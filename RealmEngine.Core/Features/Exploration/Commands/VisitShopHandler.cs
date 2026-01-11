@@ -11,7 +11,7 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class VisitShopHandler : IRequestHandler<VisitShopCommand, VisitShopResult>
 {
   private readonly ExplorationService _explorationService;
-  private readonly ShopEconomyService _shopService;
+  private readonly ShopEconomyService _shopEconomyService;
   private readonly ILogger<VisitShopHandler> _logger;
 
   /// <summary>
@@ -19,11 +19,11 @@ public class VisitShopHandler : IRequestHandler<VisitShopCommand, VisitShopResul
   /// </summary>
   public VisitShopHandler(
       ExplorationService explorationService,
-      ShopEconomyService shopService,
+      ShopEconomyService shopEconomyService,
       ILogger<VisitShopHandler> logger)
   {
     _explorationService = explorationService;
-    _shopService = shopService;
+    _shopEconomyService = shopEconomyService;
     _logger = logger;
   }
 
@@ -73,29 +73,31 @@ public class VisitShopHandler : IRequestHandler<VisitShopCommand, VisitShopResul
         };
       }
 
-            // Get or create shop inventory for this merchant
-            var shopInventory = _shopEconomyService.GetOrCreateInventory(merchant);
-            var inventory = shopInventory.Items.ToList();
+      // Get or create shop inventory for this merchant
+      var shopInventory = _shopEconomyService.GetOrCreateInventory(merchant);
+      var inventory = new List<Item>();
+      inventory.AddRange(shopInventory.CoreItems);
+      inventory.AddRange(shopInventory.DynamicItems);
 
-            return new VisitShopResult
-            {
-                Success = true,
-                Merchant = merchant,
-                Inventory = inventory
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error visiting shop at location {LocationId}", request.LocationId);
-            return new VisitShopResult
-            {
-                Success = false,
-                ErrorMessage = $"An error occurred while visiting the shop: {ex.Message}"
-            };
-        }
+      return new VisitShopResult
+      {
+        Success = true,
+        Merchant = merchant,
+        Inventory = inventory
+      };
     }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error visiting shop at location {LocationId}", request.LocationId);
+      return new VisitShopResult
+      {
+        Success = false,
+        ErrorMessage = $"An error occurred while visiting the shop: {ex.Message}"
+      };
+    }
+  }
 
-    private string DetermineShopType(NPC merchant)
+  private string DetermineShopType(NPC merchant)
   {
     var occupation = merchant.Occupation?.ToLower() ?? "";
 

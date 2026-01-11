@@ -601,9 +601,8 @@ public class CombatService
         
         if (!string.IsNullOrEmpty(ability.BaseDamage))
         {
-            // TODO: Implement dice rolling - for now, use simple average
-            // e.g., "2d6" = 2 * 3.5 = 7
-            baseDamage = EstimateDiceDamage(ability.BaseDamage);
+            // Roll dice for damage (e.g., "2d6" rolls 2 six-sided dice)
+            baseDamage = RollDice(ability.BaseDamage);
         }
 
         // Add enemy's intelligence bonus (for magic attacks)
@@ -625,7 +624,7 @@ public class CombatService
         
         if (!string.IsNullOrEmpty(spell.BaseEffectValue))
         {
-            baseDamage = EstimateDiceDamage(spell.BaseEffectValue);
+            baseDamage = RollDice(spell.BaseEffectValue);
         }
 
         // Add enemy's intelligence bonus (spells scale with intelligence)
@@ -648,7 +647,7 @@ public class CombatService
         if (!string.IsNullOrEmpty(ability.BaseDamage))
         {
             // Use BaseDamage for healing amount
-            baseHealing = EstimateDiceDamage(ability.BaseDamage);
+            baseHealing = RollDice(ability.BaseDamage);
         }
 
         // Add intelligence bonus
@@ -670,7 +669,7 @@ public class CombatService
         
         if (!string.IsNullOrEmpty(spell.BaseEffectValue))
         {
-            baseHealing = EstimateDiceDamage(spell.BaseEffectValue);
+            baseHealing = RollDice(spell.BaseEffectValue);
         }
 
         // Add intelligence bonus (spells scale with intelligence)
@@ -683,29 +682,48 @@ public class CombatService
     }
 
     /// <summary>
-    /// Estimate average damage from dice notation (e.g., "2d6" returns 7).
-    /// TODO: Replace with proper dice roller service.
+    /// Roll dice using standard notation (e.g., "2d6" rolls 2 six-sided dice).
+    /// Supports modifiers like "2d6+3" or "1d20-2".
     /// </summary>
-    private int EstimateDiceDamage(string diceNotation)
+    private int RollDice(string diceNotation)
     {
         try
         {
-            // Simple parser for "XdY" format
-            var parts = diceNotation.Split('d');
+            // Parse "XdY" or "XdY+Z" or "XdY-Z" format
+            var parts = diceNotation.ToLower().Split('d');
             if (parts.Length == 2)
             {
-                int count = int.Parse(parts[0]);
-                int sides = int.Parse(parts[1].Split('+')[0]); // Handle "2d6+3"
-                int average = count * (sides + 1) / 2;
+                int count = int.Parse(parts[0].Trim());
                 
-                // Handle bonus (e.g., "2d6+3")
+                // Handle modifiers (+ or -)
+                int sides = 0;
+                int modifier = 0;
+                
                 if (parts[1].Contains('+'))
                 {
-                    int bonus = int.Parse(parts[1].Split('+')[1]);
-                    average += bonus;
+                    var sideParts = parts[1].Split('+');
+                    sides = int.Parse(sideParts[0].Trim());
+                    modifier = int.Parse(sideParts[1].Trim());
+                }
+                else if (parts[1].Contains('-'))
+                {
+                    var sideParts = parts[1].Split('-');
+                    sides = int.Parse(sideParts[0].Trim());
+                    modifier = -int.Parse(sideParts[1].Trim());
+                }
+                else
+                {
+                    sides = int.Parse(parts[1].Trim());
                 }
                 
-                return average;
+                // Roll the dice
+                int total = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    total += _random.Next(1, sides + 1);
+                }
+                
+                return total + modifier;
             }
         }
         catch
@@ -967,12 +985,8 @@ public class CombatService
         // Update quest progress for enemy kills
         await UpdateQuestProgressForKill(enemy, outcome);
 
-        // Try to generate loot
-        // TODO: Modernize - var loot = GenerateLoot(player, enemy);
-        // TODO: Modernize - if (loot != null)
-        {
-        // TODO: Modernize - outcome.LootDropped.Add(loot);
-        }
+        // Note: Loot generation is handled by ItemGenerator in modern implementation
+        // Enemy gold drops are already added to outcome.GoldEarned above
 
         // Generate summary
         outcome.Summary = GenerateVictorySummary(enemy, outcome);

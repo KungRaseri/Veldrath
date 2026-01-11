@@ -58,7 +58,7 @@ public class QuestRewardService
                 character.Inventory.Add(new Item
                 {
                     Name = $"Quest Reward: {itemRef}",
-                    Description = $"Reward from quest '{quest.Name}' (Reference: {itemRef})",
+                    Description = $"Reward from quest '{quest.Title}' (Reference: {itemRef})",
                     Type = ItemType.QuestItem,
                     Rarity = ItemRarity.Uncommon
                 });

@@ -248,7 +248,8 @@ public class LevelUpService
     /// </summary>
     private void DisplayAttributeAllocationPreview(Character character, AttributePointAllocation allocation)
     {
-        // TODO: Convert to use IGameUI.ShowTable instead of direct Spectre.Console Table
+        // Note: In production, Godot UI will handle display formatting
+        // This ConsoleUI display is for backend testing only
         _console.ShowMessage($"STR: {character.Strength} + {allocation.StrengthPoints}");
         _console.ShowMessage($"DEX: {character.Dexterity} + {allocation.DexterityPoints}");
         _console.ShowMessage($"CON: {character.Constitution} + {allocation.ConstitutionPoints}");
