@@ -104,19 +104,19 @@ public class PatternExecutor
                     return ResolveMaterialReference(context, faker);
 
                 case "itemref":
-                    // TODO: Implement item reference resolution
-                    Log.Warning("@itemRef not yet implemented");
-                    return null;
+                    // Legacy pattern reference - use modern @items/category:name syntax instead
+                    Log.Warning("@itemRef is deprecated - use @items/category:name reference syntax");
+                    return "[Item Reference - Use @items/category:name]"; 
 
                 case "enemyref":
-                    // TODO: Implement enemy reference resolution
-                    Log.Warning("@enemyRef not yet implemented");
-                    return null;
+                    // Legacy pattern reference - use modern @enemies/category:name syntax instead
+                    Log.Warning("@enemyRef is deprecated - use @enemies/category:name reference syntax");
+                    return "[Enemy Reference - Use @enemies/category:name]";
 
                 case "npcref":
-                    // TODO: Implement NPC reference resolution
-                    Log.Warning("@npcRef not yet implemented");
-                    return null;
+                    // Legacy pattern reference - use modern @npcs/category:name syntax instead
+                    Log.Warning("@npcRef is deprecated - use @npcs/category:name reference syntax");
+                    return "[NPC Reference - Use @npcs/category:name]";
 
                 default:
                     Log.Warning("Unknown reference type: {Type}", referenceType);

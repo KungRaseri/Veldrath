@@ -168,8 +168,8 @@ public class DungeonGeneratorService
             .ToList();
 
         // Calculate rewards based on enemies
-        room.GoldReward = room.Enemies.Sum(e => e.Gold);
-        room.ExperienceReward = room.Enemies.Sum(e => e.ExperienceReward);
+        room.GoldReward = room.Enemies.Sum(e => e.GoldReward);
+        room.ExperienceReward = room.Enemies.Sum(e => e.XPReward);
     }
 
     /// <summary>
@@ -210,14 +210,14 @@ public class DungeonGeneratorService
             // Buff the boss
             boss.MaxHealth = (int)(boss.MaxHealth * 1.5);
             boss.Health = boss.MaxHealth;
-            boss.Gold = (int)(boss.Gold * 2);
-            boss.ExperienceReward = (int)(boss.ExperienceReward * 2);
+            boss.GoldReward = (int)(boss.GoldReward * 2);
+            boss.XPReward = (int)(boss.XPReward * 2);
             
             room.Enemies = new List<Enemy> { boss };
         }
 
-        room.GoldReward = boss?.Gold ?? 100;
-        room.ExperienceReward = boss?.ExperienceReward ?? 100;
+        room.GoldReward = boss?.GoldReward ?? 100;
+        room.ExperienceReward = boss?.XPReward ?? 100;
     }
 
     /// <summary>

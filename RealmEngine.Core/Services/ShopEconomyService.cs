@@ -322,17 +322,19 @@ public class ShopEconomyService
     /// </summary>
     private double CalculateQualityMultiplier(Item item)
     {
-        // Accumulate rarity weights from all components
-        var accumulatedWeight = 0;
+        // Use item rarity as a proxy for quality
+        // Rarity weights: Common=100, Uncommon=70, Rare=40, Epic=20, Legendary=10
+        var rarityWeight = item.Rarity switch
+        {
+            ItemRarity.Common => 100,
+            ItemRarity.Uncommon => 70,
+            ItemRarity.Rare => 40,
+            ItemRarity.Epic => 20,
+            ItemRarity.Legendary => 10,
+            _ => 50 // Default for unknown rarities
+        };
 
-        // TODO: Extract rarity weights from item traits
-        // For now, use a simple multiplier based on item quality
-        // This should be replaced with actual rarity weight calculation
-
-        // Placeholder: Higher quality = higher multiplier
-        accumulatedWeight = 30; // Default moderate rarity
-
-        return 100.0 / Math.Max(1, accumulatedWeight);
+        return 100.0 / Math.Max(1, rarityWeight);
     }
 
     /// <summary>

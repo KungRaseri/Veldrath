@@ -47,14 +47,21 @@ public class QuestRewardService
         }
 
         // Award items (note: item references are in v4.1 format like "@items/weapons/swords:iron-longsword")
-        // For now, we'll log them - actual item generation would need ItemGeneratorService
+        // Grant item rewards from quest
         if (quest.ItemRewardIds != null && quest.ItemRewardIds.Any())
         {
             foreach (var itemRef in quest.ItemRewardIds)
             {
-                Log.Information("Quest reward: Item '{ItemRef}' granted (item generation pending)", itemRef);
-                // TODO: Integrate with ItemGeneratorService to create actual items
-                // and add them to character.Inventory
+                Log.Information("Quest reward: Item reference '{ItemRef}' granted", itemRef);
+                // Note: Actual item generation from references requires ItemGenerator integration
+                // For now, add a placeholder item to indicate quest reward was granted
+                character.Inventory.Add(new Item
+                {
+                    Name = $"Quest Reward: {itemRef}",
+                    Description = $"Reward from quest '{quest.Name}' (Reference: {itemRef})",
+                    Type = ItemType.QuestItem,
+                    Rarity = ItemRarity.Uncommon
+                });
             }
         }
 

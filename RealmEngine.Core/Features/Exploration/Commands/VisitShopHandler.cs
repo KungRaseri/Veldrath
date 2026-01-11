@@ -73,31 +73,29 @@ public class VisitShopHandler : IRequestHandler<VisitShopCommand, VisitShopResul
         };
       }
 
-      // Generate shop inventory based on merchant type
-      var shopType = DetermineShopType(merchant);
-      var inventory = _shopService.GenerateCoreInventory(shopType, location.Level);
-      var dynamicInventory = _shopService.GenerateDynamicInventory(shopType, location.Level);
-      inventory.AddRange(dynamicInventory);
+            // Get or create shop inventory for this merchant
+            var shopInventory = _shopEconomyService.GetOrCreateInventory(merchant);
+            var inventory = shopInventory.Items.ToList();
 
-      return new VisitShopResult
-      {
-        Success = true,
-        Merchant = merchant,
-        Inventory = inventory
-      };
+            return new VisitShopResult
+            {
+                Success = true,
+                Merchant = merchant,
+                Inventory = inventory
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error visiting shop at location {LocationId}", request.LocationId);
+            return new VisitShopResult
+            {
+                Success = false,
+                ErrorMessage = $"An error occurred while visiting the shop: {ex.Message}"
+            };
+        }
     }
-    catch (Exception ex)
-    {
-      _logger.LogError(ex, "Error visiting shop at location {LocationId}", request.LocationId);
-      return new VisitShopResult
-      {
-        Success = false,
-        ErrorMessage = $"An error occurred while visiting the shop: {ex.Message}"
-      };
-    }
-  }
 
-  private string DetermineShopType(NPC merchant)
+    private string DetermineShopType(NPC merchant)
   {
     var occupation = merchant.Occupation?.ToLower() ?? "";
 

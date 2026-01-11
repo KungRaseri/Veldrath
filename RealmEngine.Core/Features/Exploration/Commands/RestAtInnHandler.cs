@@ -100,8 +100,12 @@ public class RestAtInnHandler : IRequestHandler<RestAtInnCommand, RestAtInnResul
             bool gameSaved = false;
             try
             {
-                await _saveGameService.SaveGameAsync();
-                gameSaved = true;
+                var currentSave = _saveGameService.GetCurrentSave();
+                if (currentSave != null)
+                {
+                    _saveGameService.SaveGame(currentSave);
+                    gameSaved = true;
+                }
             }
             catch (Exception ex)
             {
