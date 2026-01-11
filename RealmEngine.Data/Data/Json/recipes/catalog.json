@@ -603,6 +603,136 @@
           }
         }
       ]
+    },
+    "salvage_refinement": {
+      "description": "Refinement - Converting salvaged scraps into usable materials",
+      "items": [
+        {
+          "name": "Refine Scrap Metal",
+          "slug": "recipe-refine-scrap-metal",
+          "description": "Refine salvaged metal scraps into an iron ingot",
+          "rarityWeight": 80,
+          "requiredSkill": "Blacksmithing",
+          "requiredSkillLevel": 5,
+          "requiredStation": "Anvil",
+          "requiredStationTier": 1,
+          "craftingTime": 8,
+          "experienceGained": 2,
+          "unlockMethod": "SkillLevel",
+          "producedItem": {
+            "itemReference": "@items/materials/ingots:iron-ingot",
+            "quantity": 1,
+            "minQuality": "Common",
+            "maxQuality": "Common"
+          },
+          "components": [
+            {
+              "itemReference": "@items/materials/scraps:scrap-metal",
+              "quantity": 3
+            }
+          ]
+        },
+        {
+          "name": "Refine Scrap Wood",
+          "slug": "recipe-refine-scrap-wood",
+          "description": "Refine salvaged wood scraps into an oak plank",
+          "rarityWeight": 80,
+          "requiredSkill": "Woodworking",
+          "requiredSkillLevel": 5,
+          "requiredStation": "Workbench",
+          "requiredStationTier": 1,
+          "craftingTime": 8,
+          "experienceGained": 2,
+          "unlockMethod": "SkillLevel",
+          "producedItem": {
+            "itemReference": "@items/materials/wood:oak-plank",
+            "quantity": 1,
+            "minQuality": "Common",
+            "maxQuality": "Common"
+          },
+          "components": [
+            {
+              "itemReference": "@items/materials/scraps:scrap-wood",
+              "quantity": 3
+            }
+          ]
+        },
+        {
+          "name": "Refine Scrap Leather",
+          "slug": "recipe-refine-scrap-leather",
+          "description": "Refine salvaged leather scraps into cured leather",
+          "rarityWeight": 80,
+          "requiredSkill": "Leatherworking",
+          "requiredSkillLevel": 5,
+          "requiredStation": "TanningRack",
+          "requiredStationTier": 1,
+          "craftingTime": 8,
+          "experienceGained": 2,
+          "unlockMethod": "SkillLevel",
+          "producedItem": {
+            "itemReference": "@items/materials/leather:cured-leather",
+            "quantity": 1,
+            "minQuality": "Common",
+            "maxQuality": "Common"
+          },
+          "components": [
+            {
+              "itemReference": "@items/materials/scraps:scrap-leather",
+              "quantity": 3
+            }
+          ]
+        },
+        {
+          "name": "Refine Gemstone Fragments",
+          "slug": "recipe-refine-gemstone-fragments",
+          "description": "Refine crushed gemstone fragments into a rough gemstone",
+          "rarityWeight": 60,
+          "requiredSkill": "Jewelcrafting",
+          "requiredSkillLevel": 5,
+          "requiredStation": "JewelryBench",
+          "requiredStationTier": 1,
+          "craftingTime": 10,
+          "experienceGained": 3,
+          "unlockMethod": "SkillLevel",
+          "producedItem": {
+            "itemReference": "@items/materials/gems:rough-gemstone",
+            "quantity": 1,
+            "minQuality": "Common",
+            "maxQuality": "Uncommon"
+          },
+          "components": [
+            {
+              "itemReference": "@items/materials/scraps:gemstone-fragments",
+              "quantity": 3
+            }
+          ]
+        },
+        {
+          "name": "Refine Scrap Cloth",
+          "slug": "recipe-refine-scrap-cloth",
+          "description": "Refine torn fabric scraps into cured leather",
+          "rarityWeight": 80,
+          "requiredSkill": "Tailoring",
+          "requiredSkillLevel": 5,
+          "requiredStation": "LoomStation",
+          "requiredStationTier": 1,
+          "craftingTime": 8,
+          "experienceGained": 2,
+          "unlockMethod": "SkillLevel",
+          "producedItem": {
+            "itemReference": "@items/materials/leather:cured-leather",
+            "quantity": 1,
+            "minQuality": "Common",
+            "maxQuality": "Common"
+          },
+          "components": [
+            {
+              "itemReference": "@items/materials/scraps:scrap-cloth",
+              "quantity": 3
+            }
+          ]
+        }
+      ]
     }
   }
 }
