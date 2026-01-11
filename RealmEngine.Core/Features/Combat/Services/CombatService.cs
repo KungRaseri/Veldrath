@@ -81,7 +81,7 @@ public class CombatService
         result.HotHealing = playerStatusResult.TotalHealingReceived;
         result.ActiveStatusEffects = player.ActiveStatusEffects?.ToList() ?? new List<StatusEffect>();
         result.StatusEffectsExpired = playerStatusResult.ExpiredEffectTypes.ToList();
-        
+
         // Check if player can act (not crowd controlled)
         if (!CanAct(player))
         {
@@ -266,7 +266,7 @@ public class CombatService
         result.HotHealing = enemyStatusResult.TotalHealingReceived;
         result.ActiveStatusEffects = enemy.ActiveStatusEffects?.ToList() ?? new List<StatusEffect>();
         result.StatusEffectsExpired = enemyStatusResult.ExpiredEffectTypes.ToList();
-        
+
         // Check if enemy can act (not crowd controlled)
         if (!CanAct(enemy))
         {
@@ -284,10 +284,10 @@ public class CombatService
         {
             result.IsDodged = true;
             result.Message = $"You dodged {enemy.Name}'s attack!";
-            
+
             // Trigger reactive abilities on dodge
             _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDodge");
-            
+
             // Award acrobatics XP for successful dodge
             await _mediator.Send(new AwardSkillXPCommand
             {
@@ -296,7 +296,7 @@ public class CombatService
                 XPAmount = 8,
                 ActionSource = "successful_dodge"
             });
-            
+
             return result;
         }
 
@@ -305,10 +305,10 @@ public class CombatService
         {
             result.IsBlocked = true;
             result.Message = $"You blocked {enemy.Name}'s attack!";
-            
+
             // Trigger reactive abilities on block
             _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onBlock");
-            
+
             // Award block XP for successful block
             await _mediator.Send(new AwardSkillXPCommand
             {
@@ -317,7 +317,7 @@ public class CombatService
                 XPAmount = 8,
                 ActionSource = "successful_block"
             });
-            
+
             return result;
         }
 
@@ -347,7 +347,7 @@ public class CombatService
         if (isDefending)
         {
             baseDamage = baseDamage / 2;
-            
+
             // Award armor skill XP for defending (taking reduced damage)
             await _mediator.Send(new AwardSkillXPCommand
             {
@@ -417,7 +417,7 @@ public class CombatService
     {
         // AI decides whether to use an ability
         var chosenAbilityId = _enemyAbilityAI.DecideAbilityUsage(enemy, player, abilityStates);
-        
+
         if (chosenAbilityId == null)
         {
             return null; // AI chose to use basic attack instead
@@ -433,7 +433,7 @@ public class CombatService
 
         // Check if ability requires mana (future enhancement - enemies don't have mana yet)
         // For now, assume all enemy abilities are usable
-        
+
         // Apply ability cooldown
         abilityStates[chosenAbilityId] = ability.Cooldown;
 
@@ -455,12 +455,12 @@ public class CombatService
                 // Calculate ability damage
                 int abilityDamage = CalculateAbilityDamage(enemy, ability);
                 player.Health = Math.Max(0, player.Health - abilityDamage);
-                result = result with 
-                { 
+                result = result with
+                {
                     DamageDealt = abilityDamage,
                     Message = $"{enemy.Name} used {ability.Name}! You took {abilityDamage} damage!"
                 };
-                
+
                 // Trigger reactive abilities on damage taken
                 _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
                 break;
@@ -470,8 +470,8 @@ public class CombatService
                 // Healing ability
                 int healAmount = CalculateAbilityHealing(enemy, ability);
                 enemy.Health = Math.Min(enemy.MaxHealth, enemy.Health + healAmount);
-                result = result with 
-                { 
+                result = result with
+                {
                     HealingDone = healAmount,
                     Message = $"{enemy.Name} used {ability.Name} and restored {healAmount} health!"
                 };
@@ -500,7 +500,7 @@ public class CombatService
     {
         // AI decides which spell to cast (if any)
         string? chosenSpellId = _enemySpellCastingAI.DecideSpellCasting(enemy, player);
-        
+
         if (chosenSpellId == null)
         {
             return null; // AI chose not to cast spell
@@ -508,7 +508,7 @@ public class CombatService
 
         // Get spell from catalog
         var spell = spellCatalog.GetSpell(chosenSpellId);
-            
+
         if (spell == null)
         {
             Log.Warning($"Enemy {enemy.Name} tried to cast unknown spell {chosenSpellId}");
@@ -517,7 +517,7 @@ public class CombatService
 
         // Calculate actual mana cost (Intelligence reduces cost)
         int manaCost = _enemySpellCastingAI.CalculateManaCost(spell, enemy);
-        
+
         // Deduct mana
         enemy.Mana -= manaCost;
 
@@ -537,8 +537,8 @@ public class CombatService
                 // Damage spell - apply damage to player
                 int spellDamage = CalculateSpellDamage(enemy, spell);
                 player.Health = Math.Max(0, player.Health - spellDamage);
-                result = result with 
-                { 
+                result = result with
+                {
                     EffectValue = spellDamage.ToString(),
                     Message = $"{enemy.Name} cast {spell.DisplayName} and dealt {spellDamage} damage!"
                 };
@@ -551,8 +551,8 @@ public class CombatService
                 // Healing spell
                 int healAmount = CalculateSpellHealing(enemy, spell);
                 enemy.Health = Math.Min(enemy.MaxHealth, enemy.Health + healAmount);
-                result = result with 
-                { 
+                result = result with
+                {
                     EffectValue = healAmount.ToString(),
                     Message = $"{enemy.Name} cast {spell.DisplayName} and restored {healAmount} health!"
                 };
@@ -598,7 +598,7 @@ public class CombatService
     {
         // Base damage from ability (if no BaseDamage string, use flat 10)
         int baseDamage = 10;
-        
+
         if (!string.IsNullOrEmpty(ability.BaseDamage))
         {
             // Roll dice for damage (e.g., "2d6" rolls 2 six-sided dice)
@@ -621,7 +621,7 @@ public class CombatService
     {
         // Base damage from spell
         int baseDamage = 15; // Spells generally stronger than abilities
-        
+
         if (!string.IsNullOrEmpty(spell.BaseEffectValue))
         {
             baseDamage = RollDice(spell.BaseEffectValue);
@@ -643,7 +643,7 @@ public class CombatService
     {
         // Base healing from ability (if no BaseDamage string, use flat 10)
         int baseHealing = 10;
-        
+
         if (!string.IsNullOrEmpty(ability.BaseDamage))
         {
             // Use BaseDamage for healing amount
@@ -666,7 +666,7 @@ public class CombatService
     {
         // Base healing from spell
         int baseHealing = 20; // Healing spells generally stronger
-        
+
         if (!string.IsNullOrEmpty(spell.BaseEffectValue))
         {
             baseHealing = RollDice(spell.BaseEffectValue);
@@ -694,11 +694,11 @@ public class CombatService
             if (parts.Length == 2)
             {
                 int count = int.Parse(parts[0].Trim());
-                
+
                 // Handle modifiers (+ or -)
                 int sides = 0;
                 int modifier = 0;
-                
+
                 if (parts[1].Contains('+'))
                 {
                     var sideParts = parts[1].Split('+');
@@ -715,14 +715,14 @@ public class CombatService
                 {
                     sides = int.Parse(parts[1].Trim());
                 }
-                
+
                 // Roll the dice
                 int total = 0;
                 for (int i = 0; i < count; i++)
                 {
                     total += _random.Next(1, sides + 1);
                 }
-                
+
                 return total + modifier;
             }
         }
@@ -730,7 +730,7 @@ public class CombatService
         {
             // Fallback to default if parsing fails
         }
-        
+
         return 10; // Default fallback
     }
 
@@ -826,7 +826,7 @@ public class CombatService
             return 1.0; // Physical damage is always neutral
 
         var traits = enemy.Traits;
-        
+
         // Check for immunity
         if (traits.TryGetValue($"immuneTo{CapitalizeFirst(damageType)}", out var immunity) && immunity.AsBool())
             return 0.0; // Immune - no damage
@@ -995,33 +995,6 @@ public class CombatService
     }
 
     /// <summary>
-    /// Generate loot item based on enemy difficulty and player stats.
-    /// </summary>
-    private Item? GenerateLoot(Character player, Enemy enemy)
-    {
-        double lootChance = GetLootChance(enemy.Difficulty);
-        lootChance += player.GetRareItemChance();
-
-        if (_random.Next(0, 100) >= lootChance)
-        {
-            return null;
-        }
-
-        var lootRarity = DetermineLootRarity(enemy.Difficulty);
-        var lootType = (ItemType)_random.Next(1, 14); // Skip Consumable at 0
-        // TODO: Modernize - // TODO: Modernize - var lootItems = Generators.ItemGenerator.GenerateByType(lootType, 1);
-
-        // TODO: Modernize - if (lootItems.Count == 0)
-        {
-            return null;
-        }
-
-        // TODO: Modernize - var loot = lootItems[0];
-        // TODO: Modernize - loot.Rarity = lootRarity;
-        // TODO: Modernize - return loot;
-    }
-
-    /// <summary>
     /// Get base loot drop chance for enemy difficulty.
     /// </summary>
     private double GetLootChance(EnemyDifficulty difficulty)
@@ -1064,7 +1037,7 @@ public class CombatService
 
         if (outcome.LootDropped.Any())
         {
-        // TODO: Modernize - summary += $"\n[cyan]Loot:[/]\n";
+            // Note: Loot display handled by ItemGenerator integration in modern flow
             foreach (var item in outcome.LootDropped)
             {
                 summary += $"  • {item.Name} ({item.Rarity})\n";
@@ -1102,7 +1075,7 @@ public class CombatService
         {
             // Get the skillReference trait from the armor
             var totalTraits = armor!.GetTotalTraits();
-            
+
             if (totalTraits.TryGetValue("skillReference", out var skillRefTrait) &&
                 skillRefTrait.Type == TraitType.String &&
                 !string.IsNullOrWhiteSpace(skillRefTrait.AsString()))

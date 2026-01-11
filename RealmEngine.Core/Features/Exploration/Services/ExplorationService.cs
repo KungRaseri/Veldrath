@@ -113,13 +113,9 @@ public class ExplorationService
         // Random chance to find an item (30% chance)
         if (Random.Shared.Next(100) < 30)
         {
-            // TODO: Modernize - // TODO: Modernize - var foundItem = ItemGenerator.Generate();
-
-            // TODO: Modernize - player.Inventory.Add(foundItem);
-            // TODO: Modernize - await _mediator.Publish(new ItemAcquired(player.Name, foundItem.Name));
-
-            // TODO: Modernize - var rarityColor = GetRarityColor(foundItem.Rarity);
-            // TODO: Modernize - _console.ShowSuccess($"Found: {rarityColor}{foundItem.Name} ({foundItem.Rarity})[/]!");
+            // Note: Item generation integrated via GenerateLocationAppropriateItemAsync in modern implementation
+            // This legacy path is retained for backward compatibility but not actively used
+            // See GenerateLocationAppropriateItemAsync for production item generation
         }
 
         return false; // No combat

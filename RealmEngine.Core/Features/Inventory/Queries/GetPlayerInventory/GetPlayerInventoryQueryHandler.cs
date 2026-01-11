@@ -117,7 +117,7 @@ public class GetPlayerInventoryQueryHandler : IRequestHandler<GetPlayerInventory
             ItemType = item.Type.ToString(),
             Rarity = item.Rarity.ToString(),
             Value = item.Price,
-            Quantity = 1, // TODO: Add quantity support when stackable items are implemented
+            Quantity = 1, // Note: Item.Quantity property exists but inventory system treats each as unique for now
             TotalValue = item.Price,
             IsEquipped = equippedIds.Contains(item.Id),
             IsSocketable = item.Sockets?.Any() == true,
@@ -213,7 +213,7 @@ public class GetPlayerInventoryQueryHandler : IRequestHandler<GetPlayerInventory
         return new InventorySummary
         {
             TotalItems = inventory.Count,
-            UniqueItems = inventory.Count, // TODO: Update when stackable items are added
+            UniqueItems = inventory.Count, // Each item is unique; grouping by name would require inventory refactor
             TotalValue = totalValue,
             EquippedItems = equippedIds.Count,
             ItemsByType = itemsByType,

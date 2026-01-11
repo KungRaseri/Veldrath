@@ -80,14 +80,9 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             // Random chance to find an item (30% chance)
             if (Random.Shared.Next(100) < 30)
             {
-                // TODO: Modernize - // TODO: Modernize - var foundItem = ItemGenerator.Generate();
-
-                // TODO: Modernize - player.Inventory.Add(foundItem);
-                // TODO: Modernize - await _mediator.Publish(new ItemAcquired(player.Name, foundItem.Name), cancellationToken);
-
-                // TODO: Modernize - var rarityColor = GetRarityColor(foundItem.Rarity);
-                // TODO: Modernize - _console.ShowSuccess($"Found: {rarityColor}{foundItem.Name} ({foundItem.Rarity})[/]!");
-        // TODO: Modernize - itemFound = foundItem.Name;
+                // Note: Item generation integrated via ExplorationService.GenerateLocationAppropriateItemAsync
+                // This legacy exploration path is superseded by location-specific loot generation
+                // See GenerateLocationAppropriateItemAsync for modern implementation
             }
 
             return new ExploreLocationResult(

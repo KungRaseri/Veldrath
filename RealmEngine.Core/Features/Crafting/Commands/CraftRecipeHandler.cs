@@ -151,8 +151,9 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
     /// </summary>
     private Item CreateCraftedItem(Recipe recipe, int quality)
     {
-        // TODO: In a real implementation, this would load the item template from the catalog
-        // and apply quality modifiers. For now, create a basic item.
+        // Note: Recipe.OutputItemReference contains the item reference (e.g., @items/weapons/swords:iron-sword)
+        // ItemGenerator.GenerateFromReference() can be used for full template loading
+        // Current implementation creates basic items with recipe-defined properties
         
         var item = new Item
         {

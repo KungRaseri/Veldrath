@@ -281,9 +281,51 @@ public class SpellCastingService
     /// </summary>
     private string CalculateSpellEffect(Spell spell, CharacterSkill magicSkill, Character caster)
     {
-        // For now, return base effect value
-        // TODO: Parse dice notation and scale with skill
+        // If base effect is a number, scale with skill level
+        if (int.TryParse(spell.BaseEffectValue, out int baseValue))
+        {
+            // Add skill-based scaling: +1 per 5 skill ranks
+            int skillBonus = magicSkill.CurrentRank / 5;
+            return (baseValue + skillBonus).ToString();
+        }
+        
+        // If it's dice notation, return as-is for now (will be rolled in ApplySpellEffect)
         return spell.BaseEffectValue;
+    }
+
+    /// <summary>
+    /// Parse dice notation (e.g., "2d6") or numeric value.
+    /// </summary>
+    private int ParseDiceOrValue(string value)
+    {
+        // If it's a plain number, return it
+        if (int.TryParse(value, out int numValue))
+        {
+            return numValue;
+        }
+        
+        // If it's dice notation, roll it (using same logic as CombatService)
+        try
+        {
+            var parts = value.ToLower().Split('d');
+            if (parts.Length == 2)
+            {
+                int count = int.Parse(parts[0].Trim());
+                int sides = int.Parse(parts[1].Trim());
+                int total = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    total += Random.Shared.Next(1, sides + 1);
+                }
+                return total;
+            }
+        }
+        catch
+        {
+            // If parsing fails, return a default value
+        }
+        
+        return 10; // Default fallback
     }
 
     /// <summary>
@@ -296,14 +338,20 @@ public class SpellCastingService
             case SpellEffectType.Damage:
                 if (target != null)
                 {
-                    // TODO: Parse dice and apply damage
-                    return $"Dealt {effectValue} {spell.Traits.GetValueOrDefault("damageType", "magic")} damage to {target.Name}!";
+                    // Parse dice notation or use direct value
+                    int damage = ParseDiceOrValue(effectValue);
+                    target.Health = Math.Max(0, target.Health - damage);
+                    return $"Dealt {damage} {spell.Traits.GetValueOrDefault("damageType", "magic")} damage to {target.Name}!";
                 }
                 return "No valid target!";
 
             case SpellEffectType.Heal:
-                // TODO: Parse dice and apply healing
-                return $"Restored {effectValue} health!";
+                // Parse dice notation or use direct value
+                int healing = ParseDiceOrValue(effectValue);
+                int maxHealth = caster.GetMaxHealth();
+                int actualHealing = Math.Min(healing, maxHealth - caster.Health);
+                caster.Health = Math.Min(maxHealth, caster.Health + healing);
+                return $"Restored {actualHealing} health!";
 
             case SpellEffectType.Buff:
                 return $"Applied {spell.DisplayName} buff!";

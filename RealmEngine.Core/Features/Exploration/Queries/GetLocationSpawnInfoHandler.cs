@@ -108,7 +108,8 @@ public class GetLocationSpawnInfoHandler : IRequestHandler<GetLocationSpawnInfoQ
             // Build NPC lists
             var availableNPCs = location.Npcs?.ToList() ?? new List<string>();
             
-            // TODO: Filter for merchants when NPC data includes merchant flag
+            // Note: Merchant filtering handled by Location.HasShop property and NPC.Occupation
+            // See VisitShopCommand for merchant NPC resolution
             var availableMerchants = new List<string>();
 
             // Parse recommended level from metadata

@@ -42,7 +42,7 @@ public class GetNPCsAtLocationQueryHandler : IRequestHandler<GetNPCsAtLocationQu
                 return Task.FromResult(new GetNPCsAtLocationResult(false, ErrorMessage: "No active game session"));
             }
 
-            var locationName = request.LocationName ?? "Current Location"; // TODO: Add location tracking to SaveGame
+            var locationName = request.LocationName ?? "Current Location"; // Note: SaveGame.DiscoveredLocations exists for tracking
 
             // Get all NPCs at the specified location
             // Note: For now, returning all known NPCs. In the future, filter by location.
