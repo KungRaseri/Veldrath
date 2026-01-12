@@ -30,7 +30,7 @@ This document tracks all completed backend systems for the RealmEngine game. All
 16. [Exploration System](#-exploration-system) - Location generation, loot
 17. [Shop System](#-shop-system) - Economy, merchants, buy/sell
 18. **[Party System](#-party-system) - NPC recruitment, party combat, AI allies** 🆕
-19. **[Reputation & Factions System](#-reputation--factions-system) - 18 factions, reputation levels** 🆕
+19. **[Reputation & Factions System](#-reputation--factions-system) - 11 factions, 7 reputation levels** 🆕
 
 **For remaining work**, see [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)
 
@@ -796,12 +796,13 @@ foreach (var allyAction in result.AllyActions)
 **Tests**: Ready for testing
 
 ### Features
-- **18 Factions**: Kingdoms, Guilds, Religious, Criminal, Monster, Neutral
+- **11 Factions**: Trade, Labor, Criminal, Military, Magical, Academic, Religious, Social, Political
 - **7 Reputation Levels**: Hostile (-6000) to Exalted (+12000)
 - **Price Discounts**: 5-30% based on reputation level
 - **Access Control**: Quest/trade restrictions by reputation
 - **Faction Relationships**: Allies and enemies per faction
 - **Reputation Tracking**: Per-faction reputation stored in SaveGame
+- **Catalog Structure**: Hierarchical faction_types organization
 
 ### Reputation Levels
 - **Hostile** (<-6000): Faction attacks on sight, no trade/quests
@@ -821,19 +822,41 @@ foreach (var allyAction in result.AllyActions)
 
 **Services**:
 - `ReputationService` - Gain/lose reputation, check access
+- `FactionDataService` - Load factions from JSON catalog
 
 **Commands**:
 - `GainReputationCommand` - Award reputation points
 - `LoseReputationCommand` - Remove reputation points
 - `GetReputationQuery` - Get all or specific faction reputations
 
-### Factions
-**Kingdoms**: Kingdom of Aeloria, Dwarven Clans, Elven Concord  
-**Guilds**: Merchants Guild, Mages Conclave, Adventurers League, Scholar's Society  
-**Religious**: Order of Light  
-**Criminal**: Thieves Guild, Shadow Covenant, Necromancer Circle, Pirate Brotherhood, Dragon Cult  
-**Monster**: Goblin Tribes, Orc Warband, Abyssal Horde, Undead Legion  
-**Neutral**: Wildwood Rangers
+### Factions (11 Total)
+**Trade**: Merchants Guild  
+**Labor**: Craftsmen Guild  
+**Criminal**: Thieves Guild  
+**Military**: City Guard, Military Forces, Fighters Guild  
+**Magical**: Mages Circle  
+**Academic**: Scholars Guild  
+**Religious**: The Clergy  
+**Social**: Commoners  
+**Political**: Nobility
+
+### Faction Catalog Structure
+```json
+{
+  "metadata": { "type": "organizations_factions_catalog" },
+  "faction_types": {
+    "trade": { "items": [...] },
+    "labor": { "items": [...] },
+    "criminal": { "items": [...] },
+    "military": { "items": [...] },
+    "magical": { "items": [...] },
+    "academic": { "items": [...] },
+    "religious": { "items": [...] },
+    "social": { "items": [...] },
+    "political": { "items": [...] }
+  }
+}
+```
 
 ### Godot Integration
 ```csharp
@@ -906,4 +929,4 @@ All completed systems have comprehensive documentation:
 
 ---
 
-**Last Updated**: January 12, 2026 19:15 UTC
+**Last Updated**: January 12, 2026 22:00 UTC
