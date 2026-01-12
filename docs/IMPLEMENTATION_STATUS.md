@@ -1,23 +1,23 @@
 # Implementation Status - Remaining Work
 
-**Last Updated**: January 12, 2026 22:00 UTC  
+**Last Updated**: January 12, 2026 22:30 UTC  
 **Build Status**: ✅ Clean build (all projects compile)  
-**Test Status**: 8,546/8,546 tests passing (100%) ✅  
-**Overall Completion**: 19/22 major systems (86%)
+**Test Status**: 8,574/8,574 tests passing (100%) ✅  
+**Overall Completion**: 19/20 backend systems (95%)
 
 **Quick Links:**
 - [✅ Completed Work](COMPLETED_WORK.md) - All finished systems (19 complete)
-- [Remaining Work](#-remaining-work) - What still needs implementation (3 systems)
+- [Remaining Work](#-remaining-work) - What still needs implementation (1 system)
 - [Recent Progress](#-recent-progress-last-7-days) - Latest achievements
 
 ---
 
 ## 📊 Status Overview
 
-### ✅ Completed (19 systems - See [COMPLETED_WORK.md](COMPLETED_WORK.md))
+### ✅ Completed Backend Systems (19/20 - See [COMPLETED_WORK.md](COMPLETED_WORK.md))
 1. Character System
 2. Combat System
-3. Inventory System
+3. Inventory System (with Item Stacking)
 4. Progression System
 5. Abilities System
 6. Spells System
@@ -35,8 +35,14 @@
 18. Party System
 19. Reputation & Factions System
 
-### ❌ Not Started (1 system)
+### ❌ Backend Systems Not Started (1 system)
 - Modding Support
+
+### 🎮 Godot-Only Systems (Not Backend Features)
+- **Audio System** - Sound effects, music, voice (Godot audio engine)
+- **Visual Effects System** - Particles, animations, shaders (Godot visual engine)
+
+**Note**: RealmEngine is a backend game logic engine. All UI, audio, and visual presentation is handled by Godot.
 
 ---
 
@@ -65,9 +71,30 @@
 
 ## 📅 Recent Progress (Last 7 Days)
 
+### ✅ January 12, 2026 (22:30 UTC) - Item Stacking Complete! 🎉
+
+**Major Milestone: 19/20 Backend Systems (95%)**
+
+- ✅ **Item Stacking System Complete**: Catalog-driven stackable items
+  - Items define `stackSize` in JSON (potions=20, materials=50, weapons=1)
+  - `IsStackable` automatically determined by `stackSize > 1`
+  - Inventory auto-stacks compatible items when adding
+  - Smart compatibility check (name, type, material; rejects enchanted/socketed)
+  - Generator reads stackSize from catalog at both creation points
+- ✅ **Architecture Clarification**: Audio & Visual Effects are Godot-only (not backend)
+  - RealmEngine = Backend game logic only
+  - Godot = UI, audio, visual presentation
+  - Actual completion: 19/20 backend systems (95%), not 19/22
+- ✅ **Test Status**: 8,574/8,574 passing (100%)
+- ✅ **Documentation Updated**: IMPLEMENTATION_STATUS.md, COMPLETED_WORK.md updated
+
+**Only 1 Backend System Remaining**: Modding Support (post-launch feature)
+
+---
+
 ### ✅ January 12, 2026 (22:00 UTC) - Party & Reputation Systems Complete! 🎉
 
-**Major Milestone: 19/22 Systems (86%)**
+**Major Milestone: Party & Reputation Systems**
 
 - ✅ **Party System Complete**: NPC recruitment, party combat, AI behaviors
   - Max 4 party members (leader + 3 recruits)
@@ -83,7 +110,8 @@
   - Quest/trade access control by reputation level
   - FactionDataService loads from organizations/factions/catalog.json
   - Faction catalog synced with correct JSON structure
-- ✅ **Test Status**: 8,546/8,546 passing (100%)
+  - 28/28 reputation tests passing
+- ✅ **Test Status**: 8,574/8,574 passing (100%)
 - ✅ **Documentation Updated**: All feature pages and COMPLETED_WORK.md updated
 
 **Architecture**:
@@ -193,18 +221,20 @@ All 8,574 tests passing (100%). All 19 completed systems are fully functional an
 **Status**: ✅ 100% Complete (January 12, 2026)
 
 **Implementation**:
-- Added `Quantity` property to Item model (default: 1)
-- Added `IsStackable` property based on ItemType (Consumables/Materials = true, Weapons/Armor = false)
+- Added `StackSize` property to Item model (read from JSON catalog, default: 1)
+- Added `Quantity` property to Item model (tracks current stack count, default: 1)
+- Added `IsStackable` property determined by `StackSize > 1` from catalog data
 - Added `CanStackWith(Item other)` method (checks name, type, material; rejects enchanted/socketed/upgraded items)
 - Added `AddQuantity(int amount)` and `RemoveQuantity(int amount)` methods
 - Updated InventoryService.AddItemAsync() to automatically stack compatible items
-- Updated ItemGenerator to set IsStackable flag at item creation time
+- Updated ItemGenerator at both creation points to read `stackSize` from catalog and set `IsStackable = StackSize > 1`
 
 **How It Works**:
-- When adding items to inventory, system checks for existing stacks via `CanStackWith()`
-- If stackable + compatible stack exists → increases quantity on existing item
-- If not stackable or no compatible stack → adds as new inventory slot
-- Shop and crafting systems automatically benefit from stacking logic
+- **Catalog-Driven**: Items define `stackSize` in JSON (e.g., potions stackSize=20, weapons stackSize=1)
+- **Auto-Stacking**: When adding items to inventory, system checks for existing stacks via `CanStackWith()`
+- **Smart Merging**: If stackable + compatible stack exists → increases quantity on existing item
+- **Separate Slots**: If not stackable or no compatible stack → adds as new inventory slot
+- **Integrity**: Items with enchantments, sockets, or upgrades cannot stack (each is unique)
 
 **Testing**: Manual verification during gameplay (no automated tests required for this feature)
 

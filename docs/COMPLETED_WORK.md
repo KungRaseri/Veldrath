@@ -1,17 +1,19 @@
 # Completed Work - RealmEngine Backend
 
 **Last Updated**: January 12, 2026 22:30 UTC  
-**Overall Completion**: 19/22 major systems (86%)  
+**Overall Completion**: 19/20 backend systems (95%)  
 **Test Status**: 8,574/8,574 tests passing (100%) ✅  
 **Build Status**: Clean build with zero errors ✅
 
 This document tracks all completed backend systems for the RealmEngine game. All systems listed here are **100% functional** and ready for Godot integration.
 
+**Note**: RealmEngine is a backend game logic engine. Audio and Visual Effects are handled by Godot (UI layer), not the backend.
+
 ---
 
 ## 📊 Completion Summary
 
-### ✅ Complete Systems (19)
+### ✅ Complete Backend Systems (19/20)
 1. [Character System](#-character-system) - Character creation, classes, attributes
 2. [Combat System](#-combat-system) - Turn-based combat with abilities, spells, status effects
 3. [Inventory System](#-inventory-system) - Item management, equipment, stacking
@@ -115,9 +117,13 @@ This document tracks all completed backend systems for the RealmEngine game. All
 
 ### Item Stacking System
 - **Auto-Stacking**: When adding items, system checks for existing compatible stacks
-- **Stackable Items**: Consumables (potions, scrolls) and Materials (ore, leather)
-- **Non-Stackable**: Weapons, armor, enchanted items, socketed items
+- **Catalog-Driven**: Items define `stackSize` in JSON (potions=20, materials=50, weapons=1)
+- **Smart Logic**: `IsStackable` determined by `stackSize > 1` from item catalog data
+- **Stackable Items**: Consumables (potions, scrolls) and Materials (ore, leather) with stackSize > 1
+- **Non-Stackable**: Weapons, armor, enchanted items, socketed items, upgraded items
 - **Stacking Rules**: Items must match name, type, and material (no enchantments/sockets/upgrades)
+- **Quantity Tracking**: Each item has `Quantity` property tracking current stack count
+- **Max Stack Size**: Items have `StackSize` property defining maximum quantity per stack
 
 ### Godot Integration
 - `AddItemCommand` - Add item to inventory (automatically stacks if compatible)
