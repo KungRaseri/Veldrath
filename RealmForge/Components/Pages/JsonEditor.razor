@@ -1,4 +1,7 @@
 @page "/editor"
+@using System.Text.Json
+@using RealmEngine.Shared.Models
+@using RealmForge.Components.Shared
 @inject NavigationManager Navigation
 
 <h3>JSON Editor</h3>
@@ -6,15 +9,14 @@
 <div class="editor-layout">
     <div class="file-tree">
         <h4>Files</h4>
-        <button class="btn btn-primary" @onclick="OpenFolder">Open Data
-            Folder</button>
-
+        <button class="btn btn-primary" @onclick="OpenFolder">Open Data Folder</button>
+        
         @if (JsonFiles.Any())
         {
             <ul class="tree">
                 @foreach (var file in JsonFiles)
                 {
-                    <li @onclick="() => LoadFile(file)"
+                    <li @onclick="() => LoadFile(file)" 
                         class="@(file == CurrentFile ? "selected" : "")">
                         📄 @Path.GetFileName(file)
                     </li>
@@ -22,19 +24,52 @@
             </ul>
         }
     </div>
-
+    
     <div class="editor-panel">
         @if (!string.IsNullOrEmpty(CurrentFile))
         {
             <div class="toolbar">
                 <span class="file-name">@Path.GetFileName(CurrentFile)</span>
+                
+                <div class="mode-toggle">
+                    <label class="toggle-label">
+                        <input type="radio" name="mode" checked="@(EditorMode == "form")" @onclick="@(() => SwitchMode("form"))" />
+                        📝 Form
+                    </label>
+                    <label class="toggle-label">
+                        <input type="radio" name="mode" checked="@(EditorMode == "json")" @onclick="@(() => SwitchMode("json"))" />
+                        📄 JSON
+                    </label>
+                </div>
+                
                 <button class="btn btn-success" @onclick="SaveFile">Save</button>
-                <button class="btn btn-warning"
-                    @onclick="ValidateFile">Validate</button>
+                <button class="btn btn-warning" @onclick="ValidateFile">Validate</button>
             </div>
-
-            <textarea class="json-editor" @bind="JsonContent" rows="30"></textarea>
-
+            
+            @if (EditorMode == "form")
+            {
+                <div class="form-editor">
+                    @if (CurrentModel != null)
+                    {
+                        <DynamicFormEditor TModel="object" 
+                                          Model="@CurrentModel" 
+                                          OnSave="HandleFormSave" 
+                                          OnCancel="() => {}" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <p>Form editing not available for this file type yet.</p>
+                            <p>Switch to JSON mode to edit, or select a different file type (items, enemies, spells).</p>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <textarea class="json-editor" @bind="JsonContent" rows="30"></textarea>
+            }
+            
             @if (!string.IsNullOrEmpty(ValidationMessage))
             {
                 <div class="alert @(IsValid ? "alert-success" : "alert-danger")">
@@ -58,43 +93,117 @@
     private string ValidationMessage = string.Empty;
     private bool IsValid = false;
     private string DataFolderPath = string.Empty;
+    private string EditorMode = "form"; // Default to form mode
+    private object? CurrentModel = null;
 
-    private async Task OpenFolder()
+    private void OpenFolder()
     {
         // TODO: Use FolderPicker when implemented
         // For now, hardcode to Data/Json folder
-        var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..",
-        "..", "..", ".."));
+        var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
         DataFolderPath = Path.Combine(projectRoot, "RealmEngine.Data", "Data", "Json");
-
+        
         if (Directory.Exists(DataFolderPath))
         {
-            JsonFiles = Directory.GetFiles(DataFolderPath, "*.json",
-            SearchOption.AllDirectories).ToList();
+            JsonFiles = Directory.GetFiles(DataFolderPath, "*.json", SearchOption.AllDirectories).ToList();
             StateHasChanged();
         }
     }
 
-    private async Task LoadFile(string filePath)
+    private void LoadFile(string filePath)
     {
         CurrentFile = filePath;
-        JsonContent = await File.ReadAllTextAsync(filePath);
+        JsonContent = File.ReadAllText(filePath);
         ValidationMessage = string.Empty;
+        
+        // Try to parse as a known model type
+        TryParseModel();
+        
         StateHasChanged();
     }
 
-    private async Task SaveFile()
+    private void TryParseModel()
+    {
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            
+            // Detect file type and parse accordingly
+            var fileName = Path.GetFileName(CurrentFile).ToLower();
+            
+            if (fileName.Contains("item"))
+            {
+                CurrentModel = JsonSerializer.Deserialize<Item>(JsonContent, options);
+            }
+            else if (fileName.Contains("enemy") || fileName.Contains("enemies"))
+            {
+                CurrentModel = JsonSerializer.Deserialize<Enemy>(JsonContent, options);
+            }
+            else if (fileName.Contains("spell"))
+            {
+                CurrentModel = JsonSerializer.Deserialize<Spell>(JsonContent, options);
+            }
+            else if (fileName.Contains("ability") || fileName.Contains("abilities"))
+            {
+                CurrentModel = JsonSerializer.Deserialize<Ability>(JsonContent, options);
+            }
+            else
+            {
+                // Unknown type - form mode not available
+                CurrentModel = null;
+            }
+        }
+        catch
+        {
+            // Parsing failed - stick with JSON mode
+            CurrentModel = null;
+        }
+    }
+
+    private void SwitchMode(string mode)
+    {
+        if (mode == "json" && EditorMode == "form")
+        {
+            // Switching from form to JSON - serialize current model
+            if (CurrentModel != null)
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                JsonContent = JsonSerializer.Serialize(CurrentModel, CurrentModel.GetType(), options);
+            }
+        }
+        else if (mode == "form" && EditorMode == "json")
+        {
+            // Switching from JSON to form - parse JSON back to model
+            TryParseModel();
+        }
+        
+        EditorMode = mode;
+        StateHasChanged();
+    }
+
+    private void HandleFormSave(object model)
+    {
+        CurrentModel = model;
+        
+        // Serialize to JSON and save
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        JsonContent = JsonSerializer.Serialize(model, model.GetType(), options);
+        
+        SaveFile();
+    }
+
+    private void SaveFile()
     {
         if (!string.IsNullOrEmpty(CurrentFile))
         {
-            await File.WriteAllTextAsync(CurrentFile, JsonContent);
+            File.WriteAllText(CurrentFile, JsonContent);
             ValidationMessage = "✅ File saved successfully";
             IsValid = true;
             StateHasChanged();
         }
     }
 
-    private async Task ValidateFile()
+    private void ValidateFile()
     {
         try
         {
@@ -118,40 +227,40 @@
         gap: 20px;
         height: calc(100vh - 200px);
     }
-
+    
     .file-tree {
         width: 300px;
         border: 1px solid #ddd;
         padding: 15px;
         overflow-y: auto;
     }
-
+    
     .file-tree ul.tree {
         list-style: none;
         padding-left: 0;
     }
-
+    
     .file-tree li {
         padding: 8px;
         cursor: pointer;
         border-radius: 4px;
     }
-
+    
     .file-tree li:hover {
         background-color: #f0f0f0;
     }
-
+    
     .file-tree li.selected {
         background-color: #007bff;
         color: white;
     }
-
+    
     .editor-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
     }
-
+    
     .toolbar {
         display: flex;
         gap: 10px;
@@ -161,12 +270,39 @@
         border: 1px solid #ddd;
         border-bottom: none;
     }
-
+    
     .file-name {
         flex: 1;
         font-weight: bold;
     }
-
+    
+    .mode-toggle {
+        display: flex;
+        gap: 15px;
+        padding: 0 15px;
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+    }
+    
+    .toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .toggle-label input[type="radio"] {
+        cursor: pointer;
+    }
+    
+    .form-editor {
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        background: white;
+    }
+    
     .json-editor {
         flex: 1;
         font-family: 'Consolas', 'Monaco', monospace;
@@ -174,7 +310,7 @@
         border: 1px solid #ddd;
         resize: none;
     }
-
+    
     .empty-state {
         display: flex;
         align-items: center;
@@ -182,22 +318,28 @@
         height: 100%;
         color: #999;
     }
-
+    
     .alert {
         margin-top: 10px;
         padding: 10px;
         border-radius: 4px;
     }
-
+    
     .alert-success {
         background-color: #d4edda;
         color: #155724;
         border: 1px solid #c3e6cb;
     }
-
+    
     .alert-danger {
         background-color: #f8d7da;
         color: #721c24;
         border: 1px solid #f5c6cb;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
     }
 </style>

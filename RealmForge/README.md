@@ -1,35 +1,45 @@
 # RealmForge - Blazor Hybrid JSON Editor
 
-**Status**: ✅ Functional - Basic JSON editing capability  
+**Status**: ✅ Functional - Form-based editing with JSON fallback  
 **Technology**: .NET MAUI Blazor Hybrid  
 **Target**: Windows Desktop (cross-platform ready)
 
 ## Overview
 
-RealmForge is a desktop application for editing RealmEngine's JSON data files. Built with Blazor Hybrid, it provides a simple web-based UI in a native desktop window.
+RealmForge is a desktop application for editing RealmEngine's JSON data files. Built with Blazor Hybrid, it provides a dynamic form-based editor backed by RealmEngine.Shared models, with a JSON fallback mode for advanced editing.
 
 ## Features
 
 ### ✅ Implemented
-- Browse JSON files in Data/Json folder
-- Edit JSON content in textarea
-- Save changes to files
-- Basic JSON validation
+- **Dynamic Form Editor** - Auto-generated forms from C# models using reflection
+- **Form/JSON Toggle** - Switch between form editing (default) and raw JSON
+- **Model Detection** - Automatically detects Item, Enemy, Spell, Ability from filename
+- **Type-Specific Inputs** - String, int, double, bool, enum fields with proper controls
+- **Bi-Directional Sync** - Form ↔ JSON serialization
+- **File Browser** - Navigate Data/Json folder structure
+- **Save/Load** - Persist changes to files
+- **Basic Validation** - JSON parsing validation
 
 ### 🚧 Planned
-- Syntax highlighting (Monaco Editor)
-- Schema validation (using RealmEngine validators)
-- TreeView for nested JSON
-- Search and filter files
-- Undo/Redo
-- File system picker
+- **Monaco Editor** - Syntax highlighting for JSON mode
+- **FluentValidation Integration** - Display model validation errors in form
+- **Complex Property Editing** - Recursive forms or inline JSON for lists/nested objects
+- **Folder Picker** - Native file system dialog (currently hardcoded path)
+- **Better Model Detection** - Parse JSON metadata instead of filename matching
+- **Undo/Redo** - Change history
+- **Search and Filter** - Find files by name or content
+- **Dark Mode** - Theme support
 
 ## Running the App
 
 ### Development
 ```powershell
-cd RealmForge
-dotnet run -f net9.0-windows10.0.19041.0
+dotnet run --project RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
+```
+
+### Build
+```powershell
+dotnet build RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
 ```
 
 ### Build Release
@@ -37,26 +47,86 @@ dotnet run -f net9.0-windows10.0.19041.0
 dotnet publish -f net9.0-windows10.0.19041.0 -c Release
 ```
 
+## Usage
+
+1. Launch RealmForge
+2. Click "JSON Editor" in navigation
+3. Browse to a JSON file (e.g., `items/weapons/swords/catalog.json`)
+4. **Form Mode (Default)**: Edit fields in generated form
+5. **JSON Mode**: Switch to raw JSON editing
+6. Save changes
+
+## Component Architecture
+
+### DynamicFormEditor.razor (~200 lines)
+
+Generic form generator for any C# model:
+
+```razor
+<DynamicFormEditor TModel="Item" 
+                  Model="@itemModel" 
+                  OnSave="@HandleSave" 
+                  OnCancel="@HandleCancel" />
+```
+
+**Features:**
+- Reflection-based property inspection
+- Type-specific controls (InputText, InputNumber, InputCheckbox, select)
+- Automatic label generation (PascalCase → Title Case)
+- Complex type detection (read-only display)
+- EventCallback for save/cancel actions
+
+**Supported Property Types:**
+- `string` → `<InputText>`
+- `int` → `<InputNumber>`
+- `double`/`float` → `<InputNumber>`
+- `bool` → `<InputCheckbox>`
+- `enum` → `<select>` dropdown
+- Complex types → Read-only message
+
+### JsonEditor.razor (~300 lines)
+
+Main editor with Form/JSON toggle:
+
+**Model Detection Logic:**
+- `*item*` → `RealmEngine.Shared.Models.Item`
+- `*enemy*` → `RealmEngine.Shared.Models.Enemy`
+- `*spell*` → `RealmEngine.Shared.Models.Spell`
+- `*ability*` → `RealmEngine.Shared.Models.Ability`
+- Unknown → JSON-only mode
+
+**Mode Switching:**
+- Form → JSON: Serialize model with `JsonSerializer.Serialize()`
+- JSON → Form: Deserialize with `JsonSerializer.Deserialize<T>()`
+
+**Features:**
+- Two-panel layout (file tree + editor)
+- Radio button mode toggle
+- Bi-directional sync
+- File operations (load/save/validate)
+
 ## Project Structure
 
 ```
 RealmForge/
 ├── Components/
 │   ├── Layout/
-│   │   ├── MainLayout.razor
-│   │   └── NavMenu.razor
+│   │   ├── MainLayout.razor      # App layout
+│   │   └── NavMenu.razor         # Navigation menu
 │   ├── Pages/
-│   │   ├── Home.razor
-│   │   └── JsonEditor.razor
+│   │   ├── Home.razor           # Welcome screen
+│   │   └── JsonEditor.razor     # Main editor (~300 lines)
+│   ├── Shared/
+│   │   └── DynamicFormEditor.razor  # Generic form (~200 lines)
 │   └── Routes.razor
 ├── Resources/
 │   └── Images/
 ├── wwwroot/
 │   ├── css/
 │   └── index.html
-├── MainPage.xaml
-├── MauiProgram.cs
-└── RealmForge.csproj
+├── MainPage.xaml               # MAUI entry point
+├── MauiProgram.cs             # App configuration
+└── RealmForge.csproj          # Project file
 ```
 
 ## Technology Stack
@@ -69,33 +139,88 @@ RealmForge/
 
 ## Why Blazor Hybrid?
 
-✅ **Simpler than WPF** - Write HTML/CSS instead of XAML  
-✅ **100% C#** - No JavaScript required  
-✅ **Direct DLL integration** - Reference RealmEngine projects  
-✅ **Cross-platform** - Can target Mac/Linux if needed  
-✅ **Modern tooling** - Hot reload, dev tools
+**Advantages over WPF:**
+✅ Simpler UI development (HTML/CSS/Razor vs XAML)  
+✅ No complex data binding syntax  
+✅ Web-standard layout (flexbox, grid)  
+✅ Easier to maintain
 
-## Integration with RealmEngine
+**Advantages over Electron:**
+✅ 100% C# codebase (no JavaScript/TypeScript)  
+✅ Direct C# model integration  
+✅ Smaller bundle size (~25-30MB vs 100+MB)  
+✅ Better performance (native .NET runtime)
 
-RealmForge references:
-- `RealmEngine.Shared.dll` - Data models
-- `RealmEngine.Data.dll` - JSON loaders and validators
+**Advantages over VS Code Extension:**
+✅ Standalone deployable app  
+✅ Ships with DLLs (no separate installation)  
+✅ Doesn't require VS Code installed  
+✅ Native desktop integration
 
-This allows direct use of existing validation logic without spawning CLI processes.
+**Shared Benefits:**
+✅ Cross-platform ready (Windows, macOS, Linux)  
+✅ Modern tooling (hot reload, dev tools)  
+✅ Direct DLL integration (no IPC/CLI spawning)
 
-## Next Steps
+## Known Limitations
 
-1. Add Monaco Editor for syntax highlighting
-2. Wire up JSON schema validation
-3. Add file tree view with expand/collapse
-4. Implement proper folder picker
-5. Add search functionality
+1. **Hardcoded Data Path**: Currently points to `RealmEngine.Data/Data/Json`
+   - TODO: Add native folder picker dialog
+
+2. **Simple Model Detection**: Based on filename string matching
+   - TODO: Parse JSON metadata/type field for better detection
+
+3. **Complex Types Not Editable**: Lists, Dictionaries, nested objects show as read-only
+   - TODO: Recursive form generation or inline JSON editor for complex fields
+
+4. **Basic JSON Editor**: Plain textarea
+   - TODO: Integrate Monaco Editor for syntax highlighting, error detection
+
+5. **No Validation Feedback**: Model validation not yet integrated
+   - TODO: Display FluentValidation errors in form
+
+## Technical Implementation
+
+### Reflection-Based Property Inspection
+
+```csharp
+var properties = typeof(TModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+    .Where(p => p.CanRead && p.CanWrite)
+    .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
+    .ToArray();
+```
+
+### Model Serialization
+
+```csharp
+// Form → JSON
+var json = JsonSerializer.Serialize(model, new JsonSerializerOptions 
+{ 
+    WriteIndented = true 
+});
+
+// JSON → Form
+var model = JsonSerializer.Deserialize<Item>(jsonContent);
+```
+
+### Enum Handling
+
+```razor
+<select class="form-select" 
+        value="@GetEnumValue(prop)" 
+        @onchange="@(e => SetEnumValue(prop, e))">
+    @foreach (var enumVal in Enum.GetValues(prop.PropertyType))
+    {
+        <option value="@enumVal">@enumVal</option>
+    }
+</select>
+```
 
 ## Building for Distribution
 
-Once ready, package with:
+### Single-File Executable
 ```powershell
 dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:PublishSingleFile=true
 ```
 
-Output: Single `.exe` with all dependencies bundled.
+Output: Single `.exe` with all dependencies bundled (~25-30MB).

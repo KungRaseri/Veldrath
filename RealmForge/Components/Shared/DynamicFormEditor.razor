@@ -1,0 +1,205 @@
+@using System.Reflection
+@using System.Text.Json
+@typeparam TModel
+
+<div class="dynamic-form">
+    @if (Model != null && Properties != null)
+    {
+        <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+            <div class="form-sections">
+                @foreach (var prop in Properties)
+                {
+                    <div class="form-group">
+                        <label class="form-label">@GetDisplayName(prop)</label>
+                        
+                        @if (IsStringProperty(prop))
+                        {
+                            <InputText class="form-control" 
+                                      Value="@GetStringValue(prop)" 
+                                      ValueChanged="@((string val) => SetValue(prop, val))" 
+                                      ValueExpression="@(() => GetStringValue(prop))" />
+                        }
+                        else if (IsIntProperty(prop))
+                        {
+                            <InputNumber class="form-control" 
+                                        Value="@GetIntValue(prop)" 
+                                        ValueChanged="@((int val) => SetValue(prop, val))" 
+                                        ValueExpression="@(() => GetIntValue(prop))" />
+                        }
+                        else if (IsDoubleProperty(prop))
+                        {
+                            <InputNumber class="form-control" 
+                                        Value="@GetDoubleValue(prop)" 
+                                        ValueChanged="@((double val) => SetValue(prop, val))" 
+                                        ValueExpression="@(() => GetDoubleValue(prop))" />
+                        }
+                        else if (IsBoolProperty(prop))
+                        {
+                            <InputCheckbox class="form-check-input" 
+                                          Value="@GetBoolValue(prop)" 
+                                          ValueChanged="@((bool val) => SetValue(prop, val))" 
+                                          ValueExpression="@(() => GetBoolValue(prop))" />
+                        }
+                        else if (IsEnumProperty(prop))
+                        {
+                            <select class="form-select" value="@GetEnumValue(prop)" @onchange="@(e => SetEnumValue(prop, e))">
+                                @foreach (var enumVal in Enum.GetValues(prop.PropertyType))
+                                {
+                                    <option value="@enumVal">@enumVal</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="form-text text-muted">
+                                Complex type: @prop.PropertyType.Name
+                            </div>
+                        }
+                        
+                        @if (!string.IsNullOrEmpty(GetDescription(prop)))
+                        {
+                            <small class="form-text text-muted">@GetDescription(prop)</small>
+                        }
+                    </div>
+                }
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <div class="alert alert-warning">No model loaded</div>
+    }
+</div>
+
+@code {
+    [Parameter] public TModel? Model { get; set; }
+    [Parameter] public EventCallback<TModel> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    private PropertyInfo[]? Properties { get; set; }
+    
+    protected override void OnParametersSet()
+    {
+        if (Model != null)
+        {
+            Properties = typeof(TModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanRead && p.CanWrite)
+                .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase)) // Skip ID fields
+                .ToArray();
+        }
+    }
+    
+    private async Task HandleSubmit()
+    {
+        if (Model != null)
+        {
+            await OnSave.InvokeAsync(Model);
+        }
+    }
+    
+    // Type checking helpers
+    private bool IsStringProperty(PropertyInfo prop) => prop.PropertyType == typeof(string);
+    private bool IsIntProperty(PropertyInfo prop) => prop.PropertyType == typeof(int);
+    private bool IsDoubleProperty(PropertyInfo prop) => prop.PropertyType == typeof(double) || prop.PropertyType == typeof(float);
+    private bool IsBoolProperty(PropertyInfo prop) => prop.PropertyType == typeof(bool);
+    private bool IsEnumProperty(PropertyInfo prop) => prop.PropertyType.IsEnum;
+    
+    // Value getters
+    private string GetStringValue(PropertyInfo prop) => prop.GetValue(Model) as string ?? string.Empty;
+    private int GetIntValue(PropertyInfo prop) => (int)(prop.GetValue(Model) ?? 0);
+    private double GetDoubleValue(PropertyInfo prop) => Convert.ToDouble(prop.GetValue(Model) ?? 0);
+    private bool GetBoolValue(PropertyInfo prop) => (bool)(prop.GetValue(Model) ?? false);
+    private object GetEnumValue(PropertyInfo prop) => prop.GetValue(Model) ?? Enum.GetValues(prop.PropertyType).GetValue(0)!;
+    
+    // Value setter
+    private void SetValue(PropertyInfo prop, object value)
+    {
+        if (Model != null)
+        {
+            prop.SetValue(Model, value);
+            StateHasChanged();
+        }
+    }
+    
+    private void SetEnumValue(PropertyInfo prop, ChangeEventArgs e)
+    {
+        if (Model != null && e.Value != null)
+        {
+            var enumValue = Enum.Parse(prop.PropertyType, e.Value.ToString() ?? string.Empty);
+            prop.SetValue(Model, enumValue);
+            StateHasChanged();
+        }
+    }
+    
+    // Display helpers
+    private string GetDisplayName(PropertyInfo prop)
+    {
+        // Convert PascalCase to Title Case with spaces
+        var name = prop.Name;
+        return string.Concat(name.Select((x, i) => i > 0 && char.IsUpper(x) ? " " + x : x.ToString()));
+    }
+    
+    private string GetDescription(PropertyInfo prop)
+    {
+        // TODO: Read from XML documentation or attributes
+        return string.Empty;
+    }
+}
+
+<style>
+    .dynamic-form {
+        padding: 20px;
+    }
+    
+    .form-sections {
+        display: grid;
+        gap: 15px;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-control, .form-select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .form-text {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+    }
+</style>
