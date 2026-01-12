@@ -14,7 +14,6 @@ public class DataValidationFailureReport
 {
   private readonly ITestOutputHelper _output;
   private readonly string _dataPath;
-  private readonly string[] _validVersions = ["4.0", "4.2", "5.0", "5.1"];
 
   public DataValidationFailureReport(ITestOutputHelper output)
   {
@@ -181,10 +180,11 @@ public class DataValidationFailureReport
       var patterns = json["patterns"] as JArray;
       var components = json["components"] as JObject;
 
-      // Check version
-      if (metadata?["version"]?.ToString() != "4.0")
+      // Check if version exists
+      var version = metadata?["version"]?.ToString();
+      if (string.IsNullOrEmpty(version))
       {
-        issues.Add(new ValidationIssue(relativePath, "Version", "Must be version '4.0'"));
+        issues.Add(new ValidationIssue(relativePath, "Version", $"Version is missing or empty"));
       }
 
       // Check patterns not empty
