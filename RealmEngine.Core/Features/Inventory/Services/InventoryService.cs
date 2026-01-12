@@ -45,6 +45,7 @@ public class InventoryService
 
     /// <summary>
     /// Adds an item to the inventory.
+    /// If the item is stackable, it will be combined with an existing stack if possible.
     /// </summary>
     public async Task<bool> AddItemAsync(Item item, string playerName)
     {
@@ -54,9 +55,25 @@ public class InventoryService
             return false;
         }
 
+        // Check if item can stack with an existing item
+        if (item.IsStackable)
+        {
+            var existingStack = _inventory.FirstOrDefault(i => i.CanStackWith(item));
+            if (existingStack != null)
+            {
+                existingStack.AddQuantity(item.Quantity);
+                await _mediator.Publish(new ItemAcquired(playerName, item.Name));
+                Log.Information("Item stacked in inventory: {ItemName} x{Quantity} (Total: {Total})", 
+                    item.Name, item.Quantity, existingStack.Quantity);
+                return true;
+            }
+        }
+
+        // Add as new item if not stackable or no existing stack found
         _inventory.Add(item);
         await _mediator.Publish(new ItemAcquired(playerName, item.Name));
-        Log.Information("Item added to inventory: {ItemName} ({ItemType})", item.Name, item.Type);
+        Log.Information("Item added to inventory: {ItemName} ({ItemType}) x{Quantity}", 
+            item.Name, item.Type, item.Quantity);
         return true;
     }
 

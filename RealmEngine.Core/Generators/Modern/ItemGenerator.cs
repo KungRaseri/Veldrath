@@ -246,6 +246,10 @@ public class ItemGenerator
                 _ => ItemType.Consumable
             };
 
+            // Read stackSize from catalog and set stackability
+            item.StackSize = GetIntProperty(catalogItem, "stackSize", 1);
+            item.IsStackable = item.StackSize > 1;
+
             // Base rarity weight from catalog
             var baseRarityWeight = GetIntProperty(catalogItem, "rarityWeight", 50);
             item.TotalRarityWeight = baseRarityWeight;
@@ -1046,6 +1050,10 @@ public class ItemGenerator
                 _ => ItemType.Consumable
             }
         };
+
+        // Read stackSize from catalog and set stackability
+        item.StackSize = GetIntProperty(result.BaseItem!, "stackSize", 1);
+        item.IsStackable = item.StackSize > 1;
 
         // Store budget metadata
         item.Traits["Budget.Total"] = new TraitValue

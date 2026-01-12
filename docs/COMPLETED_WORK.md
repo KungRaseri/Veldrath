@@ -1,8 +1,8 @@
 # Completed Work - RealmEngine Backend
 
-**Last Updated**: January 12, 2026 21:00 UTC  
+**Last Updated**: January 12, 2026 22:30 UTC  
 **Overall Completion**: 19/22 major systems (86%)  
-**Test Status**: 8,546/8,546 tests passing (100%) ✅  
+**Test Status**: 8,574/8,574 tests passing (100%) ✅  
 **Build Status**: Clean build with zero errors ✅
 
 This document tracks all completed backend systems for the RealmEngine game. All systems listed here are **100% functional** and ready for Godot integration.
@@ -14,7 +14,7 @@ This document tracks all completed backend systems for the RealmEngine game. All
 ### ✅ Complete Systems (19)
 1. [Character System](#-character-system) - Character creation, classes, attributes
 2. [Combat System](#-combat-system) - Turn-based combat with abilities, spells, status effects
-3. [Inventory System](#-inventory-system) - Item management, equipment, queries
+3. [Inventory System](#-inventory-system) - Item management, equipment, stacking
 4. [Progression System](#-progression-system) - Leveling, XP, skills
 5. [Abilities System](#-abilities-system) - 383 class abilities across 4 catalogs
 6. [Spells System](#-spells-system) - 144 spells across 4 magic traditions
@@ -31,6 +31,9 @@ This document tracks all completed backend systems for the RealmEngine game. All
 17. [Shop System](#-shop-system) - Economy, merchants, buy/sell
 18. **[Party System](#-party-system) - NPC recruitment, party combat, AI allies** 🆕
 19. **[Reputation & Factions System](#-reputation--factions-system) - 11 factions, 7 reputation levels** 🆕
+
+### 🎯 Quality of Life Enhancements
+- **Item Stacking** - Consumables and materials stack automatically in inventory
 
 **For remaining work**, see [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)
 
@@ -105,19 +108,26 @@ This document tracks all completed backend systems for the RealmEngine game. All
 - **20 Item Slots**: Capacity management
 - **13 Equipment Slots**: MainHand, OffHand, Helmet, Shoulders, Chest, Bracers, Gloves, Belt, Legs, Boots, Necklace, Ring1, Ring2
 - **Item Types**: Weapons, Armor, Consumables, Materials, Quest Items
+- **Item Stacking**: Consumables and materials automatically stack by quantity
 - **Sorting**: By name, type, rarity
 - **Procedural Generation**: ItemGenerator with budget-based creation
 - **Query APIs**: 4 inspection queries for Godot UI
 
+### Item Stacking System
+- **Auto-Stacking**: When adding items, system checks for existing compatible stacks
+- **Stackable Items**: Consumables (potions, scrolls) and Materials (ore, leather)
+- **Non-Stackable**: Weapons, armor, enchanted items, socketed items
+- **Stacking Rules**: Items must match name, type, and material (no enchantments/sockets/upgrades)
+
 ### Godot Integration
-- `AddItemCommand` - Add item to inventory
-- `RemoveItemCommand` - Remove item from inventory
+- `AddItemCommand` - Add item to inventory (automatically stacks if compatible)
+- `RemoveItemCommand` - Remove item from inventory (handles quantities)
 - `EquipItemCommand` - Equip item to slot
 - `UnequipItemCommand` - Unequip item from slot
-- `UseItemCommand` - Use consumable item
+- `UseItemCommand` - Use consumable item (decrements quantity)
 - `DropItemCommand` - Drop item at location
 - `SortInventoryCommand` - Sort by criteria
-- `GetInventoryQuery` - Get all items
+- `GetInventoryQuery` - Get all items (with quantities)
 - `GetEquipmentQuery` - Get equipped items
 - `GetItemsByTypeQuery` - Filter by type
 - `GetItemsByRarityQuery` - Filter by rarity

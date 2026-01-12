@@ -37,6 +37,24 @@ public class Item : ITraitable
     public ItemType Type { get; set; } = ItemType.Consumable;
 
     /// <summary>
+    /// Gets or sets the quantity of this item (for stackable items like consumables, materials).
+    /// Default is 1 for non-stackable items (weapons, armor).
+    /// </summary>
+    public int Quantity { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the maximum stack size for this item (from JSON catalog).
+    /// Default is 1 (non-stackable). Values > 1 indicate stackable items.
+    /// </summary>
+    public int StackSize { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets whether this item can stack with others of the same type.
+    /// Determined by StackSize > 1.
+    /// </summary>
+    public bool IsStackable { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets the trait system dictionary for dynamic properties defined in JSON.
     /// Implements ITraitable interface.
     /// </summary>
@@ -624,6 +642,62 @@ public class Item : ITraitable
     {
         IsBound = true;
         BoundToCharacter = characterName;
+    }
+
+    /// <summary>
+    /// Checks if this item can stack with another item.
+    /// Items can stack if they are stackable, have the same name, type, and no unique properties (like enchantments).
+    /// </summary>
+    public bool CanStackWith(Item other)
+    {
+        if (!IsStackable || !other.IsStackable)
+            return false;
+
+        // Must have same name and type
+        if (Name != other.Name || Type != other.Type)
+            return false;
+
+        // Items with enchantments, sockets, or upgrades cannot stack
+        if (PlayerEnchantments.Count > 0 || other.PlayerEnchantments.Count > 0)
+            return false;
+
+        if (Sockets.Count > 0 || other.Sockets.Count > 0)
+            return false;
+
+        if (UpgradeLevel > 0 || other.UpgradeLevel > 0)
+            return false;
+
+        // Items with different materials cannot stack
+        if (Material != other.Material)
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Adds quantity to this item stack.
+    /// </summary>
+    public void AddQuantity(int amount)
+    {
+        if (!IsStackable)
+            throw new InvalidOperationException($"Cannot add quantity to non-stackable item: {Name}");
+
+        Quantity += amount;
+    }
+
+    /// <summary>
+    /// Removes quantity from this item stack.
+    /// </summary>
+    public bool RemoveQuantity(int amount)
+    {
+        if (!IsStackable)
+            throw new InvalidOperationException($"Cannot remove quantity from non-stackable item: {Name}");
+
+        if (amount > Quantity)
+            return false;
+
+        Quantity -= amount;
+        return true;
     }
 }
 
