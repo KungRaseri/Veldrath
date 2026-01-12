@@ -36,4 +36,9 @@ Thumbs.db
 TestResults/
 *.trx
 
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
 *.db

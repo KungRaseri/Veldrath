@@ -148,19 +148,49 @@ var results = await loader.LoadModulesAsync(modules);
 - ✅ Dependency resolution (mod A requires mod B)
 - ✅ Load order management
 - ✅ Error handling and reporting
+- ✅ **RealmForge mod support** (mod creation/editing UI)
 - ❌ Override support (Phase 2)
 - ❌ Script support (Phase 3)
+
+### Content Creation Tools
+
+**RealmForge - Primary Mod Authoring Tool**
+
+RealmForge (the existing WPF content editor) will be extended to support mod creation, making it the **official mod authoring tool**:
+
+```
+RealmForge Features for Modding:
+├── New Mod Project          → Create new mod with manifest
+├── Open Mod Project         → Load existing mod folder
+├── Mod Manifest Editor      → Edit module.json (GUI form)
+├── Content Editor           → Edit catalogs (same as base game)
+├── Reference Validator      → Check @references resolve
+├── Mod Packager            → Export .zip for distribution
+├── Test Mod in Game        → Launch game with mod enabled
+└── Publish to Workshop     → Future: Steam Workshop integration
+```
+
+**Workflow:**
+1. **File → New Mod Project** - Creates folder structure + module.json
+2. **Edit Content** - Use same catalog editors as base game
+3. **Validate** - Checks JSON schemas, references, compatibility
+4. **Test** - Launch game with mod loaded
+5. **Package** - Export as `.zip` for sharing
+
+**Manual Editing Alternative:**
+- Advanced users can edit JSON files directly in VS Code or any text editor
+- RealmForge is optional but recommended for better UX
 
 ### Module Folder Structure
 
 ```
 Mods/
-└── AwesomeSwords/                      ← Module folder
-    ├── module.json                     ← Module metadata (REQUIRED)
-    ├── icon.png                        ← Module icon (optional)
+└── AwesomeSwords/                      ← Module folder (created by RealmForge)
+    ├── module.json                     ← Module metadata (REQUIRED - edited via RealmForge)
+    ├── icon.png                        ← Module icon (optional - 256x256)
     ├── README.md                       ← Documentation (optional)
     ├── Data/
-    │   └── Json/
+    │   └── Json/                       ← Content (edited via RealmForge)
     │       ├── items/
     │       │   └── weapons/
     │       │       ├── catalog.json    ← New weapons
@@ -176,6 +206,17 @@ Mods/
     │           └── catalog.json        ← New crafting recipes
     └── CHANGELOG.md                    ← Version history (optional)
 ```
+
+**Created Automatically by RealmForge:**
+- Module folder structure
+- `module.json` with valid schema
+- `.cbconfig.json` files for UI navigation
+- Empty catalog templates
+
+**Modder Edits:**
+- Content catalogs via RealmForge's visual editor
+- Manifest properties via RealmForge's form editor
+- Documentation files via external text editor
 
 ### Module Manifest Schema (`module.json`)
 
@@ -573,6 +614,237 @@ public class ScriptCompiler
 ```
 
 **Phase 3 is intentionally deferred** - adds significant complexity and security risk.
+
+---
+
+## RealmForge - Mod Authoring Tool
+
+**Overview**: RealmForge is the official visual editor for creating and editing mods. It provides the same professional tooling used by game developers.
+
+### Why RealmForge for Modding?
+
+1. **Visual Editing**: No need to hand-edit JSON files
+2. **Validation**: Real-time error checking and reference validation
+3. **Autocomplete**: Dropdown lists for enums, references, types
+4. **Preview**: See items, enemies, quests as you create them
+5. **Integrated**: One tool for all content types
+6. **Professional**: Same tool developers use
+
+### Mod Project Workflow
+
+#### 1. Create New Mod Project
+
+```
+File → New Mod Project
+├── Module ID:         awesome-swords
+├── Name:              Awesome Swords Pack
+├── Author:            YourName
+├── Version:           1.0.0
+├── Engine Version:    1.0.0 - 2.0.0
+└── Base Path:         C:\Games\RealmGame\Mods\awesome-swords\
+```
+
+**Result**: Creates folder structure with `module.json` and empty catalogs
+
+#### 2. Edit Module Manifest
+
+```
+Tools → Mod Settings (or press Ctrl+M)
+
+┌─────────────────────────────────────────┐
+│ Mod Settings                            │
+├─────────────────────────────────────────┤
+│ Module ID:     awesome-swords           │
+│ Name:          Awesome Swords Pack      │
+│ Version:       1.0.0                    │
+│ Author:        YourName                 │
+│ Description:   [multiline text]         │
+│                                         │
+│ Engine Compatibility:                   │
+│   Minimum:     1.0.0                    │
+│   Maximum:     2.0.0                    │
+│                                         │
+│ Mode:          ● Additive               │
+│                ○ Override (Phase 2)     │
+│                                         │
+│ Dependencies:  [+ Add Dependency]       │
+│   • legendary-materials ^1.0.0          │
+│     [Remove]                            │
+│                                         │
+│ Conflicts:     [+ Add Conflict]         │
+│   • super-swords                        │
+│     [Remove]                            │
+│                                         │
+│ Tags:          weapons, content         │
+│                [+ Add Tag]              │
+│                                         │
+│ Priority:      100                      │
+│                (higher = loads later)   │
+│                                         │
+│ [Save] [Cancel]                         │
+└─────────────────────────────────────────┘
+```
+
+#### 3. Switch to Mod Mode
+
+```
+View → Mode → Mod Mode (or toggle switch in toolbar)
+
+Base Game Mode:  Edits RealmEngine.Data/Data/Json/
+Mod Mode:        Edits Mods/awesome-swords/Data/Json/
+```
+
+**UI Changes in Mod Mode:**
+- Title bar shows: "RealmForge - awesome-swords (Mod)"
+- File tree shows mod folder structure
+- Content auto-saves to mod directory
+
+#### 4. Create Mod Content
+
+**Same interface as base game editing:**
+
+```
+Data Tree (Mod Mode):
+└── Mods/awesome-swords/
+    └── Data/Json/
+        ├── items/
+        │   └── weapons/
+        │       ├── catalog.json     ← Edit here
+        │       └── names.json
+        ├── enemies/
+        └── quests/
+```
+
+**Add New Item:**
+1. Right-click `items/weapons/catalog.json`
+2. Select "Add Item"
+3. Fill in form (same as base game editor)
+4. Save
+
+#### 5. Validate Mod
+
+```
+Tools → Validate Mod (or press F7)
+
+┌─────────────────────────────────────────┐
+│ Mod Validation Report                   │
+├─────────────────────────────────────────┤
+│ ✅ Manifest valid                       │
+│ ✅ All JSON schemas valid               │
+│ ✅ All references resolve               │
+│ ⚠️  Warning: Item "Excalibur" has       │
+│     unusually high damage (999)         │
+│ ℹ️  Info: 50 items added                │
+│                                         │
+│ [Close] [Fix Issues] [Export Anyway]    │
+└─────────────────────────────────────────┘
+```
+
+#### 6. Test Mod in Game
+
+```
+Tools → Test Mod in Game (or press F5)
+
+Actions:
+1. Saves all open files
+2. Validates mod
+3. Enables mod in mods-config.json
+4. Launches game via Godot
+5. Mod is active in game
+
+[Launch Game] [Cancel]
+```
+
+#### 7. Package Mod for Distribution
+
+```
+Tools → Package Mod (or press Ctrl+Shift+P)
+
+┌─────────────────────────────────────────┐
+│ Package Mod                             │
+├─────────────────────────────────────────┤
+│ Mod:           Awesome Swords Pack      │
+│ Version:       1.0.0                    │
+│                                         │
+│ Output:        awesome-swords-v1.0.0.zip│
+│ Location:      [Browse...]              │
+│                                         │
+│ Include:                                │
+│   ☑ module.json                        │
+│   ☑ Data/Json/                         │
+│   ☑ icon.png                           │
+│   ☑ README.md                          │
+│   ☐ CHANGELOG.md                       │
+│   ☐ Source files (.psd, .blend)       │
+│                                         │
+│ Validation:    ✅ Passed                │
+│                                         │
+│ [Package] [Cancel]                      │
+└─────────────────────────────────────────┘
+
+Result: awesome-swords-v1.0.0.zip ready to share!
+```
+
+### RealmForge Mod Features
+
+#### Manifest Editor (GUI Form)
+
+- **Module ID**: Auto-validates kebab-case format
+- **Version**: Semver validation (1.2.3)
+- **Engine Version**: Range picker with min/max
+- **Dependencies**: Autocomplete from installed mods
+- **Conflicts**: Autocomplete from installed mods
+- **Tags**: Predefined tag suggestions
+
+#### Reference Validator
+
+```
+Real-time validation while editing:
+
+Item references spell: @spells/fire/fireball
+                       ↑
+                       ✅ Valid - spell exists in base game
+                       
+Item references ability: @abilities/invalid:bad-ability
+                         ↑
+                         ❌ Error - ability not found
+                         Suggestion: Did you mean @abilities/warrior:power-attack?
+```
+
+#### Cross-Mod References
+
+```
+Mod A adds item: "Legendary Sword"
+Mod B (depends on A) can reference:
+  @mods/awesome-swords/items/weapons:legendary-sword
+```
+
+**RealmForge checks:**
+- Dependency declared in module.json
+- Referenced mod is installed
+- Item exists in that mod
+
+#### Content Preview
+
+Same preview features as base game editing:
+- Item preview with stats
+- Enemy preview with abilities
+- Quest flow diagram
+- Recipe ingredient/output tree
+
+### Installation & Setup
+
+**For Modders:**
+1. Install RealmForge (included with game SDK)
+2. Launch RealmForge
+3. File → New Mod Project
+4. Start creating!
+
+**For Players:**
+- RealmForge is optional
+- Download mods as `.zip` files
+- Extract to `Mods/` folder
+- Enable in game's mod manager
 
 ---
 
@@ -1124,7 +1396,19 @@ RealmEngine.Modding.Tests/
 - [ ] Write manifest JSON schema
 - [ ] Unit tests for models
 
-**Week 2: Core Services**
+### Phase 1: Content Modules (Weeks 1-2)
+
+**Week 1: Project Setup & Models**
+- [ ] Create `RealmEngine.Modding` project
+- [ ] Add project references (Shared, Data, Core)
+- [ ] Define `ModuleManifest.cs` model
+- [ ] Define `ModuleInfo.cs` model
+- [ ] Define `ModuleLoadResult.cs` model
+- [ ] Define `ModuleLoadMode.cs` enum
+- [ ] Write manifest JSON schema
+- [ ] Unit tests for models
+
+**Week 2: Core Services & RealmForge Integration**
 - [ ] Implement `ModuleLoaderService` (discovery)
 - [ ] Implement `ModuleValidator` (schema validation)
 - [ ] Implement `ModuleDependencyResolver` (sorting)
@@ -1148,6 +1432,14 @@ RealmEngine.Modding.Tests/
 - [ ] Implement `ModuleMergeService` (additive merging)
 - [ ] Integration tests with test mods
 - [ ] Godot integration example
+- [ ] **RealmForge mod support:**
+  - [ ] New Mod Project wizard
+  - [ ] Open Mod Project command
+  - [ ] Mod Manifest Editor (GUI form)
+  - [ ] "Switch Mode" (Base Game / Mod) in UI
+  - [ ] Mod Packager (.zip export)
+  - [ ] Test in Game button
+  - [ ] Mod validation UI
 - [ ] Documentation updates
 
 ### Phase 2: Override Support (Week 3)
