@@ -11,7 +11,9 @@
       "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
     ]
   },
-  "items": [
+  "leather_types": {
+    "leather": {
+      "items": [
     {
       "slug": "hide",
       "budgetCost": 2,
@@ -281,5 +283,7 @@
       "rarityWeight": 3,
       "rarity": 3
     }
-  ]
+      ]
+    }
+  }
 }

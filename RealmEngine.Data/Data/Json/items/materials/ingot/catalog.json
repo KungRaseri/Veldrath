@@ -1,7 +1,7 @@
 {
   "metadata": {
     "description": "Metal ingots used in blacksmithing recipes",
-    "version": "1.0",
+    "version": "4.0",
     "lastUpdated": "2026-01-10",
     "type": "item_catalog",
     "totalItems": 4
@@ -14,11 +14,11 @@
           "slug": "iron-ingot",
           "description": "A refined iron ingot ready for smithing",
           "rarityWeight": 60,
+          "rarity": 60,
           "value": 5,
           "weight": 1.0,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "iron",
             "category": "metal-ingot"
@@ -29,11 +29,11 @@
           "slug": "steel-ingot",
           "description": "A high-quality steel ingot with superior strength",
           "rarityWeight": 40,
+          "rarity": 40,
           "value": 15,
           "weight": 1.2,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "steel",
             "category": "metal-ingot"
@@ -44,11 +44,11 @@
           "slug": "bronze-ingot",
           "description": "A durable bronze ingot with good corrosion resistance",
           "rarityWeight": 50,
+          "rarity": 50,
           "value": 8,
           "weight": 1.1,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "bronze",
             "category": "metal-ingot"
@@ -59,11 +59,11 @@
           "slug": "mithril-ingot",
           "description": "A rare and lightweight mithril ingot",
           "rarityWeight": 10,
+          "rarity": 10,
           "value": 100,
           "weight": 0.8,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "mithril",
             "category": "metal-ingot"

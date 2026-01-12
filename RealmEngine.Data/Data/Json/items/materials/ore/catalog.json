@@ -1,7 +1,7 @@
 {
   "metadata": {
     "description": "Raw ores used in refining and blacksmithing",
-    "version": "1.0",
+    "version": "4.0",
     "lastUpdated": "2026-01-10",
     "type": "item_catalog",
     "totalItems": 4
@@ -14,11 +14,11 @@
           "slug": "iron-ore",
           "description": "Raw iron ore ready for smelting",
           "rarityWeight": 70,
+          "rarity": 70,
           "value": 2,
           "weight": 2.0,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "iron",
             "category": "ore"
@@ -29,11 +29,11 @@
           "slug": "copper-ore",
           "description": "Raw copper ore used in bronze alloys",
           "rarityWeight": 75,
+          "rarity": 75,
           "value": 1,
           "weight": 1.8,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "copper",
             "category": "ore"
@@ -44,11 +44,11 @@
           "slug": "tin-ore",
           "description": "Raw tin ore used in bronze alloys",
           "rarityWeight": 75,
+          "rarity": 75,
           "value": 1,
           "weight": 1.5,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "tin",
             "category": "ore"
@@ -59,11 +59,11 @@
           "slug": "mithril-ore",
           "description": "Rare mithril ore found in deep caverns",
           "rarityWeight": 15,
+          "rarity": 15,
           "value": 50,
           "weight": 1.2,
           "stackable": true,
           "maxStack": 99,
-          "attributes": {},
           "traits": {
             "material": "mithril",
             "category": "ore"

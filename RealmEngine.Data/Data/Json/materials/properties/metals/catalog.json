@@ -12,7 +12,9 @@
       "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
     ]
   },
-  "items": [
+  "metal_types": {
+    "metal": {
+      "items": [
     {
       "slug": "iron",
       "budgetCost": 1,
@@ -617,5 +619,7 @@
       "rarityWeight": 2,
       "rarity": 2
     }
-  ]
+      ]
+    }
+  }
 }

@@ -55,7 +55,9 @@ public class ConfigJsonComplianceTests
     var json = JObject.Parse(File.ReadAllText(fullPath));
     
     var allowedProperties = new[] { 
-      "icon", "sortOrder", "displayName", "description", "color", "isHidden"
+      "icon", "sortOrder", "displayName", "description", "color", "isHidden",
+      // RealmForge-specific properties for advanced catalogs
+      "catalogType", "allowAdd", "allowEdit", "allowDelete", "structure"
     };
 
     // Assert - ONLY these properties are allowed

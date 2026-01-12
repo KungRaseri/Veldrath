@@ -11,7 +11,9 @@
       "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
     ]
   },
-  "items": [
+  "gemstone_types": {
+    "gemstone": {
+      "items": [
     {
       "slug": "topaz",
       "budgetCost": 8,
@@ -408,5 +410,7 @@
       "rarityWeight": 2,
       "rarity": 2
     }
-  ]
+      ]
+    }
+  }
 }

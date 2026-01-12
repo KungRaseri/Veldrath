@@ -11,7 +11,9 @@
       "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
     ]
   },
-  "items": [
+  "wood_types": {
+    "wood": {
+      "items": [
     {
       "slug": "oak",
       "budgetCost": 2,
@@ -288,5 +290,7 @@
       "rarityWeight": 4,
       "rarity": 4
     }
-  ]
+      ]
+    }
+  }
 }

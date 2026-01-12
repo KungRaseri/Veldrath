@@ -13,11 +13,13 @@
           "name": "Scrap Metal",
           "description": "Salvaged metal pieces from broken weapons and armor. Can be refined into ingots.",
           "rarityWeight": 50,
+          "rarity": 50,
           "value": 2,
           "weight": 0.5,
           "stackSize": 99,
           "itemType": "material",
           "subType": "scrap",
+          "traits": {},
           "tags": ["scrap", "metal", "salvage", "refinement"]
         },
         {
@@ -25,11 +27,13 @@
           "name": "Scrap Wood",
           "description": "Salvaged wood pieces from broken weapons and shields. Can be refined into planks.",
           "rarityWeight": 50,
+          "rarity": 50,
           "value": 1,
           "weight": 0.3,
           "stackSize": 99,
           "itemType": "material",
           "subType": "scrap",
+          "traits": {},
           "tags": ["scrap", "wood", "salvage", "refinement"]
         },
         {
@@ -37,11 +41,13 @@
           "name": "Scrap Leather",
           "description": "Salvaged leather scraps from broken armor. Can be refined into leather.",
           "rarityWeight": 50,
+          "rarity": 50,
           "value": 2,
           "weight": 0.2,
           "stackSize": 99,
           "itemType": "material",
           "subType": "scrap",
+          "traits": {},
           "tags": ["scrap", "leather", "salvage", "refinement"]
         },
         {
@@ -49,11 +55,13 @@
           "name": "Gemstone Fragments",
           "description": "Crushed gemstone pieces from broken jewelry. Can be refined into rough gemstones.",
           "rarityWeight": 30,
+          "rarity": 30,
           "value": 5,
           "weight": 0.1,
           "stackSize": 99,
           "itemType": "material",
           "subType": "scrap",
+          "traits": {},
           "tags": ["scrap", "gemstone", "salvage", "refinement", "rare"]
         },
         {
@@ -61,11 +69,13 @@
           "name": "Scrap Cloth",
           "description": "Torn fabric scraps from broken cloth armor. Can be refined into linen cloth.",
           "rarityWeight": 45,
+          "rarity": 45,
           "value": 1,
           "weight": 0.1,
           "stackSize": 99,
           "itemType": "material",
           "subType": "scrap",
+          "traits": {},
           "tags": ["scrap", "cloth", "salvage", "refinement"]
         }
       ]
