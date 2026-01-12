@@ -5,66 +5,71 @@
     "lastUpdated": "2026-01-10",
     "type": "items_materials_catalog"
   },
-  "items": [
-    {
-      "slug": "scrap-metal",
-      "name": "Scrap Metal",
-      "description": "Salvaged metal pieces from broken weapons and armor. Can be refined into ingots.",
-      "rarityWeight": 50,
-      "value": 2,
-      "weight": 0.5,
-      "stackSize": 99,
-      "itemType": "material",
-      "subType": "scrap",
-      "tags": ["scrap", "metal", "salvage", "refinement"]
-    },
-    {
-      "slug": "scrap-wood",
-      "name": "Scrap Wood",
-      "description": "Salvaged wood pieces from broken weapons and shields. Can be refined into planks.",
-      "rarityWeight": 50,
-      "value": 1,
-      "weight": 0.3,
-      "stackSize": 99,
-      "itemType": "material",
-      "subType": "scrap",
-      "tags": ["scrap", "wood", "salvage", "refinement"]
-    },
-    {
-      "slug": "scrap-leather",
-      "name": "Scrap Leather",
-      "description": "Salvaged leather scraps from broken armor. Can be refined into leather.",
-      "rarityWeight": 50,
-      "value": 2,
-      "weight": 0.2,
-      "stackSize": 99,
-      "itemType": "material",
-      "subType": "scrap",
-      "tags": ["scrap", "leather", "salvage", "refinement"]
-    },
-    {
-      "slug": "gemstone-fragments",
-      "name": "Gemstone Fragments",
-      "description": "Crushed gemstone pieces from broken jewelry. Can be refined into rough gemstones.",
-      "rarityWeight": 30,
-      "value": 5,
-      "weight": 0.1,
-      "stackSize": 99,
-      "itemType": "material",
-      "subType": "scrap",
-      "tags": ["scrap", "gemstone", "salvage", "refinement", "rare"]
-    },
-    {
-      "slug": "scrap-cloth",
-      "name": "Scrap Cloth",
-      "description": "Torn fabric scraps from broken cloth armor. Can be refined into linen cloth.",
-      "rarityWeight": 45,
-      "value": 1,
-      "weight": 0.1,
-      "stackSize": 99,
-      "itemType": "material",
-      "subType": "scrap",
-      "tags": ["scrap", "cloth", "salvage", "refinement"]
+  "material_types":{
+    "scrap": {
+      "items": [
+        {
+          "slug": "scrap-metal",
+          "name": "Scrap Metal",
+          "description": "Salvaged metal pieces from broken weapons and armor. Can be refined into ingots.",
+          "rarityWeight": 50,
+          "value": 2,
+          "weight": 0.5,
+          "stackSize": 99,
+          "itemType": "material",
+          "subType": "scrap",
+          "tags": ["scrap", "metal", "salvage", "refinement"]
+        },
+        {
+          "slug": "scrap-wood",
+          "name": "Scrap Wood",
+          "description": "Salvaged wood pieces from broken weapons and shields. Can be refined into planks.",
+          "rarityWeight": 50,
+          "value": 1,
+          "weight": 0.3,
+          "stackSize": 99,
+          "itemType": "material",
+          "subType": "scrap",
+          "tags": ["scrap", "wood", "salvage", "refinement"]
+        },
+        {
+          "slug": "scrap-leather",
+          "name": "Scrap Leather",
+          "description": "Salvaged leather scraps from broken armor. Can be refined into leather.",
+          "rarityWeight": 50,
+          "value": 2,
+          "weight": 0.2,
+          "stackSize": 99,
+          "itemType": "material",
+          "subType": "scrap",
+          "tags": ["scrap", "leather", "salvage", "refinement"]
+        },
+        {
+          "slug": "gemstone-fragments",
+          "name": "Gemstone Fragments",
+          "description": "Crushed gemstone pieces from broken jewelry. Can be refined into rough gemstones.",
+          "rarityWeight": 30,
+          "value": 5,
+          "weight": 0.1,
+          "stackSize": 99,
+          "itemType": "material",
+          "subType": "scrap",
+          "tags": ["scrap", "gemstone", "salvage", "refinement", "rare"]
+        },
+        {
+          "slug": "scrap-cloth",
+          "name": "Scrap Cloth",
+          "description": "Torn fabric scraps from broken cloth armor. Can be refined into linen cloth.",
+          "rarityWeight": 45,
+          "value": 1,
+          "weight": 0.1,
+          "stackSize": 99,
+          "itemType": "material",
+          "subType": "scrap",
+          "tags": ["scrap", "cloth", "salvage", "refinement"]
+        }
+      ]
+    
     }
-  ]
+  }
 }

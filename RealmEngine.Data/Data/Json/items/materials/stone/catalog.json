@@ -5,18 +5,26 @@
     "lastUpdated": "2026-01-10",
     "type": "items_materials_catalog"
   },
-  "items": [
-    {
-      "slug": "runestone",
-      "name": "Runestone",
-      "description": "Blank stone carved to hold runic enchantments.",
-      "rarityWeight": 40,
-      "value": 15,
-      "weight": 0.5,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "stone",
-      "tags": ["stone", "enchanting", "rune-component"]
-    }
-  ]
+  "material_types": {
+    "stone": {  
+      "items": [
+      {
+        "slug": "runestone",
+        "name": "Runestone",
+        "description": "Blank stone carved to hold runic enchantments.",
+        "rarityWeight": 40,
+        "value": 15,
+        "weight": 0.5,
+        "stackSize": 20,
+        "itemType": "material",
+        "subType": "stone",
+        "tags": [
+          "stone",
+          "enchanting",
+          "rune-component"
+        ]
+      }
+    ]
+  }
+  }
 }

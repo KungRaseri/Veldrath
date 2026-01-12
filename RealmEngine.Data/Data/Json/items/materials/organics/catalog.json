@@ -5,78 +5,118 @@
     "lastUpdated": "2026-01-10",
     "type": "items_materials_catalog"
   },
-  "items": [
-    {
-      "slug": "bloodroot",
-      "name": "Bloodroot",
-      "description": "A crimson herb with medicinal properties, used in healing potions.",
-      "rarityWeight": 60,
-      "value": 3,
-      "weight": 0.1,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "organic",
-      "tags": ["herb", "alchemy", "healing", "plant"]
-    },
-    {
-      "slug": "silverleaf",
-      "name": "Silverleaf",
-      "description": "A shimmering silver-leafed plant that enhances healing effects.",
-      "rarityWeight": 55,
-      "value": 5,
-      "weight": 0.1,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "organic",
-      "tags": ["herb", "alchemy", "healing", "rare", "plant"]
-    },
-    {
-      "slug": "mana-thistle",
-      "name": "Mana Thistle",
-      "description": "A vibrant blue thistle that restores magical energy.",
-      "rarityWeight": 50,
-      "value": 8,
-      "weight": 0.1,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "organic",
-      "tags": ["herb", "alchemy", "mana", "magical", "plant"]
-    },
-    {
-      "slug": "mountain-sage",
-      "name": "Mountain Sage",
-      "description": "Hardy herb found in high altitudes, restores stamina.",
-      "rarityWeight": 45,
-      "value": 6,
-      "weight": 0.1,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "organic",
-      "tags": ["herb", "alchemy", "stamina", "plant"]
-    },
-    {
-      "slug": "ironroot",
-      "name": "Ironroot",
-      "description": "A tough root with fortifying properties, used in strength elixirs.",
-      "rarityWeight": 40,
-      "value": 12,
-      "weight": 0.2,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "organic",
-      "tags": ["herb", "alchemy", "strength", "rare", "plant"]
-    },
-    {
-      "slug": "frost-lotus",
-      "name": "Frost Lotus",
-      "description": "An icy blue lotus with potent restorative powers.",
-      "rarityWeight": 25,
-      "value": 20,
-      "weight": 0.1,
-      "stackSize": 20,
-      "itemType": "material",
-      "subType": "organic",
-      "tags": ["herb", "alchemy", "healing", "frost", "rare", "plant"]
+  "material_types":{
+    "organic": {
+      "items": [
+        {
+          "slug": "bloodroot",
+          "name": "Bloodroot",
+          "description": "A crimson herb with medicinal properties, used in healing potions.",
+          "rarityWeight": 60,
+          "value": 3,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "organic",
+          "tags": [
+            "herb",
+            "alchemy",
+            "healing",
+            "plant"
+          ]
+        },
+        {
+          "slug": "silverleaf",
+          "name": "Silverleaf",
+          "description": "A shimmering silver-leafed plant that enhances healing effects.",
+          "rarityWeight": 55,
+          "value": 5,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "organic",
+          "tags": [
+            "herb",
+            "alchemy",
+            "healing",
+            "rare",
+            "plant"
+          ]
+        },
+        {
+          "slug": "mana-thistle",
+          "name": "Mana Thistle",
+          "description": "A vibrant blue thistle that restores magical energy.",
+          "rarityWeight": 50,
+          "value": 8,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "organic",
+          "tags": [
+            "herb",
+            "alchemy",
+            "mana",
+            "magical",
+            "plant"
+          ]
+        },
+        {
+          "slug": "mountain-sage",
+          "name": "Mountain Sage",
+          "description": "Hardy herb found in high altitudes, restores stamina.",
+          "rarityWeight": 45,
+          "value": 6,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "organic",
+          "tags": [
+            "herb",
+            "alchemy",
+            "stamina",
+            "plant"
+          ]
+        },
+        {
+          "slug": "ironroot",
+          "name": "Ironroot",
+          "description": "A tough root with fortifying properties, used in strength elixirs.",
+          "rarityWeight": 40,
+          "value": 12,
+          "weight": 0.2,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "organic",
+          "tags": [
+            "herb",
+            "alchemy",
+            "strength",
+            "rare",
+            "plant"
+          ]
+        },
+        {
+          "slug": "frost-lotus",
+          "name": "Frost Lotus",
+          "description": "An icy blue lotus with potent restorative powers.",
+          "rarityWeight": 25,
+          "value": 20,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "organic",
+          "tags": [
+            "herb",
+            "alchemy",
+            "healing",
+            "frost",
+            "rare",
+            "plant"
+          ]
+        }
+      ]
+    
     }
-  ]
+  }
 }
