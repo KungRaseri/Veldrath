@@ -48,24 +48,63 @@
 
 ## 🎯 Remaining Work
 
-### ❌ Modding Support - NOT STARTED
+### ⚠️ Modding Support - IN PROGRESS (Design Complete)
 
 **Feature Page**: [modding-support.md](features/modding-support.md)  
-**Estimated Time**: 3-4 weeks (plus ongoing support)
+**Project**: `RealmEngine.Modding` (new separate assembly)  
+**Timeline**: 3-4 weeks (phased implementation)
 
-**What's Missing:**
-- ❌ Mod loader system
-- ❌ Content creation tools
-- ❌ Scripting API (Lua/C# scripts)
-- ❌ Community sharing platform
+**Implementation Plan:**
 
-**Why Lowest Priority:**
-- Post-launch feature
-- Requires significant architecture work
-- Community-driven content extends game lifespan
-- Depends on established player base
+**Phase 1: Content Modules (Weeks 1-2)** - JSON-only mods
+- Create `RealmEngine.Modding` project structure
+- Implement module discovery and validation
+- Implement additive loading (mods add content, don't replace)
+- Content providers (Item, Enemy, Quest, Spell, Recipe, NPC)
+- Dependency resolution and load order
+- Godot integration for mod management UI
 
-**Estimated Time**: 3-4 weeks (plus ongoing support)
+**Phase 2: Override Support (Week 3)** - Mods can replace content
+- Override mode in manifest
+- Conflict detection and resolution
+- User warnings and priority system
+
+**Phase 3: C# Scripting (Month 2+)** - Advanced custom behaviors
+- Roslyn compilation pipeline
+- Security sandboxing (banned namespaces)
+- `IModScript` API design
+- Event hook system
+
+**Current Status**:
+- ✅ Design specification complete (comprehensive)
+- ✅ Architecture defined (separate project)
+- ✅ Module manifest schema designed
+- ✅ Security model planned
+- ⏳ Implementation starting with Phase 1
+
+**Why Post-Launch:**
+- Requires significant testing and validation
+- Security considerations for C# scripting
+- Community-driven feature (needs player base)
+- All core game systems complete first
+
+**Moddable Content Types:**
+- Items (weapons, armor, consumables, materials, gems, runes, crystals, essences, orbs)
+- Enemies (stats, abilities, loot tables, AI behaviors)
+- NPCs (merchants, quest givers, party members, trainers)
+- Quests (objectives, rewards, dialogue, quest chains)
+- Spells (magic abilities, effects, mana costs, schools)
+- Abilities (class skills, combat moves, passive effects)
+- Recipes (crafting formulas, required items, outputs)
+- Classes (new character classes, starting gear, progression)
+- Skills (proficiencies, leveling curves, bonuses)
+- Achievements (conditions, rewards, tiers)
+- Status Effects (buffs, debuffs, durations, stacking)
+- Difficulty Modes (stat modifiers, rewards, penalties)
+- Locations (exploration areas, encounters, loot pools)
+- Factions (organizations, reputation levels, benefits)
+- Dialogues (conversation trees, NPC interactions, choices)
+- Enchantments (weapon/armor enhancements, stat bonuses)
 
 ---
 
