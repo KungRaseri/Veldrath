@@ -267,28 +267,27 @@ public class UpgradingIntegrationTests
         var character = CreateTestCharacter();
         var item = CreateTestWeapon(ItemRarity.Epic);
         
-        // Test multiple levels - formula: 1 + (level * 0.10) + (level² * 0.01)
+        // Test multiple levels - formula: base + (level * 2)
         var testCases = new Dictionary<int, double>
         {
-            { 1, 1.11 },   // 1 + 0.1*1 + 0.01*1 = 1.11
-            { 5, 1.75 },   // 1 + 0.1*5 + 0.01*25 = 1.75
-            { 8, 2.44 },   // 1 + 0.1*8 + 0.01*64 = 2.44
-            { 10, 3.00 }   // 1 + 0.1*10 + 0.01*100 = 3.00
+            { 1, 22.0 },   // 20 + 2*1 = 22
+            { 5, 30.0 },   // 20 + 2*5 = 30
+            { 8, 36.0 },   // 20 + 2*8 = 36
+            { 10, 40.0 }   // 20 + 2*10 = 40
         };
 
-        foreach (var (level, expectedMultiplier) in testCases)
+        foreach (var (level, expectedDamage) in testCases)
         {
             // Set level manually for testing
             item.UpgradeLevel = level;
             
-            // Calculate using GetTotalTraits (which applies the multiplier)
+            // Calculate using GetTotalTraits (which applies the bonus)
             var baseDamage = 20.0;
             item.Traits["Damage"] = new TraitValue(baseDamage, TraitType.Number);
             var totalTraits = item.GetTotalTraits();
             var actualDamage = totalTraits["Damage"].AsDouble();
-            var actualMultiplier = actualDamage / baseDamage;
             
-            actualMultiplier.Should().BeApproximately(expectedMultiplier, 0.01);
+            actualDamage.Should().BeApproximately(expectedDamage, 0.01);
         }
     }
 

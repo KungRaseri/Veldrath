@@ -32,11 +32,7 @@
               "itemReference": "@items/materials/ore:iron-ore",
               "quantity": 2
             }
-          ],
-          "optionalCatalyst": {
-            "itemReference": "@items/materials/reagent:flux-powder",
-            "effect": "+10% yield chance"
-          }
+          ]
         },
         {
           "name": "Steel Ingot",
@@ -123,11 +119,7 @@
               "itemReference": "@items/materials/reagent:purified-flux",
               "quantity": 1
             }
-          ],
-          "optionalCatalyst": {
-            "itemReference": "@items/materials/essence:essence-of-earth",
-            "effect": "+20% quality"
-          }
+          ]
         }
       ]
     },
@@ -161,11 +153,7 @@
               "itemReference": "@items/materials/wood:*",
               "quantity": 1
             }
-          ],
-          "optionalCatalyst": {
-            "itemReference": "@items/consumables/elixirs:quenching-oil",
-            "effect": "+1 enchantment slot (requires Alchemy)"
-          }
+          ]
         },
         {
           "name": "Legendary Sword",
@@ -475,11 +463,7 @@
               "itemReference": "@items/materials/reagent:enchanting-dust",
               "quantity": 3
             }
-          ],
-          "optionalCatalyst": {
-            "itemReference": "@items/materials/reagent:ancient-rune-fragment",
-            "effect": "+1 tier quality"
-          }
+          ]
         },
         {
           "name": "Rune of Power",
@@ -596,11 +580,7 @@
               "itemReference": "@items/runes/offensive:rune-of-power",
               "quantity": 1
             }
-          ],
-          "optionalCatalyst": {
-            "itemReference": "@items/materials/reagent:ancient-focus-gem",
-            "effect": "Adds unique combat ability"
-          }
+          ]
         }
       ]
     },
@@ -736,5 +716,6 @@
     }
   }
 }
+
 
 

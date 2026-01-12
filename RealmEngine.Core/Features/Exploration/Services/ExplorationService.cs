@@ -6,6 +6,8 @@ using RealmEngine.Core.Generators.Modern;
 using MediatR;
 
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Generators;
+
 namespace RealmEngine.Core.Features.Exploration;
 
 /// <summary>
@@ -18,6 +20,7 @@ public class ExplorationService
     private readonly SaveGameService _saveGameService;
     private readonly IGameUI _console;
     private readonly LocationGenerator _locationGenerator;
+    private readonly ItemGenerator? _itemGenerator;
 
     private readonly List<Location> _knownLocations = new();
     private bool _locationsInitialized = false;
@@ -35,13 +38,15 @@ public class ExplorationService
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="console">The game UI.</param>
     /// <param name="locationGenerator">The location generator.</param>
-    public ExplorationService(IMediator mediator, GameStateService gameState, SaveGameService saveGameService, IGameUI console, LocationGenerator locationGenerator)
+    /// <param name="itemGenerator">The item generator (optional).</param>
+    public ExplorationService(IMediator mediator, GameStateService gameState, SaveGameService saveGameService, IGameUI console, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null)
     {
         _mediator = mediator;
         _gameState = gameState;
         _saveGameService = saveGameService;
         _console = console;
         _locationGenerator = locationGenerator;
+        _itemGenerator = itemGenerator;
     }
     
     /// <summary>
@@ -113,9 +118,34 @@ public class ExplorationService
         // Random chance to find an item (30% chance)
         if (Random.Shared.Next(100) < 30)
         {
-            // Note: Item generation integrated via GenerateLocationAppropriateItemAsync in modern implementation
-            // This legacy path is retained for backward compatibility but not actively used
-            // See GenerateLocationAppropriateItemAsync for production item generation
+            // Get current location object
+            var currentLoc = _knownLocations.FirstOrDefault(l => l.Name == _gameState.CurrentLocation);
+            
+            if (currentLoc != null && _itemGenerator != null)
+            {
+                // Generate location-appropriate loot using ItemGenerator
+                var lootResult = _locationGenerator.GenerateLocationLoot(currentLoc);
+                
+                if (lootResult != null)
+                {
+                    // Create budget request based on location danger
+                    var request = new RealmEngine.Core.Services.Budget.BudgetItemRequest
+                    {
+                        EnemyType = "exploration",
+                        EnemyLevel = player.Level,
+                        IsBoss = false,
+                        IsElite = false,
+                        ItemCategory = lootResult.ItemCategory ?? "materials"
+                    };
+                    
+                    var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+                    if (item != null)
+                    {
+                        player.Inventory.Add(item);
+                        _console.ShowSuccess($"Found: {item.Name}!");
+                    }
+                }
+            }
         }
 
         return false; // No combat
