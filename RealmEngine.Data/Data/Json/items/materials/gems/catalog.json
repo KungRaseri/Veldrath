@@ -6,11 +6,7 @@
     "type": "item_catalog"
   },
   "material_types": {
-    "gems": {
-      "properties": {
-        "category": "gem",
-        "stackable": true
-      },
+    "gem": {
       "items": [
         {
           "slug": "raw-ruby",
@@ -25,7 +21,13 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "jeweling", "red", "rare"]
+          "tags": [
+            "gem",
+            "raw",
+            "jeweling",
+            "red",
+            "rare"
+          ]
         },
         {
           "slug": "raw-sapphire",
@@ -40,7 +42,13 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "jeweling", "blue", "rare"]
+          "tags": [
+            "gem",
+            "raw",
+            "jeweling",
+            "blue",
+            "rare"
+          ]
         },
         {
           "slug": "raw-diamond",
@@ -55,7 +63,13 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "jeweling", "diamond", "very-rare"]
+          "tags": [
+            "gem",
+            "raw",
+            "jeweling",
+            "diamond",
+            "very-rare"
+          ]
         },
         {
           "slug": "rough-gemstone",
@@ -70,7 +84,12 @@
           "subType": "gem",
           "tier": "cut",
           "traits": {},
-          "tags": ["gem", "cut", "jeweling", "unpolished"]
+          "tags": [
+            "gem",
+            "cut",
+            "jeweling",
+            "unpolished"
+          ]
         }
       ]
     }

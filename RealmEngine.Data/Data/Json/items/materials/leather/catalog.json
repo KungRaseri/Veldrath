@@ -7,10 +7,6 @@
   },
   "material_types": {
     "leather": {
-      "properties": {
-        "category": "leather",
-        "stackable": true
-      },
       "items": [
         {
           "slug": "cured-leather",

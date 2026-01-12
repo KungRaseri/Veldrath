@@ -7,10 +7,6 @@
   },
   "material_types": {
     "wood": {
-      "properties": {
-        "category": "wood",
-        "stackable": true
-      },
       "items": [
         {
           "slug": "oak-plank",
