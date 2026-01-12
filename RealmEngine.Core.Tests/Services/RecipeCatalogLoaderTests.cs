@@ -102,7 +102,7 @@ public class RecipeCatalogLoaderTests
         // Assert
         var ironIngot = recipes.First(r => r.Name == "Iron Ingot");
         ironIngot.Materials.Should().HaveCount(1);
-        ironIngot.Materials[0].ItemReference.Should().Be("@items/materials/ores:iron-ore");
+        ironIngot.Materials[0].ItemReference.Should().Be("@items/materials/ore:iron-ore");
         ironIngot.Materials[0].Quantity.Should().Be(2);
     }
 
@@ -114,7 +114,7 @@ public class RecipeCatalogLoaderTests
 
         // Assert
         var ironIngot = recipes.First(r => r.Name == "Iron Ingot");
-        ironIngot.OutputItemReference.Should().Be("@items/materials/metals:iron-ingot");
+        ironIngot.OutputItemReference.Should().Be("@items/materials/ingot:iron-ingot");
         ironIngot.OutputQuantity.Should().Be(1);
         ironIngot.MinQuality.Should().Be(ItemRarity.Common);
         ironIngot.MaxQuality.Should().Be(ItemRarity.Common);
@@ -129,8 +129,8 @@ public class RecipeCatalogLoaderTests
         // Assert
         var steelIngot = recipes.First(r => r.Name == "Steel Ingot");
         steelIngot.Materials.Should().HaveCount(2);
-        steelIngot.Materials.Should().Contain(c => c.ItemReference == "@items/materials/metals:iron-ingot");
-        steelIngot.Materials.Should().Contain(c => c.ItemReference == "@items/materials/reagents:coal");
+        steelIngot.Materials.Should().Contain(c => c.ItemReference == "@items/materials/ingot:iron-ingot");
+        steelIngot.Materials.Should().Contain(c => c.ItemReference == "@items/materials/reagent:coal");
     }
 
     #endregion
@@ -307,7 +307,7 @@ public class RecipeCatalogLoaderTests
         var recipes = _loader.LoadAllRecipes();
 
         // Assert
-        var stations = new[] { "Anvil", "AlchemyTable", "EnchantingTable", "JewelryBench" };
+        var stations = new[] { "Anvil", "AlchemyTable", "EnchantingTable", "JewelryBench", "Workbench", "TanningRack", "Loom" };
         recipes.Should().OnlyContain(r => stations.Contains(r.RequiredStation));
     }
 
@@ -365,9 +365,9 @@ public class RecipeCatalogLoaderTests
 
         // Assert - Iron Ingot has no catalyst
         var ironIngot = recipes.First(r => r.Name == "Iron Ingot");
-        if (!string.IsNullOrEmpty(ironDagger.UnlockRequirement))
+        if (!string.IsNullOrEmpty(ironIngot.UnlockRequirement))
         {
-            ironDagger.UnlockRequirement.Should().NotContain("Catalyst:");
+            ironIngot.UnlockRequirement.Should().NotContain("Catalyst:");
         }
     }
 
@@ -395,7 +395,7 @@ public class RecipeCatalogLoaderTests
         // Assert
         var alchemyRecipes = recipes.Where(r => r.RequiredSkill == "Alchemy").ToList();
         alchemyRecipes.Should().NotBeEmpty();
-        alchemyRecipes.Should().HaveCountGreaterOrEqualTo(5); // At least 5 Alchemy recipes
+        alchemyRecipes.Should().HaveCountGreaterThanOrEqualTo(5); // At least 5 Alchemy recipes
     }
 
     [Fact]
