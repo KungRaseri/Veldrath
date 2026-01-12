@@ -1,6 +1,6 @@
 # Magic & Spell System
 
-**Status**: See [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md)
+**Status**: ✅ 100% Complete - See [spells-system.md](spells-system.md)
 
 **Note**: This document has been superseded by [Spells System](spells-system.md) which provides full details on the learnable magic system.
 

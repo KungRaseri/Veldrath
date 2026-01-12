@@ -1,6 +1,6 @@
 # Quality of Life Enhancements
 
-**Status**: See [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md)
+**Status**: ❌ Design Only - Not Implemented (Future Feature)
 
 ## Overview
 

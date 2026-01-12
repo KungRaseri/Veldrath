@@ -1,5 +1,7 @@
 # Shop System Integration Guide
 
+**Status**: ✅ 100% Complete (See [COMPLETED_WORK.md](../COMPLETED_WORK.md))
+
 ## Overview
 
 The shop system enables players to buy and sell items with merchant NPCs. It uses a MediatR command/handler pattern for clean separation of concerns and supports dependency injection.
