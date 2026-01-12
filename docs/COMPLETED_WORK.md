@@ -1,7 +1,7 @@
 # Completed Work - RealmEngine Backend
 
-**Last Updated**: January 12, 2026 18:00 UTC  
-**Overall Completion**: 16/22 major systems (73%)  
+**Last Updated**: January 12, 2026 19:15 UTC  
+**Overall Completion**: 17/22 major systems (77%)  
 **Test Status**: 8,354/8,354 tests passing (100%) ✅  
 **Build Status**: Clean build with zero errors ✅
 
@@ -11,7 +11,7 @@ This document tracks all completed backend systems for the RealmEngine game. All
 
 ## 📊 Completion Summary
 
-### ✅ Complete Systems (16)
+### ✅ Complete Systems (17)
 1. [Character System](#-character-system) - Character creation, classes, attributes
 2. [Combat System](#-combat-system) - Turn-based combat with abilities, spells, status effects
 3. [Inventory System](#-inventory-system) - Item management, equipment, queries
@@ -28,6 +28,7 @@ This document tracks all completed backend systems for the RealmEngine game. All
 14. [New Game+ System](#-new-game-system) - Character carryover bonuses
 15. [Crafting System](#-crafting-system) - Full crafting ecosystem
 16. [Exploration System](#-exploration-system) - Location generation, loot
+17. [Shop System](#-shop-system) - Economy, merchants, buy/sell ⭐ **NEW**
 
 **For remaining work**, see [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)
 
@@ -567,10 +568,72 @@ Level 49→50: 240,100 XP
 
 ---
 
+## ✅ Shop System
+
+**Status**: 100% Complete ⭐  
+**Feature Page**: [shop-system-integration.md](features/shop-system-integration.md)  
+**Tests**: 23/23 passing (ShopEconomyServiceTests + ShopIntegrationTests)
+
+### Features
+- **ShopEconomyService**: Full shop economy implementation (600+ lines)
+- **Dynamic Inventory**: Daily refreshing shop inventories
+- **Shop Specialization**: Weaponsmith, Armorer, Apothecary, General Store
+- **Quality-Based Pricing**: Rarity multipliers (Common=1.0x, Rare=2.5x, Legendary=10x)
+- **Buy/Sell System**: Player can buy from shops or sell to hybrid shops
+- **Merchant Traits**: Background and personality affect prices
+- **Player Item Decay**: 7-day resale window for player-sold items
+- **Catalog Loading**: ItemCatalogLoader with weighted selection
+
+### Shop Types
+- **Weaponsmith**: Swords, axes, bows, daggers (70% equipment, 30% consumables)
+- **Armorer**: Armor, shields, helmets (80% equipment, 20% consumables)
+- **Apothecary**: Potions, scrolls, crafting materials (90% consumables, 10% equipment)
+- **General Store**: Mixed inventory (50% equipment, 50% consumables)
+
+### Pricing System
+- **Quality Multiplier**: 100 / rarityWeight
+  - Common (weight=100): 1.0x multiplier
+  - Uncommon (weight=70): 1.43x multiplier
+  - Rare (weight=40): 2.5x multiplier
+  - Epic (weight=20): 5.0x multiplier
+  - Legendary (weight=10): 10.0x multiplier
+- **Player Sell Rate**: 40% of shop sell price
+- **Minimum Price**: 1 gold for all items
+
+### Inventory Types
+- **Core Items**: Unlimited stock (always available)
+- **Dynamic Items**: Refreshes daily from catalogs
+- **Player-Sold Items**: 7-day decay, resold at 80% original price
+
+### Godot Integration
+- `BrowseShopCommand` - Browse merchant inventory
+- `BuyFromShopCommand` - Purchase item from merchant
+- `SellToShopCommand` - Sell item to merchant (hybrid shops only)
+- `CheckAffordabilityQuery` - Check if player can afford item
+- `GetShopInventoryQuery` - Get current merchant inventory
+
+### Test Coverage
+- ✅ **ShopEconomyServiceTests**: 13 tests
+  - Inventory creation and persistence
+  - Price calculations (sell/buy/resell)
+  - Quality multiplier validation
+  - Merchant background/trait modifiers
+  - Minimum pricing
+- ✅ **ShopIntegrationTests**: 10 tests
+  - Browse shop integration
+  - Buy/sell workflows
+  - Gold transactions
+  - Inventory updates
+  - Error handling
+
+---
+
 ## 🎉 Recent Milestones (January 2026)
 
 ### January 12, 2026
+- ✅ **Shop System Complete** - 100% functional with all tests passing ⭐
 - ✅ **100% Test Pass Rate** - All 8,354 tests passing
+- ✅ **17/22 Systems Complete** - 77% overall completion
 - ✅ **Catalysts Removed** - Removed from recipes (deferred feature)
 - ✅ **Upgrade Formula Fixed** - Corrected to additive (+2 per level)
 - ✅ **Loot Integration Complete** - Combat and exploration loot working
@@ -654,9 +717,9 @@ Level 49→50: 240,100 XP
 
 ## 🚀 Godot Integration Readiness
 
-All 16 completed systems are **100% ready** for Godot integration with:
+All 17 completed systems are **100% ready** for Godot integration with:
 
-### Available Commands (70+)
+### Available Commands (73+)
 Organized by system for easy integration
 
 ### Available Queries (30+)
@@ -696,4 +759,4 @@ All completed systems have comprehensive documentation:
 
 ---
 
-**Last Updated**: January 12, 2026 18:00 UTC
+**Last Updated**: January 12, 2026 19:15 UTC

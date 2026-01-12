@@ -30,6 +30,14 @@ public class SaveGame
     /// <summary>Gets or sets the character data.</summary>
     public Character Character { get; set; } = new();
 
+    // === Party System ===
+    /// <summary>Gets or sets the player's party (leader + recruited NPCs).</summary>
+    public Party? Party { get; set; }
+
+    // === Reputation & Factions ===
+    /// <summary>Gets or sets reputation standings with all factions.</summary>
+    public Dictionary<string, ReputationStanding> FactionReputations { get; set; } = new();
+
     /// <summary>Gets or sets the active quests.</summary>
     public List<Quest> ActiveQuests { get; set; } = new();
     
