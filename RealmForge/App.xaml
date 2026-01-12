@@ -1,30 +1,17 @@
-﻿<Application x:Class="RealmForge.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:RealmForge"
-             xmlns:converters="clr-namespace:RealmForge.Converters"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             StartupUri="MainWindow.xaml">
+             x:Class="RealmForge.App">
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <!-- Material Design - Dark Theme -->
-                <materialDesign:BundledTheme BaseTheme="Dark"
-                                             PrimaryColor="Blue"
-                                             SecondaryColor="Orange"/>
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
 
-            <!-- Converters -->
-            <converters:NotNullToBooleanConverter x:Key="NotNullToBooleanConverter"/>
-            <converters:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter"/>
-            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-            <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
-            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
-            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
-            <converters:RarityWeightToNameConverter x:Key="RarityWeightToNameConverter"/>
-            <converters:RarityWeightToColorConverter x:Key="RarityWeightToColorConverter"/>
-            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <!--
+            For information about styling .NET MAUI pages
+            please refer to the documentation:
+            https://go.microsoft.com/fwlink/?linkid=2282329
+        -->
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

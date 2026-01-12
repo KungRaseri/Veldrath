@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmEngine.Data", "RealmEn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmEngine.Data.Tests", "RealmEngine.Data.Tests\RealmEngine.Data.Tests.csproj", "{C6750A56-3AB1-4A75-9A88-82342D95CC48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmForge.Tests", "RealmForge.Tests\RealmForge.Tests.csproj", "{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmEngine.Core.Tests", "RealmEngine.Core.Tests\RealmEngine.Core.Tests.csproj", "{501BB45F-01EA-443E-B3AB-705E7D7EE8F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmEngine.Shared.Tests", "RealmEngine.Shared.Tests\RealmEngine.Shared.Tests.csproj", "{DF444156-6EDC-4C84-941A-777A12E9F1A4}"
@@ -89,18 +87,6 @@ Global
 		{C6750A56-3AB1-4A75-9A88-82342D95CC48}.Release|x64.Build.0 = Release|Any CPU
 		{C6750A56-3AB1-4A75-9A88-82342D95CC48}.Release|x86.ActiveCfg = Release|Any CPU
 		{C6750A56-3AB1-4A75-9A88-82342D95CC48}.Release|x86.Build.0 = Release|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Debug|x64.Build.0 = Debug|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Debug|x86.Build.0 = Debug|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Release|x64.ActiveCfg = Release|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Release|x64.Build.0 = Release|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Release|x86.ActiveCfg = Release|Any CPU
-		{A5B70D64-3E2C-4B5B-9E51-2D5E8F3A9C37}.Release|x86.Build.0 = Release|Any CPU
 		{501BB45F-01EA-443E-B3AB-705E7D7EE8F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{501BB45F-01EA-443E-B3AB-705E7D7EE8F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{501BB45F-01EA-443E-B3AB-705E7D7EE8F6}.Debug|x64.ActiveCfg = Debug|Any CPU
