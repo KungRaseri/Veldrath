@@ -1,11 +1,11 @@
 {
   "metadata": {
     "description": "Faction definitions - political, social, and economic organizations in the game world",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "5.0",
+    "lastUpdated": "2026-01-12",
     "type": "organizations_factions_catalog"
   },
-  "trade_types": {
+  "faction_types": {
     "trade": {
       "items": [
         {
@@ -46,9 +46,7 @@
           "rarity": 20
         }
       ]
-    }
-  },
-  "labor_types": {
+    },
     "labor": {
       "items": [
         {
@@ -88,9 +86,7 @@
           "rarity": 20
         }
       ]
-    }
-  },
-  "criminal_types": {
+    },
     "criminal": {
       "items": [
         {
@@ -128,9 +124,7 @@
           "rarity": 35
         }
       ]
-    }
-  },
-  "military_types": {
+    },
     "military": {
       "items": [
         {
@@ -238,9 +232,7 @@
           "rarity": 12
         }
       ]
-    }
-  },
-  "magical_types": {
+    },
     "magical": {
       "items": [
         {
@@ -279,9 +271,7 @@
           "rarity": 30
         }
       ]
-    }
-  },
-  "academic_types": {
+    },
     "academic": {
       "items": [
         {
@@ -321,9 +311,7 @@
           "rarity": 25
         }
       ]
-    }
-  },
-  "religious_types": {
+    },
     "religious": {
       "items": [
         {
@@ -360,9 +348,7 @@
           "rarity": 20
         }
       ]
-    }
-  },
-  "social_types": {
+    },
     "social": {
       "items": [
         {
@@ -399,9 +385,7 @@
           "rarity": 10
         }
       ]
-    }
-  },
-  "political_types": {
+    },
     "political": {
       "items": [
         {
