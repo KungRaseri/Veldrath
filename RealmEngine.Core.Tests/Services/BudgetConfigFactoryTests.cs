@@ -199,7 +199,9 @@ public class BudgetConfigFactoryTests
             {
                 var materialRef = metalEntry.MaterialRef;
                 materialRef.Should().NotBeNullOrEmpty($"pool '{poolName}' should have materialRef");
-                materialRef.Should().StartWith("@items/materials/", $"pool '{poolName}' reference should use correct format");
+                // Accept both old and new reference formats during migration
+                (materialRef.StartsWith("@items/materials/") || materialRef.StartsWith("@materials/properties/"))
+                    .Should().BeTrue($"pool '{poolName}' reference should use valid format");
                 
                 var selectionWeight = metalEntry.SelectionWeight;
                 selectionWeight.Should().BeGreaterThan(0, $"pool '{poolName}' materials should have positive selectionWeight");

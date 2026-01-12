@@ -1,46 +1,78 @@
 {
   "metadata": {
-    "description": "Raw gemstones for jewelry and enchanting",
-    "version": "4.0",
-    "lastUpdated": "2026-01-10",
-    "type": "items_materials_catalog"
+    "description": "Gemstones for jewelry and enchanting following two-tier system (raw → cut → polished)",
+    "version": "5.1",
+    "lastUpdated": "2026-01-11",
+    "type": "item_catalog"
   },
-  "items": [
-    {
-      "slug": "raw-ruby",
-      "name": "Raw Ruby",
-      "description": "Uncut ruby gemstone, can be polished by a jeweler.",
-      "rarityWeight": 25,
-      "value": 40,
-      "weight": 0.1,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "gem",
-      "tags": ["gem", "raw", "jeweling", "red", "rare"]
-    },
-    {
-      "slug": "raw-sapphire",
-      "name": "Raw Sapphire",
-      "description": "Uncut sapphire gemstone, valuable when polished.",
-      "rarityWeight": 25,
-      "value": 40,
-      "weight": 0.1,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "gem",
-      "tags": ["gem", "raw", "jeweling", "blue", "rare"]
-    },
-    {
-      "slug": "raw-diamond",
-      "name": "Raw Diamond",
-      "description": "Uncut diamond, the hardest and most valuable gemstone.",
-      "rarityWeight": 15,
-      "value": 80,
-      "weight": 0.1,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "gem",
-      "tags": ["gem", "raw", "jeweling", "diamond", "very-rare"]
+  "material_types": {
+    "gems": {
+      "properties": {
+        "category": "gem",
+        "stackable": true
+      },
+      "items": [
+        {
+          "slug": "raw-ruby",
+          "name": "Raw Ruby",
+          "description": "Uncut ruby gemstone, can be polished by a jeweler.",
+          "rarityWeight": 25,
+          "rarity": 25,
+          "value": 40,
+          "weight": 0.1,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["gem", "raw", "jeweling", "red", "rare"]
+        },
+        {
+          "slug": "raw-sapphire",
+          "name": "Raw Sapphire",
+          "description": "Uncut sapphire gemstone, valuable when polished.",
+          "rarityWeight": 25,
+          "rarity": 25,
+          "value": 40,
+          "weight": 0.1,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["gem", "raw", "jeweling", "blue", "rare"]
+        },
+        {
+          "slug": "raw-diamond",
+          "name": "Raw Diamond",
+          "description": "Uncut diamond, the hardest and most valuable gemstone.",
+          "rarityWeight": 15,
+          "rarity": 15,
+          "value": 80,
+          "weight": 0.1,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["gem", "raw", "jeweling", "diamond", "very-rare"]
+        },
+        {
+          "slug": "rough-gemstone",
+          "name": "Rough Gemstone",
+          "description": "Cut but unpolished gemstone, ready for final finishing.",
+          "rarityWeight": 30,
+          "rarity": 35,
+          "value": 25,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "cut",
+          "traits": {},
+          "tags": ["gem", "cut", "jeweling", "unpolished"]
+        }
+      ]
     }
-  ]
+  }
 }

@@ -56,7 +56,16 @@ public class CatalogJsonV5ComplianceTests
             "items/essences/shadow/catalog.json",
             "items/gems/blue/catalog.json",
             "items/gems/red/catalog.json",
-            "items/materials/catalog.json",
+            "items/materials/essences/catalog.json",
+            "items/materials/gems/catalog.json",
+            "items/materials/ingots/catalog.json",
+            "items/materials/leather/catalog.json",
+            "items/materials/ores/catalog.json",
+            "items/materials/organics/catalog.json",
+            "items/materials/reagents/catalog.json",
+            "items/materials/scraps/catalog.json",
+            "items/materials/stone/catalog.json",
+            "items/materials/wood/catalog.json",
             "items/orbs/combat/catalog.json",
             "items/orbs/magic/catalog.json",
             "items/runes/defensive/catalog.json",
@@ -125,16 +134,20 @@ public class CatalogJsonV5ComplianceTests
         var json = JObject.Parse(File.ReadAllText(fullPath));
         var allItems = GetAllItemsFromCatalog(json);
 
-        // Assert
+        // Only check enemies and NPCs - items don't have attributes (they have requirements/traits)
+        var isEnemyOrNpc = catalogPath.StartsWith("enemies/") || catalogPath.StartsWith("npcs/");
+        if (!isEnemyOrNpc) return;
+
+        // Assert - Enemies and NPCs MUST have attributes
         foreach (var item in allItems)
         {
             var itemName = item["name"]?.ToString() ?? "Unknown";
             item.Should().ContainKey("attributes", 
-                $"{catalogPath} - Item '{itemName}' missing attributes object");
+                $"{catalogPath} - Enemy/NPC '{itemName}' missing attributes object");
             
             var attributes = item["attributes"] as JObject;
             attributes.Should().NotBeNull(
-                $"{catalogPath} - Item '{itemName}' attributes is not an object");
+                $"{catalogPath} - Enemy/NPC '{itemName}' attributes is not an object");
         }
     }
 
@@ -150,24 +163,28 @@ public class CatalogJsonV5ComplianceTests
         var allItems = GetAllItemsFromCatalog(json);
         var requiredAttributes = new[] { "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma" };
 
-        // Assert
+        // Only check enemies and NPCs - items don't have attributes (they have requirements/traits)
+        var isEnemyOrNpc = catalogPath.StartsWith("enemies/") || catalogPath.StartsWith("npcs/");
+        if (!isEnemyOrNpc) return;
+
+        // Assert - Enemies and NPCs MUST have all 6 attributes
         foreach (var item in allItems)
         {
             var itemName = item["name"]?.ToString() ?? "Unknown";
             var attributes = item["attributes"] as JObject;
             
-            if (attributes == null) continue;
+            attributes.Should().NotBeNull($"{catalogPath} - Enemy/NPC '{itemName}' must have attributes object");
 
             foreach (var attr in requiredAttributes)
             {
                 attributes.Should().ContainKey(attr,
-                    $"{catalogPath} - Item '{itemName}' missing attribute: {attr}");
+                    $"{catalogPath} - Enemy/NPC '{itemName}' missing attribute: {attr}");
                 
                 var value = attributes[attr]?.Value<int>();
                 value.Should().NotBeNull()
                     .And.BeGreaterThan(0)
                     .And.BeLessThanOrEqualTo(30,
-                    $"{catalogPath} - Item '{itemName}' has invalid {attr} value: {value}");
+                    $"{catalogPath} - Enemy/NPC '{itemName}' has invalid {attr} value: {value}");
             }
         }
     }

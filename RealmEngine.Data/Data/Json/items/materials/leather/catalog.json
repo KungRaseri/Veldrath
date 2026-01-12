@@ -1,46 +1,78 @@
 {
   "metadata": {
-    "description": "Processed leather components for crafting",
-    "version": "4.0",
-    "lastUpdated": "2026-01-10",
-    "type": "items_materials_catalog"
+    "description": "Leather materials for crafting following two-tier system (raw → refined → component)",
+    "version": "5.1",
+    "lastUpdated": "2026-01-11",
+    "type": "item_catalog"
   },
-  "items": [
-    {
-      "slug": "leather-grip",
-      "name": "Leather Grip",
-      "description": "Wrapped leather for weapon handles, improves grip.",
-      "rarityWeight": 65,
-      "value": 3,
-      "weight": 0.2,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "leather",
-      "tags": ["leather", "crafting", "weapon-component", "grip"]
-    },
-    {
-      "slug": "leather-padding",
-      "name": "Leather Padding",
-      "description": "Soft leather padding for armor interiors.",
-      "rarityWeight": 60,
-      "value": 4,
-      "weight": 0.3,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "leather",
-      "tags": ["leather", "crafting", "armor-component", "padding"]
-    },
-    {
-      "slug": "reinforced-straps",
-      "name": "Reinforced Straps",
-      "description": "Heavy-duty leather straps for armor assembly.",
-      "rarityWeight": 50,
-      "value": 6,
-      "weight": 0.4,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "leather",
-      "tags": ["leather", "crafting", "armor-component", "straps"]
+  "material_types": {
+    "leather": {
+      "properties": {
+        "category": "leather",
+        "stackable": true
+      },
+      "items": [
+        {
+          "slug": "cured-leather",
+          "name": "Cured Leather",
+          "description": "Tanned and cured leather, ready for crafting.",
+          "rarityWeight": 65,
+          "rarity": 60,
+          "value": 5,
+          "weight": 0.5,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined"]
+        },
+        {
+          "slug": "leather-grip",
+          "name": "Leather Grip",
+          "description": "Wrapped leather for weapon handles, improves grip.",
+          "rarityWeight": 65,
+          "rarity": 65,
+          "value": 7,
+          "weight": 0.2,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "component",
+          "traits": {},
+          "tags": ["leather", "crafting", "weapon-component", "grip"]
+        },
+        {
+          "slug": "leather-padding",
+          "name": "Leather Padding",
+          "description": "Soft leather padding for armor interiors.",
+          "rarityWeight": 60,
+          "rarity": 60,
+          "value": 8,
+          "weight": 0.3,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "component",
+          "traits": {},
+          "tags": ["leather", "crafting", "armor-component", "padding"]
+        },
+        {
+          "slug": "reinforced-straps",
+          "name": "Reinforced Straps",
+          "description": "Heavy-duty leather straps for armor assembly.",
+          "rarityWeight": 50,
+          "rarity": 50,
+          "value": 10,
+          "weight": 0.4,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "component",
+          "traits": {},
+          "tags": ["leather", "crafting", "armor-component", "straps"]
+        }
+      ]
     }
-  ]
+  }
 }

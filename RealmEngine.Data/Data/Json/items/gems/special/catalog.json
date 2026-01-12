@@ -1,13 +1,78 @@
 {
   "metadata": {
-    "description": "Special rare gems providing unique bonuses",
+    "description": "Special legendary gems providing unique powerful bonuses",
     "version": "5.1",
     "lastUpdated": "2026-01-11",
     "type": "gem_catalog"
   },
   "gem_types": {
     "special": {
-      "items": []
+      "properties": {
+        "category": "legendary-gem",
+        "stackable": false
+      },
+      "items": [
+        {
+          "slug": "philosophers-stone",
+          "name": "Philosopher's Stone",
+          "description": "Legendary alchemical artifact said to grant immortality and transmute base metals to gold.",
+          "rarityWeight": 1,
+          "value": 10000,
+          "weight": 0.5,
+          "stackSize": 1,
+          "itemType": "gem",
+          "subType": "legendary",
+          "requirements": {
+            "level": 50,
+            "intelligence": 20
+          },
+          "traits": {
+            "alchemyBonus": {
+              "value": 50,
+              "type": "number"
+            },
+            "goldFind": {
+              "value": 25,
+              "type": "percentage"
+            },
+            "healthRegen": {
+              "value": 10,
+              "type": "number"
+            }
+          },
+          "tags": ["gem", "legendary", "alchemy", "mythical"]
+        },
+        {
+          "slug": "star-of-destiny",
+          "name": "Star of Destiny",
+          "description": "A radiant crystalline star that pulses with cosmic energy, granting visions of possible futures.",
+          "rarityWeight": 1,
+          "value": 15000,
+          "weight": 0.3,
+          "stackSize": 1,
+          "itemType": "gem",
+          "subType": "legendary",
+          "requirements": {
+            "level": 60,
+            "wisdom": 25
+          },
+          "traits": {
+            "criticalChance": {
+              "value": 15,
+              "type": "percentage"
+            },
+            "magicFind": {
+              "value": 30,
+              "type": "percentage"
+            },
+            "experienceBonus": {
+              "value": 20,
+              "type": "percentage"
+            }
+          },
+          "tags": ["gem", "legendary", "divination", "cosmic"]
+        }
+      ]
     }
   }
 }

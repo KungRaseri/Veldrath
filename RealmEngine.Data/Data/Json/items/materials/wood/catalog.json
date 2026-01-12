@@ -1,34 +1,63 @@
 {
   "metadata": {
-    "description": "Processed wood components for weapon crafting",
-    "version": "4.0",
-    "lastUpdated": "2026-01-10",
-    "type": "items_materials_catalog"
+    "description": "Wood materials for crafting following two-tier system (raw → refined → component)",
+    "version": "5.1",
+    "lastUpdated": "2026-01-11",
+    "type": "item_catalog"
   },
-  "items": [
-    {
-      "slug": "oak-handle",
-      "name": "Oak Handle",
-      "description": "Sturdy oak handle for basic weapons.",
-      "rarityWeight": 70,
-      "value": 2,
-      "weight": 0.5,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "wood",
-      "tags": ["wood", "crafting", "weapon-component", "handle"]
-    },
-    {
-      "slug": "ash-handle",
-      "name": "Ash Handle",
-      "description": "Flexible ash wood handle, ideal for larger weapons.",
-      "rarityWeight": 50,
-      "value": 5,
-      "weight": 0.6,
-      "stackSize": 10,
-      "itemType": "material",
-      "subType": "wood",
-      "tags": ["wood", "crafting", "weapon-component", "handle"]
+  "material_types": {
+    "wood": {
+      "properties": {
+        "category": "wood",
+        "stackable": true
+      },
+      "items": [
+        {
+          "slug": "oak-plank",
+          "name": "Oak Plank",
+          "description": "Refined oak wood plank, ready for crafting.",
+          "rarityWeight": 70,
+          "rarity": 65,
+          "value": 3,
+          "weight": 1.0,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["wood", "crafting", "refined"]
+        },
+        {
+          "slug": "oak-handle",
+          "name": "Oak Handle",
+          "description": "Sturdy oak handle for basic weapons.",
+          "rarityWeight": 70,
+          "rarity": 70,
+          "value": 5,
+          "weight": 0.5,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "component",
+          "traits": {},
+          "tags": ["wood", "crafting", "weapon-component", "handle"]
+        },
+        {
+          "slug": "ash-handle",
+          "name": "Ash Handle",
+          "description": "Flexible ash wood handle, ideal for larger weapons.",
+          "rarityWeight": 50,
+          "rarity": 55,
+          "value": 8,
+          "weight": 0.6,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "component",
+          "traits": {},
+          "tags": ["wood", "crafting", "weapon-component", "handle"]
+        }
+      ]
     }
-  ]
+  }
 }
