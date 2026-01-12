@@ -6,14 +6,15 @@
 <div class="editor-layout">
     <div class="file-tree">
         <h4>Files</h4>
-        <button class="btn btn-primary" @onclick="OpenFolder">Open Data Folder</button>
-        
+        <button class="btn btn-primary" @onclick="OpenFolder">Open Data
+            Folder</button>
+
         @if (JsonFiles.Any())
         {
             <ul class="tree">
                 @foreach (var file in JsonFiles)
                 {
-                    <li @onclick="() => LoadFile(file)" 
+                    <li @onclick="() => LoadFile(file)"
                         class="@(file == CurrentFile ? "selected" : "")">
                         📄 @Path.GetFileName(file)
                     </li>
@@ -21,18 +22,19 @@
             </ul>
         }
     </div>
-    
+
     <div class="editor-panel">
         @if (!string.IsNullOrEmpty(CurrentFile))
         {
             <div class="toolbar">
                 <span class="file-name">@Path.GetFileName(CurrentFile)</span>
                 <button class="btn btn-success" @onclick="SaveFile">Save</button>
-                <button class="btn btn-warning" @onclick="ValidateFile">Validate</button>
+                <button class="btn btn-warning"
+                    @onclick="ValidateFile">Validate</button>
             </div>
-            
+
             <textarea class="json-editor" @bind="JsonContent" rows="30"></textarea>
-            
+
             @if (!string.IsNullOrEmpty(ValidationMessage))
             {
                 <div class="alert @(IsValid ? "alert-success" : "alert-danger")">
@@ -61,12 +63,14 @@
     {
         // TODO: Use FolderPicker when implemented
         // For now, hardcode to Data/Json folder
-        var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+        var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..",
+        "..", "..", ".."));
         DataFolderPath = Path.Combine(projectRoot, "RealmEngine.Data", "Data", "Json");
-        
+
         if (Directory.Exists(DataFolderPath))
         {
-            JsonFiles = Directory.GetFiles(DataFolderPath, "*.json", SearchOption.AllDirectories).ToList();
+            JsonFiles = Directory.GetFiles(DataFolderPath, "*.json",
+            SearchOption.AllDirectories).ToList();
             StateHasChanged();
         }
     }
@@ -114,40 +118,40 @@
         gap: 20px;
         height: calc(100vh - 200px);
     }
-    
+
     .file-tree {
         width: 300px;
         border: 1px solid #ddd;
         padding: 15px;
         overflow-y: auto;
     }
-    
+
     .file-tree ul.tree {
         list-style: none;
         padding-left: 0;
     }
-    
+
     .file-tree li {
         padding: 8px;
         cursor: pointer;
         border-radius: 4px;
     }
-    
+
     .file-tree li:hover {
         background-color: #f0f0f0;
     }
-    
+
     .file-tree li.selected {
         background-color: #007bff;
         color: white;
     }
-    
+
     .editor-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
     }
-    
+
     .toolbar {
         display: flex;
         gap: 10px;
@@ -157,12 +161,12 @@
         border: 1px solid #ddd;
         border-bottom: none;
     }
-    
+
     .file-name {
         flex: 1;
         font-weight: bold;
     }
-    
+
     .json-editor {
         flex: 1;
         font-family: 'Consolas', 'Monaco', monospace;
@@ -170,7 +174,7 @@
         border: 1px solid #ddd;
         resize: none;
     }
-    
+
     .empty-state {
         display: flex;
         align-items: center;
@@ -178,19 +182,19 @@
         height: 100%;
         color: #999;
     }
-    
+
     .alert {
         margin-top: 10px;
         padding: 10px;
         border-radius: 4px;
     }
-    
+
     .alert-success {
         background-color: #d4edda;
         color: #155724;
         border: 1px solid #c3e6cb;
     }
-    
+
     .alert-danger {
         background-color: #f8d7da;
         color: #721c24;
