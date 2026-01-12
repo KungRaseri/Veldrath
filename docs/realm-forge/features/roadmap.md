@@ -122,10 +122,9 @@
 
 ---
 
-## Version 4.0 (Q4 2026) - Modding Framework
+## Version 4.0 - Modding Framework
 
-**Status**: 📋 Planned  
-**Target**: December 2026
+**Status**: 📋 Planned (Deferred)
 
 ### Mod Project System
 - [ ] Create new mod projects
@@ -159,10 +158,9 @@
 
 ---
 
-## Version 5.0+ (2027+) - Advanced Modding
+## Version 5.0+ - Advanced Modding
 
-**Status**: 🔮 Future  
-**Target**: TBD
+**Status**: 🔮 Future
 
 ### Scripting Support
 - [ ] C# script editor with syntax highlighting
