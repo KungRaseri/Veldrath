@@ -43,7 +43,9 @@ public class LearnRecipeHandler : IRequestHandler<LearnRecipeCommand, LearnRecip
         }
 
         // Check skill requirement (can't learn recipes too far above current skill)
-        if (request.Character.Skills.TryGetValue(recipe.RequiredSkill!, out var characterSkill) && 
+        // Trainers can teach any recipe, but discovery/experimentation has limits
+        if (request.Source != "Trainer" &&
+            request.Character.Skills.TryGetValue(recipe.RequiredSkill!, out var characterSkill) && 
             recipe.RequiredSkillLevel > characterSkill.CurrentRank + 10)
         {
             return Task.FromResult(new LearnRecipeResult

@@ -439,12 +439,13 @@ public class Item : ITraitable
             }
         }
 
-        // 5. Add upgrade level bonuses (exponential scaling: base * (1 + level * 0.10 + level² * 0.01))
+        // 5. Add upgrade level bonuses (+2 per level to all numeric traits)
+        // Design: ITEM_ENHANCEMENT_SYSTEM.md - "+2 to attribute bonuses"
         if (UpgradeLevel > 0)
         {
-            // Calculate multiplier: 1 + (0.10 * level) + (0.01 * level²)
-            // Examples: +1=1.11x, +5=1.75x, +8=2.12x, +10=2.5x
-            var upgradeMultiplier = 1.0 + (UpgradeLevel * 0.10) + (UpgradeLevel * UpgradeLevel * 0.01);
+            // Calculate bonus: +2 per upgrade level
+            // Examples: +1=+2, +5=+10, +8=+16, +10=+20
+            var upgradeBonus = UpgradeLevel * 2.0;
             
             // Apply to all numeric traits
             foreach (var traitKey in mergedTraits.Keys.ToList())
@@ -452,7 +453,7 @@ public class Item : ITraitable
                 if (mergedTraits[traitKey].Type == TraitType.Number)
                 {
                     var baseValue = mergedTraits[traitKey].AsDouble();
-                    var upgradedValue = baseValue * upgradeMultiplier;
+                    var upgradedValue = baseValue + upgradeBonus;
                     mergedTraits[traitKey] = new TraitValue(upgradedValue, TraitType.Number);
                 }
             }

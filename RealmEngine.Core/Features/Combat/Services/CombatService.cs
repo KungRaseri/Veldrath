@@ -9,6 +9,7 @@ using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Core.Features.Combat.Commands;
 using RealmEngine.Core.Features.Quests.Commands;
+using RealmEngine.Core.Generators.Modern;
 
 namespace RealmEngine.Core.Features.Combat;
 
@@ -23,6 +24,7 @@ public class CombatService
     private readonly ReactiveAbilityService _reactiveAbilityService;
     private readonly EnemyAbilityAIService _enemyAbilityAI;
     private readonly EnemySpellCastingService _enemySpellCastingAI;
+    private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
     /// Initialize the combat service with required dependencies.
@@ -31,13 +33,15 @@ public class CombatService
         SaveGameService saveGameService,
         IMediator mediator,
         AbilityCatalogService abilityCatalogService,
-        SpellCatalogService spellCatalogService)
+        SpellCatalogService spellCatalogService,
+        ItemGenerator? itemGenerator = null)
     {
         _saveGameService = saveGameService;
         _mediator = mediator;
         _reactiveAbilityService = new ReactiveAbilityService(abilityCatalogService);
         _enemyAbilityAI = new EnemyAbilityAIService(abilityCatalogService);
         _enemySpellCastingAI = new EnemySpellCastingService(spellCatalogService);
+        _itemGenerator = itemGenerator;
     }
 
     /// <summary>
@@ -985,13 +989,85 @@ public class CombatService
         // Update quest progress for enemy kills
         await UpdateQuestProgressForKill(enemy, outcome);
 
-        // Note: Loot generation is handled by ItemGenerator in modern implementation
-        // Enemy gold drops are already added to outcome.GoldEarned above
+        // Generate loot drops based on enemy difficulty and type
+        if (_itemGenerator != null)
+        {
+            outcome.LootDropped = await GenerateLootDrops(enemy);
+        }
 
         // Generate summary
         outcome.Summary = GenerateVictorySummary(enemy, outcome);
 
         return outcome;
+    }
+
+    /// <summary>
+    /// Generate loot drops from defeated enemy.
+    /// Uses budget-based generation system based on enemy type and level.
+    /// </summary>
+    private async Task<List<Item>> GenerateLootDrops(Enemy enemy)
+    {
+        var loot = new List<Item>();
+
+        // Determine number of loot drops based on difficulty
+        var dropCount = enemy.Difficulty switch
+        {
+            EnemyDifficulty.Boss => 3,
+            EnemyDifficulty.Elite => 2,
+            EnemyDifficulty.Hard => 1,
+            _ => _random.Next(0, 100) < 50 ? 1 : 0 // 50% chance for Normal/Easy
+        };
+
+        if (dropCount == 0) return loot;
+
+        // Get loot drop chance
+        var lootChance = GetLootChance(enemy.Difficulty);
+
+        for (int i = 0; i < dropCount; i++)
+        {
+            // Roll for loot drop
+            if (_random.Next(0, 100) >= lootChance)
+                continue;
+
+            // Determine item category based on enemy type
+            var category = DetermineItemCategory(enemy.Type);
+
+            // Create budget request
+            var request = new RealmEngine.Core.Services.Budget.BudgetItemRequest
+            {
+                EnemyType = enemy.Type.ToString().ToLower(),
+                EnemyLevel = enemy.Level,
+                IsBoss = enemy.Difficulty == EnemyDifficulty.Boss,
+                IsElite = enemy.Difficulty == EnemyDifficulty.Elite,
+                ItemCategory = category
+            };
+
+            // Generate item
+            var item = await _itemGenerator!.GenerateItemWithBudgetAsync(request);
+            if (item != null)
+            {
+                loot.Add(item);
+            }
+        }
+
+        return loot;
+    }
+
+    /// <summary>
+    /// Determine appropriate item category for enemy type.
+    /// </summary>
+    private string DetermineItemCategory(EnemyType enemyType)
+    {
+        return enemyType switch
+        {
+            EnemyType.Humanoid => _random.Next(0, 100) < 60 ? "weapons" : "armor",
+            EnemyType.Beast => "materials",
+            EnemyType.Undead => _random.Next(0, 100) < 70 ? "consumables" : "materials",
+            EnemyType.Demon => _random.Next(0, 100) < 50 ? "weapons" : "armor",
+            EnemyType.Dragon => _random.Next(0, 100) < 80 ? "weapons" : "armor",
+            EnemyType.Elemental => "materials",
+            _ => "materials"
+        };
     }
 
     /// <summary>

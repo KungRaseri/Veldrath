@@ -2,6 +2,7 @@ using RealmEngine.Core.Abstractions;
 using RealmEngine.Shared.Models;
 using MediatR;
 using Serilog;
+using RealmEngine.Core.Generators.Modern;
 
 using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.Exploration.Commands;
@@ -14,6 +15,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
     private readonly IMediator _mediator;
     private readonly GameStateService _gameState;
     private readonly IGameUI _console;
+    private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExploreLocationCommandHandler"/> class.
@@ -21,11 +23,13 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
     /// <param name="mediator">The mediator.</param>
     /// <param name="gameState">The game state service.</param>
     /// <param name="console">The game UI.</param>
-    public ExploreLocationCommandHandler(IMediator mediator, GameStateService gameState, IGameUI console)
+    /// <param name="itemGenerator">Optional item generator for location loot.</param>
+    public ExploreLocationCommandHandler(IMediator mediator, GameStateService gameState, IGameUI console, ItemGenerator? itemGenerator = null)
     {
         _mediator = mediator;
         _gameState = gameState;
         _console = console;
+        _itemGenerator = itemGenerator;
     }
 
     /// <summary>
@@ -78,11 +82,15 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             string? itemFound = null;
 
             // Random chance to find an item (30% chance)
-            if (Random.Shared.Next(100) < 30)
+            if (Random.Shared.Next(100) < 30 && _itemGenerator != null)
             {
-                // Note: Item generation integrated via ExplorationService.GenerateLocationAppropriateItemAsync
-                // This legacy exploration path is superseded by location-specific loot generation
-                // See GenerateLocationAppropriateItemAsync for modern implementation
+                var item = await GenerateLocationItem(player.Level);
+                if (item != null)
+                {
+                    player.Inventory.Add(item);
+                    itemFound = item.Name;
+                    _console.ShowSuccess($"Found: {GetRarityColor(item.Rarity)}{item.Name}[/]!");
+                }
             }
 
             return new ExploreLocationResult(
@@ -98,6 +106,32 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             Log.Error(ex, "Error during exploration");
             return new ExploreLocationResult(false, false, ErrorMessage: ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Generate a location-appropriate item based on player level.
+    /// </summary>
+    private async Task<Item?> GenerateLocationItem(int playerLevel)
+    {
+        if (_itemGenerator == null)
+            return null;
+
+        // Use location type to determine item category (default to consumables for exploration)
+        var category = "consumables";
+        
+        // Create budget request based on player level
+        var request = new RealmEngine.Core.Services.Budget.BudgetItemRequest
+        {
+            EnemyType = "exploration",
+            EnemyLevel = playerLevel,
+            IsBoss = false,
+            IsElite = false,
+            ItemCategory = category,
+            AllowQuality = true
+        };
+
+        var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+        return item;
     }
 
     private static string GetRarityColor(ItemRarity rarity)

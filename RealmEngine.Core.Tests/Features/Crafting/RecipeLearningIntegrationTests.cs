@@ -26,8 +26,9 @@ public class RecipeLearningIntegrationTests : IDisposable
         // Add MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CraftRecipeHandler>());
         
-        // Add services
-        services.AddSingleton<RecipeCatalogLoader>();
+        // Add services with correct data path
+        var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
+        services.AddSingleton<RecipeCatalogLoader>(sp => new RecipeCatalogLoader(testDataPath));
         services.AddSingleton<CraftingService>();
         
         _serviceProvider = services.BuildServiceProvider();

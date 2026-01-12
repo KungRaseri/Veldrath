@@ -54,11 +54,15 @@ public class DiscoverRecipeHandler : IRequestHandler<DiscoverRecipeCommand, Disc
 
         if (!discoverableRecipes.Any())
         {
+            // Award small XP for trying
+            var noRecipeXp = 1;
+            characterSkill.CurrentXP += noRecipeXp;
+            
             return Task.FromResult(new DiscoverRecipeResult
             {
                 Success = false,
                 Message = "There are no new recipes to discover at your current skill level.",
-                SkillXpGained = 1 // Small XP for trying
+                SkillXpGained = noRecipeXp
             });
         }
 

@@ -85,21 +85,26 @@ public class ShopEconomyServiceTests
     }
 
     [Fact]
-    public void CalculateSellPrice_Should_Return_Base_Price_With_Hardcoded_Multiplier()
+    public void CalculateSellPrice_Should_Use_Rarity_Based_Quality_Multiplier()
     {
         // Arrange
         var merchant = CreateTestMerchant("Merchant");
-        var commonItem = new Item { Name = "Common Sword", Price = 100, TotalRarityWeight = 100 }; // Common
-        var rareItem = new Item { Name = "Rare Sword", Price = 100, TotalRarityWeight = 10 };      // Rare
+        var commonItem = new Item { Name = "Common Sword", Price = 100, Rarity = ItemRarity.Common };
+        var rareItem = new Item { Name = "Rare Sword", Price = 100, Rarity = ItemRarity.Rare };
+        var legendaryItem = new Item { Name = "Legendary Sword", Price = 100, Rarity = ItemRarity.Legendary };
 
         // Act
         var commonPrice = _service.CalculateSellPrice(commonItem, merchant);
         var rarePrice = _service.CalculateSellPrice(rareItem, merchant);
+        var legendaryPrice = _service.CalculateSellPrice(legendaryItem, merchant);
 
-        // Assert - Quality multiplier is currently hardcoded to 100/30 = 3.33, so both should be the same
-        // Once implemented properly, this test should be updated to verify TotalRarityWeight affects price
-        commonPrice.Should().Be(333, "quality multiplier is hardcoded to 100/30");
-        rarePrice.Should().Be(333, "quality multiplier is hardcoded to 100/30, not using TotalRarityWeight yet");
+        // Assert - Quality multiplier based on rarity: 100 / rarityWeight
+        // Common (weight=100): 100 * (100/100) = 100
+        // Rare (weight=40): 100 * (100/40) = 250
+        // Legendary (weight=10): 100 * (100/10) = 1000
+        commonPrice.Should().Be(100, "Common rarity has weight 100, multiplier 1.0");
+        rarePrice.Should().Be(250, "Rare rarity has weight 40, multiplier 2.5");
+        legendaryPrice.Should().Be(1000, "Legendary rarity has weight 10, multiplier 10.0");
     }
 
     [Fact]
