@@ -1,11 +1,11 @@
 # Implementation Status
 
-**Last Updated**: January 11, 2026  
+**Last Updated**: January 11, 2026 22:30 UTC  
 **Build Status**: ✅ Clean build (all projects compile)  
-**Test Status**: 7,800+ tests (99%+ pass rate) ✅  
+**Test Status**: 7,800+ tests (99.9% pass rate) ⚠️  
 **Documentation Coverage**: 100% XML documentation (3,850+ members documented) ✅  
-**Current Phase**: Exploration Systems 100% Complete! 🎉  
-**Recent Milestone**: Town Services & Dungeon Progression Delivered! 🚀
+**Current Phase**: Core Systems Complete, Loot Generation Remaining ⚠️  
+**Recent Milestone**: Crafting & Shop Systems Mostly Complete!
 
 **Quick Links:**
 - [Work Priorities](#-work-priorities---all-remaining-systems) - All remaining work, prioritized
@@ -16,13 +16,13 @@
 
 ## 🎯 Work Priorities - All Remaining Systems
 
-### ✅ Priority 1 COMPLETE: Crafting System (100%) 🎉
-**Current Status**: 100% Complete - Full crafting ecosystem with enhancements!  
+### 🟡 Priority 1: Crafting System (85% Complete) ⚠️ IN PROGRESS
+**Current Status**: 85% Complete - Core crafting works, recipe learning broken  
 **Feature Page**: [crafting-system.md](features/crafting-system.md)
 
 **✅ What Works (Complete Features):**
 - CraftingService with all validation logic ✅
-- RecipeCatalogLoader with 28 recipes ✅
+- RecipeCatalogLoader with 30 recipes (28 + 2 orbs) ✅
 - Materials system restructured (properties + items) ✅
 - 41/48 crafting tests passing (85.4%) ✅
 - **CraftRecipeCommand** - Full execution pipeline ✅
@@ -43,7 +43,13 @@
   - XP rewards on success and failure ✅
 - **Recipe Unlock Methods**: SkillLevel (auto), Trainer, Quest, Discovery ✅
 - **Wildcard Materials**: Support for `@items/materials/organics:*` pattern matching ✅
-- **Integration Tests**: End-to-end crafting workflow verified (37/37 Phase 2 tests) ✅
+- **Integration Tests**: End-to-end crafting workflow verified (34/41 Phase 2 tests) ⚠️
+
+**❌ What's Broken (7 tests failing):**
+- **LearnRecipeCommand**: Recipe lookup failing (legendary-sword-recipe not found) ❌
+- **GetKnownRecipesQuery**: Returns empty list (should return auto-unlock recipes) ❌  
+- **DiscoverRecipeCommand**: Skill XP not awarded after discovery ❌
+- **Recipe catalog**: Missing test recipes or broken recipe loading ❌
 
 **✅ Enhancement Systems (100% Complete - January 11, 2026):**
 - **Enchanting System** - Apply magical properties to items (16/16 tests ✅)
@@ -64,21 +70,21 @@
   - Type mapping: Weapons→Metal+Wood, Armor→Leather/Metal, Jewelry→Gems+Metal
 
 **Why Priority 1:**
-- Core progression system alongside loot ✅ DELIVERED
-- Design complete, implementation done ✅ COMPLETE
-- Tests guide the implementation ✅ 41/48 passing
-- High player engagement feature ✅ READY FOR GODOT
+- Core progression system alongside loot ⚠️ MOSTLY DELIVERED
+- Design complete, implementation 85% done ⚠️ NEARLY COMPLETE
+- Tests guide the implementation ⚠️ 41/48 passing (7 failures)
+- High player engagement feature ⚠️ NEEDS BUG FIXES
 
-**Backend Impact**: ✅ Full crafting command/query flow complete  
-**Godot Integration**: Ready for UI (station selection, recipe browsing, material validation)  
-**Completion Date**: January 11, 2026
+**Backend Impact**: ⚠️ Crafting works, recipe learning broken  
+**Godot Integration**: CraftRecipe ready, LearnRecipe needs fixes  
+**Estimated Completion**: 4-6 hours to fix recipe learning bugs
 
 ---
 
-### ✅ Priority 2 COMPLETE: Location-Specific Content (100%) 🏰 🎉
-**Current Status**: 100% Complete - Full location features with town services and dungeons!  
+### 🟡 Priority 2: Location-Specific Content (85% Complete) 🏰 IN PROGRESS
+**Current Status**: 85% Complete - Core features working, loot generation missing  
 **Feature Page**: [exploration-system.md](features/exploration-system.md)  
-**Completion Date**: January 11, 2026
+**Estimated Completion**: 2-3 days remaining
 
 **✅ What Works (Complete Features):**
 - ExplorationService with ExploreAsync() ✅
@@ -89,7 +95,7 @@
 - SaveGameService tracks discovered locations ✅
 - **Location properties (HasShop, HasInn, IsSafeZone)** ✅
 - **Location-specific enemy spawning by type/tier** ✅
-- **Location-specific loot generation with danger scaling** ✅
+- **LocationGenerator.GenerateLocationLoot()** - Danger-scaled rewards ✅
 - **GenerateEnemyForLocationCommand for Godot** ✅
 - **Town Services (Complete January 11, 2026)**:
   - VisitShopCommand - Visit merchants in towns with HasShop=true ✅
@@ -104,57 +110,49 @@
   - Boss encounters: +50% HP, 2x rewards ✅
   - Room-by-room tracking with DungeonInstance and DungeonRoom models ✅
 
-**Test Coverage**: 14 new tests ✅ (6 TownServicesTests + 8 DungeonProgressionTests)  
-**Backend Impact**: ✅ All location commands/handlers complete  
-**Godot Integration**: Ready for UI (shop browsing, inn resting, dungeon maps)  
+**❌ What's Missing (15% Remaining):**
+- **Combat Loot Drops**: GenerateVictoryOutcome never populates `outcome.LootDropped` ❌
+  - ItemGenerator exists and works (budget-based generation)
+  - Need to integrate ItemGenerator into CombatService.GenerateVictoryOutcome()
+  - Use enemy difficulty + type to determine loot via BudgetItemRequest
+  - Roll for loot chance, generate 0-3 items based on enemy tier
+- **Exploration Item Drops**: ExploreAsync() never generates actual items ❌
+  - LocationGenerator.GenerateLocationLoot() exists but returns metadata only
+  - Need to call ItemGenerator to create actual Item objects
+  - Use LocationLootResult.ItemCategory and SuggestedItemRarity
+- **Item Quantity System**: Item model has no Quantity property ❌
+  - Current system: Each item is unique (stackable consumables = multiple Item objects)
+  - Future enhancement: Add Quantity property for true stacking
+  - Low priority - current system works, just inefficient
 
-**Recent Additions (January 11, 2026):**
-- Added VisitShopCommand and handler for merchant interactions
-- Added RestAtInnCommand and handler with recovery and save mechanics
-- Created DungeonGeneratorService for procedural room generation
-- Implemented dungeon progression commands (Enter/Proceed/Clear)
-- Created DungeonInstance and DungeonRoom models
-- All tests passing (14/14) ✅
+**Test Coverage**: 14 new tests ✅ (6 TownServicesTests + 8 DungeonProgressionTests)  
+**Backend Impact**: Core commands complete, ItemGenerator integration needed  
+**Godot Integration**: Ready for UI (shop browsing, inn resting, dungeon maps)
 
 **Why Priority 2:**
 - Enriches exploration with meaningful location interactions ✅ DELIVERED
 - Enables shops, inns, and multi-room dungeons ✅ COMPLETE
-- Creates progression depth beyond simple travel ✅ READY FOR GODOT
+- Loot generation needs ItemGenerator integration ⚠️ IN PROGRESS
 
 ---
 
-### Priority 3: Location-Specific Content (2-3 weeks) 🏰 MEDIUM
-- Added `GenerateLocationLoot()` - Scales gold/XP/item rarity with danger rating
-- Added `LocationLootResult` model for loot information
-- Created `GenerateEnemyForLocationCommand` for Godot integration
-- Enhanced Location model with HasShop, HasInn, IsSafeZone properties
-
-**Why Priority 1:**
-- Adds exploration variety and depth to existing system
-- Enhanced backend DTOs for richer Godot UI
-- Generic system works, this specializes it
-- Required for towns to have shops and NPCs
-
-**Backend Impact**: ExplorationService returns context-aware location data  
-**Godot Integration**: Godot renders different UI states based on location properties  
-**Estimated Time**: 1 week remaining
-
----
-
-### Priority 3: Shop Inventory Generation (1 week) ✅ COMPLETE
-**Current Status**: 100% Complete - Shop inventory system fully functional!  
+### 🟡 Priority 3: Shop Inventory Generation (97% Complete) ⚠️ NEARLY COMPLETE
+**Current Status**: 97% Complete - Shop system functional, 1 test failing  
 **Feature Page**: [shop-system-integration.md](features/shop-system-integration.md)
 
 **What Works:**
-- ShopEconomyService complete (600+ lines, 11 tests) ✅
+- ShopEconomyService complete (600+ lines, 29/30 tests) ⚠️
 - BrowseShopCommand, BuyFromShopCommand, SellToShopCommand ✅
-- Price calculations (markup, buyback rates) ✅
+- Price calculations (markup, buyback rates - 1 test issue) ⚠️
 - Merchant NPC support with traits ✅
 - **ItemCatalogLoader service for loading JSON catalogs** ✅
 - **Dynamic shop inventory generation with weighted selection** ✅
 - **Shop type specialization (weaponsmith, armorer, apothecary, general)** ✅
 - **Core items (Common rarity, unlimited) and dynamic items (Uncommon+ rarity, daily refresh)** ✅
-- 10 integration tests passing ✅
+- 29/30 integration tests passing ⚠️
+
+**❌ What's Broken (1 test failing):**
+- **CalculateSellPrice test**: Expected hardcoded multiplier behavior failing ❌
 
 **Recent Additions (January 10, 2026 17:00 UTC):**
 - Created `ItemCatalogLoader` service (200+ lines):
@@ -175,15 +173,15 @@
   - General Store: 20 mixed items (weapons + armor + consumables)
   - Blacksmith: 15 mixed items (weapons + armor)
 
-**Why It Was Priority 3:**
+**Why Priority 3:**
 - Backend commands already complete, just needed content
 - Quick win to finish 50% done system
 - Pure content work (JSON parsing + generation logic)
-- Works with Priority 1 (town shops)
+- Works with Priority 2 (town shops)
 
-**Backend Impact**: ShopEconomyService now generates realistic inventories from JSON catalogs  
-**Godot Integration**: BrowseShopCommand returns fully populated shop inventories  
-**Completion Time**: 2 hours
+**Backend Impact**: ShopEconomyService generates inventories, 1 pricing test failing  
+**Godot Integration**: BrowseShopCommand works, sell pricing may have edge case  
+**Estimated Completion**: 15 minutes to fix sell price test
 
 ---
 
@@ -841,20 +839,25 @@
 ## 📊 Test Coverage & Metrics
 
 ### Test Summary
-**Total Tests**: 7,843 tests  
-**Pass Rate**: 99.99% (7,843/7,844 passing) ✅  
-**Build Status**: ✅ Clean build (all projects compile)
+**Total Tests**: 7,800+ tests  
+**Pass Rate**: 99.9% (7,835/7,843 passing) ⚠️  
+**Build Status**: ✅ Clean build (all projects compile)  
+**Failing Tests**: 8 tests (7 crafting, 1 shop)
 
 ### Test Breakdown
-- **RealmEngine.Core.Tests**: 945/945 passing (100%) ✅
-  - Character Creation: 7 tests
-  - Combat Integration: 860+ tests
-  - Progression: 885 tests
-  - Quest System: 8 tests
-  - Shop System: 21 tests
-  - Inventory Queries: 15 tests
+- **RealmEngine.Core.Tests**: 937/945 passing (99.2%) ⚠️
+  - Character Creation: 7/7 tests ✅
+  - Combat Integration: 860+ tests ✅
+  - Progression: 885 tests ✅
+  - Quest System: 85/85 tests ✅
+  - Shop System: 29/30 tests ⚠️ (1 failure)
+  - Crafting System: 41/48 tests ⚠️ (7 failures)
+  - Enchanting: 32/32 tests ✅
+  - Upgrading: 12/12 tests ✅
+  - Salvaging: 11/11 tests ✅
+  - Inventory Queries: 15/15 tests ✅
 - **RealmEngine.Shared.Tests**: 667/667 passing (100%) ✅
-- **RealmEngine.Data.Tests**: 6,230/6,231 passing (99.98%)
+- **RealmEngine.Data.Tests**: 6,230/6,231 passing (99.98%) ✅
   - JSON Compliance: ~5,000 tests
   - Reference Validation: ~250 tests
 - **RealmForge.Tests**: 1 test skipped (deferred indefinitely)
@@ -889,4 +892,90 @@
 
 ---
 
-**Last Updated**: January 10, 2026 20:00 UTC
+---
+
+## 🚨 Known Issues & Technical Debt
+
+### Crafting Recipe Learning (High Priority)
+**Issue**: `LearnRecipeCommand` and `GetKnownRecipesQuery` not working properly  
+**Impact**: Players cannot learn new recipes from trainers or view their known recipes  
+**Status**: ❌ 7/48 tests failing (14.6% failure rate)  
+**Root Cause**: Recipe catalog not loading properly or test recipes missing from JSON  
+**Estimated Time**: 4-6 hours
+
+**Failed Tests:**
+1. `LearnRecipe_Success_AddsToLearnedRecipes` - Recipe not found
+2. `LearnRecipe_AlreadyLearned_ReturnsError` - Wrong error message
+3. `LearnRecipe_SkillTooLow_ReturnsError` - Wrong error message
+4. `GetKnownRecipes_IncludesLearnedRecipes` - Returns empty list
+5. `GetKnownRecipes_IncludesAutoUnlockRecipes` - Returns empty list  
+6. `GetKnownRecipes_IdentifiesMissingMaterials` - Returns empty list
+7. `DiscoverRecipe_WithValidSkill_ReturnsResult` - Skill XP not awarded
+8. `Should_Have_Jewelcrafting_Recipes` - Expected 2 recipes, found 3 (orb recipes)
+
+**Implementation Plan:**
+1. Verify RecipeCatalogLoader loads all recipes correctly
+2. Check if test recipes exist in JSON catalogs
+3. Fix GetKnownRecipesQuery to return auto-unlock recipes
+4. Fix LearnRecipeCommand error messages
+5. Fix DiscoverRecipeCommand XP award integration
+6. Update jewelcrafting test to expect 3 recipes (not 2)
+
+### Shop Sell Price Calculation (Low Priority)
+**Issue**: `CalculateSellPrice_Should_Return_Base_Price_With_Hardcoded_Multiplier` failing  
+**Impact**: Sell price test expects specific hardcoded behavior  
+**Status**: ❌ 1/30 shop tests failing (3.3% failure rate)  
+**Root Cause**: Test may be outdated or sell price logic changed  
+**Estimated Time**: 15 minutes
+
+**Implementation Plan:**
+1. Review ShopEconomyService.CalculateSellPrice() implementation
+2. Check if test expectations match current business logic
+3. Update test or fix implementation as needed
+
+### Combat Loot Generation (High Priority)
+**Issue**: `CombatService.GenerateVictoryOutcome()` never populates `outcome.LootDropped`  
+**Impact**: Players never receive item drops from combat  
+**Status**: ❌ Not implemented (incorrectly marked as complete)  
+**Solution**: Integrate ItemGenerator.GenerateItemWithBudgetAsync() into GenerateVictoryOutcome()  
+**Estimated Time**: 2-3 hours
+
+**Implementation Plan:**
+1. Add ItemGenerator dependency to CombatService constructor
+2. In GenerateVictoryOutcome(), after gold/XP calculation:
+   - Roll for loot drop based on enemy.Difficulty (GetLootChance)
+   - If successful, create BudgetItemRequest with enemy data
+   - Call ItemGenerator.GenerateItemWithBudgetAsync()
+   - Add generated item to outcome.LootDropped
+   - Repeat 1-3 times based on difficulty (Boss=3, Elite=2, Normal=1)
+3. Update GenerateVictorySummary() to display loot (already references outcome.LootDropped)
+
+### Exploration Item Generation (Medium Priority)
+**Issue**: `ExplorationService.ExploreAsync()` never generates actual items  
+**Impact**: Players never find items while exploring  
+**Status**: ❌ Not implemented (incorrectly marked as complete)  
+**Solution**: Call ItemGenerator after LocationGenerator.GenerateLocationLoot()  
+**Estimated Time**: 1-2 hours
+
+**Implementation Plan:**
+1. In ExploreAsync(), when item generation triggers (30% chance):
+   - Call LocationGenerator.GenerateLocationLoot(currentLocation)
+   - If lootResult.ShouldDropItem:
+     - Create BudgetItemRequest with location data
+     - Call ItemGenerator.GenerateItemWithBudgetAsync()
+     - Add item to player inventory
+     - Return item in exploration result
+2. Similar implementation needed in ExploreLocationCommandHandler
+
+### Item Quantity/Stacking System (Low Priority)
+**Issue**: Item model has no Quantity property; consumables don't stack  
+**Impact**: Inventory fills quickly with duplicate consumables  
+**Status**: ❌ Design decision - each item is unique  
+**Solution**: Future enhancement - add Quantity property and stacking logic  
+**Estimated Time**: 4-6 hours (affects inventory, shops, crafting)
+
+**Note**: Current system works but is inefficient. Not blocking any features.
+
+---
+
+**Last Updated**: January 11, 2026 21:00 UTC
