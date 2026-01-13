@@ -2,14 +2,39 @@
 @using RealmForge.Services
 @inject ReferenceResolverService ReferenceResolver
 @inject IDialogService DialogService
+@inject ILogger<JsonFormEditor> Logger
+
+@if (_error != null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-3">
+        <MudText Typo="Typo.body2">Error rendering form: @_error</MudText>
+    </MudAlert>
+}
 
 <MudPaper Elevation="2" Class="pa-4">
-    <MudStack Spacing="3">
-        @if (_jsonObject != null)
-        {
-            @RenderJsonObject(_jsonObject, string.Empty)
-        }
-    </MudStack>
+    @if (_jsonObject != null)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+            <MudText Typo="Typo.body2">
+                <strong>@_jsonObject.Properties().Count() top-level properties</strong>
+                @if (_jsonObject.Properties().Any(p => p.Value.Type == JTokenType.Object))
+                {
+                    <span> - Expand sections below to edit</span>
+                }
+            </MudText>
+        </MudAlert>
+        
+        <MudStack Spacing="3">
+            @foreach (var prop in _jsonObject.Properties())
+            {
+                <JsonPropertyField Property="@prop" />
+            }
+        </MudStack>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No data to display</MudText>
+    }
 </MudPaper>
 
 @code {
@@ -20,10 +45,21 @@
     public EventCallback<JObject> OnJsonChanged { get; set; }
     
     private JObject? _jsonObject;
+    private string? _error;
     
     protected override void OnParametersSet()
     {
-        _jsonObject = JsonObject;
+        try
+        {
+            _error = null;
+            _jsonObject = JsonObject;
+            Logger.LogDebug("Form received JSON object with {Count} properties", _jsonObject?.Properties()?.Count() ?? 0);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            Logger.LogError(ex, "Error in OnParametersSet");
+        }
     }
     
     private RenderFragment RenderJsonObject(JObject obj, string parentPath)
@@ -31,10 +67,12 @@
         return builder =>
         {
             int seq = 0;
+            Logger.LogDebug("Rendering JSON object with {Count} properties at path: {Path}", obj.Properties().Count(), parentPath);
             
             foreach (var prop in obj.Properties())
             {
                 var currentPath = string.IsNullOrEmpty(parentPath) ? prop.Name : $"{parentPath}.{prop.Name}";
+                Logger.LogDebug("Rendering property: {Name}, Type: {Type}, Path: {Path}", prop.Name, prop.Value.Type, currentPath);
                 
                 builder.OpenElement(seq++, "div");
                 builder.AddAttribute(seq++, "class", "mb-3");
@@ -99,7 +137,7 @@
                 builder.AddAttribute(seq++, "Variant", Variant.Filled);
                 builder.AddAttribute(seq++, "Color", Color.Primary);
                 builder.AddAttribute(seq++, "StartIcon", Icons.Material.Filled.Search);
-                builder.AddAttribute(seq++, "OnClick", EventCallback.Factory.Create(this, () => OpenReferencePickerAsync(prop)));
+                builder.AddAttribute(seq++, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, _ => OpenReferencePickerAsync(prop)));
                 builder.AddAttribute(seq++, "Style", "min-width: 120px;");
                 builder.AddContent(seq++, "Browse");
                 builder.CloseComponent();
@@ -192,15 +230,17 @@
         return builder =>
         {
             int seq = 0;
+            var nestedObj = prop.Value as JObject;
+            var propCount = nestedObj?.Properties()?.Count() ?? 0;
             
             builder.OpenComponent<MudExpansionPanels>(seq++);
             builder.AddAttribute(seq++, "MultiExpansion", true);
             
             builder.OpenComponent<MudExpansionPanel>(seq++);
-            builder.AddAttribute(seq++, "Text", FormatLabel(prop.Name));
+            builder.AddAttribute(seq++, "Text", $"{FormatLabel(prop.Name)} ({propCount} properties)");
+            builder.AddAttribute(seq++, "IsInitiallyExpanded", true);
             builder.AddAttribute(seq++, "ChildContent", (RenderFragment)(b2 =>
             {
-                var nestedObj = prop.Value as JObject;
                 if (nestedObj != null)
                 {
                     b2.AddContent(0, RenderJsonObject(nestedObj, path));

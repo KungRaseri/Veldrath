@@ -1,0 +1,261 @@
+@using Newtonsoft.Json.Linq
+@inject ILogger<JsonPropertyField> Logger
+
+@if (Property != null)
+{
+    <div class="mb-3">
+        @switch (Property.Value.Type)
+        {
+            case JTokenType.String:
+                var stringValue = Property.Value.ToString();
+                @if (stringValue.StartsWith("@"))
+                {
+                    <div style="display: flex; gap: 8px; align-items: flex-end;">
+                        <MudTextField T="string" 
+                                     Label="@FormatLabel(Property.Name)" 
+                                     @bind-Value="@stringValue"
+                                     Variant="Variant.Outlined" 
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Link"
+                                     ReadOnly="true" />
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.Search"
+                                  Style="min-width: 120px;">
+                            Browse
+                        </MudButton>
+                    </div>
+                }
+                else
+                {
+                    <MudTextField T="string" 
+                                 Label="@FormatLabel(Property.Name)" 
+                                 @bind-Value="@stringValue"
+                                 Variant="Variant.Outlined" 
+                                 Lines="@(stringValue.Length > 100 ? 3 : 1)" />
+                }
+                break;
+                
+            case JTokenType.Integer:
+                var intValue = Property.Value.ToObject<long>();
+                <MudNumericField T="long" 
+                                Label="@FormatLabel(Property.Name)" 
+                                @bind-Value="@intValue"
+                                Variant="Variant.Outlined" />
+                break;
+                
+            case JTokenType.Float:
+                var floatValue = Property.Value.ToObject<double>();
+                <MudNumericField T="double" 
+                                Label="@FormatLabel(Property.Name)" 
+                                @bind-Value="@floatValue"
+                                Variant="Variant.Outlined" />
+                break;
+                
+            case JTokenType.Boolean:
+                var boolValue = Property.Value.ToObject<bool>();
+                <MudSwitch T="bool" 
+                          Label="@FormatLabel(Property.Name)" 
+                          @bind-Value="@boolValue"
+                          Color="Color.Primary" />
+                break;
+                
+            case JTokenType.Array:
+                var array = Property.Value as JArray;
+                var arrayCount = array?.Count ?? 0;
+                
+                @* Check if this is an items array with objects *@
+                @if (Property.Name.ToLower() == "items" && array?.FirstOrDefault()?.Type == JTokenType.Object)
+                {
+                    <MudText Typo="Typo.h6" Class="mb-2">@FormatLabel(Property.Name) (@arrayCount)</MudText>
+                    <MudStack Spacing="2">
+                        @foreach (var item in array)
+                        {
+                            var itemObj = item as JObject;
+                            if (itemObj != null)
+                            {
+                                var itemName = itemObj["name"]?.ToString() ?? "Unnamed";
+                                <MudCard Elevation="2">
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudText Typo="Typo.h6">@itemName</MudText>
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent>
+                                        <MudGrid Spacing="1">
+                                            @foreach (var prop in itemObj.Properties())
+                                            {
+                                                @if (prop.Name != "name")
+                                                {
+                                                    <MudItem xs="6" sm="4" md="3">
+                                                        @RenderCompactField(prop)
+                                                    </MudItem>
+                                                }
+                                            }
+                                        </MudGrid>
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+                        }
+                    </MudStack>
+                }
+                else
+                {
+                    <MudExpansionPanels MultiExpansion="true">
+                        <MudExpansionPanel Text="@($"{FormatLabel(Property.Name)} ({arrayCount} items)")">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Array editing coming in Phase 6
+                            </MudText>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+                break;
+                
+            case JTokenType.Object:
+                var nestedObj = Property.Value as JObject;
+                var propCount = nestedObj?.Properties()?.Count() ?? 0;
+                
+                @* Check if this is a "properties" object - render as card *@
+                @if (Property.Name.ToLower() == "properties")
+                {
+                    <MudCard Elevation="1" Class="mb-3">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">@FormatLabel(Property.Name)</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            @if (nestedObj != null)
+                            {
+                                @foreach (var nestedProp in nestedObj.Properties())
+                                {
+                                    <JsonPropertyField Property="@nestedProp" />
+                                }
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                }
+                else
+                {
+                    <MudExpansionPanels MultiExpansion="true">
+                        <MudExpansionPanel Text="@($"{FormatLabel(Property.Name)} ({propCount} properties)")" 
+                                          IsInitiallyExpanded="true">
+                            @if (nestedObj != null)
+                            {
+                                @foreach (var nestedProp in nestedObj.Properties())
+                                {
+                                    <JsonPropertyField Property="@nestedProp" />
+                                }
+                            }
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+                break;
+                
+            default:
+                <MudTextField T="string" 
+                             Label="@FormatLabel(Property.Name)" 
+                             Value="@(Property.Value?.ToString() ?? "")"
+                             Disabled="true"
+                             Variant="Variant.Outlined" />
+                break;
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public JProperty? Property { get; set; }
+    
+    private RenderFragment RenderCompactField(JProperty prop)
+    {
+        return builder =>
+        {
+            switch (prop.Value.Type)
+            {
+                case JTokenType.String:
+                    var stringValue = prop.Value.ToString();
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", stringValue);
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                    break;
+                    
+                case JTokenType.Integer:
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", prop.Value.ToString());
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                    break;
+                    
+                case JTokenType.Float:
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", prop.Value.ToString());
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                    break;
+                    
+                case JTokenType.Boolean:
+                    builder.OpenComponent<MudCheckBox<bool>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", prop.Value.ToObject<bool>());
+                    builder.AddAttribute(3, "ReadOnly", true);
+                    builder.AddAttribute(4, "Dense", true);
+                    builder.CloseComponent();
+                    break;
+                    
+                case JTokenType.Array:
+                    var arrayCount = (prop.Value as JArray)?.Count ?? 0;
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", $"Array ({arrayCount} items)");
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                    break;
+                    
+                case JTokenType.Object:
+                    var objCount = (prop.Value as JObject)?.Properties()?.Count() ?? 0;
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", $"Object ({objCount} properties)");
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                    break;
+                    
+                default:
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", prop.Value?.ToString() ?? "");
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                    break;
+            }
+        };
+    }
+    
+    private string FormatLabel(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return string.Empty;
+            
+        // Convert camelCase or snake_case to Title Case
+        var result = System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2");
+        result = result.Replace("_", " ");
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result);
+    }
+}

@@ -21,7 +21,7 @@
                         <MudText Typo="Typo.h6">@Path.GetFileName(_currentFilePath)</MudText>
                         
                         <MudStack Row="true" Spacing="2">
-                            <MudToggleGroup T="string" @bind-Value="@_editorMode" Color="Color.Primary" CheckMark="true">
+                            <MudToggleGroup T="string" Value="@_editorMode" ValueChanged="@OnModeChanged" Color="Color.Primary" CheckMark="true">
                                 <MudToggleItem Value="@("Form")">
                                     <MudIcon Icon="@Icons.Material.Filled.ViewList" Size="Size.Small" Class="mr-1" />
                                     Form
@@ -51,8 +51,8 @@
                     
                     <MudDivider />
                     
-                    <!-- Validation Panel -->
-                    @if (_validationResult != null)
+                    <!-- Validation Panel (only show if there are errors) -->
+                    @if (_validationResult != null && !_validationResult.IsValid && _validationResult.Errors.Count > 0)
                     {
                         <ValidationPanel ValidationResult="@_validationResult" />
                     }
@@ -138,6 +138,13 @@
             _isValid = false;
         }
     }
+    
+    private void OnModeChanged(string newMode)
+    {
+        Logger.LogInformation("Editor mode changed from {OldMode} to {NewMode}", _editorMode, newMode);
+        _editorMode = newMode;
+        StateHasChanged();
+    }
 
     private async Task LoadFileAsync(string filePath)
     {
@@ -178,6 +185,23 @@
                 
                 // Wait for Monaco to initialize
                 await Task.Delay(100);
+                
+                // Automatically validate after loading (validate the loaded JObject, not Monaco content)
+                Logger.LogDebug("Starting validation of loaded file");
+                _validationResult = await ValidationService.ValidateAsync(_currentJson);
+                
+                if (_validationResult.IsValid)
+                {
+                    _validationMessage = "Valid";
+                    _isValid = true;
+                    Logger.LogInformation("File validation passed");
+                }
+                else
+                {
+                    _validationMessage = $"{_validationResult.Errors.Count} validation error(s)";
+                    _isValid = false;
+                    Logger.LogWarning("File validation failed with {Count} errors", _validationResult.Errors.Count);
+                }
             }
         }
         catch (Exception ex)
@@ -186,6 +210,7 @@
                 filePath, ex.GetType().Name, ex.Message, ex.StackTrace);
             _validationMessage = $"Error loading file: {ex.GetType().Name} - {ex.Message}";
             _isValid = false;
+            _validationResult = null;
             await InvokeAsync(StateHasChanged);
         }
         finally
@@ -265,24 +290,39 @@
         {
             Logger.LogInformation("Validating file: {File}", _currentFilePath);
             
-            // Get current content from Monaco if in JSON mode
+            JObject jsonObject;
+            
+            // Get current content based on mode
             if (_editorMode == "JSON" && _monacoEditor != null)
             {
                 _jsonContent = await _monacoEditor.GetValueAsync();
+                
+                // Validate JSON syntax first
+                var syntaxValidation = ValidationService.ValidateJsonSyntax(_jsonContent);
+                if (!syntaxValidation.IsValid)
+                {
+                    _validationResult = syntaxValidation;
+                    _validationMessage = "JSON syntax error";
+                    _isValid = false;
+                    return;
+                }
+                
+                // Parse the JSON string
+                jsonObject = JObject.Parse(_jsonContent);
             }
-            
-            // Validate JSON syntax first
-            var syntaxValidation = ValidationService.ValidateJsonSyntax(_jsonContent);
-            if (!syntaxValidation.IsValid)
+            else
             {
-                _validationResult = syntaxValidation;
-                _validationMessage = "JSON syntax error";
-                _isValid = false;
-                return;
+                // In Form mode, use the already parsed JObject
+                if (_currentJson == null)
+                {
+                    _validationMessage = "No JSON data to validate";
+                    _isValid = false;
+                    return;
+                }
+                jsonObject = _currentJson;
             }
             
-            // Parse and validate against JSON v4.0+ standards
-            var jsonObject = JObject.Parse(_jsonContent);
+            // Validate against JSON v4.0+ standards
             _validationResult = await ValidationService.ValidateAsync(jsonObject);
             
             if (_validationResult.IsValid)
