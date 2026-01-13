@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmEngine.Core.Tests", "R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmEngine.Shared.Tests", "RealmEngine.Shared.Tests\RealmEngine.Shared.Tests.csproj", "{DF444156-6EDC-4C84-941A-777A12E9F1A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmForge.Tests", "RealmForge.Tests\RealmForge.Tests.csproj", "{8656C591-DF94-4EC2-BA9F-76801A5F27A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,18 @@ Global
 		{DF444156-6EDC-4C84-941A-777A12E9F1A4}.Release|x64.Build.0 = Release|Any CPU
 		{DF444156-6EDC-4C84-941A-777A12E9F1A4}.Release|x86.ActiveCfg = Release|Any CPU
 		{DF444156-6EDC-4C84-941A-777A12E9F1A4}.Release|x86.Build.0 = Release|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Debug|x64.Build.0 = Debug|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Debug|x86.Build.0 = Debug|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Release|x64.ActiveCfg = Release|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Release|x64.Build.0 = Release|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Release|x86.ActiveCfg = Release|Any CPU
+		{8656C591-DF94-4EC2-BA9F-76801A5F27A5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

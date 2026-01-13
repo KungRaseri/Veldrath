@@ -64,11 +64,23 @@
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.9" />
+        
+        <!-- Phase 1: Core Libraries -->
+        <PackageReference Include="MudBlazor" Version="7.24.0" />
+        <PackageReference Include="BlazorMonaco" Version="3.3.0" />
+        <PackageReference Include="FluentValidation" Version="12.1.1" />
+        <PackageReference Include="Serilog" Version="4.3.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1" />
+        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
       <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
+      <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
     </ItemGroup>
 
 </Project>
