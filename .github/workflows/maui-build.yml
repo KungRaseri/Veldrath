@@ -1,5 +1,12 @@
 name: MAUI Build and Test
 
+# RealmForge MAUI Application - Multi-Platform Build
+# Supported Platforms:
+#   ✅ Windows (net9.0-windows10.0.19041.0)
+#   ✅ Android (net9.0-android)
+#   ⏳ iOS/macOS - Not yet configured (requires macOS runner)
+#   ❌ Linux - Not supported by MAUI (use Blazor WebAssembly for web/Linux)
+
 on:
   push:
     branches: [ main, develop ]
@@ -23,6 +30,9 @@ jobs:
   build-and-test-maui:
     name: Build and Test RealmForge (MAUI)
     runs-on: windows-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     
     permissions:
       checks: write
@@ -52,10 +62,26 @@ jobs:
         dotnet restore RealmForge.sln
       shell: pwsh
       
+    - name: Generate version
+      id: version
+      run: |
+        $version = Get-Date -Format "yyyy.MM.dd.HHmm"
+        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "VERSION=$version" >> $env:GITHUB_ENV
+        Write-Output "Generated version: $version"
+      shell: pwsh
+      
     - name: Build RealmForge solution (Windows target)
       run: |
         Write-Output "Building RealmForge.sln for Windows..."
-        dotnet build RealmForge.sln --configuration ${{ env.CONFIGURATION }} --no-restore --framework net9.0-windows10.0.19041.0 /p:TargetFramework=net9.0-windows10.0.19041.0
+        # Build engine libraries first (net9.0)
+        dotnet build RealmEngine.Shared/RealmEngine.Shared.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Core/RealmEngine.Core.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Data/RealmEngine.Data.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        
+        # Build MAUI projects for Windows target
+        dotnet build RealmForge/RealmForge.csproj --configuration ${{ env.CONFIGURATION }} --no-restore --framework net9.0-windows10.0.19041.0
+        dotnet build RealmForge.Tests/RealmForge.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
       shell: pwsh
       
     - name: Run RealmForge.Tests
@@ -80,7 +106,7 @@ jobs:
         dotnet publish RealmForge/RealmForge.csproj --configuration ${{ env.CONFIGURATION }} --framework net9.0-windows10.0.19041.0 --output ./publish/RealmForge-Windows --no-build
         
         # Create archive
-        $version = Get-Date -Format "yyyy.MM.dd.HHmm"
+        $version = "${{ env.VERSION }}"
         $archiveName = "RealmForge-Windows-$version.zip"
         Compress-Archive -Path "./publish/RealmForge-Windows/*" -DestinationPath $archiveName -Force
         
@@ -102,7 +128,11 @@ jobs:
   build-android:
     name: Build RealmForge (Android)
     runs-on: windows-latest
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs: build-and-test-maui
+    
+    permissions:
+      checks: write
+      contents: read
     
     steps:
     - name: Checkout code
@@ -124,12 +154,102 @@ jobs:
       
     - name: Restore dependencies
       run: |
+        Write-Output "Restoring RealmForge.sln..."
         dotnet restore RealmForge.sln
+      shell: pwsh
+      
+    - name: Build RealmEngine libraries
+      run: |
+        Write-Output "Building RealmEngine libraries..."
+        dotnet build RealmEngine.Shared/RealmEngine.Shared.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Core/RealmEngine.Core.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Data/RealmEngine.Data.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
       shell: pwsh
       
     - name: Build RealmForge (Android)
       run: |
         Write-Output "Building RealmForge for Android..."
-        dotnet build RealmForge/RealmForge.csproj --configuration ${{ env.CONFIGURATION }} --framework net9.0-android
+        dotnet build RealmForge/RealmForge.csproj --configuration ${{ env.CONFIGURATION }} --no-restore --framework net9.0-android
       shell: pwsh
-      continue-on-error: true
+      
+    - name: Package RealmForge (Android)
+      if: success()
+      run: |
+        Write-Output "Packaging RealmForge for Android..."
+        dotnet publish RealmForge/RealmForge.csproj --configuration ${{ env.CONFIGURATION }} --framework net9.0-android --output ./publish/RealmForge-Android
+        
+        # Create archive
+        $version = "${{ needs.build-and-test-maui.outputs.version }}"
+        $archiveName = "RealmForge-Android-$version.zip"
+        Compress-Archive -Path "./publish/RealmForge-Android/*" -DestinationPath $archiveName -Force
+        
+        $archiveSize = (Get-Item $archiveName).Length / 1MB
+        Write-Output "Archive created: $archiveName ($([math]::Round($archiveSize, 2)) MB)"
+        
+        Write-Output "archive-name=$archiveName" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+      id: package
+      
+    - name: Upload RealmForge Android artifact
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: realmforge-android
+        path: ${{ steps.package.outputs.archive-name }}
+        retention-days: 30
+
+  create-release:
+    name: Create RealmForge Release
+    needs: [build-and-test-maui, build-android]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: realmforge-windows
+        
+    - name: Download Android artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: realmforge-android
+        
+    - name: Create Release Tag
+      id: create_tag
+      run: |
+        VERSION="${{ needs.build-and-test-maui.outputs.version }}"
+        TAG_NAME="realmforge-v${VERSION}"
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+        echo "Release version: ${VERSION}"
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.create_tag.outputs.tag_name }}
+        name: RealmForge ${{ steps.create_tag.outputs.version }}
+        body: |
+          # RealmForge ${{ steps.create_tag.outputs.version }}
+          
+          JSON Data Editor for RealmEngine
+          
+          ## Platforms
+          - ✅ Windows (net9.0-windows)
+          - ✅ Android (net9.0-android)
+          
+          ## What's Included
+          - RealmForge MAUI application
+          - All RealmEngine dependencies
+          - JSON editing capabilities
+          
+          **Note**: This is an early development build of the RealmForge tool.
+        files: |
+          RealmForge-Windows-*.zip
+          RealmForge-Android-*.zip
+        draft: false
+        prerelease: true
+        token: ${{ secrets.GITHUB_TOKEN }}
