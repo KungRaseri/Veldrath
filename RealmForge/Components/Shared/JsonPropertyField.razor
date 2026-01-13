@@ -64,33 +64,25 @@
                 var array = Property.Value as JArray;
                 var arrayCount = array?.Count ?? 0;
                 
-                @* Check if this is an items array with objects *@
-                @if (Property.Name.ToLower() == "items" && array?.FirstOrDefault()?.Type == JTokenType.Object)
+                @if (array?.FirstOrDefault()?.Type == JTokenType.Object)
                 {
-                    <MudText Typo="Typo.h6" Class="mb-2">@FormatLabel(Property.Name) (@arrayCount)</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 600;">
+                        @FormatLabel(Property.Name) (@arrayCount)
+                    </MudText>
                     <MudStack Spacing="2">
                         @foreach (var item in array)
                         {
                             var itemObj = item as JObject;
                             if (itemObj != null)
                             {
-                                var itemName = itemObj["name"]?.ToString() ?? "Unnamed";
-                                <MudCard Elevation="2">
-                                    <MudCardHeader>
-                                        <CardHeaderContent>
-                                            <MudText Typo="Typo.h6">@itemName</MudText>
-                                        </CardHeaderContent>
-                                    </MudCardHeader>
-                                    <MudCardContent>
+                                <MudCard Elevation="1" Class="mb-2">
+                                    <MudCardContent Class="pa-2">
                                         <MudGrid Spacing="1">
                                             @foreach (var prop in itemObj.Properties())
                                             {
-                                                @if (prop.Name != "name")
-                                                {
-                                                    <MudItem xs="6" sm="4" md="3">
-                                                        @RenderCompactField(prop)
-                                                    </MudItem>
-                                                }
+                                                <MudItem xs="12" sm="6">
+                                                    @RenderCompactField(prop)
+                                                </MudItem>
                                             }
                                         </MudGrid>
                                     </MudCardContent>
@@ -99,12 +91,26 @@
                         }
                     </MudStack>
                 }
+                else if (array?.Any() == true)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 600;">
+                        @FormatLabel(Property.Name) (@arrayCount)
+                    </MudText>
+                    <MudPaper Elevation="1" Class="pa-2" Style="border: 1px solid #e0e0e0;">
+                        <MudStack Spacing="1">
+                            @foreach (var item in array)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default">@item.ToString()</MudChip>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                }
                 else
                 {
                     <MudExpansionPanels MultiExpansion="true">
                         <MudExpansionPanel Text="@($"{FormatLabel(Property.Name)} ({arrayCount} items)")">
                             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                Array editing coming in Phase 6
+                                Empty array
                             </MudText>
                         </MudExpansionPanel>
                     </MudExpansionPanels>
@@ -115,41 +121,31 @@
                 var nestedObj = Property.Value as JObject;
                 var propCount = nestedObj?.Properties()?.Count() ?? 0;
                 
-                @* Check if this is a "properties" object - render as card *@
-                @if (Property.Name.ToLower() == "properties")
-                {
-                    <MudCard Elevation="1" Class="mb-3">
-                        <MudCardHeader>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.subtitle1">@FormatLabel(Property.Name)</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardContent>
-                            @if (nestedObj != null)
-                            {
+                @* Render all objects as cards for consistency *@
+                <MudCard Elevation="1" Class="mb-3">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">@FormatLabel(Property.Name)</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (nestedObj != null && propCount > 0)
+                        {
+                            <MudGrid Spacing="1">
                                 @foreach (var nestedProp in nestedObj.Properties())
                                 {
-                                    <JsonPropertyField Property="@nestedProp" />
+                                    <MudItem xs="12" sm="6">
+                                        @RenderCompactField(nestedProp)
+                                    </MudItem>
                                 }
-                            }
-                        </MudCardContent>
-                    </MudCard>
-                }
-                else
-                {
-                    <MudExpansionPanels MultiExpansion="true">
-                        <MudExpansionPanel Text="@($"{FormatLabel(Property.Name)} ({propCount} properties)")" 
-                                          IsInitiallyExpanded="true">
-                            @if (nestedObj != null)
-                            {
-                                @foreach (var nestedProp in nestedObj.Properties())
-                                {
-                                    <JsonPropertyField Property="@nestedProp" />
-                                }
-                            }
-                        </MudExpansionPanel>
-                    </MudExpansionPanels>
-                }
+                            </MudGrid>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Empty object</MudText>
+                        }
+                    </MudCardContent>
+                </MudCard>
                 break;
                 
             default:
@@ -214,67 +210,190 @@
                     break;
                     
                 case JTokenType.Array:
-                    var arrayCount = (prop.Value as JArray)?.Count ?? 0;
+                var compactArray = prop.Value as JArray;
+                var compactArrayCount = compactArray?.Count ?? 0;
+                var firstItem = compactArray?.FirstOrDefault();
+                
+                if (firstItem?.Type == JTokenType.Object)
+                {
+                    // Render array of objects as nested cards
+                    builder.OpenElement(0, "div");
+                    builder.AddAttribute(1, "style", "margin-bottom: 8px;");
+                    
+                    // Label
+                    builder.OpenComponent<MudText>(2);
+                    builder.AddAttribute(3, "Typo", Typo.subtitle2);
+                    builder.AddAttribute(4, "Style", "font-weight: 600; text-transform: uppercase; color: #666; margin-bottom: 4px;");
+                    builder.AddAttribute(5, "ChildContent", (RenderFragment)(labelBuilder =>
+                    {
+                        labelBuilder.AddContent(0, $"{FormatLabel(prop.Name)} ({compactArrayCount})");
+                    }));
+                    builder.CloseComponent();
+                    
+                    // Cards stack
+                    builder.OpenComponent<MudStack>(6);
+                    builder.AddAttribute(7, "Spacing", 1);
+                    builder.AddAttribute(8, "ChildContent", (RenderFragment)(stackBuilder =>
+                    {
+                        foreach (var item in compactArray!)
+                        {
+                            var itemObj = item as JObject;
+                            if (itemObj != null)
+                            {
+                                stackBuilder.OpenComponent<MudCard>(0);
+                                stackBuilder.AddAttribute(1, "Elevation", 1);
+                                stackBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(cardBuilder =>
+                                {
+                                    cardBuilder.OpenComponent<MudCardContent>(0);
+                                    cardBuilder.AddAttribute(1, "Class", "pa-1");
+                                    cardBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(contentBuilder =>
+                                    {
+                                        contentBuilder.OpenComponent<MudGrid>(0);
+                                        contentBuilder.AddAttribute(1, "Spacing", 1);
+                                        contentBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(gridBuilder =>
+                                        {
+                                            foreach (var itemProp in itemObj.Properties())
+                                            {
+                                                gridBuilder.OpenComponent<MudItem>(0);
+                                                gridBuilder.AddAttribute(1, "xs", 12);
+                                                gridBuilder.AddAttribute(2, "sm", 6);
+                                                gridBuilder.AddAttribute(3, "ChildContent", (RenderFragment)(_ =>
+                                                {
+                                                    _.AddContent(0, RenderCompactField(itemProp));
+                                                }));
+                                                gridBuilder.CloseComponent();
+                                            }
+                                        }));
+                                        contentBuilder.CloseComponent();
+                                    }));
+                                    cardBuilder.CloseComponent();
+                                }));
+                                stackBuilder.CloseComponent();
+                            }
+                        }
+                    }));
+                    builder.CloseComponent();
+                    
+                    builder.CloseElement();
+                }
+                else if (compactArray?.Any() == true)
+                {
+                    // Render array of primitives as chip list
+                    builder.OpenElement(0, "div");
+                    builder.AddAttribute(1, "style", "margin-bottom: 8px;");
+                    
+                    // Label
+                    builder.OpenComponent<MudText>(2);
+                    builder.AddAttribute(3, "Typo", Typo.subtitle2);
+                    builder.AddAttribute(4, "Style", "font-weight: 600; text-transform: uppercase; color: #666; margin-bottom: 4px;");
+                    builder.AddAttribute(5, "ChildContent", (RenderFragment)(labelBuilder =>
+                    {
+                        labelBuilder.AddContent(0, $"{FormatLabel(prop.Name)} ({compactArrayCount})");
+                    }));
+                    builder.CloseComponent();
+                    
+                    // Chips
+                    builder.OpenComponent<MudPaper>(6);
+                    builder.AddAttribute(7, "Elevation", 1);
+                    builder.AddAttribute(8, "Class", "pa-2");
+                    builder.AddAttribute(9, "Style", "border: 1px solid #e0e0e0;");
+                    builder.AddAttribute(10, "ChildContent", (RenderFragment)(paperBuilder =>
+                    {
+                        paperBuilder.OpenComponent<MudStack>(0);
+                        paperBuilder.AddAttribute(1, "Row", true);
+                        paperBuilder.AddAttribute(2, "Spacing", 1);
+                        paperBuilder.AddAttribute(3, "ChildContent", (RenderFragment)(stackBuilder =>
+                        {
+                            foreach (var item in compactArray!)
+                            {
+                                stackBuilder.OpenComponent<MudChip<string>>(0);
+                                stackBuilder.AddAttribute(1, "Size", Size.Small);
+                                stackBuilder.AddAttribute(2, "Color", Color.Default);
+                                stackBuilder.AddAttribute(3, "Text", item.ToString());
+                                stackBuilder.CloseComponent();
+                            }
+                        }));
+                        paperBuilder.CloseComponent();
+                    }));
+                    builder.CloseComponent();
+                    
+                    builder.CloseElement();
+                }
+                else
+                {
+                    // Empty array
                     builder.OpenComponent<MudTextField<string>>(0);
                     builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
-                    builder.AddAttribute(2, "Value", $"Array ({arrayCount} items)");
+                    builder.AddAttribute(2, "Value", "Empty array");
                     builder.AddAttribute(3, "Variant", Variant.Outlined);
                     builder.AddAttribute(4, "Margin", Margin.Dense);
                     builder.AddAttribute(5, "ReadOnly", true);
                     builder.CloseComponent();
-                    break;
+                }
+                break;
                     
-                case JTokenType.Object:
-                    var nestedObj = prop.Value as JObject;
-                    if (nestedObj != null && nestedObj.Properties().Any())
+            case JTokenType.Object:
+                var nestedObj = prop.Value as JObject;
+                if (nestedObj != null && nestedObj.Properties().Any())
+                {
+                    // Render object as card
+                    builder.OpenElement(0, "div");
+                    builder.AddAttribute(1, "style", "margin-bottom: 8px;");
+                    
+                    // Property label
+                    builder.OpenComponent<MudText>(2);
+                    builder.AddAttribute(3, "Typo", Typo.subtitle2);
+                    builder.AddAttribute(4, "Style", "font-weight: 600; text-transform: uppercase; color: #666; margin-bottom: 4px;");
+                    builder.AddAttribute(5, "ChildContent", (RenderFragment)(labelBuilder =>
                     {
-                        builder.OpenComponent<MudPaper>(0);
-                        builder.AddAttribute(1, "Elevation", 0);
-                        builder.AddAttribute(2, "Class", "pa-2 mb-1");
-                        builder.AddAttribute(3, "Style", "border: 1px solid #e0e0e0; border-radius: 4px;");
-                        builder.AddAttribute(4, "ChildContent", (RenderFragment)(b2 =>
+                        labelBuilder.AddContent(0, FormatLabel(prop.Name));
+                    }));
+                    builder.CloseComponent();
+                    
+                    // Card with object properties
+                    builder.OpenComponent<MudCard>(6);
+                    builder.AddAttribute(7, "Elevation", 1);
+                    builder.AddAttribute(8, "ChildContent", (RenderFragment)(cardBuilder =>
+                    {
+                        cardBuilder.OpenComponent<MudCardContent>(0);
+                        cardBuilder.AddAttribute(1, "Class", "pa-2");
+                        cardBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(contentBuilder =>
                         {
-                            b2.OpenComponent<MudText>(0);
-                            b2.AddAttribute(1, "Typo", Typo.caption);
-                            b2.AddAttribute(2, "Class", "mb-2");
-                            b2.AddAttribute(3, "Style", "font-weight: 600; text-transform: uppercase; color: #666;");
-                            b2.AddAttribute(4, "ChildContent", (RenderFragment)(b5 =>
-                            {
-                                b5.AddContent(0, FormatLabel(prop.Name));
-                            }));
-                            b2.CloseComponent();
-                            
-                            b2.OpenComponent<MudGrid>(10);
-                            b2.AddAttribute(11, "Spacing", 1);
-                            b2.AddAttribute(12, "ChildContent", (RenderFragment)(b3 =>
+                            contentBuilder.OpenComponent<MudGrid>(0);
+                            contentBuilder.AddAttribute(1, "Spacing", 1);
+                            contentBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(gridBuilder =>
                             {
                                 foreach (var nestedProp in nestedObj.Properties())
                                 {
-                                    b3.OpenComponent<MudItem>(0);
-                                    b3.AddAttribute(1, "xs", 12);
-                                    b3.AddAttribute(2, "sm", 6);
-                                    b3.AddAttribute(3, "ChildContent", (RenderFragment)(b4 =>
+                                    gridBuilder.OpenComponent<MudItem>(0);
+                                    gridBuilder.AddAttribute(1, "xs", 12);
+                                    gridBuilder.AddAttribute(2, "sm", 6);
+                                    gridBuilder.AddAttribute(3, "ChildContent", (RenderFragment)(_ =>
                                     {
-                                        b4.AddContent(0, RenderCompactField(nestedProp));
+                                        _.AddContent(0, RenderCompactField(nestedProp));
                                     }));
-                                    b3.CloseComponent();
+                                    gridBuilder.CloseComponent();
                                 }
                             }));
-                            b2.CloseComponent();
+                            contentBuilder.CloseComponent();
                         }));
-                        builder.CloseComponent();
-                    }
-                    else
-                    {
-                        builder.OpenComponent<MudTextField<string>>(0);
-                        builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
-                        builder.AddAttribute(2, "Value", "Empty Object");
-                        builder.AddAttribute(3, "Variant", Variant.Outlined);
-                        builder.AddAttribute(4, "Margin", Margin.Dense);
-                        builder.AddAttribute(5, "ReadOnly", true);
-                        builder.CloseComponent();
-                    }
-                    break;
+                        cardBuilder.CloseComponent();
+                    }));
+                    builder.CloseComponent();
+                    
+                    builder.CloseElement();
+                }
+                else
+                {
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                    builder.AddAttribute(2, "Value", "Empty Object");
+                    builder.AddAttribute(3, "Variant", Variant.Outlined);
+                    builder.AddAttribute(4, "Margin", Margin.Dense);
+                    builder.AddAttribute(5, "ReadOnly", true);
+                    builder.CloseComponent();
+                }
+                break;
                     
                 default:
                     builder.OpenComponent<MudTextField<string>>(0);
