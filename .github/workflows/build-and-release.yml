@@ -247,19 +247,8 @@ jobs:
         Copy-Item -Path "RealmEngine.Data/Json/*" -Destination "package-data/Json/" -Recurse
         
         # Create README
-        @"
-# RealmEngine JSON Data Package
-Version: $version
-
-This package contains all JSON game data files for RealmEngine.
-
-## Contents
-- Abilities, Items, Enemies, NPCs, Quests
-- All game data following JSON v4.0+ standards
-
-## Usage
-Extract to your game's Data directory or use with RealmForge editor.
-"@ | Out-File -FilePath "package-data/README.md" -Encoding UTF8
+        $readmeContent = "# RealmEngine JSON Data Package`nVersion: $version`n`nThis package contains all JSON game data files for RealmEngine.`n`n## Contents`n- Abilities, Items, Enemies, NPCs, Quests`n- All game data following JSON v4.0+ standards`n`n## Usage`nExtract to your game's Data directory or use with RealmForge editor."
+        Set-Content -Path "package-data/README.md" -Value $readmeContent -Encoding UTF8
         
         # Create archive
         $archiveName = "RealmEngine-Data-$version.zip"
