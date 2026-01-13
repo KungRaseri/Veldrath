@@ -225,14 +225,55 @@
                     break;
                     
                 case JTokenType.Object:
-                    var objCount = (prop.Value as JObject)?.Properties()?.Count() ?? 0;
-                    builder.OpenComponent<MudTextField<string>>(0);
-                    builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
-                    builder.AddAttribute(2, "Value", $"Object ({objCount} properties)");
-                    builder.AddAttribute(3, "Variant", Variant.Outlined);
-                    builder.AddAttribute(4, "Margin", Margin.Dense);
-                    builder.AddAttribute(5, "ReadOnly", true);
-                    builder.CloseComponent();
+                    var nestedObj = prop.Value as JObject;
+                    if (nestedObj != null && nestedObj.Properties().Any())
+                    {
+                        builder.OpenComponent<MudPaper>(0);
+                        builder.AddAttribute(1, "Elevation", 0);
+                        builder.AddAttribute(2, "Class", "pa-2 mb-1");
+                        builder.AddAttribute(3, "Style", "border: 1px solid #e0e0e0; border-radius: 4px;");
+                        builder.AddAttribute(4, "ChildContent", (RenderFragment)(b2 =>
+                        {
+                            b2.OpenComponent<MudText>(0);
+                            b2.AddAttribute(1, "Typo", Typo.caption);
+                            b2.AddAttribute(2, "Class", "mb-2");
+                            b2.AddAttribute(3, "Style", "font-weight: 600; text-transform: uppercase; color: #666;");
+                            b2.AddAttribute(4, "ChildContent", (RenderFragment)(b5 =>
+                            {
+                                b5.AddContent(0, FormatLabel(prop.Name));
+                            }));
+                            b2.CloseComponent();
+                            
+                            b2.OpenComponent<MudGrid>(10);
+                            b2.AddAttribute(11, "Spacing", 1);
+                            b2.AddAttribute(12, "ChildContent", (RenderFragment)(b3 =>
+                            {
+                                foreach (var nestedProp in nestedObj.Properties())
+                                {
+                                    b3.OpenComponent<MudItem>(0);
+                                    b3.AddAttribute(1, "xs", 12);
+                                    b3.AddAttribute(2, "sm", 6);
+                                    b3.AddAttribute(3, "ChildContent", (RenderFragment)(b4 =>
+                                    {
+                                        b4.AddContent(0, RenderCompactField(nestedProp));
+                                    }));
+                                    b3.CloseComponent();
+                                }
+                            }));
+                            b2.CloseComponent();
+                        }));
+                        builder.CloseComponent();
+                    }
+                    else
+                    {
+                        builder.OpenComponent<MudTextField<string>>(0);
+                        builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                        builder.AddAttribute(2, "Value", "Empty Object");
+                        builder.AddAttribute(3, "Variant", Variant.Outlined);
+                        builder.AddAttribute(4, "Margin", Margin.Dense);
+                        builder.AddAttribute(5, "ReadOnly", true);
+                        builder.CloseComponent();
+                    }
                     break;
                     
                 default:
