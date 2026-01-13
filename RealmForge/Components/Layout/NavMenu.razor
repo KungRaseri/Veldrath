@@ -1,25 +1,17 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">RealmForge</a>
-    </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable"
-    onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu"
-                    aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="editor">
-                <span class="bi bi-file-earmark-code-fill"
-                    aria-hidden="true"></span> JSON Editor
-            </NavLink>
-        </div>
-    </nav>
-</div>
+﻿<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+        Home
+    </MudNavLink>
+    <MudNavLink Href="editor" Icon="@Icons.Material.Filled.Code">
+        JSON Editor
+    </MudNavLink>
+    <MudDivider Class="my-2" />
+    <MudNavGroup Title="Tools" Icon="@Icons.Material.Filled.Build" Expanded="false">
+        <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">
+            Settings
+        </MudNavLink>
+        <MudNavLink Href="recent" Icon="@Icons.Material.Filled.History">
+            Recent Files
+        </MudNavLink>
+    </MudNavGroup>
+</MudNavMenu>

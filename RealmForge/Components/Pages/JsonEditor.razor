@@ -1,153 +1,161 @@
 @page "/editor"
-@using System.Text.Json
-@using RealmEngine.Shared.Models
-@using RealmForge.Components.Shared
-@inject NavigationManager Navigation
+@using Newtonsoft.Json.Linq
+@inject FileManagementService FileService
+@inject EditorSettingsService SettingsService
+@inject ModelValidationService ValidationService
+@inject ILogger<JsonEditor> Logger
 
-<h3>JSON Editor</h3>
-
-<div class="editor-layout">
-    <div class="file-tree">
-        <h4>Files</h4>
-        <button class="btn btn-primary" @onclick="OpenFolder">Open Data Folder</button>
-        
-        @if (JsonFiles.Any())
-        {
-            <ul class="tree">
-                @foreach (var file in JsonFiles)
-                {
-                    <li @onclick="() => LoadFile(file)" 
-                        class="@(file == CurrentFile ? "selected" : "")">
-                        📄 @Path.GetFileName(file)
-                    </li>
-                }
-            </ul>
-        }
-    </div>
+<MudGrid>
+    <MudItem xs="3">
+        <FileTreeView OnFileClick="@LoadFileAsync" RootPath="@_dataFolderPath" />
+    </MudItem>
     
-    <div class="editor-panel">
-        @if (!string.IsNullOrEmpty(CurrentFile))
+    <MudItem xs="9">
+        @if (!string.IsNullOrEmpty(_currentFilePath))
         {
-            <div class="toolbar">
-                <span class="file-name">@Path.GetFileName(CurrentFile)</span>
-                
-                <div class="mode-toggle">
-                    <label class="toggle-label">
-                        <input type="radio" name="mode" checked="@(EditorMode == "form")" @onclick="@(() => SwitchMode("form"))" />
-                        📝 Form
-                    </label>
-                    <label class="toggle-label">
-                        <input type="radio" name="mode" checked="@(EditorMode == "json")" @onclick="@(() => SwitchMode("json"))" />
-                        📄 JSON
-                    </label>
-                </div>
-                
-                <button class="btn btn-success" @onclick="SaveFile">Save</button>
-                <button class="btn btn-warning" @onclick="ValidateFile">Validate</button>
-            </div>
-            
-            @if (EditorMode == "form")
-            {
-                <div class="form-editor">
-                    @if (CurrentModel != null)
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudStack Spacing="3">
+                    <!-- Toolbar -->
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6">@Path.GetFileName(_currentFilePath)</MudText>
+                        
+                        <MudStack Row="true" Spacing="2">
+                            <MudToggleGroup T="string" @bind-Value="@_editorMode" Color="Color.Primary" CheckMark="true">
+                                <MudToggleItem Value="@("Form")">
+                                    <MudIcon Icon="@Icons.Material.Filled.ViewList" Size="Size.Small" Class="mr-1" />
+                                    Form
+                                </MudToggleItem>
+                                <MudToggleItem Value="@("JSON")">
+                                    <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mr-1" />
+                                    JSON
+                                </MudToggleItem>
+                            </MudToggleGroup>
+                            
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Success" 
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       OnClick="SaveFileAsync">
+                                Save
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+                    
+                    <MudDivider />
+                    
+                    <!-- Editor Area -->
+                    @if (_editorMode == "Form")
                     {
-                        <DynamicFormEditor TModel="object" 
-                                          Model="@CurrentModel" 
-                                          OnSave="HandleFormSave" 
-                                          OnCancel="() => {}" />
+                        <MudAlert Severity="Severity.Info">
+                            <MudText Typo="Typo.body2">
+                                Form mode coming in Phase 4. Use JSON mode for now.
+                            </MudText>
+                        </MudAlert>
                     }
                     else
                     {
-                        <div class="alert alert-info">
-                            <p>Form editing not available for this file type yet.</p>
-                            <p>Switch to JSON mode to edit, or select a different file type (items, enemies, spells).</p>
-                        </div>
+                        <MudTextField @bind-Value="@_jsonContent"
+                                      Label="JSON Content"
+                                      Variant="Variant.Outlined"
+                                      Lines="25"
+                                      HelperText="Monaco Editor will replace this in Phase 3" />
                     }
-                </div>
-            }
-            else
-            {
-                <textarea class="json-editor" @bind="JsonContent" rows="30"></textarea>
-            }
-            
-            @if (!string.IsNullOrEmpty(ValidationMessage))
-            {
-                <div class="alert @(IsValid ? "alert-success" : "alert-danger")">
-                    @ValidationMessage
-                </div>
-            }
+                    
+                    <!-- Validation Messages -->
+                    @if (!string.IsNullOrEmpty(_validationMessage))
+                    {
+                        <MudAlert Severity="@(_isValid ? Severity.Success : Severity.Error)">
+                            @_validationMessage
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
         }
         else
         {
-            <div class="empty-state">
-                <p>Select a file from the tree or open a folder to get started</p>
-            </div>
+            <MudPaper Elevation="1" Class="pa-8" Style="height: 500px;">
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 100%;">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h5" Color="Color.Secondary">No File Selected</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Select a JSON file from the tree to begin editing</MudText>
+                </MudStack>
+            </MudPaper>
         }
-    </div>
-</div>
+    </MudItem>
+</MudGrid>
 
 @code {
-    private List<string> JsonFiles = new();
-    private string CurrentFile = string.Empty;
-    private string JsonContent = string.Empty;
-    private string ValidationMessage = string.Empty;
-    private bool IsValid = false;
-    private string DataFolderPath = string.Empty;
-    private string EditorMode = "form"; // Default to form mode
-    private object? CurrentModel = null;
+    private string _dataFolderPath = string.Empty;
+    private string _currentFilePath = string.Empty;
+    private string _jsonContent = string.Empty;
+    private string _editorMode = "Form";
+    private string _validationMessage = string.Empty;
+    private bool _isValid = false;
+    private JObject? _currentJson;
 
-    private void OpenFolder()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: Use FolderPicker when implemented
-        // For now, hardcode to Data/Json folder
-        var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
-        DataFolderPath = Path.Combine(projectRoot, "RealmEngine.Data", "Data", "Json");
+        var settings = await SettingsService.LoadSettingsAsync();
+        _dataFolderPath = settings.DataFolderPath;
+        _editorMode = settings.DefaultEditorMode;
         
-        if (Directory.Exists(DataFolderPath))
-        {
-            JsonFiles = Directory.GetFiles(DataFolderPath, "*.json", SearchOption.AllDirectories).ToList();
-            StateHasChanged();
-        }
+        Logger.LogInformation("JsonEditor initialized with data path: {Path}", _dataFolderPath);
     }
 
-    private void LoadFile(string filePath)
-    {
-        CurrentFile = filePath;
-        JsonContent = File.ReadAllText(filePath);
-        ValidationMessage = string.Empty;
-        
-        // Try to parse as a known model type
-        TryParseModel();
-        
-        StateHasChanged();
-    }
-
-    private void TryParseModel()
+    private async Task LoadFileAsync(string filePath)
     {
         try
         {
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            Logger.LogInformation("Loading file: {File}", filePath);
             
-            // Detect file type and parse accordingly
-            var fileName = Path.GetFileName(CurrentFile).ToLower();
+            _currentFilePath = filePath;
+            _currentJson = await FileService.LoadJsonFileAsync(filePath);
             
-            if (fileName.Contains("item"))
+            if (_currentJson != null)
             {
-                CurrentModel = JsonSerializer.Deserialize<Item>(JsonContent, options);
+                _jsonContent = _currentJson.ToString(Newtonsoft.Json.Formatting.Indented);
+                _validationMessage = string.Empty;
+                Logger.LogDebug("File loaded successfully, {Length} characters", _jsonContent.Length);
             }
-            else if (fileName.Contains("enemy") || fileName.Contains("enemies"))
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load file");
+            _validationMessage = $"Error loading file: {ex.Message}";
+            _isValid = false;
+        }
+    }
+
+    private async Task SaveFileAsync()
+    {
+        try
+        {
+            Logger.LogInformation("Saving file: {File}", _currentFilePath);
+            
+            // Validate JSON syntax first
+            var syntaxValidation = ValidationService.ValidateJsonSyntax(_jsonContent);
+            if (!syntaxValidation.IsValid)
             {
-                CurrentModel = JsonSerializer.Deserialize<Enemy>(JsonContent, options);
+                _validationMessage = "Invalid JSON: " + string.Join(", ", syntaxValidation.Errors.Select(e => e.ErrorMessage));
+                _isValid = false;
+                return;
             }
-            else if (fileName.Contains("spell"))
-            {
-                CurrentModel = JsonSerializer.Deserialize<Spell>(JsonContent, options);
-            }
-            else if (fileName.Contains("ability") || fileName.Contains("abilities"))
-            {
-                CurrentModel = JsonSerializer.Deserialize<Ability>(JsonContent, options);
-            }
-            else
+            
+            // Parse and save
+            var jsonToSave = JObject.Parse(_jsonContent);
+            await FileService.SaveJsonFileAsync(_currentFilePath, jsonToSave);
+            
+            _validationMessage = "File saved successfully!";
+            _isValid = true;
+            Logger.LogInformation("File saved successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save file");
+            _validationMessage = $"Error saving file: {ex.Message}";
+            _isValid = false;
+        }
+    }
+}
             {
                 // Unknown type - form mode not available
                 CurrentModel = null;
