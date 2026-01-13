@@ -1,40 +1,77 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using RealmForge.Validators;
+using FluentValidation.Results;
 
 namespace RealmForge.Services;
 
 /// <summary>
-/// Service for validating JSON data against RealmEngine models
-/// Phase 4: Will integrate FluentValidation validators
+/// Service for validating JSON data against RealmEngine JSON v4.0+ standards
 /// </summary>
 public class ModelValidationService
 {
     private readonly ILogger<ModelValidationService> _logger;
+    private readonly Dictionary<string, IValidator<JObject>> _validators;
 
     public ModelValidationService(ILogger<ModelValidationService> logger)
     {
         _logger = logger;
+        
+        // Register validators for different JSON types
+        _validators = new Dictionary<string, IValidator<JObject>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "catalog", new CatalogJsonValidator() },
+            { "names", new NamesJsonValidator() },
+            { "reference", new JsonReferenceValidator() }
+        };
     }
 
     /// <summary>
-    /// Validate a JSON object (Phase 4 implementation)
+    /// Validate a JSON object against JSON v4.0+ standards
     /// </summary>
-    public Task<ValidationResult> ValidateAsync(JObject jsonObject, string modelType)
+    public async Task<ValidationResult> ValidateAsync(JObject jsonObject, string? modelType = null)
     {
-        _logger.LogDebug("Validating {ModelType}", modelType);
+        _logger.LogDebug("Validating JSON object, type: {ModelType}", modelType ?? "auto-detect");
         
-        // TODO Phase 4: Implement FluentValidation integration
-        // - Detect model type from JSON metadata
-        // - Get appropriate validator from DI
-        // - Run validation
-        // - Return detailed errors
-        
-        return Task.FromResult(new ValidationResult
+        try
         {
-            IsValid = true,
-            Errors = new List<ValidationError>()
-        });
+            // Auto-detect model type from JSON if not provided
+            if (string.IsNullOrEmpty(modelType))
+            {
+                modelType = DetectModelType(jsonObject);
+                _logger.LogDebug("Auto-detected model type: {Type}", modelType);
+            }
+            
+            // Get appropriate validator
+            if (!_validators.TryGetValue(modelType, out var validator))
+            {
+                _logger.LogWarning("No validator found for type: {Type}", modelType);
+                return new ValidationResult(); // Empty result = valid
+            }
+            
+            // Run validation
+            var result = await validator.ValidateAsync(jsonObject);
+            
+            if (!result.IsValid)
+            {
+                _logger.LogWarning("Validation failed with {Count} errors", result.Errors.Count);
+            }
+            else
+            {
+                _logger.LogDebug("Validation succeeded");
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during validation");
+            return new ValidationResult(new List<ValidationFailure>
+            {
+                new ValidationFailure("Validation", $"Validation error: {ex.Message}")
+            });
+        }
     }
 
     /// <summary>
@@ -46,38 +83,44 @@ public class ModelValidationService
         {
             JObject.Parse(jsonText);
             _logger.LogDebug("JSON syntax is valid");
-            return new ValidationResult { IsValid = true };
+            return new ValidationResult(); // Empty result = valid
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Invalid JSON syntax");
-            return new ValidationResult
+            return new ValidationResult(new List<ValidationFailure>
             {
-                IsValid = false,
-                Errors = new List<ValidationError>
-                {
-                    new() { PropertyName = "JSON", ErrorMessage = ex.Message }
-                }
-            };
+                new ValidationFailure("JSON Syntax", ex.Message)
+            });
         }
     }
-}
-
-/// <summary>
-/// Validation result with detailed errors
-/// </summary>
-public class ValidationResult
-{
-    public bool IsValid { get; set; }
-    public List<ValidationError> Errors { get; set; } = new();
-}
-
-/// <summary>
-/// Individual validation error
-/// </summary>
-public class ValidationError
-{
-    public string PropertyName { get; set; } = string.Empty;
-    public string ErrorMessage { get; set; } = string.Empty;
-    public string? AttemptedValue { get; set; }
+    
+    /// <summary>
+    /// Detect model type from JSON metadata
+    /// </summary>
+    private string DetectModelType(JObject jsonObject)
+    {
+        // Check 'type' field
+        var typeField = jsonObject["type"]?.ToString();
+        
+        if (!string.IsNullOrEmpty(typeField))
+        {
+            if (typeField.EndsWith("_catalog"))
+                return "catalog";
+            
+            if (typeField == "pattern_generation")
+                return "names";
+        }
+        
+        // Check for catalog-specific fields
+        if (jsonObject["items"] != null && jsonObject["description"] != null)
+            return "catalog";
+        
+        // Check for names-specific fields
+        if (jsonObject["patterns"] != null && jsonObject["components"] != null)
+            return "names";
+        
+        // Default to reference validation
+        return "reference";
+    }
 }

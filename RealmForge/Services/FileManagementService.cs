@@ -111,20 +111,28 @@ public class FileManagementService
     /// </summary>
     private async Task AddToRecentFilesAsync(string filePath)
     {
-        await _settingsService.UpdateSettingAsync(settings =>
+        try
         {
-            // Remove if already exists
-            settings.RecentFiles.Remove(filePath);
-            
-            // Add to front
-            settings.RecentFiles.Insert(0, filePath);
-            
-            // Trim to max size
-            if (settings.RecentFiles.Count > settings.MaxRecentFiles)
+            await _settingsService.UpdateSettingAsync(settings =>
             {
-                settings.RecentFiles = settings.RecentFiles.Take(settings.MaxRecentFiles).ToList();
-            }
-        });
+                // Remove if already exists
+                settings.RecentFiles.Remove(filePath);
+                
+                // Add to front
+                settings.RecentFiles.Insert(0, filePath);
+                
+                // Trim to max size
+                if (settings.RecentFiles.Count > settings.MaxRecentFiles)
+                {
+                    settings.RecentFiles = settings.RecentFiles.Take(settings.MaxRecentFiles).ToList();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            // Don't fail file loading if we can't update recent files
+            _logger.LogDebug(ex, "Could not update recent files (WebView may not be ready)");
+        }
     }
 
     /// <summary>

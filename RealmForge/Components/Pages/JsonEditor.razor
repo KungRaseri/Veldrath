@@ -1,5 +1,6 @@
 @page "/editor"
 @using Newtonsoft.Json.Linq
+@using FluentValidation.Results
 @inject FileManagementService FileService
 @inject EditorSettingsService SettingsService
 @inject ModelValidationService ValidationService
@@ -31,6 +32,14 @@
                                 </MudToggleItem>
                             </MudToggleGroup>
                             
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.CheckCircle"
+                                       OnClick="ValidateJsonAsync"
+                                       Size="Size.Small">
+                                Validate
+                            </MudButton>
+                            
                             <MudButton Variant="Variant.Filled" 
                                        Color="Color.Success" 
                                        StartIcon="@Icons.Material.Filled.Save"
@@ -42,21 +51,28 @@
                     
                     <MudDivider />
                     
+                    <!-- Validation Panel -->
+                    @if (_validationResult != null)
+                    {
+                        <ValidationPanel ValidationResult="@_validationResult" />
+                    }
+                    
                     <!-- Editor Area -->
                     @if (_editorMode == "Form")
                     {
                         <MudAlert Severity="Severity.Info">
                             <MudText Typo="Typo.body2">
-                                Form mode coming in Phase 4. Use JSON mode for now.
+                                Form mode coming in Phase 5.4. Use JSON mode for now.
                             </MudText>
                         </MudAlert>
                     }
                     else
                     {
-                        <MonacoEditorWrapper @ref="_monacoEditor"
-                                            @bind-Value="@_jsonContent"
+                        <MonacoEditorWrapper @key="@_currentFilePath"
+                                            @ref="_monacoEditor"
+                                            Value="@_jsonContent"
                                             Language="json"
-                                            Height="600px"
+                                            Height="calc(100vh - 350px)"
                                             IsDarkMode="@_isDarkMode" />
                         
                         <MudStack Row="true" Spacing="2" Class="mt-2">
@@ -102,6 +118,8 @@
     private bool _isDarkMode = true;
     private JObject? _currentJson;
     private MonacoEditorWrapper? _monacoEditor;
+    private ValidationResult? _validationResult;
+    private bool _isLoadingFile = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -124,25 +142,56 @@
 
     private async Task LoadFileAsync(string filePath)
     {
+        if (_isLoadingFile)
+        {
+            Logger.LogDebug("File load already in progress, skipping");
+            return;
+        }
+
         try
         {
+            _isLoadingFile = true;
             Logger.LogInformation("Loading file: {File}", filePath);
             
-            _currentFilePath = filePath;
+            // Clear current content first to destroy old Monaco instance
+            _currentFilePath = string.Empty;
+            _jsonContent = string.Empty;
+            await InvokeAsync(StateHasChanged);
+            
+            // Small delay to ensure old component is destroyed
+            await Task.Delay(50);
+            
+            // Load the JSON file
             _currentJson = await FileService.LoadJsonFileAsync(filePath);
             
             if (_currentJson != null)
             {
-                _jsonContent = _currentJson.ToString(Newtonsoft.Json.Formatting.Indented);
+                var newContent = _currentJson.ToString(Newtonsoft.Json.Formatting.Indented);
                 _validationMessage = string.Empty;
-                Logger.LogDebug("File loaded successfully, {Length} characters", _jsonContent.Length);
+                _isValid = true;
+                
+                Logger.LogDebug("File loaded successfully, {Length} characters", newContent.Length);
+                
+                // Now set the new file path and content
+                _currentFilePath = filePath;
+                _jsonContent = newContent;
+                await InvokeAsync(StateHasChanged);
+                
+                // Wait for Monaco to initialize
+                await Task.Delay(100);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load file");
-            _validationMessage = $"Error loading file: {ex.Message}";
+            Logger.LogError(ex, "Failed to load file: {File}. Exception type: {Type}, Message: {Message}, Stack: {Stack}", 
+                filePath, ex.GetType().Name, ex.Message, ex.StackTrace);
+            _validationMessage = $"Error loading file: {ex.GetType().Name} - {ex.Message}";
             _isValid = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            _isLoadingFile = false;
         }
     }
 
@@ -198,6 +247,54 @@
             Logger.LogError(ex, "Failed to format JSON");
             _validationMessage = $"Error formatting: {ex.Message}";
             _isValid = false;
+        }
+    }
+    
+    private async Task ValidateJsonAsync()
+    {
+        try
+        {
+            Logger.LogInformation("Validating file: {File}", _currentFilePath);
+            
+            // Get current content from Monaco if in JSON mode
+            if (_editorMode == "JSON" && _monacoEditor != null)
+            {
+                _jsonContent = await _monacoEditor.GetValueAsync();
+            }
+            
+            // Validate JSON syntax first
+            var syntaxValidation = ValidationService.ValidateJsonSyntax(_jsonContent);
+            if (!syntaxValidation.IsValid)
+            {
+                _validationResult = syntaxValidation;
+                _validationMessage = "JSON syntax error";
+                _isValid = false;
+                return;
+            }
+            
+            // Parse and validate against JSON v4.0+ standards
+            var jsonObject = JObject.Parse(_jsonContent);
+            _validationResult = await ValidationService.ValidateAsync(jsonObject);
+            
+            if (_validationResult.IsValid)
+            {
+                _validationMessage = "Validation passed!";
+                _isValid = true;
+                Logger.LogInformation("Validation successful");
+            }
+            else
+            {
+                _validationMessage = $"Validation failed with {_validationResult.Errors.Count} error(s)";
+                _isValid = false;
+                Logger.LogWarning("Validation failed: {Errors}", _validationResult.Errors.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Validation error");
+            _validationMessage = $"Validation error: {ex.Message}";
+            _isValid = false;
+            _validationResult = null;
         }
     }
 }

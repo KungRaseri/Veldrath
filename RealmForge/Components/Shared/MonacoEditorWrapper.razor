@@ -2,13 +2,15 @@
 @using BlazorMonaco.Editor
 @inject ILogger<MonacoEditorWrapper> Logger
 
-<div style="height: @Height; border: 1px solid #ccc; border-radius: 4px;">
-    <StandaloneCodeEditor @ref="_editor"
-                          Id="@_editorId"
-                          ConstructionOptions="EditorConstructionOptions"
-                          OnDidInit="OnEditorInit"
-                          OnDidChangeModelContent="OnContentChanged"
-                          CssClass="monaco-editor-wrapper" />
+<div class="monaco-wrapper-container" style="height: @Height; width: 100%; min-height: 400px; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column;">
+    <div style="flex: 1; min-height: 0; position: relative;">
+        <StandaloneCodeEditor @ref="_editor"
+                              Id="@_editorId"
+                              ConstructionOptions="EditorConstructionOptions"
+                              OnDidInit="OnEditorInit"
+                              OnDidChangeModelContent="OnContentChanged"
+                              CssClass="monaco-editor-wrapper" />
+    </div>
 </div>
 
 @code {
@@ -35,20 +37,11 @@
     private bool _isInitialized = false;
     private string _lastValue = string.Empty;
 
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync()
     {
-        try
-        {
-            // Update editor content when Value parameter changes externally
-            if (_isInitialized && _editor != null && Value != _lastValue)
-            {
-                await SetEditorValue(Value);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating MonacoEditor parameters");
-        }
+        // Don't try to update editor on parameter changes - use @key to force re-render instead
+        // This prevents "Cannot invoke JavaScript outside of a WebView context" errors
+        return Task.CompletedTask;
     }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
@@ -80,10 +73,17 @@
         {
             _isInitialized = true;
             _lastValue = Value;
-            Logger.LogDebug("Monaco Editor initialized with language: {Language}", Language);
+            Logger.LogDebug("Monaco Editor initialized with language: {Language}, content length: {Length}", Language, Value?.Length ?? 0);
 
             if (_editor != null)
             {
+                // Set initial value if provided
+                if (!string.IsNullOrEmpty(Value))
+                {
+                    await _editor.SetValue(Value);
+                    Logger.LogDebug("Initial value set in editor");
+                }
+
                 // Configure JSON-specific features
                 if (Language == "json")
                 {
@@ -135,10 +135,28 @@
     {
         try
         {
-            if (_editor != null)
+            if (_editor != null && _isInitialized && !string.IsNullOrEmpty(value))
             {
-                await _editor.SetValue(value);
-                _lastValue = value;
+                Logger.LogDebug("Setting editor value, length: {Length}", value.Length);
+                await InvokeAsync(async () =>
+                {
+                    try
+                    {
+                        await _editor.SetValue(value);
+                        _lastValue = value;
+                        Logger.LogDebug("Editor value set successfully");
+                    }
+                    catch (Exception innerEx)
+                    {
+                        Logger.LogError(innerEx, "Error in SetValue JS call");
+                        throw;
+                    }
+                });
+            }
+            else
+            {
+                Logger.LogDebug("Skipping SetEditorValue: Editor={EditorNull}, Initialized={Init}, ValueEmpty={Empty}", 
+                    _editor == null, _isInitialized, string.IsNullOrEmpty(value));
             }
         }
         catch (Exception ex)
@@ -154,9 +172,14 @@
     {
         try
         {
-            if (_editor != null)
+            if (_editor != null && _isInitialized)
             {
-                return await _editor.GetValue();
+                var result = string.Empty;
+                await InvokeAsync(async () =>
+                {
+                    result = await _editor.GetValue();
+                });
+                return result;
             }
             return string.Empty;
         }
@@ -168,16 +191,42 @@
     }
 
     /// <summary>
+    /// Set editor content programmatically
+    /// </summary>
+    public async Task SetValueAsync(string value)
+    {
+        try
+        {
+            if (_editor != null && _isInitialized)
+            {
+                await InvokeAsync(async () =>
+                {
+                    await _editor.SetValue(value);
+                    _lastValue = value;
+                    Logger.LogDebug("Monaco editor value set programmatically");
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error setting value in MonacoEditor");
+        }
+    }
+
+    /// <summary>
     /// Format the document
     /// </summary>
     public async Task FormatDocumentAsync()
     {
-        if (_editor != null)
+        if (_editor != null && _isInitialized)
         {
             try
             {
-                await _editor.Trigger("format", "editor.action.formatDocument");
-                Logger.LogDebug("Document formatted");
+                await InvokeAsync(async () =>
+                {
+                    await _editor.Trigger("format", "editor.action.formatDocument");
+                    Logger.LogDebug("Document formatted");
+                });
             }
             catch (Exception ex)
             {
@@ -191,13 +240,16 @@
     /// </summary>
     public async Task UpdateThemeAsync(bool isDarkMode)
     {
-        if (_editor != null)
+        if (_editor != null && _isInitialized)
         {
             try
             {
-                var theme = isDarkMode ? "vs-dark" : "vs";
-                await _editor.UpdateOptions(new EditorUpdateOptions { Theme = theme });
-                Logger.LogDebug("Editor theme updated to: {Theme}", theme);
+                await InvokeAsync(async () =>
+                {
+                    var theme = isDarkMode ? "vs-dark" : "vs";
+                    await _editor.UpdateOptions(new EditorUpdateOptions { Theme = theme });
+                    Logger.LogDebug("Editor theme updated to: {Theme}", theme);
+                });
             }
             catch (Exception ex)
             {

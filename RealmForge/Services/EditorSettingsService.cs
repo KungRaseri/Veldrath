@@ -65,10 +65,17 @@ public class EditorSettingsService
             _cachedSettings = settings;
             _logger.LogInformation("Settings saved successfully");
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("WebView context"))
+        {
+            // WebView not ready yet, just cache the settings
+            _logger.LogDebug("WebView not ready, caching settings only");
+            _cachedSettings = settings;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save settings");
-            throw;
+            // Don't throw - just keep cached version
+            _cachedSettings = settings;
         }
     }
 

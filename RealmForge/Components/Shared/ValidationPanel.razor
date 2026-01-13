@@ -1,0 +1,83 @@
+@using FluentValidation.Results
+@using MudBlazor
+
+<MudPaper Elevation="2" Class="pa-3 mb-3">
+    <MudStack Spacing="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@GetStatusIcon()" Color="@GetStatusColor()" Class="mr-2" />
+                Validation
+            </MudText>
+            
+            @if (ValidationResult != null)
+            {
+                <MudChip T="string" 
+                         Color="@GetStatusColor()" 
+                         Size="Size.Small">
+                    @(ValidationResult.IsValid ? "Valid" : $"{ValidationResult.Errors.Count} Error(s)")
+                </MudChip>
+            }
+        </MudStack>
+        
+        @if (ValidationResult != null && !ValidationResult.IsValid)
+        {
+            <MudDivider />
+            
+            <MudList T="string" Dense="true">
+                @foreach (var error in ValidationResult.Errors)
+                {
+                    <MudListItem T="string">
+                        <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Error" 
+                                     Color="Color.Error" 
+                                     Size="Size.Small" />
+                            <div>
+                                <MudText Typo="Typo.body2" Style="font-weight: 500;">
+                                    @error.PropertyName
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Error">
+                                    @error.ErrorMessage
+                                </MudText>
+                            </div>
+                        </MudStack>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        else if (ValidationResult?.IsValid == true)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true">
+                No validation errors found. JSON is valid!
+            </MudAlert>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                No validation performed yet.
+            </MudText>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public ValidationResult? ValidationResult { get; set; }
+    
+    private string GetStatusIcon()
+    {
+        if (ValidationResult == null)
+            return Icons.Material.Filled.Info;
+        
+        return ValidationResult.IsValid 
+            ? Icons.Material.Filled.CheckCircle 
+            : Icons.Material.Filled.Error;
+    }
+    
+    private Color GetStatusColor()
+    {
+        if (ValidationResult == null)
+            return Color.Default;
+        
+        return ValidationResult.IsValid ? Color.Success : Color.Error;
+    }
+}
