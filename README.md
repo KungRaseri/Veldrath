@@ -39,14 +39,37 @@ This project uses **Vertical Slice Architecture** with **CQRS** (Command Query R
 - [Save/Load Guide](./docs/guides/SAVE_LOAD_GUIDE.md) - Game persistence system
 - [Test Coverage Report](./docs/testing/TEST_COVERAGE_REPORT.md) - Comprehensive test suite with high pass rate
 
+## Solution Files
+
+Three solution files are provided for different development scenarios:
+
+- **RealmEngine.sln** - Core game engine only (no MAUI dependencies)
+  - RealmEngine.Shared, RealmEngine.Core, RealmEngine.Data
+  - Test projects for all engine libraries
+  - ✅ Builds without MAUI workloads
+  - 🎯 Used by CI/CD for engine builds and NuGet publishing
+
+- **RealmForge.sln** - MAUI tool + dependencies
+  - RealmForge (MAUI app), RealmForge.Tests
+  - Required engine libraries
+  - ⚠️ Requires MAUI workloads (`dotnet workload install maui-windows`)
+  - 🎯 Used by MAUI CI workflow
+
+- **RealmEngine.Full.sln** - All projects (complete workspace)
+  - All engine and tool projects
+  - 🎯 Used for local development when working across both
+
 ## Quick Start
 
 ```powershell
-# Build the RealmEngine framework
-dotnet build
+# Build the RealmEngine framework (no MAUI required)
+dotnet build RealmEngine.sln
 
-# Run the test suite
-dotnet test
+# Run the test suite (8,362 tests)
+dotnet test RealmEngine.sln
+
+# Build RealmForge tool (requires MAUI workloads)
+dotnet build RealmForge.sln --framework net9.0-windows10.0.19041.0
 
 # Launch RealmForge data editor
 dotnet run --project RealmForge

@@ -36,15 +36,15 @@ jobs:
       run: dotnet build RealmEngine.sln --configuration ${{ env.CONFIGURATION }} --no-restore
       
     - name: Run RealmEngine.Shared.Tests
-      run: dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=shared-tests.trx" --results-directory ./TestResults
+      run: dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=shared-tests.trx" --results-directory ./TestResults/RealmEngine
       continue-on-error: false
       
     - name: Run RealmEngine.Core.Tests
-      run: dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=core-tests.trx" --results-directory ./TestResults
+      run: dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=core-tests.trx" --results-directory ./TestResults/RealmEngine
       continue-on-error: false
       
     - name: Run RealmEngine.Data.Tests
-      run: dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=data-tests.trx" --results-directory ./TestResults
+      run: dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=data-tests.trx" --results-directory ./TestResults/RealmEngine
       continue-on-error: false
       
     - name: Publish test results
@@ -52,7 +52,8 @@ jobs:
       if: always()
       with:
         files: |
-          TestResults/*.trx
+          TestResults/RealmEngine/*.trx
+        check_name: RealmEngine Test Results
 
   build-package:
     name: Build Game Package
