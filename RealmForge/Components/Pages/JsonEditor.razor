@@ -60,11 +60,10 @@
                     <!-- Editor Area -->
                     @if (_editorMode == "Form")
                     {
-                        <MudAlert Severity="Severity.Info">
-                            <MudText Typo="Typo.body2">
-                                Form mode coming in Phase 5.4. Use JSON mode for now.
-                            </MudText>
-                        </MudAlert>
+                        <div style="max-height: calc(100vh - 400px); overflow-y: auto;">
+                            <JsonFormEditor JsonObject="@_currentJson" 
+                                          OnJsonChanged="@OnFormJsonChanged" />
+                        </div>
                     }
                     else
                     {
@@ -247,6 +246,16 @@
             Logger.LogError(ex, "Failed to format JSON");
             _validationMessage = $"Error formatting: {ex.Message}";
             _isValid = false;
+        }
+    }
+    
+    private void OnFormJsonChanged(JObject? updatedJson)
+    {
+        if (updatedJson != null)
+        {
+            _currentJson = updatedJson;
+            _jsonContent = updatedJson.ToString(Newtonsoft.Json.Formatting.Indented);
+            Logger.LogDebug("Form updated JSON content");
         }
     }
     
