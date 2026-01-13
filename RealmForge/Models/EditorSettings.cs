@@ -13,7 +13,7 @@ public class EditorSettings
     /// <summary>
     /// Path to the game data folder
     /// </summary>
-    public string DataFolderPath { get; set; } = @"c:\code\console-game\RealmEngine.Shared\Data\Json";
+    public string DataFolderPath { get; set; } = @"c:\code\console-game\RealmEngine.Data\Data\Json";
 
     /// <summary>
     /// Auto-save interval in seconds (0 = disabled)

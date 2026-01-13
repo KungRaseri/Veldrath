@@ -53,11 +53,20 @@
                     }
                     else
                     {
-                        <MudTextField @bind-Value="@_jsonContent"
-                                      Label="JSON Content"
-                                      Variant="Variant.Outlined"
-                                      Lines="25"
-                                      HelperText="Monaco Editor will replace this in Phase 3" />
+                        <MonacoEditorWrapper @ref="_monacoEditor"
+                                            @bind-Value="@_jsonContent"
+                                            Language="json"
+                                            Height="600px"
+                                            IsDarkMode="@_isDarkMode" />
+                        
+                        <MudStack Row="true" Spacing="2" Class="mt-2">
+                            <MudButton Variant="Variant.Text" 
+                                       StartIcon="@Icons.Material.Filled.FormatAlignJustify"
+                                       OnClick="FormatJsonAsync"
+                                       Size="Size.Small">
+                                Format JSON
+                            </MudButton>
+                        </MudStack>
                     }
                     
                     <!-- Validation Messages -->
@@ -87,18 +96,30 @@
     private string _dataFolderPath = string.Empty;
     private string _currentFilePath = string.Empty;
     private string _jsonContent = string.Empty;
-    private string _editorMode = "Form";
+    private string _editorMode = "JSON"; // Default to JSON mode since Monaco is ready
     private string _validationMessage = string.Empty;
     private bool _isValid = false;
+    private bool _isDarkMode = true;
     private JObject? _currentJson;
+    private MonacoEditorWrapper? _monacoEditor;
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await SettingsService.LoadSettingsAsync();
-        _dataFolderPath = settings.DataFolderPath;
-        _editorMode = settings.DefaultEditorMode;
-        
-        Logger.LogInformation("JsonEditor initialized with data path: {Path}", _dataFolderPath);
+        try
+        {
+            var settings = await SettingsService.LoadSettingsAsync();
+            _dataFolderPath = settings.DataFolderPath;
+            _editorMode = "JSON"; // Override default since Monaco is ready
+            _isDarkMode = settings.Theme == "Dark";
+            
+            Logger.LogInformation("JsonEditor initialized with data path: {Path}", _dataFolderPath);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize JsonEditor");
+            _validationMessage = $"Initialization error: {ex.Message}";
+            _isValid = false;
+        }
     }
 
     private async Task LoadFileAsync(string filePath)
@@ -131,6 +152,12 @@
         {
             Logger.LogInformation("Saving file: {File}", _currentFilePath);
             
+            // Get current content from Monaco if in JSON mode
+            if (_editorMode == "JSON" && _monacoEditor != null)
+            {
+                _jsonContent = await _monacoEditor.GetValueAsync();
+            }
+            
             // Validate JSON syntax first
             var syntaxValidation = ValidationService.ValidateJsonSyntax(_jsonContent);
             if (!syntaxValidation.IsValid)
@@ -155,199 +182,22 @@
             _isValid = false;
         }
     }
-}
-            {
-                // Unknown type - form mode not available
-                CurrentModel = null;
-            }
-        }
-        catch
-        {
-            // Parsing failed - stick with JSON mode
-            CurrentModel = null;
-        }
-    }
 
-    private void SwitchMode(string mode)
-    {
-        if (mode == "json" && EditorMode == "form")
-        {
-            // Switching from form to JSON - serialize current model
-            if (CurrentModel != null)
-            {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                JsonContent = JsonSerializer.Serialize(CurrentModel, CurrentModel.GetType(), options);
-            }
-        }
-        else if (mode == "form" && EditorMode == "json")
-        {
-            // Switching from JSON to form - parse JSON back to model
-            TryParseModel();
-        }
-        
-        EditorMode = mode;
-        StateHasChanged();
-    }
-
-    private void HandleFormSave(object model)
-    {
-        CurrentModel = model;
-        
-        // Serialize to JSON and save
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        JsonContent = JsonSerializer.Serialize(model, model.GetType(), options);
-        
-        SaveFile();
-    }
-
-    private void SaveFile()
-    {
-        if (!string.IsNullOrEmpty(CurrentFile))
-        {
-            File.WriteAllText(CurrentFile, JsonContent);
-            ValidationMessage = "✅ File saved successfully";
-            IsValid = true;
-            StateHasChanged();
-        }
-    }
-
-    private void ValidateFile()
+    private async Task FormatJsonAsync()
     {
         try
         {
-            // Basic JSON validation
-            System.Text.Json.JsonDocument.Parse(JsonContent);
-            ValidationMessage = "✅ Valid JSON";
-            IsValid = true;
+            if (_monacoEditor != null)
+            {
+                await _monacoEditor.FormatDocumentAsync();
+                Logger.LogDebug("JSON formatted");
+            }
         }
         catch (Exception ex)
         {
-            ValidationMessage = $"❌ Invalid JSON: {ex.Message}";
-            IsValid = false;
+            Logger.LogError(ex, "Failed to format JSON");
+            _validationMessage = $"Error formatting: {ex.Message}";
+            _isValid = false;
         }
-        StateHasChanged();
     }
 }
-
-<style>
-    .editor-layout {
-        display: flex;
-        gap: 20px;
-        height: calc(100vh - 200px);
-    }
-    
-    .file-tree {
-        width: 300px;
-        border: 1px solid #ddd;
-        padding: 15px;
-        overflow-y: auto;
-    }
-    
-    .file-tree ul.tree {
-        list-style: none;
-        padding-left: 0;
-    }
-    
-    .file-tree li {
-        padding: 8px;
-        cursor: pointer;
-        border-radius: 4px;
-    }
-    
-    .file-tree li:hover {
-        background-color: #f0f0f0;
-    }
-    
-    .file-tree li.selected {
-        background-color: #007bff;
-        color: white;
-    }
-    
-    .editor-panel {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .toolbar {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        border-bottom: none;
-    }
-    
-    .file-name {
-        flex: 1;
-        font-weight: bold;
-    }
-    
-    .mode-toggle {
-        display: flex;
-        gap: 15px;
-        padding: 0 15px;
-        border-left: 1px solid #ddd;
-        border-right: 1px solid #ddd;
-    }
-    
-    .toggle-label {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-    
-    .toggle-label input[type="radio"] {
-        cursor: pointer;
-    }
-    
-    .form-editor {
-        flex: 1;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        background: white;
-    }
-    
-    .json-editor {
-        flex: 1;
-        font-family: 'Consolas', 'Monaco', monospace;
-        padding: 15px;
-        border: 1px solid #ddd;
-        resize: none;
-    }
-    
-    .empty-state {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #999;
-    }
-    
-    .alert {
-        margin-top: 10px;
-        padding: 10px;
-        border-radius: 4px;
-    }
-    
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    
-    .alert-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    
-    .alert-info {
-        background-color: #d1ecf1;
-        color: #0c5460;
-        border: 1px solid #bee5eb;
-    }
-</style>

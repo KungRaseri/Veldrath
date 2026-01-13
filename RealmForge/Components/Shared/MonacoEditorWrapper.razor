@@ -1,0 +1,208 @@
+@using BlazorMonaco
+@using BlazorMonaco.Editor
+@inject ILogger<MonacoEditorWrapper> Logger
+
+<div style="height: @Height; border: 1px solid #ccc; border-radius: 4px;">
+    <StandaloneCodeEditor @ref="_editor"
+                          Id="@_editorId"
+                          ConstructionOptions="EditorConstructionOptions"
+                          OnDidInit="OnEditorInit"
+                          OnDidChangeModelContent="OnContentChanged"
+                          CssClass="monaco-editor-wrapper" />
+</div>
+
+@code {
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Language { get; set; } = "json";
+
+    [Parameter]
+    public string Height { get; set; } = "500px";
+
+    [Parameter]
+    public bool IsDarkMode { get; set; } = true;
+
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+
+    private StandaloneCodeEditor? _editor;
+    private string _editorId = $"monaco-{Guid.NewGuid()}";
+    private bool _isInitialized = false;
+    private string _lastValue = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            // Update editor content when Value parameter changes externally
+            if (_isInitialized && _editor != null && Value != _lastValue)
+            {
+                await SetEditorValue(Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating MonacoEditor parameters");
+        }
+    }
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            Language = Language,
+            Value = Value,
+            Theme = IsDarkMode ? "vs-dark" : "vs",
+            AutomaticLayout = true,
+            ReadOnly = ReadOnly,
+            ScrollBeyondLastLine = false,
+            FontSize = 14,
+            TabSize = 2,
+            InsertSpaces = true,
+            WordWrap = "on",
+            LineNumbers = "on",
+            RenderWhitespace = "selection",
+            Folding = true,
+            GlyphMargin = true,
+            FormatOnPaste = true,
+            FormatOnType = true
+        };
+    }
+
+    private async Task OnEditorInit()
+    {
+        try
+        {
+            _isInitialized = true;
+            _lastValue = Value;
+            Logger.LogDebug("Monaco Editor initialized with language: {Language}", Language);
+
+            if (_editor != null)
+            {
+                // Configure JSON-specific features
+                if (Language == "json")
+                {
+                    await ConfigureJsonFeatures();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during MonacoEditor initialization");
+        }
+    }
+
+    private async Task ConfigureJsonFeatures()
+    {
+        try
+        {
+            // JSON validation and formatting will be handled by Monaco automatically
+            Logger.LogDebug("JSON language features configured");
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to configure JSON features");
+        }
+    }
+
+    private async Task OnContentChanged(ModelContentChangedEvent e)
+    {
+        try
+        {
+            if (_editor != null)
+            {
+                var newValue = await _editor.GetValue();
+                if (newValue != _lastValue)
+                {
+                    _lastValue = newValue;
+                    await ValueChanged.InvokeAsync(newValue);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error handling content change in MonacoEditor");
+        }
+    }
+
+    private async Task SetEditorValue(string value)
+    {
+        try
+        {
+            if (_editor != null)
+            {
+                await _editor.SetValue(value);
+                _lastValue = value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error setting MonacoEditor value");
+        }
+    }
+
+    /// <summary>
+    /// Get current editor content
+    /// </summary>
+    public async Task<string> GetValueAsync()
+    {
+        try
+        {
+            if (_editor != null)
+            {
+                return await _editor.GetValue();
+            }
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting value from MonacoEditor");
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Format the document
+    /// </summary>
+    public async Task FormatDocumentAsync()
+    {
+        if (_editor != null)
+        {
+            try
+            {
+                await _editor.Trigger("format", "editor.action.formatDocument");
+                Logger.LogDebug("Document formatted");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to format document");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update theme when dark mode changes
+    /// </summary>
+    public async Task UpdateThemeAsync(bool isDarkMode)
+    {
+        if (_editor != null)
+        {
+            try
+            {
+                var theme = isDarkMode ? "vs-dark" : "vs";
+                await _editor.UpdateOptions(new EditorUpdateOptions { Theme = theme });
+                Logger.LogDebug("Editor theme updated to: {Theme}", theme);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to update theme");
+            }
+        }
+    }
+}

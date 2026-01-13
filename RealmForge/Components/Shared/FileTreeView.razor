@@ -31,13 +31,20 @@
     public EventCallback<string> OnFileClick { get; set; }
     
     [Parameter]
-    public string RootPath { get; set; } = @"c:\code\console-game\RealmEngine.Shared\Data\Json";
+    public string RootPath { get; set; } = @"c:\code\console-game\RealmEngine.Data\Data\Json";
     
     private FileTreeNode? _rootNode;
 
     protected override void OnInitialized()
     {
-        BuildFileTree();
+        try
+        {
+            BuildFileTree();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize FileTreeView");
+        }
     }
 
     private RenderFragment RenderTreeNode(FileTreeNode node, int level)

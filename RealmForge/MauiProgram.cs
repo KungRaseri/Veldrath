@@ -11,18 +11,20 @@ public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()
 	{
-		// Configure Serilog using RealmEngine.Core standards
-		var loggingSettings = new LoggingSettings
+		try
 		{
-			LogLevel = "Debug",
-			LogToFile = true,
-			LogToConsole = true,
-			LogPath = Path.Combine(FileSystem.AppDataDirectory, "logs"),
-			RetainDays = 7,
-			EnableStructuredLogging = true
-		};
+			// Configure Serilog using RealmEngine.Core standards
+			var loggingSettings = new LoggingSettings
+			{
+				LogLevel = "Debug",
+				LogToFile = true,
+				LogToConsole = true,
+				LogPath = Path.Combine(FileSystem.AppDataDirectory, "logs"),
+				RetainDays = 7,
+				EnableStructuredLogging = true
+			};
 
-		var logPath = Path.Combine(loggingSettings.LogPath, "realmforge-.txt");
+			var logPath = Path.Combine(loggingSettings.LogPath, "realmforge-.txt");
 		Log.Logger = new LoggerConfiguration()
 			.MinimumLevel.Debug()
 			.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -78,5 +80,21 @@ public static class MauiProgram
 
 		Log.Information("RealmForge initialized successfully");
 		return builder.Build();
+		}
+		catch (Exception ex)
+		{
+			// If Serilog is configured, use it; otherwise fall back to Console
+			try
+			{
+				Log.Fatal(ex, "Fatal error during application startup");
+				Log.CloseAndFlush();
+			}
+			catch
+			{
+				Console.WriteLine($"FATAL ERROR DURING STARTUP: {ex}");
+			}
+			
+			throw;
+		}
 	}
 }
