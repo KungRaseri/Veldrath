@@ -30,33 +30,29 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore RealmEngine.sln
       
     - name: Build solution
-      run: dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore
+      run: dotnet build RealmEngine.sln --configuration ${{ env.CONFIGURATION }} --no-restore
       
     - name: Run RealmEngine.Shared.Tests
-      run: dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=shared-tests.trx"
+      run: dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=shared-tests.trx" --results-directory ./TestResults
       continue-on-error: false
       
     - name: Run RealmEngine.Core.Tests
-      run: dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=core-tests.trx"
+      run: dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=core-tests.trx" --results-directory ./TestResults
       continue-on-error: false
       
     - name: Run RealmEngine.Data.Tests
-      run: dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=data-tests.trx"
+      run: dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=data-tests.trx" --results-directory ./TestResults
       continue-on-error: false
-      
-    - name: Run RealmForge.Tests
-      run: dotnet test RealmForge.Tests/RealmForge.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=realmforge-tests.trx"
-      continue-on-error: true
       
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
       if: always()
       with:
         files: |
-          **/TestResults/**/*.trx
+          TestResults/*.trx
 
   build-package:
     name: Build Game Package
@@ -79,7 +75,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore RealmEngine.Full.sln
       
     - name: Build and package with script
       id: package
@@ -107,10 +103,6 @@ jobs:
           Write-Error "RealmEngine.Core.dll not found!"
           exit 1
         }
-        if (-not (Test-Path "package/RealmForge/RealmForge.exe")) {
-          Write-Error "RealmForge.exe not found!"
-          exit 1
-        }
         if (-not (Test-Path "package/Data/Json")) {
           Write-Error "JSON data not found!"
           exit 1
@@ -127,7 +119,6 @@ jobs:
         Write-Output "✓ Package verified successfully!"
         Write-Output "  - JSON files: $jsonCount"
         Write-Output "  - DLL files: $dllCount"
-        Write-Output "  - RealmForge: Present"
         Write-Output "  - Manifest: Present"
       shell: pwsh
       
@@ -160,29 +151,6 @@ jobs:
         name: package-manifest
         path: package/package-manifest.json
         retention-days: 30
-        
-    - name: Create RealmForge standalone archive
-      run: |
-        $version = "${{ steps.package.outputs.version }}"
-        $realmForgeArchive = "RealmForge-$version.zip"
-        
-        Write-Output "Creating RealmForge archive: $realmForgeArchive"
-        Compress-Archive -Path "package/RealmForge/*" -DestinationPath $realmForgeArchive -Force
-        
-        $archiveSize = (Get-Item $realmForgeArchive).Length / 1MB
-        Write-Output "RealmForge archive size: $([math]::Round($archiveSize, 2)) MB"
-        
-        Write-Output "realmforge-archive=$realmForgeArchive" >> $env:GITHUB_OUTPUT
-        Write-Output "REALMFORGE_ARCHIVE=$realmForgeArchive" >> $env:GITHUB_ENV
-      shell: pwsh
-      id: realmforge
-      
-    - name: Upload RealmForge artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: realmforge
-        path: ${{ env.REALMFORGE_ARCHIVE }}
-        retention-days: 30
 
   publish-nuget:
     name: Publish NuGet Packages
@@ -206,7 +174,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore RealmEngine.sln
       
     - name: Generate version
       id: version
