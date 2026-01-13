@@ -1,0 +1,122 @@
+@using Newtonsoft.Json.Linq
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Rendering
+
+@RenderField(Property)
+
+@code {
+    [Parameter]
+    public JProperty? Property { get; set; }
+    
+    private RenderFragment RenderField(JProperty? prop) => builder =>
+    {
+        if (prop == null) return;
+        
+        switch (prop.Value.Type)
+        {
+            case JTokenType.String:
+                var stringValue = prop.Value.ToString();
+                builder.OpenComponent<MudTextField<string>>(0);
+                builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                builder.AddAttribute(2, "Value", stringValue);
+                builder.AddAttribute(3, "Variant", Variant.Outlined);
+                builder.AddAttribute(4, "Margin", Margin.Dense);
+                builder.AddAttribute(5, "ReadOnly", true);
+                builder.CloseComponent();
+                break;
+                
+            case JTokenType.Integer:
+            case JTokenType.Float:
+                builder.OpenComponent<MudTextField<string>>(0);
+                builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                builder.AddAttribute(2, "Value", prop.Value.ToString());
+                builder.AddAttribute(3, "Variant", Variant.Outlined);
+                builder.AddAttribute(4, "Margin", Margin.Dense);
+                builder.AddAttribute(5, "ReadOnly", true);
+                builder.CloseComponent();
+                break;
+                
+            case JTokenType.Boolean:
+                var boolValue = prop.Value.ToObject<bool>();
+                builder.OpenComponent<MudSwitch<bool>>(0);
+                builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                builder.AddAttribute(2, "Checked", boolValue);
+                builder.AddAttribute(3, "ReadOnly", true);
+                builder.AddAttribute(4, "Color", Color.Primary);
+                builder.CloseComponent();
+                break;
+                
+            case JTokenType.Null:
+            case JTokenType.Undefined:
+                builder.OpenComponent<MudTextField<string>>(0);
+                builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                builder.AddAttribute(2, "Value", "null");
+                builder.AddAttribute(3, "Variant", Variant.Outlined);
+                builder.AddAttribute(4, "Margin", Margin.Dense);
+                builder.AddAttribute(5, "ReadOnly", true);
+                builder.CloseComponent();
+                break;
+                
+            case JTokenType.Array:
+                var array = prop.Value as JArray;
+                builder.OpenComponent<ArrayDisplay>(0);
+                builder.AddAttribute(1, "PropertyName", prop.Name);
+                builder.AddAttribute(2, "Items", array ?? new JArray());
+                builder.CloseComponent();
+                break;
+                
+            case JTokenType.Object:
+                var obj = prop.Value as JObject;
+                
+                // Check if this is a metadata object that should be collapsible
+                if (prop.Name.ToLower() == "metadata")
+                {
+                    builder.OpenComponent<MudExpansionPanels>(0);
+                    builder.AddAttribute(1, "MultiExpansion", true);
+                    builder.AddAttribute(2, "ChildContent", (RenderFragment)(panelsBuilder =>
+                    {
+                        panelsBuilder.OpenComponent<MudExpansionPanel>(0);
+                        panelsBuilder.AddAttribute(1, "Text", FormatLabel(prop.Name));
+                        panelsBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(panelBuilder =>
+                        {
+                            panelBuilder.OpenComponent<ObjectDisplay>(0);
+                            panelBuilder.AddAttribute(1, "PropertyName", prop.Name);
+                            panelBuilder.AddAttribute(2, "Object", obj);
+                            panelBuilder.AddAttribute(3, "HideHeader", true);
+                            panelBuilder.CloseComponent();
+                        }));
+                        panelsBuilder.CloseComponent();
+                    }));
+                    builder.CloseComponent();
+                }
+                else
+                {
+                    builder.OpenComponent<ObjectDisplay>(0);
+                    builder.AddAttribute(1, "PropertyName", prop.Name);
+                    builder.AddAttribute(2, "Object", obj);
+                    builder.CloseComponent();
+                }
+                break;
+                
+            default:
+                builder.OpenComponent<MudTextField<string>>(0);
+                builder.AddAttribute(1, "Label", FormatLabel(prop.Name));
+                builder.AddAttribute(2, "Value", prop.Value?.ToString() ?? "");
+                builder.AddAttribute(3, "Variant", Variant.Outlined);
+                builder.AddAttribute(4, "Margin", Margin.Dense);
+                builder.AddAttribute(5, "ReadOnly", true);
+                builder.CloseComponent();
+                break;
+        }
+    };
+    
+    private string FormatLabel(string label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            return label;
+            
+        // Convert camelCase or PascalCase to Title Case with spaces
+        var result = System.Text.RegularExpressions.Regex.Replace(label, "(\\B[A-Z])", " $1");
+        return char.ToUpper(result[0]) + result.Substring(1);
+    }
+}
