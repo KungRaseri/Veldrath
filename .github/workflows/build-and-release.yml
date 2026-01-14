@@ -88,7 +88,6 @@ jobs:
   build-realmforge:
     name: Build and Test RealmForge
     runs-on: windows-latest
-    needs: build-realmengine
     
     permissions:
       checks: write
@@ -157,7 +156,6 @@ jobs:
   build-realmforge-android:
     name: Build RealmForge (Android)
     runs-on: windows-latest
-    needs: build-realmengine
     
     steps:
     - name: Checkout code
@@ -195,7 +193,7 @@ jobs:
   # ========================================
   package-realmengine:
     name: Package RealmEngine
-    needs: [build-realmengine, build-realmforge]
+    needs: build-realmengine
     runs-on: windows-latest
     
     steps:
