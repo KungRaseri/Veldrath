@@ -72,7 +72,7 @@ Write-Output ""
 # Build RealmForge
 Write-Output "Building RealmForge..."
 $ContentBuilderOutput = Join-Path $PackageRoot "RealmForge"
-dotnet publish (Join-Path $SolutionRoot "RealmForge\RealmForge.csproj") --configuration $Configuration --output $ContentBuilderOutput --no-self-contained --runtime win-x64 --verbosity quiet $VersionArgs
+dotnet publish (Join-Path $SolutionRoot "RealmForge\RealmForge.csproj") --configuration $Configuration --framework net9.0-windows10.0.19041.0 --output $ContentBuilderOutput --no-self-contained --verbosity quiet $VersionArgs
 if ($LASTEXITCODE -ne 0) { Write-Error "RealmForge build failed!"; exit 1 }
 
 # Remove duplicate Data folder from RealmForge (it will reference package root Data)
