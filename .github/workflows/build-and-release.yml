@@ -227,7 +227,7 @@ jobs:
         Copy-Item -Path "RealmEngine.Data/bin/${{ env.CONFIGURATION }}/net9.0/*" -Destination "package-libraries/Libraries/" -Recurse
         
         # Copy JSON data
-        Copy-Item -Path "RealmEngine.Data/Json" -Destination "package-libraries/Data/" -Recurse
+        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "package-libraries/Data/" -Recurse
         
         # Create archive
         $archiveName = "RealmEngine-Libraries-$version.zip"
@@ -244,7 +244,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path package-data/Json
         
         # Copy JSON data
-        Copy-Item -Path "RealmEngine.Data/Json/*" -Destination "package-data/Json/" -Recurse
+        Copy-Item -Path "RealmEngine.Data/Data/Json/*" -Destination "package-data/Json/" -Recurse
         
         # Create README
         $readmeContent = "# RealmEngine JSON Data Package`nVersion: $version`n`nThis package contains all JSON game data files for RealmEngine.`n`n## Contents`n- Abilities, Items, Enemies, NPCs, Quests`n- All game data following JSON v4.0+ standards`n`n## Usage`nExtract to your game's Data directory or use with RealmForge editor."
@@ -307,7 +307,7 @@ jobs:
         
         # Copy JSON data
         New-Item -ItemType Directory -Force -Path ./publish/RealmForge-Windows/Data
-        Copy-Item -Path "RealmEngine.Data/Json" -Destination "./publish/RealmForge-Windows/Data/" -Recurse
+        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "./publish/RealmForge-Windows/Data/" -Recurse
         
         $archiveName = "RealmForge-Windows-$version.zip"
         Compress-Archive -Path "./publish/RealmForge-Windows/*" -DestinationPath $archiveName -Force
@@ -322,7 +322,7 @@ jobs:
         
         # Copy JSON data
         New-Item -ItemType Directory -Force -Path ./publish/RealmForge-Android/Data
-        Copy-Item -Path "RealmEngine.Data/Json" -Destination "./publish/RealmForge-Android/Data/" -Recurse
+        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "./publish/RealmForge-Android/Data/" -Recurse
         
         $archiveName = "RealmForge-Android-$version.zip"
         Compress-Archive -Path "./publish/RealmForge-Android/*" -DestinationPath $archiveName -Force
