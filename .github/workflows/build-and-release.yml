@@ -102,6 +102,18 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Cache MAUI workloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\.dotnet\sdk-manifests
+          ~\.dotnet\packs
+          ~\.dotnet\metadata
+        key: ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-
+          ${{ runner.os }}-dotnet-maui-
+    
     - name: Install .NET MAUI workloads
       run: |
         Write-Output "Installing MAUI workloads..."
@@ -165,6 +177,18 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Cache MAUI workloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\.dotnet\sdk-manifests
+          ~\.dotnet\packs
+          ~\.dotnet\metadata
+        key: ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-
+          ${{ runner.os }}-dotnet-maui-
     
     - name: Install .NET MAUI workloads
       run: |
@@ -283,6 +307,18 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Cache MAUI workloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\.dotnet\sdk-manifests
+          ~\.dotnet\packs
+          ~\.dotnet\metadata
+        key: ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-
+          ${{ runner.os }}-dotnet-maui-
+    
     - name: Install MAUI workloads
       run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
       shell: pwsh
@@ -356,6 +392,18 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Cache MAUI workloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\.dotnet\sdk-manifests
+          ~\.dotnet\packs
+          ~\.dotnet\metadata
+        key: ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-maui-${{ env.DOTNET_VERSION }}-
+          ${{ runner.os }}-dotnet-maui-
     
     - name: Install MAUI workloads
       run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
