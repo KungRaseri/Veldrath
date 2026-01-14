@@ -1,11 +1,12 @@
 name: Create Release on Tag
 
 on:
-  push:
-    tags:
-      - 'v*'  # Only trigger on tag pushes starting with 'v'
-    branches-ignore:
-      - '**'  # Explicitly ignore all branch pushes
+  workflow_run:
+    workflows: ["Build and Release"]
+    types:
+      - completed
+    branches:
+      - main
 
 env:
   DOTNET_VERSION: '9.0.x'
@@ -13,67 +14,96 @@ env:
 
 jobs:
   create-release:
-    name: Build and Release Package
+    name: Create GitHub Release from Artifacts
     runs-on: windows-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     permissions:
       contents: write
-      packages: write
+      actions: read
       
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Need full history for changelog
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Build and package
-      id: package
+        fetch-depth: 0  # Need full history for changelog and tag info
+    
+    - name: Get tag name from workflow run
+      id: get-tag
       run: |
-        Write-Output "Running build-game-package.ps1..."
-        cd scripts
-        .\build-game-package.ps1 -Configuration ${{ env.CONFIGURATION }}
-        cd ..
+        # Get the tag that triggered the workflow
+        $refName = "${{ github.event.workflow_run.head_branch }}"
+        Write-Output "Workflow run branch: $refName"
         
-        # Extract version from manifest
-        $manifest = Get-Content "package/package-manifest.json" | ConvertFrom-Json
-        $version = $manifest.Version
-        $jsonCount = $manifest.Components.JsonData.FileCount
+        # Get all tags pointing to the workflow run commit
+        $commit = "${{ github.event.workflow_run.head_sha }}"
+        Write-Output "Workflow run commit: $commit"
         
+        $tags = git tag --points-at $commit
+        $vTag = $tags | Where-Object { $_ -like "v*" } | Select-Object -First 1
+        
+        if ([string]::IsNullOrEmpty($vTag)) {
+          Write-Output "No version tag found for commit $commit"
+          Write-Output "Available tags: $tags"
+          exit 1
+        }
+        
+        Write-Output "Found tag: $vTag"
+        $version = $vTag.TrimStart('v')
+        
+        Write-Output "tag=$vTag" >> $env:GITHUB_OUTPUT
         Write-Output "version=$version" >> $env:GITHUB_OUTPUT
-        Write-Output "json-count=$jsonCount" >> $env:GITHUB_OUTPUT
         Write-Output "VERSION=$version" >> $env:GITHUB_ENV
-        Write-Output "JSON_COUNT=$jsonCount" >> $env:GITHUB_ENV
-        Write-Output "Built version: $version"
+        Write-Output "TAG=$vTag" >> $env:GITHUB_ENV
       shell: pwsh
-      
-    - name: Create release archives
+    
+    - name: Download all package artifacts
+      uses: actions/download-artifact@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+        path: ./artifacts
+    
+    - name: List downloaded artifacts
       run: |
-        Write-Output "Creating release archives..."
+        Write-Output "Downloaded artifacts:"
+        Get-ChildItem -Path ./artifacts -Recurse | Select-Object FullName
+      shell: pwsh
+    
+    - name: Prepare release files
+      id: prepare
+      run: |
+        $version = "${{ env.VERSION }}"
+        Write-Output "Preparing release files for version: $version"
         
-        # Create full package ZIP (all DLLs + RealmForge + Data)
-        Compress-Archive -Path "package/*" -DestinationPath "RealmEngine-${{ env.VERSION }}.zip" -Force
-        Write-Output "[OK] Created RealmEngine-${{ env.VERSION }}.zip"
+        # Create release directory
+        New-Item -ItemType Directory -Force -Path ./release
         
-        # Create RealmForge standalone ZIP (just the editor)
-        Compress-Archive -Path "package/RealmForge/*" -DestinationPath "RealmForge-${{ env.VERSION }}.zip" -Force
-        Write-Output "[OK] Created RealmForge-${{ env.VERSION }}.zip"
+        # Copy all package artifacts to release directory
+        Get-ChildItem -Path ./artifacts -Filter "*.zip" -Recurse | ForEach-Object {
+          Copy-Item $_.FullName -Destination ./release/
+          Write-Output "Copenv.TAG"
+        }
         
-        # Create Libraries-only ZIP (DLLs for Godot integration)
-        Compress-Archive -Path "package/Libraries/*" -DestinationPath "RealmEngine-Libraries-${{ env.VERSION }}.zip" -Force
-        Write-Output "[OK] Created RealmEngine-Libraries-${{ env.VERSION }}.zip"
+        # Copy manifest
+        $manifestPath = Get-ChildItem -Path ./artifacts -Filter "package-manifest.json" -Recurse | Select-Object -First 1
+        if ($manifestPath) {
+          Copy-Item $manifestPath.FullName -Destination ./release/package-manifest.json
+          Write-Output "Copied: package-manifest.json"
+          
+          # Extract metadata from manifest
+          $manifest = Get-Content $manifestPath.FullName | ConvertFrom-Json
+          $jsonCount = $manifest.Components.JsonData.FileCount
+          Write-Output "json-count=$jsonCount" >> $env:GITHUB_OUTPUT
+          Write-Output "JSON_COUNT=$jsonCount" >> $env:GITHUB_ENV
+        } else {
+          Write-Output "Warning: package-manifest.json not found"
+          Write-Output "json-count=0" >> $env:GITHUB_OUTPUT
+          Write-Output "JSON_COUNT=0" >> $env:GITHUB_ENV
+        }
         
-        # Copy manifest to root for release attachment
-        Copy-Item "package/package-manifest.json" -Destination "package-manifest.json"
-        
-        Write-Output "Release archives created successfully!"
+        Write-Output "Release files prepared:"
+        Get-ChildItem -Path ./release | Select-Object Name, Length
       shell: pwsh
       
     - name: Generate changelog
@@ -104,10 +134,9 @@ jobs:
       
     - name: Generate release notes
       run: |
-        $manifest = Get-Content "package-manifest.json" | ConvertFrom-Json
         $version = "${{ env.VERSION }}"
-        $jsonCount = "${{ env.JSON_COUNT }}"
-        $commit = "${{ github.sha }}"
+        $jsonCount = "${{ steps.prepare.outputs.json-count }}"
+        $commit = "${{ github.event.workflow_run.head_sha }}"
         $repoUrl = "${{ github.server_url }}/${{ github.repository }}"
         $repoOwner = "${{ github.repository_owner }}"
         
@@ -121,19 +150,20 @@ jobs:
         [void]$sb.AppendLine("### What's Included")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("- **Game Libraries** - Core engine DLLs with XML IntelliSense documentation")
-        [void]$sb.AppendLine("- **RealmForge** - WPF desktop editor for JSON game data (v4.0 standards)")
+        [void]$sb.AppendLine("- **RealmForge** - MAUI desktop/mobile editor for JSON game data (v4.0+ standards)")
         [void]$sb.AppendLine("- **Game Data** - $jsonCount JSON files (abilities, items, enemies, NPCs, quests, etc.)")
-        [void]$sb.AppendLine("- **NuGet Packages** - Available on GitHub Packages")
+        [void]$sb.AppendLine("- **NuGet Packages** - Published to GitHub Packages")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("### Downloads")
         [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("| Package | Description | Size |")
-        [void]$sb.AppendLine("|---------|-------------|------|")
-        [void]$sb.AppendLine("| **RealmEngine-$version.zip** | 📦 Complete package (libraries + data + RealmForge) | Full |")
-        [void]$sb.AppendLine("| **RealmEngine-Libraries-$version.zip** | 📚 DLLs only (for Godot C# integration) | ~2-5 MB |")
-        [void]$sb.AppendLine("| **RealmForge-$version.zip** | 🛠️ JSON Editor standalone | ~50 MB |")
-        [void]$sb.AppendLine("| **package-manifest.json** | 📋 Build metadata and file inventory | <1 KB |")
-        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("| Package | Description |")
+        [void]$sb.AppendLine("|---------|-------------|")
+        [void]$sb.AppendLine("| **RealmEngine-Full-$version.zip** | 📦 Complete package (libraries + data) |")
+        [void]$sb.AppendLine("| **RealmEngine-Libraries-$version.zip** | 📚 DLLs only (for Godot C# integration) |")
+        [void]$sb.AppendLine("| **RealmEngine-Data-$version.zip** | 📂 JSON data files only |")
+        [void]$sb.AppendLine("| **RealmForge-Windows-$version.zip** | 🛠️ JSON Editor for Windows + Data |")
+        [void]$sb.AppendLine("| **RealmForge-Android-$version.zip** | 📱 JSON Editor for Android + Data |")
+        [void]$sb.AppendLine("| **package-manifest.json** | 📋 Build metadata and file inventory
         [void]$sb.AppendLine("### Installation")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("#### For Godot Integration")
@@ -146,35 +176,45 @@ jobs:
         [void]$sb.AppendLine("   using RealmEngine.Shared.Models;")
         [void]$sb.AppendLine("   ````")
         [void]$sb.AppendLine("4. IntelliSense documentation is automatically available")
+        [void]$sb.AppendLine("") (Windows)")
         [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("#### For Content Editing")
+        [void]$sb.AppendLine("1. Download ``RealmForge-Windows-$version.zip``")
+        [void]$sb.AppendLine("2. Extract and install the MSIX package")
+        [void]$sb.AppendLine("3. Launch RealmForge from Start Menu")
+        [void]$sb.AppendLine("4. Edit JSON game data with visual validation")
+        [void]$sb.AppendLine("5. All changes comply with JSON v4.0+ standards")
         [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("1. Download ``RealmForge-$version.zip``")
-        [void]$sb.AppendLine("2. Extract and run ``RealmForge.exe``")
-        [void]$sb.AppendLine("3. Edit JSON game data with visual validation")
+        [void]$sb.AppendLine("#### For Content Editing (Android)")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("1. Download ``RealmForge-Android-$version.zip``")
+        [void]$sb.AppendLine("2. Extract and sideload the APK")
+        [void]$sb.AppendLine("3. Edit game data on mobile device")
         [void]$sb.AppendLine("4. All changes comply with JSON v4.0 standards")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("#### Via NuGet (GitHub Packages)")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("````bash")
-        [void]$sb.AppendLine("dotnet add package RealmEngine.Core --version $version --source https://nuget.pkg.github.com/$repoOwner/index.json")
-        [void]$sb.AppendLine("dotnet add package RealmEngine.Shared --version $version --source https://nuget.pkg.github.com/$repoOwner/index.json")
-        [void]$sb.AppendLine("dotnet add package RealmEngine.Data --version $version --source https://nuget.pkg.github.com/$repoOwner/index.json")
-        [void]$sb.AppendLine("````")
-        [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("### Requirements")
-        [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("- **.NET 9.0 Runtime** (for RealmForge)")
+        [void]$sb.AppendLine("dotnet add package Realmbundled with RealmForge packages)")
         [void]$sb.AppendLine("- **Godot 4.x with C# support** (for game integration)")
-        [void]$sb.AppendLine("- **Windows 10+** (for RealmForge - WPF application)")
+        [void]$sb.AppendLine("- **Windows 10+ (10.0.19041.0)** (for RealmForge Windows - MAUI application)")
+        [void]$sb.AppendLine("- **Android 7.0+ (API 24)** (for RealmForge Android)")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("### Package Contents")
         [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("**Libraries** (in RealmEngine-Libraries-*.zip):")
+        [void]$sb.AppendLine("**Libraries** (RealmEngine-Libraries-*.zip):")
         [void]$sb.AppendLine("- ``RealmEngine.Core.dll`` + ``.xml`` - Game mechanics (generators, validators, combat)")
         [void]$sb.AppendLine("- ``RealmEngine.Shared.dll`` + ``.xml`` - Shared models and services")
         [void]$sb.AppendLine("- ``RealmEngine.Data.dll`` + ``.xml`` - JSON data loading and validation")
         [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("**RealmForge** (RealmForge-Windows/Android-*.zip):")
+        [void]$sb.AppendLine("- MAUI Blazor Hybrid application")
+        [void]$sb.AppendLine("- Visual JSON editor with Monaco editor")
+        [void]$sb.AppendLine("- Real-time validation and reference resolution")
+        [void]$sb.AppendLine("- All dependencies and runtime files included")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("**Data** (RealmEngine-Data-*.zip or included in Full package):")
+        [void]$sb.AppendLine("- $jsonCount JSON files organized by domain")
+        [void]$sb.AppendLine("- v4.0+ compliant with reference system (v4.1)
         [void]$sb.AppendLine("**RealmForge** (in RealmForge-*.zip):")
         [void]$sb.AppendLine("- ``RealmForge.exe`` - Visual JSON editor")
         [void]$sb.AppendLine("- All dependencies and runtime files")
@@ -201,16 +241,12 @@ jobs:
         Write-Output "Release notes generated"
       shell: pwsh
       
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          RealmEngine-${{ env.VERSION }}.zip
-          RealmEngine-Libraries-${{ env.VERSION }}.zip
-          RealmForge-${{ env.VERSION }}.zip
-          package-manifest.json
+    - name: Crerelease/*
         body_path: release-notes.md
         draft: false
+        prerelease: false
+        generate_release_notes: false
+        tag_name: ${{ env.TAG
         prerelease: false
         generate_release_notes: false
         tag_name: ${{ github.ref_name }}
