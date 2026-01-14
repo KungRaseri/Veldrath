@@ -82,7 +82,7 @@ jobs:
         # Copy all package artifacts to release directory
         Get-ChildItem -Path ./artifacts -Filter "*.zip" -Recurse | ForEach-Object {
           Copy-Item $_.FullName -Destination ./release/
-          Write-Output "Copenv.TAG"
+          Write-Output "Copied: $($_.Name)"
         }
         
         # Copy manifest
@@ -110,7 +110,7 @@ jobs:
       id: changelog
       run: |
         # Get previous tag
-        $currentTag = "${{ github.ref_name }}"
+        $currentTag = "${{ env.TAG }}"
         $tags = git tag --sort=-version:refname
         $prevTag = $tags | Where-Object { $_ -ne $currentTag } | Select-Object -First 1
         
@@ -163,7 +163,8 @@ jobs:
         [void]$sb.AppendLine("| **RealmEngine-Data-$version.zip** | 📂 JSON data files only |")
         [void]$sb.AppendLine("| **RealmForge-Windows-$version.zip** | 🛠️ JSON Editor for Windows + Data |")
         [void]$sb.AppendLine("| **RealmForge-Android-$version.zip** | 📱 JSON Editor for Android + Data |")
-        [void]$sb.AppendLine("| **package-manifest.json** | 📋 Build metadata and file inventory
+        [void]$sb.AppendLine("| **package-manifest.json** | 📋 Build metadata and file inventory |")
+        [void]$sb.AppendLine("")
         [void]$sb.AppendLine("### Installation")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("#### For Godot Integration")
@@ -176,7 +177,8 @@ jobs:
         [void]$sb.AppendLine("   using RealmEngine.Shared.Models;")
         [void]$sb.AppendLine("   ````")
         [void]$sb.AppendLine("4. IntelliSense documentation is automatically available")
-        [void]$sb.AppendLine("") (Windows)")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("#### For Content Editing (Windows)")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("1. Download ``RealmForge-Windows-$version.zip``")
         [void]$sb.AppendLine("2. Extract and install the MSIX package")
@@ -188,13 +190,19 @@ jobs:
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("1. Download ``RealmForge-Android-$version.zip``")
         [void]$sb.AppendLine("2. Extract and sideload the APK")
-        [void]$sb.AppendLine("3. Edit game data on mobile device")
-        [void]$sb.AppendLine("4. All changes comply with JSON v4.0 standards")
+        [void]$sb.AppendLine("3. Edit game data on mobile devices")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("#### Via NuGet (GitHub Packages)")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("````bash")
-        [void]$sb.AppendLine("dotnet add package Realmbundled with RealmForge packages)")
+        [void]$sb.AppendLine("dotnet add package RealmEngine.Core --version $version --source https://nuget.pkg.github.com/$repoOwner/index.json")
+        [void]$sb.AppendLine("dotnet add package RealmEngine.Shared --version $version --source https://nuget.pkg.github.com/$repoOwner/index.json")
+        [void]$sb.AppendLine("dotnet add package RealmEngine.Data --version $version --source https://nuget.pkg.github.com/$repoOwner/index.json")
+        [void]$sb.AppendLine("````")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("### Requirements")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("- **.NET 9.0 Runtime** (bundled with RealmForge packages)")
         [void]$sb.AppendLine("- **Godot 4.x with C# support** (for game integration)")
         [void]$sb.AppendLine("- **Windows 10+ (10.0.19041.0)** (for RealmForge Windows - MAUI application)")
         [void]$sb.AppendLine("- **Android 7.0+ (API 24)** (for RealmForge Android)")
@@ -214,14 +222,7 @@ jobs:
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("**Data** (RealmEngine-Data-*.zip or included in Full package):")
         [void]$sb.AppendLine("- $jsonCount JSON files organized by domain")
-        [void]$sb.AppendLine("- v4.0+ compliant with reference system (v4.1)
-        [void]$sb.AppendLine("**RealmForge** (in RealmForge-*.zip):")
-        [void]$sb.AppendLine("- ``RealmForge.exe`` - Visual JSON editor")
-        [void]$sb.AppendLine("- All dependencies and runtime files")
-        [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("**Data** (in full package):")
-        [void]$sb.AppendLine("- $jsonCount JSON files organized by domain")
-        [void]$sb.AppendLine("- v4.0 compliant with reference system support")
+        [void]$sb.AppendLine("- v4.0+ compliant with reference system (v4.1) support")
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("### Changes in This Release")
         [void]$sb.AppendLine("")
@@ -241,15 +242,15 @@ jobs:
         Write-Output "Release notes generated"
       shell: pwsh
       
-    - name: Crerelease/*
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/*
         body_path: release-notes.md
         draft: false
         prerelease: false
         generate_release_notes: false
-        tag_name: ${{ env.TAG
-        prerelease: false
-        generate_release_notes: false
-        tag_name: ${{ github.ref_name }}
+        tag_name: ${{ env.TAG }}
         name: RealmEngine ${{ env.VERSION }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
