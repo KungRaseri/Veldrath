@@ -234,7 +234,14 @@ public class ItemGenerator
                 BaseName = baseName,
                 Name = baseName, // Will be updated after enhancements
                 Description = GetStringProperty(catalogItem, "description") ?? "No description available",
-                Price = GetIntProperty(catalogItem, "value", 1)
+                Price = GetIntProperty(catalogItem, "value", 1),
+                Weight = GetDoubleProperty(catalogItem, "weight", 0.0),
+                Attributes = GetDictionaryProperty<int>(catalogItem, "attributes"),
+                Stats = GetDictionaryProperty<string>(catalogItem, "stats"),
+                ArmorClass = GetStringProperty(catalogItem, "armorClass"),
+                Effect = GetStringProperty(catalogItem, "effect"),
+                Power = GetIntProperty(catalogItem, "power", 0),
+                Duration = GetIntProperty(catalogItem, "duration", 0)
             };
 
             // Resolve item type from category
@@ -1329,6 +1336,38 @@ public class ItemGenerator
             < 350 => ItemRarity.Epic,
             _ => ItemRarity.Legendary
         };
+    }
+
+    private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
+    {
+        try
+        {
+            var dict = new Dictionary<string, T>();
+            var value = obj[propertyName];
+            if (value is JObject jObj)
+            {
+                foreach (var prop in jObj.Properties())
+                {
+                    if (typeof(T) == typeof(int))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<int>();
+                    }
+                    else if (typeof(T) == typeof(string))
+                    {
+                        dict[prop.Name] = (T)(object)(prop.Value.Value<string>() ?? string.Empty);
+                    }
+                    else if (typeof(T) == typeof(double))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<double>();
+                    }
+                }
+            }
+            return dict;
+        }
+        catch
+        {
+            return new Dictionary<string, T>();
+        }
     }
 
     #endregion

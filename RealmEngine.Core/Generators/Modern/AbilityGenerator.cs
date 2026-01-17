@@ -176,6 +176,7 @@ public class AbilityGenerator
                 Name = name,
                 DisplayName = displayName,
                 Description = GetStringProperty(catalogAbility, "description") ?? "An ability",
+                Tier = GetIntProperty(catalogAbility, "tier", 1),
                 // Consolidated catalogs use "selectionWeight", old structure uses "rarityWeight"
                 RarityWeight = catalogAbility["selectionWeight"] != null 
                     ? GetIntProperty(catalogAbility, "selectionWeight", 1) 

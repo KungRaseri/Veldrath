@@ -148,14 +148,22 @@ public class QuestGenerator
                 Id = $"{questType}:{GetStringProperty(catalogQuest, "name")}",
                 Slug = GetStringProperty(catalogQuest, "slug") ?? string.Empty,
                 Title = GetStringProperty(catalogQuest, "displayName") ?? GetStringProperty(catalogQuest, "name") ?? "Unknown Quest",
+                DisplayName = GetStringProperty(catalogQuest, "displayName") ?? GetStringProperty(catalogQuest, "name") ?? "Unknown Quest",
                 Description = GetStringProperty(catalogQuest, "description") ?? "A mysterious task awaits",
                 QuestType = GetStringProperty(catalogQuest, "questType") ?? questType,
                 Difficulty = GetStringProperty(catalogQuest, "difficulty") ?? "medium",
                 Type = GetBoolProperty(catalogQuest, "legendary", false) ? "legendary" : "side",
+                RarityWeight = GetIntProperty(catalogQuest, "rarityWeight", 50),
+                QuestGiverTypes = GetStringArrayProperty(catalogQuest, "questGiverTypes")?.ToList() ?? new List<string>(),
+                CombatOptional = GetBoolProperty(catalogQuest, "combatOptional", false),
+                MinClues = GetIntProperty(catalogQuest, "minClues", 0),
+                MaxClues = GetIntProperty(catalogQuest, "maxClues", 0),
                 
                 // Set rewards
                 GoldReward = GetIntProperty(catalogQuest, "baseGoldReward", 50),
                 XpReward = GetIntProperty(catalogQuest, "baseXpReward", 100),
+                BaseGoldReward = GetIntProperty(catalogQuest, "baseGoldReward", 50),
+                BaseXpReward = GetIntProperty(catalogQuest, "baseXpReward", 100),
                 
                 // Set target info for kill/fetch quests
                 TargetName = GetStringProperty(catalogQuest, "targetType") ?? "",
@@ -432,4 +440,62 @@ public class QuestGenerator
             quest.ObjectiveNpcs = npcs;
         }
     }
-}
+
+    private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
+    {
+        try
+        {
+            var dict = new Dictionary<string, T>();
+            var value = obj[propertyName];
+            if (value is JObject jObj)
+            {
+                foreach (var prop in jObj.Properties())
+                {
+                    if (typeof(T) == typeof(int))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<int>();
+                    }
+                    else if (typeof(T) == typeof(string))
+                    {
+                        dict[prop.Name] = (T)(object)(prop.Value.Value<string>() ?? string.Empty);
+                    }
+                    else if (typeof(T) == typeof(double))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<double>();
+                    }
+                }
+            }
+            return dict;
+        }
+        catch
+        {
+            return new Dictionary<string, T>();
+        }
+    }
+
+    private static string[]? GetStringArrayProperty(JToken obj, string propertyName)
+    {
+        try
+        {
+            var value = obj[propertyName];
+            if (value == null) return null;
+
+            if (value is JArray array)
+            {
+                return array.Select(x => x?.Value<string>()).Where(x => x != null).ToArray()!;
+            }
+
+            if (value.Type == JTokenType.String)
+            {
+                // Handle space-separated string format
+                var stringValue = value.Value<string>();
+                return stringValue?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }}

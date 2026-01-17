@@ -214,9 +214,16 @@ public class EnchantmentGenerator
         {
             Slug = GetStringProperty(component, "slug") ?? string.Empty,
             Name = name,
+            DisplayName = GetStringProperty(component, "displayName") ?? name,
             RarityWeight = GetIntProperty(component, "rarityWeight", 50),
             Position = position,
-            Description = "Enchantment"
+            Description = "Enchantment",
+            Value = GetIntProperty(component, "value", 0),
+            Weight = GetDoubleProperty(component, "weight", 0.0),
+            Effect = GetStringProperty(component, "effect"),
+            Power = GetIntProperty(component, "power", 0),
+            Duration = GetIntProperty(component, "duration", 0),
+            Attributes = GetDictionaryProperty<int>(component, "attributes")
         };
 
         // Set rarity based on weight
@@ -346,6 +353,51 @@ public class EnchantmentGenerator
         catch
         {
             return null;
+        }
+    }
+
+    private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
+    {
+        try
+        {
+            var dict = new Dictionary<string, T>();
+            var value = obj[propertyName];
+            if (value is JObject jObj)
+            {
+                foreach (var prop in jObj.Properties())
+                {
+                    if (typeof(T) == typeof(int))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<int>();
+                    }
+                    else if (typeof(T) == typeof(string))
+                    {
+                        dict[prop.Name] = (T)(object)(prop.Value.Value<string>() ?? string.Empty);
+                    }
+                    else if (typeof(T) == typeof(double))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<double>();
+                    }
+                }
+            }
+            return dict;
+        }
+        catch
+        {
+            return new Dictionary<string, T>();
+        }
+    }
+
+    private static double GetDoubleProperty(JToken obj, string propertyName, double defaultValue)
+    {
+        try
+        {
+            var value = obj[propertyName];
+            return value != null ? value.Value<double>() : defaultValue;
+        }
+        catch
+        {
+            return defaultValue;
         }
     }
 }

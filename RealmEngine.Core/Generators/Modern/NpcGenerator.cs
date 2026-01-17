@@ -169,9 +169,16 @@ public class NpcGenerator
                 Id = $"{category}:{GetStringProperty(catalogNpc, "name") ?? GetStringProperty(catalogNpc, "displayName")}",
                 Slug = GetStringProperty(catalogNpc, "slug") ?? string.Empty,
                 Name = GetStringProperty(catalogNpc, "displayName") ?? GetStringProperty(catalogNpc, "name") ?? "Unknown NPC",
+                DisplayName = GetStringProperty(catalogNpc, "displayName") ?? GetStringProperty(catalogNpc, "name") ?? "Unknown NPC",
                 Age = GetIntProperty(catalogNpc, "age", _random.Next(20, 70)),
                 Occupation = GetStringProperty(catalogNpc, "occupation") ?? GetStringProperty(catalogNpc, "socialClass") ?? "Citizen",
+                SocialClass = GetStringProperty(catalogNpc, "socialClass") ?? "common",
+                SkillBonuses = GetStringArrayProperty(catalogNpc, "skillBonuses")?.ToList() ?? new List<string>(),
+                Attributes = GetDictionaryProperty<int>(catalogNpc, "attributes"),
+                BaseGold = GetStringProperty(catalogNpc, "baseGold") ?? "1d10",
                 Gold = GetIntProperty(catalogNpc, "baseGold", _random.Next(10, 100)),
+                ShopType = GetStringProperty(catalogNpc, "shopType"),
+                ShopChance = GetDoubleProperty(catalogNpc, "shopChance", 0.0),
                 Dialogue = GetStringProperty(catalogNpc, "greeting") ?? GetStringProperty(catalogNpc, "description") ?? "Hello there!",
                 IsFriendly = GetBoolProperty(catalogNpc, "isFriendly", !GetBoolProperty(catalogNpc, "isHostile", false))
             };
@@ -462,6 +469,78 @@ public class NpcGenerator
                 }
             }
             npc.Inventory = inventory;
+        }
+    }
+
+    private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
+    {
+        try
+        {
+            var dict = new Dictionary<string, T>();
+            var value = obj[propertyName];
+            if (value is JObject jObj)
+            {
+                foreach (var prop in jObj.Properties())
+                {
+                    if (typeof(T) == typeof(int))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<int>();
+                    }
+                    else if (typeof(T) == typeof(string))
+                    {
+                        dict[prop.Name] = (T)(object)(prop.Value.Value<string>() ?? string.Empty);
+                    }
+                    else if (typeof(T) == typeof(double))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<double>();
+                    }
+                }
+            }
+            return dict;
+        }
+        catch
+        {
+            return new Dictionary<string, T>();
+        }
+    }
+
+    private static double GetDoubleProperty(JToken obj, string propertyName, double defaultValue)
+    {
+        try
+        {
+            var value = obj[propertyName];
+            return value != null ? value.Value<double>() : defaultValue;
+        }
+        catch
+        {
+            return defaultValue;
+        }
+    }
+
+    private static string[]? GetStringArrayProperty(JToken obj, string propertyName)
+    {
+        try
+        {
+            var value = obj[propertyName];
+            if (value == null) return null;
+
+            if (value is JArray array)
+            {
+                return array.Select(x => x?.Value<string>()).Where(x => x != null).ToArray()!;
+            }
+
+            if (value.Type == JTokenType.String)
+            {
+                // Handle space-separated string format
+                var stringValue = value.Value<string>();
+                return stringValue?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

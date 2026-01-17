@@ -191,13 +191,15 @@ public class EnemyGenerator
                 MaxHealth = health,
                 Level = level,
                 
-                // Map attributes
+                // Map attributes (both individual and dictionary)
                 Strength = str,
                 Dexterity = dex,
                 Constitution = con,
                 Intelligence = intel,
                 Wisdom = wis,
                 Charisma = cha,
+                Attributes = GetDictionaryProperty<int>(catalogEnemy, "attributes"),
+                Stats = GetDictionaryProperty<string>(catalogEnemy, "stats"),
                 
                 // Map damage properties
                 BasePhysicalDamage = attack,
@@ -680,5 +682,37 @@ public class EnemyGenerator
             >= 30 => EnemyDifficulty.Normal,
             _ => EnemyDifficulty.Easy
         };
+    }
+
+    private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
+    {
+        try
+        {
+            var dict = new Dictionary<string, T>();
+            var value = obj[propertyName];
+            if (value is JObject jObj)
+            {
+                foreach (var prop in jObj.Properties())
+                {
+                    if (typeof(T) == typeof(int))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<int>();
+                    }
+                    else if (typeof(T) == typeof(string))
+                    {
+                        dict[prop.Name] = (T)(object)(prop.Value.Value<string>() ?? string.Empty);
+                    }
+                    else if (typeof(T) == typeof(double))
+                    {
+                        dict[prop.Name] = (T)(object)prop.Value.Value<double>();
+                    }
+                }
+            }
+            return dict;
+        }
+        catch
+        {
+            return new Dictionary<string, T>();
+        }
     }
 }
