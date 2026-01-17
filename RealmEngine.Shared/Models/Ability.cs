@@ -12,6 +12,12 @@ public class Ability
     /// Unique identifier for this ability (kebab-case, e.g., "basic-attack").
     /// </summary>
     public string Id { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// URL-safe identifier for this ability (kebab-case).
+    /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
 
     /// <summary>
     /// Internal name used in references (kebab-case).
@@ -39,6 +45,12 @@ public class Ability
     /// Description of what the ability does.
     /// </summary>
     public string Description { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the ability tier/power level (1-5).
+    /// Higher tiers indicate more powerful abilities.
+    /// </summary>
+    public int Tier { get; set; } = 1;
 
     /// <summary>
     /// Rarity weight for procedural generation (lower = more common).

@@ -11,9 +11,21 @@ public class NPC : ITraitable
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
     /// <summary>
+    /// Gets or sets the URL-safe identifier for this NPC (kebab-case).
+    /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
     /// Gets or sets the display name of the NPC.
     /// </summary>
     public string Name { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the display name shown to players (may differ from internal Name).
+    /// Used in UI and dialogue. Maps to "displayName" in JSON.
+    /// </summary>
+    public string DisplayName { get; set; } = string.Empty;
     
     /// <summary>
     /// Gets or sets the base name of the NPC without titles (e.g., "Garrick", "Elara").
@@ -43,9 +55,33 @@ public class NPC : ITraitable
     public string Occupation { get; set; } = string.Empty;
     
     /// <summary>
+    /// Gets or sets the social class/tier of this NPC.
+    /// Values: "common", "merchant", "craftsmen", "noble", "military", "religious", etc.
+    /// </summary>
+    public string SocialClass { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the list of skills this NPC has bonuses in.
+    /// Examples: ["persuasion", "appraisal", "haggling"], ["smithing", "metalworking"]
+    /// </summary>
+    public List<string> SkillBonuses { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the base attribute bonuses from JSON catalog.
+    /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
+    /// </summary>
+    public Dictionary<string, int> Attributes { get; set; } = new();
+    
+    /// <summary>
     /// Gets or sets the amount of gold this NPC possesses.
     /// </summary>
     public int Gold { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the base gold dice formula for this NPC type.
+    /// Example: "5d10" means roll 5d10 for gold amount. Maps to "baseGold" in JSON.
+    /// </summary>
+    public string BaseGold { get; set; } = string.Empty;
     
     /// <summary>
     /// Gets or sets the default dialogue text for this NPC.
@@ -57,6 +93,24 @@ public class NPC : ITraitable
     /// Hostile NPCs may initiate combat.
     /// </summary>
     public bool IsFriendly { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets the type of shop this NPC operates (if any).
+    /// Examples: "general_store", "blacksmith", "alchemist", "tavern"
+    /// </summary>
+    public string? ShopType { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the probability (0.0-1.0) that this NPC has a shop.
+    /// 0.95 = 95% chance of having shop inventory.
+    /// </summary>
+    public double ShopChance { get; set; } = 0.0;
+    
+    /// <summary>
+    /// Gets or sets the shop inventory configuration.
+    /// Contains core items, specialty items, and restock rules.
+    /// </summary>
+    public NPCShopInventory? ShopInventory { get; set; }
 
     /// <summary>
     /// Collection of dialogue line IDs for this NPC's conversations.
@@ -277,4 +331,43 @@ public class NPC : ITraitable
         
         return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
+}
+
+/// <summary>
+/// Represents shop inventory configuration for merchant NPCs.
+/// Contains items for sale and restock rules.
+/// </summary>
+public class NPCShopInventory
+{
+    /// <summary>
+    /// Gets or sets the core items always available in the shop.
+    /// </summary>
+    public List<ShopInventoryItem> CoreItems { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the specialty items that may appear in the shop.
+    /// </summary>
+    public List<ShopInventoryItem> SpecialtyItems { get; set; } = new();
+}
+
+/// <summary>
+/// Represents a single item entry in an NPC's shop inventory.
+/// </summary>
+public class ShopInventoryItem
+{
+    /// <summary>
+    /// Gets or sets the item reference ID (v4.1 format).
+    /// Example: "@items/materials:*" for random material, "@items/weapons/swords:iron-longsword" for specific item.
+    /// </summary>
+    public string Item { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the base quantity of this item in stock.
+    /// </summary>
+    public int BaseQuantity { get; set; } = 1;
+    
+    /// <summary>
+    /// Gets or sets whether this item restocks daily.
+    /// </summary>
+    public bool RestockDaily { get; set; } = false;
 }

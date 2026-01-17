@@ -12,9 +12,27 @@ public class Quest : ITraitable
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
     /// <summary>
+    /// Gets or sets the URL-safe identifier for this quest (kebab-case).
+    /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
     /// Gets or sets the quest title displayed to the player.
     /// </summary>
     public string Title { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the display name shown in UI.
+    /// May differ from internal Title. Maps to "displayName" in JSON.
+    /// </summary>
+    public string DisplayName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the rarity weight for quest selection in procedural generation.
+    /// Lower values = more rare/harder to get.
+    /// </summary>
+    public int RarityWeight { get; set; } = 50;
     
     /// <summary>
     /// Gets or sets the descriptive text explaining the quest objectives.
@@ -35,6 +53,44 @@ public class Quest : ITraitable
     /// Gets or sets the quest category ("main", "side", "legendary").
     /// </summary>
     public string Type { get; set; } = "side";
+    
+    /// <summary>
+    /// Gets or sets the types of NPCs that can give this quest.
+    /// Examples: ["common", "service", "military"], ["merchants", "craftsmen"]
+    /// </summary>
+    public List<string> QuestGiverTypes { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets whether combat is optional for this quest.
+    /// True = quest can be completed without fighting.
+    /// </summary>
+    public bool CombatOptional { get; set; } = false;
+    
+    /// <summary>
+    /// Gets or sets the minimum number of clues required (for investigation quests).
+    /// </summary>
+    public int MinClues { get; set; } = 0;
+    
+    /// <summary>
+    /// Gets or sets the maximum number of clues available (for investigation quests).
+    /// </summary>
+    public int MaxClues { get; set; } = 0;
+    
+    /// <summary>
+    /// Gets or sets the base gold reward for this quest template.
+    /// </summary>
+    public int BaseGoldReward { get; set; } = 0;
+    
+    /// <summary>
+    /// Gets or sets the base XP reward for this quest template.
+    /// </summary>
+    public int BaseXpReward { get; set; } = 0;
+    
+    /// <summary>
+    /// Gets or sets the location type for this quest.
+    /// Examples: "Village", "Forest", "Dungeon", "City"
+    /// </summary>
+    public string Location { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the unique identifier of the NPC who gives this quest.

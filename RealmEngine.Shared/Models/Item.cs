@@ -12,6 +12,12 @@ public class Item : ITraitable
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
     /// <summary>
+    /// Gets or sets the URL-safe identifier for this item (kebab-case).
+    /// Used for lookups, references, and API endpoints.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
     /// Gets or sets the display name of the item (may include enhancements).
     /// </summary>
     public string Name { get; set; } = string.Empty;
@@ -25,6 +31,12 @@ public class Item : ITraitable
     /// Gets or sets the market value of the item in gold.
     /// </summary>
     public int Price { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the physical weight of the item in pounds.
+    /// Used for inventory encumbrance calculations.
+    /// </summary>
+    public double Weight { get; set; } = 0.0;
     
     /// <summary>
     /// Gets or sets the item rarity (Common, Uncommon, Rare, Epic, Legendary, Mythic).
@@ -55,10 +67,23 @@ public class Item : ITraitable
     public bool IsStackable { get; set; } = false;
 
     /// <summary>
+    /// Gets or sets the base attribute bonuses from this item.
+    /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
+    /// </summary>
+    public Dictionary<string, int> Attributes { get; set; } = new();
+    
+    /// <summary>
     /// Gets or sets the trait system dictionary for dynamic properties defined in JSON.
     /// Implements ITraitable interface.
     /// </summary>
     public Dictionary<string, TraitValue> Traits { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the formula-based stats for this item.
+    /// Used for armor defense calculations, weapon attack bonuses, etc.
+    /// Keys like "defense", "attack", with string formulas as values.
+    /// </summary>
+    public Dictionary<string, string> Stats { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the equipment set name this item belongs to (if any).
@@ -71,6 +96,36 @@ public class Item : ITraitable
     /// Two-handed weapons cannot be used with shields.
     /// </summary>
     public bool IsTwoHanded { get; set; } = false;
+    
+    /// <summary>
+    /// Gets or sets the damage configuration for weapons.
+    /// Contains min/max damage dice and modifier formula.
+    /// </summary>
+    public ItemDamage? Damage { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the armor class for armor items.
+    /// Values: "light", "medium", "heavy"
+    /// </summary>
+    public string? ArmorClass { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the effect type for consumable items.
+    /// Examples: "heal", "buff", "heal_overtime", "cure_poison", "restore", "stat_boost"
+    /// </summary>
+    public string? Effect { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the power/magnitude of the effect for consumables.
+    /// For healing potions, this is HP restored. For buffs, this is bonus amount.
+    /// </summary>
+    public int Power { get; set; } = 0;
+    
+    /// <summary>
+    /// Gets or sets the duration of the effect in turns/seconds.
+    /// 0 means instant effect (like healing potions).
+    /// </summary>
+    public int Duration { get; set; } = 0;
 
     // Enhancement System v1.0 (Hybrid Model)
     // ========================================
@@ -699,6 +754,27 @@ public class Item : ITraitable
         Quantity -= amount;
         return true;
     }
+}
+
+/// <summary>
+/// Represents weapon damage configuration.
+/// </summary>
+public class ItemDamage
+{
+    /// <summary>
+    /// Gets or sets the minimum damage value.
+    /// </summary>
+    public int Min { get; set; } = 1;
+    
+    /// <summary>
+    /// Gets or sets the maximum damage value.
+    /// </summary>
+    public int Max { get; set; } = 4;
+    
+    /// <summary>
+    /// Gets or sets the damage modifier formula (e.g., "wielder.strength_mod").
+    /// </summary>
+    public string Modifier { get; set; } = string.Empty;
 }
 
 /// <summary>

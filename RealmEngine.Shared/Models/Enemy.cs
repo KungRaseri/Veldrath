@@ -11,6 +11,12 @@ public class Enemy : ITraitable
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
     /// <summary>
+    /// Gets or sets the URL-safe identifier for this enemy (kebab-case).
+    /// Used for lookups, references, and catalog identification.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
     /// Gets or sets the display name of the enemy.
     /// </summary>
     public string Name { get; set; } = string.Empty;
@@ -36,12 +42,32 @@ public class Enemy : ITraitable
     /// Gets or sets the descriptive text for the enemy.
     /// </summary>
     public string Description { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the base attribute bonuses from JSON catalog.
+    /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
+    /// </summary>
+    public Dictionary<string, int> Attributes { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the trait system dictionary for dynamic properties.
     /// Implements ITraitable interface.
     /// </summary>
     public Dictionary<string, TraitValue> Traits { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the formula-based combat stats for this enemy.
+    /// Contains attack, defense, speed, and health formulas from JSON.
+    /// Keys: "attack", "defense", "speed", "health" with string formulas as values.
+    /// Example: "attack": "strength_mod + level + 8"
+    /// </summary>
+    public Dictionary<string, string> Stats { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the combat configuration for this enemy.
+    /// Contains ability references and level-based unlock data.
+    /// </summary>
+    public EnemyCombat? Combat { get; set; }
 
     /// <summary>
     /// Gets or sets the enemy's current level.
@@ -110,8 +136,9 @@ public class Enemy : ITraitable
     
     /// <summary>
     /// Gets or sets the experience points rewarded when this enemy is defeated.
+    /// Maps to "xp" field in JSON catalogs.
     /// </summary>
-    public int XPReward { get; set; } = 25;
+    public int XP { get; set; } = 25;
     
     /// <summary>
     /// Gets or sets the gold rewarded when this enemy is defeated.
@@ -416,4 +443,24 @@ public enum EnemyDifficulty
     Elite,
     /// <summary>Boss difficulty (1.5x+ player level).</summary>
     Boss
+}
+
+/// <summary>
+/// Represents combat configuration for an enemy.
+/// Contains ability references and level-based unlock data from JSON.
+/// </summary>
+public class EnemyCombat
+{
+    /// <summary>
+    /// Gets or sets the current ability reference IDs available to this enemy.
+    /// Each ID is a JSON reference like "@abilities/active/offensive:fireball".
+    /// </summary>
+    public List<string> Abilities { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the level-based ability unlock map.
+    /// Key = level (int), Value = array of ability reference IDs unlocked at that level.
+    /// Example: { 5: ["@abilities/active/offensive:*"], 10: ["@abilities/active/support:heal"] }
+    /// </summary>
+    public Dictionary<int, List<string>> AbilityUnlocks { get; set; } = new();
 }

@@ -9,6 +9,12 @@ public class CharacterClass
     /// <summary>Gets or sets the unique identifier for this character class.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
+    /// <summary>
+    /// Gets or sets the URL-safe identifier for this class (kebab-case).
+    /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
     /// <summary>Gets or sets the internal name of the character class.</summary>
     public string Name { get; set; } = string.Empty;
     
@@ -59,6 +65,12 @@ public class CharacterClass
     public int BonusWisdom { get; set; } = 10;
     /// <summary>Gets or sets the bonus charisma modifier for this class.</summary>
     public int BonusCharisma { get; set; } = 10;
+    
+    /// <summary>
+    /// Gets or sets the level-based progression data for this class.
+    /// Contains stat growth per level and ability unlock schedules.
+    /// </summary>
+    public ClassProgression? Progression { get; set; }
 
     /// <summary>
     /// Collection of starting ability reference IDs (v4.1 format) that characters of this class begin with.
@@ -367,4 +379,52 @@ public class AttributeAllocation
             case "Charisma": Charisma = value; break;
         }
     }
+}
+
+/// <summary>
+/// Represents level-based progression data for a character class.
+/// Contains stat growth and ability unlock schedules from JSON.
+/// </summary>
+public class ClassProgression
+{
+    /// <summary>
+    /// Gets or sets the stat growth configuration per level.
+    /// </summary>
+    public StatGrowth? StatGrowth { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the level-based ability unlock map.
+    /// Key = level (int), Value = array of ability reference IDs unlocked at that level.
+    /// </summary>
+    public Dictionary<int, List<string>> AbilityUnlocks { get; set; } = new();
+}
+
+/// <summary>
+/// Represents stat growth per level for a character class.
+/// </summary>
+public class StatGrowth
+{
+    /// <summary>Gets or sets the health points gained per level.</summary>
+    public double HealthPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the mana points gained per level.</summary>
+    public double ManaPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the strength gained per level.</summary>
+    public double StrengthPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the dexterity gained per level.</summary>
+    public double DexterityPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the constitution gained per level.</summary>
+    public double ConstitutionPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the intelligence gained per level.</summary>
+    public double IntelligencePerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the wisdom gained per level.</summary>
+    public double WisdomPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the charisma gained per level.</summary>
+    public double CharismaPerLevel { get; set; } = 0;
 }
