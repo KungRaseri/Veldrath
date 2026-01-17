@@ -57,7 +57,7 @@ public class BossEncounterIntegrationTests
         result.Boss.Should().NotBeNull();
         result.Boss!.Name.Should().Be("Dark Lord");
         result.Boss.Difficulty.Should().Be(EnemyDifficulty.Boss);
-        result.Boss.XPReward.Should().BeGreaterThanOrEqualTo(10000); // 5000 * 2 (boss multiplier)
+        result.Boss.XP.Should().BeGreaterThanOrEqualTo(10000); // 5000 * 2 (boss multiplier)
         result.Boss.GoldReward.Should().BeGreaterThanOrEqualTo(20); // Enhanced rewards (3x multiplier)
     }
 

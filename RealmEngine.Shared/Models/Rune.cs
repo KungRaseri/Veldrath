@@ -9,6 +9,12 @@ public class Rune : ISocketable
     /// <summary>Gets or sets the unique identifier.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
+    /// <summary>
+    /// Gets or sets the URL-safe identifier for this rune (kebab-case).
+    /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
     /// <summary>Gets or sets the name.</summary>
     public string Name { get; set; } = string.Empty;
     

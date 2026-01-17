@@ -28,7 +28,7 @@ public class EnemyTests
         enemy.Charisma.Should().Be(10);
         enemy.BasePhysicalDamage.Should().Be(5);
         enemy.BaseMagicDamage.Should().Be(0);
-        enemy.XPReward.Should().Be(25);
+        enemy.XP.Should().Be(25);
         enemy.GoldReward.Should().Be(10);
         enemy.Type.Should().Be(EnemyType.Common);
         enemy.Difficulty.Should().Be(EnemyDifficulty.Easy);
@@ -328,7 +328,7 @@ public class EnemyTests
         enemy.Charisma = 6;
         enemy.BasePhysicalDamage = 15;
         enemy.BaseMagicDamage = 5;
-        enemy.XPReward = 50;
+        enemy.XP = 50;
         enemy.GoldReward = 25;
         enemy.Type = EnemyType.Humanoid;
         enemy.Difficulty = EnemyDifficulty.Normal;
@@ -347,7 +347,7 @@ public class EnemyTests
         enemy.Charisma.Should().Be(6);
         enemy.BasePhysicalDamage.Should().Be(15);
         enemy.BaseMagicDamage.Should().Be(5);
-        enemy.XPReward.Should().Be(50);
+        enemy.XP.Should().Be(50);
         enemy.GoldReward.Should().Be(25);
         enemy.Type.Should().Be(EnemyType.Humanoid);
         enemy.Difficulty.Should().Be(EnemyDifficulty.Normal);

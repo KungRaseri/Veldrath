@@ -57,7 +57,7 @@ public class AttackEnemyHandlerTests
     {
         // Arrange
         var player = new Character { Name = "Hero", Strength = 20, Experience = 0, Gold = 0 };
-        var enemy = new Enemy { Name = "Goblin", Health = 10, MaxHealth = 50, XPReward = 25, GoldReward = 10 };
+        var enemy = new Enemy { Name = "Goblin", Health = 10, MaxHealth = 50, XP = 25, GoldReward = 10 };
         var combatResult = new CombatResult { Damage = 15, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
@@ -84,7 +84,7 @@ public class AttackEnemyHandlerTests
     {
         // Arrange
         var player = new Character { Name = "Hero", Strength = 20, Experience = 0, Gold = 0 };
-        var enemy = new Enemy { Name = "Dragon", Health = 5, MaxHealth = 100, XPReward = 100, GoldReward = 50 };
+        var enemy = new Enemy { Name = "Dragon", Health = 5, MaxHealth = 100, XP = 100, GoldReward = 50 };
         var combatResult = new CombatResult { Damage = 50, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
@@ -157,7 +157,7 @@ public class AttackEnemyHandlerTests
     {
         // Arrange
         var player = new Character { Name = "Hero", Strength = 20, Experience = 0, Gold = 0 };
-        var enemy = new Enemy { Name = "Rat", Health = 5, MaxHealth = 10, XPReward = 5, GoldReward = 2 };
+        var enemy = new Enemy { Name = "Rat", Health = 5, MaxHealth = 10, XP = 5, GoldReward = 2 };
         var combatResult = new CombatResult { Damage = 10, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);

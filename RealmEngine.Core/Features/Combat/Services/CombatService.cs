@@ -967,7 +967,7 @@ public class CombatService
         var outcome = new CombatOutcome
         {
             PlayerVictory = true,
-            XPGained = enemy.XPReward,
+            XPGained = enemy.XP,
             GoldGained = enemy.GoldReward,
             DefeatedEnemyId = enemy.Id,
             DefeatedEnemyType = enemy.Type.ToString()

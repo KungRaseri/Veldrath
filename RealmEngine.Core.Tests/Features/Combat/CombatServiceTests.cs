@@ -221,7 +221,7 @@ public class CombatServiceTests
         // Arrange
         var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, null!);
         var player = new Character { Name = "Hero" };
-        var enemy = new Enemy { Name = "Goblin", XPReward = 50, GoldReward = 25 };
+        var enemy = new Enemy { Name = "Goblin", XP = 50, GoldReward = 25 };
 
         // Act
         var outcome = await service.GenerateVictoryOutcome(player, enemy);
@@ -241,7 +241,7 @@ public class CombatServiceTests
         // Arrange
         var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, null!);
         var player = new Character { Name = "Hero" };
-        var enemy = new Enemy { Name = "Skeleton King", XPReward = 100, GoldReward = 50 };
+        var enemy = new Enemy { Name = "Skeleton King", XP = 100, GoldReward = 50 };
 
         // Act
         var outcome = await service.GenerateVictoryOutcome(player, enemy);

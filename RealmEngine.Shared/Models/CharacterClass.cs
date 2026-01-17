@@ -200,11 +200,6 @@ public class CharacterClass
     public Dictionary<string, object> Traits { get; set; } = new();
 
     /// <summary>
-    /// Progression data (stat growth, ability unlocks, etc.).
-    /// </summary>
-    public ClassProgression? Progression { get; set; }
-
-    /// <summary>
     /// Flavor text for class selection.
     /// </summary>
     public string FlavorText { get; set; } = string.Empty;
@@ -216,9 +211,9 @@ public class CharacterClass
 public class ClassProgression
 {
     /// <summary>
-    /// Stat growth per level.
+    /// Gets or sets the stat growth configuration per level.
     /// </summary>
-    public Dictionary<string, double> StatGrowth { get; set; } = new();
+    public StatGrowth? StatGrowth { get; set; }
 
     /// <summary>
     /// Ability unlock schedule mapping level to ability IDs.
@@ -247,6 +242,36 @@ public class ClassProgression
     /// Example: { 5: ["power-strike", "cleave"], 10: ["whirlwind", "battle-cry"] }
     /// </example>
     public Dictionary<int, List<string>> AbilityUnlocks { get; set; } = new();
+}
+
+/// <summary>
+/// Represents stat growth per level for a character class.
+/// </summary>
+public class StatGrowth
+{
+    /// <summary>Gets or sets the health points gained per level.</summary>
+    public double HealthPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the mana points gained per level.</summary>
+    public double ManaPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the strength gained per level.</summary>
+    public double StrengthPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the dexterity gained per level.</summary>
+    public double DexterityPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the constitution gained per level.</summary>
+    public double ConstitutionPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the intelligence gained per level.</summary>
+    public double IntelligencePerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the wisdom gained per level.</summary>
+    public double WisdomPerLevel { get; set; } = 0;
+    
+    /// <summary>Gets or sets the charisma gained per level.</summary>
+    public double CharismaPerLevel { get; set; } = 0;
 }
 
 /// <summary>
@@ -379,52 +404,4 @@ public class AttributeAllocation
             case "Charisma": Charisma = value; break;
         }
     }
-}
-
-/// <summary>
-/// Represents level-based progression data for a character class.
-/// Contains stat growth and ability unlock schedules from JSON.
-/// </summary>
-public class ClassProgression
-{
-    /// <summary>
-    /// Gets or sets the stat growth configuration per level.
-    /// </summary>
-    public StatGrowth? StatGrowth { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the level-based ability unlock map.
-    /// Key = level (int), Value = array of ability reference IDs unlocked at that level.
-    /// </summary>
-    public Dictionary<int, List<string>> AbilityUnlocks { get; set; } = new();
-}
-
-/// <summary>
-/// Represents stat growth per level for a character class.
-/// </summary>
-public class StatGrowth
-{
-    /// <summary>Gets or sets the health points gained per level.</summary>
-    public double HealthPerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the mana points gained per level.</summary>
-    public double ManaPerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the strength gained per level.</summary>
-    public double StrengthPerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the dexterity gained per level.</summary>
-    public double DexterityPerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the constitution gained per level.</summary>
-    public double ConstitutionPerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the intelligence gained per level.</summary>
-    public double IntelligencePerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the wisdom gained per level.</summary>
-    public double WisdomPerLevel { get; set; } = 0;
-    
-    /// <summary>Gets or sets the charisma gained per level.</summary>
-    public double CharismaPerLevel { get; set; } = 0;
 }

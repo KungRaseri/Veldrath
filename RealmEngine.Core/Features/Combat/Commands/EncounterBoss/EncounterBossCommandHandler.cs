@@ -66,7 +66,7 @@ public class EncounterBossCommandHandler : IRequestHandler<EncounterBossCommand,
                 Level = boss.Level,
                 RecommendedPlayerLevel = boss.Level - 2, // Bosses are tough, recommend being 2 levels below max
                 Difficulty = boss.Difficulty,
-                EstimatedXP = boss.XPReward,
+                EstimatedXP = boss.XP,
                 EstimatedGold = boss.GoldReward,
                 HealthTotal = boss.MaxHealth,
                 AttackPower = boss.BasePhysicalDamage + boss.BaseMagicDamage,
@@ -77,7 +77,7 @@ public class EncounterBossCommandHandler : IRequestHandler<EncounterBossCommand,
             };
 
             _logger.LogInformation("Boss encounter ready: {Boss} (Level {Level}, {XP} XP, {Gold} gold)",
-                boss.Name, boss.Level, boss.XPReward, boss.GoldReward);
+                boss.Name, boss.Level, boss.XP, boss.GoldReward);
 
             return new BossEncounterResult
             {

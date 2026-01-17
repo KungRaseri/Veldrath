@@ -87,12 +87,6 @@ public class Quest : ITraitable
     public int BaseXpReward { get; set; } = 0;
     
     /// <summary>
-    /// Gets or sets the location type for this quest.
-    /// Examples: "Village", "Forest", "Dungeon", "City"
-    /// </summary>
-    public string Location { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the unique identifier of the NPC who gives this quest.
     /// </summary>
     public string QuestGiverId { get; set; } = string.Empty;

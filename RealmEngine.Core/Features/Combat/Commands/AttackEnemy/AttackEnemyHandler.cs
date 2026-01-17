@@ -64,7 +64,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
         {
             // Award gold and experience with difficulty multiplier
             var difficulty = _saveGameService.GetDifficultySettings();
-            xpGained = (int)(enemy.XPReward * difficulty.GoldXPMultiplier);
+            xpGained = (int)(enemy.XP * difficulty.GoldXPMultiplier);
             goldGained = (int)(enemy.GoldReward * difficulty.GoldXPMultiplier);
             
             player.Experience += xpGained;

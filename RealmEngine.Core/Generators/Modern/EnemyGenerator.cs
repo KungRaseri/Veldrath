@@ -203,7 +203,7 @@ public class EnemyGenerator
                 BaseMagicDamage = magicAttack,
                 
                 // Map rewards (bosses get 2.5x multiplier)
-                XPReward = GetIntProperty(catalogEnemy, "xp", 25) * (isBoss ? 2 : 1),
+                XP = GetIntProperty(catalogEnemy, "xp", 25) * (isBoss ? 2 : 1),
                 GoldReward = GetIntProperty(catalogEnemy, "gold", 10) * (isBoss ? 3 : 1),
                 
                 // Set Type and Difficulty based on boss status and rarity

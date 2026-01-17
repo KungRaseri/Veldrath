@@ -168,7 +168,7 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
         if (enemy.Health <= 0)
         {
             var difficulty = _saveGameService.GetDifficultySettings();
-            int xpGained = (int)(enemy.XPReward * difficulty.GoldXPMultiplier);
+            int xpGained = (int)(enemy.XP * difficulty.GoldXPMultiplier);
             int goldGained = (int)(enemy.GoldReward * difficulty.GoldXPMultiplier);
 
             // Distribute XP/gold to party
@@ -229,7 +229,7 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
                     if (enemy.Health <= 0)
                     {
                         var difficulty = _saveGameService.GetDifficultySettings();
-                        int xpGained = (int)(enemy.XPReward * difficulty.GoldXPMultiplier);
+                        int xpGained = (int)(enemy.XP * difficulty.GoldXPMultiplier);
                         int goldGained = (int)(enemy.GoldReward * difficulty.GoldXPMultiplier);
 
                         _partyService.DistributeExperience(party, xpGained);

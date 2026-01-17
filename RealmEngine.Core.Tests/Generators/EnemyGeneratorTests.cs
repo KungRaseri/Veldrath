@@ -118,7 +118,7 @@ public class EnemyGeneratorTests
             enemy.Charisma.Should().BeInRange(1, 30);
             
             // Rewards
-            enemy.XPReward.Should().BeGreaterThan(0);
+            enemy.XP.Should().BeGreaterThan(0);
             enemy.GoldReward.Should().BeGreaterThanOrEqualTo(0);
         });
     }
