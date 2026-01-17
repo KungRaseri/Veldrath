@@ -129,10 +129,10 @@ public class BudgetGenerationStepTests
                     var pool = _materialPools.Pools[goblinConfig.MaterialPool];
                     _output.WriteLine($"Pool has {pool.Metals.Count} metals");
                     
-                    foreach (var metalRef in pool.Metals.Take(3))
+                    foreach (var (materialRef, entry) in pool.Metals.Take(3))
                     {
-                        _output.WriteLine($"  - {metalRef.MaterialRef} (weight: {metalRef.SelectionWeight})");
-                        var resolved = await _referenceResolver.ResolveToObjectAsync(metalRef.MaterialRef);
+                        _output.WriteLine($"  - {materialRef} (weight: {entry.RarityWeight})");
+                        var resolved = await _referenceResolver.ResolveToObjectAsync(materialRef);
                         if (resolved != null)
                         {
                             var cost = _budgetCalculator.CalculateMaterialCost(resolved);

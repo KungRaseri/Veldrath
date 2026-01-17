@@ -12,27 +12,29 @@
   },
   "costFormulas": {
     "material": {
-      "formula": "direct",
-      "field": "budgetCost",
-      "description": "Material cost uses budgetCost property directly (higher rarityWeight materials cost more)"
+      "formula": "inverse_scaled",
+      "numerator": 60,
+      "field": "rarityWeight",
+      "scaleField": "costScale",
+      "description": "Material cost = (60 / rarityWeight) × costScale. Higher rarityWeight = more common = cheaper. costScale defaults to 1.0 if omitted."
     },
     "component": {
       "formula": "inverse",
       "numerator": 100,
-      "field": "selectionWeight",
-      "description": "Component cost = 100 / selectionWeight (rarer components cost more budget)"
+      "field": "rarityWeight",
+      "description": "Component cost = 100 / rarityWeight (higher rarityWeight = more common = cheaper)"
     },
     "enchantment": {
       "formula": "inverse",
       "numerator": 130,
-      "field": "selectionWeight",
-      "description": "Enchantment cost = 130 / selectionWeight (enchantments are more valuable than regular components)"
+      "field": "rarityWeight",
+      "description": "Enchantment cost = 130 / rarityWeight (enchantments are more valuable than regular components)"
     },
     "materialQuality": {
       "formula": "inverse",
       "numerator": 150,
-      "field": "selectionWeight",
-      "description": "Material quality cost = 150 / selectionWeight (quality modifiers are premium)"
+      "field": "rarityWeight",
+      "description": "Material quality cost = 150 / rarityWeight (quality modifiers are premium)"
     }
   },
   "patternCosts": {

@@ -69,53 +69,59 @@ public class BudgetCalculator
     }
 
     /// <summary>
-    /// Calculate the cost of a material using direct budgetCost property.
+    /// Calculate the cost of a material using inverse formula with optional cost scale.
+    /// Formula: cost = (numerator / rarityWeight) × costScale
     /// </summary>
     public int CalculateMaterialCost(JToken material)
     {
-        var budgetCost = GetIntProperty(material, "budgetCost", 0);
-        if (budgetCost <= 0)
+        var rarityWeight = GetIntProperty(material, "rarityWeight", 0);
+        if (rarityWeight <= 0)
         {
-            _logger.LogWarning("Material {MaterialName} has invalid budgetCost: {Cost}", 
-                GetStringProperty(material, "name"), budgetCost);
-            return 999999; // Unaffordable
-        }
-        return budgetCost;
-    }
-
-    /// <summary>
-    /// Calculate the cost of a component using inverse formula: numerator / selectionWeight.
-    /// </summary>
-    public int CalculateComponentCost(JToken component)
-    {
-        var selectionWeight = GetIntProperty(component, "selectionWeight", 0);
-        if (selectionWeight <= 0)
-        {
-            _logger.LogWarning("Component {ComponentName} has invalid selectionWeight: {Weight}", 
-                GetStringProperty(component, "value"), selectionWeight);
+            _logger.LogWarning("Material {MaterialName} has invalid rarityWeight: {Weight}", 
+                GetStringProperty(material, "name"), rarityWeight);
             return 999999; // Unaffordable
         }
 
-        var numerator = _config.Formulas.Component.Numerator ?? 100;
-        var cost = (double)numerator / selectionWeight;
+        var numerator = _config.Formulas.Material.Numerator ?? 6000;
+        var costScale = GetDoubleProperty(material, "costScale", 1.0);
+        var cost = ((double)numerator / rarityWeight) * costScale;
+        
         return (int)Math.Round(cost);
     }
 
     /// <summary>
-    /// Calculate the cost of an enchantment using premium formula: numerator / selectionWeight.
+    /// Calculate the cost of a component using inverse formula: numerator / rarityWeight.
+    /// </summary>
+    public int CalculateComponentCost(JToken component)
+    {
+        var rarityWeight = GetIntProperty(component, "rarityWeight", 0);
+        if (rarityWeight <= 0)
+        {
+            _logger.LogWarning("Component {ComponentName} has invalid rarityWeight: {Weight}", 
+                GetStringProperty(component, "value"), rarityWeight);
+            return 999999; // Unaffordable
+        }
+
+        var numerator = _config.Formulas.Component.Numerator ?? 100;
+        var cost = (double)numerator / rarityWeight;
+        return (int)Math.Round(cost);
+    }
+
+    /// <summary>
+    /// Calculate the cost of an enchantment using premium formula: numerator / rarityWeight.
     /// </summary>
     public int CalculateEnchantmentCost(JToken enchantment)
     {
-        var selectionWeight = GetIntProperty(enchantment, "selectionWeight", 0);
-        if (selectionWeight <= 0)
+        var rarityWeight = GetIntProperty(enchantment, "rarityWeight", 0);
+        if (rarityWeight <= 0)
         {
-            _logger.LogWarning("Enchantment {EnchantmentName} has invalid selectionWeight: {Weight}", 
-                GetStringProperty(enchantment, "value"), selectionWeight);
+            _logger.LogWarning("Enchantment {EnchantmentName} has invalid rarityWeight: {Weight}", 
+                GetStringProperty(enchantment, "value"), rarityWeight);
             return 999999; // Unaffordable
         }
 
         var numerator = _config.Formulas.Enchantment.Numerator ?? 130;
-        var cost = (double)numerator / selectionWeight;
+        var cost = (double)numerator / rarityWeight;
         return (int)Math.Round(cost);
     }
 
@@ -124,14 +130,14 @@ public class BudgetCalculator
     /// </summary>
     public int CalculateQualityCost(JToken quality)
     {
-        var selectionWeight = GetIntProperty(quality, "selectionWeight", 0);
-        if (selectionWeight <= 0)
+        var rarityWeight = GetIntProperty(quality, "rarityWeight", 0);
+        if (rarityWeight <= 0)
         {
             return 999999; // Unaffordable
         }
 
         var numerator = _config.Formulas.MaterialQuality.Numerator ?? 150;
-        var cost = (double)numerator / selectionWeight;
+        var cost = (double)numerator / rarityWeight;
         return (int)Math.Round(cost);
     }
 
@@ -165,5 +171,18 @@ public class BudgetCalculator
     private static int GetIntProperty(JToken token, string propertyName, int defaultValue)
     {
         return token[propertyName]?.Value<int>() ?? defaultValue;
+    }
+
+    private static double GetDoubleProperty(JToken token, string propertyName, double defaultValue)
+    {
+        try
+        {
+            var value = token[propertyName];
+            return value?.Value<double>() ?? defaultValue;
+        }
+        catch
+        {
+            return defaultValue;
+        }
     }
 }

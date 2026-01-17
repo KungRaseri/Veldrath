@@ -116,6 +116,10 @@ public class CostFormula
   [JsonProperty("field")]
   public string Field { get; set; } = string.Empty;
 
+  /// <summary>Gets or sets the optional scale field name (for materials).</summary>
+  [JsonProperty("scaleField")]
+  public string? ScaleField { get; set; }
+
   /// <summary>Gets or sets the formula description.</summary>
   [JsonProperty("description")]
   public string Description { get; set; } = string.Empty;

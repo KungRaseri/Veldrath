@@ -153,10 +153,10 @@ public class BudgetConfigFactory
             },
             Formulas = new CostFormulas
             {
-                Material = new CostFormula { Formula = "direct", Field = "budgetCost" },
-                Component = new CostFormula { Formula = "inverse", Numerator = 100, Field = "selectionWeight" },
-                Enchantment = new CostFormula { Formula = "inverse", Numerator = 130, Field = "selectionWeight" },
-                MaterialQuality = new CostFormula { Formula = "inverse", Numerator = 150, Field = "selectionWeight" }
+                Material = new CostFormula { Formula = "inverse_scaled", Numerator = 6000, Field = "rarityWeight", ScaleField = "costScale" },
+                Component = new CostFormula { Formula = "inverse", Numerator = 100, Field = "rarityWeight" },
+                Enchantment = new CostFormula { Formula = "inverse", Numerator = 130, Field = "rarityWeight" },
+                MaterialQuality = new CostFormula { Formula = "inverse", Numerator = 150, Field = "rarityWeight" }
             },
             MinimumCosts = new MinimumCosts
             {
@@ -187,12 +187,12 @@ public class BudgetConfigFactory
                 ["default"] = new MaterialPool
                 {
                     Description = "Default fallback pool",
-                    Metals = new List<MaterialReference>
+                    Metals = new Dictionary<string, MaterialPoolEntry>
                     {
-                        new() { MaterialRef = "@items/materials:Iron", SelectionWeight = 40 },
-                        new() { MaterialRef = "@items/materials:Steel", SelectionWeight = 30 },
-                        new() { MaterialRef = "@items/materials:Mithril", SelectionWeight = 20 },
-                        new() { MaterialRef = "@items/materials:Adamantine", SelectionWeight = 10 }
+                        ["@items/materials:Iron"] = new() { RarityWeight = 40 },
+                        ["@items/materials:Steel"] = new() { RarityWeight = 30 },
+                        ["@items/materials:Mithril"] = new() { RarityWeight = 20 },
+                        ["@items/materials:Adamantine"] = new() { RarityWeight = 10 }
                     }
                 }
             }

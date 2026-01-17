@@ -48,21 +48,21 @@ public class MaterialPool
     [JsonProperty("description")]
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets the list of metal material references.</summary>
+    /// <summary>Gets or sets the metal materials with their selection properties.</summary>
     [JsonProperty("metals")]
-    public List<MaterialReference> Metals { get; set; } = new();
+    public Dictionary<string, MaterialPoolEntry> Metals { get; set; } = new();
 }
 
 /// <summary>
-/// Reference to a material with a selection weight.
+/// Entry defining a material's selection properties in a pool.
 /// </summary>
-public class MaterialReference
+public class MaterialPoolEntry
 {
-    /// <summary>Gets or sets the reference to the material catalog item.</summary>
-    [JsonProperty("materialRef")]
-    public string MaterialRef { get; set; } = string.Empty;
+    /// <summary>Gets or sets the rarity weight for weighted random selection.</summary>
+    [JsonProperty("rarityWeight")]
+    public int RarityWeight { get; set; }
 
-    /// <summary>Gets or sets the selection weight for random selection.</summary>
-    [JsonProperty("selectionWeight")]
-    public int SelectionWeight { get; set; }
+    /// <summary>Gets or sets the optional level requirement range [min, max].</summary>
+    [JsonProperty("levelRequirementRange")]
+    public int[]? LevelRequirementRange { get; set; }
 }

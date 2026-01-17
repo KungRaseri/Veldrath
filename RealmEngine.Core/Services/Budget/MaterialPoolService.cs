@@ -67,19 +67,19 @@ public class MaterialPoolService
             // Resolve all materials in pool and filter by budget
             var affordableMaterials = new List<(JToken Material, int Cost, int Weight)>();
 
-            foreach (var materialRef in pool.Metals)
+            foreach (var (materialRef, entry) in pool.Metals)
             {
-                var resolved = await _referenceResolver.ResolveToObjectAsync(materialRef.MaterialRef);
+                var resolved = await _referenceResolver.ResolveToObjectAsync(materialRef);
                 if (resolved == null)
                 {
-                    _logger.LogWarning("Failed to resolve material reference: {Ref}", materialRef.MaterialRef);
+                    _logger.LogWarning("Failed to resolve material reference: {Ref}", materialRef);
                     continue;
                 }
 
                 var cost = _budgetCalculator.CalculateMaterialCost(resolved);
                 if (_budgetCalculator.CanAfford(availableBudget, cost))
                 {
-                    affordableMaterials.Add((resolved, cost, materialRef.SelectionWeight));
+                    affordableMaterials.Add((resolved, cost, entry.RarityWeight));
                 }
             }
 

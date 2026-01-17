@@ -195,16 +195,14 @@ public class BudgetConfigFactoryTests
             
             if (metals == null) continue;
 
-            foreach (var metalEntry in metals)
+            foreach (var (materialRef, entry) in metals)
             {
-                var materialRef = metalEntry.MaterialRef;
                 materialRef.Should().NotBeNullOrEmpty($"pool '{poolName}' should have materialRef");
                 // Accept both old and new reference formats during migration
                 (materialRef.StartsWith("@items/materials/") || materialRef.StartsWith("@materials/properties/"))
                     .Should().BeTrue($"pool '{poolName}' reference should use valid format");
                 
-                var selectionWeight = metalEntry.SelectionWeight;
-                selectionWeight.Should().BeGreaterThan(0, $"pool '{poolName}' materials should have positive selectionWeight");
+                entry.RarityWeight.Should().BeGreaterThan(0, $"pool '{poolName}' materials should have positive rarityWeight");
             }
         }
     }
@@ -215,13 +213,13 @@ public class BudgetConfigFactoryTests
         // Act
         var config = _configFactory.GetBudgetConfig();
 
-        // Assert - Material formula (direct)
-        config.Formulas.Material.Formula.Should().Be("direct");
-        config.Formulas.Material.Field.Should().Be("budgetCost");
+        // Assert - Material formula (inverse_scaled)
+        config.Formulas.Material.Formula.Should().Be("inverse_scaled");
+        config.Formulas.Material.Field.Should().Be("rarityWeight");
 
         // Assert - Component formula (inverse)
         config.Formulas.Component.Formula.Should().Be("inverse");
-        config.Formulas.Component.Field.Should().Be("selectionWeight");
+        config.Formulas.Component.Field.Should().Be("rarityWeight");
         config.Formulas.Component.Numerator.Should().BeGreaterThan(0);
 
         // Assert - Enchantment formula (inverse, higher cost)
@@ -284,9 +282,9 @@ public class BudgetConfigFactoryTests
 
         foreach (var expectedMaterial in expectedMaterials)
         {
-            metals.Should().Contain(m => 
-                m.MaterialRef.Contains($":{expectedMaterial}") ||
-                m.MaterialRef.Contains($":{expectedMaterial.Replace("-", "")}"),
+            metals.Keys.Should().Contain(materialRef => 
+                materialRef.Contains($":{expectedMaterial}") ||
+                materialRef.Contains($":{expectedMaterial.Replace("-", "")}"),
                 $"pool '{poolName}' should contain material '{expectedMaterial}'");
         }
     }
