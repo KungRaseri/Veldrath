@@ -627,32 +627,6 @@ public class CatalogJsonV5ComplianceTests
 
   [Theory]
   [MemberData(nameof(GetAllCatalogs))]
-  public void All_Items_Should_Have_Rarity_Field(string catalogPath)
-  {
-    // Arrange
-    var fullPath = Path.Combine(_dataPath, catalogPath);
-    if (!File.Exists(fullPath)) return;
-
-    var json = JObject.Parse(File.ReadAllText(fullPath));
-    var allItems = GetAllItemsFromCatalog(json);
-
-    // Assert
-    foreach (var item in allItems)
-    {
-      var itemName = item["name"]?.ToString() ?? "Unknown";
-      item.Should().ContainKey("rarity",
-          $"{catalogPath} - Item '{itemName}' missing rarity field");
-
-      var rarity = item["rarity"]?.Value<int>();
-      rarity.Should().NotBeNull()
-          .And.BeGreaterThan(0)
-          .And.BeLessThanOrEqualTo(100,
-          $"{catalogPath} - Item '{itemName}' has invalid rarity value: {rarity}");
-    }
-  }
-
-  [Theory]
-  [MemberData(nameof(GetAllCatalogs))]
   public void All_Items_Should_Have_RarityWeight_Field(string catalogPath)
   {
     // Arrange

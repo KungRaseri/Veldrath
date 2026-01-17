@@ -38,7 +38,7 @@ RealmEngine/ (Backend API for Godot)
 - ✅ **Data Models**: Character, Item, Enemy, NPC, Quest, SaveGame
 - ✅ **MediatR Commands**: CreateCharacter, AttackEnemy, BuyFromShop, CastSpell
 - ✅ **MediatR Queries**: GetPlayerInventory, GetCombatState, GetActiveQuests
-- ✅ **JSON Data**: 192 data files (enemies, items, abilities, spells, etc.)
+- ✅ **JSON Data**: 211 data files (enemies, items, abilities, spells, etc.)
 - ✅ **Generators**: Procedural content (items, enemies, NPCs, locations)
 - ✅ **Persistence**: LiteDB save/load system
 
@@ -173,6 +173,46 @@ if (result.Success) {
 - `docs/standards/json/CATALOG_JSON_STANDARD.md`
 - `docs/standards/json/CBCONFIG_STANDARD.md`
 - `docs/standards/json/README.md`
+
+### Budget System Field Standardization (January 17, 2026)
+
+**Unified Field System**: All game data now uses `rarityWeight` exclusively for both selection probability and cost calculation.
+
+**Key Changes:**
+- ✅ **Removed** `budgetCost` field from all materials (14 files)
+- ✅ **Removed** `rarity` field from all catalogs (76 files)
+- ✅ **Removed** `selectionWeight` from material pools (replaced with `rarityWeight`)
+- ✅ **Material Pools**: Converted from array to dictionary structure in `material-pools.json`
+
+**Cost Calculation**: Costs are now calculated dynamically from `rarityWeight` using inverse formulas:
+- **Materials**: `cost = (6000 / rarityWeight) × costScale`
+- **Components**: `cost = 100 / rarityWeight`
+- **Enchantments**: `cost = 130 / rarityWeight`
+
+**Rarity Tiers**: The `rarity` field is no longer stored in JSON. Instead, display tiers are calculated on-demand from `rarityWeight`:
+- **Common**: rarityWeight 50-100
+- **Uncommon**: rarityWeight 30-49
+- **Rare**: rarityWeight 15-29
+- **Epic**: rarityWeight 5-14
+- **Legendary**: rarityWeight 1-4
+
+**Material Pools Dictionary Structure**: Material pools are now keyed by pool name for efficient lookup:
+```json
+{
+  "pools": {
+    "humanoid_low": {
+      "metals": [
+        {
+          "materialRef": "@materials/properties/metals:iron",
+          "rarityWeight": 60
+        }
+      ]
+    }
+  }
+}
+```
+
+**See**: [BUDGET_SYSTEM_FIELD_STANDARDIZATION.md](../docs/proposals/BUDGET_SYSTEM_FIELD_STANDARDIZATION.md)
 
 ## Dependencies
 
