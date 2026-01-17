@@ -239,7 +239,7 @@ public class AttackEnemyHandlerTests
             Name = "TestEnemy", 
             Health = initialHealth, 
             MaxHealth = 100, 
-            XPReward = 10, 
+            XP = 10, 
             GoldReward = 5 
         };
         var combatResult = new CombatResult { Damage = damage, IsCritical = false };

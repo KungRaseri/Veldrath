@@ -146,7 +146,7 @@ public class QuestIntegrationTests
             Name = "Shrine Guardian", 
             Health = 50, 
             MaxHealth = 50,
-            XPReward = 100,
+            XP = 100,
             GoldReward = 50,
             Type = EnemyType.Boss
         };
@@ -209,7 +209,7 @@ public class QuestIntegrationTests
                 Name = $"Abyssal Demon {i+1}", 
                 Health = 30, 
                 MaxHealth = 30,
-                XPReward = 50,
+                XP = 50,
                 GoldReward = 25,
                 Type = EnemyType.Demon
             };
@@ -262,7 +262,7 @@ public class QuestIntegrationTests
                 Name = "Abyssal Demon", 
                 Health = 30, 
                 MaxHealth = 30,
-                XPReward = 50,
+                XP = 50,
                 GoldReward = 25,
                 Type = EnemyType.Demon
             };
@@ -440,7 +440,7 @@ public class QuestIntegrationTests
             Name = "Shrine Guardian", 
             Health = 0, // Set to 0 to simulate defeated state
             MaxHealth = 50,
-            XPReward = 100,
+            XP = 100,
             GoldReward = 50,
             Type = EnemyType.Boss
         };
@@ -461,4 +461,5 @@ public class QuestIntegrationTests
         outcome.QuestsCompleted.Should().Contain("The First Trial");
     }
 }
+
 

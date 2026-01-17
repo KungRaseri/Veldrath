@@ -129,8 +129,8 @@ public class DungeonProgressionTests
             IsCleared = false,
             Enemies = new List<Enemy>
             {
-                new() { Name = "Goblin", Level = 2, Health = 20, GoldReward = 5, XPReward = 10 },
-                new() { Name = "Orc", Level = 3, Health = 35, GoldReward = 10, XPReward = 20 }
+                new() { Name = "Goblin", Level = 2, Health = 20, GoldReward = 5, XP = 10 },
+                new() { Name = "Orc", Level = 3, Health = 35, GoldReward = 10, XP = 20 }
             }
         };
 
@@ -186,8 +186,8 @@ public class DungeonProgressionTests
                     Name = "Shadow Lord", 
                     Level = 10, 
                     Health = 200, 
-                    GoldReward = 100, 
-                    XPReward = 200 
+                    GoldReward = 100,
+                    XP = 200
                 }
             },
             GoldReward = 100,
