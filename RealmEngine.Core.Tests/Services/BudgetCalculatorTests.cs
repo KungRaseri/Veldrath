@@ -22,7 +22,7 @@ public class BudgetCalculatorTests
             },
             Formulas = new CostFormulas
             {
-                Material = new CostFormula { Formula = "direct", Field = "budgetCost" },
+                Material = new CostFormula { Formula = "inverse_scaled", Numerator = 60, Field = "rarityWeight", ScaleField = "costScale" },
                 Component = new CostFormula { Formula = "inverse", Numerator = 100, Field = "rarityWeight" },
                 Enchantment = new CostFormula { Formula = "inverse", Numerator = 130, Field = "rarityWeight" },
                 MaterialQuality = new CostFormula { Formula = "inverse", Numerator = 150, Field = "rarityWeight" }
@@ -142,19 +142,19 @@ public class BudgetCalculatorTests
     }
 
     [Fact]
-    public void CalculateMaterialCost_DirectFormula_ReturnsBudgetCost()
+    public void CalculateMaterialCost_InverseFormula_ReturnsInverseCost()
     {
         // Arrange
         var material = JToken.Parse(@"{
             ""name"": ""Iron"",
-            ""budgetCost"": 25
+            ""rarityWeight"": 60
         }");
 
         // Act
         var result = _calculator.CalculateMaterialCost(material);
 
         // Assert
-        result.Should().Be(25);
+        result.Should().Be(1); // 60 / 60 = 1
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class BudgetCalculatorTests
         // Arrange
         var enchantment = JToken.Parse(@"{
             ""value"": ""of Power"",
-            ""selectionWeight"": 10
+            ""rarityWeight"": 10
         }");
 
         // Act
@@ -195,7 +195,7 @@ public class BudgetCalculatorTests
         // Arrange
         var quality = JToken.Parse(@"{
             ""value"": ""Fine"",
-            ""selectionWeight"": 20
+            ""rarityWeight"": 20
         }");
 
         // Act
@@ -240,12 +240,12 @@ public class BudgetCalculatorTests
     }
 
     [Fact]
-    public void CalculateComponentCost_HighSelectionWeight_ReturnsLowCost()
+    public void CalculateComponentCost_HighRarityWeight_ReturnsLowCost()
     {
         // Arrange - Common component
         var component = JToken.Parse(@"{
             ""value"": ""Common Prefix"",
-            ""selectionWeight"": 50
+            ""rarityWeight"": 50
         }");
 
         // Act
@@ -256,12 +256,12 @@ public class BudgetCalculatorTests
     }
 
     [Fact]
-    public void CalculateComponentCost_LowSelectionWeight_ReturnsHighCost()
+    public void CalculateComponentCost_LowRarityWeight_ReturnsHighCost()
     {
         // Arrange - Rare component
         var component = JToken.Parse(@"{
             ""value"": ""Rare Prefix"",
-            ""selectionWeight"": 5
+            ""rarityWeight"": 5
         }");
 
         // Act
@@ -369,12 +369,12 @@ public class BudgetCalculatorTests
     [InlineData(20, 10, true)]   // 100 / 20 = 5, budget 10 can afford  
     [InlineData(50, 10, true)]   // 100 / 50 = 2, budget 10 can afford
     [InlineData(1, 5, false)]    // 100 / 1 = 100, budget 5 can't afford
-    public void CanAffordComponent_InverseFormula_WorksCorrectly(int selectionWeight, int budget, bool canAfford)
+    public void CanAffordComponent_InverseFormula_WorksCorrectly(int rarityWeight, int budget, bool canAfford)
     {
         // Arrange
         var component = JToken.Parse($@"{{
             ""value"": ""Test Component"",
-            ""selectionWeight"": {selectionWeight}
+            ""rarityWeight"": {rarityWeight}
         }}");
 
         var cost = _calculator.CalculateComponentCost(component);
@@ -387,28 +387,28 @@ public class BudgetCalculatorTests
     }
 
     [Fact]
-    public void MaterialCost_DirectFormula_UsesBudgetCostDirectly()
+    public void MaterialCost_InverseFormula_HigherWeightLowerCost()
     {
         // Arrange
-        var cheapMaterial = JToken.Parse(@"{ ""budgetCost"": 10 }");
-        var expensiveMaterial = JToken.Parse(@"{ ""budgetCost"": 100 }");
+        var commonMaterial = JToken.Parse(@"{ ""rarityWeight"": 60 }"); // Common (high weight)
+        var rareMaterial = JToken.Parse(@"{ ""rarityWeight"": 10 }");    // Rare (low weight)
 
         // Act
-        var cheapCost = _calculator.CalculateMaterialCost(cheapMaterial);
-        var expensiveCost = _calculator.CalculateMaterialCost(expensiveMaterial);
+        var commonCost = _calculator.CalculateMaterialCost(commonMaterial);
+        var rareCost = _calculator.CalculateMaterialCost(rareMaterial);
 
         // Assert
-        cheapCost.Should().Be(10);
-        expensiveCost.Should().Be(100);
-        expensiveCost.Should().BeGreaterThan(cheapCost);
+        commonCost.Should().Be(1);  // 60 / 60 = 1
+        rareCost.Should().Be(6);    // 60 / 10 = 6
+        rareCost.Should().BeGreaterThan(commonCost, "rare materials should be more expensive");
     }
 
     [Fact]
     public void ComponentCost_LowerThanEnchantmentCost_ForSameWeight()
     {
-        // Arrange - Same selection weight for both
-        var component = JToken.Parse(@"{ ""selectionWeight"": 10 }");
-        var enchantment = JToken.Parse(@"{ ""selectionWeight"": 10 }");
+        // Arrange - Same rarity weight for both
+        var component = JToken.Parse(@"{ ""rarityWeight"": 10 }");
+        var enchantment = JToken.Parse(@"{ ""rarityWeight"": 10 }");
 
         // Act
         var componentCost = _calculator.CalculateComponentCost(component);
