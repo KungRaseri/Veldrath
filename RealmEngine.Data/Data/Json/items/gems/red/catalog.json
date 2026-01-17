@@ -11,7 +11,6 @@
         {
           "name": "ruby",
           "slug": "ruby",
-          "rarity": 90,
           "rarityWeight": 50,
           "attributes": {
             "dexterity": 10,
@@ -35,7 +34,6 @@
         {
           "name": "garnet",
           "slug": "garnet",
-          "rarity": 90,
           "rarityWeight": 60,
           "attributes": {
             "dexterity": 10,
@@ -59,7 +57,6 @@
         {
           "name": "bloodstone",
           "slug": "bloodstone",
-          "rarity": 90,
           "rarityWeight": 40,
           "attributes": {
             "dexterity": 10,
@@ -83,7 +80,6 @@
         {
           "name": "red-diamond",
           "slug": "red-diamond",
-          "rarity": 70,
           "rarityWeight": 20,
           "attributes": {
             "dexterity": 10,

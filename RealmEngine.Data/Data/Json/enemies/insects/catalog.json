@@ -31,7 +31,6 @@
           "name": "Giant Spider",
           "rarityWeight": 8,
           "xp": 45,
-          "rarity": 30,
           "attributes": {
             "constitution": 12,
             "wisdom": 11,
@@ -65,7 +64,6 @@
           "name": "Phase Spider",
           "rarityWeight": 25,
           "xp": 90,
-          "rarity": 90,
           "attributes": {
             "constitution": 14,
             "wisdom": 12,
@@ -101,7 +99,6 @@
           "name": "Widow Spider",
           "rarityWeight": 18,
           "xp": 75,
-          "rarity": 70,
           "attributes": {
             "constitution": 13,
             "wisdom": 11,
@@ -136,7 +133,6 @@
           "name": "Spider Matriarch",
           "rarityWeight": 40,
           "xp": 160,
-          "rarity": 90,
           "attributes": {
             "constitution": 17,
             "wisdom": 13,
@@ -184,7 +180,6 @@
           "name": "Giant Beetle",
           "rarityWeight": 6,
           "xp": 40,
-          "rarity": 30,
           "attributes": {
             "constitution": 15,
             "wisdom": 10,
@@ -218,7 +213,6 @@
           "name": "Fire Beetle",
           "rarityWeight": 10,
           "xp": 45,
-          "rarity": 30,
           "attributes": {
             "constitution": 14,
             "wisdom": 10,
@@ -252,7 +246,6 @@
           "name": "Bombardier Beetle",
           "rarityWeight": 18,
           "xp": 70,
-          "rarity": 70,
           "attributes": {
             "constitution": 16,
             "wisdom": 10,
@@ -296,7 +289,6 @@
           "name": "Giant Wasp",
           "rarityWeight": 10,
           "xp": 50,
-          "rarity": 30,
           "attributes": {
             "constitution": 12,
             "wisdom": 11,
@@ -331,7 +323,6 @@
           "name": "Giant Hornet",
           "rarityWeight": 15,
           "xp": 70,
-          "rarity": 50,
           "attributes": {
             "constitution": 13,
             "wisdom": 11,
@@ -367,7 +358,6 @@
           "name": "Giant Dragonfly",
           "rarityWeight": 12,
           "xp": 65,
-          "rarity": 50,
           "attributes": {
             "constitution": 12,
             "wisdom": 12,
@@ -401,7 +391,6 @@
           "name": "Giant Mantis",
           "rarityWeight": 22,
           "xp": 110,
-          "rarity": 90,
           "attributes": {
             "constitution": 14,
             "wisdom": 13,
@@ -445,7 +434,6 @@
           "name": "Giant Ant",
           "rarityWeight": 5,
           "xp": 25,
-          "rarity": 15,
           "attributes": {
             "constitution": 12,
             "wisdom": 9,
@@ -478,7 +466,6 @@
           "name": "Giant Ant Soldier",
           "rarityWeight": 10,
           "xp": 50,
-          "rarity": 30,
           "attributes": {
             "constitution": 15,
             "wisdom": 9,
@@ -512,7 +499,6 @@
           "name": "Giant Ant Queen",
           "rarityWeight": 45,
           "xp": 170,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 12,

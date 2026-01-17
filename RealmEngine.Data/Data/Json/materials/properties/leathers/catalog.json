@@ -16,7 +16,6 @@
       "items": [
     {
       "slug": "hide",
-      "budgetCost": 2,
       "name": "Hide",
       "attributes": {
         "dexterity": 10,
@@ -40,11 +39,9 @@
         }
       },
       "rarityWeight": 60,
-      "rarity": 60
     },
     {
       "slug": "leather",
-      "budgetCost": 3,
       "name": "Leather",
       "attributes": {
         "dexterity": 10,
@@ -69,11 +66,9 @@
         }
       },
       "rarityWeight": 50,
-      "rarity": 50
     },
     {
       "slug": "studded-leather",
-      "budgetCost": 5,
       "name": "Studded Leather",
       "attributes": {
         "dexterity": 10,
@@ -99,11 +94,9 @@
         }
       },
       "rarityWeight": 35,
-      "rarity": 35
     },
     {
       "slug": "hardened-leather",
-      "budgetCost": 7,
       "name": "Hardened Leather",
       "attributes": {
         "dexterity": 10,
@@ -128,11 +121,9 @@
         }
       },
       "rarityWeight": 28,
-      "rarity": 28
     },
     {
       "slug": "drake-leather",
-      "budgetCost": 14,
       "name": "Drake Leather",
       "attributes": {
         "dexterity": 10,
@@ -158,11 +149,9 @@
         }
       },
       "rarityWeight": 12,
-      "rarity": 12
     },
     {
       "slug": "wyvern-leather",
-      "budgetCost": 17,
       "name": "Wyvern Leather",
       "attributes": {
         "dexterity": 10,
@@ -188,11 +177,9 @@
         }
       },
       "rarityWeight": 10,
-      "rarity": 10
     },
     {
       "slug": "shadow-leather",
-      "budgetCost": 21,
       "name": "Shadow Leather",
       "attributes": {
         "dexterity": 10,
@@ -218,11 +205,9 @@
         }
       },
       "rarityWeight": 8,
-      "rarity": 8
     },
     {
       "slug": "chimera-hide",
-      "budgetCost": 25,
       "name": "Chimera Hide",
       "attributes": {
         "dexterity": 10,
@@ -249,11 +234,9 @@
         }
       },
       "rarityWeight": 6,
-      "rarity": 6
     },
     {
       "slug": "dragon-leather",
-      "budgetCost": 32,
       "name": "Dragon Leather",
       "attributes": {
         "dexterity": 10,
@@ -281,7 +264,6 @@
         }
       },
       "rarityWeight": 3,
-      "rarity": 3
     }
       ]
     }

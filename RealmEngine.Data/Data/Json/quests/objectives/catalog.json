@@ -19,7 +19,6 @@
           },
           "description": "Slay goblins threatening the region",
           "locationHint": "goblin-camps",
-          "rarity": 30
         },
         {
           "slug": "wolf-hunt",
@@ -32,7 +31,6 @@
           },
           "description": "Hunt wolves attacking travelers",
           "locationHint": "forests",
-          "rarity": 35
         },
         {
           "slug": "bandit-elimination",
@@ -45,7 +43,6 @@
           },
           "description": "Clear out bandit groups",
           "locationHint": "roads",
-          "rarity": 40
         },
         {
           "slug": "undead-purge",
@@ -58,7 +55,6 @@
           },
           "description": "Cleanse undead from sacred grounds",
           "locationHint": "graveyards",
-          "rarity": 60
         },
         {
           "slug": "dragon-slaying",
@@ -71,7 +67,6 @@
           },
           "description": "Slay the legendary dragon",
           "locationHint": "dragon-lair",
-          "rarity": 300
         }
       ],
       "fetch_objectives": [
@@ -132,7 +127,6 @@
           "distance": "medium",
           "description": "Escort merchant safely to destination",
           "dangerLevel": "moderate",
-          "rarity": 50
         },
         {
           "slug": "noble-protection",
@@ -143,7 +137,6 @@
           "distance": "long",
           "description": "Protect noble during travel",
           "dangerLevel": "high",
-          "rarity": 120
         },
         {
           "slug": "refugee-guidance",
@@ -154,7 +147,6 @@
           "distance": "short",
           "description": "Guide refugees to safety",
           "dangerLevel": "low",
-          "rarity": 40
         }
       ],
       "investigate_objectives": [

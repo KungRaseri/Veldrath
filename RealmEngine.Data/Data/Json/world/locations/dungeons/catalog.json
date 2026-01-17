@@ -25,7 +25,6 @@
             "@items/weapons:*",
             "@items/consumables:*"
           ],
-          "rarity": 15
         },
         {
           "slug": "goblinwarrens",
@@ -44,7 +43,6 @@
             "@items/weapons:*",
             "@items/consumables:*"
           ],
-          "rarity": 12
         },
         {
           "slug": "spidernest",
@@ -63,7 +61,6 @@
             "@items/materials:*",
             "@items/consumables:*"
           ],
-          "rarity": 18
         }
       ]
     }
@@ -89,7 +86,6 @@
             "@items/armor:*",
             "@items/consumables:*"
           ],
-          "rarity": 30
         },
         {
           "slug": "forgottentemple",
@@ -110,7 +106,6 @@
             "@items/armor:*",
             "@items/consumables:*"
           ],
-          "rarity": 35
         },
         {
           "slug": "icecaverns",
@@ -130,7 +125,6 @@
             "@items/materials:*",
             "@items/consumables:*"
           ],
-          "rarity": 32
         },
         {
           "slug": "swamplair",
@@ -150,7 +144,6 @@
             "@items/materials:*",
             "@items/consumables:*"
           ],
-          "rarity": 28
         },
         {
           "slug": "dwarvenmines",
@@ -170,7 +163,6 @@
             "@items/materials:*",
             "@items/weapons:*"
           ],
-          "rarity": 25
         },
         {
           "slug": "enchantedforest",
@@ -190,7 +182,6 @@
             "@items/materials:*",
             "@items/consumables:*"
           ],
-          "rarity": 38
         }
       ]
     }
@@ -217,7 +208,6 @@
             "@items/consumables:*",
             "@items/consumables:*"
           ],
-          "rarity": 55
         },
         {
           "slug": "ancientcatacombs",
@@ -236,7 +226,6 @@
             "@items/weapons:*",
             "@items/armor:*"
           ],
-          "rarity": 50
         },
         {
           "slug": "orcstronghold",
@@ -255,7 +244,6 @@
             "@items/weapons:*",
             "@items/armor:*"
           ],
-          "rarity": 52
         }
       ]
     }
@@ -282,7 +270,6 @@
             "@items/armor:*",
             "@items/materials:*"
           ],
-          "rarity": 90
         },
         {
           "slug": "necromancerstower",
@@ -301,7 +288,6 @@
             "@items/weapons:*",
             "@items/consumables:*"
           ],
-          "rarity": 85
         },
         {
           "slug": "vampirecastle",
@@ -321,7 +307,6 @@
             "@items/armor:*",
             "@items/consumables:*"
           ],
-          "rarity": 95
         }
       ]
     }
@@ -346,7 +331,6 @@
             "@items/weapons:*",
             "@items/armor:*"
           ],
-          "rarity": 130
         },
         {
           "slug": "elementalplane",
@@ -365,7 +349,6 @@
             "@items/weapons:*",
             "@items/consumables:*"
           ],
-          "rarity": 140
         }
       ]
     }
@@ -393,7 +376,6 @@
             "@items/armor:*",
             "@items/consumables:*"
           ],
-          "rarity": 200
         }
       ]
     }

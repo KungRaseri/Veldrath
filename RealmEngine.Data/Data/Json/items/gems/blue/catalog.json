@@ -12,7 +12,6 @@
           "rarityWeight": 50,
           "slug": "sapphire",
           "name": "sapphire",
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "intelligence": 8,
@@ -36,7 +35,6 @@
           "rarityWeight": 60,
           "slug": "aquamarine",
           "name": "aquamarine",
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "intelligence": 8,
@@ -60,7 +58,6 @@
           "rarityWeight": 55,
           "slug": "lapis-lazuli",
           "name": "lapis-lazuli",
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "intelligence": 8,
@@ -84,7 +81,6 @@
           "rarityWeight": 20,
           "slug": "blue-diamond",
           "name": "blue-diamond",
-          "rarity": 70,
           "attributes": {
             "constitution": 10,
             "intelligence": 8,

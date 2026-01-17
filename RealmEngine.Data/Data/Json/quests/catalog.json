@@ -49,7 +49,6 @@
             "military"
           ],
           "description": "Investigate the mysterious occurrences in {location}",
-          "rarity": 15
         },
         {
           "slug": "trackthief",
@@ -70,7 +69,6 @@
             "military"
           ],
           "description": "Follow the clues to catch the thief who stole from the market",
-          "rarity": 12
         },
         {
           "slug": "solvemystery",
@@ -92,7 +90,6 @@
             "professional"
           ],
           "description": "Uncover the truth behind the strange events at {location}",
-          "rarity": 35
         },
         {
           "slug": "investigatemurder",
@@ -114,7 +111,6 @@
             "service"
           ],
           "description": "Solve the murder case before the trail goes cold",
-          "rarity": 40
         },
         {
           "slug": "uncoverconspiracy",
@@ -137,7 +133,6 @@
             "magical"
           ],
           "description": "Expose the conspiracy threatening the kingdom",
-          "rarity": 70
         }
       ]
     },
@@ -162,7 +157,6 @@
             "common"
           ],
           "description": "Gather {quantity} {itemType} from the surrounding area",
-          "rarity": 10
         },
         {
           "slug": "collectminerals",
@@ -183,7 +177,6 @@
             "professional"
           ],
           "description": "Collect {quantity} {itemType} from the mines",
-          "rarity": 12
         },
         {
           "slug": "gatherwood",
@@ -204,7 +197,6 @@
             "service"
           ],
           "description": "Collect {quantity} pieces of quality {itemType}",
-          "rarity": 8
         },
         {
           "slug": "huntanimals",
@@ -226,7 +218,6 @@
             "common"
           ],
           "description": "Hunt {quantity} {animalType} and bring back their pelts",
-          "rarity": 15
         },
         {
           "slug": "recoverartifact",
@@ -249,7 +240,6 @@
             "religious"
           ],
           "description": "Retrieve the ancient {itemName} from {location}",
-          "rarity": 30
         },
         {
           "slug": "stealtreasure",
@@ -270,7 +260,6 @@
           ],
           "required_faction": "thieves_guild",
           "description": "Steal {quantity} valuable items from the noble's vault",
-          "rarity": 35
         },
         {
           "slug": "findlegendaryweapon",
@@ -294,7 +283,6 @@
             "magical"
           ],
           "description": "Seek the legendary {itemName} hidden in {location}",
-          "rarity": 60
         }
       ]
     },
@@ -319,7 +307,6 @@
             "common"
           ],
           "description": "Escort the merchant safely to the next town",
-          "rarity": 12
         },
         {
           "slug": "guidetraveler",
@@ -340,7 +327,6 @@
             "military"
           ],
           "description": "Guide the lost traveler back to civilization",
-          "rarity": 10
         },
         {
           "slug": "protectnoble",
@@ -361,7 +347,6 @@
             "military"
           ],
           "description": "Guard the noble on their journey through dangerous territory",
-          "rarity": 32
         },
         {
           "slug": "escortwizard",
@@ -382,7 +367,6 @@
             "noble"
           ],
           "description": "Protect the wizard carrying dangerous artifacts to the academy",
-          "rarity": 38
         },
         {
           "slug": "escortprophet",
@@ -404,7 +388,6 @@
             "noble"
           ],
           "description": "Protect the prophet from assassins during their pilgrimage",
-          "rarity": 65
         }
       ]
     },
@@ -429,7 +412,6 @@
             "military"
           ],
           "description": "Eliminate {quantity} {target} threatening the area",
-          "rarity": 8
         },
         {
           "slug": "clearundead",
@@ -450,7 +432,6 @@
             "noble"
           ],
           "description": "Cleanse {quantity} {target} from the graveyard",
-          "rarity": 10
         },
         {
           "slug": "huntdemons",
@@ -472,7 +453,6 @@
             "noble"
           ],
           "description": "Hunt down {quantity} {target} before they summon reinforcements",
-          "rarity": 35
         },
         {
           "slug": "banishelementals",
@@ -494,7 +474,6 @@
             "noble"
           ],
           "description": "Banish {quantity} {target} from {location}",
-          "rarity": 30
         },
         {
           "slug": "slaydragons",
@@ -517,7 +496,6 @@
             "military"
           ],
           "description": "Defeat the legendary {target} terrorizing the mountains",
-          "rarity": 70
         },
         {
           "slug": "defeatchampions",
@@ -538,7 +516,6 @@
             "military"
           ],
           "description": "Challenge {quantity} arena champions to prove your worth",
-          "rarity": 55
         }
       ]
     },
@@ -562,7 +539,6 @@
             "merchant"
           ],
           "description": "Deliver this message to the recipient in the neighboring town",
-          "rarity": 8
         },
         {
           "slug": "deliverpackage",
@@ -582,7 +558,6 @@
             "service"
           ],
           "description": "Bring this package to {recipient} in {destination}",
-          "rarity": 10
         },
         {
           "slug": "transportgoods",
@@ -603,7 +578,6 @@
             "noble"
           ],
           "description": "Transport fragile goods safely across dangerous roads",
-          "rarity": 28
         },
         {
           "slug": "urgentdelivery",
@@ -624,7 +598,6 @@
             "service"
           ],
           "description": "Rush this urgent delivery across the kingdom before time runs out",
-          "rarity": 32
         },
         {
           "slug": "deliverrelic",
@@ -647,7 +620,6 @@
             "noble"
           ],
           "description": "Deliver the cursed relic while evading those who hunt it",
-          "rarity": 60
         }
       ]
     }

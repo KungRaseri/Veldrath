@@ -46,7 +46,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 22,
-          "rarity": 22
         },
         {
           "name": "Cowl",
@@ -68,7 +67,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 24,
-          "rarity": 24
         },
         {
           "name": "Hood",
@@ -90,7 +88,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 25,
-          "rarity": 25
         },
         {
           "name": "Crown",
@@ -112,7 +109,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 1,
-          "rarity": 1
         },
         {
           "name": "Circlet",
@@ -134,7 +130,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 2,
-          "rarity": 2
         },
         {
           "name": "Vest",
@@ -156,7 +151,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 24,
-          "rarity": 24
         },
         {
           "name": "Jerkin",
@@ -178,7 +172,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 22,
-          "rarity": 22
         },
         {
           "name": "Gloves",
@@ -200,7 +193,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 24,
-          "rarity": 24
         },
         {
           "name": "Bracers",
@@ -222,7 +214,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 22,
-          "rarity": 22
         },
         {
           "name": "Mittens",
@@ -244,7 +235,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 25,
-          "rarity": 25
         },
         {
           "name": "Tassets",
@@ -266,7 +256,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 18,
-          "rarity": 18
         },
         {
           "name": "Shoes",
@@ -288,7 +277,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 25,
-          "rarity": 25
         },
         {
           "name": "Sandals",
@@ -310,7 +298,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 25,
-          "rarity": 25
         },
         {
           "name": "Mantle",
@@ -332,7 +319,6 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 22,
-          "rarity": 22
         },
         {
           "name": "Shield",
@@ -354,7 +340,6 @@
           "traits": {},
           "blockChance": 15,
           "rarityWeight": 15,
-          "rarity": 15
         },
         {
           "name": "Buckler",
@@ -376,7 +361,6 @@
           "traits": {},
           "blockChance": 10,
           "rarityWeight": 18,
-          "rarity": 18
         },
         {
           "name": "Tower Shield",
@@ -398,7 +382,6 @@
           "traits": {},
           "blockChance": 25,
           "rarityWeight": 8,
-          "rarity": 8
         },
         {
           "name": "Kite Shield",
@@ -420,7 +403,6 @@
           "traits": {},
           "blockChance": 18,
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Heater",
@@ -442,7 +424,6 @@
           "traits": {},
           "blockChance": 12,
           "rarityWeight": 16,
-          "rarity": 16
         }
       ]
     },
@@ -475,7 +456,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Hauberk",
@@ -497,7 +477,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Chainmail",
@@ -519,7 +498,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 15,
-          "rarity": 15
         },
         {
           "name": "Scale Mail",
@@ -541,7 +519,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 13,
-          "rarity": 13
         },
         {
           "name": "Ring Mail",
@@ -563,7 +540,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 16,
-          "rarity": 16
         },
         {
           "name": "Banded Mail",
@@ -585,7 +561,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Vambraces",
@@ -607,7 +582,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 18,
-          "rarity": 18
         },
         {
           "name": "Leggings",
@@ -629,7 +603,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 16,
-          "rarity": 16
         },
         {
           "name": "Chausses",
@@ -651,7 +624,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 15,
-          "rarity": 15
         },
         {
           "name": "Boots",
@@ -673,7 +645,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 18,
-          "rarity": 18
         },
         {
           "name": "Spaulders",
@@ -695,7 +666,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 15,
-          "rarity": 15
         },
         {
           "name": "Shoulderguards",
@@ -717,7 +687,6 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 16,
-          "rarity": 16
         }
       ]
     },
@@ -750,7 +719,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Helmet",
@@ -772,7 +740,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 14,
-          "rarity": 14
         },
         {
           "name": "Great Helm",
@@ -794,7 +761,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 10,
-          "rarity": 10
         },
         {
           "name": "Armet",
@@ -816,7 +782,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 8,
-          "rarity": 8
         },
         {
           "name": "Barbute",
@@ -838,7 +803,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 10,
-          "rarity": 10
         },
         {
           "name": "Cuirass",
@@ -860,7 +824,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 6,
-          "rarity": 6
         },
         {
           "name": "Breastplate",
@@ -882,7 +845,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 10,
-          "rarity": 10
         },
         {
           "name": "Chestplate",
@@ -904,7 +866,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 8,
-          "rarity": 8
         },
         {
           "name": "Plate Mail",
@@ -926,7 +887,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 5,
-          "rarity": 5
         },
         {
           "name": "Gauntlets",
@@ -948,7 +908,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 15,
-          "rarity": 15
         },
         {
           "name": "Greaves",
@@ -970,7 +929,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Sabatons",
@@ -992,7 +950,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "rarity": 12
         },
         {
           "name": "Sollerets",
@@ -1014,7 +971,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 13,
-          "rarity": 13
         },
         {
           "name": "Pauldrons",
@@ -1036,7 +992,6 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "rarity": 12
         }
       ]
     }

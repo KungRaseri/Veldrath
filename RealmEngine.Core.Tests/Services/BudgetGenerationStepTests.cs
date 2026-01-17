@@ -202,53 +202,6 @@ public class BudgetGenerationStepTests
     }
 
     [Fact]
-    public void Step5_BaseItemsHaveBudgetCost()
-    {
-        // Arrange
-        string category = "weapons";
-        var catalogPath = $"items/{category}/catalog.json";
-        var file = _dataCache.GetFile(catalogPath);
-        
-        // Act
-        var weaponTypes = file?.JsonData?["weapon_types"] as JObject;
-        var allItems = new List<JToken>();
-        
-        if (weaponTypes != null)
-        {
-            foreach (var prop in weaponTypes.Properties())
-            {
-                var items = prop.Value["items"] as JArray;
-                if (items != null)
-                {
-                    allItems.AddRange(items);
-                }
-            }
-        }
-        
-        // Assert
-        _output.WriteLine($"Found {allItems.Count} total weapons");
-        
-        var itemsWithCost = allItems.Where(i => i["budgetCost"] != null).ToList();
-        var itemsWithoutCost = allItems.Where(i => i["budgetCost"] == null).ToList();
-        
-        _output.WriteLine($"Items with budgetCost: {itemsWithCost.Count}");
-        _output.WriteLine($"Items WITHOUT budgetCost: {itemsWithoutCost.Count}");
-        
-        if (itemsWithCost.Any())
-        {
-            var costs = itemsWithCost.Select(i => i["budgetCost"]!.Value<int>()).ToList();
-            _output.WriteLine($"Cost range: {costs.Min()} - {costs.Max()}");
-            _output.WriteLine($"First 5 items:");
-            foreach (var item in itemsWithCost.Take(5))
-            {
-                _output.WriteLine($"  {item["name"]}: cost={item["budgetCost"]}, weight={item["rarityWeight"]}");
-            }
-        }
-        
-        itemsWithoutCost.Should().BeEmpty("All items should have budgetCost");
-    }
-
-    [Fact]
     public void Step6_AffordableBaseItems_Exist()
     {
         // Arrange
@@ -272,7 +225,7 @@ public class BudgetGenerationStepTests
         // Act
         var affordableItems = allItems.Where(item =>
         {
-            var cost = item["budgetCost"]?.Value<int>() ?? 0;
+            var cost = _budgetCalculator.CalculateMaterialCost(item);
             return _budgetCalculator.CanAfford(availableBudget, cost);
         }).ToList();
         
@@ -286,16 +239,18 @@ public class BudgetGenerationStepTests
             _output.WriteLine("Affordable weapons:");
             foreach (var item in affordableItems.Take(5))
             {
-                _output.WriteLine($"  {item["name"]}: cost={item["budgetCost"]}");
+                var cost = _budgetCalculator.CalculateMaterialCost(item);
+                _output.WriteLine($"  {item["name"]}: calculated cost={cost}, rarityWeight={item["rarityWeight"]}");
             }
         }
         else
         {
             _output.WriteLine("NO AFFORDABLE ITEMS FOUND!");
             _output.WriteLine("Cheapest items:");
-            foreach (var item in allItems.OrderBy(i => i["budgetCost"]?.Value<int>() ?? 999).Take(5))
+            foreach (var item in allItems.OrderBy(i => _budgetCalculator.CalculateMaterialCost(i)).Take(5))
             {
-                _output.WriteLine($"  {item["name"]}: cost={item["budgetCost"]}");
+                var cost = _budgetCalculator.CalculateMaterialCost(item);
+                _output.WriteLine($"  {item["name"]}: calculated cost={cost}, rarityWeight={item["rarityWeight"]}");
             }
         }
         
@@ -415,7 +370,7 @@ public class BudgetGenerationStepTests
         
         var affordableItems = allItems.Where(item =>
         {
-            var cost = item["budgetCost"]?.Value<int>() ?? 0;
+            var cost = _budgetCalculator.CalculateMaterialCost(item);
             return _budgetCalculator.CanAfford(componentBudget, cost);
         }).ToList();
         

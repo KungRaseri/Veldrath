@@ -112,7 +112,7 @@ public class BudgetItemGenerationService
                 return null;
             }
 
-            var baseItemCost = GetIntProperty(baseItem, "budgetCost", 0);
+            var baseItemCost = _budgetCalculator.CalculateMaterialCost(baseItem);
             remainingBudget -= baseItemCost;
 
             _logger.LogDebug("Base item selected: {ItemName} (cost={Cost}, remaining={Remaining})", 
@@ -214,7 +214,7 @@ public class BudgetItemGenerationService
         // Filter by budget
         var affordableItems = items.Where(item =>
         {
-            var cost = GetIntProperty(item, "budgetCost", 0);
+            var cost = _budgetCalculator.CalculateMaterialCost(item);
             return _budgetCalculator.CanAfford(availableBudget, cost);
         }).ToList();
 

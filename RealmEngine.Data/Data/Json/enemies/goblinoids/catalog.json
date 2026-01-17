@@ -31,7 +31,6 @@
           "name": "Goblin",
           "rarityWeight": 3,
           "xp": 10,
-          "rarity": 15,
           "attributes": {
             "constitution": 11,
             "wisdom": 10,
@@ -64,7 +63,6 @@
           "name": "Goblin Scout",
           "rarityWeight": 5,
           "xp": 15,
-          "rarity": 15,
           "attributes": {
             "constitution": 11,
             "wisdom": 13,
@@ -98,7 +96,6 @@
           "name": "Goblin Shaman",
           "rarityWeight": 12,
           "xp": 25,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 12,
@@ -132,7 +129,6 @@
           "name": "Goblin Chief",
           "rarityWeight": 18,
           "xp": 40,
-          "rarity": 70,
           "attributes": {
             "constitution": 13,
             "wisdom": 11,
@@ -176,7 +172,6 @@
           "name": "Hobgoblin",
           "rarityWeight": 8,
           "xp": 35,
-          "rarity": 30,
           "attributes": {
             "constitution": 13,
             "wisdom": 11,
@@ -209,7 +204,6 @@
           "name": "Hobgoblin Soldier",
           "rarityWeight": 12,
           "xp": 50,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 11,
@@ -243,7 +237,6 @@
           "name": "Hobgoblin Captain",
           "rarityWeight": 22,
           "xp": 80,
-          "rarity": 90,
           "attributes": {
             "constitution": 15,
             "wisdom": 12,
@@ -278,7 +271,6 @@
           "name": "Hobgoblin Warlord",
           "rarityWeight": 35,
           "xp": 120,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 13,
@@ -324,7 +316,6 @@
           "name": "Bugbear",
           "rarityWeight": 10,
           "xp": 55,
-          "rarity": 30,
           "attributes": {
             "constitution": 15,
             "wisdom": 10,
@@ -358,7 +349,6 @@
           "name": "Bugbear Hunter",
           "rarityWeight": 18,
           "xp": 85,
-          "rarity": 70,
           "attributes": {
             "constitution": 15,
             "wisdom": 12,
@@ -393,7 +383,6 @@
           "name": "Bugbear Chieftain",
           "rarityWeight": 28,
           "xp": 130,
-          "rarity": 90,
           "attributes": {
             "constitution": 17,
             "wisdom": 12,
@@ -436,7 +425,6 @@
           "name": "Goblin King",
           "rarityWeight": 60,
           "xp": 200,
-          "rarity": 90,
           "attributes": {
             "constitution": 15,
             "wisdom": 13,

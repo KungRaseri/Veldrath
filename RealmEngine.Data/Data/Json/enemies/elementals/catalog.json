@@ -25,7 +25,6 @@
           "name": "Fire Elemental",
           "rarityWeight": 20,
           "xp": 300,
-          "rarity": 70,
           "attributes": {
             "constitution": 16,
             "wisdom": 10,
@@ -62,7 +61,6 @@
           "name": "Salamander",
           "rarityWeight": 15,
           "xp": 200,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 10,
@@ -96,7 +94,6 @@
           "name": "Efreeti",
           "rarityWeight": 45,
           "xp": 700,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,
@@ -144,7 +141,6 @@
           "name": "Water Elemental",
           "rarityWeight": 20,
           "xp": 300,
-          "rarity": 70,
           "attributes": {
             "constitution": 18,
             "wisdom": 12,
@@ -181,7 +177,6 @@
           "name": "Undine",
           "rarityWeight": 15,
           "xp": 200,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 13,
@@ -224,7 +219,6 @@
           "name": "Earth Elemental",
           "rarityWeight": 22,
           "xp": 400,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 12,
@@ -261,7 +255,6 @@
           "name": "Golem",
           "rarityWeight": 28,
           "xp": 500,
-          "rarity": 90,
           "attributes": {
             "constitution": 22,
             "wisdom": 10,
@@ -298,7 +291,6 @@
           "name": "Gnome",
           "rarityWeight": 12,
           "xp": 150,
-          "rarity": 50,
           "attributes": {
             "constitution": 16,
             "wisdom": 11,
@@ -341,7 +333,6 @@
           "name": "Air Elemental",
           "rarityWeight": 20,
           "xp": 300,
-          "rarity": 70,
           "attributes": {
             "constitution": 14,
             "wisdom": 12,
@@ -378,7 +369,6 @@
           "name": "Sylph",
           "rarityWeight": 15,
           "xp": 200,
-          "rarity": 50,
           "attributes": {
             "constitution": 12,
             "wisdom": 13,
@@ -412,7 +402,6 @@
           "name": "Djinn",
           "rarityWeight": 42,
           "xp": 650,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,
@@ -450,7 +439,6 @@
           "name": "Phoenix",
           "rarityWeight": 70,
           "xp": 1000,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 18,

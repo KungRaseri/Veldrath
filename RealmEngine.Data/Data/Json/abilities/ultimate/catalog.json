@@ -55,7 +55,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "reality-warp",
@@ -106,7 +105,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "alt-ancient-power",
@@ -121,7 +119,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "godlike-might",
@@ -136,7 +133,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "primordial-power",
@@ -151,7 +147,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "elemental-lord",
@@ -166,7 +161,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "plane-walker",
@@ -181,7 +175,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "leadership",
@@ -196,7 +189,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "champion",
@@ -211,7 +203,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "battlemaster",
@@ -226,7 +217,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "demonblood",
@@ -241,7 +231,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "alt-immortal",
@@ -256,7 +245,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "godslayer",
@@ -271,7 +259,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "primalforce",
@@ -286,7 +273,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "titanic",
@@ -301,7 +287,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "dragonancestor",
@@ -316,7 +301,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "dinosaurking",
@@ -331,7 +315,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "basilisk",
@@ -346,7 +329,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "ancient-evil",
@@ -361,7 +343,6 @@
             }
           },
           "rarityWeight": 250,
-          "rarity": 250
         },
         {
           "slug": "alt-soul-harvest",
@@ -376,7 +357,6 @@
             }
           },
           "rarityWeight": 500,
-          "rarity": 500
         },
         {
           "slug": "ragnarok",
@@ -419,7 +399,6 @@
             }
           },
           "rarityWeight": 5,
-          "rarity": 5
         },
         {
           "slug": "fortress",
@@ -454,7 +433,6 @@
             }
           },
           "rarityWeight": 75,
-          "rarity": 75
         },
         {
           "slug": "grandmaster-duelist",
@@ -489,7 +467,6 @@
             }
           },
           "rarityWeight": 50,
-          "rarity": 50
         },
         {
           "slug": "holy-champion",
@@ -528,7 +505,6 @@
             }
           },
           "rarityWeight": 100,
-          "rarity": 100
         },
         {
           "slug": "alt-apex-predator",
@@ -563,7 +539,6 @@
             }
           },
           "rarityWeight": 75,
-          "rarity": 75
         },
         {
           "slug": "archmages-supremacy",
@@ -598,7 +573,6 @@
             }
           },
           "rarityWeight": 100,
-          "rarity": 100
         },
         {
           "slug": "avatar-of-light",
@@ -633,7 +607,6 @@
             }
           },
           "rarityWeight": 50,
-          "rarity": 50
         },
         {
           "slug": "death-incarnate",
@@ -668,7 +641,6 @@
             }
           },
           "rarityWeight": 35,
-          "rarity": 35
         },
         {
           "slug": "death-lord",
@@ -703,7 +675,6 @@
             }
           },
           "rarityWeight": 50,
-          "rarity": 50
         },
         {
           "slug": "dread-pirate",
@@ -742,7 +713,6 @@
             }
           },
           "rarityWeight": 100,
-          "rarity": 100
         },
         {
           "slug": "elemental-apocalypse",
@@ -781,7 +751,6 @@
             }
           },
           "rarityWeight": 25,
-          "rarity": 25
         },
         {
           "slug": "master-of-elements",
@@ -816,7 +785,6 @@
             }
           },
           "rarityWeight": 75,
-          "rarity": 75
         },
         {
           "slug": "perfect-crime",
@@ -851,7 +819,6 @@
             }
           },
           "rarityWeight": 100,
-          "rarity": 100
         },
         {
           "slug": "natures-wrath",
@@ -886,7 +853,6 @@
             }
           },
           "rarityWeight": 50,
-          "rarity": 50
         },
         {
           "slug": "alt-ancient-power",
@@ -921,7 +887,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "storm-fury",
@@ -952,7 +917,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "alt-plague-bearer",
@@ -987,7 +951,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "corruption-wave",
@@ -1022,7 +985,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "blizzard",
@@ -1057,7 +1019,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         },
         {
           "slug": "lunar-rage",
@@ -1104,7 +1065,6 @@
             }
           },
           "rarityWeight": 150,
-          "rarity": 150
         }
       ]
     }

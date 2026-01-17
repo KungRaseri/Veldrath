@@ -16,7 +16,6 @@
       "items": [
     {
       "slug": "oak",
-      "budgetCost": 2,
       "name": "Oak",
       "attributes": {
         "dexterity": 10,
@@ -40,11 +39,9 @@
         }
       },
       "rarityWeight": 60,
-      "rarity": 60
     },
     {
       "slug": "ash",
-      "budgetCost": 3,
       "name": "Ash",
       "attributes": {
         "dexterity": 10,
@@ -69,11 +66,9 @@
         }
       },
       "rarityWeight": 50,
-      "rarity": 50
     },
     {
       "slug": "maple",
-      "budgetCost": 4,
       "name": "Maple",
       "attributes": {
         "dexterity": 10,
@@ -99,11 +94,9 @@
         }
       },
       "rarityWeight": 42,
-      "rarity": 42
     },
     {
       "slug": "yew",
-      "budgetCost": 7,
       "name": "Yew",
       "attributes": {
         "dexterity": 10,
@@ -130,11 +123,9 @@
         }
       },
       "rarityWeight": 30,
-      "rarity": 30
     },
     {
       "slug": "ebony",
-      "budgetCost": 18,
       "name": "Ebony",
       "attributes": {
         "dexterity": 10,
@@ -162,11 +153,9 @@
         }
       },
       "rarityWeight": 10,
-      "rarity": 10
     },
     {
       "slug": "ironwood",
-      "budgetCost": 15,
       "name": "Ironwood",
       "attributes": {
         "dexterity": 10,
@@ -192,11 +181,9 @@
         }
       },
       "rarityWeight": 12,
-      "rarity": 12
     },
     {
       "slug": "living-wood",
-      "budgetCost": 22,
       "name": "Living Wood",
       "attributes": {
         "dexterity": 10,
@@ -224,11 +211,9 @@
         }
       },
       "rarityWeight": 8,
-      "rarity": 8
     },
     {
       "slug": "elder-wood",
-      "budgetCost": 27,
       "name": "Elder Wood",
       "attributes": {
         "dexterity": 10,
@@ -256,11 +241,9 @@
         }
       },
       "rarityWeight": 5,
-      "rarity": 5
     },
     {
       "slug": "heartwood",
-      "budgetCost": 34,
       "name": "Heartwood",
       "attributes": {
         "dexterity": 10,
@@ -288,7 +271,6 @@
         }
       },
       "rarityWeight": 4,
-      "rarity": 4
     }
       ]
     }

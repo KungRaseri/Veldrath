@@ -20,7 +20,6 @@
         {
           "name": "Agility Scroll",
           "slug": "agility-scroll",
-          "rarity": 75,
           "rarityWeight": 45,
           "value": 40,
           "weight": 0.1,
@@ -38,7 +37,6 @@
         {
           "name": "Intellect Scroll",
           "slug": "intellect-scroll",
-          "rarity": 75,
           "rarityWeight": 45,
           "value": 40,
           "weight": 0.1,

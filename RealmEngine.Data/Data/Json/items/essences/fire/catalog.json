@@ -11,7 +11,6 @@
         {
           "rarityWeight": 60,
           "slug": "flame-essence",
-          "rarity": 90,
           "name": "flame-essence",
           "attributes": {
             "dexterity": 10,
@@ -35,7 +34,6 @@
         {
           "rarityWeight": 40,
           "slug": "inferno-essence",
-          "rarity": 90,
           "name": "inferno-essence",
           "attributes": {
             "dexterity": 10,
@@ -63,7 +61,6 @@
         {
           "rarityWeight": 70,
           "slug": "ember-essence",
-          "rarity": 90,
           "name": "ember-essence",
           "attributes": {
             "dexterity": 10,

@@ -17,7 +17,6 @@
       "items": [
     {
       "slug": "iron",
-      "budgetCost": 1,
       "name": "Iron",
       "attributes": {
         "dexterity": 10,
@@ -45,11 +44,9 @@
         }
       },
       "rarityWeight": 60,
-      "rarity": 60
     },
     {
       "slug": "bronze",
-      "budgetCost": 1,
       "name": "Bronze",
       "attributes": {
         "dexterity": 10,
@@ -78,11 +75,9 @@
         }
       },
       "rarityWeight": 50,
-      "rarity": 50
     },
     {
       "slug": "steel",
-      "budgetCost": 1,
       "name": "Steel",
       "attributes": {
         "dexterity": 10,
@@ -112,11 +107,9 @@
         }
       },
       "rarityWeight": 40,
-      "rarity": 40
     },
     {
       "slug": "silver",
-      "budgetCost": 7,
       "name": "Silver",
       "attributes": {
         "dexterity": 10,
@@ -148,11 +141,9 @@
         }
       },
       "rarityWeight": 25,
-      "rarity": 25
     },
     {
       "slug": "electrum",
-      "budgetCost": 10,
       "name": "Electrum",
       "attributes": {
         "dexterity": 10,
@@ -182,11 +173,9 @@
         }
       },
       "rarityWeight": 18,
-      "rarity": 18
     },
     {
       "slug": "cold-iron",
-      "budgetCost": 8,
       "name": "Cold Iron",
       "attributes": {
         "dexterity": 10,
@@ -217,11 +206,9 @@
         }
       },
       "rarityWeight": 22,
-      "rarity": 22
     },
     {
       "slug": "obsidian",
-      "budgetCost": 9,
       "name": "Obsidian",
       "attributes": {
         "dexterity": 10,
@@ -253,11 +240,9 @@
         }
       },
       "rarityWeight": 20,
-      "rarity": 20
     },
     {
       "slug": "mithril",
-      "budgetCost": 16,
       "name": "Mithril",
       "attributes": {
         "dexterity": 10,
@@ -290,11 +275,9 @@
         }
       },
       "rarityWeight": 10,
-      "rarity": 10
     },
     {
       "slug": "darksteel",
-      "budgetCost": 15,
       "name": "Darksteel",
       "attributes": {
         "dexterity": 10,
@@ -328,11 +311,9 @@
         }
       },
       "rarityWeight": 12,
-      "rarity": 12
     },
     {
       "slug": "adamantine",
-      "budgetCost": 24,
       "name": "Adamantine",
       "attributes": {
         "dexterity": 10,
@@ -366,11 +347,9 @@
         }
       },
       "rarityWeight": 5,
-      "rarity": 5
     },
     {
       "slug": "dragon-steel",
-      "budgetCost": 30,
       "name": "Dragon Steel",
       "attributes": {
         "dexterity": 10,
@@ -403,11 +382,9 @@
         }
       },
       "rarityWeight": 3,
-      "rarity": 3
     },
     {
       "slug": "godforged",
-      "budgetCost": 60,
       "name": "Godforged",
       "attributes": {
         "dexterity": 10,
@@ -449,11 +426,9 @@
         }
       },
       "rarityWeight": 1,
-      "rarity": 1
     },
     {
       "slug": "dragonbone",
-      "budgetCost": 40,
       "name": "Dragonbone",
       "attributes": {
         "dexterity": 10,
@@ -487,11 +462,9 @@
         }
       },
       "rarityWeight": 2,
-      "rarity": 2
     },
     {
       "slug": "celestial-ore",
-      "budgetCost": 50,
       "name": "Celestial Ore",
       "attributes": {
         "dexterity": 10,
@@ -528,11 +501,9 @@
         }
       },
       "rarityWeight": 1,
-      "rarity": 1
     },
     {
       "slug": "crystal",
-      "budgetCost": 18,
       "name": "Crystal",
       "attributes": {
         "dexterity": 10,
@@ -570,11 +541,9 @@
         }
       },
       "rarityWeight": 8,
-      "rarity": 8
     },
     {
       "slug": "void-crystal",
-      "budgetCost": 45,
       "name": "Void Crystal",
       "attributes": {
         "dexterity": 10,
@@ -617,7 +586,6 @@
         }
       },
       "rarityWeight": 2,
-      "rarity": 2
     }
       ]
     }

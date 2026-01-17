@@ -68,7 +68,6 @@
           ],
           "faction": "thieves_guild",
           "schedule": "@social/schedules/*:criminal",
-          "rarity": 32
         },
         {
           "slug": "formerspy",
@@ -115,7 +114,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:criminal",
-          "rarity": 50
         },
         {
           "slug": "formersmuggler",
@@ -161,7 +159,6 @@
           ],
           "faction": "thieves_guild",
           "schedule": "@social/schedules/*:criminal",
-          "rarity": 38
         },
         {
           "slug": "reformedthief",
@@ -206,7 +203,6 @@
           ],
           "faction": "thieves_guild",
           "schedule": "@social/schedules/*:criminal",
-          "rarity": 30
         },
         {
           "slug": "formerpirate",
@@ -253,7 +249,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:flexible",
-          "rarity": 48
         }
       ]
     }

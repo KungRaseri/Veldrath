@@ -68,7 +68,6 @@
           ],
           "faction": "clergy",
           "schedule": "@social/schedules/*:priest",
-          "rarity": 35
         }
       ]
     }
@@ -119,7 +118,6 @@
           ],
           "faction": "clergy",
           "schedule": "@social/schedules/*:priest",
-          "rarity": 35
         }
       ]
     }

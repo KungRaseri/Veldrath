@@ -9,7 +9,6 @@
     "offensive": {
       "items": [
         {
-          "rarity": 90,
           "slug": "fury-rune",
           "name": "fury-rune",
           "rarityWeight": 50,
@@ -33,7 +32,6 @@
           }
         },
         {
-          "rarity": 90,
           "slug": "piercing-rune",
           "name": "piercing-rune",
           "rarityWeight": 45,
@@ -57,7 +55,6 @@
           }
         },
         {
-          "rarity": 90,
           "slug": "devastation-rune",
           "name": "devastation-rune",
           "rarityWeight": 30,
@@ -81,7 +78,6 @@
           }
         },
         {
-          "rarity": 75,
           "slug": "rune-of-power",
           "name": "rune-of-power",
           "rarityWeight": 45,

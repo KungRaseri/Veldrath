@@ -31,7 +31,6 @@
           "name": "Kobold",
           "rarityWeight": 3,
           "xp": 8,
-          "rarity": 15,
           "attributes": {
             "constitution": 10,
             "wisdom": 9,
@@ -64,7 +63,6 @@
           "name": "Kobold Scout",
           "rarityWeight": 5,
           "xp": 12,
-          "rarity": 15,
           "attributes": {
             "constitution": 10,
             "wisdom": 11,
@@ -98,7 +96,6 @@
           "name": "Kobold Trapmaker",
           "rarityWeight": 10,
           "xp": 18,
-          "rarity": 30,
           "attributes": {
             "constitution": 11,
             "wisdom": 10,
@@ -132,7 +129,6 @@
           "name": "Kobold Sorcerer",
           "rarityWeight": 15,
           "xp": 30,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 11,
@@ -176,7 +172,6 @@
           "name": "Lizardfolk",
           "rarityWeight": 8,
           "xp": 60,
-          "rarity": 30,
           "attributes": {
             "constitution": 14,
             "wisdom": 12,
@@ -210,7 +205,6 @@
           "name": "Lizardfolk Warrior",
           "rarityWeight": 12,
           "xp": 80,
-          "rarity": 50,
           "attributes": {
             "constitution": 15,
             "wisdom": 12,
@@ -244,7 +238,6 @@
           "name": "Lizardfolk Shaman",
           "rarityWeight": 18,
           "xp": 95,
-          "rarity": 70,
           "attributes": {
             "constitution": 14,
             "wisdom": 16,
@@ -278,7 +271,6 @@
           "name": "Lizardfolk King",
           "rarityWeight": 35,
           "xp": 140,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 14,
@@ -323,7 +315,6 @@
           "name": "Yuan-ti Pureblood",
           "rarityWeight": 20,
           "xp": 100,
-          "rarity": 70,
           "attributes": {
             "constitution": 14,
             "wisdom": 13,
@@ -358,7 +349,6 @@
           "name": "Yuan-ti Malison",
           "rarityWeight": 32,
           "xp": 150,
-          "rarity": 90,
           "attributes": {
             "constitution": 15,
             "wisdom": 14,
@@ -393,7 +383,6 @@
           "name": "Yuan-ti Abomination",
           "rarityWeight": 50,
           "xp": 200,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 15,
@@ -437,7 +426,6 @@
           "name": "Naga",
           "rarityWeight": 45,
           "xp": 170,
-          "rarity": 90,
           "attributes": {
             "constitution": 15,
             "wisdom": 16,
@@ -472,7 +460,6 @@
           "name": "Basilisk",
           "rarityWeight": 38,
           "xp": 130,
-          "rarity": 90,
           "attributes": {
             "constitution": 17,
             "wisdom": 12,

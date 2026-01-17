@@ -96,7 +96,6 @@
           ],
           "faction": "merchants_guild",
           "schedule": "@social/schedules/*:merchant",
-          "rarity": 10
         }
       ]
     }

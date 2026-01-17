@@ -12,7 +12,6 @@
           "rarityWeight": 55,
           "name": "protection-rune",
           "slug": "protection-rune",
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "strength": 10,
@@ -36,7 +35,6 @@
           "rarityWeight": 50,
           "name": "warding-rune",
           "slug": "warding-rune",
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "strength": 10,
@@ -60,7 +58,6 @@
           "rarityWeight": 40,
           "name": "fortitude-rune",
           "slug": "fortitude-rune",
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "strength": 10,
@@ -84,7 +81,6 @@
           "rarityWeight": 45,
           "name": "rune-of-fortitude",
           "slug": "rune-of-fortitude",
-          "rarity": 75,
           "attributes": {},
           "traits": {
             "maxHealth": {

@@ -25,7 +25,6 @@
             "crossroads",
             "merchant_stalls"
           ],
-          "rarity": 8
         }
       ]
     }
@@ -53,7 +52,6 @@
             "farmland",
             "mill"
           ],
-          "rarity": 10
         },
         {
           "slug": "oakshire",
@@ -74,7 +72,6 @@
             "ancient_oaks",
             "elven_architecture"
           ],
-          "rarity": 15
         },
         {
           "slug": "frostpeak",
@@ -94,7 +91,6 @@
             "snow_covered",
             "isolated"
           ],
-          "rarity": 18
         }
       ]
     }
@@ -124,7 +120,6 @@
             "master_smiths",
             "dwarven_halls"
           ],
-          "rarity": 25
         },
         {
           "slug": "ravenhollow",
@@ -147,7 +142,6 @@
             "ravens",
             "mysterious_residents"
           ],
-          "rarity": 35
         },
         {
           "slug": "sandstone",
@@ -170,7 +164,6 @@
             "trade_caravans",
             "desert_architecture"
           ],
-          "rarity": 28
         },
         {
           "slug": "ashborough",
@@ -192,7 +185,6 @@
             "volcanic_soil",
             "resilient_people"
           ],
-          "rarity": 32
         },
         {
           "slug": "crimsonharbor",
@@ -215,7 +207,6 @@
             "lawless",
             "red_sails"
           ],
-          "rarity": 40
         }
       ]
     }
@@ -247,7 +238,6 @@
             "trade_center",
             "cosmopolitan"
           ],
-          "rarity": 50
         },
         {
           "slug": "stormhaven",
@@ -270,7 +260,6 @@
             "elite_guards",
             "battle_hardened"
           ],
-          "rarity": 55
         },
         {
           "slug": "thenexus",
@@ -293,7 +282,6 @@
             "mage_towers",
             "ley_lines"
           ],
-          "rarity": 80
         },
         {
           "slug": "sanctuary",
@@ -316,7 +304,6 @@
             "holy_relics",
             "pilgrims"
           ],
-          "rarity": 70
         }
       ]
     }
@@ -346,7 +333,6 @@
             "royal_palace",
             "cultural_center"
           ],
-          "rarity": 100
         }
       ]
     }
@@ -371,7 +357,6 @@
             "haunted",
             "ruins"
           ],
-          "rarity": 60
         }
       ]
     }

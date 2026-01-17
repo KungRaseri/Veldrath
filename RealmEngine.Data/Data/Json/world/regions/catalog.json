@@ -51,7 +51,6 @@
               "Shadow_Empire"
             ]
           },
-          "rarity": 15
         },
         {
           "slug": "frostheim",
@@ -92,7 +91,6 @@
             ],
             "enemies": []
           },
-          "rarity": 20
         },
         {
           "slug": "shadow-empire",
@@ -129,7 +127,6 @@
               "Elven_Reaches"
             ]
           },
-          "rarity": 40
         }
       ]
     }
@@ -176,7 +173,6 @@
               "Shadow_Empire"
             ]
           },
-          "rarity": 25
         },
         {
           "slug": "desert-emirates",
@@ -214,7 +210,6 @@
             ],
             "enemies": []
           },
-          "rarity": 22
         },
         {
           "slug": "sanctuary-theocracy",
@@ -251,7 +246,6 @@
               "Shadow_Empire"
             ]
           },
-          "rarity": 28
         },
         {
           "slug": "mage-dominion",
@@ -289,7 +283,6 @@
             ],
             "enemies": []
           },
-          "rarity": 35
         }
       ]
     }
@@ -332,7 +325,6 @@
               "Desert_Emirates"
             ]
           },
-          "rarity": 30
         },
         {
           "slug": "frontier-outposts",
@@ -369,7 +361,6 @@
             ],
             "enemies": []
           },
-          "rarity": 18
         },
         {
           "slug": "contested-lands",
@@ -403,7 +394,6 @@
             "neutral": [],
             "enemies": []
           },
-          "rarity": 32
         }
       ]
     }

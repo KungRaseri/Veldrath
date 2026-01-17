@@ -43,7 +43,6 @@
               "persuasion"
             ]
           },
-          "rarity": 20
         }
       ]
     },
@@ -83,7 +82,6 @@
               "crafting"
             ]
           },
-          "rarity": 20
         }
       ]
     },
@@ -121,7 +119,6 @@
               "lockpicking"
             ]
           },
-          "rarity": 35
         }
       ]
     },
@@ -162,7 +159,6 @@
               "combat"
             ]
           },
-          "rarity": 15
         },
         {
           "slug": "military",
@@ -196,7 +192,6 @@
               "combat"
             ]
           },
-          "rarity": 10
         },
         {
           "slug": "fighters-guild",
@@ -229,7 +224,6 @@
               "combat"
             ]
           },
-          "rarity": 12
         }
       ]
     },
@@ -268,7 +262,6 @@
               "arcana"
             ]
           },
-          "rarity": 30
         }
       ]
     },
@@ -308,7 +301,6 @@
               "investigation"
             ]
           },
-          "rarity": 25
         }
       ]
     },
@@ -345,7 +337,6 @@
             "reputation": 25,
             "alignment": "good"
           },
-          "rarity": 20
         }
       ]
     },
@@ -382,7 +373,6 @@
           "joinRequirements": {
             "none": true
           },
-          "rarity": 10
         }
       ]
     },
@@ -421,7 +411,6 @@
             "birthright": true,
             "charisma": 14
           },
-          "rarity": 40
         }
       ]
     }

@@ -67,7 +67,6 @@
           ],
           "faction": "scholars_guild",
           "schedule": "@social/schedules/*:scholar",
-          "rarity": 22
         },
         {
           "slug": "lorekeeper",
@@ -113,7 +112,6 @@
           ],
           "faction": "scholars_guild",
           "schedule": "@social/schedules/*:scholar",
-          "rarity": 35
         }
       ]
     },
@@ -170,7 +168,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:healer",
-          "rarity": 25
         },
         {
           "slug": "alchemist",
@@ -216,7 +213,6 @@
           ],
           "faction": "mages_circle",
           "schedule": "@social/schedules/*:mage",
-          "rarity": 40
         }
       ]
     }
@@ -299,7 +295,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:healer",
-          "rarity": 25
         },
         {
           "slug": "healer",
@@ -364,7 +359,6 @@
           ],
           "faction": "clergy",
           "schedule": "@social/schedules/*:healer",
-          "rarity": 35
         },
         {
           "slug": "herbalist",
@@ -429,7 +423,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:healer",
-          "rarity": 28
         }
       ]
     },
@@ -510,7 +503,6 @@
           ],
           "faction": "scholars_guild",
           "schedule": "@social/schedules/*:scholar",
-          "rarity": 30
         },
         {
           "slug": "sage",
@@ -578,7 +570,6 @@
           ],
           "faction": "scholars_guild",
           "schedule": "@social/schedules/*:scholar",
-          "rarity": 50
         },
         {
           "slug": "cartographer",
@@ -642,7 +633,6 @@
           ],
           "faction": "scholars_guild",
           "schedule": "@social/schedules/*:scholar",
-          "rarity": 40
         }
       ]
     }

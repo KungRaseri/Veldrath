@@ -25,7 +25,6 @@
           "resources": [
             "@items/materials:*"
           ],
-          "rarity": 10
         },
         {
           "slug": "mistyhills",
@@ -45,7 +44,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 12
         },
         {
           "slug": "silverlake",
@@ -64,7 +62,6 @@
             "@items/consumables:*",
             "@items/materials:*"
           ],
-          "rarity": 15
         }
       ]
     }
@@ -91,7 +88,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 25
         },
         {
           "slug": "endlessdesert",
@@ -111,7 +107,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 28
         },
         {
           "slug": "crystalcaverns",
@@ -131,7 +126,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 32
         },
         {
           "slug": "stormycoast",
@@ -151,7 +145,6 @@
             "@items/materials:*",
             "@items/consumables:*"
           ],
-          "rarity": 30
         },
         {
           "slug": "whisperingwoods",
@@ -172,7 +165,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 35
         }
       ]
     }
@@ -199,7 +191,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 50
         },
         {
           "slug": "frozentundra",
@@ -220,7 +211,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 55
         },
         {
           "slug": "poisonswamp",
@@ -241,7 +231,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 58
         },
         {
           "slug": "ancientbattlefield",
@@ -260,7 +249,6 @@
             "@items/weapons:*",
             "@items/armor:*"
           ],
-          "rarity": 60
         },
         {
           "slug": "shatteredisles",
@@ -280,7 +268,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 65
         },
         {
           "slug": "jungleoffangs",
@@ -300,7 +287,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 62
         },
         {
           "slug": "thegreatrift",
@@ -321,7 +307,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 68
         }
       ]
     }
@@ -347,7 +332,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 100
         },
         {
           "slug": "deadlands",
@@ -367,7 +351,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 110
         },
         {
           "slug": "bloodmoors",
@@ -388,7 +371,6 @@
             "@items/materials:*",
             "@items/materials:*"
           ],
-          "rarity": 115
         }
       ]
     }

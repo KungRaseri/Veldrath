@@ -27,7 +27,6 @@
           "name": "Imp",
           "rarityWeight": 5,
           "xp": 40,
-          "rarity": 15,
           "attributes": {
             "constitution": 11,
             "wisdom": 10,
@@ -60,7 +59,6 @@
           "name": "Shadow Demon",
           "rarityWeight": 12,
           "xp": 70,
-          "rarity": 50,
           "attributes": {
             "constitution": 12,
             "wisdom": 12,
@@ -103,7 +101,6 @@
           "name": "Demon",
           "rarityWeight": 20,
           "xp": 200,
-          "rarity": 70,
           "attributes": {
             "constitution": 16,
             "wisdom": 12,
@@ -140,7 +137,6 @@
           "name": "Vrock",
           "rarityWeight": 28,
           "xp": 300,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 12,
@@ -174,7 +170,6 @@
           "name": "Hellhound",
           "rarityWeight": 18,
           "xp": 180,
-          "rarity": 70,
           "attributes": {
             "constitution": 15,
             "wisdom": 12,
@@ -208,7 +203,6 @@
           "name": "Nightmare",
           "rarityWeight": 25,
           "xp": 250,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 13,
@@ -251,7 +245,6 @@
           "name": "Devil",
           "rarityWeight": 22,
           "xp": 230,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 14,
@@ -286,7 +279,6 @@
           "name": "Incubus",
           "rarityWeight": 20,
           "xp": 200,
-          "rarity": 70,
           "attributes": {
             "constitution": 14,
             "wisdom": 13,
@@ -320,7 +312,6 @@
           "name": "Succubus",
           "rarityWeight": 20,
           "xp": 200,
-          "rarity": 70,
           "attributes": {
             "constitution": 14,
             "wisdom": 13,
@@ -363,7 +354,6 @@
           "name": "Abyssal Lord",
           "rarityWeight": 80,
           "xp": 1800,
-          "rarity": 95,
           "attributes": {
             "constitution": 20,
             "wisdom": 16,
@@ -421,7 +411,6 @@
           "name": "Fiend",
           "rarityWeight": 40,
           "xp": 500,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,
@@ -459,7 +448,6 @@
           "name": "Balor",
           "rarityWeight": 70,
           "xp": 1200,
-          "rarity": 90,
           "attributes": {
             "constitution": 22,
             "wisdom": 14,
@@ -498,7 +486,6 @@
           "name": "Pit Fiend",
           "rarityWeight": 75,
           "xp": 1400,
-          "rarity": 90,
           "attributes": {
             "constitution": 23,
             "wisdom": 16,
@@ -538,7 +525,6 @@
           "name": "Marilith",
           "rarityWeight": 65,
           "xp": 1000,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,
@@ -573,7 +559,6 @@
           "name": "Beholder",
           "rarityWeight": 60,
           "xp": 900,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -618,7 +603,6 @@
           "name": "Dark Lord",
           "rarityWeight": 1,
           "xp": 5000,
-          "rarity": 100,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,

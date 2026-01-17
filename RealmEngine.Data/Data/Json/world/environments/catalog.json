@@ -27,7 +27,6 @@
           ],
           "travelDifficulty": "Easy",
           "visibility": "Medium",
-          "rarity": 10
         },
         {
           "slug": "grassland",
@@ -48,7 +47,6 @@
           ],
           "travelDifficulty": "Easy",
           "visibility": "High",
-          "rarity": 8
         },
         {
           "slug": "desert",
@@ -73,7 +71,6 @@
             "dehydration",
             "heat_exhaustion"
           ],
-          "rarity": 15
         },
         {
           "slug": "mountain",
@@ -98,7 +95,6 @@
             "falling_rocks",
             "altitude_sickness"
           ],
-          "rarity": 18
         },
         {
           "slug": "swamp",
@@ -124,7 +120,6 @@
             "quicksand",
             "poison_gas"
           ],
-          "rarity": 20
         },
         {
           "slug": "tundra",
@@ -150,7 +145,6 @@
             "hypothermia",
             "blizzards"
           ],
-          "rarity": 22
         },
         {
           "slug": "jungle",
@@ -176,7 +170,6 @@
             "venomous_creatures",
             "dense_undergrowth"
           ],
-          "rarity": 25
         },
         {
           "slug": "volcanic",
@@ -202,7 +195,6 @@
             "toxic_fumes",
             "extreme_heat"
           ],
-          "rarity": 35
         }
       ]
     }
@@ -223,7 +215,6 @@
             "combat": 1.0
           },
           "duration": "Variable",
-          "rarity": 10
         },
         {
           "slug": "cloudy",
@@ -238,7 +229,6 @@
             "combat": 1.0
           },
           "duration": "1-6 hours",
-          "rarity": 15
         },
         {
           "slug": "light-rain",
@@ -253,7 +243,6 @@
             "combat": 0.95
           },
           "duration": "2-8 hours",
-          "rarity": 18
         },
         {
           "slug": "heavy-rain",
@@ -269,7 +258,6 @@
             "ranged_penalty": -2
           },
           "duration": "1-4 hours",
-          "rarity": 25
         },
         {
           "slug": "thunderstorm",
@@ -289,7 +277,6 @@
           "hazards": [
             "lightning_strikes"
           ],
-          "rarity": 30
         },
         {
           "slug": "fog",
@@ -305,7 +292,6 @@
             "ranged_penalty": -5
           },
           "duration": "2-12 hours",
-          "rarity": 20
         },
         {
           "slug": "snow",
@@ -321,7 +307,6 @@
           },
           "duration": "3-12 hours",
           "temperatureRequired": "Cold",
-          "rarity": 22
         },
         {
           "slug": "blizzard",
@@ -344,7 +329,6 @@
             "hypothermia",
             "disorientation"
           ],
-          "rarity": 40
         },
         {
           "slug": "sandstorm",
@@ -365,7 +349,6 @@
             "disorientation",
             "sand_damage"
           ],
-          "rarity": 35
         }
       ]
     }
@@ -390,7 +373,6 @@
             "escape_difficulty": "Hard",
             "damage": "None (Drowning risk)"
           },
-          "rarity": 25
         },
         {
           "slug": "lava-flows",
@@ -407,7 +389,6 @@
             "damage": "10d10 fire",
             "instant_death": true
           },
-          "rarity": 45
         },
         {
           "slug": "thin-ice",
@@ -426,7 +407,6 @@
             "cold_damage": "2d6 per round",
             "hypothermia_risk": true
           },
-          "rarity": 30
         },
         {
           "slug": "poison-gas",
@@ -445,7 +425,6 @@
             "constitution_save": "DC 15",
             "disease_risk": true
           },
-          "rarity": 35
         },
         {
           "slug": "rockslide",
@@ -464,7 +443,6 @@
             "dexterity_save": "DC 15",
             "area_effect": true
           },
-          "rarity": 28
         },
         {
           "slug": "dense-undergrowth",
@@ -483,7 +461,6 @@
             "stealth_bonus": 2,
             "visibility": 0.6
           },
-          "rarity": 15
         },
         {
           "slug": "cursed-ground",
@@ -502,7 +479,6 @@
             "healing_reduction": 0.5,
             "undead_attraction": true
           },
-          "rarity": 50
         }
       ]
     }

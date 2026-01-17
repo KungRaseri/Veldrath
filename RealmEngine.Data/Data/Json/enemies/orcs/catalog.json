@@ -30,7 +30,6 @@
           "name": "Orc",
           "rarityWeight": 5,
           "xp": 40,
-          "rarity": 15,
           "attributes": {
             "constitution": 16,
             "wisdom": 10,
@@ -63,7 +62,6 @@
           "name": "Orc Grunt",
           "rarityWeight": 8,
           "xp": 50,
-          "rarity": 30,
           "attributes": {
             "constitution": 17,
             "wisdom": 9,
@@ -97,7 +95,6 @@
           "name": "Orc Warrior",
           "rarityWeight": 12,
           "xp": 70,
-          "rarity": 50,
           "attributes": {
             "constitution": 18,
             "wisdom": 9,
@@ -132,7 +129,6 @@
           "name": "Orc Berserker",
           "rarityWeight": 18,
           "xp": 90,
-          "rarity": 70,
           "attributes": {
             "constitution": 18,
             "wisdom": 8,
@@ -180,7 +176,6 @@
           "name": "Orc Champion",
           "rarityWeight": 22,
           "xp": 110,
-          "rarity": 90,
           "attributes": {
             "constitution": 19,
             "wisdom": 10,
@@ -215,7 +210,6 @@
           "name": "Orc Shaman",
           "rarityWeight": 25,
           "xp": 115,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 14,
@@ -250,7 +244,6 @@
           "name": "Orc Warlord",
           "rarityWeight": 35,
           "xp": 150,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 12,
@@ -286,7 +279,6 @@
           "name": "Orc Chieftain",
           "rarityWeight": 42,
           "xp": 180,
-          "rarity": 90,
           "attributes": {
             "constitution": 19,
             "wisdom": 13,
@@ -335,7 +327,6 @@
           "name": "Orc King",
           "rarityWeight": 65,
           "xp": 250,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 14,
@@ -376,7 +367,6 @@
           "name": "Half-Orc",
           "rarityWeight": 15,
           "xp": 55,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 11,
@@ -410,7 +400,6 @@
           "name": "Orc Brute",
           "rarityWeight": 30,
           "xp": 170,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 9,

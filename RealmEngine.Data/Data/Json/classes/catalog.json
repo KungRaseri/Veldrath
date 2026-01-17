@@ -101,7 +101,6 @@
               ]
             }
           },
-          "rarity": 20
         },
         {
           "slug": "paladin",
@@ -176,7 +175,6 @@
               ]
             }
           },
-          "rarity": 75
         }
       ]
     },
@@ -263,7 +261,6 @@
               ]
             }
           },
-          "rarity": 10
         },
         {
           "slug": "assassin",
@@ -338,7 +335,6 @@
               ]
             }
           },
-          "rarity": 150
         },
         {
           "slug": "swashbuckler",
@@ -414,7 +410,6 @@
               ]
             }
           },
-          "rarity": 100
         }
       ]
     },
@@ -503,7 +498,6 @@
               ]
             }
           },
-          "rarity": 15
         },
         {
           "slug": "beastmaster",
@@ -578,7 +572,6 @@
               ]
             }
           },
-          "rarity": 100
         }
       ]
     },
@@ -677,7 +670,6 @@
               ]
             }
           },
-          "rarity": 5
         },
         {
           "slug": "berserker",
@@ -751,7 +743,6 @@
               ]
             }
           },
-          "rarity": 50
         },
         {
           "slug": "knight",
@@ -827,7 +818,6 @@
               ]
             }
           },
-          "rarity": 35
         },
         {
           "slug": "duelist",
@@ -903,7 +893,6 @@
               ]
             }
           },
-          "rarity": 75
         }
       ]
     },
@@ -991,7 +980,6 @@
               ]
             }
           },
-          "rarity": 15
         },
         {
           "slug": "elementalist",
@@ -1062,7 +1050,6 @@
               ]
             }
           },
-          "rarity": 100
         },
         {
           "slug": "necromancer",
@@ -1137,7 +1124,6 @@
               ]
             }
           },
-          "rarity": 250
         }
       ]
     }

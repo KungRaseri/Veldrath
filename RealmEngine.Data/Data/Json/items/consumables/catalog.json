@@ -24,7 +24,6 @@
         {
           "name": "Potion",
           "slug": "potion",
-          "rarity": 75,
           "rarityWeight": 50,
           "value": 10,
           "weight": 0.5,
@@ -44,7 +43,6 @@
         {
           "name": "Elixir",
           "slug": "elixir",
-          "rarity": 50,
           "rarityWeight": 30,
           "value": 25,
           "weight": 0.5,
@@ -64,7 +62,6 @@
         {
           "name": "Tonic",
           "slug": "tonic",
-          "rarity": 75,
           "rarityWeight": 40,
           "value": 15,
           "weight": 0.5,
@@ -84,7 +81,6 @@
         {
           "name": "Greater Potion",
           "slug": "greater-potion",
-          "rarity": 25,
           "rarityWeight": 15,
           "value": 50,
           "weight": 0.6,
@@ -104,7 +100,6 @@
         {
           "name": "Superior Elixir",
           "slug": "superior-elixir",
-          "rarity": 10,
           "rarityWeight": 5,
           "value": 100,
           "weight": 0.7,
@@ -124,7 +119,6 @@
         {
           "name": "Health Potion",
           "slug": "health-potion",
-          "rarity": 75,
           "rarityWeight": 50,
           "value": 15,
           "weight": 0.5,
@@ -137,7 +131,6 @@
         {
           "name": "Mana Potion",
           "slug": "mana-potion",
-          "rarity": 75,
           "rarityWeight": 45,
           "value": 20,
           "weight": 0.4,
@@ -150,7 +143,6 @@
         {
           "name": "Greater Mana Potion",
           "slug": "greater-mana-potion",
-          "rarity": 50,
           "rarityWeight": 20,
           "value": 60,
           "weight": 0.6,
@@ -163,7 +155,6 @@
         {
           "name": "Stamina Potion",
           "slug": "stamina-potion",
-          "rarity": 75,
           "rarityWeight": 40,
           "value": 18,
           "weight": 0.4,
@@ -187,7 +178,6 @@
           "rarityWeight": 50,
           "value": 100,
           "weight": 0.5,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -207,7 +197,6 @@
           "rarityWeight": 40,
           "value": 80,
           "weight": 0.5,
-          "rarity": 80,
           "attributes": {},
           "traits": {},
           "effect": "stat_boost",
@@ -220,7 +209,6 @@
           "rarityWeight": 30,
           "value": 50,
           "weight": 0.4,
-          "rarity": 70,
           "attributes": {},
           "traits": {},
           "effect": "buff",
@@ -241,7 +229,6 @@
           "rarityWeight": 6,
           "value": 12,
           "weight": 0.3,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -261,7 +248,6 @@
           "rarityWeight": 8,
           "value": 18,
           "weight": 0.3,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -281,7 +267,6 @@
           "rarityWeight": 10,
           "value": 25,
           "weight": 0.3,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -301,7 +286,6 @@
           "rarityWeight": 15,
           "value": 30,
           "weight": 0.2,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -329,7 +313,6 @@
           "rarityWeight": 10,
           "value": 20,
           "weight": 0.2,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -349,7 +332,6 @@
           "rarityWeight": 15,
           "value": 35,
           "weight": 0.2,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -369,7 +351,6 @@
           "rarityWeight": 20,
           "value": 50,
           "weight": 0.2,
-          "rarity": 70,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -389,7 +370,6 @@
           "rarityWeight": 18,
           "value": 40,
           "weight": 0.2,
-          "rarity": 70,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -409,7 +389,6 @@
           "rarityWeight": 22,
           "value": 45,
           "weight": 0.2,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -437,7 +416,6 @@
           "rarityWeight": 12,
           "value": 25,
           "weight": 0.3,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -457,7 +435,6 @@
           "rarityWeight": 12,
           "value": 25,
           "weight": 0.3,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -477,7 +454,6 @@
           "rarityWeight": 15,
           "value": 30,
           "weight": 0.3,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -497,7 +473,6 @@
           "rarityWeight": 10,
           "value": 20,
           "weight": 0.2,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -517,7 +492,6 @@
           "rarityWeight": 18,
           "value": 35,
           "weight": 0.3,
-          "rarity": 70,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -537,7 +511,6 @@
           "rarityWeight": 11,
           "value": 22,
           "weight": 0.2,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -557,7 +530,6 @@
           "rarityWeight": 9,
           "value": 18,
           "weight": 0.2,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -577,7 +549,6 @@
           "rarityWeight": 10,
           "value": 20,
           "weight": 0.2,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -605,7 +576,6 @@
           "rarityWeight": 20,
           "value": 50,
           "weight": 0.2,
-          "rarity": 70,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -625,7 +595,6 @@
           "rarityWeight": 25,
           "value": 60,
           "weight": 0.2,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -645,7 +614,6 @@
           "rarityWeight": 30,
           "value": 75,
           "weight": 0.3,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -665,7 +633,6 @@
           "rarityWeight": 40,
           "value": 100,
           "weight": 0.3,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -685,7 +652,6 @@
           "rarityWeight": 22,
           "value": 45,
           "weight": 0.2,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -705,7 +671,6 @@
           "rarityWeight": 60,
           "value": 150,
           "weight": 0.5,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -725,7 +690,6 @@
           "rarityWeight": 80,
           "value": 200,
           "weight": 0.3,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,

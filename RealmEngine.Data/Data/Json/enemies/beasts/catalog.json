@@ -29,7 +29,6 @@
           "name": "Wolf",
           "rarityWeight": 5,
           "xp": 50,
-          "rarity": 15,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -65,7 +64,6 @@
           "name": "Timber Wolf",
           "rarityWeight": 8,
           "xp": 75,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -102,7 +100,6 @@
           "name": "Frost Wolf",
           "rarityWeight": 15,
           "xp": 100,
-          "rarity": 50,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -151,7 +148,6 @@
           "name": "Bear",
           "rarityWeight": 10,
           "xp": 120,
-          "rarity": 30,
           "attributes": {
             "constitution": 15,
             "wisdom": 12,
@@ -188,7 +184,6 @@
           "name": "Black Bear",
           "rarityWeight": 8,
           "xp": 100,
-          "rarity": 30,
           "attributes": {
             "constitution": 14,
             "wisdom": 12,
@@ -225,7 +220,6 @@
           "name": "Grizzly Bear",
           "rarityWeight": 15,
           "xp": 180,
-          "rarity": 50,
           "attributes": {
             "constitution": 17,
             "wisdom": 13,
@@ -263,7 +257,6 @@
           "name": "Cave Bear",
           "rarityWeight": 20,
           "xp": 250,
-          "rarity": 70,
           "attributes": {
             "constitution": 18,
             "wisdom": 13,
@@ -315,7 +308,6 @@
           "name": "Tiger",
           "rarityWeight": 12,
           "xp": 140,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 13,
@@ -352,7 +344,6 @@
           "name": "Panther",
           "rarityWeight": 10,
           "xp": 110,
-          "rarity": 30,
           "attributes": {
             "constitution": 13,
             "wisdom": 13,
@@ -389,7 +380,6 @@
           "name": "Lion",
           "rarityWeight": 14,
           "xp": 160,
-          "rarity": 50,
           "attributes": {
             "constitution": 15,
             "wisdom": 13,
@@ -438,7 +428,6 @@
           "name": "Serpent",
           "rarityWeight": 7,
           "xp": 60,
-          "rarity": 30,
           "attributes": {
             "constitution": 12,
             "wisdom": 11,
@@ -472,7 +461,6 @@
           "name": "Crocodile",
           "rarityWeight": 18,
           "xp": 200,
-          "rarity": 70,
           "attributes": {
             "constitution": 17,
             "wisdom": 11,
@@ -506,7 +494,6 @@
           "name": "Scorpion",
           "rarityWeight": 9,
           "xp": 80,
-          "rarity": 30,
           "attributes": {
             "constitution": 14,
             "wisdom": 10,
@@ -540,7 +527,6 @@
           "name": "Spider",
           "rarityWeight": 5,
           "xp": 45,
-          "rarity": 15,
           "attributes": {
             "constitution": 10,
             "wisdom": 10,
@@ -574,7 +560,6 @@
           "name": "Boar",
           "rarityWeight": 8,
           "xp": 90,
-          "rarity": 30,
           "attributes": {
             "constitution": 16,
             "wisdom": 10,

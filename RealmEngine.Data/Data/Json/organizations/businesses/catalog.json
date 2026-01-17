@@ -72,7 +72,6 @@
           ],
           "required_population": 200,
           "npc_count": "2-4",
-          "rarity": 5
         },
         {
           "slug": "inn-quality",
@@ -148,7 +147,6 @@
           ],
           "required_population": 1000,
           "npc_count": "5-8",
-          "rarity": 12
         },
         {
           "slug": "inn-luxury",
@@ -226,7 +224,6 @@
           ],
           "required_population": 10000,
           "npc_count": "15-25",
-          "rarity": 30
         }
       ]
     }
@@ -302,7 +299,6 @@
           "required_population": 300,
           "npc_count": "10-20",
           "quest_board": true,
-          "rarity": 8
         },
         {
           "slug": "tavern-respectable",
@@ -372,7 +368,6 @@
           "required_population": 800,
           "npc_count": "15-30",
           "quest_board": true,
-          "rarity": 10
         },
         {
           "slug": "restaurant-fine",
@@ -440,7 +435,6 @@
           "required_population": 5000,
           "npc_count": "8-15",
           "reservations_required": true,
-          "rarity": 25
         }
       ]
     }
@@ -525,7 +519,6 @@
             "crossroads"
           ],
           "required_population": 500,
-          "rarity": 5
         },
         {
           "slug": "temple",
@@ -602,7 +595,6 @@
           ],
           "required_population": 1000,
           "faction": "@organizations/factions/religious:clergy",
-          "rarity": 10
         },
         {
           "slug": "bank",
@@ -674,7 +666,6 @@
           ],
           "required_population": 5000,
           "faction": "@organizations/factions/trade:merchants_guild",
-          "rarity": 20
         }
       ]
     }
@@ -732,7 +723,6 @@
             "cities"
           ],
           "required_population": 8000,
-          "rarity": 22
         },
         {
           "slug": "arena",
@@ -794,7 +784,6 @@
           ],
           "required_population": 10000,
           "faction": "@organizations/factions/military:fighters_guild",
-          "rarity": 28
         },
         {
           "slug": "gambling-hall",
@@ -853,7 +842,6 @@
           "required_population": 5000,
           "faction": "@organizations/factions/criminal:thieves_guild",
           "reputation_required": -10,
-          "rarity": 32
         }
       ]
     }

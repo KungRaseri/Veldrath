@@ -23,7 +23,6 @@
             "May the light guide your path, traveler.",
             "Peace be with you this {time_of_day}."
           ],
-          "rarity": 20
         },
         {
           "slug": "priest-solemn",
@@ -35,7 +34,6 @@
             "Welcome to this holy place, child.",
             "You are always welcome in the temple."
           ],
-          "rarity": 25
         }
       ]
     },
@@ -51,7 +49,6 @@
             "Well met, {player_name}. To what do we owe this distinguished visit?",
             "Ah, {player_name}. Welcome to our halls."
           ],
-          "rarity": 15
         },
         {
           "slug": "noble-friendly",
@@ -63,7 +60,6 @@
             "Always a pleasure, my friend.",
             "Welcome back! I trust you've been well?"
           ],
-          "rarity": 12
         },
         {
           "slug": "knight-honorable",
@@ -75,7 +71,6 @@
             "Greetings, warrior. May your blade stay true.",
             "Good {time_of_day}. Stand tall, for we serve a greater cause."
           ],
-          "rarity": 18
         },
         {
           "slug": "courtier-refined",
@@ -87,7 +82,6 @@
             "Welcome to court, {player_name}. Do mind the politics.",
             "Ah, such distinguished company we keep today."
           ],
-          "rarity": 20
         }
       ]
     },
@@ -103,7 +97,6 @@
             "Can't you see I'm concentrating?",
             "What? Oh, a visitor. Fine, what do you need?"
           ],
-          "rarity": 25
         },
         {
           "slug": "hedge-wizard-cryptic",
@@ -115,7 +108,6 @@
             "Ahh, the one the visions spoke of.",
             "You seek answers. I may have them... for a price."
           ],
-          "rarity": 30
         }
       ]
     },
@@ -131,7 +123,6 @@
             "Ah, {player_name}! My best customer! Come in, come in!",
             "Good {time_of_day}! I have just the thing you're looking for!"
           ],
-          "rarity": 10
         },
         {
           "slug": "merchant-professional",
@@ -143,7 +134,6 @@
             "Welcome to my establishment, {player_name}.",
             "Looking for quality goods? You've come to the right place."
           ],
-          "rarity": 12
         }
       ]
     },
@@ -159,7 +149,6 @@
             "Keep your voice down...",
             "What's the password?"
           ],
-          "rarity": 30
         },
         {
           "slug": "criminal-wary",
@@ -171,7 +160,6 @@
             "You a guard?",
             "What do you want?"
           ],
-          "rarity": 28
         },
         {
           "slug": "spy-enigmatic",
@@ -183,7 +171,6 @@
             "The sparrow flies at midnight.",
             "Careful who you trust, {player_name}."
           ],
-          "rarity": 35
         },
         {
           "slug": "smuggler-shifty",
@@ -195,7 +182,6 @@
             "Got rare goods. Interested?",
             "No questions, no problems."
           ],
-          "rarity": 32
         },
         {
           "slug": "thief-nervous",
@@ -207,7 +193,6 @@
             "L-look, I didn't do anything!",
             "Please don't tell anyone you saw me here."
           ],
-          "rarity": 25
         }
       ]
     },
@@ -223,7 +208,6 @@
             "Welcome, {player_name}. Always glad to see you.",
             "Ah, perfect timing! Come in, come in."
           ],
-          "rarity": 12
         },
         {
           "slug": "warm-rural",
@@ -235,7 +219,6 @@
             "Good to see a friendly face!",
             "Come on over, friend!"
           ],
-          "rarity": 10
         },
         {
           "slug": "apothecary-clinical",
@@ -247,7 +230,6 @@
             "Let me examine you. Where does it hurt?",
             "I have the remedy you need."
           ],
-          "rarity": 18
         },
         {
           "slug": "professional-busy",
@@ -259,7 +241,6 @@
             "Make it quick, I have work to do.",
             "What is it? I don't have all day."
           ],
-          "rarity": 15
         }
       ]
     },
@@ -275,7 +256,6 @@
             "Halt. Identify yourself.",
             "Move along, citizen."
           ],
-          "rarity": 20
         },
         {
           "slug": "soldier-casual",
@@ -287,7 +267,6 @@
             "All quiet today.",
             "Nothin' to worry about, move along."
           ],
-          "rarity": 15
         },
         {
           "slug": "military-formal",
@@ -299,7 +278,6 @@
             "At attention. State your purpose.",
             "Sir/Ma'am. How may I assist?"
           ],
-          "rarity": 20
         },
         {
           "slug": "guard-watchful",
@@ -311,7 +289,6 @@
             "Don't try anything.",
             "Keep moving, citizen."
           ],
-          "rarity": 18
         },
         {
           "slug": "mercenary-blunt",
@@ -323,7 +300,6 @@
             "Talk fast. Time is gold.",
             "What's the job and what's the pay?"
           ],
-          "rarity": 22
         }
       ]
     },
@@ -339,7 +315,6 @@
             "Good {time_of_day}! Come warm yourself by the fire!",
             "Ah, {player_name}! Your usual room is ready!"
           ],
-          "rarity": 8
         },
         {
           "slug": "tavern-rowdy",
@@ -351,7 +326,6 @@
             "What'll it be? The usual?",
             "Well well, if it isn't {player_name}! Drinks on the house!"
           ],
-          "rarity": 10
         },
         {
           "slug": "cook-busy",
@@ -363,7 +337,6 @@
             "Hungry? I've got stew ready.",
             "Make it quick, I've got bread in the oven!"
           ],
-          "rarity": 12
         },
         {
           "slug": "stable-earthy",
@@ -375,7 +348,6 @@
             "Your mount is well fed and ready.",
             "Fine animals here, all of 'em."
           ],
-          "rarity": 15
         }
       ]
     },
@@ -391,7 +363,6 @@
             "Beggin' your pardon...",
             "Not causin' trouble, just passin' through."
           ],
-          "rarity": 8
         },
         {
           "slug": "farmer-simple",
@@ -403,7 +374,6 @@
             "Aye, good {time_of_day} to ye.",
             "Crops are comin' in well this season."
           ],
-          "rarity": 10
         }
       ]
     },
@@ -419,7 +389,6 @@
             "Ah, a fellow seeker of knowledge. Welcome.",
             "Good {time_of_day}. Have you come to peruse the archives?"
           ],
-          "rarity": 18
         },
         {
           "slug": "distracted-scholar",
@@ -431,7 +400,6 @@
             "One moment... just finishing this calculation...",
             "Ah, {player_name}. Forgive me, I was deep in thought."
           ],
-          "rarity": 22
         }
       ]
     }

@@ -10,7 +10,6 @@
       "items": [
         {
           "name": "mana-crystal",
-          "rarity": 90,
           "rarityWeight": 60,
           "slug": "mana-crystal",
           "attributes": {
@@ -34,7 +33,6 @@
         },
         {
           "name": "pure-mana-crystal",
-          "rarity": 90,
           "rarityWeight": 35,
           "slug": "pure-mana-crystal",
           "attributes": {
@@ -62,7 +60,6 @@
         },
         {
           "name": "arcane-crystal",
-          "rarity": 90,
           "rarityWeight": 45,
           "slug": "arcane-crystal",
           "attributes": {

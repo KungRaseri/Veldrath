@@ -94,7 +94,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:innkeeper",
-          "rarity": 15
         },
         {
           "slug": "tavernkeeper",
@@ -159,7 +158,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:innkeeper",
-          "rarity": 12
         }
       ]
     },
@@ -234,7 +232,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:cook",
-          "rarity": 18
         }
       ]
     },
@@ -312,7 +309,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:stablemaster",
-          "rarity": 20
         }
       ]
     }

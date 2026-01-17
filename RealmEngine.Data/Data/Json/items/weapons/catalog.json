@@ -30,7 +30,6 @@
         {
           "name": "Longsword",
           "slug": "longsword",
-          "rarity": 75,
           "value": 15,
           "weight": 3.0,
           "budgetCost": 3,
@@ -53,7 +52,6 @@
         {
           "name": "Greatsword",
           "slug": "greatsword",
-          "rarity": 50,
           "value": 50,
           "weight": 6.0,
           "budgetCost": 6,
@@ -76,7 +74,6 @@
         {
           "name": "Katana",
           "slug": "katana",
-          "rarity": 50,
           "value": 40,
           "weight": 3.0,
           "budgetCost": 5,
@@ -99,7 +96,6 @@
         {
           "name": "Broadsword",
           "slug": "broadsword",
-          "rarity": 75,
           "value": 18,
           "weight": 3.5,
           "budgetCost": 3,
@@ -122,7 +118,6 @@
         {
           "name": "Claymore",
           "slug": "claymore",
-          "rarity": 50,
           "value": 60,
           "weight": 7.0,
           "budgetCost": 7,
@@ -145,7 +140,6 @@
         {
           "name": "Saber",
           "slug": "saber",
-          "rarity": 75,
           "value": 20,
           "weight": 2.5,
           "budgetCost": 3,
@@ -182,7 +176,6 @@
         {
           "name": "Shortsword",
           "slug": "shortsword",
-          "rarity": 75,
           "value": 10,
           "weight": 2.0,
           "budgetCost": 2,
@@ -205,7 +198,6 @@
         {
           "name": "Scimitar",
           "slug": "scimitar",
-          "rarity": 75,
           "value": 15,
           "weight": 3.0,
           "budgetCost": 3,
@@ -228,7 +220,6 @@
         {
           "name": "Rapier",
           "slug": "rapier",
-          "rarity": 50,
           "value": 25,
           "weight": 2.0,
           "budgetCost": 4,
@@ -251,7 +242,6 @@
         {
           "name": "Gladius",
           "slug": "gladius",
-          "rarity": 75,
           "value": 12,
           "weight": 2.0,
           "budgetCost": 2,
@@ -274,7 +264,6 @@
         {
           "name": "Dagger",
           "slug": "dagger",
-          "rarity": 75,
           "value": 5,
           "weight": 1.0,
           "budgetCost": 2,
@@ -297,7 +286,6 @@
         {
           "name": "Dirk",
           "slug": "dirk",
-          "rarity": 75,
           "value": 6,
           "weight": 1.0,
           "budgetCost": 2,
@@ -320,7 +308,6 @@
         {
           "name": "Stiletto",
           "slug": "stiletto",
-          "rarity": 75,
           "value": 10,
           "weight": 0.5,
           "budgetCost": 2,
@@ -343,7 +330,6 @@
         {
           "name": "Kris",
           "slug": "kris",
-          "rarity": 50,
           "value": 15,
           "weight": 1.5,
           "budgetCost": 3,
@@ -366,7 +352,6 @@
         {
           "name": "Tanto",
           "slug": "tanto",
-          "rarity": 75,
           "value": 12,
           "weight": 0.8,
           "budgetCost": 2,
@@ -389,7 +374,6 @@
         {
           "name": "Kukri",
           "slug": "kukri",
-          "rarity": 75,
           "value": 12,
           "weight": 1.2,
           "budgetCost": 3,
@@ -412,7 +396,6 @@
         {
           "name": "Rondel",
           "slug": "rondel",
-          "rarity": 75,
           "value": 8,
           "weight": 1.0,
           "budgetCost": 2,
@@ -435,7 +418,6 @@
         {
           "name": "Main Gauche",
           "slug": "main-gauche",
-          "rarity": 75,
           "value": 10,
           "weight": 1.5,
           "budgetCost": 2,
@@ -471,7 +453,6 @@
         {
           "name": "Battleaxe",
           "slug": "battleaxe",
-          "rarity": 75,
           "value": 20,
           "weight": 4.0,
           "budgetCost": 4,
@@ -494,7 +475,6 @@
         {
           "name": "Handaxe",
           "slug": "handaxe",
-          "rarity": 75,
           "value": 10,
           "weight": 2.0,
           "budgetCost": 2,
@@ -517,7 +497,6 @@
         {
           "name": "Greataxe",
           "slug": "greataxe",
-          "rarity": 50,
           "value": 55,
           "weight": 7.0,
           "budgetCost": 8,
@@ -540,7 +519,6 @@
         {
           "name": "Waraxe",
           "slug": "waraxe",
-          "rarity": 50,
           "value": 30,
           "weight": 5.0,
           "budgetCost": 6,
@@ -563,7 +541,6 @@
         {
           "name": "Hatchet",
           "slug": "hatchet",
-          "rarity": 75,
           "value": 5,
           "weight": 1.5,
           "budgetCost": 2,
@@ -586,7 +563,6 @@
         {
           "name": "Tomahawk",
           "slug": "tomahawk",
-          "rarity": 75,
           "value": 8,
           "weight": 2.0,
           "budgetCost": 2,
@@ -609,7 +585,6 @@
         {
           "name": "Cleaver",
           "slug": "cleaver",
-          "rarity": 75,
           "value": 8,
           "weight": 2.5,
           "budgetCost": 2,
@@ -632,7 +607,6 @@
         {
           "name": "Poleaxe",
           "slug": "poleaxe",
-          "rarity": 50,
           "value": 40,
           "weight": 6.0,
           "budgetCost": 7,
@@ -669,7 +643,6 @@
         {
           "name": "Longbow",
           "slug": "longbow",
-          "rarity": 75,
           "value": 30,
           "weight": 2.0,
           "budgetCost": 4,
@@ -692,7 +665,6 @@
         {
           "name": "Shortbow",
           "slug": "shortbow",
-          "rarity": 75,
           "value": 20,
           "weight": 1.5,
           "budgetCost": 3,
@@ -715,7 +687,6 @@
         {
           "name": "Composite Bow",
           "slug": "composite-bow",
-          "rarity": 50,
           "value": 50,
           "weight": 2.5,
           "budgetCost": 5,
@@ -738,7 +709,6 @@
         {
           "name": "Recurve Bow",
           "slug": "recurve-bow",
-          "rarity": 75,
           "value": 35,
           "weight": 2.0,
           "budgetCost": 5,
@@ -761,7 +731,6 @@
         {
           "name": "Crossbow",
           "slug": "crossbow",
-          "rarity": 50,
           "value": 50,
           "weight": 5.0,
           "budgetCost": 6,
@@ -784,7 +753,6 @@
         {
           "name": "Heavy Crossbow",
           "slug": "heavy-crossbow",
-          "rarity": 50,
           "value": 75,
           "weight": 8.0,
           "budgetCost": 9,
@@ -807,7 +775,6 @@
         {
           "name": "Warbow",
           "slug": "warbow",
-          "rarity": 25,
           "value": 80,
           "weight": 3.0,
           "budgetCost": 10,
@@ -830,7 +797,6 @@
         {
           "name": "Hunting Bow",
           "slug": "hunting-bow",
-          "rarity": 75,
           "value": 15,
           "weight": 1.5,
           "budgetCost": 3,
@@ -867,7 +833,6 @@
         {
           "name": "Spear",
           "slug": "spear",
-          "rarity": 75,
           "value": 10,
           "weight": 3.0,
           "budgetCost": 3,
@@ -890,7 +855,6 @@
         {
           "name": "Lance",
           "slug": "lance",
-          "rarity": 50,
           "value": 40,
           "weight": 6.0,
           "budgetCost": 8,
@@ -913,7 +877,6 @@
         {
           "name": "Javelin",
           "slug": "javelin",
-          "rarity": 75,
           "value": 8,
           "weight": 2.0,
           "budgetCost": 2,
@@ -936,7 +899,6 @@
         {
           "name": "Pike",
           "slug": "pike",
-          "rarity": 75,
           "value": 30,
           "weight": 8.0,
           "budgetCost": 6,
@@ -959,7 +921,6 @@
         {
           "name": "Halberd",
           "slug": "halberd",
-          "rarity": 50,
           "value": 35,
           "weight": 6.0,
           "budgetCost": 6,
@@ -982,7 +943,6 @@
         {
           "name": "Trident",
           "slug": "trident",
-          "rarity": 75,
           "value": 25,
           "weight": 4.0,
           "budgetCost": 4,
@@ -1005,7 +965,6 @@
         {
           "name": "Partisan",
           "slug": "partisan",
-          "rarity": 50,
           "value": 30,
           "weight": 5.0,
           "budgetCost": 5,
@@ -1028,7 +987,6 @@
         {
           "name": "Glaive",
           "slug": "glaive",
-          "rarity": 50,
           "value": 40,
           "weight": 6.0,
           "budgetCost": 7,
@@ -1064,7 +1022,6 @@
         {
           "name": "Mace",
           "slug": "mace",
-          "rarity": 75,
           "value": 12,
           "weight": 4.0,
           "budgetCost": 3,
@@ -1087,7 +1044,6 @@
         {
           "name": "Warhammer",
           "slug": "warhammer",
-          "rarity": 75,
           "value": 20,
           "weight": 5.0,
           "budgetCost": 4,
@@ -1110,7 +1066,6 @@
         {
           "name": "Flail",
           "slug": "flail",
-          "rarity": 75,
           "value": 18,
           "weight": 5.0,
           "budgetCost": 4,
@@ -1133,7 +1088,6 @@
         {
           "name": "Morning Star",
           "slug": "morning-star",
-          "rarity": 50,
           "value": 25,
           "weight": 6.0,
           "budgetCost": 4,
@@ -1156,7 +1110,6 @@
         {
           "name": "Club",
           "slug": "club",
-          "rarity": 75,
           "value": 2,
           "weight": 2.0,
           "budgetCost": 2,
@@ -1179,7 +1132,6 @@
         {
           "name": "Maul",
           "slug": "maul",
-          "rarity": 50,
           "value": 45,
           "weight": 10.0,
           "budgetCost": 7,
@@ -1202,7 +1154,6 @@
         {
           "name": "Cudgel",
           "slug": "cudgel",
-          "rarity": 75,
           "value": 3,
           "weight": 2.5,
           "budgetCost": 2,
@@ -1225,7 +1176,6 @@
         {
           "name": "Scepter",
           "slug": "scepter",
-          "rarity": 50,
           "value": 15,
           "weight": 2.0,
           "budgetCost": 3,
@@ -1262,7 +1212,6 @@
         {
           "name": "Staff",
           "slug": "staff",
-          "rarity": 75,
           "value": 10,
           "weight": 4.0,
           "budgetCost": 3,
@@ -1285,7 +1234,6 @@
         {
           "name": "Quarterstaff",
           "slug": "quarterstaff",
-          "rarity": 75,
           "value": 8,
           "weight": 4.0,
           "budgetCost": 3,
@@ -1308,7 +1256,6 @@
         {
           "name": "War Staff",
           "slug": "war-staff",
-          "rarity": 50,
           "value": 25,
           "weight": 5.0,
           "budgetCost": 4,
@@ -1331,7 +1278,6 @@
         {
           "name": "Battle Staff",
           "slug": "battle-staff",
-          "rarity": 50,
           "value": 35,
           "weight": 6.0,
           "budgetCost": 6,
@@ -1354,7 +1300,6 @@
         {
           "name": "Rod",
           "slug": "rod",
-          "rarity": 50,
           "value": 20,
           "weight": 2.0,
           "budgetCost": 4,
@@ -1377,7 +1322,6 @@
         {
           "name": "Scepter Staff",
           "slug": "scepter-staff",
-          "rarity": 50,
           "value": 30,
           "weight": 3.0,
           "budgetCost": 5,

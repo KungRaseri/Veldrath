@@ -28,7 +28,6 @@
           "name": "Bandit",
           "rarityWeight": 5,
           "xp": 50,
-          "rarity": 15,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -61,7 +60,6 @@
           "name": "Thug",
           "rarityWeight": 6,
           "xp": 60,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -98,7 +96,6 @@
           "name": "Brigand",
           "rarityWeight": 8,
           "xp": 75,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -135,7 +132,6 @@
           "name": "Highwayman",
           "rarityWeight": 10,
           "xp": 90,
-          "rarity": 30,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -182,7 +178,6 @@
           "name": "Warrior",
           "rarityWeight": 10,
           "xp": 100,
-          "rarity": 30,
           "attributes": {
             "constitution": 13,
             "wisdom": 12,
@@ -222,7 +217,6 @@
           "name": "Mercenary",
           "rarityWeight": 12,
           "xp": 120,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 11,
@@ -263,7 +257,6 @@
           "name": "Captain",
           "rarityWeight": 20,
           "xp": 200,
-          "rarity": 70,
           "attributes": {
             "constitution": 15,
             "wisdom": 14,
@@ -304,7 +297,6 @@
           "name": "Champion",
           "rarityWeight": 30,
           "xp": 300,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 14,
@@ -358,7 +350,6 @@
           "name": "Assassin",
           "rarityWeight": 22,
           "xp": 180,
-          "rarity": 90,
           "attributes": {
             "constitution": 13,
             "wisdom": 14,
@@ -402,7 +393,6 @@
           "name": "Archer",
           "rarityWeight": 15,
           "xp": 140,
-          "rarity": 50,
           "attributes": {
             "constitution": 12,
             "wisdom": 15,
@@ -442,7 +432,6 @@
           "name": "Mage",
           "rarityWeight": 25,
           "xp": 200,
-          "rarity": 90,
           "attributes": {
             "constitution": 11,
             "wisdom": 13,
@@ -488,7 +477,6 @@
           "name": "Berserker",
           "rarityWeight": 24,
           "xp": 220,
-          "rarity": 90,
           "attributes": {
             "constitution": 17,
             "wisdom": 10,
@@ -541,7 +529,6 @@
           "name": "Cultist",
           "rarityWeight": 8,
           "xp": 65,
-          "rarity": 30,
           "attributes": {
             "constitution": 11,
             "wisdom": 12,
@@ -578,7 +565,6 @@
           "name": "Zealot",
           "rarityWeight": 14,
           "xp": 110,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 16,
@@ -628,7 +614,6 @@
           "name": "Shrine Guardian",
           "rarityWeight": 100,
           "xp": 500,
-          "rarity": 100,
           "attributes": {
             "constitution": 16,
             "wisdom": 15,

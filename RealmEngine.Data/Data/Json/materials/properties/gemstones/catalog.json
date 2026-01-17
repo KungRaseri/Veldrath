@@ -16,7 +16,6 @@
       "items": [
     {
       "slug": "topaz",
-      "budgetCost": 8,
       "name": "Topaz",
       "attributes": {
         "dexterity": 10,
@@ -49,11 +48,9 @@
         }
       },
       "rarityWeight": 30,
-      "rarity": 30
     },
     {
       "slug": "amethyst",
-      "budgetCost": 9,
       "name": "Amethyst",
       "attributes": {
         "dexterity": 10,
@@ -88,11 +85,9 @@
         }
       },
       "rarityWeight": 28,
-      "rarity": 28
     },
     {
       "slug": "ruby",
-      "budgetCost": 13,
       "name": "Ruby",
       "attributes": {
         "dexterity": 10,
@@ -126,11 +121,9 @@
         }
       },
       "rarityWeight": 18,
-      "rarity": 18
     },
     {
       "slug": "sapphire",
-      "budgetCost": 15,
       "name": "Sapphire",
       "attributes": {
         "dexterity": 10,
@@ -165,11 +158,9 @@
         }
       },
       "rarityWeight": 16,
-      "rarity": 16
     },
     {
       "slug": "emerald",
-      "budgetCost": 16,
       "name": "Emerald",
       "attributes": {
         "dexterity": 10,
@@ -205,11 +196,9 @@
         }
       },
       "rarityWeight": 14,
-      "rarity": 14
     },
     {
       "slug": "onyx",
-      "budgetCost": 19,
       "name": "Onyx",
       "attributes": {
         "dexterity": 10,
@@ -246,11 +235,9 @@
         }
       },
       "rarityWeight": 10,
-      "rarity": 10
     },
     {
       "slug": "opal",
-      "budgetCost": 20,
       "name": "Opal",
       "attributes": {
         "dexterity": 10,
@@ -286,11 +273,9 @@
         }
       },
       "rarityWeight": 9,
-      "rarity": 9
     },
     {
       "slug": "obsidian",
-      "budgetCost": 21,
       "name": "Obsidian",
       "attributes": {
         "dexterity": 10,
@@ -325,11 +310,9 @@
         }
       },
       "rarityWeight": 8,
-      "rarity": 8
     },
     {
       "slug": "diamond",
-      "budgetCost": 28,
       "name": "Diamond",
       "attributes": {
         "dexterity": 10,
@@ -366,11 +349,9 @@
         }
       },
       "rarityWeight": 5,
-      "rarity": 5
     },
     {
       "slug": "star-stone",
-      "budgetCost": 56,
       "name": "Star Stone",
       "attributes": {
         "dexterity": 10,
@@ -408,7 +389,6 @@
         }
       },
       "rarityWeight": 2,
-      "rarity": 2
     }
       ]
     }

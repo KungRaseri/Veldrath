@@ -78,7 +78,6 @@
             "cities"
           ],
           "required_population": 500,
-          "rarity": 5
         },
         {
           "slug": "weapon-master",
@@ -140,7 +139,6 @@
             "cities"
           ],
           "required_population": 5000,
-          "rarity": 15
         }
       ]
     }
@@ -218,7 +216,6 @@
             "cities"
           ],
           "required_population": 800,
-          "rarity": 8
         }
       ]
     }
@@ -296,7 +293,6 @@
             "cities"
           ],
           "required_population": 1000,
-          "rarity": 12
         },
         {
           "slug": "magic-shop",
@@ -368,7 +364,6 @@
             "towers"
           ],
           "required_population": 3000,
-          "rarity": 20
         }
       ]
     }
@@ -445,7 +440,6 @@
             "villages"
           ],
           "required_population": 100,
-          "rarity": 3
         },
         {
           "slug": "trading-post",
@@ -517,7 +511,6 @@
             "frontiers"
           ],
           "required_population": 50,
-          "rarity": 10
         }
       ]
     }
@@ -594,7 +587,6 @@
             "cities"
           ],
           "required_population": 2000,
-          "rarity": 18
         },
         {
           "slug": "fletcher",
@@ -666,7 +658,6 @@
             "forests"
           ],
           "required_population": 500,
-          "rarity": 14
         },
         {
           "slug": "black-market",
@@ -740,7 +731,6 @@
           "required_population": 5000,
           "hidden": true,
           "reputation_required": -20,
-          "rarity": 40
         }
       ]
     }

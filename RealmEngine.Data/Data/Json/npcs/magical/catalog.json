@@ -68,7 +68,6 @@
           ],
           "faction": "mages_circle",
           "schedule": "@social/schedules/*:mage",
-          "rarity": 45
         },
         {
           "slug": "hedgewizard",
@@ -115,7 +114,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:mage",
-          "rarity": 38
         }
       ]
     }

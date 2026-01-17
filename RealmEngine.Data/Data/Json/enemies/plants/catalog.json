@@ -31,7 +31,6 @@
           "name": "Vine",
           "rarityWeight": 5,
           "xp": 30,
-          "rarity": 15,
           "attributes": {
             "constitution": 13,
             "wisdom": 6,
@@ -64,7 +63,6 @@
           "name": "Carnivorous Plant",
           "rarityWeight": 10,
           "xp": 55,
-          "rarity": 30,
           "attributes": {
             "constitution": 14,
             "wisdom": 7,
@@ -98,7 +96,6 @@
           "name": "Venus Trap",
           "rarityWeight": 15,
           "xp": 75,
-          "rarity": 50,
           "attributes": {
             "constitution": 16,
             "wisdom": 8,
@@ -132,7 +129,6 @@
           "name": "Man-Eater",
           "rarityWeight": 25,
           "xp": 120,
-          "rarity": 90,
           "attributes": {
             "constitution": 17,
             "wisdom": 9,
@@ -177,7 +173,6 @@
           "name": "Thorn Bush",
           "rarityWeight": 6,
           "xp": 40,
-          "rarity": 30,
           "attributes": {
             "constitution": 14,
             "wisdom": 7,
@@ -211,7 +206,6 @@
           "name": "Bramble",
           "rarityWeight": 10,
           "xp": 50,
-          "rarity": 30,
           "attributes": {
             "constitution": 15,
             "wisdom": 7,
@@ -245,7 +239,6 @@
           "name": "Thorn Tree",
           "rarityWeight": 20,
           "xp": 110,
-          "rarity": 70,
           "attributes": {
             "constitution": 18,
             "wisdom": 8,
@@ -290,7 +283,6 @@
           "name": "Shambling Mound",
           "rarityWeight": 28,
           "xp": 140,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 10,
@@ -325,7 +317,6 @@
           "name": "Treant",
           "rarityWeight": 40,
           "xp": 190,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 14,
@@ -360,7 +351,6 @@
           "name": "Myconid",
           "rarityWeight": 18,
           "xp": 85,
-          "rarity": 70,
           "attributes": {
             "constitution": 14,
             "wisdom": 14,
@@ -395,7 +385,6 @@
           "name": "Awakened Tree",
           "rarityWeight": 32,
           "xp": 160,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 12,
@@ -438,7 +427,6 @@
           "name": "Elder Treant",
           "rarityWeight": 60,
           "xp": 300,
-          "rarity": 90,
           "attributes": {
             "constitution": 22,
             "wisdom": 17,
@@ -478,7 +466,6 @@
           "name": "Ancient Grove Guardian",
           "rarityWeight": 80,
           "xp": 400,
-          "rarity": 90,
           "attributes": {
             "constitution": 24,
             "wisdom": 19,

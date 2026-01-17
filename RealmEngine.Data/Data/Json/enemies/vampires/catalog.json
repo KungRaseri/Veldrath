@@ -28,7 +28,6 @@
           "name": "Vampire Spawn",
           "rarityWeight": 15,
           "xp": 100,
-          "rarity": 50,
           "attributes": {
             "constitution": 14,
             "wisdom": 12,
@@ -62,7 +61,6 @@
           "name": "Thrall",
           "rarityWeight": 10,
           "xp": 75,
-          "rarity": 30,
           "attributes": {
             "constitution": 13,
             "wisdom": 10,
@@ -95,7 +93,6 @@
           "name": "Fledgling",
           "rarityWeight": 20,
           "xp": 120,
-          "rarity": 70,
           "attributes": {
             "constitution": 15,
             "wisdom": 13,
@@ -140,7 +137,6 @@
           "name": "Vampire",
           "rarityWeight": 30,
           "xp": 180,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 14,
@@ -176,7 +172,6 @@
           "name": "Vampire Knight",
           "rarityWeight": 38,
           "xp": 210,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,
@@ -212,7 +207,6 @@
           "name": "Vampire Mage",
           "rarityWeight": 42,
           "xp": 220,
-          "rarity": 90,
           "attributes": {
             "constitution": 16,
             "wisdom": 15,
@@ -248,7 +242,6 @@
           "name": "Vampire Lord",
           "rarityWeight": 55,
           "xp": 280,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 16,
@@ -294,7 +287,6 @@
           "name": "Elder Vampire",
           "rarityWeight": 70,
           "xp": 350,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 18,
@@ -331,7 +323,6 @@
           "name": "Vampire Prince",
           "rarityWeight": 80,
           "xp": 400,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 18,
@@ -369,7 +360,6 @@
           "name": "Vampire Progenitor",
           "rarityWeight": 100,
           "xp": 550,
-          "rarity": 90,
           "attributes": {
             "constitution": 20,
             "wisdom": 17,
@@ -408,7 +398,6 @@
           "name": "Nosferatu",
           "rarityWeight": 65,
           "xp": 320,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 14,

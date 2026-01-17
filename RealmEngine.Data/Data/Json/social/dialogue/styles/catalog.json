@@ -27,7 +27,6 @@
             "Indeed, the ancient texts corroborate your hypothesis.",
             "A most intriguing query. Let us examine this matter thoroughly."
           ],
-          "rarity": 10
         },
         {
           "slug": "noble",
@@ -43,7 +42,6 @@
             "Your presence graces our halls.",
             "One must maintain proper decorum in such matters."
           ],
-          "rarity": 15
         },
         {
           "slug": "wise",
@@ -59,7 +57,6 @@
             "The path of wisdom is walked slowly.",
             "Reflect upon this: all answers lie within the question."
           ],
-          "rarity": 12
         }
       ]
     },
@@ -82,7 +79,6 @@
             "The shadows know what the light cannot see.",
             "Perhaps. Perhaps not. Time will tell."
           ],
-          "rarity": 18
         },
         {
           "slug": "intimidating",
@@ -98,7 +94,6 @@
             "Choose your next words carefully.",
             "Leave. Now."
           ],
-          "rarity": 20
         },
         {
           "slug": "nervous",
@@ -114,7 +109,6 @@
             "Please don't... I mean, if you could...",
             "S-sorry, I'm not sure I..."
           ],
-          "rarity": 15
         },
         {
           "slug": "sarcastic",
@@ -130,7 +124,6 @@
             "Sure, that'll work. If we're lucky.",
             "Right. Because that's never gone wrong before."
           ],
-          "rarity": 25
         }
       ]
     },
@@ -150,7 +143,6 @@
             "No worries, I'm happy to help.",
             "Come on in, make yourself at home!"
           ],
-          "rarity": 8
         },
         {
           "slug": "cheerful",
@@ -166,7 +158,6 @@
             "What a beautiful day, isn't it?",
             "Absolutely! That sounds fantastic!"
           ],
-          "rarity": 10
         },
         {
           "slug": "gruff",
@@ -182,7 +173,6 @@
             "Make it quick.",
             "Hmph. Fine."
           ],
-          "rarity": 12
         },
         {
           "slug": "professional",
@@ -198,7 +188,6 @@
             "That will be 50 gold pieces.",
             "I'll have that ready for you by tomorrow."
           ],
-          "rarity": 8
         },
         {
           "slug": "greedy",
@@ -214,7 +203,6 @@
             "That'll cost you extra.",
             "Gold talks, everything else walks."
           ],
-          "rarity": 15
         }
       ]
     }

@@ -71,7 +71,6 @@
           ],
           "faction": "city_guard",
           "schedule": "@social/schedules/*:guard",
-          "rarity": 30
         },
         {
           "slug": "guardduty",
@@ -116,7 +115,6 @@
           ],
           "faction": "city_guard",
           "schedule": "@social/schedules/*:guard",
-          "rarity": 28
         },
         {
           "slug": "formermercenary",
@@ -163,7 +161,6 @@
           ],
           "faction": "independent",
           "schedule": "@social/schedules/*:flexible",
-          "rarity": 42
         }
       ]
     }
@@ -209,7 +206,6 @@
           ],
           "faction": "city_guard",
           "schedule": "@social/schedules/*:guard",
-          "rarity": 28
         }
       ]
     }

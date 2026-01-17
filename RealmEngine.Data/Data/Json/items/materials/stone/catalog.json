@@ -13,7 +13,6 @@
         "name": "Runestone",
         "description": "Blank stone carved to hold runic enchantments.",
         "rarityWeight": 40,
-        "rarity": 40,
         "value": 15,
         "weight": 0.5,
         "stackSize": 20,

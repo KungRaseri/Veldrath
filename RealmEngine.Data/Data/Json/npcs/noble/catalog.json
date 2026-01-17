@@ -72,7 +72,6 @@
           ],
           "faction": "nobility",
           "schedule": "@social/schedules/*:noble",
-          "rarity": 60
         },
         {
           "slug": "knighterrant",
@@ -120,7 +119,6 @@
           ],
           "faction": "nobility",
           "schedule": "@social/schedules/*:noble",
-          "rarity": 55
         },
         {
           "slug": "courtattendant",
@@ -167,7 +165,6 @@
           ],
           "faction": "nobility",
           "schedule": "@social/schedules/*:noble",
-          "rarity": 50
         }
       ]
     }
@@ -213,7 +210,6 @@
           ],
           "faction": "nobility",
           "schedule": "@social/schedules/*:noble",
-          "rarity": 60
         }
       ]
     }

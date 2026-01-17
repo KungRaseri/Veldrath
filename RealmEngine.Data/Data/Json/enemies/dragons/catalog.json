@@ -28,7 +28,6 @@
           "name": "Red Dragon",
           "rarityWeight": 80,
           "xp": 2000,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -70,7 +69,6 @@
           "name": "Blue Dragon",
           "rarityWeight": 75,
           "xp": 1800,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -112,7 +110,6 @@
           "name": "Green Dragon",
           "rarityWeight": 70,
           "xp": 1600,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -154,7 +151,6 @@
           "name": "Black Dragon",
           "rarityWeight": 68,
           "xp": 1500,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -196,7 +192,6 @@
           "name": "White Dragon",
           "rarityWeight": 65,
           "xp": 1400,
-          "rarity": 90,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -247,7 +242,6 @@
           "name": "Gold Dragon",
           "rarityWeight": 100,
           "xp": 2500,
-          "rarity": 90,
           "attributes": {
             "constitution": 24,
             "wisdom": 18,
@@ -290,7 +284,6 @@
           "name": "Silver Dragon",
           "rarityWeight": 90,
           "xp": 2200,
-          "rarity": 90,
           "attributes": {
             "constitution": 23,
             "wisdom": 17,
@@ -332,7 +325,6 @@
           "name": "Bronze Dragon",
           "rarityWeight": 78,
           "xp": 1900,
-          "rarity": 90,
           "attributes": {
             "constitution": 22,
             "wisdom": 16,
@@ -374,7 +366,6 @@
           "name": "Copper Dragon",
           "rarityWeight": 72,
           "xp": 1700,
-          "rarity": 90,
           "attributes": {
             "constitution": 21,
             "wisdom": 15,
@@ -416,7 +407,6 @@
           "name": "Brass Dragon",
           "rarityWeight": 68,
           "xp": 1600,
-          "rarity": 90,
           "attributes": {
             "constitution": 21,
             "wisdom": 14,
@@ -467,7 +457,6 @@
           "name": "Drake",
           "rarityWeight": 30,
           "xp": 600,
-          "rarity": 90,
           "attributes": {
             "constitution": 18,
             "wisdom": 12,
@@ -504,7 +493,6 @@
           "name": "Wyrm",
           "rarityWeight": 40,
           "xp": 800,
-          "rarity": 90,
           "attributes": {
             "constitution": 19,
             "wisdom": 13,
@@ -542,7 +530,6 @@
           "name": "Wyvern",
           "rarityWeight": 28,
           "xp": 550,
-          "rarity": 90,
           "attributes": {
             "constitution": 17,
             "wisdom": 11,

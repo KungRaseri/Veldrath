@@ -21,7 +21,6 @@
             "Precisely what I was thinking.",
             "You've got the right idea."
           ],
-          "rarity": 10
         },
         {
           "slug": "acceptance",
@@ -36,7 +35,6 @@
             "You have my agreement.",
             "I'll see to it personally."
           ],
-          "rarity": 12
         }
       ]
     }
@@ -57,7 +55,6 @@
             "My answer is no.",
             "I'm sorry, but I must refuse."
           ],
-          "rarity": 15
         },
         {
           "slug": "disagreement",
@@ -72,7 +69,6 @@
             "I beg to differ.",
             "I can't support that view."
           ],
-          "rarity": 18
         }
       ]
     }
@@ -93,7 +89,6 @@
             "I'm curious to hear more.",
             "Interesting. Go on."
           ],
-          "rarity": 20
         },
         {
           "slug": "clarification",
@@ -108,7 +103,6 @@
             "Could you be more specific?",
             "I need more details."
           ],
-          "rarity": 22
         }
       ]
     }
@@ -129,7 +123,6 @@
             "I'm indebted to you.",
             "I cannot thank you enough."
           ],
-          "rarity": 12
         },
         {
           "slug": "concern",
@@ -144,7 +137,6 @@
             "Something doesn't feel right.",
             "I have a bad feeling about this."
           ],
-          "rarity": 25
         },
         {
           "slug": "anger",
@@ -159,7 +151,6 @@
             "You've gone too far!",
             "This is an outrage!"
           ],
-          "rarity": 30
         },
         {
           "slug": "joy",
@@ -174,7 +165,6 @@
             "How marvelous!",
             "That's fantastic!"
           ],
-          "rarity": 15
         },
         {
           "slug": "sadness",
@@ -189,7 +179,6 @@
             "Such terrible news.",
             "This pains me greatly."
           ],
-          "rarity": 28
         }
       ]
     }
@@ -210,7 +199,6 @@
             "Allow me to share what I've learned.",
             "I have information that might help."
           ],
-          "rarity": 18
         },
         {
           "slug": "rumor",
@@ -225,7 +213,6 @@
             "Rumor has it...",
             "Between you and me..."
           ],
-          "rarity": 20
         },
         {
           "slug": "warning",
@@ -240,7 +227,6 @@
             "There's danger ahead.",
             "You'd best be on your guard."
           ],
-          "rarity": 25
         }
       ]
     }
@@ -261,7 +247,6 @@
             "You drive a hard bargain. {price} and we have a deal.",
             "I'll meet you halfway at {price}."
           ],
-          "rarity": 22
         },
         {
           "slug": "deal-made",
@@ -276,7 +261,6 @@
             "We have an agreement.",
             "It's yours!"
           ],
-          "rarity": 15
         },
         {
           "slug": "no-deal",
@@ -291,7 +275,6 @@
             "You'll have to do better than that.",
             "I'm afraid we can't do business."
           ],
-          "rarity": 20
         }
       ]
     }
