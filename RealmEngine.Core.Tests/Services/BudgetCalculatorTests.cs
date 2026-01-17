@@ -23,9 +23,9 @@ public class BudgetCalculatorTests
             Formulas = new CostFormulas
             {
                 Material = new CostFormula { Formula = "direct", Field = "budgetCost" },
-                Component = new CostFormula { Formula = "inverse", Numerator = 100, Field = "selectionWeight" },
-                Enchantment = new CostFormula { Formula = "inverse", Numerator = 130, Field = "selectionWeight" },
-                MaterialQuality = new CostFormula { Formula = "inverse", Numerator = 150, Field = "selectionWeight" }
+                Component = new CostFormula { Formula = "inverse", Numerator = 100, Field = "rarityWeight" },
+                Enchantment = new CostFormula { Formula = "inverse", Numerator = 130, Field = "rarityWeight" },
+                MaterialQuality = new CostFormula { Formula = "inverse", Numerator = 150, Field = "rarityWeight" }
             },
             PatternCosts = new Dictionary<string, int>
             {
@@ -163,7 +163,7 @@ public class BudgetCalculatorTests
         // Arrange
         var component = JToken.Parse(@"{
             ""value"": ""Flaming"",
-            ""selectionWeight"": 20
+            ""rarityWeight"": 20
         }");
 
         // Act
@@ -423,9 +423,9 @@ public class BudgetCalculatorTests
     public void QualityCost_HighestCostTier_ForSameWeight()
     {
         // Arrange - Same selection weight for all
-        var component = JToken.Parse(@"{ ""selectionWeight"": 10 }");
-        var enchantment = JToken.Parse(@"{ ""selectionWeight"": 10 }");
-        var quality = JToken.Parse(@"{ ""selectionWeight"": 10 }");
+        var component = JToken.Parse(@"{ ""rarityWeight"": 10 }");
+        var enchantment = JToken.Parse(@"{ ""rarityWeight"": 10 }");
+        var quality = JToken.Parse(@"{ ""rarityWeight"": 10 }");
 
         // Act
         var componentCost = _calculator.CalculateComponentCost(component);

@@ -25,7 +25,7 @@ public class JsonDataComplianceTests
             throw new DirectoryNotFoundException($"Could not find solution root from: {baseDir}");
 
         _dataPath = Path.Combine(solutionRoot, "RealmEngine.Data", "Data", "Json");
-        
+
         if (!Directory.Exists(_dataPath))
             throw new DirectoryNotFoundException($"Data directory not found: {_dataPath}");
 
@@ -48,8 +48,8 @@ public class JsonDataComplianceTests
             .ToList();
 
         _allComponentFiles = allJsonFiles
-            .Where(f => !f.EndsWith("catalog.json") && 
-                        !f.EndsWith("names.json") && 
+            .Where(f => !f.EndsWith("catalog.json") &&
+                        !f.EndsWith("names.json") &&
                         !f.EndsWith(".cbconfig.json"))
             .ToList();
     }
@@ -142,12 +142,12 @@ public class JsonDataComplianceTests
         {
             var hasRarityWeight = ((JObject)item).ContainsKey("rarityWeight");
             var hasSelectionWeight = ((JObject)item).ContainsKey("selectionWeight");
-            
+
             (hasRarityWeight || hasSelectionWeight).Should().BeTrue(
                 $"{relativePath} - Item '{item["name"]}' missing rarityWeight or selectionWeight");
-            
-            var weight = hasRarityWeight 
-                ? item["rarityWeight"]?.Value<int>() 
+
+            var weight = hasRarityWeight
+                ? item["rarityWeight"]?.Value<int>()
                 : item["selectionWeight"]?.Value<int>();
             weight.Should().NotBeNull($"{relativePath} - Item '{item["name"]}' null weight");
             weight.Should().BeGreaterThan(0, $"{relativePath} - Item '{item["name"]}' invalid weight");
@@ -187,7 +187,7 @@ public class JsonDataComplianceTests
             var hasRarityWeight = item.ContainsKey("rarityWeight");
             var hasSelectionWeight = item.ContainsKey("selectionWeight");
             var hasWeight = item.ContainsKey("weight");
-            
+
             // If item has "weight" but no rarityWeight or selectionWeight, check if it's a decimal (physical weight)
             if (hasWeight && !hasRarityWeight && !hasSelectionWeight)
             {
@@ -294,7 +294,7 @@ public class JsonDataComplianceTests
             // - Optional filters: [property=value] or [property>5]
             // - Optional marker: ?
             // - Property access: .property.nested
-            reference.Should().MatchRegex(@"^@[\w-]+/[\w-/]+:[\w-*\s]+(\[[^\]]+\])?(\?)?(\.\w+)*$", 
+            reference.Should().MatchRegex(@"^@[\w-]+/[\w-/]+:[\w-*\s]+(\[[^\]]+\])?(\?)?(\.\w+)*$",
                 $"{relativePath} has invalid reference syntax: {reference}");
         }
     }
@@ -453,7 +453,7 @@ public class JsonDataComplianceTests
         // Assert
         foreach (var pattern in patterns)
         {
-            ((JObject)pattern).Should().ContainKey("rarityWeight", 
+            ((JObject)pattern).Should().ContainKey("rarityWeight",
                 $"{relativePath} - Pattern missing rarityWeight");
         }
     }
@@ -472,7 +472,7 @@ public class JsonDataComplianceTests
         // Assert - v4.0 standard prohibits example fields
         foreach (var pattern in patterns)
         {
-            ((JObject)pattern).Should().NotContainKey("example", 
+            ((JObject)pattern).Should().NotContainKey("example",
                 $"{relativePath} - Pattern has forbidden 'example' field");
         }
     }
@@ -504,7 +504,7 @@ public class JsonDataComplianceTests
         // Assert - v4.0 standard: notes must be array of strings ONLY, no objects
         foreach (var note in notes)
         {
-            note.Type.Should().Be(JTokenType.String, 
+            note.Type.Should().Be(JTokenType.String,
                 $"{relativePath} - metadata.notes contains non-string element: {note.Type}. Expected only strings.");
         }
     }
@@ -519,7 +519,7 @@ public class JsonDataComplianceTests
         var version = json["metadata"]?["version"]?.ToString();
 
         // Assert - Accept 4.0, 4.2, 5.0, and 5.1
-        version.Should().Match(v => v == "4.0" || v == "4.2" || v == "5.0" || v == "5.1", 
+        version.Should().Match(v => v == "4.0" || v == "4.2" || v == "5.0" || v == "5.1",
             $"{relativePath} version should be '4.0', '4.2', '5.0', or '5.1'");
     }
 
@@ -558,11 +558,11 @@ public class JsonDataComplianceTests
             {
                 foreach (var item in items.OfType<JObject>())
                 {
-                    item.Should().ContainKey("rarityWeight", 
+                    item.Should().ContainKey("rarityWeight",
                         $"{relativePath} - Component '{componentGroup.Name}' item '{item["value"]}' missing rarityWeight");
-                    
+
                     var weight = item["rarityWeight"]?.Value<int>();
-                    weight.Should().BeGreaterThan(0, 
+                    weight.Should().BeGreaterThan(0,
                         $"{relativePath} - Component '{componentGroup.Name}' item '{item["value"]}' has invalid rarityWeight");
                 }
             }
@@ -587,9 +587,9 @@ public class JsonDataComplianceTests
             {
                 foreach (var item in items.OfType<JObject>())
                 {
-                    item.Should().ContainKey("value", 
+                    item.Should().ContainKey("value",
                         $"{relativePath} - Component '{componentGroup.Name}' item missing 'value' field");
-                    
+
                     var value = item["value"]?.ToString();
                     value.Should().NotBeNullOrWhiteSpace(
                         $"{relativePath} - Component '{componentGroup.Name}' has empty value");
@@ -616,7 +616,7 @@ public class JsonDataComplianceTests
             {
                 var hasTemplate = obj.ContainsKey("template");
                 var hasPattern = obj.ContainsKey("pattern");
-                
+
                 (hasTemplate || hasPattern).Should().BeTrue(
                     $"{relativePath} - Pattern object missing both 'template' and 'pattern' fields");
             }
@@ -660,7 +660,7 @@ public class JsonDataComplianceTests
         foreach (var pattern in patterns.OfType<JObject>())
         {
             var patternStr = pattern["pattern"]?.ToString() ?? pattern["template"]?.ToString() ?? string.Empty;
-            
+
             if (patternStr.Contains("[@materialRef") || patternStr.Contains("[@"))
             {
                 Assert.Fail($"{relativePath} - Pattern uses old [@ref] syntax instead of v4.1 @domain/path:item syntax: {patternStr}");
@@ -753,7 +753,7 @@ public class JsonDataComplianceTests
         // Assert
         if (sortOrder.HasValue)
         {
-            sortOrder.Value.Should().BeGreaterThanOrEqualTo(0, 
+            sortOrder.Value.Should().BeGreaterThanOrEqualTo(0,
                 $"{relativePath} has negative sortOrder");
         }
     }
@@ -869,7 +869,7 @@ public class JsonDataComplianceTests
     {
         // Arrange
         var fullPath = Path.Combine(_dataPath, relativePath);
-        
+
         // Act & Assert
         var act = () => JToken.Parse(File.ReadAllText(fullPath));
         act.Should().NotThrow<JsonReaderException>($"{relativePath} should be valid JSON");
@@ -885,11 +885,11 @@ public class JsonDataComplianceTests
 
         // Assert
         json.Should().NotBeNull($"{relativePath} should not be null");
-        
+
         if (json is JObject obj)
         {
             obj.Should().NotBeEmpty($"{relativePath} should not be empty object");
-            
+
             // For config-style files, check that nested settings exist
             if (obj["settings"] is JObject settings)
             {
@@ -918,14 +918,9 @@ public class JsonDataComplianceTests
         // Assert - if metadata exists, validate required fields
         metadata["version"].Should().NotBeNull($"{relativePath} metadata missing version");
         metadata["lastUpdated"].Should().NotBeNull($"{relativePath} metadata missing lastUpdated");
-        
+
         var version = metadata["version"]?.ToString();
-        if (!string.IsNullOrEmpty(version))
-        {
-            // Accept 4.0, 4.2, 5.0, and 5.1 versions
-            version.Should().Match(v => v == "4.0" || v == "4.2" || v == "5.0" || v == "5.1", 
-                $"{relativePath} should use version 4.0, 4.2, 5.0, or 5.1");
-        }
+        version.Should().NotBeNullOrEmpty($"{relativePath} version should not be empty");
 
         var lastUpdated = metadata["lastUpdated"]?.ToString();
         if (!string.IsNullOrEmpty(lastUpdated))
@@ -1057,7 +1052,7 @@ public class JsonDataComplianceTests
         foreach (var prop in catalog.Properties())
         {
             // Skip metadata and known special keys
-            if (prop.Name == "metadata" || prop.Name == "components" || 
+            if (prop.Name == "metadata" || prop.Name == "components" ||
                 prop.Name == "items" || prop.Name.EndsWith("_types") || prop.Name.EndsWith("Types"))
             {
                 continue;
@@ -1091,12 +1086,12 @@ public class JsonDataComplianceTests
         // v4.1 syntax: @domain/path/category:item-name[filters]?.property.nested
         var regex = new System.Text.RegularExpressions.Regex(@"@[\w-]+/[\w-/]+:[\w-*\s]+(\[[^\]]+\])?(\?)?(\.\w+)*");
         var matches = regex.Matches(jsonText);
-        
+
         foreach (System.Text.RegularExpressions.Match match in matches)
         {
             references.Add(match.Value);
         }
-        
+
         return references;
     }
 

@@ -241,7 +241,7 @@ public class BudgetGenerationStepTests
             _output.WriteLine($"First 5 items:");
             foreach (var item in itemsWithCost.Take(5))
             {
-                _output.WriteLine($"  {item["name"]}: cost={item["budgetCost"]}, weight={item["selectionWeight"]}");
+                _output.WriteLine($"  {item["name"]}: cost={item["budgetCost"]}, weight={item["rarityWeight"]}");
             }
         }
         
