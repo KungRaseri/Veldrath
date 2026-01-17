@@ -441,6 +441,13 @@ public class QuestGenerator
         }
     }
 
+    /// <summary>
+    /// Safely extracts a dictionary property from a JToken with type conversion support.
+    /// </summary>
+    /// <typeparam name="T">The value type (int, string, or double).</typeparam>
+    /// <param name="obj">The JToken to extract from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>A dictionary with the extracted values, or an empty dictionary if the property doesn't exist or conversion fails.</returns>
     private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
     {
         try
@@ -473,6 +480,12 @@ public class QuestGenerator
         }
     }
 
+    /// <summary>
+    /// Safely extracts a string array from a JToken property, supporting both JArray and space-separated string formats.
+    /// </summary>
+    /// <param name="obj">The JToken to extract from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>A string array with the extracted values, or null if the property doesn't exist or conversion fails.</returns>
     private static string[]? GetStringArrayProperty(JToken obj, string propertyName)
     {
         try

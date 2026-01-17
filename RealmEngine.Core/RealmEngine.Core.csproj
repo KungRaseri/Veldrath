@@ -7,6 +7,8 @@
     <RootNamespace>RealmEngine.Core</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Enforce XML documentation for public APIs (CS1591) -->
+    <NoWarn></NoWarn>
     
     <!-- NuGet Package Metadata -->
     <PackageId>RealmEngine.Core</PackageId>

@@ -343,6 +343,12 @@ public class EnchantmentGenerator
         }
     }
 
+    /// <summary>
+    /// Safely extracts a string value from a JToken property.
+    /// </summary>
+    /// <param name="obj">The JToken to extract from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>The extracted string value, or null if the property doesn't exist or conversion fails.</returns>
     private static string? GetStringProperty(JToken obj, string propertyName)
     {
         try
@@ -356,6 +362,13 @@ public class EnchantmentGenerator
         }
     }
 
+    /// <summary>
+    /// Safely extracts a dictionary property from a JToken with type conversion support.
+    /// </summary>
+    /// <typeparam name="T">The value type (int, string, or double).</typeparam>
+    /// <param name="obj">The JToken to extract from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>A dictionary with the extracted values, or an empty dictionary if the property doesn't exist or conversion fails.</returns>
     private static Dictionary<string, T> GetDictionaryProperty<T>(JToken obj, string propertyName)
     {
         try
@@ -388,6 +401,13 @@ public class EnchantmentGenerator
         }
     }
 
+    /// <summary>
+    /// Safely extracts a double value from a JToken property.
+    /// </summary>
+    /// <param name="obj">The JToken to extract from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <param name="defaultValue">The value to return if extraction fails.</param>
+    /// <returns>The extracted double value, or the default value if extraction fails.</returns>
     private static double GetDoubleProperty(JToken obj, string propertyName, double defaultValue)
     {
         try
