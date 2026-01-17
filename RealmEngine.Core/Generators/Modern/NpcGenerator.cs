@@ -167,6 +167,7 @@ public class NpcGenerator
             var npc = new NPC
             {
                 Id = $"{category}:{GetStringProperty(catalogNpc, "name") ?? GetStringProperty(catalogNpc, "displayName")}",
+                Slug = GetStringProperty(catalogNpc, "slug") ?? string.Empty,
                 Name = GetStringProperty(catalogNpc, "displayName") ?? GetStringProperty(catalogNpc, "name") ?? "Unknown NPC",
                 Age = GetIntProperty(catalogNpc, "age", _random.Next(20, 70)),
                 Occupation = GetStringProperty(catalogNpc, "occupation") ?? GetStringProperty(catalogNpc, "socialClass") ?? "Citizen",

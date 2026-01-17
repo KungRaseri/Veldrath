@@ -172,6 +172,7 @@ public class AbilityGenerator
             var ability = new Ability
             {
                 Id = $"{category}/{subcategory}:{slug ?? name}",
+                Slug = slug ?? string.Empty,
                 Name = name,
                 DisplayName = displayName,
                 Description = GetStringProperty(catalogAbility, "description") ?? "An ability",

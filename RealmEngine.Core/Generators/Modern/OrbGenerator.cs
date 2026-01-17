@@ -48,6 +48,7 @@ public class OrbGenerator
             return new Orb
             {
                 Id = Guid.NewGuid().ToString(),
+                Slug = selected.Slug,
                 Name = selected.Name,
                 Description = selected.Description,
                 SocketType = SocketType.Orb,
@@ -101,6 +102,7 @@ public class OrbGenerator
             {
                 all.Add(new Orb
                 {
+                    Slug = item["slug"]?.ToString() ?? string.Empty,
                     Name = item["name"]?.ToString() ?? "Unknown Orb",
                     Category = item["category"]?.ToString() ?? category,
                     Description = item["description"]?.ToString() ?? string.Empty,

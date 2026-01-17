@@ -48,6 +48,7 @@ public class CrystalGenerator
             return new Crystal
             {
                 Id = Guid.NewGuid().ToString(),
+                Slug = selected.Slug,
                 Name = selected.Name,
                 Description = selected.Description,
                 SocketType = SocketType.Crystal,
@@ -101,6 +102,7 @@ public class CrystalGenerator
             {
                 all.Add(new Crystal
                 {
+                    Slug = item["slug"]?.ToString() ?? string.Empty,
                     Name = item["name"]?.ToString() ?? "Unknown Crystal",
                     Category = item["category"]?.ToString() ?? category,
                     Description = item["description"]?.ToString() ?? string.Empty,

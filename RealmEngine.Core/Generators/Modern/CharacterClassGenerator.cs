@@ -158,6 +158,7 @@ public class CharacterClassGenerator
         var characterClass = new CharacterClass
         {
             Id = $"{categoryKey}:{data.Name}",
+            Slug = data.Slug,
             Name = data.Name,
             DisplayName = data.DisplayName,
             Description = data.Description,

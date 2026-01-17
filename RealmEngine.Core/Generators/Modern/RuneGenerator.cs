@@ -48,6 +48,7 @@ public class RuneGenerator
             return new Rune
             {
                 Id = Guid.NewGuid().ToString(),
+                Slug = selected.Slug,
                 Name = selected.Name,
                 Description = selected.Description,
                 SocketType = SocketType.Rune,
@@ -101,6 +102,7 @@ public class RuneGenerator
             {
                 all.Add(new Rune
                 {
+                    Slug = item["slug"]?.ToString() ?? string.Empty,
                     Name = item["name"]?.ToString() ?? "Unknown Rune",
                     Category = item["category"]?.ToString() ?? category,
                     Description = item["description"]?.ToString() ?? string.Empty,

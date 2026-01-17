@@ -67,6 +67,7 @@ public class GemGenerator
             var gem = new Gem
             {
                 Id = Guid.NewGuid().ToString(),
+                Slug = selectedGem.Slug,
                 Name = selectedGem.Name,
                 Description = selectedGem.Description,
                 SocketType = SocketType.Gem,
@@ -133,6 +134,7 @@ public class GemGenerator
             {
                 var gem = new Gem
                 {
+                    Slug = item["slug"]?.ToString() ?? string.Empty,
                     Name = item["name"]?.ToString() ?? "Unknown Gem",
                     Category = item["category"]?.ToString() ?? category,
                     Description = item["description"]?.ToString() ?? string.Empty,

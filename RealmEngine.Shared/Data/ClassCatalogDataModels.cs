@@ -53,6 +53,10 @@ public class ClassCategoryMetadata
 /// </summary>
 public class ClassItemData
 {
+    /// <summary>Gets or sets the slug.</summary>
+    [JsonPropertyName("slug")]
+    public string Slug { get; set; } = string.Empty;
+
     /// <summary>Gets or sets the name.</summary>
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;

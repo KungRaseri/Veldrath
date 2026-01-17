@@ -146,6 +146,7 @@ public class QuestGenerator
             var quest = new Quest
             {
                 Id = $"{questType}:{GetStringProperty(catalogQuest, "name")}",
+                Slug = GetStringProperty(catalogQuest, "slug") ?? string.Empty,
                 Title = GetStringProperty(catalogQuest, "displayName") ?? GetStringProperty(catalogQuest, "name") ?? "Unknown Quest",
                 Description = GetStringProperty(catalogQuest, "description") ?? "A mysterious task awaits",
                 QuestType = GetStringProperty(catalogQuest, "questType") ?? questType,

@@ -184,6 +184,7 @@ public class EnemyGenerator
             var enemy = new Enemy
             {
                 Id = $"{category}:{GetStringProperty(catalogEnemy, "name")}",
+                Slug = GetStringProperty(catalogEnemy, "slug") ?? string.Empty,
                 Name = GetStringProperty(catalogEnemy, "name") ?? "Unknown Enemy",
                 Description = GetStringProperty(catalogEnemy, "description") ?? "A mysterious creature",
                 Health = health,

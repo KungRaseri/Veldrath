@@ -230,6 +230,7 @@ public class ItemGenerator
             var item = new Item
             {
                 Id = $"{category}:{baseName}",
+                Slug = GetStringProperty(catalogItem, "slug") ?? string.Empty,
                 BaseName = baseName,
                 Name = baseName, // Will be updated after enhancements
                 Description = GetStringProperty(catalogItem, "description") ?? "No description available",

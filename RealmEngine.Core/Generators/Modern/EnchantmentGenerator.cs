@@ -212,6 +212,7 @@ public class EnchantmentGenerator
     {
         var enchantment = new Enchantment
         {
+            Slug = GetStringProperty(component, "slug") ?? string.Empty,
             Name = name,
             RarityWeight = GetIntProperty(component, "rarityWeight", 50),
             Position = position,

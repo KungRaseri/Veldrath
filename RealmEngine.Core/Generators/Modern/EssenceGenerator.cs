@@ -55,6 +55,7 @@ public class EssenceGenerator
             return new Essence
             {
                 Id = Guid.NewGuid().ToString(),
+                Slug = selected.Slug,
                 Name = selected.Name,
                 Description = selected.Description,
                 SocketType = SocketType.Essence,
@@ -111,6 +112,7 @@ public class EssenceGenerator
             {
                 all.Add(new Essence
                 {
+                    Slug = item["slug"]?.ToString() ?? string.Empty,
                     Name = item["name"]?.ToString() ?? "Unknown Essence",
                     Category = item["category"]?.ToString() ?? category,
                     Description = item["description"]?.ToString() ?? string.Empty,
