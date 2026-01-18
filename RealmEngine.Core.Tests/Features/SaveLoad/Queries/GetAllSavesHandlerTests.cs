@@ -39,20 +39,9 @@ public class GetAllSavesHandlerTests : IDisposable
         var save1 = _saveGameService.CreateNewGame(player1, DifficultySettings.Normal);
         _saveGameService.SaveGame(save1);
 
-        // Create second save (creates a new SaveGame, not using CreateNewGame to avoid overwriting _currentSave)
+        // Create second save using CreateNewGame to ensure proper initialization
         var player2 = new Character { Name = "Player2", ClassName = "Mage", Level = 10, Health = 150, MaxHealth = 150 };
-        var save2 = new SaveGame
-        {
-            Id = Guid.NewGuid().ToString(),
-            PlayerName = player2.Name,
-            Character = player2,
-            CreationDate = DateTime.Now,
-            SaveDate = DateTime.Now,
-            DifficultyLevel = "Hard",
-            IronmanMode = false,
-            PermadeathMode = false,
-            ApocalypseMode = false
-        };
+        var save2 = _saveGameService.CreateNewGame(player2, DifficultySettings.Hard);
         _saveGameService.SaveGame(save2);
 
         var query = new GetAllSavesQuery();
