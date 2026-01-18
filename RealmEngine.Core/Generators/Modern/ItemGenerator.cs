@@ -1047,7 +1047,7 @@ public class ItemGenerator
             Id = $"{category}:{baseItemName}",
             BaseName = baseItemName,
             Name = baseItemName, // Will be updated
-            Description = $"A {baseItemName}",
+            Description = GetStringProperty(result.BaseItem!, "description") ?? "No description available",
             Price = GetIntProperty(result.BaseItem!, "value", 1),
             Type = category switch
             {
