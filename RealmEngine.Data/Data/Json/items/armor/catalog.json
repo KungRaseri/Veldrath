@@ -111,7 +111,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 1
+          "rarityWeight": 1,
+          "description": "An ornamental headpiece symbolizing authority and status, offering minimal protection."
         },
         {
           "name": "Circlet",
@@ -132,7 +133,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 2
+          "rarityWeight": 2,
+          "description": "A simple metal band worn around the forehead, more decorative than protective."
         },
         {
           "name": "Vest",
@@ -153,7 +155,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 24
+          "rarityWeight": 24,
+          "description": "A lightweight sleeveless garment offering basic torso protection without restricting movement."
         },
         {
           "name": "Jerkin",
@@ -174,7 +177,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 22
+          "rarityWeight": 22,
+          "description": "A close-fitting jacket made of leather or thick fabric, favored for its comfort and flexibility."
         },
         {
           "name": "Gloves",
@@ -195,7 +199,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 24
+          "rarityWeight": 24,
+          "description": "Simple handwear providing grip and basic protection from the elements."
         },
         {
           "name": "Bracers",
@@ -238,7 +243,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25
+          "rarityWeight": 25,
+          "description": "Padded handwear offering warmth and minimal protection, limiting finger dexterity."
         },
         {
           "name": "Tassets",
@@ -259,7 +265,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "Articulated plates protecting the upper thighs and groin area."
         },
         {
           "name": "Shoes",
@@ -280,7 +287,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25
+          "rarityWeight": 25,
+          "description": "Basic footwear offering protection from rough terrain with minimal weight."
         },
         {
           "name": "Sandals",
@@ -301,7 +309,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25
+          "rarityWeight": 25,
+          "description": "Open footwear providing ventilation in hot climates at the cost of protection."
         },
         {
           "name": "Mantle",
@@ -322,7 +331,8 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 22
+          "rarityWeight": 22,
+          "description": "A decorative cloak that provides minimal protection while displaying status."
         },
         {
           "name": "Shield",
@@ -343,7 +353,8 @@
           },
           "traits": {},
           "blockChance": 15,
-          "rarityWeight": 15
+          "rarityWeight": 15,
+          "description": "A defensive tool held in hand to block attacks and protect the body."
         },
         {
           "name": "Buckler",
@@ -430,7 +441,8 @@
           },
           "traits": {},
           "blockChance": 12,
-          "rarityWeight": 16
+          "rarityWeight": 16,
+          "description": "A compact triangular shield offering good protection without excessive weight."
         }
       ]
     },
@@ -462,7 +474,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A streamlined helmet with a tail protecting the neck, offering good visibility."
         },
         {
           "name": "Hauberk",
@@ -483,7 +496,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A long shirt of chainmail extending to the knees, providing extensive coverage."
         },
         {
           "name": "Chainmail",
@@ -592,7 +606,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "Forearm guards made of metal plates, protecting from wrist to elbow."
         },
         {
           "name": "Leggings",
@@ -613,7 +628,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 16
+          "rarityWeight": 16,
+          "description": "Fitted leg armor providing protection while allowing freedom of movement."
         },
         {
           "name": "Chausses",
@@ -634,7 +650,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 15
+          "rarityWeight": 15,
+          "description": "Chainmail leg armor covering from waist to foot, offering flexible protection."
         },
         {
           "name": "Boots",
@@ -655,7 +672,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "Sturdy footwear reinforced for combat, balancing protection and mobility."
         },
         {
           "name": "Spaulders",
@@ -676,7 +694,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 15
+          "rarityWeight": 15,
+          "description": "Plate armor covering the shoulders, protecting against overhead strikes."
         },
         {
           "name": "Shoulderguards",
@@ -697,7 +716,8 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 16
+          "rarityWeight": 16,
+          "description": "Protective plates or padding worn over the shoulders."
         }
       ]
     },
@@ -729,7 +749,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A solid metal helmet providing excellent head protection in battle."
         },
         {
           "name": "Helmet",
@@ -750,7 +771,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 14
+          "rarityWeight": 14,
+          "description": "A protective head covering designed to deflect blows and projectiles."
         },
         {
           "name": "Great Helm",
@@ -837,7 +859,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 6
+          "rarityWeight": 6,
+          "description": "A fitted breastplate protecting the torso, often ornately decorated."
         },
         {
           "name": "Breastplate",
@@ -858,7 +881,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A solid metal plate covering the chest, the core of any plate armor."
         },
         {
           "name": "Chestplate",
@@ -879,7 +903,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 8
+          "rarityWeight": 8,
+          "description": "Heavy armor protecting the vital organs of the torso."
         },
         {
           "name": "Plate Mail",
@@ -944,7 +969,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "Shin armor protecting the lower legs from knee to ankle."
         },
         {
           "name": "Sabatons",
@@ -965,7 +991,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "Articulated plate footwear providing complete protection for the feet."
         },
         {
           "name": "Sollerets",
@@ -986,7 +1013,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 13
+          "rarityWeight": 13,
+          "description": "Pointed plate boots designed for mounted combat, protecting feet and ankles."
         },
         {
           "name": "Pauldrons",
@@ -1007,7 +1035,8 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "Large shoulder plates providing extensive protection to the upper arms and shoulders."
         }
       ]
     }
