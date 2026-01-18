@@ -6,8 +6,8 @@
     "type": "item_catalog",
     "totalItems": 4
   },
-  "material_types":{
-    "ore":{
+  "material_types": {
+    "ore": {
       "items": [
         {
           "name": "Iron Ore",
@@ -66,7 +66,6 @@
           }
         }
       ]
-    
     }
   }
 }

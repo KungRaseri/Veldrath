@@ -22,7 +22,7 @@
             "Blessings upon you, {player_name}.",
             "May the light guide your path, traveler.",
             "Peace be with you this {time_of_day}."
-          ],
+          ]
         },
         {
           "slug": "priest-solemn",
@@ -33,7 +33,7 @@
             "The gods smile upon your arrival, {player_name}.",
             "Welcome to this holy place, child.",
             "You are always welcome in the temple."
-          ],
+          ]
         }
       ]
     },
@@ -48,7 +48,7 @@
             "Good {time_of_day}, {player_name}. Your presence honors our estate.",
             "Well met, {player_name}. To what do we owe this distinguished visit?",
             "Ah, {player_name}. Welcome to our halls."
-          ],
+          ]
         },
         {
           "slug": "noble-friendly",
@@ -59,7 +59,7 @@
             "Delighted to see you again, {player_name}!",
             "Always a pleasure, my friend.",
             "Welcome back! I trust you've been well?"
-          ],
+          ]
         },
         {
           "slug": "knight-honorable",
@@ -70,7 +70,7 @@
             "Well met, {player_name}. Honor and duty call us both.",
             "Greetings, warrior. May your blade stay true.",
             "Good {time_of_day}. Stand tall, for we serve a greater cause."
-          ],
+          ]
         },
         {
           "slug": "courtier-refined",
@@ -81,7 +81,7 @@
             "How utterly delightful to see you, darling.",
             "Welcome to court, {player_name}. Do mind the politics.",
             "Ah, such distinguished company we keep today."
-          ],
+          ]
         }
       ]
     },
@@ -96,7 +96,7 @@
             "Not now... the spell is almost... oh. You.",
             "Can't you see I'm concentrating?",
             "What? Oh, a visitor. Fine, what do you need?"
-          ],
+          ]
         },
         {
           "slug": "hedge-wizard-cryptic",
@@ -107,7 +107,7 @@
             "The stars foretold your coming...",
             "Ahh, the one the visions spoke of.",
             "You seek answers. I may have them... for a price."
-          ],
+          ]
         }
       ]
     },
@@ -122,7 +122,7 @@
             "Welcome, welcome! Looking to buy or sell today?",
             "Ah, {player_name}! My best customer! Come in, come in!",
             "Good {time_of_day}! I have just the thing you're looking for!"
-          ],
+          ]
         },
         {
           "slug": "merchant-professional",
@@ -133,7 +133,7 @@
             "Good {time_of_day}. How may I assist you today?",
             "Welcome to my establishment, {player_name}.",
             "Looking for quality goods? You've come to the right place."
-          ],
+          ]
         }
       ]
     },
@@ -148,7 +148,7 @@
             "You lookin' for somethin'?",
             "Keep your voice down...",
             "What's the password?"
-          ],
+          ]
         },
         {
           "slug": "criminal-wary",
@@ -159,7 +159,7 @@
             "Do I know you?",
             "You a guard?",
             "What do you want?"
-          ],
+          ]
         },
         {
           "slug": "spy-enigmatic",
@@ -170,7 +170,7 @@
             "Interesting weather we're having.",
             "The sparrow flies at midnight.",
             "Careful who you trust, {player_name}."
-          ],
+          ]
         },
         {
           "slug": "smuggler-shifty",
@@ -181,7 +181,7 @@
             "Looking for something... special?",
             "Got rare goods. Interested?",
             "No questions, no problems."
-          ],
+          ]
         },
         {
           "slug": "thief-nervous",
@@ -192,7 +192,7 @@
             "Uh, hi. You're not here to cause trouble, right?",
             "L-look, I didn't do anything!",
             "Please don't tell anyone you saw me here."
-          ],
+          ]
         }
       ]
     },
@@ -207,7 +207,7 @@
             "Good {time_of_day}! How can I help you today?",
             "Welcome, {player_name}. Always glad to see you.",
             "Ah, perfect timing! Come in, come in."
-          ],
+          ]
         },
         {
           "slug": "warm-rural",
@@ -218,7 +218,7 @@
             "Well hello there! Welcome!",
             "Good to see a friendly face!",
             "Come on over, friend!"
-          ],
+          ]
         },
         {
           "slug": "apothecary-clinical",
@@ -229,7 +229,7 @@
             "What are your symptoms?",
             "Let me examine you. Where does it hurt?",
             "I have the remedy you need."
-          ],
+          ]
         },
         {
           "slug": "professional-busy",
@@ -240,7 +240,7 @@
             "Yes? I'm quite busy.",
             "Make it quick, I have work to do.",
             "What is it? I don't have all day."
-          ],
+          ]
         }
       ]
     },
@@ -255,7 +255,7 @@
             "State your business.",
             "Halt. Identify yourself.",
             "Move along, citizen."
-          ],
+          ]
         },
         {
           "slug": "soldier-casual",
@@ -266,7 +266,7 @@
             "Afternoon. Keepin' the peace around here.",
             "All quiet today.",
             "Nothin' to worry about, move along."
-          ],
+          ]
         },
         {
           "slug": "military-formal",
@@ -277,7 +277,7 @@
             "Report, soldier.",
             "At attention. State your purpose.",
             "Sir/Ma'am. How may I assist?"
-          ],
+          ]
         },
         {
           "slug": "guard-watchful",
@@ -288,7 +288,7 @@
             "I'm watching you.",
             "Don't try anything.",
             "Keep moving, citizen."
-          ],
+          ]
         },
         {
           "slug": "mercenary-blunt",
@@ -299,7 +299,7 @@
             "You hiring?",
             "Talk fast. Time is gold.",
             "What's the job and what's the pay?"
-          ],
+          ]
         }
       ]
     },
@@ -314,7 +314,7 @@
             "Welcome to the inn, traveler! Room or food?",
             "Good {time_of_day}! Come warm yourself by the fire!",
             "Ah, {player_name}! Your usual room is ready!"
-          ],
+          ]
         },
         {
           "slug": "tavern-rowdy",
@@ -325,7 +325,7 @@
             "Ha! Look who's back! Pull up a stool!",
             "What'll it be? The usual?",
             "Well well, if it isn't {player_name}! Drinks on the house!"
-          ],
+          ]
         },
         {
           "slug": "cook-busy",
@@ -336,7 +336,7 @@
             "Kitchen's hot today! What can I get you?",
             "Hungry? I've got stew ready.",
             "Make it quick, I've got bread in the oven!"
-          ],
+          ]
         },
         {
           "slug": "stable-earthy",
@@ -347,7 +347,7 @@
             "Needin' a horse?",
             "Your mount is well fed and ready.",
             "Fine animals here, all of 'em."
-          ],
+          ]
         }
       ]
     },
@@ -362,7 +362,7 @@
             "G-good {time_of_day}, m'lord/m'lady.",
             "Beggin' your pardon...",
             "Not causin' trouble, just passin' through."
-          ],
+          ]
         },
         {
           "slug": "farmer-simple",
@@ -373,7 +373,7 @@
             "Mornin'. Nice weather for farmin'.",
             "Aye, good {time_of_day} to ye.",
             "Crops are comin' in well this season."
-          ],
+          ]
         }
       ]
     },
@@ -388,7 +388,7 @@
             "Greetings, {player_name}. I trust your scholarly pursuits progress well?",
             "Ah, a fellow seeker of knowledge. Welcome.",
             "Good {time_of_day}. Have you come to peruse the archives?"
-          ],
+          ]
         },
         {
           "slug": "distracted-scholar",
@@ -399,7 +399,7 @@
             "Hmm? Oh! Yes, what was it you needed?",
             "One moment... just finishing this calculation...",
             "Ah, {player_name}. Forgive me, I was deep in thought."
-          ],
+          ]
         }
       ]
     }

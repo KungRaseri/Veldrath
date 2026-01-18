@@ -6,7 +6,7 @@
     "type": "item_catalog",
     "totalItems": 19
   },
-  "material_types":{
+  "material_types": {
     "reagent": {
       "items": [
         {
@@ -219,7 +219,6 @@
           "traits": {}
         }
       ]
-    
     }
   }
 }

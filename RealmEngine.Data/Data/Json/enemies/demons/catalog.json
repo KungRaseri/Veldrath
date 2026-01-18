@@ -391,9 +391,17 @@
             "difficulty": "boss",
             "title": "Lord of the Abyssal Depths",
             "description": "A powerful demon lord commanding legions from the darkest pits of the abyss",
-            "immunities": ["poison", "necrotic"],
-            "vulnerabilities": ["radiant"],
-            "resistances": ["fire", "physical"]
+            "immunities": [
+              "poison",
+              "necrotic"
+            ],
+            "vulnerabilities": [
+              "radiant"
+            ],
+            "resistances": [
+              "fire",
+              "physical"
+            ]
           }
         }
       ]
@@ -641,9 +649,17 @@
             "difficulty": "boss",
             "title": "The Dark Lord of All Evil",
             "description": "The ultimate evil, master of demons and darkness. The final confrontation that will determine the fate of the realm.",
-            "immunities": ["fire", "poison", "necrotic"],
-            "vulnerabilities": ["radiant"],
-            "resistances": ["physical"]
+            "immunities": [
+              "fire",
+              "poison",
+              "necrotic"
+            ],
+            "vulnerabilities": [
+              "radiant"
+            ],
+            "resistances": [
+              "physical"
+            ]
           }
         }
       ]

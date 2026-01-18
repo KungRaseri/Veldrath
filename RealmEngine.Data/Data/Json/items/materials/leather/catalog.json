@@ -20,7 +20,11 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "leather-grip",
@@ -34,7 +38,12 @@
           "subType": "leather",
           "tier": "component",
           "traits": {},
-          "tags": ["leather", "crafting", "weapon-component", "grip"]
+          "tags": [
+            "leather",
+            "crafting",
+            "weapon-component",
+            "grip"
+          ]
         },
         {
           "slug": "leather-padding",
@@ -48,7 +57,12 @@
           "subType": "leather",
           "tier": "component",
           "traits": {},
-          "tags": ["leather", "crafting", "armor-component", "padding"]
+          "tags": [
+            "leather",
+            "crafting",
+            "armor-component",
+            "padding"
+          ]
         },
         {
           "slug": "reinforced-straps",
@@ -62,7 +76,12 @@
           "subType": "leather",
           "tier": "component",
           "traits": {},
-          "tags": ["leather", "crafting", "armor-component", "straps"]
+          "tags": [
+            "leather",
+            "crafting",
+            "armor-component",
+            "straps"
+          ]
         }
       ]
     }

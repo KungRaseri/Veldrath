@@ -24,7 +24,7 @@
           ],
           "resources": [
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "mistyhills",
@@ -43,7 +43,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "silverlake",
@@ -61,7 +61,7 @@
           "resources": [
             "@items/consumables:*",
             "@items/materials:*"
-          ],
+          ]
         }
       ]
     }
@@ -87,7 +87,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "endlessdesert",
@@ -106,7 +106,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "crystalcaverns",
@@ -125,7 +125,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "stormycoast",
@@ -144,7 +144,7 @@
           "resources": [
             "@items/materials:*",
             "@items/consumables:*"
-          ],
+          ]
         },
         {
           "slug": "whisperingwoods",
@@ -164,7 +164,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         }
       ]
     }
@@ -190,7 +190,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "frozentundra",
@@ -210,7 +210,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "poisonswamp",
@@ -230,7 +230,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "ancientbattlefield",
@@ -248,7 +248,7 @@
           "resources": [
             "@items/weapons:*",
             "@items/armor:*"
-          ],
+          ]
         },
         {
           "slug": "shatteredisles",
@@ -267,7 +267,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "jungleoffangs",
@@ -286,7 +286,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "thegreatrift",
@@ -306,7 +306,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         }
       ]
     }
@@ -331,7 +331,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "deadlands",
@@ -350,7 +350,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         },
         {
           "slug": "bloodmoors",
@@ -370,7 +370,7 @@
           "resources": [
             "@items/materials:*",
             "@items/materials:*"
-          ],
+          ]
         }
       ]
     }

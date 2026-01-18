@@ -100,7 +100,7 @@
                 "@abilities/ultimate:avatar-of-light"
               ]
             }
-          },
+          }
         },
         {
           "slug": "paladin",
@@ -174,7 +174,7 @@
                 "@abilities/ultimate:holy-champion"
               ]
             }
-          },
+          }
         }
       ]
     },
@@ -260,7 +260,7 @@
                 "@abilities/ultimate:perfect-crime"
               ]
             }
-          },
+          }
         },
         {
           "slug": "assassin",
@@ -334,7 +334,7 @@
                 "@abilities/ultimate:death-incarnate"
               ]
             }
-          },
+          }
         },
         {
           "slug": "swashbuckler",
@@ -409,7 +409,7 @@
                 "@abilities/ultimate:dread-pirate"
               ]
             }
-          },
+          }
         }
       ]
     },
@@ -497,7 +497,7 @@
                 "@abilities/ultimate:apex-predator"
               ]
             }
-          },
+          }
         },
         {
           "slug": "beastmaster",
@@ -571,7 +571,7 @@
                 "@abilities/ultimate:natures-wrath"
               ]
             }
-          },
+          }
         }
       ]
     },
@@ -669,7 +669,7 @@
                 "@abilities/passive:titans-strength"
               ]
             }
-          },
+          }
         },
         {
           "slug": "berserker",
@@ -742,7 +742,7 @@
                 "@abilities/ultimate:ragnarok"
               ]
             }
-          },
+          }
         },
         {
           "slug": "knight",
@@ -817,7 +817,7 @@
                 "@abilities/ultimate:fortress"
               ]
             }
-          },
+          }
         },
         {
           "slug": "duelist",
@@ -892,7 +892,7 @@
                 "@abilities/ultimate:grandmaster-duelist"
               ]
             }
-          },
+          }
         }
       ]
     },
@@ -979,7 +979,7 @@
                 "@abilities/ultimate:archmages-supremacy"
               ]
             }
-          },
+          }
         },
         {
           "slug": "elementalist",
@@ -1049,7 +1049,7 @@
                 "@abilities/ultimate:master-of-elements"
               ]
             }
-          },
+          }
         },
         {
           "slug": "necromancer",
@@ -1123,7 +1123,7 @@
                 "@abilities/ultimate:death-lord"
               ]
             }
-          },
+          }
         }
       ]
     }

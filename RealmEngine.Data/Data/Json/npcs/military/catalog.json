@@ -70,7 +70,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "city_guard",
-          "schedule": "@social/schedules/*:guard",
+          "schedule": "@social/schedules/*:guard"
         },
         {
           "slug": "guardduty",
@@ -114,7 +114,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "city_guard",
-          "schedule": "@social/schedules/*:guard",
+          "schedule": "@social/schedules/*:guard"
         },
         {
           "slug": "formermercenary",
@@ -160,7 +160,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "independent",
-          "schedule": "@social/schedules/*:flexible",
+          "schedule": "@social/schedules/*:flexible"
         }
       ]
     }
@@ -205,7 +205,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "city_guard",
-          "schedule": "@social/schedules/*:guard",
+          "schedule": "@social/schedules/*:guard"
         }
       ]
     }

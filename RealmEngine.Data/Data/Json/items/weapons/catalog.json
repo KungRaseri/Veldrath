@@ -30,6 +30,7 @@
         {
           "name": "Longsword",
           "slug": "longsword",
+          "description": "A versatile blade forged for balance and precision, favored by warriors who value technique over brute force.",
           "value": 15,
           "weight": 3.0,
           "budgetCost": 3,
@@ -52,6 +53,7 @@
         {
           "name": "Greatsword",
           "slug": "greatsword",
+          "description": "A massive two-handed blade capable of cleaving through armor and bone with devastating force.",
           "value": 50,
           "weight": 6.0,
           "budgetCost": 6,
@@ -74,6 +76,7 @@
         {
           "name": "Katana",
           "slug": "katana",
+          "description": "A curved blade of exceptional craftsmanship, designed for swift, lethal strikes with a single edge.",
           "value": 40,
           "weight": 3.0,
           "budgetCost": 5,
@@ -113,7 +116,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A wide, sturdy blade built for powerful slashing attacks and reliable defense."
         },
         {
           "name": "Claymore",
@@ -135,7 +139,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A massive highland sword wielded with both hands, delivering crushing overhead strikes."
         },
         {
           "name": "Saber",
@@ -157,7 +162,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A curved cavalry sword designed for slashing attacks from horseback or in close combat."
         }
       ]
     },
@@ -193,7 +199,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A compact blade favored for its maneuverability in tight spaces and quick strikes."
         },
         {
           "name": "Scimitar",
@@ -215,7 +222,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A gracefully curved blade hailing from desert lands, deadly in the hands of a skilled warrior."
         },
         {
           "name": "Rapier",
@@ -237,7 +245,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "An elegant thrusting sword designed for precision strikes and refined swordsmanship."
         },
         {
           "name": "Gladius",
@@ -259,7 +268,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A short Roman sword built for brutal efficiency in close-quarters combat."
         },
         {
           "name": "Dagger",
@@ -281,7 +291,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 22
+          "rarityWeight": 22,
+          "description": "A small blade easily concealed, lethal in the hands of an assassin or when thrown."
         },
         {
           "name": "Dirk",
@@ -303,7 +314,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A long dagger with a straight blade, traditional among highland warriors and scouts."
         },
         {
           "name": "Stiletto",
@@ -325,7 +337,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A thin, needle-like blade designed to pierce through gaps in armor."
         },
         {
           "name": "Kris",
@@ -347,7 +360,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A wavy-bladed dagger with mystical significance, said to hold spiritual power."
         },
         {
           "name": "Tanto",
@@ -369,7 +383,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A short blade traditionally paired with a katana, ideal for close combat."
         },
         {
           "name": "Kukri",
@@ -391,7 +406,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A curved blade from mountain regions, equally useful as tool and weapon."
         },
         {
           "name": "Rondel",
@@ -413,7 +429,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A stiff-bladed dagger with a sharp point, designed to puncture armor joints."
         },
         {
           "name": "Main Gauche",
@@ -435,7 +452,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A parrying dagger used in the off-hand for defensive maneuvers."
         }
       ]
     },
@@ -470,7 +488,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A heavy chopping weapon that combines raw power with tactical versatility."
         },
         {
           "name": "Handaxe",
@@ -492,7 +511,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A compact axe easily wielded or thrown, useful both in combat and utility."
         },
         {
           "name": "Greataxe",
@@ -514,7 +534,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A massive two-handed axe capable of splitting shields and skulls with a single blow."
         },
         {
           "name": "Waraxe",
@@ -536,7 +557,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A formidable axe designed specifically for warfare, balancing power and control."
         },
         {
           "name": "Hatchet",
@@ -558,7 +580,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 22
+          "rarityWeight": 22,
+          "description": "A small utility axe that doubles as an effective throwing weapon."
         },
         {
           "name": "Tomahawk",
@@ -580,7 +603,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A light throwing axe used by tribal warriors, deadly at range or in melee."
         },
         {
           "name": "Cleaver",
@@ -602,7 +626,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A heavy chopping blade, originally a butcher's tool, repurposed for brutal combat."
         },
         {
           "name": "Poleaxe",
@@ -624,7 +649,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A pole-mounted axe head combined with other striking surfaces for maximum versatility."
         }
       ]
     },
@@ -660,7 +686,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A tall bow requiring strength to draw, capable of impressive range and penetration."
         },
         {
           "name": "Shortbow",
@@ -682,7 +709,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A compact bow favored by scouts and hunters for its portability and ease of use."
         },
         {
           "name": "Composite Bow",
@@ -704,7 +732,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A sophisticated bow made from multiple materials, offering superior power and accuracy."
         },
         {
           "name": "Recurve Bow",
@@ -726,7 +755,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 15
+          "rarityWeight": 15,
+          "description": "A bow with curved tips that stores more energy, delivering faster and more powerful shots."
         },
         {
           "name": "Crossbow",
@@ -748,7 +778,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A mechanical bow that trades firing speed for raw power and ease of aim."
         },
         {
           "name": "Heavy Crossbow",
@@ -770,7 +801,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A massive crossbow capable of punching through heavy armor at considerable range."
         },
         {
           "name": "Warbow",
@@ -792,7 +824,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 6
+          "rarityWeight": 6,
+          "description": "A powerful military bow designed to pierce armor, requiring exceptional strength to draw."
         },
         {
           "name": "Hunting Bow",
@@ -814,7 +847,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A lightweight bow designed for hunting game, reliable and easy to maintain."
         }
       ]
     },
@@ -850,7 +884,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A versatile weapon consisting of a pointed blade on a shaft, effective at keeping enemies at bay."
         },
         {
           "name": "Lance",
@@ -872,7 +907,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A long cavalry weapon designed for devastating charges, unwieldy on foot."
         },
         {
           "name": "Javelin",
@@ -894,7 +930,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A light throwing spear that can also be used in melee, favored by skirmishers."
         },
         {
           "name": "Pike",
@@ -916,7 +953,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 16
+          "rarityWeight": 16,
+          "description": "An extremely long spear used in formations, presenting a wall of points to cavalry and infantry."
         },
         {
           "name": "Halberd",
@@ -938,7 +976,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A pole weapon combining an axe blade, spike, and hook for maximum versatility."
         },
         {
           "name": "Trident",
@@ -960,7 +999,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 16
+          "rarityWeight": 16,
+          "description": "A three-pronged spear associated with sea gods, deadly for thrusting attacks."
         },
         {
           "name": "Partisan",
@@ -982,7 +1022,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "An ornate pole weapon with a broad blade and side projections, favored by guards."
         },
         {
           "name": "Glaive",
@@ -1004,7 +1045,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A pole weapon with a single-edged blade, combining reach with slashing power."
         }
       ]
     },
@@ -1039,7 +1081,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A heavy metal club designed to crush armor and bones with brutal efficiency."
         },
         {
           "name": "Warhammer",
@@ -1061,7 +1104,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A balanced hammer built for war, capable of denting the heaviest armor."
         },
         {
           "name": "Flail",
@@ -1083,7 +1127,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 18
+          "rarityWeight": 18,
+          "description": "A hinged weapon with a spiked head on a chain, difficult to defend against."
         },
         {
           "name": "Morning Star",
@@ -1105,7 +1150,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A spiked mace designed to penetrate armor and cause devastating wounds."
         },
         {
           "name": "Club",
@@ -1127,7 +1173,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 25
+          "rarityWeight": 25,
+          "description": "A simple wooden bludgeon, crude but effective in untrained hands."
         },
         {
           "name": "Maul",
@@ -1149,7 +1196,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A massive two-handed hammer that can shatter shields and pulverize armor."
         },
         {
           "name": "Cudgel",
@@ -1171,7 +1219,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 25
+          "rarityWeight": 25,
+          "description": "A thick stick or light club, the weapon of choice for tavern brawlers and thugs."
         },
         {
           "name": "Scepter",
@@ -1193,7 +1242,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "An ornamental rod that can serve as a weapon when magic is not enough."
         }
       ]
     },
@@ -1229,7 +1279,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A wooden pole often used by travelers and mages as both walking aid and weapon."
         },
         {
           "name": "Quarterstaff",
@@ -1251,7 +1302,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 20
+          "rarityWeight": 20,
+          "description": "A sturdy wooden staff wielded with both hands, offering reach and defensive capability."
         },
         {
           "name": "War Staff",
@@ -1273,7 +1325,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 12
+          "rarityWeight": 12,
+          "description": "A reinforced staff designed for combat, often capped with metal for extra striking power."
         },
         {
           "name": "Battle Staff",
@@ -1295,7 +1348,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A heavy combat staff capable of breaking bones and deflecting sword strikes."
         },
         {
           "name": "Rod",
@@ -1317,7 +1371,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 10
+          "rarityWeight": 10,
+          "description": "A short metal rod infused with magical energy, serving as both focus and weapon."
         },
         {
           "name": "Scepter Staff",
@@ -1339,7 +1394,8 @@
             "modifier": "wielder.strength_mod"
           },
           "traits": {},
-          "rarityWeight": 8
+          "rarityWeight": 8,
+          "description": "An ornate staff that channels magical power while serving as a symbol of authority."
         }
       ]
     }

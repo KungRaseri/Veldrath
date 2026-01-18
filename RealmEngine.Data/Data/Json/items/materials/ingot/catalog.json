@@ -6,7 +6,7 @@
     "type": "item_catalog",
     "totalItems": 4
   },
-  "material_types":{
+  "material_types": {
     "ingot": {
       "items": [
         {
@@ -66,7 +66,6 @@
           }
         }
       ]
-    
     }
   }
 }

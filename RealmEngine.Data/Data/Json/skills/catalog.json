@@ -66,7 +66,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "swimming",
@@ -123,7 +123,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "climbing",
@@ -180,7 +180,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "carrying",
@@ -232,7 +232,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -295,7 +295,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "stealth",
@@ -347,7 +347,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "sleight-of-hand",
@@ -399,7 +399,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "lockpicking",
@@ -451,7 +451,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -514,7 +514,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "concentration",
@@ -566,7 +566,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "disease-resistance",
@@ -618,7 +618,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "poison-resistance",
@@ -670,7 +670,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -728,7 +728,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "investigation",
@@ -780,7 +780,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "nature",
@@ -832,7 +832,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "history",
@@ -884,7 +884,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -942,7 +942,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "insight",
@@ -994,7 +994,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "medicine",
@@ -1046,7 +1046,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "survival",
@@ -1103,7 +1103,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -1161,7 +1161,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "intimidation",
@@ -1213,7 +1213,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "deception",
@@ -1265,7 +1265,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "performance",
@@ -1317,7 +1317,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -1383,7 +1383,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "heavy-blades",
@@ -1440,7 +1440,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "axes",
@@ -1501,7 +1501,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "blunt",
@@ -1563,7 +1563,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "polearms",
@@ -1625,7 +1625,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "bows",
@@ -1686,7 +1686,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "crossbows",
@@ -1747,7 +1747,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "throwing",
@@ -1808,7 +1808,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "unarmed",
@@ -1861,7 +1861,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "shield",
@@ -1914,7 +1914,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -1980,7 +1980,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "medium-armor",
@@ -2036,7 +2036,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "heavy-armor",
@@ -2097,7 +2097,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "unarmored-defense",
@@ -2150,7 +2150,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -2217,7 +2217,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "force-magic",
@@ -2273,7 +2273,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "chronomancy",
@@ -2334,7 +2334,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "conjuration",
@@ -2395,7 +2395,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -2462,7 +2462,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "restoration",
@@ -2523,7 +2523,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "smiting",
@@ -2584,7 +2584,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "warding",
@@ -2645,7 +2645,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -2712,7 +2712,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "enchantment",
@@ -2773,7 +2773,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "illusion",
@@ -2834,7 +2834,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "shadowcraft",
@@ -2895,7 +2895,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -2962,7 +2962,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "elementalism",
@@ -3023,7 +3023,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "beast-mastery",
@@ -3084,7 +3084,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "verdancy",
@@ -3145,7 +3145,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     },
@@ -3207,7 +3207,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "leatherworking",
@@ -3259,7 +3259,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "tailoring",
@@ -3311,7 +3311,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "woodworking",
@@ -3363,7 +3363,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "jewelcrafting",
@@ -3420,7 +3420,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "alchemy",
@@ -3477,7 +3477,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "enchanting",
@@ -3529,7 +3529,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "runecrafting",
@@ -3581,7 +3581,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "mining",
@@ -3638,7 +3638,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "herbalism",
@@ -3690,7 +3690,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "cooking",
@@ -3747,7 +3747,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "fishing",
@@ -3804,7 +3804,7 @@
               "type": "array"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         }
       ]
     }

@@ -22,7 +22,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "swift-pounce",
@@ -36,7 +36,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "savage-roar",
@@ -50,7 +50,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "pack-hunter",
@@ -64,7 +64,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "feral-rage",
@@ -78,7 +78,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "ferocious",
@@ -92,7 +92,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "primal-fury",
@@ -106,7 +106,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "gore",
@@ -120,7 +120,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "enrage",
@@ -134,7 +134,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "poisonweapons",
@@ -148,7 +148,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "berserker",
@@ -162,7 +162,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "bombthrower",
@@ -176,7 +176,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "shamanmagic",
@@ -190,7 +190,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "shadowstep",
@@ -204,7 +204,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "venommaster",
@@ -218,7 +218,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "passive-battle-cry",
@@ -232,7 +232,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "revenge",
@@ -246,7 +246,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "acidic",
@@ -260,7 +260,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "paralyzing",
@@ -274,7 +274,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "plaguecarrier",
@@ -288,7 +288,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "charger",
@@ -302,7 +302,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "bloodfrenzy",
@@ -316,7 +316,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "executioner",
@@ -330,7 +330,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "juggernaut",
@@ -344,7 +344,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "carnivorous",
@@ -358,7 +358,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "parasitic",
@@ -372,7 +372,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "entangling",
@@ -386,7 +386,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "sporecloud",
@@ -400,7 +400,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "vinewhip",
@@ -414,7 +414,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "toxicaura",
@@ -428,7 +428,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "tailwhip",
@@ -442,7 +442,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "deathroll",
@@ -456,7 +456,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "acidspit",
@@ -470,7 +470,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "rage",
@@ -484,7 +484,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "mountainstrength",
@@ -498,7 +498,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "rockthrow",
@@ -512,7 +512,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "smash",
@@ -526,7 +526,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "clubmaster",
@@ -540,7 +540,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         }
       ]
     },
@@ -559,7 +559,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "passive-armored-scales",
@@ -573,7 +573,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "passive-regeneration",
@@ -587,7 +587,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "camouflage",
@@ -601,7 +601,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "elemental-body",
@@ -615,7 +615,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "passive-elemental-immunity",
@@ -629,7 +629,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "elemental-weakness",
@@ -643,7 +643,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "sneakattack",
@@ -657,7 +657,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "packtactics",
@@ -671,7 +671,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "cowardly",
@@ -685,7 +685,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "scavenger",
@@ -699,7 +699,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "mechanicalgenius",
@@ -713,7 +713,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "cursedbloodline",
@@ -727,7 +727,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "demonpact",
@@ -741,7 +741,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "swarm",
@@ -755,7 +755,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "chitinous",
@@ -769,7 +769,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "venomous",
@@ -783,7 +783,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "heavyarmor",
@@ -797,7 +797,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "ironhide",
@@ -811,7 +811,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "regenerative",
@@ -825,7 +825,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "naturalarmor",
@@ -839,7 +839,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "rooted",
@@ -853,7 +853,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "thorny",
@@ -867,7 +867,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "poisonous",
@@ -881,7 +881,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "scaledhide",
@@ -895,7 +895,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "coldblooded",
@@ -909,7 +909,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "venomousbite",
@@ -923,7 +923,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "armoredplates",
@@ -937,7 +937,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "thickskin",
@@ -951,7 +951,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "massive",
@@ -965,7 +965,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "fireweakness",
@@ -979,7 +979,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "immune-to-poison",
@@ -993,7 +993,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "immune-to-cold",
@@ -1007,7 +1007,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "vulnerable-to-fire",
@@ -1021,7 +1021,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "vulnerable-to-holy",
@@ -1035,7 +1035,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "blood-drain",
@@ -1049,7 +1049,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "immortal",
@@ -1063,7 +1063,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "sunlight-weakness",
@@ -1077,7 +1077,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "enhanced-senses",
@@ -1091,7 +1091,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         }
       ]
     },
@@ -1110,7 +1110,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "apex-predator",
@@ -1124,7 +1124,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "trapmaker",
@@ -1138,7 +1138,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "quickreflexes",
@@ -1152,7 +1152,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "tunnelfighter",
@@ -1166,7 +1166,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "warchief",
@@ -1180,7 +1180,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "kingofgoblins",
@@ -1194,7 +1194,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "queencommand",
@@ -1208,7 +1208,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "mindcontrol",
@@ -1222,7 +1222,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "swarmlord",
@@ -1236,7 +1236,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "webspinner",
@@ -1250,7 +1250,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "hivemind",
@@ -1264,7 +1264,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "warlord",
@@ -1278,7 +1278,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "shamanwisdom",
@@ -1292,7 +1292,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "alphaleader",
@@ -1306,7 +1306,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "ambushpredator",
@@ -1320,7 +1320,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "primalroar",
@@ -1334,7 +1334,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "chieftaincommand",
@@ -1348,7 +1348,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "trollking",
@@ -1362,7 +1362,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "necromantic-aura",
@@ -1376,7 +1376,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "fearsome-presence",
@@ -1390,7 +1390,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "ancient-power",
@@ -1404,7 +1404,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "vampire-lord",
@@ -1418,7 +1418,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "progenitor",
@@ -1432,7 +1432,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         }
       ]
     },
@@ -1451,7 +1451,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "night-hunter",
@@ -1465,7 +1465,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "lair-actions",
@@ -1479,7 +1479,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "treasure-sense",
@@ -1493,7 +1493,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "passive-regeneration",
@@ -1507,7 +1507,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "metamorphosis",
@@ -1521,7 +1521,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "colossalsize",
@@ -1535,7 +1535,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "primordial",
@@ -1549,7 +1549,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "eldritchhorror",
@@ -1563,7 +1563,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "seedspawner",
@@ -1577,7 +1577,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "bioluminescent",
@@ -1591,7 +1591,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "ancienttreent",
@@ -1605,7 +1605,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "forestspirit",
@@ -1619,7 +1619,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "worldtree",
@@ -1633,7 +1633,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "primalgrowth",
@@ -1647,7 +1647,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "colossus",
@@ -1661,7 +1661,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "primaltitan",
@@ -1675,7 +1675,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "worldeater",
@@ -1689,7 +1689,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "stoneform",
@@ -1703,7 +1703,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "caveadaptation",
@@ -1717,7 +1717,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "icetroll",
@@ -1731,7 +1731,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "lavaimmunity",
@@ -1745,7 +1745,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         }
       ]
     },
@@ -1764,7 +1764,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "flying",
@@ -1778,7 +1778,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "burrowing",
@@ -1792,7 +1792,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "ambulatory",
@@ -1806,7 +1806,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "swiftswimmer",
@@ -1820,7 +1820,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "passive-camouflage",
@@ -1834,7 +1834,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "passive-shadow-walk",
@@ -1848,7 +1848,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         }
       ]
     },
@@ -1867,7 +1867,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         }
       ]
     },
@@ -1886,7 +1886,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "combat-supremacy",
@@ -1900,7 +1900,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "titans-strength",
@@ -1914,7 +1914,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "unstoppable",
@@ -1928,7 +1928,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 120,
+          "rarityWeight": 120
         },
         {
           "slug": "deaths-door",
@@ -1942,7 +1942,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "sentinel",
@@ -1956,7 +1956,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "crusader",
@@ -1970,7 +1970,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "master-thief",
@@ -1984,7 +1984,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "shadow-master",
@@ -1998,7 +1998,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "master-of-blades",
@@ -2012,7 +2012,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "legendary-swagger",
@@ -2026,7 +2026,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "master-tracker",
@@ -2040,7 +2040,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "primal-bond",
@@ -2054,7 +2054,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "king-of-beasts",
@@ -2068,7 +2068,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "bladework",
@@ -2082,7 +2082,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 100,
+          "rarityWeight": 100
         },
         {
           "slug": "elemental-mastery",
@@ -2096,7 +2096,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         }
       ]
     }

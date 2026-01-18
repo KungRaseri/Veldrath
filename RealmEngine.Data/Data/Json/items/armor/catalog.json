@@ -29,6 +29,7 @@
         {
           "name": "Coif",
           "slug": "coif",
+          "description": "A chainmail hood that protects the head and neck without restricting vision or movement.",
           "value": 12,
           "weight": 1.5,
           "budgetCost": 3,
@@ -45,11 +46,12 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 22,
+          "rarityWeight": 22
         },
         {
           "name": "Cowl",
           "slug": "cowl",
+          "description": "A hooded garment favored by rogues and scouts, offering subtle protection while maintaining stealth.",
           "value": 8,
           "weight": 0.5,
           "budgetCost": 3,
@@ -66,11 +68,12 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 24,
+          "rarityWeight": 24
         },
         {
           "name": "Hood",
           "slug": "hood",
+          "description": "A simple cloth hood that provides minimal protection but excellent concealment in shadows.",
           "value": 5,
           "weight": 0.3,
           "budgetCost": 2,
@@ -87,7 +90,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25,
+          "rarityWeight": 25
         },
         {
           "name": "Crown",
@@ -108,7 +111,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 1,
+          "rarityWeight": 1
         },
         {
           "name": "Circlet",
@@ -129,7 +132,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 2,
+          "rarityWeight": 2
         },
         {
           "name": "Vest",
@@ -150,7 +153,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 24,
+          "rarityWeight": 24
         },
         {
           "name": "Jerkin",
@@ -171,7 +174,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 22,
+          "rarityWeight": 22
         },
         {
           "name": "Gloves",
@@ -192,7 +195,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 24,
+          "rarityWeight": 24
         },
         {
           "name": "Bracers",
@@ -214,6 +217,7 @@
           "traits": {},
           "armorClass": "light",
           "rarityWeight": 22,
+          "description": "Leather arm guards protecting the forearms from slashes and arrows."
         },
         {
           "name": "Mittens",
@@ -234,7 +238,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25,
+          "rarityWeight": 25
         },
         {
           "name": "Tassets",
@@ -255,7 +259,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 18,
+          "rarityWeight": 18
         },
         {
           "name": "Shoes",
@@ -276,7 +280,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25,
+          "rarityWeight": 25
         },
         {
           "name": "Sandals",
@@ -297,7 +301,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 25,
+          "rarityWeight": 25
         },
         {
           "name": "Mantle",
@@ -318,7 +322,7 @@
           },
           "traits": {},
           "armorClass": "light",
-          "rarityWeight": 22,
+          "rarityWeight": 22
         },
         {
           "name": "Shield",
@@ -339,7 +343,7 @@
           },
           "traits": {},
           "blockChance": 15,
-          "rarityWeight": 15,
+          "rarityWeight": 15
         },
         {
           "name": "Buckler",
@@ -361,6 +365,7 @@
           "traits": {},
           "blockChance": 10,
           "rarityWeight": 18,
+          "description": "A small round shield held in the fist, used for parrying rather than full coverage."
         },
         {
           "name": "Tower Shield",
@@ -382,6 +387,7 @@
           "traits": {},
           "blockChance": 25,
           "rarityWeight": 8,
+          "description": "A massive rectangular shield offering near-total body coverage."
         },
         {
           "name": "Kite Shield",
@@ -403,6 +409,7 @@
           "traits": {},
           "blockChance": 18,
           "rarityWeight": 12,
+          "description": "A large teardrop-shaped shield providing excellent coverage, especially for cavalry."
         },
         {
           "name": "Heater",
@@ -423,7 +430,7 @@
           },
           "traits": {},
           "blockChance": 12,
-          "rarityWeight": 16,
+          "rarityWeight": 16
         }
       ]
     },
@@ -455,7 +462,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 12,
+          "rarityWeight": 12
         },
         {
           "name": "Hauberk",
@@ -476,7 +483,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 12,
+          "rarityWeight": 12
         },
         {
           "name": "Chainmail",
@@ -498,6 +505,7 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 15,
+          "description": "Full body coverage of interlocking metal rings, heavy but protective."
         },
         {
           "name": "Scale Mail",
@@ -519,6 +527,7 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 13,
+          "description": "Overlapping scales attached to a backing, providing flexible protection."
         },
         {
           "name": "Ring Mail",
@@ -540,6 +549,7 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 16,
+          "description": "Metal rings sewn onto leather, offering better defense than plain hide."
         },
         {
           "name": "Banded Mail",
@@ -561,6 +571,7 @@
           "traits": {},
           "armorClass": "medium",
           "rarityWeight": 12,
+          "description": "Horizontal metal bands fastened to leather and chainmail backing."
         },
         {
           "name": "Vambraces",
@@ -581,7 +592,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 18,
+          "rarityWeight": 18
         },
         {
           "name": "Leggings",
@@ -602,7 +613,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 16,
+          "rarityWeight": 16
         },
         {
           "name": "Chausses",
@@ -623,7 +634,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 15,
+          "rarityWeight": 15
         },
         {
           "name": "Boots",
@@ -644,7 +655,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 18,
+          "rarityWeight": 18
         },
         {
           "name": "Spaulders",
@@ -665,7 +676,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 15,
+          "rarityWeight": 15
         },
         {
           "name": "Shoulderguards",
@@ -686,7 +697,7 @@
           },
           "traits": {},
           "armorClass": "medium",
-          "rarityWeight": 16,
+          "rarityWeight": 16
         }
       ]
     },
@@ -718,7 +729,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12,
+          "rarityWeight": 12
         },
         {
           "name": "Helmet",
@@ -739,7 +750,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 14,
+          "rarityWeight": 14
         },
         {
           "name": "Great Helm",
@@ -761,6 +772,7 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 10,
+          "description": "A fully enclosed helmet offering maximum protection at the cost of visibility."
         },
         {
           "name": "Armet",
@@ -782,6 +794,7 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 8,
+          "description": "A sophisticated helmet that completely encases the head with articulated visors."
         },
         {
           "name": "Barbute",
@@ -803,6 +816,7 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 10,
+          "description": "A helmet that covers the entire head with openings for eyes and mouth."
         },
         {
           "name": "Cuirass",
@@ -823,7 +837,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 6,
+          "rarityWeight": 6
         },
         {
           "name": "Breastplate",
@@ -844,7 +858,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "name": "Chestplate",
@@ -865,7 +879,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 8,
+          "rarityWeight": 8
         },
         {
           "name": "Plate Mail",
@@ -887,6 +901,7 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 5,
+          "description": "Full armor of shaped metal plates, the pinnacle of protective gear."
         },
         {
           "name": "Gauntlets",
@@ -908,6 +923,7 @@
           "traits": {},
           "armorClass": "heavy",
           "rarityWeight": 15,
+          "description": "Reinforced gloves designed to protect hands while maintaining dexterity."
         },
         {
           "name": "Greaves",
@@ -928,7 +944,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12,
+          "rarityWeight": 12
         },
         {
           "name": "Sabatons",
@@ -949,7 +965,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12,
+          "rarityWeight": 12
         },
         {
           "name": "Sollerets",
@@ -970,7 +986,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 13,
+          "rarityWeight": 13
         },
         {
           "name": "Pauldrons",
@@ -991,7 +1007,7 @@
           },
           "traits": {},
           "armorClass": "heavy",
-          "rarityWeight": 12,
+          "rarityWeight": 12
         }
       ]
     }

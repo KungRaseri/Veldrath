@@ -188,8 +188,7 @@
     },
     "blacksmithing_armor": {
       "description": "Tier 2-3 Blacksmithing - Armor crafting",
-      "items": [
-      ]
+      "items": []
     },
     "alchemy_potions": {
       "description": "Tier 1 Alchemy - Basic potions and brews",
@@ -506,8 +505,7 @@
     },
     "jewelcrafting_cutting": {
       "description": "Tier 1 Jewelcrafting - Gem cutting and polishing",
-      "items": [
-      ]
+      "items": []
     },
     "jewelcrafting_orbs": {
       "description": "Tier 3 Jewelcrafting - Magical orb creation",
@@ -716,6 +714,3 @@
     }
   }
 }
-
-
-

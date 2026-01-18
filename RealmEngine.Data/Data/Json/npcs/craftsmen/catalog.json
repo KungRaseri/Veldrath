@@ -56,7 +56,7 @@
           "uniqueItems": [
             "Apprentice Badge"
           ],
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
+          "dialogueStyle": "@social/dialogue/styles/casual:professional"
         },
         {
           "slug": "smithapprentice",
@@ -93,7 +93,7 @@
             "Master's Hammer",
             "Forge-worn Apron"
           ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         }
       ]
     }
@@ -184,7 +184,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "weaponsmith",
@@ -252,7 +252,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "armorer",
@@ -321,7 +321,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "fletcher",
@@ -391,7 +391,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "leatherworker",
@@ -456,7 +456,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "jeweler",
@@ -523,7 +523,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/merchant:merchant"
-          ],
+          ]
         }
       ]
     }

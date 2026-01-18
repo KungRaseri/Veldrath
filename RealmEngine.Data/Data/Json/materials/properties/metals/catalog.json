@@ -43,7 +43,7 @@
           "value": 15
         }
       },
-      "rarityWeight": 60,
+      "rarityWeight": 60
     },
     {
       "slug": "bronze",
@@ -74,7 +74,7 @@
           "value": 10
         }
       },
-      "rarityWeight": 50,
+      "rarityWeight": 50
     },
     {
       "slug": "steel",
@@ -106,7 +106,7 @@
           "value": 50
         }
       },
-      "rarityWeight": 40,
+      "rarityWeight": 40
     },
     {
       "slug": "silver",
@@ -140,7 +140,7 @@
           "value": 60
         }
       },
-      "rarityWeight": 25,
+      "rarityWeight": 25
     },
     {
       "slug": "electrum",
@@ -172,7 +172,7 @@
           "value": 90
         }
       },
-      "rarityWeight": 18,
+      "rarityWeight": 18
     },
     {
       "slug": "cold-iron",
@@ -205,7 +205,7 @@
           "value": 55
         }
       },
-      "rarityWeight": 22,
+      "rarityWeight": 22
     },
     {
       "slug": "obsidian",
@@ -239,7 +239,7 @@
           "value": 30
         }
       },
-      "rarityWeight": 20,
+      "rarityWeight": 20
     },
     {
       "slug": "mithril",
@@ -274,7 +274,7 @@
           "value": 150
         }
       },
-      "rarityWeight": 10,
+      "rarityWeight": 10
     },
     {
       "slug": "darksteel",
@@ -310,7 +310,7 @@
           "value": 140
         }
       },
-      "rarityWeight": 12,
+      "rarityWeight": 12
     },
     {
       "slug": "adamantine",
@@ -346,7 +346,7 @@
           "value": 200
         }
       },
-      "rarityWeight": 5,
+      "rarityWeight": 5
     },
     {
       "slug": "dragon-steel",
@@ -381,7 +381,7 @@
           "value": 350
         }
       },
-      "rarityWeight": 3,
+      "rarityWeight": 3
     },
     {
       "slug": "godforged",
@@ -425,7 +425,7 @@
           "value": 1500
         }
       },
-      "rarityWeight": 1,
+      "rarityWeight": 1
     },
     {
       "slug": "dragonbone",
@@ -461,7 +461,7 @@
           "value": 450
         }
       },
-      "rarityWeight": 2,
+      "rarityWeight": 2
     },
     {
       "slug": "celestial-ore",
@@ -500,7 +500,7 @@
           "value": 600
         }
       },
-      "rarityWeight": 1,
+      "rarityWeight": 1
     },
     {
       "slug": "crystal",
@@ -540,7 +540,7 @@
           "value": 100
         }
       },
-      "rarityWeight": 8,
+      "rarityWeight": 8
     },
     {
       "slug": "void-crystal",
@@ -585,7 +585,7 @@
           "value": 300
         }
       },
-      "rarityWeight": 2,
+      "rarityWeight": 2
     }
       ]
     }

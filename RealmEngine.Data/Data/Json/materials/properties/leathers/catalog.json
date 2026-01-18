@@ -38,7 +38,7 @@
           "value": 5
         }
       },
-      "rarityWeight": 60,
+      "rarityWeight": 60
     },
     {
       "slug": "leather",
@@ -65,7 +65,7 @@
           "value": 10
         }
       },
-      "rarityWeight": 50,
+      "rarityWeight": 50
     },
     {
       "slug": "studded-leather",
@@ -93,7 +93,7 @@
           "value": 25
         }
       },
-      "rarityWeight": 35,
+      "rarityWeight": 35
     },
     {
       "slug": "hardened-leather",
@@ -120,7 +120,7 @@
           "value": 40
         }
       },
-      "rarityWeight": 28,
+      "rarityWeight": 28
     },
     {
       "slug": "drake-leather",
@@ -148,7 +148,7 @@
           "value": 120
         }
       },
-      "rarityWeight": 12,
+      "rarityWeight": 12
     },
     {
       "slug": "wyvern-leather",
@@ -176,7 +176,7 @@
           "value": 150
         }
       },
-      "rarityWeight": 10,
+      "rarityWeight": 10
     },
     {
       "slug": "shadow-leather",
@@ -204,7 +204,7 @@
           "value": 200
         }
       },
-      "rarityWeight": 8,
+      "rarityWeight": 8
     },
     {
       "slug": "chimera-hide",
@@ -233,7 +233,7 @@
           "value": 250
         }
       },
-      "rarityWeight": 6,
+      "rarityWeight": 6
     },
     {
       "slug": "dragon-leather",
@@ -263,7 +263,7 @@
           "value": 400
         }
       },
-      "rarityWeight": 3,
+      "rarityWeight": 3
     }
       ]
     }

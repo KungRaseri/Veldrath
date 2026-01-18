@@ -5,7 +5,7 @@
     "lastUpdated": "2026-01-10",
     "type": "items_materials_catalog"
   },
-  "material_types":{
+  "material_types": {
     "organic": {
       "items": [
         {
@@ -122,7 +122,6 @@
           ]
         }
       ]
-    
     }
   }
 }

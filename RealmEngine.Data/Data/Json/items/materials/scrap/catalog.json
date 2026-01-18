@@ -5,7 +5,7 @@
     "lastUpdated": "2026-01-10",
     "type": "items_materials_catalog"
   },
-  "material_types":{
+  "material_types": {
     "scrap": {
       "items": [
         {
@@ -19,7 +19,12 @@
           "itemType": "material",
           "subType": "scrap",
           "traits": {},
-          "tags": ["scrap", "metal", "salvage", "refinement"]
+          "tags": [
+            "scrap",
+            "metal",
+            "salvage",
+            "refinement"
+          ]
         },
         {
           "slug": "scrap-wood",
@@ -32,7 +37,12 @@
           "itemType": "material",
           "subType": "scrap",
           "traits": {},
-          "tags": ["scrap", "wood", "salvage", "refinement"]
+          "tags": [
+            "scrap",
+            "wood",
+            "salvage",
+            "refinement"
+          ]
         },
         {
           "slug": "scrap-leather",
@@ -45,7 +55,12 @@
           "itemType": "material",
           "subType": "scrap",
           "traits": {},
-          "tags": ["scrap", "leather", "salvage", "refinement"]
+          "tags": [
+            "scrap",
+            "leather",
+            "salvage",
+            "refinement"
+          ]
         },
         {
           "slug": "gemstone-fragments",
@@ -58,7 +73,13 @@
           "itemType": "material",
           "subType": "scrap",
           "traits": {},
-          "tags": ["scrap", "gemstone", "salvage", "refinement", "rare"]
+          "tags": [
+            "scrap",
+            "gemstone",
+            "salvage",
+            "refinement",
+            "rare"
+          ]
         },
         {
           "slug": "scrap-cloth",
@@ -71,10 +92,14 @@
           "itemType": "material",
           "subType": "scrap",
           "traits": {},
-          "tags": ["scrap", "cloth", "salvage", "refinement"]
+          "tags": [
+            "scrap",
+            "cloth",
+            "salvage",
+            "refinement"
+          ]
         }
       ]
-    
     }
   }
 }

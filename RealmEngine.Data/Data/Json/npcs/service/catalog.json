@@ -93,7 +93,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "independent",
-          "schedule": "@social/schedules/*:innkeeper",
+          "schedule": "@social/schedules/*:innkeeper"
         },
         {
           "slug": "tavernkeeper",
@@ -157,7 +157,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "independent",
-          "schedule": "@social/schedules/*:innkeeper",
+          "schedule": "@social/schedules/*:innkeeper"
         }
       ]
     },
@@ -231,7 +231,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "independent",
-          "schedule": "@social/schedules/*:cook",
+          "schedule": "@social/schedules/*:cook"
         }
       ]
     },
@@ -308,7 +308,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "independent",
-          "schedule": "@social/schedules/*:stablemaster",
+          "schedule": "@social/schedules/*:stablemaster"
         }
       ]
     }

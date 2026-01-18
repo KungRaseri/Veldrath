@@ -56,7 +56,7 @@
             "tools.farming"
           ],
           "uniqueItems": [],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         },
         {
           "slug": "laborer",
@@ -88,7 +88,7 @@
             "consumables.food"
           ],
           "uniqueItems": [],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         }
       ]
     },
@@ -140,7 +140,7 @@
             "Lucky Coin",
             "Worn Doll"
           ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         },
         {
           "slug": "refugee",
@@ -176,7 +176,7 @@
             "Tattered Map",
             "Foreign Keepsake"
           ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         },
         {
           "slug": "exile",
@@ -212,7 +212,7 @@
             "Exile's Brand",
             "Homeland Memento"
           ],
-          "dialogueStyle": "@social/dialogue/styles/gruff:mysterious",
+          "dialogueStyle": "@social/dialogue/styles/gruff:mysterious"
         },
         {
           "slug": "formerslave",
@@ -248,7 +248,7 @@
             "Broken Shackles",
             "Freedom Papers"
           ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         },
         {
           "slug": "formergladiator",
@@ -286,7 +286,7 @@
             "Arena Champion's Crown",
             "Freedom Token"
           ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
+          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
         }
       ]
     }
@@ -332,7 +332,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "peasant",
@@ -362,7 +362,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "beggar",
@@ -392,7 +392,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         },
         {
           "slug": "streeturchin",
@@ -423,7 +423,7 @@
           ],
           "farewells": [
             "@social/dialogue/farewells/simple:simple"
-          ],
+          ]
         }
       ]
     }

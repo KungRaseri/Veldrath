@@ -21,8 +21,8 @@
         "displayName": "Common",
         "color": "gray",
         "hexColor": "#808080",
-        "dropRate": 0.60,
-        "spawnRate": 0.60,
+        "dropRate": 0.6,
+        "spawnRate": 0.6,
         "statMultiplier": 1.0,
         "description": "Basic tier - standard items, weak enemies, common encounters"
       },
@@ -43,8 +43,8 @@
         "displayName": "Rare",
         "color": "blue",
         "hexColor": "#0080FF",
-        "dropRate": 0.10,
-        "spawnRate": 0.10,
+        "dropRate": 0.1,
+        "spawnRate": 0.1,
         "statMultiplier": 1.7,
         "description": "Superior tier - exceptional items, elite enemies, uncommon encounters"
       },

@@ -22,7 +22,7 @@
             "Farewell, {player_name}. May fortune favor your endeavors.",
             "Until we meet again. Safe travels.",
             "Our doors remain open to you, always."
-          ],
+          ]
         }
       ]
     }
@@ -39,7 +39,7 @@
             "May knowledge light your path, {player_name}.",
             "Farewell, and may your studies prove fruitful.",
             "Until next time. Keep questioning, always."
-          ],
+          ]
         }
       ]
     }
@@ -57,7 +57,7 @@
             "Come back anytime!",
             "Thank you for your patronage!",
             "Good doing business with you!"
-          ],
+          ]
         }
       ]
     }
@@ -77,7 +77,7 @@
             "Goodbye!",
             "See you around!",
             "Safe travels!"
-          ],
+          ]
         }
       ]
     }

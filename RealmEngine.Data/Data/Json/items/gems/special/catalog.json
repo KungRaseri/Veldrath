@@ -40,7 +40,12 @@
               "type": "number"
             }
           },
-          "tags": ["gem", "legendary", "alchemy", "mythical"]
+          "tags": [
+            "gem",
+            "legendary",
+            "alchemy",
+            "mythical"
+          ]
         },
         {
           "slug": "star-of-destiny",
@@ -70,7 +75,12 @@
               "type": "percentage"
             }
           },
-          "tags": ["gem", "legendary", "divination", "cosmic"]
+          "tags": [
+            "gem",
+            "legendary",
+            "divination",
+            "cosmic"
+          ]
         }
       ]
     }

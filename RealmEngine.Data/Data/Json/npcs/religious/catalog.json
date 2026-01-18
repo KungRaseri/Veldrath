@@ -67,7 +67,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "clergy",
-          "schedule": "@social/schedules/*:priest",
+          "schedule": "@social/schedules/*:priest"
         }
       ]
     }
@@ -117,7 +117,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "clergy",
-          "schedule": "@social/schedules/*:priest",
+          "schedule": "@social/schedules/*:priest"
         }
       ]
     }

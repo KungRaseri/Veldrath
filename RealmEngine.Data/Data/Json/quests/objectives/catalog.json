@@ -18,7 +18,7 @@
             "max": 10
           },
           "description": "Slay goblins threatening the region",
-          "locationHint": "goblin-camps",
+          "locationHint": "goblin-camps"
         },
         {
           "slug": "wolf-hunt",
@@ -30,7 +30,7 @@
             "max": 8
           },
           "description": "Hunt wolves attacking travelers",
-          "locationHint": "forests",
+          "locationHint": "forests"
         },
         {
           "slug": "bandit-elimination",
@@ -42,7 +42,7 @@
             "max": 12
           },
           "description": "Clear out bandit groups",
-          "locationHint": "roads",
+          "locationHint": "roads"
         },
         {
           "slug": "undead-purge",
@@ -54,7 +54,7 @@
             "max": 15
           },
           "description": "Cleanse undead from sacred grounds",
-          "locationHint": "graveyards",
+          "locationHint": "graveyards"
         },
         {
           "slug": "dragon-slaying",
@@ -66,7 +66,7 @@
             "max": 1
           },
           "description": "Slay the legendary dragon",
-          "locationHint": "dragon-lair",
+          "locationHint": "dragon-lair"
         }
       ],
       "fetch_objectives": [
@@ -126,7 +126,7 @@
           "destination": "town",
           "distance": "medium",
           "description": "Escort merchant safely to destination",
-          "dangerLevel": "moderate",
+          "dangerLevel": "moderate"
         },
         {
           "slug": "noble-protection",
@@ -136,7 +136,7 @@
           "destination": "castle",
           "distance": "long",
           "description": "Protect noble during travel",
-          "dangerLevel": "high",
+          "dangerLevel": "high"
         },
         {
           "slug": "refugee-guidance",
@@ -146,7 +146,7 @@
           "destination": "safe-haven",
           "distance": "short",
           "description": "Guide refugees to safety",
-          "dangerLevel": "low",
+          "dangerLevel": "low"
         }
       ],
       "investigate_objectives": [

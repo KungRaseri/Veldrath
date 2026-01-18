@@ -20,7 +20,7 @@
             "I couldn't agree more.",
             "Precisely what I was thinking.",
             "You've got the right idea."
-          ],
+          ]
         },
         {
           "slug": "acceptance",
@@ -34,7 +34,7 @@
             "I accept your offer.",
             "You have my agreement.",
             "I'll see to it personally."
-          ],
+          ]
         }
       ]
     }
@@ -54,7 +54,7 @@
             "I cannot agree to that.",
             "My answer is no.",
             "I'm sorry, but I must refuse."
-          ],
+          ]
         },
         {
           "slug": "disagreement",
@@ -68,7 +68,7 @@
             "That's not how I understand it.",
             "I beg to differ.",
             "I can't support that view."
-          ],
+          ]
         }
       ]
     }
@@ -88,7 +88,7 @@
             "Could you elaborate?",
             "I'm curious to hear more.",
             "Interesting. Go on."
-          ],
+          ]
         },
         {
           "slug": "clarification",
@@ -102,7 +102,7 @@
             "Let me make sure I understand...",
             "Could you be more specific?",
             "I need more details."
-          ],
+          ]
         }
       ]
     }
@@ -122,7 +122,7 @@
             "You have my thanks.",
             "I'm indebted to you.",
             "I cannot thank you enough."
-          ],
+          ]
         },
         {
           "slug": "concern",
@@ -136,7 +136,7 @@
             "I fear things may go poorly.",
             "Something doesn't feel right.",
             "I have a bad feeling about this."
-          ],
+          ]
         },
         {
           "slug": "anger",
@@ -150,7 +150,7 @@
             "I won't tolerate this!",
             "You've gone too far!",
             "This is an outrage!"
-          ],
+          ]
         },
         {
           "slug": "joy",
@@ -164,7 +164,7 @@
             "This brings me joy!",
             "How marvelous!",
             "That's fantastic!"
-          ],
+          ]
         },
         {
           "slug": "sadness",
@@ -178,7 +178,7 @@
             "I'm deeply saddened.",
             "Such terrible news.",
             "This pains me greatly."
-          ],
+          ]
         }
       ]
     }
@@ -198,7 +198,7 @@
             "Here's what you should know:",
             "Allow me to share what I've learned.",
             "I have information that might help."
-          ],
+          ]
         },
         {
           "slug": "rumor",
@@ -212,7 +212,7 @@
             "They say...",
             "Rumor has it...",
             "Between you and me..."
-          ],
+          ]
         },
         {
           "slug": "warning",
@@ -226,7 +226,7 @@
             "I must warn you...",
             "There's danger ahead.",
             "You'd best be on your guard."
-          ],
+          ]
         }
       ]
     }
@@ -246,7 +246,7 @@
             "I could do {price}, but that's my final offer.",
             "You drive a hard bargain. {price} and we have a deal.",
             "I'll meet you halfway at {price}."
-          ],
+          ]
         },
         {
           "slug": "deal-made",
@@ -260,7 +260,7 @@
             "Pleasure doing business with you.",
             "We have an agreement.",
             "It's yours!"
-          ],
+          ]
         },
         {
           "slug": "no-deal",
@@ -274,7 +274,7 @@
             "That's not enough for me.",
             "You'll have to do better than that.",
             "I'm afraid we can't do business."
-          ],
+          ]
         }
       ]
     }

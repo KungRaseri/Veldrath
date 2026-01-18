@@ -71,7 +71,7 @@
             "@social/dialogue/farewells/noble:noble"
           ],
           "faction": "nobility",
-          "schedule": "@social/schedules/*:noble",
+          "schedule": "@social/schedules/*:noble"
         },
         {
           "slug": "knighterrant",
@@ -118,7 +118,7 @@
             "@social/dialogue/farewells/noble:noble"
           ],
           "faction": "nobility",
-          "schedule": "@social/schedules/*:noble",
+          "schedule": "@social/schedules/*:noble"
         },
         {
           "slug": "courtattendant",
@@ -164,7 +164,7 @@
             "@social/dialogue/farewells/noble:noble"
           ],
           "faction": "nobility",
-          "schedule": "@social/schedules/*:noble",
+          "schedule": "@social/schedules/*:noble"
         }
       ]
     }
@@ -209,7 +209,7 @@
             "@social/dialogue/farewells/noble:noble"
           ],
           "faction": "nobility",
-          "schedule": "@social/schedules/*:noble",
+          "schedule": "@social/schedules/*:noble"
         }
       ]
     }

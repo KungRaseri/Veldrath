@@ -42,7 +42,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "retaliation",
@@ -72,7 +72,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "reactive-berserker-rage",
@@ -110,7 +110,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "death-throes",
@@ -144,7 +144,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "opportunity-strike",
@@ -174,7 +174,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "punishing-blow",
@@ -208,7 +208,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "reactive-bloodlust",
@@ -242,7 +242,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "reactive-frenzy",
@@ -272,7 +272,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "execution",
@@ -302,7 +302,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "predators-instinct",
@@ -332,7 +332,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "chain-lightning",
@@ -370,7 +370,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "reactive-life-drain",
@@ -396,7 +396,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "mana-burn",
@@ -426,7 +426,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "fury-of-the-fallen",
@@ -464,7 +464,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         }
       ]
     },
@@ -495,7 +495,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 10,
+          "rarityWeight": 10
         },
         {
           "slug": "counter-shield",
@@ -525,7 +525,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "adaptive-armor",
@@ -555,7 +555,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "reactive-second-wind",
@@ -589,7 +589,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "reactive-last-stand",
@@ -623,7 +623,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "evasive-maneuver",
@@ -653,7 +653,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "iron-will",
@@ -683,7 +683,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 250,
+          "rarityWeight": 250
         },
         {
           "slug": "reactive-barrier",
@@ -717,7 +717,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "defensive-stance",
@@ -751,7 +751,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "reactive-parry",
@@ -777,7 +777,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "spell-reflection",
@@ -807,7 +807,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "reactive-revenge",
@@ -841,7 +841,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         }
       ]
     },
@@ -880,7 +880,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "crowd-control-immunity",
@@ -910,7 +910,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "summon-aid",
@@ -948,7 +948,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         },
         {
           "slug": "cleanse",
@@ -974,7 +974,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "adrenaline-rush",
@@ -1008,7 +1008,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "smoke-bomb",
@@ -1042,7 +1042,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "phoenix-rebirth",
@@ -1072,7 +1072,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 500,
+          "rarityWeight": 500
         },
         {
           "slug": "blink",
@@ -1098,7 +1098,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 75,
+          "rarityWeight": 75
         },
         {
           "slug": "reactive-battle-cry",
@@ -1136,7 +1136,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 35,
+          "rarityWeight": 35
         },
         {
           "slug": "last-laugh",
@@ -1166,7 +1166,7 @@
               "type": "string"
             }
           },
-          "rarityWeight": 150,
+          "rarityWeight": 150
         }
       ]
     }

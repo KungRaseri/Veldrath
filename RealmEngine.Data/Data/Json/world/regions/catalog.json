@@ -50,7 +50,7 @@
             "enemies": [
               "Shadow_Empire"
             ]
-          },
+          }
         },
         {
           "slug": "frostheim",
@@ -90,7 +90,7 @@
               "Elven_Reaches"
             ],
             "enemies": []
-          },
+          }
         },
         {
           "slug": "shadow-empire",
@@ -126,7 +126,7 @@
               "Sanctuary_Theocracy",
               "Elven_Reaches"
             ]
-          },
+          }
         }
       ]
     }
@@ -172,7 +172,7 @@
             "enemies": [
               "Shadow_Empire"
             ]
-          },
+          }
         },
         {
           "slug": "desert-emirates",
@@ -209,7 +209,7 @@
               "Elven_Reaches"
             ],
             "enemies": []
-          },
+          }
         },
         {
           "slug": "sanctuary-theocracy",
@@ -245,7 +245,7 @@
             "enemies": [
               "Shadow_Empire"
             ]
-          },
+          }
         },
         {
           "slug": "mage-dominion",
@@ -282,7 +282,7 @@
               "Elven_Reaches"
             ],
             "enemies": []
-          },
+          }
         }
       ]
     }
@@ -324,7 +324,7 @@
               "Goldenvale",
               "Desert_Emirates"
             ]
-          },
+          }
         },
         {
           "slug": "frontier-outposts",
@@ -360,7 +360,7 @@
               "Frostheim"
             ],
             "enemies": []
-          },
+          }
         },
         {
           "slug": "contested-lands",
@@ -393,7 +393,7 @@
             "allies": [],
             "neutral": [],
             "enemies": []
-          },
+          }
         }
       ]
     }

@@ -75,7 +75,7 @@
           ],
           "allies": [
             "merchants_guild"
-          ],
+          ]
         }
       ]
     }
@@ -148,7 +148,7 @@
           "rivals": [],
           "allies": [
             "scholars_guild"
-          ],
+          ]
         }
       ]
     }
@@ -224,7 +224,7 @@
           "allies": [
             "fighters_guild",
             "craftsmen_guild"
-          ],
+          ]
         }
       ]
     }
@@ -297,7 +297,7 @@
           "rivals": [],
           "allies": [
             "merchants_guild"
-          ],
+          ]
         }
       ]
     }
@@ -373,7 +373,7 @@
             "fighters_guild",
             "merchants_guild"
           ],
-          "allies": [],
+          "allies": []
         },
         {
           "slug": "assassins-guild",
@@ -443,7 +443,7 @@
             "fighters_guild",
             "clergy"
           ],
-          "allies": [],
+          "allies": []
         }
       ]
     }

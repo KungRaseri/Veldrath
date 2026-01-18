@@ -67,7 +67,7 @@
             "@social/dialogue/farewells/scholarly:scholarly"
           ],
           "faction": "mages_circle",
-          "schedule": "@social/schedules/*:mage",
+          "schedule": "@social/schedules/*:mage"
         },
         {
           "slug": "hedgewizard",
@@ -113,7 +113,7 @@
             "@social/dialogue/farewells/simple:simple"
           ],
           "faction": "independent",
-          "schedule": "@social/schedules/*:mage",
+          "schedule": "@social/schedules/*:mage"
         }
       ]
     }

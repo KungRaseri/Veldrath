@@ -20,7 +20,11 @@
           "subType": "wood",
           "tier": "refined",
           "traits": {},
-          "tags": ["wood", "crafting", "refined"]
+          "tags": [
+            "wood",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "oak-handle",
@@ -34,7 +38,12 @@
           "subType": "wood",
           "tier": "component",
           "traits": {},
-          "tags": ["wood", "crafting", "weapon-component", "handle"]
+          "tags": [
+            "wood",
+            "crafting",
+            "weapon-component",
+            "handle"
+          ]
         },
         {
           "slug": "ash-handle",
@@ -48,7 +57,12 @@
           "subType": "wood",
           "tier": "component",
           "traits": {},
-          "tags": ["wood", "crafting", "weapon-component", "handle"]
+          "tags": [
+            "wood",
+            "crafting",
+            "weapon-component",
+            "handle"
+          ]
         }
       ]
     }

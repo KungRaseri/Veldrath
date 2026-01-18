@@ -71,7 +71,7 @@
             "towns"
           ],
           "required_population": 200,
-          "npc_count": "2-4",
+          "npc_count": "2-4"
         },
         {
           "slug": "inn-quality",
@@ -146,7 +146,7 @@
             "cities"
           ],
           "required_population": 1000,
-          "npc_count": "5-8",
+          "npc_count": "5-8"
         },
         {
           "slug": "inn-luxury",
@@ -223,7 +223,7 @@
             "cities"
           ],
           "required_population": 10000,
-          "npc_count": "15-25",
+          "npc_count": "15-25"
         }
       ]
     }
@@ -298,7 +298,7 @@
           ],
           "required_population": 300,
           "npc_count": "10-20",
-          "quest_board": true,
+          "quest_board": true
         },
         {
           "slug": "tavern-respectable",
@@ -367,7 +367,7 @@
           ],
           "required_population": 800,
           "npc_count": "15-30",
-          "quest_board": true,
+          "quest_board": true
         },
         {
           "slug": "restaurant-fine",
@@ -434,7 +434,7 @@
           ],
           "required_population": 5000,
           "npc_count": "8-15",
-          "reservations_required": true,
+          "reservations_required": true
         }
       ]
     }
@@ -518,7 +518,7 @@
             "cities",
             "crossroads"
           ],
-          "required_population": 500,
+          "required_population": 500
         },
         {
           "slug": "temple",
@@ -594,7 +594,7 @@
             "cities"
           ],
           "required_population": 1000,
-          "faction": "@organizations/factions/religious:clergy",
+          "faction": "@organizations/factions/religious:clergy"
         },
         {
           "slug": "bank",
@@ -665,7 +665,7 @@
             "cities"
           ],
           "required_population": 5000,
-          "faction": "@organizations/factions/trade:merchants_guild",
+          "faction": "@organizations/factions/trade:merchants_guild"
         }
       ]
     }
@@ -722,7 +722,7 @@
           "location_types": [
             "cities"
           ],
-          "required_population": 8000,
+          "required_population": 8000
         },
         {
           "slug": "arena",
@@ -783,7 +783,7 @@
             "cities"
           ],
           "required_population": 10000,
-          "faction": "@organizations/factions/military:fighters_guild",
+          "faction": "@organizations/factions/military:fighters_guild"
         },
         {
           "slug": "gambling-hall",
@@ -841,7 +841,7 @@
           ],
           "required_population": 5000,
           "faction": "@organizations/factions/criminal:thieves_guild",
-          "reputation_required": -10,
+          "reputation_required": -10
         }
       ]
     }
