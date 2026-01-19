@@ -38,7 +38,8 @@
           "traits": {},
           "effect": "heal",
           "power": 25,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Elixir",
@@ -57,7 +58,8 @@
           "traits": {},
           "effect": "heal",
           "power": 50,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Tonic",
@@ -76,7 +78,8 @@
           "traits": {},
           "effect": "buff",
           "power": 10,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Greater Potion",
@@ -95,7 +98,8 @@
           "traits": {},
           "effect": "heal",
           "power": 100,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Superior Elixir",
@@ -114,7 +118,8 @@
           "traits": {},
           "effect": "heal",
           "power": 150,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Health Potion",
@@ -126,7 +131,8 @@
           "traits": {},
           "effect": "heal",
           "power": 40,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Mana Potion",
@@ -138,7 +144,8 @@
           "traits": {},
           "effect": "restore",
           "power": 40,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Greater Mana Potion",
@@ -150,7 +157,8 @@
           "traits": {},
           "effect": "restore",
           "power": 100,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Stamina Potion",
@@ -162,7 +170,8 @@
           "traits": {},
           "effect": "buff",
           "power": 50,
-          "duration": 180
+          "duration": 180,
+          "stackSize": 99
         }
       ]
     },
@@ -189,7 +198,8 @@
           "traits": {},
           "effect": "healthRegeneration",
           "power": 50,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Elixir of Strength",
@@ -201,7 +211,8 @@
           "traits": {},
           "effect": "stat_boost",
           "power": 3,
-          "duration": 600
+          "duration": 600,
+          "stackSize": 99
         },
         {
           "name": "Quenching Oil",
@@ -213,7 +224,8 @@
           "traits": {},
           "effect": "buff",
           "power": 10,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         }
       ]
     },
@@ -240,7 +252,8 @@
           "traits": {},
           "effect": "heal_overtime",
           "power": 20,
-          "duration": 180
+          "duration": 180,
+          "stackSize": 99
         },
         {
           "name": "Ointment",
@@ -259,7 +272,8 @@
           "traits": {},
           "effect": "heal_overtime",
           "power": 30,
-          "duration": 240
+          "duration": 240,
+          "stackSize": 99
         },
         {
           "name": "Balm",
@@ -278,7 +292,8 @@
           "traits": {},
           "effect": "heal_overtime",
           "power": 40,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Unguent",
@@ -297,7 +312,8 @@
           "traits": {},
           "effect": "cure_poison",
           "power": 50,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         }
       ]
     },
@@ -324,7 +340,8 @@
           "traits": {},
           "effect": "restore_mana",
           "power": 30,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Extract",
@@ -343,7 +360,8 @@
           "traits": {},
           "effect": "restore_mana",
           "power": 50,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Distillation",
@@ -362,7 +380,8 @@
           "traits": {},
           "effect": "restore_mana",
           "power": 75,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Infusion",
@@ -381,7 +400,8 @@
           "traits": {},
           "effect": "magic_buff",
           "power": 25,
-          "duration": 600
+          "duration": 600,
+          "stackSize": 99
         },
         {
           "name": "Tincture",
@@ -400,7 +420,8 @@
           "traits": {},
           "effect": "mixed",
           "power": 40,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         }
       ]
     },
@@ -427,7 +448,8 @@
           "traits": {},
           "effect": "increase_defense",
           "power": 15,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Strengthener",
@@ -446,7 +468,8 @@
           "traits": {},
           "effect": "increase_attack",
           "power": 15,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Enhancer",
@@ -465,7 +488,8 @@
           "traits": {},
           "effect": "increase_all",
           "power": 10,
-          "duration": 240
+          "duration": 240,
+          "stackSize": 99
         },
         {
           "name": "Booster",
@@ -484,7 +508,8 @@
           "traits": {},
           "effect": "increase_speed",
           "power": 20,
-          "duration": 180
+          "duration": 180,
+          "stackSize": 99
         },
         {
           "name": "Amplifier",
@@ -503,7 +528,8 @@
           "traits": {},
           "effect": "increase_damage",
           "power": 25,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Stimulant",
@@ -522,7 +548,8 @@
           "traits": {},
           "effect": "increase_stamina",
           "power": 30,
-          "duration": 300
+          "duration": 300,
+          "stackSize": 99
         },
         {
           "name": "Energizer",
@@ -541,7 +568,8 @@
           "traits": {},
           "effect": "restore_stamina",
           "power": 50,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Invigorator",
@@ -560,7 +588,8 @@
           "traits": {},
           "effect": "restore_energy",
           "power": 40,
-          "duration": 120
+          "duration": 120,
+          "stackSize": 99
         }
       ]
     },
@@ -587,7 +616,8 @@
           "traits": {},
           "effect": "cure_poison",
           "power": 100,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Remedy",
@@ -606,7 +636,8 @@
           "traits": {},
           "effect": "cure_disease",
           "power": 100,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Restorative",
@@ -625,7 +656,8 @@
           "traits": {},
           "effect": "restore_all",
           "power": 50,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Rejuvenator",
@@ -644,7 +676,8 @@
           "traits": {},
           "effect": "restore_all",
           "power": 75,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Refresher",
@@ -663,7 +696,8 @@
           "traits": {},
           "effect": "remove_debuff",
           "power": 100,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Revitalizer",
@@ -682,7 +716,8 @@
           "traits": {},
           "effect": "revive",
           "power": 50,
-          "duration": 0
+          "duration": 0,
+          "stackSize": 99
         },
         {
           "name": "Nectar",
@@ -701,7 +736,8 @@
           "traits": {},
           "effect": "restore_all_overtime",
           "power": 100,
-          "duration": 600
+          "duration": 600,
+          "stackSize": 99
         }
       ]
     }

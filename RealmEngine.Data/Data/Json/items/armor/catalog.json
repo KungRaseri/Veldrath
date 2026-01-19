@@ -32,20 +32,31 @@
           "description": "A chainmail hood that protects the head and neck without restricting vision or movement.",
           "value": 12,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
-          "rarityWeight": 22
+          "rarityWeight": 22,
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Cowl",
@@ -53,20 +64,31 @@
           "description": "A hooded garment favored by rogues and scouts, offering subtle protection while maintaining stealth.",
           "value": 8,
           "weight": 0.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
-          "rarityWeight": 24
+          "rarityWeight": 24,
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Hood",
@@ -74,356 +96,559 @@
           "description": "A simple cloth hood that provides minimal protection but excellent concealment in shadows.",
           "value": 5,
           "weight": 0.3,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
-          "rarityWeight": 25
+          "rarityWeight": 25,
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Crown",
           "slug": "crown",
           "value": 100,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 1,
-          "description": "An ornamental headpiece symbolizing authority and status, offering minimal protection."
+          "description": "An ornamental headpiece symbolizing authority and status, offering minimal protection.",
+          "requirements": {
+            "level": 20,
+            "attributes": {
+              "constitution": 24
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 15
+            }
+          }
         },
         {
           "name": "Circlet",
           "slug": "circlet",
           "value": 80,
           "weight": 0.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 2,
-          "description": "A simple metal band worn around the forehead, more decorative than protective."
+          "description": "A simple metal band worn around the forehead, more decorative than protective.",
+          "requirements": {
+            "level": 20,
+            "attributes": {
+              "constitution": 24
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 15
+            }
+          }
         },
         {
           "name": "Vest",
           "slug": "vest",
           "value": 15,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 24,
-          "description": "A lightweight sleeveless garment offering basic torso protection without restricting movement."
+          "description": "A lightweight sleeveless garment offering basic torso protection without restricting movement.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Jerkin",
           "slug": "jerkin",
           "value": 20,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 22,
-          "description": "A close-fitting jacket made of leather or thick fabric, favored for its comfort and flexibility."
+          "description": "A close-fitting jacket made of leather or thick fabric, favored for its comfort and flexibility.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Gloves",
           "slug": "gloves",
           "value": 8,
           "weight": 0.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 24,
-          "description": "Simple handwear providing grip and basic protection from the elements."
+          "description": "Simple handwear providing grip and basic protection from the elements.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Bracers",
           "slug": "bracers",
           "value": 10,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 22,
-          "description": "Leather arm guards protecting the forearms from slashes and arrows."
+          "description": "Leather arm guards protecting the forearms from slashes and arrows.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Mittens",
           "slug": "mittens",
           "value": 5,
           "weight": 0.3,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 25,
-          "description": "Padded handwear offering warmth and minimal protection, limiting finger dexterity."
+          "description": "Padded handwear offering warmth and minimal protection, limiting finger dexterity.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Tassets",
           "slug": "tassets",
           "value": 15,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 18,
-          "description": "Articulated plates protecting the upper thighs and groin area."
+          "description": "Articulated plates protecting the upper thighs and groin area.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Shoes",
           "slug": "shoes",
           "value": 5,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 25,
-          "description": "Basic footwear offering protection from rough terrain with minimal weight."
+          "description": "Basic footwear offering protection from rough terrain with minimal weight.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Sandals",
           "slug": "sandals",
           "value": 3,
           "weight": 0.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 25,
-          "description": "Open footwear providing ventilation in hot climates at the cost of protection."
+          "description": "Open footwear providing ventilation in hot climates at the cost of protection.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Mantle",
           "slug": "mantle",
           "value": 10,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 1"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "armorClass": "light",
           "rarityWeight": 22,
-          "description": "A decorative cloak that provides minimal protection while displaying status."
+          "description": "A decorative cloak that provides minimal protection while displaying status.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Shield",
           "slug": "shield",
           "value": 25,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "blockChance": {
+              "value": 20.0,
+              "type": "number"
+            },
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "blockChance": 15,
           "rarityWeight": 15,
-          "description": "A defensive tool held in hand to block attacks and protect the body."
+          "description": "A defensive tool held in hand to block attacks and protect the body.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Buckler",
           "slug": "buckler",
           "value": 15,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "blockChance": {
+              "value": 20.0,
+              "type": "number"
+            },
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "blockChance": 10,
           "rarityWeight": 18,
-          "description": "A small round shield held in the fist, used for parrying rather than full coverage."
+          "description": "A small round shield held in the fist, used for parrying rather than full coverage.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Tower Shield",
           "slug": "tower-shield",
           "value": 60,
           "weight": 15.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 5"
           },
-          "traits": {},
+          "traits": {
+            "blockChance": {
+              "value": 20.0,
+              "type": "number"
+            },
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "blockChance": 25,
           "rarityWeight": 8,
-          "description": "A massive rectangular shield offering near-total body coverage."
+          "description": "A massive rectangular shield offering near-total body coverage.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Kite Shield",
           "slug": "kite-shield",
           "value": 35,
           "weight": 8.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 4"
           },
-          "traits": {},
+          "traits": {
+            "blockChance": {
+              "value": 20.0,
+              "type": "number"
+            },
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "blockChance": 18,
           "rarityWeight": 12,
-          "description": "A large teardrop-shaped shield providing excellent coverage, especially for cavalry."
+          "description": "A large teardrop-shaped shield providing excellent coverage, especially for cavalry.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Heater",
           "slug": "heater",
           "value": 20,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
           "blockChance": 12,
           "rarityWeight": 16,
-          "description": "A compact triangular shield offering good protection without excessive weight."
+          "description": "A compact triangular shield offering good protection without excessive weight.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 5
+            }
+          }
         }
       ]
     },
@@ -441,252 +666,384 @@
           "slug": "sallet",
           "value": 25,
           "weight": 2.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 12,
-          "description": "A streamlined helmet with a tail protecting the neck, offering good visibility."
+          "description": "A streamlined helmet with a tail protecting the neck, offering good visibility.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Hauberk",
           "slug": "hauberk",
           "value": 60,
           "weight": 20.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 6"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 12,
-          "description": "A long shirt of chainmail extending to the knees, providing extensive coverage."
+          "description": "A long shirt of chainmail extending to the knees, providing extensive coverage.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Chainmail",
           "slug": "chainmail",
           "value": 50,
           "weight": 18.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 5"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 15,
-          "description": "Full body coverage of interlocking metal rings, heavy but protective."
+          "description": "Full body coverage of interlocking metal rings, heavy but protective.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Scale Mail",
           "slug": "scale-mail",
           "value": 45,
           "weight": 15.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 5"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 13,
-          "description": "Overlapping scales attached to a backing, providing flexible protection."
+          "description": "Overlapping scales attached to a backing, providing flexible protection.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Ring Mail",
           "slug": "ring-mail",
           "value": 35,
           "weight": 12.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 4"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 16,
-          "description": "Metal rings sewn onto leather, offering better defense than plain hide."
+          "description": "Metal rings sewn onto leather, offering better defense than plain hide.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Banded Mail",
           "slug": "banded-mail",
           "value": 55,
           "weight": 16.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 6"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 12,
-          "description": "Horizontal metal bands fastened to leather and chainmail backing."
+          "description": "Horizontal metal bands fastened to leather and chainmail backing.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Vambraces",
           "slug": "vambraces",
           "value": 12,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 18,
-          "description": "Forearm guards made of metal plates, protecting from wrist to elbow."
+          "description": "Forearm guards made of metal plates, protecting from wrist to elbow.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Leggings",
           "slug": "leggings",
           "value": 20,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 16,
-          "description": "Fitted leg armor providing protection while allowing freedom of movement."
+          "description": "Fitted leg armor providing protection while allowing freedom of movement.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Chausses",
           "slug": "chausses",
           "value": 25,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 15,
-          "description": "Chainmail leg armor covering from waist to foot, offering flexible protection."
+          "description": "Chainmail leg armor covering from waist to foot, offering flexible protection.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Boots",
           "slug": "boots",
           "value": 12,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 18,
-          "description": "Sturdy footwear reinforced for combat, balancing protection and mobility."
+          "description": "Sturdy footwear reinforced for combat, balancing protection and mobility.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Spaulders",
           "slug": "spaulders",
           "value": 18,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 15,
-          "description": "Plate armor covering the shoulders, protecting against overhead strikes."
+          "description": "Plate armor covering the shoulders, protecting against overhead strikes.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Shoulderguards",
           "slug": "shoulderguards",
           "value": 15,
           "weight": 2.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 7,
+              "type": "number"
+            }
+          },
           "armorClass": "medium",
           "rarityWeight": 16,
-          "description": "Protective plates or padding worn over the shoulders."
+          "description": "Protective plates or padding worn over the shoulders.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:medium-armor",
+              "rank": 5
+            }
+          }
         }
       ]
     },
@@ -704,294 +1061,448 @@
           "slug": "helm",
           "value": 20,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "description": "A solid metal helmet providing excellent head protection in battle."
+          "description": "A solid metal helmet providing excellent head protection in battle.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Helmet",
           "slug": "helmet",
           "value": 18,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 14,
-          "description": "A protective head covering designed to deflect blows and projectiles."
+          "description": "A protective head covering designed to deflect blows and projectiles.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Great Helm",
           "slug": "great-helm",
           "value": 40,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 5"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 10,
-          "description": "A fully enclosed helmet offering maximum protection at the cost of visibility."
+          "description": "A fully enclosed helmet offering maximum protection at the cost of visibility.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Armet",
           "slug": "armet",
           "value": 35,
           "weight": 3.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 4"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 8,
-          "description": "A sophisticated helmet that completely encases the head with articulated visors."
+          "description": "A sophisticated helmet that completely encases the head with articulated visors.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Barbute",
           "slug": "barbute",
           "value": 30,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 4"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 10,
-          "description": "A helmet that covers the entire head with openings for eyes and mouth."
+          "description": "A helmet that covers the entire head with openings for eyes and mouth.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Cuirass",
           "slug": "cuirass",
           "value": 80,
           "weight": 15.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 8"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 6,
-          "description": "A fitted breastplate protecting the torso, often ornately decorated."
+          "description": "A fitted breastplate protecting the torso, often ornately decorated.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Breastplate",
           "slug": "breastplate",
           "value": 70,
           "weight": 12.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 7"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 10,
-          "description": "A solid metal plate covering the chest, the core of any plate armor."
+          "description": "A solid metal plate covering the chest, the core of any plate armor.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Chestplate",
           "slug": "chestplate",
           "value": 75,
           "weight": 14.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 8"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 8,
-          "description": "Heavy armor protecting the vital organs of the torso."
+          "description": "Heavy armor protecting the vital organs of the torso.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Plate Mail",
           "slug": "plate-mail",
           "value": 120,
           "weight": 25.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 9"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 5,
-          "description": "Full armor of shaped metal plates, the pinnacle of protective gear."
+          "description": "Full armor of shaped metal plates, the pinnacle of protective gear.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Gauntlets",
           "slug": "gauntlets",
           "value": 15,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 2"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 15,
-          "description": "Reinforced gloves designed to protect hands while maintaining dexterity."
+          "description": "Reinforced gloves designed to protect hands while maintaining dexterity.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "constitution": 16
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Greaves",
           "slug": "greaves",
           "value": 30,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 4"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "description": "Shin armor protecting the lower legs from knee to ankle."
+          "description": "Shin armor protecting the lower legs from knee to ankle.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Sabatons",
           "slug": "sabatons",
           "value": 20,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "description": "Articulated plate footwear providing complete protection for the feet."
+          "description": "Articulated plate footwear providing complete protection for the feet.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Sollerets",
           "slug": "sollerets",
           "value": 18,
           "weight": 3.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 13,
-          "description": "Pointed plate boots designed for mounted combat, protecting feet and ankles."
+          "description": "Pointed plate boots designed for mounted combat, protecting feet and ankles.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Pauldrons",
           "slug": "pauldrons",
           "value": 25,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "stats": {
             "defense": "10 + dexterity_mod + constitution_mod + 3"
           },
-          "traits": {},
+          "traits": {
+            "dodgeModifier": {
+              "value": -5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 12,
+              "type": "number"
+            }
+          },
           "armorClass": "heavy",
           "rarityWeight": 12,
-          "description": "Large shoulder plates providing extensive protection to the upper arms and shoulders."
+          "description": "Large shoulder plates providing extensive protection to the upper arms and shoulders.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "constitution": 20
+            },
+            "skill": {
+              "reference": "@skills/armor:heavy-armor",
+              "rank": 10
+            }
+          }
         }
       ]
     }

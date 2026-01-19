@@ -33,21 +33,40 @@
           "description": "A versatile blade forged for balance and precision, favored by warriors who value technique over brute force.",
           "value": 15,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
-          "rarityWeight": 20
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 20,
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Greatsword",
@@ -55,21 +74,40 @@
           "description": "A massive two-handed blade capable of cleaving through armor and bone with devastating force.",
           "value": 50,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 2,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
-          "rarityWeight": 10
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 10,
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Katana",
@@ -77,87 +115,163 @@
           "description": "A curved blade of exceptional craftsmanship, designed for swift, lethal strikes with a single edge.",
           "value": 40,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
-          "rarityWeight": 10
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 10,
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Broadsword",
           "slug": "broadsword",
           "value": 18,
           "weight": 3.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A wide, sturdy blade built for powerful slashing attacks and reliable defense."
+          "description": "A wide, sturdy blade built for powerful slashing attacks and reliable defense.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Claymore",
           "slug": "claymore",
           "value": 60,
           "weight": 7.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 2,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A massive highland sword wielded with both hands, delivering crushing overhead strikes."
+          "description": "A massive highland sword wielded with both hands, delivering crushing overhead strikes.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Saber",
           "slug": "saber",
           "value": 20,
           "weight": 2.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A curved cavalry sword designed for slashing attacks from horseback or in close combat."
+          "description": "A curved cavalry sword designed for slashing attacks from horseback or in close combat.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 5
+            }
+          }
         }
       ]
     },
@@ -178,264 +292,492 @@
           "slug": "shortsword",
           "value": 10,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A compact blade favored for its maneuverability in tight spaces and quick strikes."
+          "description": "A compact blade favored for its maneuverability in tight spaces and quick strikes.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Scimitar",
           "slug": "scimitar",
           "value": 15,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A gracefully curved blade hailing from desert lands, deadly in the hands of a skilled warrior."
+          "description": "A gracefully curved blade hailing from desert lands, deadly in the hands of a skilled warrior.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Rapier",
           "slug": "rapier",
           "value": 25,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "An elegant thrusting sword designed for precision strikes and refined swordsmanship."
+          "description": "An elegant thrusting sword designed for precision strikes and refined swordsmanship.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "dexterity": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Gladius",
           "slug": "gladius",
           "value": 12,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A short Roman sword built for brutal efficiency in close-quarters combat."
+          "description": "A short Roman sword built for brutal efficiency in close-quarters combat.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Dagger",
           "slug": "dagger",
           "value": 5,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 22,
-          "description": "A small blade easily concealed, lethal in the hands of an assassin or when thrown."
+          "description": "A small blade easily concealed, lethal in the hands of an assassin or when thrown.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Dirk",
           "slug": "dirk",
           "value": 6,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A long dagger with a straight blade, traditional among highland warriors and scouts."
+          "description": "A long dagger with a straight blade, traditional among highland warriors and scouts.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Stiletto",
           "slug": "stiletto",
           "value": 10,
           "weight": 0.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A thin, needle-like blade designed to pierce through gaps in armor."
+          "description": "A thin, needle-like blade designed to pierce through gaps in armor.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Kris",
           "slug": "kris",
           "value": 15,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A wavy-bladed dagger with mystical significance, said to hold spiritual power."
+          "description": "A wavy-bladed dagger with mystical significance, said to hold spiritual power.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "dexterity": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Tanto",
           "slug": "tanto",
           "value": 12,
           "weight": 0.8,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A short blade traditionally paired with a katana, ideal for close combat."
+          "description": "A short blade traditionally paired with a katana, ideal for close combat.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Kukri",
           "slug": "kukri",
           "value": 12,
           "weight": 1.2,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A curved blade from mountain regions, equally useful as tool and weapon."
+          "description": "A curved blade from mountain regions, equally useful as tool and weapon.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Rondel",
           "slug": "rondel",
           "value": 8,
           "weight": 1.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A stiff-bladed dagger with a sharp point, designed to puncture armor joints."
+          "description": "A stiff-bladed dagger with a sharp point, designed to puncture armor joints.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Main Gauche",
           "slug": "main-gauche",
           "value": 10,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A parrying dagger used in the off-hand for defensive maneuvers."
+          "description": "A parrying dagger used in the off-hand for defensive maneuvers.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 5
+            }
+          }
         }
       ]
     },
@@ -455,176 +797,328 @@
           "slug": "battleaxe",
           "value": 20,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A heavy chopping weapon that combines raw power with tactical versatility."
+          "description": "A heavy chopping weapon that combines raw power with tactical versatility.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Handaxe",
           "slug": "handaxe",
           "value": 10,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A compact axe easily wielded or thrown, useful both in combat and utility."
+          "description": "A compact axe easily wielded or thrown, useful both in combat and utility.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Greataxe",
           "slug": "greataxe",
           "value": 55,
           "weight": 7.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A massive two-handed axe capable of splitting shields and skulls with a single blow."
+          "description": "A massive two-handed axe capable of splitting shields and skulls with a single blow.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Waraxe",
           "slug": "waraxe",
           "value": 30,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A formidable axe designed specifically for warfare, balancing power and control."
+          "description": "A formidable axe designed specifically for warfare, balancing power and control.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Hatchet",
           "slug": "hatchet",
           "value": 5,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 22,
-          "description": "A small utility axe that doubles as an effective throwing weapon."
+          "description": "A small utility axe that doubles as an effective throwing weapon.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Tomahawk",
           "slug": "tomahawk",
           "value": 8,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A light throwing axe used by tribal warriors, deadly at range or in melee."
+          "description": "A light throwing axe used by tribal warriors, deadly at range or in melee.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Cleaver",
           "slug": "cleaver",
           "value": 8,
           "weight": 2.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A heavy chopping blade, originally a butcher's tool, repurposed for brutal combat."
+          "description": "A heavy chopping blade, originally a butcher's tool, repurposed for brutal combat.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Poleaxe",
           "slug": "poleaxe",
           "value": 40,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A pole-mounted axe head combined with other striking surfaces for maximum versatility."
+          "description": "A pole-mounted axe head combined with other striking surfaces for maximum versatility.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:axes",
+              "rank": 10
+            }
+          }
         }
       ]
     },
@@ -645,176 +1139,328 @@
           "slug": "longbow",
           "value": 30,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 10,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A tall bow requiring strength to draw, capable of impressive range and penetration."
+          "description": "A tall bow requiring strength to draw, capable of impressive range and penetration.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Shortbow",
           "slug": "shortbow",
           "value": 20,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 6,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A compact bow favored by scouts and hunters for its portability and ease of use."
+          "description": "A compact bow favored by scouts and hunters for its portability and ease of use.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Composite Bow",
           "slug": "composite-bow",
           "value": 50,
           "weight": 2.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 7,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A sophisticated bow made from multiple materials, offering superior power and accuracy."
+          "description": "A sophisticated bow made from multiple materials, offering superior power and accuracy.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "dexterity": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Recurve Bow",
           "slug": "recurve-bow",
           "value": 35,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 7,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 15,
-          "description": "A bow with curved tips that stores more energy, delivering faster and more powerful shots."
+          "description": "A bow with curved tips that stores more energy, delivering faster and more powerful shots.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Crossbow",
           "slug": "crossbow",
           "value": 50,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 8,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A mechanical bow that trades firing speed for raw power and ease of aim."
+          "description": "A mechanical bow that trades firing speed for raw power and ease of aim.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "dexterity": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Heavy Crossbow",
           "slug": "heavy-crossbow",
           "value": 75,
           "weight": 8.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 8,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A massive crossbow capable of punching through heavy armor at considerable range."
+          "description": "A massive crossbow capable of punching through heavy armor at considerable range.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "dexterity": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Warbow",
           "slug": "warbow",
           "value": 80,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 2,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 10,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 6,
-          "description": "A powerful military bow designed to pierce armor, requiring exceptional strength to draw."
+          "description": "A powerful military bow designed to pierce armor, requiring exceptional strength to draw.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "dexterity": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Hunting Bow",
           "slug": "hunting-bow",
           "value": 15,
           "weight": 1.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 6,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A lightweight bow designed for hunting game, reliable and easy to maintain."
+          "description": "A lightweight bow designed for hunting game, reliable and easy to maintain.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "dexterity": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:bows",
+              "rank": 5
+            }
+          }
         }
       ]
     },
@@ -835,176 +1481,328 @@
           "slug": "spear",
           "value": 10,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A versatile weapon consisting of a pointed blade on a shaft, effective at keeping enemies at bay."
+          "description": "A versatile weapon consisting of a pointed blade on a shaft, effective at keeping enemies at bay.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Lance",
           "slug": "lance",
           "value": 40,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A long cavalry weapon designed for devastating charges, unwieldy on foot."
+          "description": "A long cavalry weapon designed for devastating charges, unwieldy on foot.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Javelin",
           "slug": "javelin",
           "value": 8,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A light throwing spear that can also be used in melee, favored by skirmishers."
+          "description": "A light throwing spear that can also be used in melee, favored by skirmishers.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Pike",
           "slug": "pike",
           "value": 30,
           "weight": 8.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 16,
-          "description": "An extremely long spear used in formations, presenting a wall of points to cavalry and infantry."
+          "description": "An extremely long spear used in formations, presenting a wall of points to cavalry and infantry.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Halberd",
           "slug": "halberd",
           "value": 35,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A pole weapon combining an axe blade, spike, and hook for maximum versatility."
+          "description": "A pole weapon combining an axe blade, spike, and hook for maximum versatility.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Trident",
           "slug": "trident",
           "value": 25,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 16,
-          "description": "A three-pronged spear associated with sea gods, deadly for thrusting attacks."
+          "description": "A three-pronged spear associated with sea gods, deadly for thrusting attacks.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Partisan",
           "slug": "partisan",
           "value": 30,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "An ornate pole weapon with a broad blade and side projections, favored by guards."
+          "description": "An ornate pole weapon with a broad blade and side projections, favored by guards.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Glaive",
           "slug": "glaive",
           "value": 40,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 1,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A pole weapon with a single-edged blade, combining reach with slashing power."
+          "description": "A pole weapon with a single-edged blade, combining reach with slashing power.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:polearms",
+              "rank": 10
+            }
+          }
         }
       ]
     },
@@ -1024,176 +1822,392 @@
           "slug": "mace",
           "value": 12,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A heavy metal club designed to crush armor and bones with brutal efficiency."
+          "description": "A heavy metal club designed to crush armor and bones with brutal efficiency.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Warhammer",
           "slug": "warhammer",
           "value": 20,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A balanced hammer built for war, capable of denting the heaviest armor."
+          "description": "A balanced hammer built for war, capable of denting the heaviest armor.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Flail",
           "slug": "flail",
           "value": 18,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 18,
-          "description": "A hinged weapon with a spiked head on a chain, difficult to defend against."
+          "description": "A hinged weapon with a spiked head on a chain, difficult to defend against.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Morning Star",
           "slug": "morning-star",
           "value": 25,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A spiked mace designed to penetrate armor and cause devastating wounds."
+          "description": "A spiked mace designed to penetrate armor and cause devastating wounds.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Club",
           "slug": "club",
           "value": 2,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 25,
-          "description": "A simple wooden bludgeon, crude but effective in untrained hands."
+          "description": "A simple wooden bludgeon, crude but effective in untrained hands.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Maul",
           "slug": "maul",
           "value": 45,
           "weight": 10.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 2,
             "max": 12,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A massive two-handed hammer that can shatter shields and pulverize armor."
+          "description": "A massive two-handed hammer that can shatter shields and pulverize armor.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Cudgel",
           "slug": "cudgel",
           "value": 3,
           "weight": 2.5,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 25,
-          "description": "A thick stick or light club, the weapon of choice for tavern brawlers and thugs."
+          "description": "A thick stick or light club, the weapon of choice for tavern brawlers and thugs.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Scepter",
           "slug": "scepter",
           "value": 15,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            },
+            "statusEffectChance": {
+              "value": 15.0,
+              "type": "number"
+            },
+            "statusEffectType": {
+              "value": "stun",
+              "type": "string"
+            }
+          },
           "rarityWeight": 12,
-          "description": "An ornamental rod that can serve as a weapon when magic is not enough."
+          "description": "An ornamental rod that can serve as a weapon when magic is not enough.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         }
       ]
     },
@@ -1214,132 +2228,246 @@
           "slug": "staff",
           "value": 10,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A wooden pole often used by travelers and mages as both walking aid and weapon."
+          "description": "A wooden pole often used by travelers and mages as both walking aid and weapon.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "Quarterstaff",
           "slug": "quarterstaff",
           "value": 8,
           "weight": 4.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 20,
-          "description": "A sturdy wooden staff wielded with both hands, offering reach and defensive capability."
+          "description": "A sturdy wooden staff wielded with both hands, offering reach and defensive capability.",
+          "requirements": {
+            "level": 10,
+            "attributes": {
+              "strength": 16
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 5
+            }
+          }
         },
         {
           "name": "War Staff",
           "slug": "war-staff",
           "value": 25,
           "weight": 5.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 8,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 12,
-          "description": "A reinforced staff designed for combat, often capped with metal for extra striking power."
+          "description": "A reinforced staff designed for combat, often capped with metal for extra striking power.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Battle Staff",
           "slug": "battle-staff",
           "value": 35,
           "weight": 6.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 10,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A heavy combat staff capable of breaking bones and deflecting sword strikes."
+          "description": "A heavy combat staff capable of breaking bones and deflecting sword strikes.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Rod",
           "slug": "rod",
           "value": 20,
           "weight": 2.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 4,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 10,
-          "description": "A short metal rod infused with magical energy, serving as both focus and weapon."
+          "description": "A short metal rod infused with magical energy, serving as both focus and weapon.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         },
         {
           "name": "Scepter Staff",
           "slug": "scepter-staff",
           "value": 30,
           "weight": 3.0,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8
-          },
           "damage": {
             "min": 1,
             "max": 6,
             "modifier": "wielder.strength_mod"
           },
-          "traits": {},
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 2,
+              "type": "number"
+            },
+            "cleaveTargets": {
+              "value": 0,
+              "type": "number"
+            }
+          },
           "rarityWeight": 8,
-          "description": "An ornate staff that channels magical power while serving as a symbol of authority."
+          "description": "An ornate staff that channels magical power while serving as a symbol of authority.",
+          "requirements": {
+            "level": 15,
+            "attributes": {
+              "strength": 20
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 10
+            }
+          }
         }
       ]
     }
