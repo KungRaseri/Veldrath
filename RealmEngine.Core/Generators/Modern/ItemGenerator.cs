@@ -249,7 +249,7 @@ public class ItemGenerator
                 Description = GetStringProperty(catalogItem, "description") ?? "No description available",
                 Price = GetIntProperty(catalogItem, "value", 1),
                 Weight = GetDoubleProperty(catalogItem, "weight", 0.0),
-                Attributes = GetDictionaryProperty<int>(catalogItem, "attributes"),
+                BaseAttributes = new Dictionary<string, int>(), // Populated from name components during generation
                 Stats = GetDictionaryProperty<string>(catalogItem, "stats"),
                 ArmorClass = GetStringProperty(catalogItem, "armorClass"),
                 Effect = GetStringProperty(catalogItem, "effect"),

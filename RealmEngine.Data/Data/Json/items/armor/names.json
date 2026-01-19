@@ -114,6 +114,10 @@
           "armorBonus": {
             "value": 2,
             "type": "number"
+          },
+          "strengthBonus": {
+            "value": 2,
+            "type": "number"
           }
         }
       },
@@ -131,6 +135,10 @@
           },
           "weightMultiplier": {
             "value": 1.1,
+            "type": "number"
+          },
+          "strengthBonus": {
+            "value": 2,
             "type": "number"
           }
         }
@@ -150,6 +158,10 @@
           "durability": {
             "value": 150,
             "type": "number"
+          },
+          "strengthBonus": {
+            "value": 3,
+            "type": "number"
           }
         }
       },
@@ -167,6 +179,10 @@
           },
           "valueMultiplier": {
             "value": 1.2,
+            "type": "number"
+          },
+          "strengthBonus": {
+            "value": 3,
             "type": "number"
           }
         }
@@ -368,6 +384,10 @@
           "armorBonus": {
             "value": 4,
             "type": "number"
+          },
+          "charismaBonus": {
+            "value": 4,
+            "type": "number"
           }
         }
       },
@@ -390,6 +410,10 @@
           "glowEffect": {
             "value": true,
             "type": "boolean"
+          },
+          "intelligenceBonus": {
+            "value": 6,
+            "type": "number"
           }
         }
       },
@@ -561,6 +585,10 @@
           },
           "armorBonus": {
             "value": 3,
+            "type": "number"
+          },
+          "intelligenceBonus": {
+            "value": 4,
             "type": "number"
           }
         }
@@ -871,6 +899,10 @@
           },
           "blockChance": {
             "value": 8,
+            "type": "number"
+          },
+          "constitutionBonus": {
+            "value": 3,
             "type": "number"
           }
         }
@@ -1230,6 +1262,10 @@
           "invisibility": {
             "value": true,
             "type": "boolean"
+          },
+          "dexterityBonus": {
+            "value": 6,
+            "type": "number"
           }
         }
       },

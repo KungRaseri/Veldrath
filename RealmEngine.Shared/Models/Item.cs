@@ -10,50 +10,50 @@ public class Item : ITraitable
     /// Gets or sets the unique identifier for this item.
     /// </summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+
     /// <summary>
     /// Gets or sets the URL-safe identifier for this item (kebab-case).
     /// Used for lookups, references, and API endpoints.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name of the item (may include enhancements).
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the descriptive text for the item (mechanical description).
     /// </summary>
     public string Description { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the lore/flavor text for the item (history, significance).
     /// Optional field that provides immersive backstory. May be procedurally generated.
     /// </summary>
     public string? Lore { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the market value of the item in gold.
     /// </summary>
     public int Price { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the physical weight of the item in pounds.
     /// Used for inventory encumbrance calculations.
     /// </summary>
     public double Weight { get; set; } = 0.0;
-    
+
     /// <summary>
     /// Gets or sets the item rarity (Common, Uncommon, Rare, Epic, Legendary, Mythic).
     /// </summary>
     public ItemRarity Rarity { get; set; } = ItemRarity.Common;
-    
+
     /// <summary>
     /// Gets or sets the item type/category (Weapon, Armor, Consumable, Quest, Material, etc.).
     /// </summary>
     public ItemType Type { get; set; } = ItemType.Consumable;
-    
+
     /// <summary>
     /// Gets or sets the requirements to equip or use this item.
     /// Includes level, attribute, and skill requirements.
@@ -79,31 +79,39 @@ public class Item : ITraitable
     public bool IsStackable { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the implicit attribute bonuses from the base item type (from catalog).
-    /// These are inherent to the item type and never change (e.g., all longswords have +10 STR).
+    /// Gets or sets the attribute bonuses provided by this item's name components, materials, and enchantments.
+    /// These are bonuses GIVEN to the character when equipped (e.g., +5 STR from "Herculean" prefix).
+    /// DO NOT CONFUSE with Requirements.Attributes (which are stats NEEDED to equip the item).
     /// </summary>
+    /// <remarks>
+    /// <para><strong>Requirements vs Bonuses:</strong></para>
+    /// <list type="bullet">
+    /// <item><description><strong>Requirements.Attributes</strong> = Stats needed to EQUIP (e.g., "Need 16 STR to use this sword")</description></item>
+    /// <item><description><strong>BaseAttributes</strong> = Bonuses GIVEN when equipped (e.g., "+5 STR from Herculean prefix")</description></item>
+    /// </list>
+    /// <para><strong>Sources of Attribute Bonuses:</strong></para>
+    /// <list type="bullet">
+    /// <item><description>Name components (prefix/suffix in names.json): "Herculean" = +STR, "Swift" = +DEX</description></item>
+    /// <item><description>Materials: Iron weapons may give +CON, Mithril may give +DEX</description></item>
+    /// <item><description>Enchantments: "of the Bear" = +STR, "of the Fox" = +DEX</description></item>
+    /// </list>
+    /// <para><strong>NOT from base catalog:</strong> Base item templates (weapons/catalog.json) do NOT provide attribute bonuses.</para>
+    /// </remarks>
     public Dictionary<string, int> BaseAttributes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the implicit traits from the base item type (from catalog).
     /// These are inherent properties that define the item type (e.g., base damage, armor class).
     /// </summary>
     public Dictionary<string, TraitValue> BaseTraits { get; set; } = new();
-    
-    /// <summary>
-    /// Gets or sets the combined attribute bonuses from this item (base + material + enchantments).
-    /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
-    /// NOTE: This is computed/legacy - prefer BaseAttributes for display separation.
-    /// </summary>
-    public Dictionary<string, int> Attributes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the trait system dictionary for dynamic properties defined in JSON.
     /// Implements ITraitable interface.
     /// NOTE: This is combined data - prefer BaseTraits for display separation.
     /// </summary>
     public Dictionary<string, TraitValue> Traits { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the formula-based stats for this item.
     /// Used for armor defense calculations, weapon attack bonuses, etc.
@@ -122,31 +130,31 @@ public class Item : ITraitable
     /// Two-handed weapons cannot be used with shields.
     /// </summary>
     public bool IsTwoHanded { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets the damage configuration for weapons.
     /// Contains min/max damage dice and modifier formula.
     /// </summary>
     public ItemDamage? Damage { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the armor class for armor items.
     /// Values: "light", "medium", "heavy"
     /// </summary>
     public string? ArmorClass { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the effect type for consumable items.
     /// Examples: "heal", "buff", "heal_overtime", "cure_poison", "restore", "stat_boost"
     /// </summary>
     public string? Effect { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the power/magnitude of the effect for consumables.
     /// For healing potions, this is HP restored. For buffs, this is bonus amount.
     /// </summary>
     public int Power { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the duration of the effect in turns/seconds.
     /// 0 means instant effect (like healing potions).
@@ -155,62 +163,62 @@ public class Item : ITraitable
 
     // Enhancement System v1.0 (Hybrid Model)
     // ========================================
-    
+
     /// <summary>
     /// Gets or sets the material this item is crafted from (e.g., \"iron\", \"steel\", \"mithril\").
     /// Materials are baked into the item at generation time.
     /// </summary>
     public string? Material { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the traits provided by this item's material.
     /// Materials contribute to the item's overall power level.
     /// </summary>
     public Dictionary<string, TraitValue> MaterialTraits { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the collection of enchantments applied to this item.
     /// Enchantments are baked into the item at generation time.
     /// </summary>
     public List<Enchantment> Enchantments { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the collection of player-applied enchantments (post-crafting).
     /// Separate from generation Enchantments. These are applied via enchantment scrolls.
     /// Limited by MaxPlayerEnchantments based on rarity and socket crystals.
     /// </summary>
     public List<Enchantment> PlayerEnchantments { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the maximum number of player-applied enchantments allowed.
     /// Determined by item rarity: Common=1, Rare=2, Legendary=3.
     /// Can be increased up to 3 using socket crystals (requires Enchanting skill).
     /// </summary>
     public int MaxPlayerEnchantments { get; set; } = 1;
-    
+
     /// <summary>
     /// Gets or sets the collection of sockets available on this item, organized by socket type.
     /// Sockets are player-customizable after generation.
     /// Key = SocketType, Value = List of sockets for that type.
     /// </summary>
     public Dictionary<SocketType, List<Socket>> Sockets { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the total rarity weight calculated from base item, material, enchantments, and sockets.
     /// </summary>
     public int TotalRarityWeight { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the base item name before enhancements are applied (e.g., \"Longsword\").
     /// </summary>
     public string BaseName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Ordered list of prefix components (quality, material, enchantments, etc.) that appear before the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
     public List<NameComponent> Prefixes { get; set; } = new();
-    
+
     /// <summary>
     /// Ordered list of suffix components (enchantments, sockets, etc.) that appear after the base name.
     /// Each component preserves its token identifier and display value.
@@ -221,23 +229,23 @@ public class Item : ITraitable
     /// Higher upgrade levels increase attribute bonuses.
     /// </summary>
     public int UpgradeLevel { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the maximum number of enchantments that can be applied to this item.
     /// Determined at crafting time based on rarity and catalyst materials.
     /// </summary>
     public int MaxEnchantments { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the binding behavior of this item.
     /// </summary>
     public BindingType Binding { get; set; } = BindingType.Unbound;
-    
+
     /// <summary>
     /// Gets or sets whether this item is currently bound to a character.
     /// </summary>
     public bool IsBound { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets the name of the character this item is bound to (if IsBound is true).
     /// </summary>
@@ -289,7 +297,7 @@ public class Item : ITraitable
     /// </code>
     /// </example>
     public List<string> EnchantmentIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of material reference IDs (v4.1 format) this item can be crafted from.
     /// ⚠️ HYBRID PATTERN: Materials resolve to Material property string at generation time.
@@ -335,7 +343,7 @@ public class Item : ITraitable
     /// </code>
     /// </example>
     public List<string> MaterialIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of item reference IDs (v4.1 format) required for crafting recipes or upgrades.
     /// Each ID is a JSON reference like "@items/materials/ingots:iron-ingot".
@@ -481,7 +489,7 @@ public class Item : ITraitable
                 }
             }
         }
-        
+
         // 3a. Add player-applied enchantment traits (post-crafting)
         foreach (var enchantment in PlayerEnchantments)
         {
@@ -545,7 +553,7 @@ public class Item : ITraitable
             // Calculate bonus: +2 per upgrade level
             // Examples: +1=+2, +5=+10, +8=+16, +10=+20
             var upgradeBonus = UpgradeLevel * 2.0;
-            
+
             // Apply to all numeric traits
             foreach (var traitKey in mergedTraits.Keys.ToList())
             {
@@ -570,7 +578,7 @@ public class Item : ITraitable
     {
         return Prefixes.FirstOrDefault(p => p.Token == token)?.Value;
     }
-    
+
     /// <summary>
     /// Gets the value of a specific suffix component by token name.
     /// </summary>
@@ -589,16 +597,16 @@ public class Item : ITraitable
     public string ComposeNameFromComponents()
     {
         var parts = new List<string>();
-        
+
         // Add all prefixes in order
         parts.AddRange(Prefixes.Select(p => p.Value));
-        
+
         // Add base name
         if (!string.IsNullOrWhiteSpace(BaseName)) parts.Add(BaseName);
-        
+
         // Add all suffixes in order
         parts.AddRange(Suffixes.Select(s => s.Value));
-        
+
         return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
 
@@ -623,7 +631,7 @@ public class Item : ITraitable
         {
             nameParts.Add($"({enchantment.Name})");
         }
-        
+
         // Add player-applied enchantment suffixes
         foreach (var enchantment in PlayerEnchantments)
         {
@@ -632,7 +640,7 @@ public class Item : ITraitable
 
         return string.Join(" ", nameParts);
     }
-    
+
     /// <summary>
     /// Get rich socket information for all socket types on this item.
     /// Useful for Godot UI display.
@@ -651,7 +659,7 @@ public class Item : ITraitable
             .OrderBy(info => info.Type)
             .ToList();
     }
-    
+
     /// <summary>
     /// Get a display string showing all socket types and their fill status.
     /// Example: "Gem: 1/2 | Essence: 0/1 | Rune: 3/3"
@@ -660,25 +668,25 @@ public class Item : ITraitable
     {
         var infos = GetSocketsInfo();
         if (!infos.Any()) return string.Empty;
-        
+
         return string.Join(" | ", infos.Select(info => info.DisplayText));
     }
-    
+
     /// <summary>
     /// Check if this item can accept an additional player-applied enchantment.
     /// </summary>
     public bool CanAddPlayerEnchantment() => PlayerEnchantments.Count < MaxPlayerEnchantments;
-    
+
     /// <summary>
     /// Check if this item has any player enchantment slots.
     /// </summary>
     public bool HasPlayerEnchantmentSlots() => MaxPlayerEnchantments > 0;
-    
+
     /// <summary>
     /// Get the number of available (unfilled) player enchantment slots.
     /// </summary>
     public int AvailablePlayerEnchantmentSlots() => MaxPlayerEnchantments - PlayerEnchantments.Count;
-    
+
     /// <summary>
     /// Get the maximum upgrade level allowed for this item based on rarity.
     /// Common/Uncommon: +5, Rare: +7, Epic: +9, Legendary: +10
@@ -692,30 +700,30 @@ public class Item : ITraitable
         ItemRarity.Legendary => 10,
         _ => 0
     };
-    
+
     /// <summary>
     /// Check if this item can be upgraded further.
     /// </summary>
     public bool CanUpgrade() => UpgradeLevel < GetMaxUpgradeLevel();
-    
+
     /// <summary>
     /// Check if this item can accept an additional enchantment (legacy method for generation).
     /// </summary>
     [Obsolete("Use CanAddPlayerEnchantment() for player-applied enchantments")]
     public bool CanAddEnchantment() => Enchantments.Count < MaxEnchantments;
-    
+
     /// <summary>
     /// Check if this item has any enchantment slots (legacy method for generation).
     /// </summary>
     [Obsolete("Use HasPlayerEnchantmentSlots() for player-applied enchantments")]
     public bool HasEnchantmentSlots() => MaxEnchantments > 0;
-    
+
     /// <summary>
     /// Get the number of available (unfilled) enchantment slots (legacy method for generation).
     /// </summary>
     [Obsolete("Use AvailablePlayerEnchantmentSlots() for player-applied enchantments")]
     public int AvailableEnchantmentSlots() => MaxEnchantments - Enchantments.Count;
-    
+
     /// <summary>
     /// Bind this item to a specific character.
     /// </summary>
@@ -791,12 +799,12 @@ public class ItemDamage
     /// Gets or sets the minimum damage value.
     /// </summary>
     public int Min { get; set; } = 1;
-    
+
     /// <summary>
     /// Gets or sets the maximum damage value.
     /// </summary>
     public int Max { get; set; } = 4;
-    
+
     /// <summary>
     /// Gets or sets the damage modifier formula (e.g., "wielder.strength_mod").
     /// </summary>
@@ -810,13 +818,13 @@ public enum BindingType
 {
     /// <summary>Item can be freely traded and sold.</summary>
     Unbound,
-    
+
     /// <summary>Item binds to character when equipped.</summary>
     BindOnEquip,
-    
+
     /// <summary>Item binds to character when enchanted (for enchantment scrolls).</summary>
     BindOnApply,
-    
+
     /// <summary>Item is permanently bound to character (quest rewards).</summary>
     CharacterBound
 }

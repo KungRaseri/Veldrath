@@ -364,6 +364,10 @@
           "durability": {
             "value": 100,
             "type": "number"
+          },
+          "constitutionBonus": {
+            "value": 5,
+            "type": "number"
           }
         }
       },
@@ -1139,6 +1143,10 @@
           },
           "damageBonus": {
             "value": 5,
+            "type": "number"
+          },
+          "strengthBonus": {
+            "value": 3,
             "type": "number"
           }
         }
