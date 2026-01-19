@@ -256,4 +256,156 @@ public static class SkillEffectCalculator
 
         return null;
     }
+
+    /// <summary>
+    /// Get skill rank progress as percentage (0-100).
+    /// Useful for progress bars in UI.
+    /// </summary>
+    /// <param name="currentRank">Current skill rank</param>
+    /// <param name="maxRank">Maximum rank (default: 100)</param>
+    /// <returns>Progress percentage</returns>
+    public static double GetRankProgress(int currentRank, int maxRank = 100)
+    {
+        if (maxRank <= 0) return 0.0;
+        return Math.Min((double)currentRank / maxRank * 100.0, 100.0);
+    }
+
+    /// <summary>
+    /// Get a formatted damage multiplier display.
+    /// Example: "1.25x" or "+25%"
+    /// </summary>
+    /// <param name="multiplier">The damage multiplier (e.g., 1.25)</param>
+    /// <param name="asPercentage">If true, shows as "+25%", otherwise "1.25x"</param>
+    /// <returns>Formatted string for UI</returns>
+    public static string FormatMultiplier(double multiplier, bool asPercentage = false)
+    {
+        if (asPercentage)
+        {
+            var percent = (multiplier - 1.0) * 100.0;
+            var sign = percent >= 0 ? "+" : "";
+            return $"{sign}{percent:F1}%";
+        }
+        return $"{multiplier:F2}x";
+    }
+
+    /// <summary>
+    /// Get all active skill bonuses as a dictionary.
+    /// Useful for Godot UI data binding.
+    /// </summary>
+    /// <param name="character">The character</param>
+    /// <returns>Dictionary of stat name to bonus value</returns>
+    public static Dictionary<string, double> GetAllBonuses(Character character)
+    {
+        return new Dictionary<string, double>
+        {
+            ["PhysicalDamage"] = GetPhysicalDamageMultiplier(character) - 1.0,
+            ["MagicDamage"] = GetMagicDamageMultiplier(character) - 1.0,
+            ["CriticalChance"] = GetCriticalChanceBonus(character),
+            ["PhysicalDefense"] = GetPhysicalDefenseMultiplier(character) - 1.0,
+            ["DodgeChance"] = GetDodgeChanceBonus(character),
+            ["RareItemFind"] = GetRareItemFindBonus(character),
+            ["MaxMana"] = GetMaxManaMultiplier(character) - 1.0,
+            ["HealthRegen"] = GetHealthRegeneration(character)
+        };
+    }
+
+    /// <summary>
+    /// Get top 3 skill bonuses for compact UI display.
+    /// </summary>
+    /// <param name="character">The character</param>
+    /// <param name="count">Number of top bonuses to return</param>
+    /// <returns>List of (name, value) tuples sorted by impact</returns>
+    public static List<(string Name, double Value)> GetTopBonuses(Character character, int count = 3)
+    {
+        var bonuses = GetAllBonuses(character);
+        return bonuses
+            .Where(b => Math.Abs(b.Value) > 0.001) // Filter near-zero
+            .OrderByDescending(b => Math.Abs(b.Value))
+            .Take(count)
+            .Select(b => (b.Key, b.Value))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculate effective damage after skill bonuses.
+    /// </summary>
+    /// <param name="baseDamage">Base damage value</param>
+    /// <param name="character">The character</param>
+    /// <param name="weaponSkillSlug">Weapon skill slug (optional)</param>
+    /// <returns>Final damage after multipliers</returns>
+    public static int CalculateEffectiveDamage(int baseDamage, Character character, string? weaponSkillSlug = null)
+    {
+        var multiplier = GetPhysicalDamageMultiplier(character, weaponSkillSlug);
+        return (int)Math.Round(baseDamage * multiplier);
+    }
+
+    /// <summary>
+    /// Calculate effective defense after skill bonuses.
+    /// </summary>
+    /// <param name="baseDefense">Base defense value</param>
+    /// <param name="character">The character</param>
+    /// <returns>Final defense after multipliers</returns>
+    public static int CalculateEffectiveDefense(int baseDefense, Character character)
+    {
+        var multiplier = GetPhysicalDefenseMultiplier(character);
+        return (int)Math.Round(baseDefense * multiplier);
+    }
+
+    /// <summary>
+    /// Get BBCode formatted skill summary for Godot RichTextLabel.
+    /// </summary>
+    /// <param name="character">The character</param>
+    /// <returns>BBCode formatted string</returns>
+    public static string GetSkillBonusSummaryBBCode(Character character)
+    {
+        var bonuses = GetAllBonuses(character);
+        var lines = new List<string>();
+
+        if (bonuses["PhysicalDamage"] > 0)
+            lines.Add($"[color=green]+{bonuses["PhysicalDamage"] * 100:F0}% Physical Damage[/color]");
+
+        if (bonuses["MagicDamage"] > 0)
+            lines.Add($"[color=cyan]+{bonuses["MagicDamage"] * 100:F0}% Magic Damage[/color]");
+
+        if (bonuses["CriticalChance"] > 0)
+            lines.Add($"[color=yellow]+{bonuses["CriticalChance"]:F0}% Critical Chance[/color]");
+
+        if (bonuses["PhysicalDefense"] > 0)
+            lines.Add($"[color=blue]+{bonuses["PhysicalDefense"] * 100:F0}% Physical Defense[/color]");
+
+        if (bonuses["DodgeChance"] > 0)
+            lines.Add($"[color=magenta]+{bonuses["DodgeChance"]:F0}% Dodge Chance[/color]");
+
+        if (bonuses["RareItemFind"] > 0)
+            lines.Add($"[color=orange]+{bonuses["RareItemFind"]:F0}% Rare Item Find[/color]");
+
+        if (bonuses["MaxMana"] > 0)
+            lines.Add($"[color=blue]+{bonuses["MaxMana"] * 100:F0}% Max Mana[/color]");
+
+        if (bonuses["HealthRegen"] > 0)
+            lines.Add($"[color=green]+{bonuses["HealthRegen"]:F0} HP Regeneration per turn[/color]");
+
+        return lines.Any() ? string.Join("\n", lines) : "[color=gray]No active skill bonuses[/color]";
+    }
+
+    /// <summary>
+    /// Get skill efficiency rating (0-100).
+    /// Measures how well skills are distributed across categories.
+    /// </summary>
+    /// <param name="character">The character</param>
+    /// <returns>Efficiency score (100 = perfectly balanced)</returns>
+    public static double GetSkillEfficiencyRating(Character character)
+    {
+        if (!character.Skills.Any()) return 0.0;
+
+        var totalRanks = character.Skills.Values.Sum(s => s.CurrentRank);
+        var avgRank = totalRanks / (double)character.Skills.Count;
+        var variance = character.Skills.Values.Average(s => Math.Pow(s.CurrentRank - avgRank, 2));
+        var stdDev = Math.Sqrt(variance);
+
+        // Lower std dev = more balanced = higher efficiency
+        // Perfect balance (all skills equal) = 100
+        var efficiency = Math.Max(0, 100 - (stdDev / avgRank * 50));
+        return Math.Min(efficiency, 100.0);
+    }
 }

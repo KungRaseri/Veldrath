@@ -190,4 +190,175 @@ public static class TraitApplicator
 
         return string.Join("\n", lines);
     }
+
+    /// <summary>
+    /// Get traits as a dictionary for Godot UI data binding.
+    /// Converts TraitValue objects to primitive types.
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <returns>Dictionary of trait name to value (as object)</returns>
+    public static Dictionary<string, object> GetTraitsForUI(ITraitable entity)
+    {
+        var result = new Dictionary<string, object>();
+
+        foreach (var trait in entity.Traits)
+        {
+            result[trait.Key] = trait.Value.Type switch
+            {
+                TraitType.Number => trait.Value.AsDouble(),
+                TraitType.String => trait.Value.AsString(),
+                TraitType.Boolean => trait.Value.AsBool(),
+                TraitType.StringArray => trait.Value.AsStringList(),
+                TraitType.NumberArray => trait.Value.AsIntList(),
+                _ => trait.Value.ToString() ?? string.Empty
+            };
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Filter traits by type.
+    /// Useful for displaying only specific categories in UI.
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <param name="type">The trait type to filter by</param>
+    /// <returns>Dictionary of filtered traits</returns>
+    public static Dictionary<string, TraitValue> FilterTraitsByType(ITraitable entity, TraitType type)
+    {
+        return entity.Traits
+            .Where(t => t.Value.Type == type)
+            .ToDictionary(t => t.Key, t => t.Value);
+    }
+
+    /// <summary>
+    /// Get all numeric traits for stat calculations.
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <returns>Dictionary of numeric trait names to values</returns>
+    public static Dictionary<string, double> GetNumericTraits(ITraitable entity)
+    {
+        return entity.Traits
+            .Where(t => t.Value.Type == TraitType.Number)
+            .ToDictionary(t => t.Key, t => t.Value.AsDouble());
+    }
+
+    /// <summary>
+    /// Get all boolean flags for conditional logic.
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <returns>Dictionary of flag names to boolean values</returns>
+    public static Dictionary<string, bool> GetBooleanTraits(ITraitable entity)
+    {
+        return entity.Traits
+            .Where(t => t.Value.Type == TraitType.Boolean)
+            .ToDictionary(t => t.Key, t => t.Value.AsBool());
+    }
+
+    /// <summary>
+    /// Compare two entities and get trait differences.
+    /// Useful for "before vs after" displays in crafting/upgrading.
+    /// </summary>
+    /// <param name="entity1">First entity</param>
+    /// <param name="entity2">Second entity</param>
+    /// <returns>Dictionary of trait changes (positive = increase, negative = decrease)</returns>
+    public static Dictionary<string, double> CompareNumericTraits(ITraitable entity1, ITraitable entity2)
+    {
+        var differences = new Dictionary<string, double>();
+        var allTraitNames = entity1.Traits.Keys.Union(entity2.Traits.Keys).ToHashSet();
+
+        foreach (var traitName in allTraitNames)
+        {
+            var value1 = GetTrait<double>(entity1, traitName, 0.0);
+            var value2 = GetTrait<double>(entity2, traitName, 0.0);
+            var diff = value2 - value1;
+
+            if (Math.Abs(diff) > 0.001) // Filter near-zero differences
+            {
+                differences[traitName] = diff;
+            }
+        }
+
+        return differences;
+    }
+
+    /// <summary>
+    /// Format trait differences for UI display.
+    /// Example: "+5 Attack" or "-3 Defense"
+    /// </summary>
+    /// <param name="differences">Dictionary from CompareNumericTraits</param>
+    /// <returns>List of formatted strings</returns>
+    public static List<string> FormatTraitDifferences(Dictionary<string, double> differences)
+    {
+        return differences
+            .OrderByDescending(d => Math.Abs(d.Value))
+            .Select(d =>
+            {
+                var sign = d.Value >= 0 ? "+" : "";
+                return $"{sign}{d.Value:F1} {d.Key}";
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Get BBCode formatted trait differences for Godot RichTextLabel.
+    /// Positive changes in green, negative in red.
+    /// </summary>
+    /// <param name="differences">Dictionary from CompareNumericTraits</param>
+    /// <returns>BBCode formatted string</returns>
+    public static string FormatTraitDifferencesBBCode(Dictionary<string, double> differences)
+    {
+        var lines = differences
+            .OrderByDescending(d => Math.Abs(d.Value))
+            .Select(d =>
+            {
+                var color = d.Value >= 0 ? "green" : "red";
+                var sign = d.Value >= 0 ? "+" : "";
+                return $"[color={color}]{sign}{d.Value:F1} {d.Key}[/color]";
+            });
+
+        return string.Join("\n", lines);
+    }
+
+    /// <summary>
+    /// Search for traits matching a pattern.
+    /// Useful for finding all damage-related traits, resist traits, etc.
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <param name="pattern">Search pattern (case-insensitive)</param>
+    /// <returns>Dictionary of matching traits</returns>
+    public static Dictionary<string, TraitValue> SearchTraits(ITraitable entity, string pattern)
+    {
+        return entity.Traits
+            .Where(t => t.Key.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(t => t.Key, t => t.Value);
+    }
+
+    /// <summary>
+    /// Get trait count by type.
+    /// Useful for statistics and debugging.
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <returns>Dictionary of trait type to count</returns>
+    public static Dictionary<TraitType, int> GetTraitStatistics(ITraitable entity)
+    {
+        return entity.Traits
+            .GroupBy(t => t.Value.Type)
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    /// <summary>
+    /// Clone all traits from source to target.
+    /// Creates new TraitValue instances (deep copy).
+    /// </summary>
+    /// <param name="source">Source entity</param>
+    /// <param name="target">Target entity</param>
+    public static void CloneTraits(ITraitable source, ITraitable target)
+    {
+        target.Traits.Clear();
+        foreach (var trait in source.Traits)
+        {
+            target.Traits[trait.Key] = new TraitValue(trait.Value.Value, trait.Value.Type);
+        }
+    }
 }
