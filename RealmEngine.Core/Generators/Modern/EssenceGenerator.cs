@@ -58,7 +58,6 @@ public class EssenceGenerator
                 Slug = selected.Slug,
                 Name = selected.Name,
                 Description = selected.Description,
-                SocketType = SocketType.Essence,
                 Category = selected.Category,
                 Rarity = selected.Rarity,
                 Price = selected.Price,

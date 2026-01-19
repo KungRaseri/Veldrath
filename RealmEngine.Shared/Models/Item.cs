@@ -23,9 +23,15 @@ public class Item : ITraitable
     public string Name { get; set; } = string.Empty;
     
     /// <summary>
-    /// Gets or sets the descriptive text for the item.
+    /// Gets or sets the descriptive text for the item (mechanical description).
     /// </summary>
     public string Description { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the lore/flavor text for the item (history, significance).
+    /// Optional field that provides immersive backstory. May be procedurally generated.
+    /// </summary>
+    public string? Lore { get; set; }
     
     /// <summary>
     /// Gets or sets the market value of the item in gold.
@@ -47,6 +53,12 @@ public class Item : ITraitable
     /// Gets or sets the item type/category (Weapon, Armor, Consumable, Quest, Material, etc.).
     /// </summary>
     public ItemType Type { get; set; } = ItemType.Consumable;
+    
+    /// <summary>
+    /// Gets or sets the requirements to equip or use this item.
+    /// Includes level, attribute, and skill requirements.
+    /// </summary>
+    public ItemRequirements? Requirements { get; set; }
 
     /// <summary>
     /// Gets or sets the quantity of this item (for stackable items like consumables, materials).
@@ -67,14 +79,28 @@ public class Item : ITraitable
     public bool IsStackable { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the base attribute bonuses from this item.
+    /// Gets or sets the implicit attribute bonuses from the base item type (from catalog).
+    /// These are inherent to the item type and never change (e.g., all longswords have +10 STR).
+    /// </summary>
+    public Dictionary<string, int> BaseAttributes { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the implicit traits from the base item type (from catalog).
+    /// These are inherent properties that define the item type (e.g., base damage, armor class).
+    /// </summary>
+    public Dictionary<string, TraitValue> BaseTraits { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the combined attribute bonuses from this item (base + material + enchantments).
     /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
+    /// NOTE: This is computed/legacy - prefer BaseAttributes for display separation.
     /// </summary>
     public Dictionary<string, int> Attributes { get; set; } = new();
     
     /// <summary>
     /// Gets or sets the trait system dictionary for dynamic properties defined in JSON.
     /// Implements ITraitable interface.
+    /// NOTE: This is combined data - prefer BaseTraits for display separation.
     /// </summary>
     public Dictionary<string, TraitValue> Traits { get; set; } = new();
     

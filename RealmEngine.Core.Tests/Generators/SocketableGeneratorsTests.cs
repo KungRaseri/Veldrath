@@ -127,7 +127,6 @@ public class SocketableGeneratorsTests
         essence.Should().NotBeNull();
         essence!.Id.Should().NotBeNullOrEmpty();
         essence.Name.Should().NotBeNullOrEmpty();
-        essence.SocketType.Should().Be(SocketType.Essence);
         essence.RarityWeight.Should().BeGreaterThan(0);
     }
 
@@ -145,7 +144,6 @@ public class SocketableGeneratorsTests
         // Assert
         essence.Should().NotBeNull();
         essence!.Category.Should().Be(category);
-        essence.SocketType.Should().Be(SocketType.Essence);
     }
 
     [Fact]
@@ -159,7 +157,6 @@ public class SocketableGeneratorsTests
 
         // Assert
         essences.Should().HaveCount(5);
-        essences.Should().OnlyContain(e => e.SocketType == SocketType.Essence);
         essences.Select(e => e.Id).Should().OnlyHaveUniqueItems();
     }
 
@@ -390,7 +387,6 @@ public class SocketableGeneratorsTests
 
         // Act
         var gem = gemGen.Generate();
-        var essence = essenceGen.Generate();
         var rune = runeGen.Generate();
         var crystal = crystalGen.Generate();
         var orb = orbGen.Generate();
@@ -398,7 +394,6 @@ public class SocketableGeneratorsTests
         // Assert
         var socketTypes = new[] { 
             gem?.SocketType, 
-            essence?.SocketType, 
             rune?.SocketType, 
             crystal?.SocketType, 
             orb?.SocketType 
@@ -406,7 +401,6 @@ public class SocketableGeneratorsTests
 
         socketTypes.Should().OnlyHaveUniqueItems();
         socketTypes.Should().Contain(SocketType.Gem);
-        socketTypes.Should().Contain(SocketType.Essence);
         socketTypes.Should().Contain(SocketType.Rune);
         socketTypes.Should().Contain(SocketType.Crystal);
         socketTypes.Should().Contain(SocketType.Orb);
@@ -417,13 +411,12 @@ public class SocketableGeneratorsTests
     {
         // Arrange & Act
         var gem = new GemGenerator(_dataCache, new NullLogger<GemGenerator>()).Generate();
-        var essence = new EssenceGenerator(_dataCache, new NullLogger<EssenceGenerator>()).Generate();
         var rune = new RuneGenerator(_dataCache, new NullLogger<RuneGenerator>()).Generate();
         var crystal = new CrystalGenerator(_dataCache, new NullLogger<CrystalGenerator>()).Generate();
         var orb = new OrbGenerator(_dataCache, new NullLogger<OrbGenerator>()).Generate();
 
         // Assert - All should implement common socketable properties
-        var socketables = new ISocketable?[] { gem, essence, rune, crystal, orb };
+        var socketables = new ISocketable?[] { gem, rune, crystal, orb };
         socketables.Should().AllSatisfy(s =>
         {
             s.Should().NotBeNull();

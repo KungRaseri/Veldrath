@@ -2,32 +2,27 @@ namespace RealmEngine.Shared.Models;
 
 /// <summary>
 /// Types of sockets available for items.
-/// Each type accepts specific socketable content (gems, essences, runes, etc.).
+/// Essences are NOT socketable - they are crafting materials only.
 /// </summary>
 public enum SocketType
 {
     /// <summary>
-    /// Physical gems providing stat bonuses (Ruby, Sapphire, etc.).
+    /// Physical gems providing attribute bonuses (Ruby: +STR, Sapphire: +INT, etc.).
     /// </summary>
     Gem,
     
     /// <summary>
-    /// Magical essences providing elemental effects (Fire Essence, Shadow Essence, etc.).
-    /// </summary>
-    Essence,
-    
-    /// <summary>
-    /// Inscribed runes providing skill modifiers (Flame Rune, Protection Rune, etc.).
+    /// Inscribed runes providing proc effects (Fury Rune: chance to enrage, etc.).
     /// </summary>
     Rune,
     
     /// <summary>
-    /// Energy crystals providing resource effects (Mana Crystal, Life Crystal, etc.).
+    /// Energy crystals providing resource effects (Life Crystal: +max HP, +regen, etc.).
     /// </summary>
     Crystal,
     
     /// <summary>
-    /// Skill orbs providing ability enhancements (Combat Orb, Magic Orb, etc.).
+    /// Skill orbs providing ability enhancements (Strike Orb: +skill damage, -cooldown, etc.).
     /// </summary>
     Orb
 }

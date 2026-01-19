@@ -2,12 +2,12 @@ namespace RealmEngine.Shared.Models;
 
 /// <summary>
 /// Represents a socket slot in an item that can hold socketable content.
-/// No subtype constraints - any gem fits any gem socket, any essence fits any essence socket, etc.
+/// No subtype constraints - any gem fits any gem socket, any rune fits any rune socket, etc.
 /// </summary>
 public class Socket
 {
     /// <summary>
-    /// Type of content this socket accepts (Gem, Essence, Rune, Crystal, or Orb).
+    /// Type of content this socket accepts (Gem, Rune, Crystal, or Orb).
     /// </summary>
     public SocketType Type { get; set; }
     
@@ -20,6 +20,13 @@ public class Socket
     /// Whether this socket is locked and cannot be modified.
     /// </summary>
     public bool IsLocked { get; set; } = false;
+    
+    /// <summary>
+    /// Link group identifier for socket linking (-1 = unlinked).
+    /// Sockets with the same positive LinkGroup value are linked together.
+    /// Linked sockets enable combo bonuses when socketed items work together.
+    /// </summary>
+    public int LinkGroup { get; set; } = -1;
     
     /// <summary>
     /// Check if this socket can accept a given socketable item.

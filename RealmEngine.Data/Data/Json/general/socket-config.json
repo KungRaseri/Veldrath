@@ -1,0 +1,116 @@
+{
+  "metadata": {
+    "description": "Socket generation configuration for items",
+    "version": "1.0",
+    "lastUpdated": "2026-01-18",
+    "type": "socket_config",
+    "notes": [
+      "Socket counts based on item rarity",
+      "Socket type weights vary by item type (weapons, armor, accessories)",
+      "Link chances determine grouped socket connections for combo bonuses",
+      "Material bonuses apply to Rare+ materials only"
+    ]
+  },
+  "socketCounts": {
+    "Common": {
+      "chances": [50, 50],
+      "description": "0-1 sockets: 50% for 0, 50% for 1"
+    },
+    "Uncommon": {
+      "chances": [30, 40, 30],
+      "description": "0-2 sockets: 30% for 0, 40% for 1, 30% for 2"
+    },
+    "Rare": {
+      "chances": [10, 40, 30, 20],
+      "description": "0-3 sockets: 10% for 0, 40% for 1, 30% for 2, 20% for 3"
+    },
+    "Epic": {
+      "chances": [0, 20, 30, 50, 30],
+      "description": "1-4 sockets: 20% for 1, 30% for 2, 50% for 3, 30% for 4"
+    },
+    "Legendary": {
+      "chances": [0, 0, 30, 30, 40, 20, 10],
+      "description": "2-6 sockets: 30% for 2, 30% for 3, 40% for 4, 20% for 5, 10% for 6"
+    }
+  },
+  "socketTypeWeights": {
+    "Weapon": {
+      "Gem": 30,
+      "Rune": 30,
+      "Crystal": 15,
+      "Orb": 25
+    },
+    "Armor": {
+      "Gem": 25,
+      "Rune": 20,
+      "Crystal": 35,
+      "Orb": 20
+    },
+    "Accessory": {
+      "Gem": 25,
+      "Rune": 25,
+      "Crystal": 25,
+      "Orb": 25
+    }
+  },
+  "linkChances": {
+    "Rare": {
+      "twoLink": 30,
+      "threeLink": 0,
+      "fourLink": 0,
+      "description": "30% chance for one 2-link group"
+    },
+    "Epic": {
+      "twoLink": 50,
+      "threeLink": 20,
+      "fourLink": 0,
+      "description": "50% chance for 2-link, 20% chance for 3-link"
+    },
+    "Legendary": {
+      "twoLink": 0,
+      "threeLink": 100,
+      "fourLink": 30,
+      "fiveLink": 10,
+      "description": "Guaranteed 3-link, 30% chance for 4-link, 10% for 5-link"
+    }
+  },
+  "materialBonuses": {
+    "Mithril": {
+      "socketChanceBonus": 10,
+      "linkChanceBonus": 5,
+      "guaranteedSockets": 0,
+      "tier": "Rare"
+    },
+    "Elven Steel": {
+      "socketChanceBonus": 10,
+      "linkChanceBonus": 5,
+      "guaranteedSockets": 0,
+      "tier": "Rare"
+    },
+    "Adamantine": {
+      "socketChanceBonus": 20,
+      "linkChanceBonus": 10,
+      "guaranteedSockets": 1,
+      "tier": "Epic"
+    },
+    "Starmetal": {
+      "socketChanceBonus": 15,
+      "linkChanceBonus": 10,
+      "guaranteedSockets": 0,
+      "tier": "Epic"
+    },
+    "Dragonscale": {
+      "socketChanceBonus": 15,
+      "linkChanceBonus": 15,
+      "guaranteedSockets": 0,
+      "tier": "Legendary",
+      "specialEffect": "Higher chance for Crystal socket type"
+    },
+    "Orichalcum": {
+      "socketChanceBonus": 20,
+      "linkChanceBonus": 15,
+      "guaranteedSockets": 1,
+      "tier": "Legendary"
+    }
+  }
+}
