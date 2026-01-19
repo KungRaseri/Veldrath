@@ -6,6 +6,69 @@
 
 ---
 
+## Table of Contents
+
+1. [Executive Summary](#executive-summary) - Overview and major changes
+2. [Current State Analysis](#current-state-analysis) - Problems with current structure
+3. [JSON v4.3 Architecture Changes](#json-v43-architecture-changes) - New directory structure and files
+4. [Proposed Architecture](#proposed-architecture) - Component classes and Item model
+5. [Display Name Generation](#display-name-generation) - How names are constructed
+6. [Tooltip Data Structure](#tooltip-data-structure-option-b-trait-separation) - Tooltip breakdown by source
+7. [Component Count Limits](#component-count-limits) - Rarity-based restrictions
+8. [Enchantments](#enchantments-separate-from-name-components) - Separation from prefixes/suffixes
+9. [Migration Strategy](#migration-strategy) - 7-phase implementation plan
+10. [Migration Script](#migration-script) - Complete Python automation
+11. [Resolved Architectural Decisions](#resolved-architectural-decisions) - All 13 decisions documented
+12. [Next Steps](#next-steps) - Immediate actions and success criteria
+13. [Documentation Updates](#documentation-updates-required) - Files to update/create
+14. [Approval Checklist](#approval-checklist) - Final approval status
+
+---
+
+## Quick Reference
+
+**Key Breaking Change:** All material property references must update:
+- `@materials/properties/metals:iron` → `@properties/materials/metals:iron`
+
+**Migration Commands:**
+```bash
+# Create backup
+python scripts/migrate-to-v4.3-unified-architecture.py --backup
+
+# Execute all phases
+python scripts/migrate-to-v4.3-unified-architecture.py --all
+
+# Or execute phase by phase
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 1  # Non-breaking
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 2  # BREAKING
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 3  # BREAKING
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 4  # Cleanup
+```
+
+**Estimated Timeline:** 16 days total (4 JSON migration + 3 code updates + 3 testing)
+
+**Files Created:**
+- `properties/materials/` (moved from materials/properties/)
+- `properties/qualities/catalog.json` (extracted from names.json)
+- `configuration/rarity.json`
+- `configuration/budget.json`
+- `configuration/material-filters.json`
+- `configuration/generation-rules.json`
+- `configuration/socket-config.json`
+
+**Files Modified:**
+- All `names.json` files (remove quality/material, rename value→name)
+- ~100+ catalog/recipe files (reference updates)
+- `Item.cs`, `ItemGenerator.cs`, service classes
+
+**Files Deleted:**
+- `materials/properties/` (moved)
+- `general/budget-config.json` (moved)
+- `general/socket_config.json` (moved)
+- `general/material-pools.json` (replaced)
+
+---
+
 ## Executive Summary
 
 Refactor the Item model to provide clear separation between Quality, Material, Prefixes, Suffixes, Enchantments, and Sockets. This enables granular tooltip display, proper trait attribution, and eliminates ambiguity in item name generation.
@@ -1840,57 +1903,9 @@ if __name__ == '__main__':
     main()
 ```
 
----
-
-## Migration Strategy
-
-### Phase 1: Add New Structure (Non-Breaking)
-
-**Goal:** Introduce new component classes and properties without breaking existing code.
-
-**Changes:**
-1. Create new component classes (ItemQuality, ItemMaterial, ItemPrefix, ItemSuffix)
-2. Add new properties to Item model
-3. Mark old properties as `[Obsolete]`
-4. Keep old properties functional during transition
-
-**Timeline:** 1 week
-
-### Phase 2: Update Generators
-
-**Goal:** Modify ItemGenerator to populate new structure.
-
-**Changes:**
-1. Parse names.json components by category (quality, prefix, suffix)
-2. Resolve materials to ItemMaterial objects
-3. Populate new properties (Quality, Material, Prefixes, Suffixes)
-4. Maintain backward compatibility by populating old properties too
-
-**Timeline:** 2 weeks
-
-### Phase 3: Update Consumers
-
-**Goal:** Update all systems to use new structure.
-
-**Changes:**
-1. Tooltip generation
-2. UI bindings (Godot)
-3. Combat calculations
-4. Save/load serialization
-5. Tests
-
-**Timeline:** 2 weeks
-
-### Phase 4: Remove Old Properties
-
-**Goal:** Clean up obsolete code.
-
-**Changes:**
-1. Remove `[Obsolete]` properties
-2. Remove backward compatibility shims
-3. Update documentation
-
-**Timeline:** 1 week
+**Note:** The complete migration is split into 7 phases total:
+- Phases 1-4: JSON data migration (covered above)
+- Phases 5-7: C# code updates (covered below)
 
 ---
 
