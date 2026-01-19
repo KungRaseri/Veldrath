@@ -51,3 +51,32 @@ public record CombatEnded(string PlayerName, bool Victory) : INotification;
 /// Event raised when an item is acquired.
 /// </summary>
 public record ItemAcquired(string PlayerName, string ItemName) : INotification;
+
+/// <summary>
+/// Event raised when a socketable item is added to an equipment socket.
+/// </summary>
+public record ItemSocketed(
+    string ItemId, 
+    string SocketableItemName, 
+    SocketType SocketType, 
+    int SocketIndex,
+    Dictionary<string, TraitValue> AppliedTraits) : INotification;
+
+/// <summary>
+/// Event raised when a socketable item is removed from an equipment socket.
+/// </summary>
+public record ItemUnsocketed(
+    string ItemId, 
+    string SocketableItemName, 
+    SocketType SocketType, 
+    int SocketIndex,
+    int GoldCost) : INotification;
+
+/// <summary>
+/// Event raised when linked sockets are filled and a combo bonus activates.
+/// </summary>
+public record SocketLinkActivated(
+    string ItemId, 
+    int LinkGroupId, 
+    int LinkSize, 
+    double BonusMultiplier) : INotification;
