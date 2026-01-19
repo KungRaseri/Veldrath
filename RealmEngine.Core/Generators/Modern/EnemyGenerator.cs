@@ -172,7 +172,12 @@ public class EnemyGenerator
             
             // Determine if this is a boss enemy from category properties
             bool isBoss = categoryProperties?["isBoss"]?.Value<bool>() ?? false;
-            var rarity = GetIntProperty(catalogEnemy, "rarity", 10);
+            // v5.1+: Use rarityWeight, fallback to old rarity field for backward compatibility
+            var rarity = GetIntProperty(catalogEnemy, "rarityWeight", 0);
+            if (rarity == 0)
+            {
+                rarity = GetIntProperty(catalogEnemy, "rarity", 10);
+            }
             
             // v5.1: Read stats from stats object (formulas), fallback to v4.0 direct values
             var statsObj = catalogEnemy["stats"] as JObject;

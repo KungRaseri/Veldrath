@@ -192,7 +192,7 @@ public class BossEncounterIntegrationTests
 
     [Theory]
     [InlineData("demons", "Dark Lord", EnemyDifficulty.Boss)] // Has isBoss in catalog
-    [InlineData("wolves", "Fenrir the Ancient", EnemyDifficulty.Elite)] // Rarity 95, no isBoss flag
+    [InlineData("wolves", "Fenrir the Ancient", EnemyDifficulty.Easy)] // rarityWeight 100 = common, defaults to Easy
     public async Task Should_Generate_Different_Bosses_From_Different_Categories(string category, string bossName, EnemyDifficulty expectedDifficulty)
     {
         // Act
