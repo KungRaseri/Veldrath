@@ -364,4 +364,100 @@ public class ItemGeneratorTests
                 item.Name.Should().Contain(item.Material, "Name should include material");
         }
     }
+
+    [Fact]
+    public async Task Should_Generate_Items_With_Sockets_Based_On_Rarity()
+    {
+        // Arrange
+        _dataCache.LoadAllData();
+
+        // Act - Generate many items to ensure some have sockets
+        var weapons = await _generator.GenerateItemsAsync("weapons", 100);
+
+        // Assert
+        var itemsWithSockets = weapons.Where(w => w.Sockets.Count > 0).ToList();
+        
+        // Should generate at least some items with sockets
+        itemsWithSockets.Should().NotBeEmpty("Higher rarity items should have sockets");
+
+        foreach (var item in itemsWithSockets)
+        {
+            // Each socket should be valid
+            foreach (var socketList in item.Sockets.Values)
+            {
+                socketList.Should().NotBeEmpty();
+                
+                foreach (var socket in socketList)
+                {
+                    socket.Type.Should().BeDefined();
+                    socket.LinkGroup.Should().BeGreaterThanOrEqualTo(-1, "LinkGroup should be -1 (unlinked) or positive (linked)");
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Should_Generate_More_Sockets_For_Higher_Rarity_Items()
+    {
+        // Arrange
+        _dataCache.LoadAllData();
+
+        // Act - Generate many items of different rarities
+        var items = await _generator.GenerateItemsAsync("weapons", 200);
+
+        // Group by rarity
+        var commonItems = items.Where(i => i.Rarity == ItemRarity.Common).ToList();
+        var rareItems = items.Where(i => i.Rarity == ItemRarity.Rare).ToList();
+        var legendaryItems = items.Where(i => i.Rarity == ItemRarity.Legendary).ToList();
+
+        // Calculate average socket counts
+        var commonAvg = commonItems.Any() ? commonItems.Average(i => i.Sockets.Values.Sum(list => list.Count)) : 0;
+        var rareAvg = rareItems.Any() ? rareItems.Average(i => i.Sockets.Values.Sum(list => list.Count)) : 0;
+        var legendaryAvg = legendaryItems.Any() ? legendaryItems.Average(i => i.Sockets.Values.Sum(list => list.Count)) : 0;
+
+        // Assert - Higher rarity should generally have more sockets
+        // Note: This is probabilistic, but with 200 items the trend should be clear
+        if (commonItems.Any() && rareItems.Any())
+        {
+            rareAvg.Should().BeGreaterThanOrEqualTo(commonAvg, "Rare items should generally have more sockets than common");
+        }
+        
+        if (rareItems.Any() && legendaryItems.Any())
+        {
+            legendaryAvg.Should().BeGreaterThanOrEqualTo(rareAvg, "Legendary items should generally have more sockets than rare");
+        }
+    }
+
+    [Fact]
+    public async Task Should_Serialize_Items_With_Sockets_Correctly()
+    {
+        // Arrange
+        _dataCache.LoadAllData();
+
+        // Act - Generate item and serialize/deserialize
+        var items = await _generator.GenerateItemsAsync("weapons", 50);
+        var itemWithSockets = items.FirstOrDefault(i => i.Sockets.Count > 0);
+
+        // Assert
+        itemWithSockets.Should().NotBeNull("Should generate at least one item with sockets");
+
+        if (itemWithSockets != null)
+        {
+            // Serialize to JSON
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(itemWithSockets, Newtonsoft.Json.Formatting.Indented);
+            json.Should().Contain("Sockets", "JSON should contain sockets property");
+
+            // Deserialize back
+            var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<Item>(json);
+            deserialized.Should().NotBeNull();
+            deserialized!.Sockets.Should().HaveCount(itemWithSockets.Sockets.Count, "Sockets should deserialize correctly");
+
+            // Verify socket details match
+            foreach (var kvp in itemWithSockets.Sockets)
+            {
+                deserialized.Sockets.Should().ContainKey(kvp.Key, "Socket type should be preserved");
+                deserialized.Sockets[kvp.Key].Should().HaveCount(kvp.Value.Count, "Socket count should match");
+            }
+        }
+    }
 }

@@ -22,15 +22,25 @@ public class SocketGeneratorTests : IDisposable
     public SocketGeneratorTests()
     {
         // Use real GameDataCache with actual JSON data
-        _basePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
+        var currentDir = Directory.GetCurrentDirectory();
+        _basePath = Path.GetFullPath(Path.Combine(currentDir, "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json"));
+        
+        if (!Directory.Exists(_basePath))
+        {
+            throw new Exception($"Data directory not found at: {_basePath}");
+        }
+        
         _dataCache = new GameDataCache(_basePath, new MemoryCache(new MemoryCacheOptions()));
+        _dataCache.LoadAllData(); // Load all JSON files from the data directory
+        
         _mockLogger = new Mock<ILogger<SocketGenerator>>();
         
         // Verify socket config is loaded
         var configExists = _dataCache.FileExists("general/socket_config.json");
         if (!configExists)
         {
-            throw new Exception($"socket_config.json not found. Base path: {_basePath}. Total files: {_dataCache.GetStats().TotalFiles}");
+            var stats = _dataCache.GetStats();
+            throw new Exception($"socket_config.json not found. Base path: {_basePath}. Total files: {stats.TotalFiles}. Config files: {stats.ConfigFiles}");
         }
         
         _generator = new SocketGenerator(_dataCache, _mockLogger.Object);

@@ -21,6 +21,7 @@ public class ItemGenerator
     private readonly NameComposer _nameComposer;
     private EnchantmentGenerator? _enchantmentGenerator;
     private BudgetItemGenerationService? _budgetGenerator;
+    private SocketGenerator? _socketGenerator;
 
     /// <summary>
     /// Initializes a new instance of the ItemGenerator class.
@@ -48,6 +49,18 @@ public class ItemGenerator
         {
             _enchantmentGenerator ??= new EnchantmentGenerator(_dataCache, _referenceResolver, _loggerFactory.CreateLogger<EnchantmentGenerator>());
             return _enchantmentGenerator;
+        }
+    }
+
+    /// <summary>
+    /// Gets or creates the socket generator (lazy initialization).
+    /// </summary>
+    private SocketGenerator SocketGenerator
+    {
+        get
+        {
+            _socketGenerator ??= new SocketGenerator(_dataCache, _loggerFactory.CreateLogger<SocketGenerator>());
+            return _socketGenerator;
         }
     }
 
@@ -1118,6 +1131,25 @@ public class ItemGenerator
 
         // Calculate rarity from budget
         item.Rarity = CalculateRarityFromBudget(result.AdjustedBudget);
+
+        // Generate sockets based on item rarity, type, and material
+        try
+        {
+            var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material);
+            if (socketList.Count > 0)
+            {
+                // Group sockets by type for the dictionary structure
+                item.Sockets = socketList
+                    .GroupBy(s => s.Type)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+                
+                _logger.LogDebug("Generated {SocketCount} sockets for {ItemName}", socketList.Count, item.Name);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
+        }
 
         return item;
     }
