@@ -32,7 +32,6 @@
           "description": "A chainmail hood that protects the head and neck without restricting vision or movement.",
           "value": 12,
           "weight": 1.5,
-          "budgetCost": 3,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -54,7 +53,6 @@
           "description": "A hooded garment favored by rogues and scouts, offering subtle protection while maintaining stealth.",
           "value": 8,
           "weight": 0.5,
-          "budgetCost": 3,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -76,7 +74,6 @@
           "description": "A simple cloth hood that provides minimal protection but excellent concealment in shadows.",
           "value": 5,
           "weight": 0.3,
-          "budgetCost": 2,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -97,7 +94,6 @@
           "slug": "crown",
           "value": 100,
           "weight": 1.0,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -119,7 +115,6 @@
           "slug": "circlet",
           "value": 80,
           "weight": 0.5,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -141,7 +136,6 @@
           "slug": "vest",
           "value": 15,
           "weight": 3.0,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -163,7 +157,6 @@
           "slug": "jerkin",
           "value": 20,
           "weight": 4.0,
-          "budgetCost": 7,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -185,7 +178,6 @@
           "slug": "gloves",
           "value": 8,
           "weight": 0.5,
-          "budgetCost": 2,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -207,7 +199,6 @@
           "slug": "bracers",
           "value": 10,
           "weight": 1.0,
-          "budgetCost": 3,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -229,7 +220,6 @@
           "slug": "mittens",
           "value": 5,
           "weight": 0.3,
-          "budgetCost": 2,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -251,7 +241,6 @@
           "slug": "tassets",
           "value": 15,
           "weight": 3.0,
-          "budgetCost": 5,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -273,7 +262,6 @@
           "slug": "shoes",
           "value": 5,
           "weight": 1.0,
-          "budgetCost": 2,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -295,7 +283,6 @@
           "slug": "sandals",
           "value": 3,
           "weight": 0.5,
-          "budgetCost": 2,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -317,7 +304,6 @@
           "slug": "mantle",
           "value": 10,
           "weight": 1.0,
-          "budgetCost": 3,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -339,7 +325,6 @@
           "slug": "shield",
           "value": 25,
           "weight": 6.0,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -361,7 +346,6 @@
           "slug": "buckler",
           "value": 15,
           "weight": 3.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -383,7 +367,6 @@
           "slug": "tower-shield",
           "value": 60,
           "weight": 15.0,
-          "budgetCost": 10,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -405,7 +388,6 @@
           "slug": "kite-shield",
           "value": 35,
           "weight": 8.0,
-          "budgetCost": 7,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -427,7 +409,6 @@
           "slug": "heater",
           "value": 20,
           "weight": 5.0,
-          "budgetCost": 5,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -460,7 +441,6 @@
           "slug": "sallet",
           "value": 25,
           "weight": 2.5,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -482,7 +462,6 @@
           "slug": "hauberk",
           "value": 60,
           "weight": 20.0,
-          "budgetCost": 9,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -504,7 +483,6 @@
           "slug": "chainmail",
           "value": 50,
           "weight": 18.0,
-          "budgetCost": 8,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -526,7 +504,6 @@
           "slug": "scale-mail",
           "value": 45,
           "weight": 15.0,
-          "budgetCost": 8,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -548,7 +525,6 @@
           "slug": "ring-mail",
           "value": 35,
           "weight": 12.0,
-          "budgetCost": 7,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -570,7 +546,6 @@
           "slug": "banded-mail",
           "value": 55,
           "weight": 16.0,
-          "budgetCost": 8,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -592,7 +567,6 @@
           "slug": "vambraces",
           "value": 12,
           "weight": 1.5,
-          "budgetCost": 3,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -614,7 +588,6 @@
           "slug": "leggings",
           "value": 20,
           "weight": 4.0,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -636,7 +609,6 @@
           "slug": "chausses",
           "value": 25,
           "weight": 5.0,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -658,7 +630,6 @@
           "slug": "boots",
           "value": 12,
           "weight": 2.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -680,7 +651,6 @@
           "slug": "spaulders",
           "value": 18,
           "weight": 3.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -702,7 +672,6 @@
           "slug": "shoulderguards",
           "value": 15,
           "weight": 2.5,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -735,7 +704,6 @@
           "slug": "helm",
           "value": 20,
           "weight": 3.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -757,7 +725,6 @@
           "slug": "helmet",
           "value": 18,
           "weight": 3.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -779,7 +746,6 @@
           "slug": "great-helm",
           "value": 40,
           "weight": 5.0,
-          "budgetCost": 6,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -801,7 +767,6 @@
           "slug": "armet",
           "value": 35,
           "weight": 3.5,
-          "budgetCost": 5,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -823,7 +788,6 @@
           "slug": "barbute",
           "value": 30,
           "weight": 3.0,
-          "budgetCost": 5,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -845,7 +809,6 @@
           "slug": "cuirass",
           "value": 80,
           "weight": 15.0,
-          "budgetCost": 10,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -867,7 +830,6 @@
           "slug": "breastplate",
           "value": 70,
           "weight": 12.0,
-          "budgetCost": 10,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -889,7 +851,6 @@
           "slug": "chestplate",
           "value": 75,
           "weight": 14.0,
-          "budgetCost": 11,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -911,7 +872,6 @@
           "slug": "plate-mail",
           "value": 120,
           "weight": 25.0,
-          "budgetCost": 12,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -933,7 +893,6 @@
           "slug": "gauntlets",
           "value": 15,
           "weight": 2.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -955,7 +914,6 @@
           "slug": "greaves",
           "value": 30,
           "weight": 6.0,
-          "budgetCost": 7,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -977,7 +935,6 @@
           "slug": "sabatons",
           "value": 20,
           "weight": 4.0,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -999,7 +956,6 @@
           "slug": "sollerets",
           "value": 18,
           "weight": 3.5,
-          "budgetCost": 4,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
@@ -1021,7 +977,6 @@
           "slug": "pauldrons",
           "value": 25,
           "weight": 4.0,
-          "budgetCost": 5,
           "attributes": {
             "constitution": 10,
             "wisdom": 8,
