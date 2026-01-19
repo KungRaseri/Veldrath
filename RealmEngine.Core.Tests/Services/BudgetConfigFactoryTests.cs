@@ -61,8 +61,8 @@ public class BudgetConfigFactoryTests
     public void DataCache_ShouldHaveConfigFiles()
     {
         // Act - test different path formats
-        var budgetConfig1 = _dataCache.FileExists("general/budget-config.json");
-        var budgetConfig2 = _dataCache.FileExists("general\\budget-config.json");
+        var budgetConfig1 = _dataCache.FileExists("general/budget_config.json");
+        var budgetConfig2 = _dataCache.FileExists("general\\budget_config.json");
         
         var materialPools1 = _dataCache.FileExists("general/material-pools.json");
         var materialPools2 = _dataCache.FileExists("general\\material-pools.json");
@@ -74,7 +74,7 @@ public class BudgetConfigFactoryTests
         var totalFiles = _dataCache.TotalFilesLoaded;
 
         // Assert - at least one path format should work
-        (budgetConfig1 || budgetConfig2).Should().BeTrue($"budget-config.json should exist (tried forward and backslash). Total files loaded: {totalFiles}");
+        (budgetConfig1 || budgetConfig2).Should().BeTrue($"budget_config.json should exist (tried forward and backslash). Total files loaded: {totalFiles}");
         (materialPools1 || materialPools2).Should().BeTrue($"material-pools.json should exist. Total files loaded: {totalFiles}");
         (enemyTypes1 || enemyTypes2).Should().BeTrue($"enemy-types.json should exist. Total files loaded: {totalFiles}");
     }

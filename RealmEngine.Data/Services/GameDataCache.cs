@@ -605,6 +605,10 @@ public class GameDataCache : IDisposable
 
         if (fileName == ".cbconfig.json")
             return JsonFileType.ConfigFile;
+        
+        // Recognize game configuration files
+        if (fileName == "socket_config.json" || fileName == "budget_config.json")
+            return JsonFileType.ConfigFile;
 
         if (fileName == "catalog.json")
             return JsonFileType.GenericCatalog;

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace RealmEngine.Core.Services.Budget;
 
 /// <summary>
-/// Budget configuration loaded from general/budget-config.json.
+/// Budget configuration loaded from general/budget_config.json.
 /// Controls how item budget is calculated and allocated across components.
 /// </summary>
 public class BudgetConfig
