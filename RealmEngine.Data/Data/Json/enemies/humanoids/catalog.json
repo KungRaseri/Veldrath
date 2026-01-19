@@ -26,7 +26,7 @@
           "level": 3,
           "slug": "bandit",
           "name": "Bandit",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 50,
           "attributes": {
             "constitution": 10,
@@ -58,7 +58,7 @@
           "level": 4,
           "slug": "thug",
           "name": "Thug",
-          "rarityWeight": 6,
+          "rarityWeight": 104,
           "xp": 60,
           "attributes": {
             "constitution": 10,
@@ -94,7 +94,7 @@
           "level": 5,
           "slug": "brigand",
           "name": "Brigand",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 75,
           "attributes": {
             "constitution": 10,
@@ -130,7 +130,7 @@
           "level": 6,
           "slug": "highwayman",
           "name": "Highwayman",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 90,
           "attributes": {
             "constitution": 10,
@@ -176,7 +176,7 @@
           "level": 6,
           "slug": "warrior",
           "name": "Warrior",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 100,
           "attributes": {
             "constitution": 13,
@@ -215,7 +215,7 @@
           "level": 7,
           "slug": "mercenary",
           "name": "Mercenary",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 120,
           "attributes": {
             "constitution": 14,
@@ -255,7 +255,7 @@
           "level": 9,
           "slug": "captain",
           "name": "Captain",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 200,
           "attributes": {
             "constitution": 15,
@@ -295,7 +295,7 @@
           "level": 11,
           "slug": "champion",
           "name": "Champion",
-          "rarityWeight": 30,
+          "rarityWeight": 80,
           "xp": 300,
           "attributes": {
             "constitution": 16,
@@ -348,7 +348,7 @@
           "level": 8,
           "slug": "assassin",
           "name": "Assassin",
-          "rarityWeight": 22,
+          "rarityWeight": 88,
           "xp": 180,
           "attributes": {
             "constitution": 13,
@@ -391,7 +391,7 @@
           "level": 7,
           "slug": "archer",
           "name": "Archer",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 140,
           "attributes": {
             "constitution": 12,
@@ -430,7 +430,7 @@
           "level": 8,
           "slug": "mage",
           "name": "Mage",
-          "rarityWeight": 25,
+          "rarityWeight": 85,
           "xp": 200,
           "attributes": {
             "constitution": 11,
@@ -475,7 +475,7 @@
           "level": 9,
           "slug": "berserker",
           "name": "Berserker",
-          "rarityWeight": 24,
+          "rarityWeight": 86,
           "xp": 220,
           "attributes": {
             "constitution": 17,
@@ -527,7 +527,7 @@
           "level": 4,
           "slug": "cultist",
           "name": "Cultist",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 65,
           "attributes": {
             "constitution": 11,
@@ -563,7 +563,7 @@
           "level": 6,
           "slug": "zealot",
           "name": "Zealot",
-          "rarityWeight": 14,
+          "rarityWeight": 96,
           "xp": 110,
           "attributes": {
             "constitution": 14,
@@ -612,7 +612,7 @@
           "level": 10,
           "slug": "shrine-guardian",
           "name": "Shrine Guardian",
-          "rarityWeight": 100,
+          "rarityWeight": 10,
           "xp": 500,
           "attributes": {
             "constitution": 16,

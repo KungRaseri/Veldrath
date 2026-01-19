@@ -27,7 +27,7 @@
           "level": 3,
           "slug": "wolf",
           "name": "Wolf",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 50,
           "attributes": {
             "constitution": 10,
@@ -62,7 +62,7 @@
           "level": 5,
           "slug": "timber-wolf",
           "name": "Timber Wolf",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 75,
           "attributes": {
             "constitution": 10,
@@ -98,7 +98,7 @@
           "level": 7,
           "slug": "frost-wolf",
           "name": "Frost Wolf",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 100,
           "attributes": {
             "constitution": 10,
@@ -146,7 +146,7 @@
           "level": 6,
           "slug": "bear",
           "name": "Bear",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 120,
           "attributes": {
             "constitution": 15,
@@ -182,7 +182,7 @@
           "level": 5,
           "slug": "black-bear",
           "name": "Black Bear",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 100,
           "attributes": {
             "constitution": 14,
@@ -218,7 +218,7 @@
           "level": 8,
           "slug": "grizzly-bear",
           "name": "Grizzly Bear",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 180,
           "attributes": {
             "constitution": 17,
@@ -255,7 +255,7 @@
           "level": 10,
           "slug": "cave-bear",
           "name": "Cave Bear",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 250,
           "attributes": {
             "constitution": 18,
@@ -306,7 +306,7 @@
           "level": 7,
           "slug": "tiger",
           "name": "Tiger",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 140,
           "attributes": {
             "constitution": 14,
@@ -342,7 +342,7 @@
           "level": 6,
           "slug": "panther",
           "name": "Panther",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 110,
           "attributes": {
             "constitution": 13,
@@ -378,7 +378,7 @@
           "level": 8,
           "slug": "lion",
           "name": "Lion",
-          "rarityWeight": 14,
+          "rarityWeight": 96,
           "xp": 160,
           "attributes": {
             "constitution": 15,
@@ -426,7 +426,7 @@
           "level": 4,
           "slug": "serpent",
           "name": "Serpent",
-          "rarityWeight": 7,
+          "rarityWeight": 103,
           "xp": 60,
           "attributes": {
             "constitution": 12,
@@ -459,7 +459,7 @@
           "level": 9,
           "slug": "crocodile",
           "name": "Crocodile",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 200,
           "attributes": {
             "constitution": 17,
@@ -492,7 +492,7 @@
           "level": 5,
           "slug": "scorpion",
           "name": "Scorpion",
-          "rarityWeight": 9,
+          "rarityWeight": 101,
           "xp": 80,
           "attributes": {
             "constitution": 14,
@@ -525,7 +525,7 @@
           "level": 3,
           "slug": "spider",
           "name": "Spider",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 45,
           "attributes": {
             "constitution": 10,
@@ -558,7 +558,7 @@
           "level": 5,
           "slug": "boar",
           "name": "Boar",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 90,
           "attributes": {
             "constitution": 16,

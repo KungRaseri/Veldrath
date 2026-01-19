@@ -26,7 +26,7 @@
           "level": 20,
           "slug": "red-dragon",
           "name": "Red Dragon",
-          "rarityWeight": 80,
+          "rarityWeight": 30,
           "xp": 2000,
           "attributes": {
             "constitution": 10,
@@ -67,7 +67,7 @@
           "level": 19,
           "slug": "blue-dragon",
           "name": "Blue Dragon",
-          "rarityWeight": 75,
+          "rarityWeight": 35,
           "xp": 1800,
           "attributes": {
             "constitution": 10,
@@ -108,7 +108,7 @@
           "level": 18,
           "slug": "green-dragon",
           "name": "Green Dragon",
-          "rarityWeight": 70,
+          "rarityWeight": 40,
           "xp": 1600,
           "attributes": {
             "constitution": 10,
@@ -149,7 +149,7 @@
           "level": 17,
           "slug": "black-dragon",
           "name": "Black Dragon",
-          "rarityWeight": 68,
+          "rarityWeight": 42,
           "xp": 1500,
           "attributes": {
             "constitution": 10,
@@ -190,7 +190,7 @@
           "level": 16,
           "slug": "white-dragon",
           "name": "White Dragon",
-          "rarityWeight": 65,
+          "rarityWeight": 45,
           "xp": 1400,
           "attributes": {
             "constitution": 10,
@@ -240,7 +240,7 @@
           "level": 22,
           "slug": "gold-dragon",
           "name": "Gold Dragon",
-          "rarityWeight": 100,
+          "rarityWeight": 10,
           "xp": 2500,
           "attributes": {
             "constitution": 24,
@@ -282,7 +282,7 @@
           "level": 21,
           "slug": "silver-dragon",
           "name": "Silver Dragon",
-          "rarityWeight": 90,
+          "rarityWeight": 20,
           "xp": 2200,
           "attributes": {
             "constitution": 23,
@@ -323,7 +323,7 @@
           "level": 19,
           "slug": "bronze-dragon",
           "name": "Bronze Dragon",
-          "rarityWeight": 78,
+          "rarityWeight": 32,
           "xp": 1900,
           "attributes": {
             "constitution": 22,
@@ -364,7 +364,7 @@
           "level": 18,
           "slug": "copper-dragon",
           "name": "Copper Dragon",
-          "rarityWeight": 72,
+          "rarityWeight": 38,
           "xp": 1700,
           "attributes": {
             "constitution": 21,
@@ -405,7 +405,7 @@
           "level": 17,
           "slug": "brass-dragon",
           "name": "Brass Dragon",
-          "rarityWeight": 68,
+          "rarityWeight": 42,
           "xp": 1600,
           "attributes": {
             "constitution": 21,
@@ -455,7 +455,7 @@
           "level": 12,
           "slug": "drake",
           "name": "Drake",
-          "rarityWeight": 30,
+          "rarityWeight": 80,
           "xp": 600,
           "attributes": {
             "constitution": 18,
@@ -491,7 +491,7 @@
           "level": 14,
           "slug": "wyrm",
           "name": "Wyrm",
-          "rarityWeight": 40,
+          "rarityWeight": 70,
           "xp": 800,
           "attributes": {
             "constitution": 19,
@@ -528,7 +528,7 @@
           "level": 11,
           "slug": "wyvern",
           "name": "Wyvern",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 550,
           "attributes": {
             "constitution": 17,

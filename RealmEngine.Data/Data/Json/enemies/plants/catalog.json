@@ -29,7 +29,7 @@
           "level": 2,
           "slug": "vine",
           "name": "Vine",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 30,
           "attributes": {
             "constitution": 13,
@@ -61,7 +61,7 @@
           "level": 4,
           "slug": "carnivorous-plant",
           "name": "Carnivorous Plant",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 55,
           "attributes": {
             "constitution": 14,
@@ -94,7 +94,7 @@
           "level": 5,
           "slug": "venus-trap",
           "name": "Venus Trap",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 75,
           "attributes": {
             "constitution": 16,
@@ -127,7 +127,7 @@
           "level": 7,
           "slug": "man-eater",
           "name": "Man-Eater",
-          "rarityWeight": 25,
+          "rarityWeight": 85,
           "xp": 120,
           "attributes": {
             "constitution": 17,
@@ -171,7 +171,7 @@
           "level": 3,
           "slug": "thorn-bush",
           "name": "Thorn Bush",
-          "rarityWeight": 6,
+          "rarityWeight": 104,
           "xp": 40,
           "attributes": {
             "constitution": 14,
@@ -204,7 +204,7 @@
           "level": 4,
           "slug": "bramble",
           "name": "Bramble",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 50,
           "attributes": {
             "constitution": 15,
@@ -237,7 +237,7 @@
           "level": 7,
           "slug": "thorn-tree",
           "name": "Thorn Tree",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 110,
           "attributes": {
             "constitution": 18,
@@ -281,7 +281,7 @@
           "level": 8,
           "slug": "shambling-mound",
           "name": "Shambling Mound",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 140,
           "attributes": {
             "constitution": 18,
@@ -315,7 +315,7 @@
           "level": 10,
           "slug": "treant",
           "name": "Treant",
-          "rarityWeight": 40,
+          "rarityWeight": 70,
           "xp": 190,
           "attributes": {
             "constitution": 20,
@@ -349,7 +349,7 @@
           "level": 6,
           "slug": "myconid",
           "name": "Myconid",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 85,
           "attributes": {
             "constitution": 14,
@@ -383,7 +383,7 @@
           "level": 9,
           "slug": "awakened-tree",
           "name": "Awakened Tree",
-          "rarityWeight": 32,
+          "rarityWeight": 78,
           "xp": 160,
           "attributes": {
             "constitution": 18,
@@ -425,7 +425,7 @@
           "level": 13,
           "slug": "elder-treant",
           "name": "Elder Treant",
-          "rarityWeight": 60,
+          "rarityWeight": 50,
           "xp": 300,
           "attributes": {
             "constitution": 22,
@@ -464,7 +464,7 @@
           "level": 15,
           "slug": "ancient-grove-guardian",
           "name": "Ancient Grove Guardian",
-          "rarityWeight": 80,
+          "rarityWeight": 30,
           "xp": 400,
           "attributes": {
             "constitution": 24,

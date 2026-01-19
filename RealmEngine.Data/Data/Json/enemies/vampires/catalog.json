@@ -26,7 +26,7 @@
           "level": 6,
           "slug": "vampire-spawn",
           "name": "Vampire Spawn",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 100,
           "attributes": {
             "constitution": 14,
@@ -59,7 +59,7 @@
           "level": 5,
           "slug": "thrall",
           "name": "Thrall",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 75,
           "attributes": {
             "constitution": 13,
@@ -91,7 +91,7 @@
           "level": 7,
           "slug": "fledgling",
           "name": "Fledgling",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 120,
           "attributes": {
             "constitution": 15,
@@ -135,7 +135,7 @@
           "level": 9,
           "slug": "vampire",
           "name": "Vampire",
-          "rarityWeight": 30,
+          "rarityWeight": 80,
           "xp": 180,
           "attributes": {
             "constitution": 16,
@@ -170,7 +170,7 @@
           "level": 10,
           "slug": "vampire-knight",
           "name": "Vampire Knight",
-          "rarityWeight": 38,
+          "rarityWeight": 72,
           "xp": 210,
           "attributes": {
             "constitution": 18,
@@ -205,7 +205,7 @@
           "level": 10,
           "slug": "vampire-mage",
           "name": "Vampire Mage",
-          "rarityWeight": 42,
+          "rarityWeight": 68,
           "xp": 220,
           "attributes": {
             "constitution": 16,
@@ -285,7 +285,7 @@
           "level": 14,
           "slug": "elder-vampire",
           "name": "Elder Vampire",
-          "rarityWeight": 70,
+          "rarityWeight": 40,
           "xp": 350,
           "attributes": {
             "constitution": 20,
@@ -321,7 +321,7 @@
           "level": 15,
           "slug": "vampire-prince",
           "name": "Vampire Prince",
-          "rarityWeight": 80,
+          "rarityWeight": 30,
           "xp": 400,
           "attributes": {
             "constitution": 20,
@@ -358,7 +358,7 @@
           "level": 18,
           "slug": "vampire-progenitor",
           "name": "Vampire Progenitor",
-          "rarityWeight": 100,
+          "rarityWeight": 10,
           "xp": 550,
           "attributes": {
             "constitution": 20,
@@ -396,7 +396,7 @@
           "level": 13,
           "slug": "nosferatu",
           "name": "Nosferatu",
-          "rarityWeight": 65,
+          "rarityWeight": 45,
           "xp": 320,
           "attributes": {
             "constitution": 18,

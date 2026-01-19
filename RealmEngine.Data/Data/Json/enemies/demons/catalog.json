@@ -25,7 +25,7 @@
           "level": 2,
           "slug": "imp",
           "name": "Imp",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 40,
           "attributes": {
             "constitution": 11,
@@ -57,7 +57,7 @@
           "level": 4,
           "slug": "shadow-demon",
           "name": "Shadow Demon",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 70,
           "attributes": {
             "constitution": 12,
@@ -99,7 +99,7 @@
           "level": 8,
           "slug": "demon",
           "name": "Demon",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 200,
           "attributes": {
             "constitution": 16,
@@ -135,7 +135,7 @@
           "level": 10,
           "slug": "vrock",
           "name": "Vrock",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 300,
           "attributes": {
             "constitution": 18,
@@ -168,7 +168,7 @@
           "level": 7,
           "slug": "hellhound",
           "name": "Hellhound",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 180,
           "attributes": {
             "constitution": 15,
@@ -201,7 +201,7 @@
           "level": 9,
           "slug": "nightmare",
           "name": "Nightmare",
-          "rarityWeight": 25,
+          "rarityWeight": 85,
           "xp": 250,
           "attributes": {
             "constitution": 16,
@@ -243,7 +243,7 @@
           "level": 9,
           "slug": "devil",
           "name": "Devil",
-          "rarityWeight": 22,
+          "rarityWeight": 88,
           "xp": 230,
           "attributes": {
             "constitution": 16,
@@ -277,7 +277,7 @@
           "level": 8,
           "slug": "incubus",
           "name": "Incubus",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 200,
           "attributes": {
             "constitution": 14,
@@ -310,7 +310,7 @@
           "level": 8,
           "slug": "succubus",
           "name": "Succubus",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 200,
           "attributes": {
             "constitution": 14,
@@ -352,7 +352,7 @@
           "level": 18,
           "slug": "abyssal-lord",
           "name": "Abyssal Lord",
-          "rarityWeight": 80,
+          "rarityWeight": 30,
           "xp": 1800,
           "attributes": {
             "constitution": 20,
@@ -417,7 +417,7 @@
           "level": 12,
           "slug": "fiend",
           "name": "Fiend",
-          "rarityWeight": 40,
+          "rarityWeight": 70,
           "xp": 500,
           "attributes": {
             "constitution": 18,
@@ -454,7 +454,7 @@
           "level": 16,
           "slug": "balor",
           "name": "Balor",
-          "rarityWeight": 70,
+          "rarityWeight": 40,
           "xp": 1200,
           "attributes": {
             "constitution": 22,
@@ -492,7 +492,7 @@
           "level": 17,
           "slug": "pit-fiend",
           "name": "Pit Fiend",
-          "rarityWeight": 75,
+          "rarityWeight": 35,
           "xp": 1400,
           "attributes": {
             "constitution": 23,
@@ -531,7 +531,7 @@
           "level": 15,
           "slug": "marilith",
           "name": "Marilith",
-          "rarityWeight": 65,
+          "rarityWeight": 45,
           "xp": 1000,
           "attributes": {
             "constitution": 18,
@@ -565,7 +565,7 @@
           "level": 14,
           "slug": "beholder",
           "name": "Beholder",
-          "rarityWeight": 60,
+          "rarityWeight": 50,
           "xp": 900,
           "attributes": {
             "constitution": 10,
@@ -609,7 +609,7 @@
           "level": 20,
           "slug": "dark_lord",
           "name": "Dark Lord",
-          "rarityWeight": 1,
+          "rarityWeight": 109,
           "xp": 5000,
           "attributes": {
             "constitution": 18,

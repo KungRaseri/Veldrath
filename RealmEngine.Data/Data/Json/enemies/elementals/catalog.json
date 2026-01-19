@@ -23,7 +23,7 @@
           "level": 10,
           "slug": "fire-elemental",
           "name": "Fire Elemental",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 300,
           "attributes": {
             "constitution": 16,
@@ -59,7 +59,7 @@
           "level": 8,
           "slug": "salamander",
           "name": "Salamander",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 200,
           "attributes": {
             "constitution": 14,
@@ -92,7 +92,7 @@
           "level": 14,
           "slug": "efreeti",
           "name": "Efreeti",
-          "rarityWeight": 45,
+          "rarityWeight": 65,
           "xp": 700,
           "attributes": {
             "constitution": 18,
@@ -139,7 +139,7 @@
           "level": 10,
           "slug": "water-elemental",
           "name": "Water Elemental",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 300,
           "attributes": {
             "constitution": 18,
@@ -175,7 +175,7 @@
           "level": 8,
           "slug": "undine",
           "name": "Undine",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 200,
           "attributes": {
             "constitution": 14,
@@ -217,7 +217,7 @@
           "level": 11,
           "slug": "earth-elemental",
           "name": "Earth Elemental",
-          "rarityWeight": 22,
+          "rarityWeight": 88,
           "xp": 400,
           "attributes": {
             "constitution": 20,
@@ -253,7 +253,7 @@
           "level": 12,
           "slug": "golem",
           "name": "Golem",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 500,
           "attributes": {
             "constitution": 22,
@@ -289,7 +289,7 @@
           "level": 7,
           "slug": "gnome",
           "name": "Gnome",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 150,
           "attributes": {
             "constitution": 16,
@@ -331,7 +331,7 @@
           "level": 10,
           "slug": "air-elemental",
           "name": "Air Elemental",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 300,
           "attributes": {
             "constitution": 14,
@@ -367,7 +367,7 @@
           "level": 8,
           "slug": "sylph",
           "name": "Sylph",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 200,
           "attributes": {
             "constitution": 12,
@@ -400,7 +400,7 @@
           "level": 13,
           "slug": "djinn",
           "name": "Djinn",
-          "rarityWeight": 42,
+          "rarityWeight": 68,
           "xp": 650,
           "attributes": {
             "constitution": 18,
@@ -437,7 +437,7 @@
           "level": 16,
           "slug": "phoenix",
           "name": "Phoenix",
-          "rarityWeight": 70,
+          "rarityWeight": 40,
           "xp": 1000,
           "attributes": {
             "constitution": 20,

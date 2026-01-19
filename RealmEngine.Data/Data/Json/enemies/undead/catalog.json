@@ -26,7 +26,7 @@
           "level": 2,
           "slug": "zombie",
           "name": "Zombie",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 30,
           "attributes": {
             "constitution": 10,
@@ -58,7 +58,7 @@
           "level": 1,
           "slug": "corpse",
           "name": "Corpse",
-          "rarityWeight": 3,
+          "rarityWeight": 107,
           "xp": 20,
           "attributes": {
             "constitution": 10,
@@ -90,7 +90,7 @@
           "level": 4,
           "slug": "ghoul",
           "name": "Ghoul",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 60,
           "attributes": {
             "constitution": 10,
@@ -136,7 +136,7 @@
           "level": 3,
           "slug": "skeleton",
           "name": "Skeleton",
-          "rarityWeight": 6,
+          "rarityWeight": 104,
           "xp": 45,
           "attributes": {
             "constitution": 13,
@@ -171,7 +171,7 @@
           "level": 5,
           "slug": "ghast",
           "name": "Ghast",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 75,
           "attributes": {
             "constitution": 14,
@@ -217,7 +217,7 @@
           "level": 7,
           "slug": "wraith",
           "name": "Wraith",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 140,
           "attributes": {
             "constitution": 12,
@@ -256,7 +256,7 @@
           "level": 6,
           "slug": "specter",
           "name": "Specter",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 110,
           "attributes": {
             "constitution": 11,
@@ -292,7 +292,7 @@
           "level": 5,
           "slug": "phantom",
           "name": "Phantom",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 90,
           "attributes": {
             "constitution": 10,
@@ -328,7 +328,7 @@
           "level": 4,
           "slug": "shade",
           "name": "Shade",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 70,
           "attributes": {
             "constitution": 10,
@@ -363,7 +363,7 @@
           "level": 9,
           "slug": "banshee",
           "name": "Banshee",
-          "rarityWeight": 30,
+          "rarityWeight": 80,
           "xp": 200,
           "attributes": {
             "constitution": 12,
@@ -409,7 +409,7 @@
           "level": 8,
           "slug": "wight",
           "name": "Wight",
-          "rarityWeight": 25,
+          "rarityWeight": 85,
           "xp": 180,
           "attributes": {
             "constitution": 14,
@@ -448,7 +448,7 @@
           "level": 10,
           "slug": "revenant",
           "name": "Revenant",
-          "rarityWeight": 35,
+          "rarityWeight": 75,
           "xp": 250,
           "attributes": {
             "constitution": 18,
@@ -488,7 +488,7 @@
           "level": 9,
           "slug": "mummy",
           "name": "Mummy",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 220,
           "attributes": {
             "constitution": 16,
@@ -527,7 +527,7 @@
           "level": 15,
           "slug": "lich",
           "name": "Lich",
-          "rarityWeight": 80,
+          "rarityWeight": 30,
           "xp": 500,
           "attributes": {
             "constitution": 16,

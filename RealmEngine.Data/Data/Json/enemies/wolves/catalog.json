@@ -18,7 +18,7 @@
         {
           "slug": "wolf",
           "name": "Wolf",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "level": 3,
           "xp": 50,
           "attributes": {
@@ -50,7 +50,7 @@
         {
           "slug": "timber-wolf",
           "name": "Timber Wolf",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "level": 5,
           "xp": 75,
           "attributes": {
@@ -78,7 +78,7 @@
         {
           "slug": "frost-wolf",
           "name": "Frost Wolf",
-          "rarityWeight": 40,
+          "rarityWeight": 70,
           "level": 8,
           "xp": 150,
           "attributes": {
@@ -112,7 +112,7 @@
         {
           "slug": "alpha-dire-wolf",
           "name": "Alpha Dire Wolf",
-          "rarityWeight": 70,
+          "rarityWeight": 40,
           "level": 12,
           "xp": 300,
           "attributes": {
@@ -145,7 +145,7 @@
         {
           "slug": "fenrir-the-ancient",
           "name": "Fenrir the Ancient",
-          "rarityWeight": 100,
+          "rarityWeight": 10,
           "level": 20,
           "xp": 1000,
           "attributes": {

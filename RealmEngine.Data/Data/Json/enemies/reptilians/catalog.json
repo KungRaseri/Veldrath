@@ -29,7 +29,7 @@
           "level": 1,
           "slug": "kobold",
           "name": "Kobold",
-          "rarityWeight": 3,
+          "rarityWeight": 107,
           "xp": 8,
           "attributes": {
             "constitution": 10,
@@ -61,7 +61,7 @@
           "level": 1,
           "slug": "kobold-scout",
           "name": "Kobold Scout",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 12,
           "attributes": {
             "constitution": 10,
@@ -94,7 +94,7 @@
           "level": 2,
           "slug": "kobold-trapmaker",
           "name": "Kobold Trapmaker",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 18,
           "attributes": {
             "constitution": 11,
@@ -127,7 +127,7 @@
           "level": 3,
           "slug": "kobold-sorcerer",
           "name": "Kobold Sorcerer",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 30,
           "attributes": {
             "constitution": 10,
@@ -170,7 +170,7 @@
           "level": 4,
           "slug": "lizardfolk",
           "name": "Lizardfolk",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 60,
           "attributes": {
             "constitution": 14,
@@ -203,7 +203,7 @@
           "level": 5,
           "slug": "lizardfolk-warrior",
           "name": "Lizardfolk Warrior",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 80,
           "attributes": {
             "constitution": 15,
@@ -236,7 +236,7 @@
           "level": 6,
           "slug": "lizardfolk-shaman",
           "name": "Lizardfolk Shaman",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 95,
           "attributes": {
             "constitution": 14,
@@ -269,7 +269,7 @@
           "level": 8,
           "slug": "lizardfolk-king",
           "name": "Lizardfolk King",
-          "rarityWeight": 35,
+          "rarityWeight": 75,
           "xp": 140,
           "attributes": {
             "constitution": 16,
@@ -313,7 +313,7 @@
           "level": 6,
           "slug": "yuan-ti-pureblood",
           "name": "Yuan-ti Pureblood",
-          "rarityWeight": 20,
+          "rarityWeight": 90,
           "xp": 100,
           "attributes": {
             "constitution": 14,
@@ -347,7 +347,7 @@
           "level": 8,
           "slug": "yuan-ti-malison",
           "name": "Yuan-ti Malison",
-          "rarityWeight": 32,
+          "rarityWeight": 78,
           "xp": 150,
           "attributes": {
             "constitution": 15,
@@ -381,7 +381,7 @@
           "level": 10,
           "slug": "yuan-ti-abomination",
           "name": "Yuan-ti Abomination",
-          "rarityWeight": 50,
+          "rarityWeight": 60,
           "xp": 200,
           "attributes": {
             "constitution": 16,
@@ -424,7 +424,7 @@
           "level": 9,
           "slug": "naga",
           "name": "Naga",
-          "rarityWeight": 45,
+          "rarityWeight": 65,
           "xp": 170,
           "attributes": {
             "constitution": 15,
@@ -458,7 +458,7 @@
           "level": 7,
           "slug": "basilisk",
           "name": "Basilisk",
-          "rarityWeight": 38,
+          "rarityWeight": 72,
           "xp": 130,
           "attributes": {
             "constitution": 17,

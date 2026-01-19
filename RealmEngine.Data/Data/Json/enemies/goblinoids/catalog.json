@@ -29,7 +29,7 @@
           "level": 1,
           "slug": "goblin",
           "name": "Goblin",
-          "rarityWeight": 3,
+          "rarityWeight": 107,
           "xp": 10,
           "attributes": {
             "constitution": 11,
@@ -61,7 +61,7 @@
           "level": 2,
           "slug": "goblin-scout",
           "name": "Goblin Scout",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 15,
           "attributes": {
             "constitution": 11,
@@ -94,7 +94,7 @@
           "level": 3,
           "slug": "goblin-shaman",
           "name": "Goblin Shaman",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 25,
           "attributes": {
             "constitution": 10,
@@ -127,7 +127,7 @@
           "level": 4,
           "slug": "goblin-chief",
           "name": "Goblin Chief",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 40,
           "attributes": {
             "constitution": 13,
@@ -170,7 +170,7 @@
           "level": 3,
           "slug": "hobgoblin",
           "name": "Hobgoblin",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 35,
           "attributes": {
             "constitution": 13,
@@ -202,7 +202,7 @@
           "level": 4,
           "slug": "hobgoblin-soldier",
           "name": "Hobgoblin Soldier",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 50,
           "attributes": {
             "constitution": 14,
@@ -235,7 +235,7 @@
           "level": 6,
           "slug": "hobgoblin-captain",
           "name": "Hobgoblin Captain",
-          "rarityWeight": 22,
+          "rarityWeight": 88,
           "xp": 80,
           "attributes": {
             "constitution": 15,
@@ -269,7 +269,7 @@
           "level": 8,
           "slug": "hobgoblin-warlord",
           "name": "Hobgoblin Warlord",
-          "rarityWeight": 35,
+          "rarityWeight": 75,
           "xp": 120,
           "attributes": {
             "constitution": 16,
@@ -314,7 +314,7 @@
           "level": 4,
           "slug": "bugbear",
           "name": "Bugbear",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 55,
           "attributes": {
             "constitution": 15,
@@ -347,7 +347,7 @@
           "level": 6,
           "slug": "bugbear-hunter",
           "name": "Bugbear Hunter",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 85,
           "attributes": {
             "constitution": 15,
@@ -381,7 +381,7 @@
           "level": 8,
           "slug": "bugbear-chieftain",
           "name": "Bugbear Chieftain",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 130,
           "attributes": {
             "constitution": 17,
@@ -423,7 +423,7 @@
           "level": 10,
           "slug": "goblin-king",
           "name": "Goblin King",
-          "rarityWeight": 60,
+          "rarityWeight": 50,
           "xp": 200,
           "attributes": {
             "constitution": 15,

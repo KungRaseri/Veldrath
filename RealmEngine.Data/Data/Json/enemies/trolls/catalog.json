@@ -28,7 +28,7 @@
           "level": 8,
           "slug": "troll",
           "name": "Troll",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 140,
           "attributes": {
             "constitution": 10,
@@ -61,7 +61,7 @@
           "level": 9,
           "slug": "cave-troll",
           "name": "Cave Troll",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 160,
           "attributes": {
             "constitution": 10,
@@ -95,7 +95,7 @@
           "level": 10,
           "slug": "mountain-troll",
           "name": "Mountain Troll",
-          "rarityWeight": 25,
+          "rarityWeight": 85,
           "xp": 190,
           "attributes": {
             "constitution": 10,
@@ -132,7 +132,7 @@
           "level": 11,
           "slug": "war-troll",
           "name": "War Troll",
-          "rarityWeight": 32,
+          "rarityWeight": 78,
           "xp": 220,
           "attributes": {
             "constitution": 10,
@@ -178,7 +178,7 @@
           "level": 10,
           "slug": "ice-troll",
           "name": "Ice Troll",
-          "rarityWeight": 28,
+          "rarityWeight": 82,
           "xp": 180,
           "attributes": {
             "constitution": 20,
@@ -215,7 +215,7 @@
           "level": 10,
           "slug": "fire-troll",
           "name": "Fire Troll",
-          "rarityWeight": 30,
+          "rarityWeight": 80,
           "xp": 185,
           "attributes": {
             "constitution": 19,
@@ -253,7 +253,7 @@
           "level": 10,
           "slug": "venom-troll",
           "name": "Venom Troll",
-          "rarityWeight": 35,
+          "rarityWeight": 75,
           "xp": 190,
           "attributes": {
             "constitution": 19,
@@ -299,7 +299,7 @@
           "level": 13,
           "slug": "dire-troll",
           "name": "Dire Troll",
-          "rarityWeight": 50,
+          "rarityWeight": 60,
           "xp": 280,
           "attributes": {
             "constitution": 22,
@@ -337,7 +337,7 @@
           "level": 12,
           "slug": "troll-chieftain",
           "name": "Troll Chieftain",
-          "rarityWeight": 45,
+          "rarityWeight": 65,
           "xp": 250,
           "attributes": {
             "constitution": 21,
@@ -373,7 +373,7 @@
           "level": 15,
           "slug": "ancient-troll",
           "name": "Ancient Troll",
-          "rarityWeight": 70,
+          "rarityWeight": 40,
           "xp": 350,
           "attributes": {
             "constitution": 22,

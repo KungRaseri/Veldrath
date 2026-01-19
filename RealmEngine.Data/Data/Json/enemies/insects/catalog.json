@@ -29,7 +29,7 @@
           "level": 3,
           "slug": "giant-spider",
           "name": "Giant Spider",
-          "rarityWeight": 8,
+          "rarityWeight": 102,
           "xp": 45,
           "attributes": {
             "constitution": 12,
@@ -62,7 +62,7 @@
           "level": 6,
           "slug": "phase-spider",
           "name": "Phase Spider",
-          "rarityWeight": 25,
+          "rarityWeight": 85,
           "xp": 90,
           "attributes": {
             "constitution": 14,
@@ -97,7 +97,7 @@
           "level": 5,
           "slug": "widow-spider",
           "name": "Widow Spider",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 75,
           "attributes": {
             "constitution": 13,
@@ -131,7 +131,7 @@
           "level": 9,
           "slug": "spider-matriarch",
           "name": "Spider Matriarch",
-          "rarityWeight": 40,
+          "rarityWeight": 70,
           "xp": 160,
           "attributes": {
             "constitution": 17,
@@ -178,7 +178,7 @@
           "level": 3,
           "slug": "giant-beetle",
           "name": "Giant Beetle",
-          "rarityWeight": 6,
+          "rarityWeight": 104,
           "xp": 40,
           "attributes": {
             "constitution": 15,
@@ -211,7 +211,7 @@
           "level": 3,
           "slug": "fire-beetle",
           "name": "Fire Beetle",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 45,
           "attributes": {
             "constitution": 14,
@@ -244,7 +244,7 @@
           "level": 5,
           "slug": "bombardier-beetle",
           "name": "Bombardier Beetle",
-          "rarityWeight": 18,
+          "rarityWeight": 92,
           "xp": 70,
           "attributes": {
             "constitution": 16,
@@ -287,7 +287,7 @@
           "level": 4,
           "slug": "giant-wasp",
           "name": "Giant Wasp",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 50,
           "attributes": {
             "constitution": 12,
@@ -321,7 +321,7 @@
           "level": 5,
           "slug": "giant-hornet",
           "name": "Giant Hornet",
-          "rarityWeight": 15,
+          "rarityWeight": 95,
           "xp": 70,
           "attributes": {
             "constitution": 13,
@@ -356,7 +356,7 @@
           "level": 5,
           "slug": "giant-dragonfly",
           "name": "Giant Dragonfly",
-          "rarityWeight": 12,
+          "rarityWeight": 98,
           "xp": 65,
           "attributes": {
             "constitution": 12,
@@ -389,7 +389,7 @@
           "level": 7,
           "slug": "giant-mantis",
           "name": "Giant Mantis",
-          "rarityWeight": 22,
+          "rarityWeight": 88,
           "xp": 110,
           "attributes": {
             "constitution": 14,
@@ -432,7 +432,7 @@
           "level": 2,
           "slug": "giant-ant",
           "name": "Giant Ant",
-          "rarityWeight": 5,
+          "rarityWeight": 105,
           "xp": 25,
           "attributes": {
             "constitution": 12,
@@ -464,7 +464,7 @@
           "level": 4,
           "slug": "giant-ant-soldier",
           "name": "Giant Ant Soldier",
-          "rarityWeight": 10,
+          "rarityWeight": 100,
           "xp": 50,
           "attributes": {
             "constitution": 15,
@@ -497,7 +497,7 @@
           "level": 9,
           "slug": "giant-ant-queen",
           "name": "Giant Ant Queen",
-          "rarityWeight": 45,
+          "rarityWeight": 65,
           "xp": 170,
           "attributes": {
             "constitution": 18,

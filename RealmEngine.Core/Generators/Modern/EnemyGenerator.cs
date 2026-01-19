@@ -172,12 +172,8 @@ public class EnemyGenerator
             
             // Determine if this is a boss enemy from category properties
             bool isBoss = categoryProperties?["isBoss"]?.Value<bool>() ?? false;
-            // v5.1+: Use rarityWeight, fallback to old rarity field for backward compatibility
-            var rarity = GetIntProperty(catalogEnemy, "rarityWeight", 0);
-            if (rarity == 0)
-            {
-                rarity = GetIntProperty(catalogEnemy, "rarity", 10);
-            }
+            // v5.1+: Use rarityWeight for spawn probability (higher = more common)
+            var rarityWeight = GetIntProperty(catalogEnemy, "rarityWeight", 50); // Default to uncommon (50)
             
             // v5.1: Read stats from stats object (formulas), fallback to v4.0 direct values
             var statsObj = catalogEnemy["stats"] as JObject;
@@ -214,9 +210,9 @@ public class EnemyGenerator
                 XP = GetIntProperty(catalogEnemy, "xp", 25) * (isBoss ? 2 : 1),
                 GoldReward = GetIntProperty(catalogEnemy, "gold", 10) * (isBoss ? 3 : 1),
                 
-                // Set Type and Difficulty based on boss status and rarity
+                // Set Type and Difficulty based on boss status and rarityWeight
                 Type = DetermineEnemyType(category, isBoss),
-                Difficulty = DetermineDifficulty(rarity, isBoss)
+                Difficulty = DetermineDifficulty(rarityWeight, isBoss)
             };
 
             // v5.1: Resolve ability references from combat.abilities, fallback to v4.0 top-level abilities
@@ -676,16 +672,18 @@ public class EnemyGenerator
     /// <summary>
     /// Determines the difficulty based on rarity and boss status.
     /// </summary>
-    private static EnemyDifficulty DetermineDifficulty(int rarity, bool isBoss)
+    private static EnemyDifficulty DetermineDifficulty(int rarityWeight, bool isBoss)
     {
         if (isBoss) return EnemyDifficulty.Boss;
         
-        return rarity switch
+        // Convert rarityWeight to difficulty (inverse: low weight = rare = harder)
+        // This matches our budget system where rarityWeight is for spawn probability
+        return rarityWeight switch
         {
-            >= 90 => EnemyDifficulty.Elite,
-            >= 60 => EnemyDifficulty.Hard,
-            >= 30 => EnemyDifficulty.Normal,
-            _ => EnemyDifficulty.Easy
+            <= 10 => EnemyDifficulty.Elite,   // Very rare spawns are elite
+            <= 30 => EnemyDifficulty.Hard,     // Rare spawns are hard
+            <= 60 => EnemyDifficulty.Normal,   // Uncommon spawns are normal
+            _ => EnemyDifficulty.Easy          // Common spawns (>60) are easy
         };
     }
 
