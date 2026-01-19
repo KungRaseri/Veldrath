@@ -2215,6 +2215,276 @@ while (selectedPrefixes.Count < maxPrefixes && budget > 0)
 
 ---
 
+## Common Pitfalls and Troubleshooting
+
+### Issue 1: Reference Resolution Failures After Phase 2
+
+**Symptom:** Tests fail with "Reference not found" errors after updating references.
+
+**Cause:** Some JSON files still use old `@materials/properties/` paths.
+
+**Solution:**
+```bash
+# Search for any remaining old references
+grep -r "@materials/properties/" RealmEngine.Data/Data/Json/
+
+# Update manually or re-run Phase 2
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 2
+```
+
+---
+
+### Issue 2: Quality Duplication in names.json
+
+**Symptom:** Qualities still appearing in weapon/armor names.json after Phase 3.
+
+**Cause:** Migration script didn't remove quality components.
+
+**Solution:**
+```bash
+# Manually edit files or re-run Phase 3
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 3
+
+# Verify no quality components remain
+grep -r '"quality":' RealmEngine.Data/Data/Json/items/*/names.json
+```
+
+---
+
+### Issue 3: C# Compilation Errors in Phase 5
+
+**Symptom:** `Item.cs` doesn't compile after adding new properties.
+
+**Cause:** Missing `IItemComponent` interface or component classes.
+
+**Solution:**
+1. Ensure all component classes created:
+   - `IItemComponent.cs`
+   - `ItemQuality.cs`
+   - `ItemMaterial.cs`
+   - `ItemPrefix.cs`
+   - `ItemSuffix.cs`
+2. Add to `RealmEngine.Shared/Models/` directory
+3. Build incrementally: `dotnet build RealmEngine.Shared.csproj` first
+
+---
+
+### Issue 4: ItemGenerator Null Reference Exceptions
+
+**Symptom:** ItemGenerator crashes when loading qualities.
+
+**Cause:** `properties/qualities/catalog.json` not created or invalid.
+
+**Solution:**
+```bash
+# Verify file exists and is valid JSON
+cat RealmEngine.Data/Data/Json/properties/qualities/catalog.json | jq .
+
+# Verify itemTypeTraits structure
+jq '.qualities[0].itemTypeTraits' RealmEngine.Data/Data/Json/properties/qualities/catalog.json
+```
+
+---
+
+### Issue 5: Material Filters Not Working
+
+**Symptom:** Weapons/armor generated with wrong material types (e.g., leather sword).
+
+**Cause:** `material-filters.json` pools not configured correctly.
+
+**Solution:**
+1. Verify filter structure:
+```json
+{
+  "filters": {
+    "weapon": {
+      "allowedMaterials": [
+        "@properties/materials/metals",
+        "@properties/materials/woods"
+      ]
+    }
+  }
+}
+```
+2. Check MaterialPoolService uses filters correctly
+3. Log material selection for debugging
+
+---
+
+### Issue 6: Display Names Too Long
+
+**Symptom:** Item names like "Fine Iron Flaming Sharp Ancient Longsword of Speed of the Bear".
+
+**Cause:** `GetDisplayName()` showing all prefixes/suffixes instead of first only.
+
+**Solution:**
+```csharp
+// Correct implementation
+if (Prefixes.Any())
+    parts.Add(Prefixes[0].Name);  // First only!
+
+// NOT this:
+foreach (var prefix in Prefixes)  // ❌ WRONG
+    parts.Add(prefix.Name);
+```
+
+---
+
+### Issue 7: Trait Aggregation Missing Bonuses
+
+**Symptom:** Items show correct prefixes/suffixes but traits don't add up.
+
+**Cause:** Forgot to include component traits in aggregation.
+
+**Solution:**
+```csharp
+public int GetTotalFireDamage()
+{
+    return GetTraitValue(BaseTraits, "fireDamage")
+        + GetTraitValue(Quality?.Traits, "fireDamage")  // Don't forget!
+        + GetTraitValue(Material?.Traits, "fireDamage")  // Don't forget!
+        + Prefixes.Sum(p => GetTraitValue(p.Traits, "fireDamage"))
+        + Suffixes.Sum(s => GetTraitValue(s.Traits, "fireDamage"));
+}
+```
+
+---
+
+### Issue 8: JSON Compliance Tests Failing
+
+**Symptom:** Compliance tests fail with "missing required field" errors.
+
+**Cause:** names.json files still have `value` instead of `name` field.
+
+**Solution:**
+```bash
+# Re-run Phase 3 to rename fields
+python scripts/migrate-to-v4.3-unified-architecture.py --phase 3
+
+# Or manually update
+sed -i 's/"value":/"name":/g' RealmEngine.Data/Data/Json/items/*/names.json
+```
+
+---
+
+### Issue 9: Performance Degradation
+
+**Symptom:** Item generation takes 200ms+ per item (expected: <100ms).
+
+**Cause:** On-demand trait aggregation called too frequently.
+
+**Solution:**
+1. Profile code to find hot paths
+2. Add caching if needed:
+```csharp
+private Dictionary<string, TraitValue>? _cachedTraits;
+
+public Dictionary<string, TraitValue> GetTotalTraits()
+{
+    if (_cachedTraits == null || _traitsDirty)
+    {
+        _cachedTraits = ComputeTotalTraits();
+        _traitsDirty = false;
+    }
+    return _cachedTraits;
+}
+```
+3. Invalidate cache when components change
+
+---
+
+### Issue 10: Godot Integration Broken
+
+**Symptom:** Godot can't deserialize new Item structure.
+
+**Cause:** Godot expects old structure with flat Prefixes/Suffixes.
+
+**Solution:**
+1. Update Godot C# bindings to match new structure
+2. Or create DTO for backward compatibility:
+```csharp
+public class ItemDTO
+{
+    public string Name { get; set; }
+    public List<string> Prefixes { get; set; }  // Simplified
+    public List<string> Suffixes { get; set; }  // Simplified
+    public Dictionary<string, int> TotalTraits { get; set; }  // Pre-aggregated
+    
+    public static ItemDTO FromItem(Item item)
+    {
+        return new ItemDTO
+        {
+            Name = item.GetDisplayName(),
+            Prefixes = item.Prefixes.Select(p => p.Name).ToList(),
+            Suffixes = item.Suffixes.Select(s => s.Name).ToList(),
+            TotalTraits = item.GetTotalTraits()
+        };
+    }
+}
+```
+
+---
+
+## Validation Checklist
+
+Before considering migration complete, verify:
+
+**Phase 1 (Structure Creation):**
+- [ ] `properties/materials/` directory exists with metals/woods/leathers
+- [ ] `properties/qualities/catalog.json` exists with 4+ qualities
+- [ ] `configuration/` directory exists with 5 config files
+- [ ] All new files are valid JSON (run `jq` or JSON validator)
+- [ ] `.cbconfig.json` files exist for all new directories
+
+**Phase 2 (Reference Updates):**
+- [ ] No JSON files contain `@materials/properties/` (old path)
+- [ ] All material references use `@properties/materials/` (new path)
+- [ ] Reference integrity tests pass (no broken links)
+- [ ] BudgetCalculator.cs compiles (uses new config paths)
+- [ ] MaterialPoolService.cs compiles (uses material-filters.json)
+
+**Phase 3 (names.json Migration):**
+- [ ] No names.json files contain `quality` components
+- [ ] No weapon names.json files contain `material` components
+- [ ] No armor names.json files contain `material` components
+- [ ] All components use `name` field (not `value`)
+- [ ] All names.json files have `version: "4.3"`
+- [ ] All names.json files have `type: "modifier_catalog"`
+
+**Phase 4 (Cleanup):**
+- [ ] `materials/properties/` directory deleted
+- [ ] `general/budget-config.json` deleted
+- [ ] `general/socket_config.json` deleted
+- [ ] `general/material-pools.json` deleted
+- [ ] No duplicate file paths remain
+
+**Phase 5 (Code Updates):**
+- [ ] `IItemComponent.cs` exists in RealmEngine.Shared/Models
+- [ ] `ItemQuality.cs` exists with all required properties
+- [ ] `ItemMaterial.cs` exists with CostScale property
+- [ ] `ItemPrefix.cs` and `ItemSuffix.cs` exist
+- [ ] `Item.cs` has new component properties
+- [ ] Old properties marked `[Obsolete]`
+- [ ] All model tests pass
+
+**Phase 6 (Generator Updates):**
+- [ ] ItemGenerator loads from `properties/qualities/`
+- [ ] ItemGenerator applies itemTypeTraits filtering
+- [ ] ItemGenerator enforces component uniqueness
+- [ ] ItemGenerator respects rarity-based limits
+- [ ] Display name uses first prefix/suffix only
+- [ ] Tooltip data includes all components
+- [ ] 1000-item generation test passes
+
+**Phase 7 (Testing & Integration):**
+- [ ] All unit tests pass (8000+ tests)
+- [ ] Integration tests pass (item generation)
+- [ ] Performance tests pass (<100ms per item)
+- [ ] JSON compliance tests pass (all 164 files)
+- [ ] Godot integration works (item display, tooltips, combat)
+
+---
+
 ## Next Steps
 
 ### Immediate Actions
