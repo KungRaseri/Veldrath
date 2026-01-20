@@ -159,7 +159,9 @@ public class BudgetItemGenerationService
                 Pattern = patternString,
                 PatternCost = patternCost,
                 Components = components.Select(c => c.Component).ToList(),
-                ComponentCosts = components.ToDictionary(c => GetStringProperty(c.Component, "value"), c => c.Cost),
+                ComponentCosts = components
+                    .GroupBy(c => GetStringProperty(c.Component, "value"))
+                    .ToDictionary(g => g.Key, g => g.First().Cost),
                 Sockets = sockets
             };
 

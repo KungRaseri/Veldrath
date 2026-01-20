@@ -33,13 +33,13 @@
       "description": "Elite knights - high-tier materials"
     },
     "dragon": {
-      "materialPool": "dragon",
+      "materialPool": "dragon_hoard",
       "budgetMultiplier": 2.5,
       "materialPercentage": 0.4,
       "description": "Dragons - legendary material hoarders, 40% material budget"
     },
     "fire_elemental": {
-      "materialPool": "elemental",
+      "materialPool": "elemental_fire",
       "budgetMultiplier": 1.5,
       "materialPercentage": 0.5,
       "description": "Fire elementals - obsidian and fire-themed materials, heavy material focus"

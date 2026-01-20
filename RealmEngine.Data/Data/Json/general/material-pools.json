@@ -205,6 +205,20 @@
         }
       }
     },
+    "undead": {
+      "description": "Generic undead creatures - alias for undead_low",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/metals:copper": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 20
+        }
+      }
+    },
     "demon": {
       "description": "Demonic enemies (imps, demons, demon lords)",
       "metals": {
@@ -310,6 +324,59 @@
         },
         "@properties/materials/metals:celestial-ore": {
           "rarityWeight": 10
+        }
+      }
+    },
+    "elemental_ice": {
+      "description": "Ice elementals - frost and crystal materials",
+      "metals": {
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "beast": {
+      "description": "Generic beasts and animals - natural materials",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 70
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 30
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:hide": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/leathers:leather": {
+          "rarityWeight": 40
+        }
+      }
+    },
+    "demonic": {
+      "description": "Demonic creatures - cursed and dark materials",
+      "metals": {
+        "@properties/materials/metals:darksteel": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 15
         }
       }
     }
