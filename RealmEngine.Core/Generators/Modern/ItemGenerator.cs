@@ -340,17 +340,19 @@ public class ItemGenerator
             // Apply material from budget generation
             if (budgetResult.Material != null)
             {
-                var materialName = GetStringProperty(budgetResult.Material, "name");
+                item.Material = ConvertToItemMaterial(budgetResult.Material);
+                var materialName = item.Material?.Name ?? string.Empty;
+                
                 if (!string.IsNullOrEmpty(materialName))
                 {
-                    item.Material = materialName;
-                    
-                    // Add material to Prefixes list
+#pragma warning disable CS0618
+                    // Add material to Prefixes list (for backward compatibility)
                     item.Prefixes.Add(new NameComponent
                     {
                         Token = "material",
                         Value = materialName
                     });
+#pragma warning restore CS0618
                     
                     // Apply material traits
                     var traits = budgetResult.Material["traits"];
@@ -404,6 +406,7 @@ public class ItemGenerator
                     // Determine if prefix or suffix based on token name
                     var isPrefixToken = token is "prefix" or "quality" or "descriptive";
                     
+#pragma warning disable CS0618
                     if (isPrefixToken)
                     {
                         item.Prefixes.Add(new NameComponent { Token = token, Value = value });
@@ -412,6 +415,7 @@ public class ItemGenerator
                     {
                         item.Suffixes.Add(new NameComponent { Token = token, Value = value });
                     }
+#pragma warning restore CS0618
                 }
             }
 
@@ -501,7 +505,7 @@ public class ItemGenerator
             var material = GetRandomWeightedItem(materials);
             if (material == null) return;
 
-            item.Material = GetStringProperty(material, "name");
+            item.Material = ConvertToItemMaterial(material);
             
             // Add material rarity weight to total
             var materialWeight = GetIntProperty(material, "rarityWeight", 0);
@@ -731,6 +735,7 @@ public class ItemGenerator
         // NOTE: Prefixes/Suffixes lists are already populated by ApplyEnhancementsFromPatternAsync
         // We just need to add enchantments and build the final name
         
+#pragma warning disable CS0618
         // 1. Prefix enchantments
         var prefixEnchantments = item.Enchantments
             .Where(e => e.Position == EnchantmentPosition.Prefix)
@@ -786,6 +791,7 @@ public class ItemGenerator
             
             nameParts.Add(enchantment.Name);
         }
+#pragma warning restore CS0618
 
         // 6. Socket indicator (separate from naming components per design decision)
         var socketsDisplay = item.GetSocketsDisplayText();
@@ -1092,18 +1098,23 @@ public class ItemGenerator
         // Apply material
         if (result.Material != null)
         {
-            item.Material = GetStringProperty(result.Material, "name");
-            ApplyMaterialTraits(item, result.Material);
+            item.Material = ConvertToItemMaterial(result.Material);
+            if (item.Material != null)
+            {
+                ApplyMaterialTraits(item, result.Material);
+            }
         }
 
         // Apply quality modifier
         if (result.Quality != null)
         {
+#pragma warning disable CS0618
             item.Prefixes.Add(new NameComponent
             {
                 Token = "quality",
                 Value = GetStringProperty(result.Quality, "value") ?? ""
             });
+#pragma warning restore CS0618
         }
 
         // Apply components from budget
@@ -1112,6 +1123,7 @@ public class ItemGenerator
             var value = GetStringProperty(component, "value") ?? "";
             var token = GetStringProperty(component, "token") ?? "component";
             
+#pragma warning disable CS0618
             // Determine if prefix or suffix based on typical naming
             if (token.Contains("prefix") || token == "descriptive")
             {
@@ -1121,6 +1133,7 @@ public class ItemGenerator
             {
                 item.Suffixes.Add(new NameComponent { Token = token, Value = value });
             }
+#pragma warning restore CS0618
         }
 
         // Apply base item stats
@@ -1135,7 +1148,7 @@ public class ItemGenerator
         // Generate sockets based on item rarity, type, and material
         try
         {
-            var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material);
+            var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
             if (socketList.Count > 0)
             {
                 // Group sockets by type for the dictionary structure
@@ -1168,11 +1181,12 @@ public class ItemGenerator
         }
 
         // Material
-        if (!string.IsNullOrEmpty(item.Material))
+        if (item.Material != null)
         {
-            nameParts.Add(item.Material);
+            nameParts.Add(item.Material.Name);
         }
 
+#pragma warning disable CS0618
         // Prefixes
         foreach (var prefix in item.Prefixes)
         {
@@ -1193,6 +1207,7 @@ public class ItemGenerator
                 nameParts.Add($"of {suffix.Value}");
             }
         }
+#pragma warning restore CS0618
 
         return string.Join(" ", nameParts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
@@ -1407,6 +1422,83 @@ public class ItemGenerator
         {
             return new Dictionary<string, T>();
         }
+    }
+
+    /// <summary>
+    /// Converts a JToken material to an ItemMaterial object.
+    /// </summary>
+    private ItemMaterial? ConvertToItemMaterial(JToken? materialToken)
+    {
+        if (materialToken == null) return null;
+
+        var material = new ItemMaterial
+        {
+            Name = GetStringProperty(materialToken, "name") ?? "Unknown",
+            RarityWeight = GetIntProperty(materialToken, "rarityWeight", 0),
+            Description = GetStringProperty(materialToken, "description") ?? string.Empty,
+            CostScale = GetDoubleProperty(materialToken, "costScale", 1.0),
+            Category = GetStringProperty(materialToken, "category") ?? string.Empty
+        };
+
+        // Convert traits
+        var traits = materialToken["traits"];
+        if (traits != null && traits.Type == JTokenType.Object)
+        {
+            foreach (var traitProp in traits.Children<JProperty>())
+            {
+                var traitName = traitProp.Name;
+                var traitValue = traitProp.Value;
+
+                if (traitValue.Type == JTokenType.Object)
+                {
+                    var typeStr = GetStringProperty(traitValue, "type");
+                    var valueObj = traitValue["value"];
+
+                    if (typeStr == "number" && valueObj != null)
+                    {
+                        material.Traits[traitName] = new TraitValue
+                        {
+                            Value = valueObj.Value<double>(),
+                            Type = TraitType.Number
+                        };
+                    }
+                    else if (typeStr == "boolean" && valueObj != null)
+                    {
+                        material.Traits[traitName] = new TraitValue
+                        {
+                            Value = valueObj.Value<bool>(),
+                            Type = TraitType.Boolean
+                        };
+                    }
+                    else if (valueObj != null)
+                    {
+                        material.Traits[traitName] = new TraitValue
+                        {
+                            Value = valueObj.Value<string>() ?? string.Empty,
+                            Type = TraitType.String
+                        };
+                    }
+                }
+                else if (traitValue.Type == JTokenType.Integer || traitValue.Type == JTokenType.Float)
+                {
+                    material.Traits[traitName] = new TraitValue
+                    {
+                        Value = traitValue.Value<double>(),
+                        Type = TraitType.Number
+                    };
+                }
+                else
+                {
+                    material.Traits[traitName] = new TraitValue
+                    {
+                        Value = traitValue.Value<string>() ?? string.Empty,
+                        Type = TraitType.String
+                    };
+                }
+            }
+        }
+
+        return material;
     }
 
     #endregion

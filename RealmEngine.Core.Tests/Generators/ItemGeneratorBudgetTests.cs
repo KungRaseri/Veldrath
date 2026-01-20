@@ -67,7 +67,7 @@ public class ItemGeneratorBudgetTests
         // Assert
         item.Should().NotBeNull();
         item!.Rarity.Should().BeOneOf(ItemRarity.Rare, ItemRarity.Epic, ItemRarity.Legendary);
-        item.Material.Should().NotBeNullOrEmpty("dragons should drop items with materials");
+        item.Material.Should().NotBeNull("dragons should drop items with materials");
     }
 
     [Fact]
@@ -86,8 +86,8 @@ public class ItemGeneratorBudgetTests
 
         // Assert
         item.Should().NotBeNull();
-        item!.Material.Should().NotBeNullOrEmpty();
-        item.Name.Should().Contain(item.Material);
+        item!.Material.Should().NotBeNull();
+        item.Name.Should().Contain(item.Material!.Name);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class ItemGeneratorBudgetTests
         // Assert
         items.Should().HaveCount(5);
         items.Should().OnlyContain(i => i.Type == ItemType.Weapon);
-        items.Should().OnlyContain(i => !string.IsNullOrEmpty(i.Material));
+        items.Should().OnlyContain(i => i.Material != null);
     }
 
     [Fact]

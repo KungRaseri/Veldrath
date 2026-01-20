@@ -67,17 +67,18 @@ public class ItemNamingComponentsTests
         }
 
         // Find items with materials
-        var itemsWithMaterial = allItems.Where(i => !string.IsNullOrEmpty(i.Material)).ToList();
+        var itemsWithMaterial = allItems.Where(i => i.Material != null).ToList();
 
         // Assert
         itemsWithMaterial.Should().NotBeEmpty("at least some generated items should have materials");
         
         foreach (var item in itemsWithMaterial.Take(5))
         {
-            item.Material.Should().NotBeNullOrWhiteSpace();
+            item.Material.Should().NotBeNull();
+            item.Material!.Name.Should().NotBeNullOrWhiteSpace();
             var materialComponent = item.GetPrefixValue("material");
-            materialComponent.Should().Be(item.Material, "material component should match Material property");
-            item.Name.Should().Contain(item.Material, "item name should contain the material");
+            materialComponent.Should().Be(item.Material.Name, "material component should match Material property");
+            item.Name.Should().Contain(item.Material.Name, "item name should contain the material");
             
             _output.WriteLine($"Item: {item.Name}");
             _output.WriteLine($"  Material: {item.Material}");
@@ -170,12 +171,12 @@ public class ItemNamingComponentsTests
         var items = await _generator.GenerateItemsAsync("weapons", 30);
         
         // Find item with material
-        var itemWithMaterial = items.FirstOrDefault(i => !string.IsNullOrEmpty(i.Material));
+        var itemWithMaterial = items.FirstOrDefault(i => i.Material != null);
         itemWithMaterial.Should().NotBeNull("at least one item should have a material");
         
         // Test GetPrefixValue
         var material = itemWithMaterial!.GetPrefixValue("material");
-        material.Should().Be(itemWithMaterial.Material, 
+        material.Should().Be(itemWithMaterial.Material!.Name, 
             "GetPrefixValue should return the material component");
         
         _output.WriteLine($"Item: {itemWithMaterial.Name}");

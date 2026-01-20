@@ -209,14 +209,14 @@ public class ItemGeneratorTests
         var items = await _generator.GenerateItemsAsync("weapons", 20);
 
         // Assert
-        var itemsWithMaterials = items.Where(i => !string.IsNullOrEmpty(i.Material)).ToList();
+        var itemsWithMaterials = items.Where(i => i.Material != null).ToList();
 
         // Some items should have materials (not all patterns have materialRef)
         itemsWithMaterials.Should().NotBeEmpty("At least some items should have materials");
 
         foreach (var item in itemsWithMaterials)
         {
-            item.Material.Should().NotBeNullOrEmpty();
+            item.Material.Should().NotBeNull();
             item.MaterialTraits.Should().NotBeEmpty("Items with materials should have material traits");
             item.TotalRarityWeight.Should().BeGreaterThan(0, "Material should contribute to rarity weight");
         }
@@ -350,7 +350,7 @@ public class ItemGeneratorTests
 
         // Assert
         var enhancedItems = items.Where(i =>
-            !string.IsNullOrEmpty(i.Material) ||
+            i.Material != null ||
             i.Enchantments.Any() ||
             i.Sockets.Any()).ToList();
 
@@ -360,8 +360,8 @@ public class ItemGeneratorTests
         {
             item.Name.Should().Contain(item.BaseName, "Enhanced name should include base name");
 
-            if (!string.IsNullOrEmpty(item.Material))
-                item.Name.Should().Contain(item.Material, "Name should include material");
+            if (item.Material != null)
+                item.Name.Should().Contain(item.Material.Name, "Name should include material");
         }
     }
 

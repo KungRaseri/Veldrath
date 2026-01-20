@@ -122,8 +122,10 @@ public class GetPlayerInventoryQueryHandler : IRequestHandler<GetPlayerInventory
             IsEquipped = equippedIds.Contains(item.Id),
             IsSocketable = item.Sockets?.Any() == true,
             SocketCount = item.Sockets?.Sum(kvp => kvp.Value.Count),
+#pragma warning disable CS0618
             Prefixes = item.Prefixes?.Select(p => p.Value).ToList() ?? new List<string>(),
             Suffixes = item.Suffixes?.Select(s => s.Value).ToList() ?? new List<string>()
+#pragma warning restore CS0618
         };
     }
 
