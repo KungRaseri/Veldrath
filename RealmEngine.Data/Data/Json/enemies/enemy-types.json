@@ -17,7 +17,7 @@
       "description": "Orc warriors - mid-tier materials, slightly better budget"
     },
     "troll": {
-      "materialPool": "beast",
+      "materialPool": "beast_common",
       "budgetMultiplier": 1.3,
       "materialPercentage": 0.35,
       "description": "Trolls - beast-like materials, higher material percentage"
@@ -33,66 +33,66 @@
       "description": "Elite knights - high-tier materials"
     },
     "dragon": {
-      "materialPool": "dragon_hoard",
+      "materialPool": "dragon",
       "budgetMultiplier": 2.5,
       "materialPercentage": 0.4,
       "description": "Dragons - legendary material hoarders, 40% material budget"
     },
     "fire_elemental": {
-      "materialPool": "elemental_fire",
+      "materialPool": "elemental",
       "budgetMultiplier": 1.5,
       "materialPercentage": 0.5,
       "description": "Fire elementals - obsidian and fire-themed materials, heavy material focus"
     },
     "ice_elemental": {
-      "materialPool": "elemental_ice",
+      "materialPool": "elemental",
       "budgetMultiplier": 1.5,
       "materialPercentage": 0.5,
       "description": "Ice elementals - crystal and frost materials, heavy material focus"
     },
     "undead": {
-      "materialPool": "undead",
+      "materialPool": "undead_low",
       "budgetMultiplier": 1.0,
       "materialPercentage": 0.2,
       "description": "Undead - rusty materials, low material percentage, more enchantment focus"
     },
     "skeleton": {
-      "materialPool": "undead",
+      "materialPool": "undead_low",
       "budgetMultiplier": 0.9,
       "materialPercentage": 0.2,
       "description": "Skeletons - worse than generic undead"
     },
     "vampire": {
-      "materialPool": "undead",
+      "materialPool": "undead_high",
       "budgetMultiplier": 1.8,
       "materialPercentage": 0.25,
       "description": "Vampires - better undead, slightly better materials"
     },
     "demon": {
-      "materialPool": "demonic",
+      "materialPool": "demon",
       "budgetMultiplier": 2.0,
       "materialPercentage": 0.35,
       "description": "Demons - dark cursed materials, high budget"
     },
     "angel": {
-      "materialPool": "celestial",
+      "materialPool": "fey",
       "budgetMultiplier": 2.2,
       "materialPercentage": 0.4,
-      "description": "Angels - divine materials, high budget"
+      "description": "Angels - divine materials, high budget (using fey pool for celestial-themed materials)"
     },
     "beast": {
-      "materialPool": "beast",
+      "materialPool": "beast_common",
       "budgetMultiplier": 1.0,
       "materialPercentage": 0.25,
       "description": "Generic beasts - natural materials, lower material focus"
     },
     "wolf": {
-      "materialPool": "beast",
+      "materialPool": "beast_common",
       "budgetMultiplier": 0.8,
       "description": "Wolves - basic beast loot"
     },
     "bear": {
-      "materialPool": "beast",
+      "materialPool": "beast_rare",
       "budgetMultiplier": 1.2,
       "description": "Bears - tougher beasts, better loot"
     },

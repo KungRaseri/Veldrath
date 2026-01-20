@@ -1139,6 +1139,14 @@ public class ItemGenerator
         // Apply base item stats
         ApplyBaseItemStats(item, result.BaseItem!);
 
+        // Calculate total rarity weight from all components
+        var totalRarityWeight = GetIntProperty(result.BaseItem!, "rarityWeight", 50);
+        if (item.Material != null)
+        {
+            totalRarityWeight += item.Material.RarityWeight;
+        }
+        item.TotalRarityWeight = totalRarityWeight;
+
         // Compose final name
         item.Name = ComposeBudgetItemName(item, result);
 
@@ -1225,7 +1233,7 @@ public class ItemGenerator
                 var traitName = traitProp.Name;
                 var traitValue = traitProp.Value;
 
-                item.Traits[$"Material.{traitName}"] = new TraitValue
+                var traitVal = new TraitValue
                 {
                     Value = traitValue.Type == JTokenType.Integer ? traitValue.Value<int>() : 
                             traitValue.Type == JTokenType.Float ? traitValue.Value<double>() :
@@ -1236,6 +1244,11 @@ public class ItemGenerator
                            traitValue.Type == JTokenType.Boolean ? TraitType.Boolean :
                            TraitType.String
                 };
+
+                item.Traits[$"Material.{traitName}"] = traitVal;
+#pragma warning disable CS0618 // Obsolete warning
+                item.MaterialTraits[traitName] = traitVal; // Also populate legacy field
+#pragma warning restore CS0618
             }
         }
 
@@ -1253,7 +1266,7 @@ public class ItemGenerator
                     var traitName = traitProp.Name;
                     var traitValue = traitProp.Value;
 
-                    item.Traits[$"Material.{traitName}"] = new TraitValue
+                    var traitVal = new TraitValue
                     {
                         Value = traitValue.Type == JTokenType.Integer ? traitValue.Value<int>() :
                                 traitValue.Type == JTokenType.Float ? traitValue.Value<double>() :
@@ -1262,6 +1275,11 @@ public class ItemGenerator
                                traitValue.Type == JTokenType.Float ? TraitType.Number :
                                TraitType.String
                     };
+
+                    item.Traits[$"Material.{traitName}"] = traitVal;
+#pragma warning disable CS0618 // Obsolete warning
+                    item.MaterialTraits[traitName] = traitVal; // Also populate legacy field
+#pragma warning restore CS0618
                 }
             }
         }

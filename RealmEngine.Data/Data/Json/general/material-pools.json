@@ -1,0 +1,191 @@
+{
+  "metadata": {
+    "description": "Material pool definitions for enemy loot tables - controls which materials can drop from which enemies",
+    "version": "4.0",
+    "lastUpdated": "2026-01-19",
+    "type": "material_pools"
+  },
+  "pools": {
+    "humanoid_low": {
+      "description": "Low-tier humanoid enemies (goblins, bandits, cultists)",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "humanoid_mid": {
+      "description": "Mid-tier humanoid enemies (knights, guards, mercenaries)",
+      "metals": {
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 15
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "humanoid_high": {
+      "description": "High-tier humanoid enemies (champions, warlords, elite guards)",
+      "metals": {
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:dragon-steel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:godforged": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "beast_common": {
+      "description": "Common beasts (wolves, bears, dire animals)",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 70
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 30
+        }
+      }
+    },
+    "beast_rare": {
+      "description": "Rare beasts (chimeras, manticores)",
+      "metals": {
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "undead_low": {
+      "description": "Low-tier undead (skeletons, zombies)",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "undead_high": {
+      "description": "High-tier undead (liches, death knights, vampire lords)",
+      "metals": {
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:darksteel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:void-crystal": {
+          "rarityWeight": 15
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "demon": {
+      "description": "Demonic enemies (imps, demons, demon lords)",
+      "metals": {
+        "@properties/materials/metals:darksteel": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 25
+        },
+        "@properties/materials/metals:void-crystal": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "dragon": {
+      "description": "Draconic enemies (dragons, drakes, wyverns)",
+      "metals": {
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 25
+        },
+        "@properties/materials/metals:dragon-steel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 10
+        },
+        "@properties/materials/metals:godforged": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "elemental": {
+      "description": "Elemental creatures (fire, water, earth, air)",
+      "metals": {
+        "@properties/materials/metals:crystal": {
+          "rarityWeight": 45
+        },
+        "@properties/materials/metals:electrum": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:void-crystal": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "fey": {
+      "description": "Fey creatures (sprites, dryads, archfey)",
+      "metals": {
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:electrum": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 10
+        }
+      }
+    }
+  }
+}
