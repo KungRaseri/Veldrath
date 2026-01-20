@@ -226,7 +226,13 @@ jobs:
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("### Changes in This Release")
         [void]$sb.AppendLine("")
-        [void]$sb.AppendLine("${{ steps.changelog.outputs.changelog }}")
+        
+        # Escape changelog content to prevent PowerShell parsing errors
+        $changelog = @'
+${{ steps.changelog.outputs.changelog }}
+'@
+        [void]$sb.AppendLine($changelog)
+        
         [void]$sb.AppendLine("")
         [void]$sb.AppendLine("### Documentation")
         [void]$sb.AppendLine("")
