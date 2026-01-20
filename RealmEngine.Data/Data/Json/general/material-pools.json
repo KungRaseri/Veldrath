@@ -9,13 +9,13 @@
     "humanoid_low": {
       "description": "Low-tier humanoid enemies (goblins, bandits, cultists)",
       "metals": {
-        "@materials/properties/metals:iron": {
+        "@properties/materials/metals:iron": {
           "rarityWeight": 60
         },
-        "@materials/properties/metals:bronze": {
+        "@properties/materials/metals:bronze": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 10
         }
       }
@@ -23,13 +23,13 @@
     "humanoid_mid": {
       "description": "Mid-tier humanoid enemies (knights, guards, mercenaries)",
       "metals": {
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 50
         },
-        "@materials/properties/metals:silver": {
+        "@properties/materials/metals:silver": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 20
         }
       }
@@ -37,13 +37,13 @@
     "humanoid_high": {
       "description": "High-tier humanoid enemies (champions, lords, elite warriors)",
       "metals": {
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:adamantine": {
+        "@properties/materials/metals:adamantine": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:dragonbone": {
+        "@properties/materials/metals:dragonbone": {
           "rarityWeight": 20
         }
       }
@@ -51,19 +51,19 @@
     "dragon_hoard": {
       "description": "Dragon loot - can drop any material including legendary metals",
       "metals": {
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 15
         },
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 25
         },
-        "@materials/properties/metals:adamantine": {
+        "@properties/materials/metals:adamantine": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:dragonbone": {
+        "@properties/materials/metals:dragonbone": {
           "rarityWeight": 20
         },
-        "@materials/properties/metals:celestial-ore": {
+        "@properties/materials/metals:celestial-ore": {
           "rarityWeight": 10
         }
       }
@@ -71,16 +71,16 @@
     "elemental_fire": {
       "description": "Fire-themed enemies (fire elementals, salamanders, ifrit)",
       "metals": {
-        "@materials/properties/metals:obsidian": {
+        "@properties/materials/metals:obsidian": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 20
         },
-        "@materials/properties/metals:dragonbone": {
+        "@properties/materials/metals:dragonbone": {
           "rarityWeight": 10
         }
       }
@@ -88,16 +88,16 @@
     "elemental_ice": {
       "description": "Ice-themed enemies (ice elementals, frost giants)",
       "metals": {
-        "@materials/properties/metals:crystal": {
+        "@properties/materials/metals:crystal": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:silver": {
+        "@properties/materials/metals:silver": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 20
         },
-        "@materials/properties/metals:adamantine": {
+        "@properties/materials/metals:adamantine": {
           "rarityWeight": 10
         }
       }
@@ -105,13 +105,13 @@
     "undead": {
       "description": "Undead enemies - tend to have rusty, worn materials",
       "metals": {
-        "@materials/properties/metals:iron": {
+        "@properties/materials/metals:iron": {
           "rarityWeight": 50
         },
-        "@materials/properties/metals:silver": {
+        "@properties/materials/metals:silver": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:obsidian": {
+        "@properties/materials/metals:obsidian": {
           "rarityWeight": 10
         }
       }
@@ -119,16 +119,16 @@
     "beast": {
       "description": "Beast enemies - natural materials, bone, hide",
       "metals": {
-        "@materials/properties/metals:iron": {
+        "@properties/materials/metals:iron": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:bronze": {
+        "@properties/materials/metals:bronze": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 20
         },
-        "@materials/properties/metals:dragonbone": {
+        "@properties/materials/metals:dragonbone": {
           "rarityWeight": 10
         }
       }
@@ -136,16 +136,16 @@
     "demonic": {
       "description": "Demonic enemies - dark, cursed materials",
       "metals": {
-        "@materials/properties/metals:obsidian": {
+        "@properties/materials/metals:obsidian": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:adamantine": {
+        "@properties/materials/metals:adamantine": {
           "rarityWeight": 20
         },
-        "@materials/properties/metals:void-crystal": {
+        "@properties/materials/metals:void-crystal": {
           "rarityWeight": 10
         }
       }
@@ -153,16 +153,16 @@
     "celestial": {
       "description": "Celestial/holy enemies - divine materials",
       "metals": {
-        "@materials/properties/metals:silver": {
+        "@properties/materials/metals:silver": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:celestial-ore": {
+        "@properties/materials/metals:celestial-ore": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:adamantine": {
+        "@properties/materials/metals:adamantine": {
           "rarityWeight": 10
         }
       }
@@ -170,16 +170,16 @@
     "default": {
       "description": "Default pool if no specific pool defined - balanced selection",
       "metals": {
-        "@materials/properties/metals:iron": {
+        "@properties/materials/metals:iron": {
           "rarityWeight": 40
         },
-        "@materials/properties/metals:steel": {
+        "@properties/materials/metals:steel": {
           "rarityWeight": 30
         },
-        "@materials/properties/metals:mithril": {
+        "@properties/materials/metals:mithril": {
           "rarityWeight": 20
         },
-        "@materials/properties/metals:adamantine": {
+        "@properties/materials/metals:adamantine": {
           "rarityWeight": 10
         }
       }
