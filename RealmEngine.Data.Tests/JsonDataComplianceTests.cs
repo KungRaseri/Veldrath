@@ -1042,6 +1042,11 @@ public class JsonDataComplianceTests
                         {
                             items.AddRange(categoryItems.OfType<JObject>());
                         }
+                        // Pattern 3a: Direct object items (e.g., quality_types where each key IS an item)
+                        else if (category.Value is JObject directItem)
+                        {
+                            items.Add(directItem);
+                        }
                     }
                 }
             }

@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "description": "Item type material compatibility - defines which materials can be used for which item types",
+    "version": "5.1",
+    "lastUpdated": "2026-01-19",
+    "type": "material_filter_config",
+    "notes": [
+      "Filters define valid material categories for each item type",
+      "weapons can use metals (for blades) or woods (for hafts/bows)",
+      "armor can use metals (for plate/chain) or leathers (for hide/padding)",
+      "accessories typically use gems, crystals, and precious metals"
+    ]
+  },
+  "filters": {
+    "weapon": {
+      "description": "Materials usable in weapon crafting",
+      "allowedMaterials": [
+        "@properties/materials/metals",
+        "@properties/materials/woods"
+      ]
+    },
+    "armor": {
+      "description": "Materials usable in armor crafting",
+      "allowedMaterials": [
+        "@properties/materials/metals",
+        "@properties/materials/leathers"
+      ]
+    },
+    "accessory": {
+      "description": "Materials usable in accessory crafting",
+      "allowedMaterials": [
+        "@properties/materials/metals"
+      ]
+    }
+  }
+}

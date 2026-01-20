@@ -1,0 +1,53 @@
+{
+  "version": "4.3",
+  "type": "rarity_config",
+  "lastUpdated": "2026-01-19",
+  "description": "Rarity tier definitions and colors",
+  "tiers": [
+    {
+      "name": "Common",
+      "rarityWeightRange": {
+        "min": 50,
+        "max": 100
+      },
+      "color": "#FFFFFF",
+      "dropChance": 0.5
+    },
+    {
+      "name": "Uncommon",
+      "rarityWeightRange": {
+        "min": 30,
+        "max": 49
+      },
+      "color": "#1EFF00",
+      "dropChance": 0.25
+    },
+    {
+      "name": "Rare",
+      "rarityWeightRange": {
+        "min": 15,
+        "max": 29
+      },
+      "color": "#0070DD",
+      "dropChance": 0.15
+    },
+    {
+      "name": "Epic",
+      "rarityWeightRange": {
+        "min": 5,
+        "max": 14
+      },
+      "color": "#A335EE",
+      "dropChance": 0.08
+    },
+    {
+      "name": "Legendary",
+      "rarityWeightRange": {
+        "min": 1,
+        "max": 4
+      },
+      "color": "#FF8000",
+      "dropChance": 0.02
+    }
+  ]
+}
