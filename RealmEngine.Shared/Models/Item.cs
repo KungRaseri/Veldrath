@@ -168,7 +168,8 @@ public class Item : ITraitable
     /// Gets or sets the material this item is crafted from (e.g., \"iron\", \"steel\", \"mithril\").
     /// Materials are baked into the item at generation time.
     /// </summary>
-    public string? Material { get; set; }
+    [Obsolete("Use Material (ItemMaterial type) instead. This string property is ambiguous and will be removed in v5.0.")]
+    public string? MaterialName { get; set; }
 
     /// <summary>
     /// Gets or sets the traits provided by this item's material.
@@ -213,16 +214,52 @@ public class Item : ITraitable
     /// </summary>
     public string BaseName { get; set; } = string.Empty;
 
+    // ========================================
+    // NEW v4.3 Component System
+    // ========================================
+
+    /// <summary>
+    /// Gets or sets the quality tier of this item (Fine, Superior, Exceptional, Masterwork, Legendary).
+    /// Quality provides stat bonuses that vary by item type (weapon vs armor).
+    /// </summary>
+    public ItemQuality? Quality { get; set; }
+
+    /// <summary>
+    /// Gets or sets the material this item is made from (Iron, Mithril, Oak, Dragonhide, etc.).
+    /// Material provides durability, weight modifiers, and base attribute bonuses.
+    /// </summary>
+    public ItemMaterial? Material { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of prefix modifiers applied to this item.
+    /// Prefixes provide various bonuses and appear before the base name.
+    /// Multiple prefixes can be present, but only the first appears in the display name.
+    /// </summary>
+    public List<ItemPrefix> PrefixComponents { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the list of suffix modifiers applied to this item.
+    /// Suffixes provide various bonuses and appear after the base name.
+    /// Multiple suffixes can be present, but only the first appears in the display name.
+    /// </summary>
+    public List<ItemSuffix> SuffixComponents { get; set; } = new();
+
+    // ========================================
+    // OBSOLETE v4.0 Properties (Deprecated)
+    // ========================================
+
     /// <summary>
     /// Ordered list of prefix components (quality, material, enchantments, etc.) that appear before the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
+    [Obsolete("Use Quality, Material, and PrefixComponents instead. This property mixes multiple component types ambiguously. Will be removed in v5.0.")]
     public List<NameComponent> Prefixes { get; set; } = new();
 
     /// <summary>
     /// Ordered list of suffix components (enchantments, sockets, etc.) that appear after the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
+    [Obsolete("Use SuffixComponents instead. This property will be removed in v5.0.")]
     public List<NameComponent> Suffixes { get; set; } = new();
     /// <summary>
     /// Gets or sets the upgrade level of this item (+1, +2, +3, etc.).
@@ -574,6 +611,7 @@ public class Item : ITraitable
     /// </summary>
     /// <param name="token">The token name to search for (e.g., "quality", "material").</param>
     /// <returns>The component value if found, otherwise null.</returns>
+#pragma warning disable CS0618 // Type or member is obsolete
     public string? GetPrefixValue(string token)
     {
         return Prefixes.FirstOrDefault(p => p.Token == token)?.Value;
@@ -609,6 +647,7 @@ public class Item : ITraitable
 
         return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
+#pragma warning restore CS0618 // Type or member is obsolete
 
     /// <summary>
     /// Get the display name for this item including upgrade level and enchantments.
@@ -787,6 +826,156 @@ public class Item : ITraitable
 
         Quantity -= amount;
         return true;
+    }
+
+    // ========================================
+    // NEW v4.3 Methods
+    // ========================================
+
+    /// <summary>
+    /// Gets the full display name of the item with quality, material, first prefix, and first suffix.
+    /// Format: "{Quality} {Material} {FirstPrefix} {BaseName} {FirstSuffix}"
+    /// Example: "Fine Iron Flaming Longsword of the Bear"
+    /// </summary>
+    public string GetFullDisplayName()
+    {
+        var parts = new List<string>();
+
+        if (Quality != null)
+            parts.Add(Quality.Name);
+
+        if (Material != null)
+            parts.Add(Material.Name);
+
+        if (PrefixComponents.Count > 0)
+            parts.Add(PrefixComponents[0].Name);
+
+        parts.Add(BaseName);
+
+        if (SuffixComponents.Count > 0)
+            parts.Add(SuffixComponents[0].Name);
+
+        return string.Join(" ", parts);
+    }
+
+    /// <summary>
+    /// Gets the short name of the item without quality or material.
+    /// Format: "{FirstPrefix} {BaseName} {FirstSuffix}"
+    /// Example: "Flaming Longsword of the Bear"
+    /// </summary>
+    public string GetShortName()
+    {
+        var parts = new List<string>();
+
+        if (PrefixComponents.Count > 0)
+            parts.Add(PrefixComponents[0].Name);
+
+        parts.Add(BaseName);
+
+        if (SuffixComponents.Count > 0)
+            parts.Add(SuffixComponents[0].Name);
+
+        return string.Join(" ", parts);
+    }
+
+    /// <summary>
+    /// Gets structured tooltip data with bonuses broken down by source.
+    /// Enables clear attribution of traits to specific components.
+    /// </summary>
+    public ItemTooltipData GetTooltipData()
+    {
+        var tooltip = new ItemTooltipData
+        {
+            DisplayName = GetFullDisplayName(),
+            Rarity = Rarity,
+            Type = Type,
+            Lore = Lore
+        };
+
+        // Base section
+        tooltip.BaseSection.Header = BaseName;
+        tooltip.BaseSection.Bonuses = FormatTraits(Traits);
+
+        // Quality section
+        if (Quality != null)
+        {
+            tooltip.QualitySection = new TooltipSection
+            {
+                Header = $"Quality: {Quality.Name}",
+                Bonuses = FormatTraits(Quality.Traits)
+            };
+        }
+
+        // Material section
+        if (Material != null)
+        {
+            tooltip.MaterialSection = new TooltipSection
+            {
+                Header = $"Material: {Material.Name}",
+                Bonuses = FormatTraits(Material.Traits)
+            };
+        }
+
+        // Prefix sections
+        foreach (var prefix in PrefixComponents)
+        {
+            tooltip.PrefixSections.Add(new TooltipSection
+            {
+                Header = prefix.Name,
+                Bonuses = FormatTraits(prefix.Traits)
+            });
+        }
+
+        // Suffix sections
+        foreach (var suffix in SuffixComponents)
+        {
+            tooltip.SuffixSections.Add(new TooltipSection
+            {
+                Header = suffix.Name,
+                Bonuses = FormatTraits(suffix.Traits)
+            });
+        }
+
+        // Enchantment sections
+        foreach (var enchantment in Enchantments)
+        {
+            tooltip.EnchantmentSections.Add(new TooltipSection
+            {
+                Header = $"Enchantment: {enchantment.Name}",
+                Bonuses = FormatTraits(enchantment.Traits)
+            });
+        }
+
+        return tooltip;
+    }
+
+    /// <summary>
+    /// Formats traits into human-readable bonus strings.
+    /// </summary>
+    private List<string> FormatTraits(Dictionary<string, object> traits)
+    {
+        var bonuses = new List<string>();
+        foreach (var trait in traits)
+        {
+            bonuses.Add($"{trait.Key}: {trait.Value}");
+        }
+        return bonuses;
+    }
+
+    /// <summary>
+    /// Formats trait values into human-readable bonus strings.
+    /// </summary>
+    private List<string> FormatTraits(Dictionary<string, TraitValue> traits)
+    {
+        var bonuses = new List<string>();
+        foreach (var trait in traits)
+        {
+            var value = trait.Value.Type == TraitType.Number 
+                ? trait.Value.AsDouble().ToString()
+                : trait.Value.AsString();
+            bonuses.Add($"{trait.Key}: {value}");
+        }
+        return bonuses;
     }
 }
 
