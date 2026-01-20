@@ -7,22 +7,20 @@
     "componentKeys": [
       "age",
       "habitat",
-      "descriptive",
       "title"
     ],
     "patternTokens": [
       "base",
       "age",
       "habitat",
-      "descriptive",
       "title"
     ],
-    "totalPatterns": 8,
+    "totalPatterns": 6,
     "raritySystem": "weight-based",
     "notes": [
       "base_token: Resolves to item name from trolls/catalog.json",
       "troll_nature: Large regenerating creatures with elemental variants",
-      "weight_ranges: Young (10) \u2192 Ancient (70), Cave (12) \u2192 Volcanic (30)",
+      "weight_ranges: Young (10) → Ancient (70), Cave (12) → Volcanic (30)",
       "regeneration: All trolls have regeneration trait, vulnerable to fire",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
@@ -144,20 +142,12 @@
       "pattern": "{habitat} {base}"
     },
     {
-      "rarityWeight": 30,
-      "pattern": "{descriptive} {base}"
-    },
-    {
       "rarityWeight": 25,
       "pattern": "{base} {title}"
     },
     {
       "rarityWeight": 20,
       "pattern": "{age} {habitat} {base}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{descriptive} {base} {title}"
     },
     {
       "rarityWeight": 10,

@@ -7,17 +7,15 @@
     "componentKeys": [
       "element",
       "size",
-      "descriptive",
       "title"
     ],
     "patternTokens": [
       "base",
       "element",
       "size",
-      "descriptive",
       "title"
     ],
-    "totalPatterns": 7,
+    "totalPatterns": 4,
     "raritySystem": "weight-based",
     "notes": [
       "Base token resolves from enemies/elementals/catalog.json",
@@ -187,20 +185,8 @@
       "pattern": "{size} {element} {base}"
     },
     {
-      "rarityWeight": 30,
-      "pattern": "{descriptive} {element} {base}"
-    },
-    {
       "rarityWeight": 25,
       "pattern": "{element} {base} {title}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{size} {descriptive} {element} {base}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{size} {descriptive} {element} {base} {title}"
     }
   ]
 }

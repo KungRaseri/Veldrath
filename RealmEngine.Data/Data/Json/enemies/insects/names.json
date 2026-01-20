@@ -7,22 +7,20 @@
     "componentKeys": [
       "size",
       "type",
-      "descriptive",
       "title"
     ],
     "patternTokens": [
       "base",
       "size",
       "type",
-      "descriptive",
       "title"
     ],
-    "totalPatterns": 8,
+    "totalPatterns": 6,
     "raritySystem": "weight-based",
     "notes": [
       "base_token: Resolves to item name from insects/catalog.json",
       "insect_variety: Includes spiders, beetles, wasps, ants with hive/solitary behavior",
-      "weight_ranges: Small (5) \u2192 Colossal (40), Common (5) \u2192 Crystal (35)",
+      "weight_ranges: Small (5) → Colossal (40), Common (5) → Crystal (35)",
       "traits: Many insects are venomous, armored, or have hive minds",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
@@ -140,20 +138,12 @@
       "pattern": "{type} {base}"
     },
     {
-      "rarityWeight": 30,
-      "pattern": "{descriptive} {base}"
-    },
-    {
       "rarityWeight": 25,
       "pattern": "{base} {title}"
     },
     {
       "rarityWeight": 20,
       "pattern": "{size} {type} {base}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{descriptive} {base} {title}"
     },
     {
       "rarityWeight": 10,

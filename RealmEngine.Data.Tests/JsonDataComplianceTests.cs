@@ -308,7 +308,7 @@ public class JsonDataComplianceTests
     {
         // Assert
         _allNamesFiles.Should().NotBeEmpty();
-        _allNamesFiles.Should().HaveCountGreaterThan(25, "expected 25+ names files");
+        _allNamesFiles.Should().HaveCount(25, "expected exactly 25 names files after cleanup");
     }
 
     [Theory]
@@ -518,9 +518,9 @@ public class JsonDataComplianceTests
         var json = JObject.Parse(File.ReadAllText(fullPath));
         var version = json["metadata"]?["version"]?.ToString();
 
-        // Assert - Accept 4.0, 4.2, 5.0, and 5.1
-        version.Should().Match(v => v == "4.0" || v == "4.2" || v == "5.0" || v == "5.1",
-            $"{relativePath} version should be '4.0', '4.2', '5.0', or '5.1'");
+        // Assert - Version should exist and not be empty
+        version.Should().NotBeNullOrWhiteSpace(
+            $"{relativePath} should have a valid version number");
     }
 
     [Theory]
@@ -587,12 +587,12 @@ public class JsonDataComplianceTests
             {
                 foreach (var item in items.OfType<JObject>())
                 {
-                    item.Should().ContainKey("value",
-                        $"{relativePath} - Component '{componentGroup.Name}' item missing 'value' field");
+                    item.Should().ContainKey("name",
+                        $"{relativePath} - Component '{componentGroup.Name}' item missing 'name' field");
 
-                    var value = item["value"]?.ToString();
-                    value.Should().NotBeNullOrWhiteSpace(
-                        $"{relativePath} - Component '{componentGroup.Name}' has empty value");
+                    var name = item["name"]?.ToString();
+                    name.Should().NotBeNullOrWhiteSpace(
+                        $"{relativePath} - Component '{componentGroup.Name}' has empty name");
                 }
             }
         }

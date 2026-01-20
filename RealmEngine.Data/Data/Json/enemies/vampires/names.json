@@ -7,22 +7,20 @@
     "componentKeys": [
       "age",
       "title",
-      "bloodline",
-      "descriptive"
+      "bloodline"
     ],
     "patternTokens": [
       "base",
       "age",
       "title",
-      "bloodline",
-      "descriptive"
+      "bloodline"
     ],
-    "totalPatterns": 8,
+    "totalPatterns": 6,
     "raritySystem": "weight-based",
     "notes": [
       "base_token: Resolves to item name from vampires/catalog.json",
       "vampire_culture: Aristocratic undead with bloodlines and nobility titles",
-      "weight_ranges: Spawn (10) \u2192 Progenitor (100), Cursed (15) \u2192 Eternis (60)",
+      "weight_ranges: Spawn (10) → Progenitor (100), Cursed (15) → Eternis (60)",
       "traits: All vampires are undead, vulnerable to radiant, have regeneration",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
@@ -165,20 +163,12 @@
       "pattern": "{bloodline} {base}"
     },
     {
-      "rarityWeight": 25,
-      "pattern": "{descriptive} {base}"
-    },
-    {
       "rarityWeight": 20,
       "pattern": "{age} {bloodline} {base}"
     },
     {
       "rarityWeight": 15,
       "pattern": "{age} {base} {title}"
-    },
-    {
-      "rarityWeight": 10,
-      "pattern": "{descriptive} {bloodline} {base} {title}"
     }
   ]
 }

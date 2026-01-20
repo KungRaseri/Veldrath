@@ -8,7 +8,6 @@
       "profession",
       "rank",
       "specialization",
-      "descriptive",
       "title"
     ],
     "patternTokens": [
@@ -16,10 +15,9 @@
       "profession",
       "rank",
       "specialization",
-      "descriptive",
       "title"
     ],
-    "totalPatterns": 7,
+    "totalPatterns": 5,
     "raritySystem": "weight-based",
     "notes": [
       "Base token resolves from enemies/humanoids/catalog.json",
@@ -250,14 +248,6 @@
     {
       "rarityWeight": 25,
       "pattern": "{rank} {profession} {title}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{descriptive} {profession} {specialization}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{rank} {descriptive} {profession} {specialization} {title}"
     }
   ]
 }

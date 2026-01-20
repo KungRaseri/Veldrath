@@ -7,22 +7,20 @@
     "componentKeys": [
       "rank",
       "tribe",
-      "descriptive",
       "title"
     ],
     "patternTokens": [
       "base",
       "rank",
       "tribe",
-      "descriptive",
       "title"
     ],
-    "totalPatterns": 8,
+    "totalPatterns": 6,
     "raritySystem": "weight-based",
     "notes": [
       "base_token: Resolves to item name from goblinoids/catalog.json",
       "tribal_culture: Goblinoids organize in tribes/clans with hierarchies",
-      "weight_ranges: Young (3) \u2192 King (60), Cave (5) \u2192 Skullcrusher (35)",
+      "weight_ranges: Young (3) → King (60), Cave (5) → Skullcrusher (35)",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
     "supportsTraits": true
@@ -171,10 +169,6 @@
       "pattern": "{rank} {base}"
     },
     {
-      "rarityWeight": 35,
-      "pattern": "{descriptive} {base}"
-    },
-    {
       "rarityWeight": 30,
       "pattern": "{base} {title}"
     },
@@ -185,10 +179,6 @@
     {
       "rarityWeight": 20,
       "pattern": "{rank} {tribe} {base}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{descriptive} {base} {title}"
     },
     {
       "rarityWeight": 10,

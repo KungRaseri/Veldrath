@@ -6,18 +6,16 @@
     "type": "pattern_generation",
     "componentKeys": [
       "size",
-      "descriptive",
       "origin",
       "title"
     ],
     "patternTokens": [
       "base",
       "size",
-      "descriptive",
       "origin",
       "title"
     ],
-    "totalPatterns": 8,
+    "totalPatterns": 3,
     "raritySystem": "weight-based",
     "notes": [
       "Base token resolves from enemies/beasts/catalog.json",
@@ -180,28 +178,8 @@
       "pattern": "{size} {base}"
     },
     {
-      "rarityWeight": 35,
-      "pattern": "{descriptive} {base}"
-    },
-    {
       "rarityWeight": 30,
       "pattern": "{origin} {base}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{size} {descriptive} {base}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{descriptive} {base} {title}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{size} {descriptive} {origin} {base}"
-    },
-    {
-      "rarityWeight": 10,
-      "pattern": "{size} {descriptive} {base} {title}"
     }
   ]
 }

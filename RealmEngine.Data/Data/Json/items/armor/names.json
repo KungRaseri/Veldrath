@@ -7,18 +7,14 @@
     "supportsTraits": true,
     "componentKeys": [
       "prefix",
-      "quality",
-      "descriptive",
       "suffix"
     ],
     "patternTokens": [
       "base",
       "prefix",
-      "quality",
-      "descriptive",
       "suffix"
     ],
-    "totalPatterns": 16,
+    "totalPatterns": 4,
     "raritySystem": "weight-based",
     "notes": [
       "Base token resolves from items/armor/catalog.json",
@@ -1285,16 +1281,8 @@
       "rarityWeight": 30
     },
     {
-      "pattern": "{descriptive} {base}",
-      "rarityWeight": 35
-    },
-    {
       "pattern": "{base} {suffix}",
       "rarityWeight": 30
-    },
-    {
-      "pattern": "{descriptive} {base} {suffix}",
-      "rarityWeight": 12
     },
     {
       "pattern": "{prefix} {base} {suffix}",

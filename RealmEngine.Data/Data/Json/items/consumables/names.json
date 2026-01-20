@@ -6,19 +6,15 @@
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
-      "quality",
       "effect",
-      "descriptive",
       "suffix"
     ],
     "patternTokens": [
       "base",
-      "quality",
       "effect",
-      "descriptive",
       "suffix"
     ],
-    "totalPatterns": 7,
+    "totalPatterns": 3,
     "raritySystem": "weight-based",
     "notes": [
       "Base token resolves from items/consumables/catalog.json",
@@ -1032,28 +1028,12 @@
       "rarityWeight": 100
     },
     {
-      "pattern": "{quality} {base}",
-      "rarityWeight": 50
-    },
-    {
       "pattern": "{effect} {base}",
       "rarityWeight": 40
     },
     {
       "pattern": "{base} {suffix}",
       "rarityWeight": 35
-    },
-    {
-      "pattern": "{quality} {effect} {base}",
-      "rarityWeight": 20
-    },
-    {
-      "pattern": "{descriptive} {base} {suffix}",
-      "rarityWeight": 15
-    },
-    {
-      "pattern": "{quality} {effect} {base} {suffix}",
-      "rarityWeight": 8
     }
   ]
 }

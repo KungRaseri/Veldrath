@@ -251,10 +251,10 @@ public class DataValidationFailureReport
           {
             foreach (var item in items.OfType<JObject>())
             {
-              if (!item.ContainsKey("value"))
+              if (!item.ContainsKey("name"))
               {
                 issues.Add(new ValidationIssue(relativePath, "Component Item",
-                    $"Component '{componentGroup.Name}' has item missing 'value' field"));
+                    $"Component '{componentGroup.Name}' has item missing 'name' field"));
               }
               if (!item.ContainsKey("rarityWeight"))
               {

@@ -7,17 +7,15 @@
     "componentKeys": [
       "rank",
       "aspect",
-      "descriptive",
       "title"
     ],
     "patternTokens": [
       "base",
       "rank",
       "aspect",
-      "descriptive",
       "title"
     ],
-    "totalPatterns": 7,
+    "totalPatterns": 4,
     "raritySystem": "weight-based",
     "notes": [
       "Base token resolves from enemies/demons/catalog.json",
@@ -167,24 +165,12 @@
       "pattern": "{rank} {base}"
     },
     {
-      "rarityWeight": 35,
-      "pattern": "{descriptive} {base}"
-    },
-    {
       "rarityWeight": 30,
       "pattern": "{aspect} {base}"
     },
     {
       "rarityWeight": 25,
       "pattern": "{rank} {aspect} {base}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{descriptive} {base} {title}"
-    },
-    {
-      "rarityWeight": 15,
-      "pattern": "{rank} {descriptive} {aspect} {base} {title}"
     }
   ]
 }
