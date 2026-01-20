@@ -88,6 +88,17 @@
         "@properties/materials/woods:maple": {
           "rarityWeight": 20
         }
+      },
+      "fabrics": {
+        "@properties/materials/fabrics:cotton": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/fabrics:wool": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/fabrics:silk": {
+          "rarityWeight": 10
+        }
       }
     },
     "humanoid_high": {
@@ -107,14 +118,28 @@
         }
       },
       "leathers": {
-        "@properties/materials/leathers:dire-beast-hide": {
+        "@properties/materials/leathers:chimera-hide": {
           "rarityWeight": 35
         },
         "@properties/materials/leathers:shadow-leather": {
           "rarityWeight": 30
         },
-        "@properties/materials/leathers:dragonhide": {
+        "@properties/materials/leathers:dragon-leather": {
           "rarityWeight": 20
+        }
+      },
+      "fabrics": {
+        "@properties/materials/fabrics:shimmercloth": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/fabrics:ethereal-silk": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/fabrics:voidweave": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/fabrics:starweave": {
+          "rarityWeight": 10
         }
       }
     },
@@ -217,6 +242,26 @@
         }
       }
     },
+    "dragon_hoard": {
+      "description": "Dragon hoard treasures (rare and legendary materials)",
+      "metals": {
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 25
+        },
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 15
+        },
+        "@properties/materials/metals:godforged": {
+          "rarityWeight": 10
+        }
+      }
+    },
     "elemental": {
       "description": "Elemental creatures (fire, water, earth, air)",
       "metals": {
@@ -231,6 +276,23 @@
         },
         "@properties/materials/metals:void-crystal": {
           "rarityWeight": 5
+        }
+      }
+    },
+    "elemental_fire": {
+      "description": "Fire elemental materials (obsidian, heat-resistant metals)",
+      "metals": {
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 10
         }
       }
     },

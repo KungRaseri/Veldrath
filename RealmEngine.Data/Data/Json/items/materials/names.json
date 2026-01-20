@@ -5,6 +5,10 @@
     "lastUpdated": "2026-01-20",
     "type": "pattern_generation",
     "supportsTraits": true,
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "componentKeys": ["quality"],
+    "patternTokens": ["{quality}"],
     "notes": [
       "Quality modifiers affect budget calculation",
       "Negative budgetModifier = discount (easier to afford)",
@@ -12,9 +16,17 @@
       "Used in budget-based generation to adjust affordability"
     ]
   },
+  "patterns": [
+    {
+      "template": "{quality}",
+      "rarityWeight": 100,
+      "description": "Quality-only pattern for budget generation"
+    }
+  ],
   "components": {
     "quality": [
       {
+        "name": "Damaged",
         "value": "Damaged",
         "rarityWeight": 100,
         "budgetModifier": -0.3,
@@ -26,6 +38,7 @@
         }
       },
       {
+        "name": "Worn",
         "value": "Worn",
         "rarityWeight": 90,
         "budgetModifier": -0.2,
@@ -37,6 +50,7 @@
         }
       },
       {
+        "name": "Cracked",
         "value": "Cracked",
         "rarityWeight": 80,
         "budgetModifier": -0.15,
@@ -48,12 +62,14 @@
         }
       },
       {
+        "name": "Standard",
         "value": "Standard",
         "rarityWeight": 70,
         "budgetModifier": 0.0,
         "traits": {}
       },
       {
+        "name": "Fine",
         "value": "Fine",
         "rarityWeight": 40,
         "budgetModifier": 0.15,
@@ -65,6 +81,7 @@
         }
       },
       {
+        "name": "Superior",
         "value": "Superior",
         "rarityWeight": 25,
         "budgetModifier": 0.25,
@@ -80,6 +97,7 @@
         }
       },
       {
+        "name": "Exceptional",
         "value": "Exceptional",
         "rarityWeight": 15,
         "budgetModifier": 0.35,
@@ -95,6 +113,7 @@
         }
       },
       {
+        "name": "Masterwork",
         "value": "Masterwork",
         "rarityWeight": 8,
         "budgetModifier": 0.5,
@@ -114,6 +133,7 @@
         }
       },
       {
+        "name": "Legendary",
         "value": "Legendary",
         "rarityWeight": 3,
         "budgetModifier": 0.75,

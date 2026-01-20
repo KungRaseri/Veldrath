@@ -198,9 +198,9 @@ public class BudgetConfigFactoryTests
             foreach (var (materialRef, entry) in metals)
             {
                 materialRef.Should().NotBeNullOrEmpty($"pool '{poolName}' should have materialRef");
-                // Accept both old and new reference formats during migration
-                (materialRef.StartsWith("@items/materials/") || materialRef.StartsWith("@materials/properties/"))
-                    .Should().BeTrue($"pool '{poolName}' reference should use valid format");
+                // Accept both old and new reference formats
+                (materialRef.StartsWith("@items/materials/") || materialRef.StartsWith("@materials/properties/") || materialRef.StartsWith("@properties/materials/"))
+                    .Should().BeTrue($"pool '{poolName}' reference '{materialRef}' should use valid format (@items/materials/ or @materials/properties/ or @properties/materials/)");
                 
                 entry.RarityWeight.Should().BeGreaterThan(0, $"pool '{poolName}' materials should have positive rarityWeight");
             }

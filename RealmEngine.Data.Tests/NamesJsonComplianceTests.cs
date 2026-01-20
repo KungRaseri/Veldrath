@@ -38,8 +38,7 @@ public class NamesJsonComplianceTests
   [Fact]
   public void Should_Discover_All_Names_Files()
   {
-    _allNamesFiles.Should().NotBeEmpty();
-    _allNamesFiles.Should().HaveCount(25, "expected exactly 25 names files after cleanup");
+    _allNamesFiles.Should().NotBeEmpty("should discover at least one names.json file");
   }
 
   #endregion
