@@ -302,6 +302,25 @@ public class ItemGenerator
             // Calculate final rarity from total weight
             item.Rarity = ConvertWeightToRarity(item.TotalRarityWeight);
 
+            // Generate sockets based on item rarity and type
+            try
+            {
+                var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
+                if (socketList.Count > 0)
+                {
+                    // Group sockets by type for the dictionary structure
+                    item.Sockets = socketList
+                        .GroupBy(s => s.Type)
+                        .ToDictionary(g => g.Key, g => g.ToList());
+                    
+                    _logger.LogDebug("Generated {SocketCount} sockets for {ItemName}", socketList.Count, item.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
+            }
+
             // Update item name with enhancements
             item.Name = BuildEnhancedName(item);
 
@@ -1108,11 +1127,39 @@ public class ItemGenerator
         // Apply quality modifier
         if (result.Quality != null)
         {
+            // Convert to ItemQuality object (v4.3 structure)
+            item.Quality = new ItemQuality
+            {
+                Name = GetStringProperty(result.Quality, "value") ?? GetStringProperty(result.Quality, "name") ?? "",
+                RarityWeight = GetIntProperty(result.Quality, "rarityWeight", 50),
+                Traits = new Dictionary<string, TraitValue>()
+            };
+            
+            // Copy traits from JSON if available
+            var traitsToken = result.Quality["traits"];
+            if (traitsToken != null && traitsToken is JObject traitsObj)
+            {
+                foreach (var prop in traitsObj.Properties())
+                {
+                    var traitValue = prop.Value;
+                    if (traitValue != null)
+                    {
+                        item.Quality.Traits[prop.Name] = new TraitValue
+                        {
+                            Value = traitValue.Type == JTokenType.Integer ? 
+                                traitValue.Value<int>() : 
+                                traitValue.Value<double>()
+                        };
+                    }
+                }
+            }
+            
+            // Also add to obsolete Prefixes for backward compatibility (will be removed in v5.0)
 #pragma warning disable CS0618
             item.Prefixes.Add(new NameComponent
             {
                 Token = "quality",
-                Value = GetStringProperty(result.Quality, "value") ?? ""
+                Value = item.Quality.Name
             });
 #pragma warning restore CS0618
         }
@@ -1153,23 +1200,33 @@ public class ItemGenerator
         // Calculate rarity from budget
         item.Rarity = CalculateRarityFromBudget(result.AdjustedBudget);
 
-        // Generate sockets based on item rarity, type, and material
-        try
+        // Apply sockets from budget generation result
+        if (result.Sockets != null && result.Sockets.Count > 0)
         {
-            var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
-            if (socketList.Count > 0)
-            {
-                // Group sockets by type for the dictionary structure
-                item.Sockets = socketList
-                    .GroupBy(s => s.Type)
-                    .ToDictionary(g => g.Key, g => g.ToList());
-                
-                _logger.LogDebug("Generated {SocketCount} sockets for {ItemName}", socketList.Count, item.Name);
-            }
+            item.Sockets = result.Sockets;
+            var totalSocketCount = result.Sockets.Values.Sum(list => list.Count);
+            _logger.LogDebug("Applied {SocketCount} sockets from budget result for {ItemName}", totalSocketCount, item.Name);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
+            // Fallback to legacy SocketGenerator if budget generation didn't provide sockets
+            try
+            {
+                var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
+                if (socketList.Count > 0)
+                {
+                    // Group sockets by type for the dictionary structure
+                    item.Sockets = socketList
+                        .GroupBy(s => s.Type)
+                        .ToDictionary(g => g.Key, g => g.ToList());
+                    
+                    _logger.LogDebug("Generated {SocketCount} sockets (legacy) for {ItemName}", socketList.Count, item.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
+            }
         }
 
         return item;

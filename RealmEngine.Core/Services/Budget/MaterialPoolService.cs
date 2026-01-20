@@ -65,6 +65,7 @@ public class MaterialPoolService
             }
 
             // Resolve all materials in pool and filter by budget
+            var allMaterials = new List<(JToken Material, int Cost, int Weight)>();
             var affordableMaterials = new List<(JToken Material, int Cost, int Weight)>();
 
             foreach (var (materialRef, entry) in pool.Metals)
@@ -77,17 +78,29 @@ public class MaterialPoolService
                 }
 
                 var cost = _budgetCalculator.CalculateMaterialCost(resolved);
+                var materialEntry = (resolved, cost, entry.RarityWeight);
+                allMaterials.Add(materialEntry);
+                
                 if (_budgetCalculator.CanAfford(availableBudget, cost))
                 {
-                    affordableMaterials.Add((resolved, cost, entry.RarityWeight));
+                    affordableMaterials.Add(materialEntry);
                 }
             }
 
+            // If no affordable materials, use the cheapest material available
             if (!affordableMaterials.Any())
             {
-                _logger.LogWarning("No affordable materials found for enemy type {EnemyType} with budget {Budget}", 
-                    enemyType, availableBudget);
-                return null;
+                if (!allMaterials.Any())
+                {
+                    _logger.LogError("No materials found in pool {PoolName} for enemy type {EnemyType}", 
+                        enemyConfig.MaterialPool, enemyType);
+                    return null;
+                }
+                
+                var cheapest = allMaterials.OrderBy(m => m.Cost).First();
+                _logger.LogInformation("Budget {Budget} too low, using cheapest material {MaterialName} (cost={Cost})", 
+                    availableBudget, GetStringProperty(cheapest.Material, "name"), cheapest.Cost);
+                return cheapest.Material;
             }
 
             // Select random material based on selection weights
@@ -142,5 +155,17 @@ public class MaterialPoolService
 
         // Fallback to last item
         return items.Last();
+    }
+    
+    private static string GetStringProperty(JToken token, string propertyName, string defaultValue = "")
+    {
+        try
+        {
+            return token[propertyName]?.Value<string>() ?? defaultValue;
+        }
+        catch
+        {
+            return defaultValue;
+        }
     }
 }

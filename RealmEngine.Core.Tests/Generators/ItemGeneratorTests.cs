@@ -256,7 +256,7 @@ public class ItemGeneratorTests
         }
     }
 
-    [Fact(Skip = "Socket generation not yet implemented in budget-based generation")]
+    [Fact]
     public async Task Should_Generate_Gem_Sockets_On_Items()
     {
         // Arrange
@@ -374,7 +374,7 @@ public class ItemGeneratorTests
         }
     }
 
-    [Fact(Skip = "Socket generation not yet implemented in budget-based generation")]
+    [Fact]
     public async Task Should_Generate_Items_With_Sockets_Based_On_Rarity()
     {
         // Arrange
@@ -405,7 +405,7 @@ public class ItemGeneratorTests
         }
     }
 
-    [Fact(Skip = "Socket generation not yet implemented in budget-based generation")]
+    [Fact]
     public async Task Should_Generate_More_Sockets_For_Higher_Rarity_Items()
     {
         // Arrange
@@ -437,7 +437,7 @@ public class ItemGeneratorTests
         }
     }
 
-    [Fact(Skip = "Socket generation not yet implemented in budget-based generation")]
+    [Fact]
     public async Task Should_Serialize_Items_With_Sockets_Correctly()
     {
         // Arrange

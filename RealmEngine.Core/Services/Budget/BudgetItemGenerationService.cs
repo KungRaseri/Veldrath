@@ -92,7 +92,7 @@ public class BudgetItemGenerationService
             var material = await _materialPoolService.SelectMaterialAsync(request.EnemyType, materialBudget);
             if (material == null)
             {
-                _logger.LogError("GENERATION FAILED at Step 5: No material found for enemy type '{EnemyType}' with material budget {MaterialBudget}. Check material-pools.json and materials catalog.", 
+                _logger.LogWarning("GENERATION FAILED at Step 5: No material found for enemy type '{EnemyType}' with material budget {MaterialBudget}. Try increasing budget or adding cheaper materials.", 
                     request.EnemyType, materialBudget);
                 return null;
             }
@@ -107,8 +107,8 @@ public class BudgetItemGenerationService
             var baseItem = await SelectBaseItemAsync(request.ItemCategory, remainingBudget);
             if (baseItem == null)
             {
-                _logger.LogError("GENERATION FAILED at Step 6: No affordable base item in category '{Category}' with component budget {Budget}. Path checked: items/{Category}/catalog.json", 
-                    request.ItemCategory, remainingBudget, request.ItemCategory);
+                _logger.LogWarning("GENERATION FAILED at Step 6: No affordable base item in category '{Category}' with component budget {Budget}. Try increasing budget or adding cheaper items.", 
+                    request.ItemCategory, remainingBudget);
                 return null;
             }
 
@@ -122,7 +122,7 @@ public class BudgetItemGenerationService
             var pattern = await SelectPatternAsync(request.ItemCategory);
             if (pattern == null)
             {
-                _logger.LogError("GENERATION FAILED at Step 7: No pattern found in category '{Category}'. Path checked: items/{Category}/names.json. Verify 'patterns' array exists.", 
+                _logger.LogWarning("GENERATION FAILED at Step 7: No pattern found in category '{Category}'. Verify items/{Category}/names.json exists.", 
                     request.ItemCategory, request.ItemCategory);
                 return null;
             }
@@ -136,6 +136,11 @@ public class BudgetItemGenerationService
                 request.ItemCategory, 
                 patternString, 
                 remainingBudget);
+
+            // Step 8: Generate sockets based on rarity
+            var sockets = GenerateSocketsForItem(
+                CalculateRarityFromBudget(adjustedBudget),
+                GetItemTypeForSockets(request.ItemCategory));
 
             // Step 9: Build result
             var result = new BudgetItemResult
@@ -154,14 +159,15 @@ public class BudgetItemGenerationService
                 Pattern = patternString,
                 PatternCost = patternCost,
                 Components = components.Select(c => c.Component).ToList(),
-                ComponentCosts = components.ToDictionary(c => GetStringProperty(c.Component, "value"), c => c.Cost)
+                ComponentCosts = components.ToDictionary(c => GetStringProperty(c.Component, "value"), c => c.Cost),
+                Sockets = sockets
             };
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GENERATION FAILED with EXCEPTION for {EnemyType} level {Level} {Category}: {Message}. Stack trace logged above.", 
+            _logger.LogError(ex, "GENERATION FAILED with EXCEPTION for {EnemyType} level {Level} {Category}: {Message}", 
                 request.EnemyType, request.EnemyLevel, request.ItemCategory, ex.Message);
             return null;
         }
@@ -436,6 +442,159 @@ public class BudgetItemGenerationService
         return allItems.Any() ? allItems : null;
     }
 
+    /// <summary>
+    /// Generate sockets for an item based on rarity and item type.
+    /// Uses socket-config.json to determine socket counts and types.
+    /// </summary>
+    private Dictionary<SocketType, List<Socket>> GenerateSocketsForItem(ItemRarity rarity, string itemType)
+    {
+        var sockets = new Dictionary<SocketType, List<Socket>>();
+        
+        try
+        {
+            // Load socket configuration
+            var socketConfigPath = "configuration/socket-config.json";
+            if (!_dataCache.FileExists(socketConfigPath))
+            {
+                _logger.LogWarning("Socket config not found at {Path}, returning empty sockets", socketConfigPath);
+                return sockets;
+            }
+
+            var socketConfig = _dataCache.GetFile(socketConfigPath);
+            if (socketConfig?.JsonData == null)
+            {
+                _logger.LogWarning("Socket config JsonData is null, returning empty sockets");
+                return sockets;
+            }
+
+            // Get socket count based on rarity
+            var socketCounts = socketConfig.JsonData["socketCounts"]?[rarity.ToString()];
+            if (socketCounts == null)
+            {
+                _logger.LogDebug("No socket count configuration for rarity {Rarity}", rarity);
+                return sockets;
+            }
+
+            var chances = socketCounts["chances"]?.Values<int>().ToArray();
+            if (chances == null || chances.Length == 0)
+            {
+                _logger.LogDebug("No socket chances configured for rarity {Rarity}", rarity);
+                return sockets;
+            }
+
+            // Randomly determine socket count based on chances
+            var totalWeight = chances.Sum();
+            var roll = _random.Next(totalWeight);
+            var socketCount = 0;
+            var cumulative = 0;
+            
+            for (int i = 0; i < chances.Length; i++)
+            {
+                cumulative += chances[i];
+                if (roll < cumulative)
+                {
+                    socketCount = i;
+                    break;
+                }
+            }
+
+            if (socketCount == 0)
+            {
+                _logger.LogDebug("Rolled 0 sockets for rarity {Rarity}", rarity);
+                return sockets;
+            }
+
+            // Get socket type weights for item type
+            var socketTypeWeights = socketConfig.JsonData["socketTypeWeights"]?[itemType];
+            if (socketTypeWeights == null)
+            {
+                _logger.LogWarning("No socket type weights for item type {ItemType}, defaulting to equal weights", itemType);
+                socketTypeWeights = new JObject
+                {
+                    ["Gem"] = 25,
+                    ["Rune"] = 25,
+                    ["Crystal"] = 25,
+                    ["Orb"] = 25
+                };
+            }
+
+            // Generate sockets
+            var gemWeight = socketTypeWeights["Gem"]?.Value<int>() ?? 25;
+            var runeWeight = socketTypeWeights["Rune"]?.Value<int>() ?? 25;
+            var crystalWeight = socketTypeWeights["Crystal"]?.Value<int>() ?? 25;
+            var orbWeight = socketTypeWeights["Orb"]?.Value<int>() ?? 25;
+            var typeWeightTotal = gemWeight + runeWeight + crystalWeight + orbWeight;
+
+            for (int i = 0; i < socketCount; i++)
+            {
+                // Randomly select socket type
+                var typeRoll = _random.Next(typeWeightTotal);
+                SocketType socketType;
+                
+                if (typeRoll < gemWeight)
+                    socketType = SocketType.Gem;
+                else if (typeRoll < gemWeight + runeWeight)
+                    socketType = SocketType.Rune;
+                else if (typeRoll < gemWeight + runeWeight + crystalWeight)
+                    socketType = SocketType.Crystal;
+                else
+                    socketType = SocketType.Orb;
+
+                // Add socket to appropriate list
+                if (!sockets.ContainsKey(socketType))
+                {
+                    sockets[socketType] = new List<Socket>();
+                }
+
+                sockets[socketType].Add(new Socket
+                {
+                    Type = socketType,
+                    Content = null,
+                    IsLocked = false,
+                    LinkGroup = -1 // TODO: Implement socket linking based on linkChances in config
+                });
+            }
+
+            _logger.LogDebug("Generated {Count} sockets for {Rarity} {ItemType}", socketCount, rarity, itemType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating sockets for {Rarity} {ItemType}", rarity, itemType);
+        }
+
+        return sockets;
+    }
+
+    /// <summary>
+    /// Calculate item rarity from budget amount.
+    /// Higher budgets indicate rarer items.
+    /// </summary>
+    private ItemRarity CalculateRarityFromBudget(int budget)
+    {
+        // Budget thresholds for rarity tiers
+        // These values are tuned to match typical item generation budgets
+        if (budget >= 500) return ItemRarity.Legendary;
+        if (budget >= 300) return ItemRarity.Epic;
+        if (budget >= 150) return ItemRarity.Rare;
+        if (budget >= 50) return ItemRarity.Uncommon;
+        return ItemRarity.Common;
+    }
+
+    /// <summary>
+    /// Convert item category string to item type for socket generation.
+    /// </summary>
+    private string GetItemTypeForSockets(string category)
+    {
+        // Normalize category to socket config format
+        return category.ToLowerInvariant() switch
+        {
+            "weapons" => "Weapon",
+            "armor" => "Armor",
+            "accessories" => "Accessory",
+            _ => "Weapon" // Default to weapon if unknown
+        };
+    }
+
     private static string GetStringProperty(JToken token, string propertyName)
     {
         return token[propertyName]?.Value<string>() ?? string.Empty;
@@ -511,4 +670,7 @@ public class BudgetItemResult
     public List<JToken> Components { get; set; } = new();
     /// <summary>Gets or sets the dictionary of component costs by component type.</summary>
     public Dictionary<string, int> ComponentCosts { get; set; } = new();
+    
+    /// <summary>Gets or sets the generated sockets for the item.</summary>
+    public Dictionary<SocketType, List<Socket>> Sockets { get; set; } = new();
 }

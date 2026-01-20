@@ -2,13 +2,19 @@
   "metadata": {
     "description": "Material pool definitions for enemy loot tables - controls which materials can drop from which enemies",
     "version": "4.0",
-    "lastUpdated": "2026-01-19",
+    "lastUpdated": "2026-01-20",
     "type": "material_pools"
   },
   "pools": {
     "humanoid_low": {
       "description": "Low-tier humanoid enemies (goblins, bandits, cultists)",
       "metals": {
+        "@properties/materials/metals:copper": {
+          "rarityWeight": 80
+        },
+        "@properties/materials/metals:tin": {
+          "rarityWeight": 70
+        },
         "@properties/materials/metals:iron": {
           "rarityWeight": 60
         },
@@ -17,6 +23,31 @@
         },
         "@properties/materials/metals:steel": {
           "rarityWeight": 10
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:scraps": {
+          "rarityWeight": 90
+        },
+        "@properties/materials/leathers:rawhide": {
+          "rarityWeight": 80
+        },
+        "@properties/materials/leathers:hide": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/leathers:leather": {
+          "rarityWeight": 40
+        }
+      },
+      "woods": {
+        "@properties/materials/woods:pine": {
+          "rarityWeight": 85
+        },
+        "@properties/materials/woods:birch": {
+          "rarityWeight": 75
+        },
+        "@properties/materials/woods:oak": {
+          "rarityWeight": 50
         }
       }
     },
@@ -35,6 +66,28 @@
         "@properties/materials/metals:mithril": {
           "rarityWeight": 5
         }
+      },
+      "leathers": {
+        "@properties/materials/leathers:leather": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/leathers:studded-leather": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/leathers:hardened-leather": {
+          "rarityWeight": 20
+        }
+      },
+      "woods": {
+        "@properties/materials/woods:oak": {
+          "rarityWeight": 45
+        },
+        "@properties/materials/woods:ash": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/woods:maple": {
+          "rarityWeight": 20
+        }
       }
     },
     "humanoid_high": {
@@ -51,6 +104,17 @@
         },
         "@properties/materials/metals:godforged": {
           "rarityWeight": 10
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:dire-beast-hide": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/leathers:shadow-leather": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/leathers:dragonhide": {
+          "rarityWeight": 20
         }
       }
     },

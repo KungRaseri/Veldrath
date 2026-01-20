@@ -2,10 +2,10 @@
   "metadata": {
     "description": "Weapon type catalog with base stats and traits",
     "version": "5.1",
-    "lastUpdated": "2026-01-08",
+    "lastUpdated": "2026-01-20",
     "type": "item_catalog",
     "totalWeaponTypes": 7,
-    "totalWeapons": 69,
+    "totalWeapons": 74,
     "usage": "Base catalog of weapons with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
     "notes": [
       "Base items used in pattern generation with names.json",
@@ -27,6 +27,76 @@
         "slot": "mainhand"
       },
       "items": [
+        {
+          "name": "Rusty Blade",
+          "slug": "rusty-blade",
+          "description": "A corroded blade barely holding an edge, suitable only for desperate situations.",
+          "value": 1,
+          "weight": 2.5,
+          "damage": {
+            "min": 1,
+            "max": 4,
+            "modifier": "wielder.strength_mod"
+          },
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 95,
+          "requirements": {
+            "level": 1,
+            "attributes": {
+              "strength": 8
+            }
+          }
+        },
+        {
+          "name": "Shortsword",
+          "slug": "shortsword",
+          "description": "A basic blade shorter than a longsword but more agile.",
+          "value": 8,
+          "weight": 2.0,
+          "damage": {
+            "min": 1,
+            "max": 6,
+            "modifier": "wielder.strength_mod"
+          },
+          "traits": {
+            "critChance": {
+              "value": 8.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 50,
+          "requirements": {
+            "level": 5,
+            "attributes": {
+              "strength": 12
+            },
+            "skill": {
+              "reference": "@skills/weapon:heavy-blades",
+              "rank": 3
+            }
+          }
+        },
         {
           "name": "Longsword",
           "slug": "longsword",
@@ -287,6 +357,76 @@
         "slot": "mainhand"
       },
       "items": [
+        {
+          "name": "Broken Dagger",
+          "slug": "broken-dagger",
+          "value": 1,
+          "weight": 0.5,
+          "damage": {
+            "min": 1,
+            "max": 2,
+            "modifier": "wielder.dexterity_mod"
+          },
+          "traits": {
+            "critChance": {
+              "value": 10.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.5,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 100,
+          "description": "A chipped blade with a cracked handle, more useful as a tool than a weapon.",
+          "requirements": {
+            "level": 1,
+            "attributes": {
+              "dexterity": 8
+            }
+          }
+        },
+        {
+          "name": "Dagger",
+          "slug": "dagger",
+          "value": 5,
+          "weight": 1.0,
+          "damage": {
+            "min": 1,
+            "max": 4,
+            "modifier": "wielder.dexterity_mod"
+          },
+          "traits": {
+            "critChance": {
+              "value": 12.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 1.8,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 60,
+          "description": "A simple blade for quick strikes and concealment.",
+          "requirements": {
+            "level": 3,
+            "attributes": {
+              "dexterity": 12
+            },
+            "skill": {
+              "reference": "@skills/weapon:light-blades",
+              "rank": 2
+            }
+          }
+        },
         {
           "name": "Shortsword",
           "slug": "shortsword",
@@ -1817,6 +1957,76 @@
         "slot": "mainhand"
       },
       "items": [
+        {
+          "name": "Wooden Club",
+          "slug": "wooden-club",
+          "value": 1,
+          "weight": 2.0,
+          "damage": {
+            "min": 1,
+            "max": 3,
+            "modifier": "wielder.strength_mod"
+          },
+          "traits": {
+            "critChance": {
+              "value": 3.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.0,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 100,
+          "description": "A crude bludgeon carved from a sturdy branch, effective despite its simplicity.",
+          "requirements": {
+            "level": 1,
+            "attributes": {
+              "strength": 8
+            }
+          }
+        },
+        {
+          "name": "Club",
+          "slug": "club",
+          "value": 5,
+          "weight": 3.0,
+          "damage": {
+            "min": 1,
+            "max": 4,
+            "modifier": "wielder.strength_mod"
+          },
+          "traits": {
+            "critChance": {
+              "value": 5.0,
+              "type": "number"
+            },
+            "critMultiplier": {
+              "value": 2.2,
+              "type": "number"
+            },
+            "range": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "rarityWeight": 70,
+          "description": "A solid wooden weapon reinforced with metal studs.",
+          "requirements": {
+            "level": 3,
+            "attributes": {
+              "strength": 12
+            },
+            "skill": {
+              "reference": "@skills/weapon:blunt",
+              "rank": 2
+            }
+          }
+        },
         {
           "name": "Mace",
           "slug": "mace",

@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Leather material properties for crafting system - stat bonuses applied to armor",
     "version": "5.1",
-    "lastUpdated": "2026-01-10",
+    "lastUpdated": "2026-01-20",
     "type": "materials_properties_catalog",
-    "totalMaterials": 9,
+    "totalMaterials": 11,
     "usage": "Material properties define stat bonuses based on item type. itemTypeTraits apply bonuses primarily to armor.",
     "notes": [
       "Leather materials focus on armor bonuses with dexterity/stealth benefits",
@@ -14,6 +14,56 @@
   "leather_types": {
     "leather": {
       "items": [
+    {
+      "slug": "rawhide",
+      "name": "Rawhide",
+      "attributes": {
+        "dexterity": 5,
+        "intelligence": 5,
+        "charisma": 5,
+        "strength": 5,
+        "constitution": 5,
+        "wisdom": 5
+      },
+      "traits": {
+        "durability": 35,
+        "weight": 1.2,
+        "flexibility": 40
+      },
+      "displayName": "Rawhide",
+      "itemTypeTraits": {
+        "armor": {
+          "armorRating": 1,
+          "value": 2
+        }
+      },
+      "rarityWeight": 95
+    },
+    {
+      "slug": "scraps",
+      "name": "Scraps",
+      "attributes": {
+        "dexterity": 5,
+        "intelligence": 5,
+        "charisma": 5,
+        "strength": 5,
+        "constitution": 5,
+        "wisdom": 5
+      },
+      "traits": {
+        "durability": 25,
+        "weight": 0.8,
+        "flexibility": 50
+      },
+      "displayName": "Scraps",
+      "itemTypeTraits": {
+        "armor": {
+          "armorRating": 1,
+          "value": 1
+        }
+      },
+      "rarityWeight": 100
+    },
     {
       "slug": "hide",
       "name": "Hide",

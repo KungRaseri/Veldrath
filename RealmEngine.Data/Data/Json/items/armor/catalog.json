@@ -2,10 +2,10 @@
   "metadata": {
     "description": "Armor type catalog with base stats and traits",
     "version": "5.1",
-    "lastUpdated": "2026-01-08",
+    "lastUpdated": "2026-01-20",
     "type": "item_catalog",
     "total_armor_types": 3,
-    "total_pieces": 40,
+    "total_pieces": 45,
     "usage": "Base catalog of armor with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
     "notes": [
       "Base items used in pattern generation with names.json",
@@ -26,6 +26,94 @@
         "category": "armor"
       },
       "items": [
+        {
+          "name": "Torn Rags",
+          "slug": "torn-rags",
+          "description": "Barely functional scraps of cloth offering minimal protection.",
+          "value": 1,
+          "weight": 0.5,
+          "stats": {
+            "defense": "10 + dexterity_mod + constitution_mod"
+          },
+          "traits": {
+            "dodgeModifier": {
+              "value": 5,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 1,
+              "type": "number"
+            }
+          },
+          "armorClass": "light",
+          "rarityWeight": 100,
+          "requirements": {
+            "level": 1,
+            "attributes": {
+              "constitution": 8
+            }
+          }
+        },
+        {
+          "name": "Cloth Tunic",
+          "slug": "cloth-tunic",
+          "description": "Simple cloth garment providing basic coverage.",
+          "value": 3,
+          "weight": 1.0,
+          "stats": {
+            "defense": "10 + dexterity_mod + constitution_mod + 1"
+          },
+          "traits": {
+            "dodgeModifier": {
+              "value": 8,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 2,
+              "type": "number"
+            }
+          },
+          "armorClass": "light",
+          "rarityWeight": 80,
+          "requirements": {
+            "level": 2,
+            "attributes": {
+              "constitution": 10
+            }
+          }
+        },
+        {
+          "name": "Padded Armor",
+          "slug": "padded-armor",
+          "description": "Quilted fabric armor that provides modest protection.",
+          "value": 8,
+          "weight": 2.0,
+          "stats": {
+            "defense": "10 + dexterity_mod + constitution_mod + 2"
+          },
+          "traits": {
+            "dodgeModifier": {
+              "value": 10,
+              "type": "number"
+            },
+            "damageReduction": {
+              "value": 3,
+              "type": "number"
+            }
+          },
+          "armorClass": "light",
+          "rarityWeight": 50,
+          "requirements": {
+            "level": 5,
+            "attributes": {
+              "constitution": 12
+            },
+            "skill": {
+              "reference": "@skills/armor:light-armor",
+              "rank": 3
+            }
+          }
+        },
         {
           "name": "Coif",
           "slug": "coif",

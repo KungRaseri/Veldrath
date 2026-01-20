@@ -1,0 +1,137 @@
+{
+  "metadata": {
+    "description": "Material quality modifiers for budget-based item generation",
+    "version": "4.0",
+    "lastUpdated": "2026-01-20",
+    "type": "pattern_generation",
+    "supportsTraits": true,
+    "notes": [
+      "Quality modifiers affect budget calculation",
+      "Negative budgetModifier = discount (easier to afford)",
+      "Positive budgetModifier = premium (more expensive)",
+      "Used in budget-based generation to adjust affordability"
+    ]
+  },
+  "components": {
+    "quality": [
+      {
+        "value": "Damaged",
+        "rarityWeight": 100,
+        "budgetModifier": -0.3,
+        "traits": {
+          "durability": {
+            "value": -20,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Worn",
+        "rarityWeight": 90,
+        "budgetModifier": -0.2,
+        "traits": {
+          "durability": {
+            "value": -10,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Cracked",
+        "rarityWeight": 80,
+        "budgetModifier": -0.15,
+        "traits": {
+          "durability": {
+            "value": -15,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Standard",
+        "rarityWeight": 70,
+        "budgetModifier": 0.0,
+        "traits": {}
+      },
+      {
+        "value": "Fine",
+        "rarityWeight": 40,
+        "budgetModifier": 0.15,
+        "traits": {
+          "durability": {
+            "value": 10,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Superior",
+        "rarityWeight": 25,
+        "budgetModifier": 0.25,
+        "traits": {
+          "durability": {
+            "value": 20,
+            "type": "number"
+          },
+          "damageBonus": {
+            "value": 2,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Exceptional",
+        "rarityWeight": 15,
+        "budgetModifier": 0.35,
+        "traits": {
+          "durability": {
+            "value": 30,
+            "type": "number"
+          },
+          "damageBonus": {
+            "value": 4,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Masterwork",
+        "rarityWeight": 8,
+        "budgetModifier": 0.5,
+        "traits": {
+          "durability": {
+            "value": 50,
+            "type": "number"
+          },
+          "damageBonus": {
+            "value": 6,
+            "type": "number"
+          },
+          "critChance": {
+            "value": 5,
+            "type": "number"
+          }
+        }
+      },
+      {
+        "value": "Legendary",
+        "rarityWeight": 3,
+        "budgetModifier": 0.75,
+        "traits": {
+          "durability": {
+            "value": 100,
+            "type": "number"
+          },
+          "damageBonus": {
+            "value": 10,
+            "type": "number"
+          },
+          "critChance": {
+            "value": 10,
+            "type": "number"
+          }
+        }
+      }
+    ]
+  }
+}

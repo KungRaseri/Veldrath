@@ -36,11 +36,11 @@ public class SocketGeneratorTests : IDisposable
         _mockLogger = new Mock<ILogger<SocketGenerator>>();
         
         // Verify socket config is loaded
-        var configExists = _dataCache.FileExists("general/socket_config.json");
+        var configExists = _dataCache.FileExists("configuration/socket-config.json");
         if (!configExists)
         {
             var stats = _dataCache.GetStats();
-            throw new Exception($"socket_config.json not found. Base path: {_basePath}. Total files: {stats.TotalFiles}. Config files: {stats.ConfigFiles}");
+            throw new Exception($"socket-config.json not found. Base path: {_basePath}. Total files: {stats.TotalFiles}. Config files: {stats.ConfigFiles}");
         }
         
         _generator = new SocketGenerator(_dataCache, _mockLogger.Object);

@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Metal material properties for crafting system - stat bonuses applied to weapons/armor",
     "version": "5.1",
-    "lastUpdated": "2026-01-10",
+    "lastUpdated": "2026-01-17",
     "type": "materials_properties_catalog",
-    "totalMaterials": 16,
+    "totalMaterials": 18,
     "usage": "Material properties define stat bonuses based on item type. itemTypeTraits apply bonuses to weapon, armor, socket, enchantment, or jewelry.",
     "notes": [
       "Materials apply different bonuses based on item type (weapon vs armor vs jewelry)",
@@ -15,6 +15,66 @@
   "metal_types": {
     "metal": {
       "items": [
+    {
+      "slug": "copper",
+      "name": "Copper",
+      "attributes": {
+        "dexterity": 5,
+        "intelligence": 5,
+        "charisma": 5,
+        "strength": 5,
+        "constitution": 5,
+        "wisdom": 5
+      },
+      "traits": {
+        "durability": 40,
+        "weight": 0.9,
+        "enchantability": 20
+      },
+      "displayName": "Copper",
+      "itemTypeTraits": {
+        "weapon": {
+          "damage": 0,
+          "value": 2
+        },
+        "armor": {
+          "armorRating": 2,
+          "defenseBonus": 0,
+          "value": 3
+        }
+      },
+      "rarityWeight": 95
+    },
+    {
+      "slug": "tin",
+      "name": "Tin",
+      "attributes": {
+        "dexterity": 5,
+        "intelligence": 5,
+        "charisma": 5,
+        "strength": 5,
+        "constitution": 5,
+        "wisdom": 5
+      },
+      "traits": {
+        "durability": 35,
+        "weight": 0.8,
+        "enchantability": 18
+      },
+      "displayName": "Tin",
+      "itemTypeTraits": {
+        "weapon": {
+          "damage": 0,
+          "value": 1
+        },
+        "armor": {
+          "armorRating": 1,
+          "defenseBonus": 0,
+          "value": 2
+        }
+      },
+      "rarityWeight": 90
+    },
     {
       "slug": "iron",
       "name": "Iron",

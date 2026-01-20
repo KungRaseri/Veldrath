@@ -26,7 +26,7 @@ public class SocketGenerator
         _random = new Random();
         
         // Load socket configuration
-        var configPath = "general/socket_config.json";
+        var configPath = "configuration/socket-config.json";
         if (_dataCache.FileExists(configPath))
         {
             var file = _dataCache.GetFile(configPath);
