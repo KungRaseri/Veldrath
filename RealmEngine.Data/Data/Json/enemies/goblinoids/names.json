@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Goblinoid name generation patterns with weight-based rarity components",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "rank",
@@ -22,7 +22,7 @@
     "notes": [
       "base_token: Resolves to item name from goblinoids/catalog.json",
       "tribal_culture: Goblinoids organize in tribes/clans with hierarchies",
-      "weight_ranges: Young (3) → King (60), Cave (5) → Skullcrusher (35)",
+      "weight_ranges: Young (3) \u2192 King (60), Cave (5) \u2192 Skullcrusher (35)",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
     "supportsTraits": true
@@ -30,134 +30,134 @@
   "components": {
     "rank": [
       {
-        "value": "Young",
-        "rarityWeight": 3
+        "rarityWeight": 3,
+        "name": "Young"
       },
       {
-        "value": "Lesser",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Lesser"
       },
       {
-        "value": "Common",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Common"
       },
       {
-        "value": "Elite",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Elite"
       },
       {
-        "value": "War",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "War"
       },
       {
-        "value": "Chief",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Chief"
       },
       {
-        "value": "King",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "King"
       }
     ],
     "tribe": [
       {
-        "value": "Cave",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Cave"
       },
       {
-        "value": "Forest",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Forest"
       },
       {
-        "value": "Mountain",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Mountain"
       },
       {
-        "value": "Shadow",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Shadow"
       },
       {
-        "value": "Blood",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Blood"
       },
       {
-        "value": "Iron",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Iron"
       },
       {
-        "value": "Blackfang",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Blackfang"
       },
       {
-        "value": "Skullcrusher",
-        "rarityWeight": 35
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Sneaky",
-        "rarityWeight": 5
-      },
-      {
-        "value": "Cunning",
-        "rarityWeight": 8
-      },
-      {
-        "value": "Brutal",
-        "rarityWeight": 10
-      },
-      {
-        "value": "Vicious",
-        "rarityWeight": 12
-      },
-      {
-        "value": "Ruthless",
-        "rarityWeight": 15
-      },
-      {
-        "value": "Savage",
-        "rarityWeight": 18
-      },
-      {
-        "value": "Merciless",
-        "rarityWeight": 22
-      },
-      {
-        "value": "Bloodthirsty",
-        "rarityWeight": 28
+        "rarityWeight": 35,
+        "name": "Skullcrusher"
       }
     ],
     "title": [
       {
-        "value": "Raider",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Raider"
       },
       {
-        "value": "Warrior",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Warrior"
       },
       {
-        "value": "Slayer",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Slayer"
       },
       {
-        "value": "Hunter",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Hunter"
       },
       {
-        "value": "Shaman",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Shaman"
       },
       {
-        "value": "Warlord",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Warlord"
       },
       {
-        "value": "Chieftain",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Chieftain"
       },
       {
-        "value": "Overlord",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Overlord"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 5,
+        "name": "Sneaky"
+      },
+      {
+        "rarityWeight": 8,
+        "name": "Cunning"
+      },
+      {
+        "rarityWeight": 10,
+        "name": "Brutal"
+      },
+      {
+        "rarityWeight": 12,
+        "name": "Vicious"
+      },
+      {
+        "rarityWeight": 15,
+        "name": "Ruthless"
+      },
+      {
+        "rarityWeight": 18,
+        "name": "Savage"
+      },
+      {
+        "rarityWeight": 22,
+        "name": "Merciless"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Bloodthirsty"
       }
     ]
   },

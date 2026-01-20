@@ -1,9 +1,9 @@
 {
   "metadata": {
     "type": "pattern_generation",
-    "version": "4.0",
+    "version": "4.3",
     "description": "Pattern-based NPC name generation system with soft filtering",
-    "lastUpdated": "2026-01-08",
+    "lastUpdated": "2026-01-19",
     "componentKeys": [
       "title",
       "first_name",
@@ -32,7 +32,6 @@
   "components": {
     "title": [
       {
-        "value": "Sir",
         "rarityWeight": 40,
         "gender": "male",
         "preferredSocialClass": "noble",
@@ -43,10 +42,10 @@
           "merchant": 0.3,
           "common": 0.1,
           "criminal": 0.01
-        }
+        },
+        "name": "Sir"
       },
       {
-        "value": "Lady",
         "rarityWeight": 40,
         "gender": "female",
         "preferredSocialClass": "noble",
@@ -57,10 +56,10 @@
           "merchant": 0.2,
           "common": 0.1,
           "criminal": 0.01
-        }
+        },
+        "name": "Lady"
       },
       {
-        "value": "Lord",
         "rarityWeight": 50,
         "gender": "male",
         "preferredSocialClass": "noble",
@@ -69,10 +68,10 @@
           "military": 0.2,
           "common": 0.05,
           "criminal": 0.01
-        }
+        },
+        "name": "Lord"
       },
       {
-        "value": "Master",
         "rarityWeight": 30,
         "gender": "male",
         "preferredSocialClass": "craftsman",
@@ -82,10 +81,10 @@
           "common": 0.3,
           "noble": 0.2,
           "military": 0.4
-        }
+        },
+        "name": "Master"
       },
       {
-        "value": "Mistress",
         "rarityWeight": 30,
         "gender": "female",
         "preferredSocialClass": "craftsman",
@@ -94,10 +93,10 @@
           "merchant": 0.8,
           "common": 0.3,
           "noble": 0.2
-        }
+        },
+        "name": "Mistress"
       },
       {
-        "value": "Captain",
         "rarityWeight": 35,
         "preferredSocialClass": "military",
         "weightMultiplier": {
@@ -105,20 +104,20 @@
           "noble": 0.6,
           "craftsman": 0.1,
           "common": 0.2
-        }
+        },
+        "name": "Captain"
       },
       {
-        "value": "Sergeant",
         "rarityWeight": 32,
         "preferredSocialClass": "military",
         "weightMultiplier": {
           "military": 1.0,
           "common": 0.3,
           "noble": 0.2
-        }
+        },
+        "name": "Sergeant"
       },
       {
-        "value": "Brother",
         "rarityWeight": 25,
         "gender": "male",
         "preferredSocialClass": "religious",
@@ -126,10 +125,10 @@
           "religious": 1.0,
           "common": 0.4,
           "noble": 0.3
-        }
+        },
+        "name": "Brother"
       },
       {
-        "value": "Sister",
         "rarityWeight": 25,
         "gender": "female",
         "preferredSocialClass": "religious",
@@ -137,10 +136,10 @@
           "religious": 1.0,
           "common": 0.4,
           "noble": 0.3
-        }
+        },
+        "name": "Sister"
       },
       {
-        "value": "Professor",
         "rarityWeight": 45,
         "preferredSocialClass": "scholar",
         "weightMultiplier": {
@@ -148,10 +147,10 @@
           "magical": 0.7,
           "noble": 0.5,
           "craftsman": 0.2
-        }
+        },
+        "name": "Professor"
       },
       {
-        "value": "Doctor",
         "rarityWeight": 42,
         "preferredSocialClass": "scholar",
         "weightMultiplier": {
@@ -159,10 +158,10 @@
           "magical": 0.6,
           "noble": 0.4,
           "common": 0.2
-        }
+        },
+        "name": "Doctor"
       },
       {
-        "value": "Sage",
         "rarityWeight": 50,
         "preferredSocialClass": "magical",
         "weightMultiplier": {
@@ -170,7 +169,8 @@
           "scholar": 0.8,
           "noble": 0.4,
           "common": 0.1
-        }
+        },
+        "name": "Sage"
       }
     ],
     "first_name": {
@@ -1133,124 +1133,124 @@
     },
     "suffix": [
       {
-        "value": "the Brave",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "the Brave"
       },
       {
-        "value": "the Wise",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "the Wise"
       },
       {
-        "value": "the Bold",
-        "rarityWeight": 32
+        "rarityWeight": 32,
+        "name": "the Bold"
       },
       {
-        "value": "the Just",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "the Just"
       },
       {
-        "value": "the Fierce",
-        "rarityWeight": 34
+        "rarityWeight": 34,
+        "name": "the Fierce"
       },
       {
-        "value": "the Gentle",
-        "rarityWeight": 38
+        "rarityWeight": 38,
+        "name": "the Gentle"
       },
       {
-        "value": "the Swift",
-        "rarityWeight": 33
+        "rarityWeight": 33,
+        "name": "the Swift"
       },
       {
-        "value": "the Strong",
-        "rarityWeight": 31
+        "rarityWeight": 31,
+        "name": "the Strong"
       },
       {
-        "value": "the Cunning",
-        "rarityWeight": 42
+        "rarityWeight": 42,
+        "name": "the Cunning"
       },
       {
-        "value": "the Fair",
-        "rarityWeight": 36
+        "rarityWeight": 36,
+        "name": "the Fair"
       },
       {
-        "value": "Dragonslayer",
-        "rarityWeight": 65
+        "rarityWeight": 65,
+        "name": "Dragonslayer"
       },
       {
-        "value": "Wyrmsbane",
-        "rarityWeight": 68
+        "rarityWeight": 68,
+        "name": "Wyrmsbane"
       },
       {
-        "value": "Trollhunter",
-        "rarityWeight": 58
+        "rarityWeight": 58,
+        "name": "Trollhunter"
       },
       {
-        "value": "Giantsbane",
-        "rarityWeight": 62
+        "rarityWeight": 62,
+        "name": "Giantsbane"
       },
       {
-        "value": "Demonhunter",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Demonhunter"
       },
       {
-        "value": "Ironhand",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "Ironhand"
       },
       {
-        "value": "Steelarm",
-        "rarityWeight": 48
+        "rarityWeight": 48,
+        "name": "Steelarm"
       },
       {
-        "value": "Goldfist",
-        "rarityWeight": 52
+        "rarityWeight": 52,
+        "name": "Goldfist"
       },
       {
-        "value": "Silvereye",
-        "rarityWeight": 55
+        "rarityWeight": 55,
+        "name": "Silvereye"
       },
       {
-        "value": "Blackheart",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Blackheart"
       },
       {
-        "value": "Lionheart",
-        "rarityWeight": 46
+        "rarityWeight": 46,
+        "name": "Lionheart"
       },
       {
-        "value": "Ravenheart",
-        "rarityWeight": 54
+        "rarityWeight": 54,
+        "name": "Ravenheart"
       },
       {
-        "value": "Wolfsbane",
-        "rarityWeight": 56
+        "rarityWeight": 56,
+        "name": "Wolfsbane"
       },
       {
-        "value": "Bearslayer",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Bearslayer"
       },
       {
-        "value": "the Unyielding",
-        "rarityWeight": 44
+        "rarityWeight": 44,
+        "name": "the Unyielding"
       },
       {
-        "value": "the Relentless",
-        "rarityWeight": 47
+        "rarityWeight": 47,
+        "name": "the Relentless"
       },
       {
-        "value": "the Merciful",
-        "rarityWeight": 41
+        "rarityWeight": 41,
+        "name": "the Merciful"
       },
       {
-        "value": "the Merciless",
-        "rarityWeight": 53
+        "rarityWeight": 53,
+        "name": "the Merciless"
       },
       {
-        "value": "the Wanderer",
-        "rarityWeight": 37
+        "rarityWeight": 37,
+        "name": "the Wanderer"
       },
       {
-        "value": "the Exile",
-        "rarityWeight": 49
+        "rarityWeight": 49,
+        "name": "the Exile"
       }
     ]
   },

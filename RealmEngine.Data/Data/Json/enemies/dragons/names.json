@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Dragon enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "age",
@@ -30,170 +30,170 @@
   "components": {
     "age": [
       {
-        "value": "Young",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Young"
       },
       {
-        "value": "Wyrmling",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Wyrmling"
       },
       {
-        "value": "Adult",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Adult"
       },
       {
-        "value": "Ancient",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Ancient"
       },
       {
-        "value": "Elder",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "Elder"
       },
       {
-        "value": "Great",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Great"
       },
       {
-        "value": "Mighty",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Mighty"
       },
       {
-        "value": "Primordial",
-        "rarityWeight": 95
+        "rarityWeight": 95,
+        "name": "Primordial"
       },
       {
-        "value": "Legendary",
-        "rarityWeight": 100
+        "rarityWeight": 100,
+        "name": "Legendary"
       }
     ],
     "color": [
       {
-        "value": "Red",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Red"
       },
       {
-        "value": "Blue",
-        "rarityWeight": 38
+        "rarityWeight": 38,
+        "name": "Blue"
       },
       {
-        "value": "Green",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Green"
       },
       {
-        "value": "Black",
-        "rarityWeight": 37
+        "rarityWeight": 37,
+        "name": "Black"
       },
       {
-        "value": "White",
-        "rarityWeight": 33
+        "rarityWeight": 33,
+        "name": "White"
       },
       {
-        "value": "Gold",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Gold"
       },
       {
-        "value": "Silver",
-        "rarityWeight": 55
+        "rarityWeight": 55,
+        "name": "Silver"
       },
       {
-        "value": "Bronze",
-        "rarityWeight": 42
+        "rarityWeight": 42,
+        "name": "Bronze"
       },
       {
-        "value": "Copper",
-        "rarityWeight": 38
+        "rarityWeight": 38,
+        "name": "Copper"
       },
       {
-        "value": "Brass",
-        "rarityWeight": 36
+        "rarityWeight": 36,
+        "name": "Brass"
       },
       {
-        "value": "Shadow",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Shadow"
       },
       {
-        "value": "Crystal",
-        "rarityWeight": 65
+        "rarityWeight": 65,
+        "name": "Crystal"
       },
       {
-        "value": "Amethyst",
-        "rarityWeight": 72
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Flame",
-        "rarityWeight": 30
-      },
-      {
-        "value": "Storm",
-        "rarityWeight": 35
-      },
-      {
-        "value": "Frost",
-        "rarityWeight": 32
-      },
-      {
-        "value": "Volcanic",
-        "rarityWeight": 45
-      },
-      {
-        "value": "Tempest",
-        "rarityWeight": 50
-      },
-      {
-        "value": "Glacial",
-        "rarityWeight": 48
-      },
-      {
-        "value": "Inferno",
-        "rarityWeight": 55
-      },
-      {
-        "value": "Thunder",
-        "rarityWeight": 42
-      },
-      {
-        "value": "Poison",
-        "rarityWeight": 38
-      },
-      {
-        "value": "Venomous",
-        "rarityWeight": 40
+        "rarityWeight": 72,
+        "name": "Amethyst"
       }
     ],
     "title": [
       {
-        "value": "of the Mountain",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "of the Mountain"
       },
       {
-        "value": "of Destruction",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "of Destruction"
       },
       {
-        "value": "Worldeater",
-        "rarityWeight": 100
+        "rarityWeight": 100,
+        "name": "Worldeater"
       },
       {
-        "value": "the Wise",
-        "rarityWeight": 65
+        "rarityWeight": 65,
+        "name": "the Wise"
       },
       {
-        "value": "the Cruel",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "the Cruel"
       },
       {
-        "value": "the Mighty",
-        "rarityWeight": 75
+        "rarityWeight": 75,
+        "name": "the Mighty"
       },
       {
-        "value": "the Eternal",
-        "rarityWeight": 90
+        "rarityWeight": 90,
+        "name": "the Eternal"
       },
       {
-        "value": "of the Apocalypse",
-        "rarityWeight": 95
+        "rarityWeight": 95,
+        "name": "of the Apocalypse"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 30,
+        "name": "Flame"
+      },
+      {
+        "rarityWeight": 35,
+        "name": "Storm"
+      },
+      {
+        "rarityWeight": 32,
+        "name": "Frost"
+      },
+      {
+        "rarityWeight": 45,
+        "name": "Volcanic"
+      },
+      {
+        "rarityWeight": 50,
+        "name": "Tempest"
+      },
+      {
+        "rarityWeight": 48,
+        "name": "Glacial"
+      },
+      {
+        "rarityWeight": 55,
+        "name": "Inferno"
+      },
+      {
+        "rarityWeight": 42,
+        "name": "Thunder"
+      },
+      {
+        "rarityWeight": 38,
+        "name": "Poison"
+      },
+      {
+        "rarityWeight": 40,
+        "name": "Venomous"
       }
     ]
   },

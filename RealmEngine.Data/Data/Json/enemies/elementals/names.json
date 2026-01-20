@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Elemental enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "element",
@@ -30,146 +30,146 @@
   "components": {
     "element": [
       {
-        "value": "Fire",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Fire"
       },
       {
-        "value": "Ice",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Ice"
       },
       {
-        "value": "Earth",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Earth"
       },
       {
-        "value": "Air",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Air"
       },
       {
-        "value": "Lightning",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Lightning"
       },
       {
-        "value": "Water",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Water"
       },
       {
-        "value": "Storm",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Storm"
       },
       {
-        "value": "Magma",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Magma"
       },
       {
-        "value": "Frost",
-        "rarityWeight": 24
+        "rarityWeight": 24,
+        "name": "Frost"
       },
       {
-        "value": "Thunder",
-        "rarityWeight": 28
+        "rarityWeight": 28,
+        "name": "Thunder"
       },
       {
-        "value": "Stone",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Stone"
       },
       {
-        "value": "Wind",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Wind"
       },
       {
-        "value": "Volcanic",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Volcanic"
       },
       {
-        "value": "Glacial",
-        "rarityWeight": 38
+        "rarityWeight": 38,
+        "name": "Glacial"
       }
     ],
     "size": [
       {
-        "value": "Lesser",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Lesser"
       },
       {
-        "value": "Greater",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Greater"
       },
       {
-        "value": "Prime",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Prime"
       },
       {
-        "value": "Elder",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Elder"
       },
       {
-        "value": "Primal",
-        "rarityWeight": 85
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Raging",
-        "rarityWeight": 25
-      },
-      {
-        "value": "Ancient",
-        "rarityWeight": 45
-      },
-      {
-        "value": "Bound",
-        "rarityWeight": 30
-      },
-      {
-        "value": "Enraged",
-        "rarityWeight": 35
-      },
-      {
-        "value": "Calm",
-        "rarityWeight": 15
-      },
-      {
-        "value": "Furious",
-        "rarityWeight": 40
-      },
-      {
-        "value": "Eternal",
-        "rarityWeight": 60
-      },
-      {
-        "value": "Colossal",
-        "rarityWeight": 55
+        "rarityWeight": 85,
+        "name": "Primal"
       }
     ],
     "title": [
       {
-        "value": "of the Volcano",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "of the Volcano"
       },
       {
-        "value": "of the Storm",
-        "rarityWeight": 55
+        "rarityWeight": 55,
+        "name": "of the Storm"
       },
       {
-        "value": "of the Deep",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "of the Deep"
       },
       {
-        "value": "of the Peaks",
-        "rarityWeight": 48
+        "rarityWeight": 48,
+        "name": "of the Peaks"
       },
       {
-        "value": "of the Maelstrom",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "of the Maelstrom"
       },
       {
-        "value": "the Untamed",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "the Untamed"
       },
       {
-        "value": "the Eternal",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "the Eternal"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 25,
+        "name": "Raging"
+      },
+      {
+        "rarityWeight": 45,
+        "name": "Ancient"
+      },
+      {
+        "rarityWeight": 30,
+        "name": "Bound"
+      },
+      {
+        "rarityWeight": 35,
+        "name": "Enraged"
+      },
+      {
+        "rarityWeight": 15,
+        "name": "Calm"
+      },
+      {
+        "rarityWeight": 40,
+        "name": "Furious"
+      },
+      {
+        "rarityWeight": 60,
+        "name": "Eternal"
+      },
+      {
+        "rarityWeight": 55,
+        "name": "Colossal"
       }
     ]
   },

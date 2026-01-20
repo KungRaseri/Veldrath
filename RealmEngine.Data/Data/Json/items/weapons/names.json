@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Unified weapon naming system with prefix/suffix support and trait assignment (v4.2 - Hybrid Enhancement System)",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -36,7 +36,6 @@
   "components": {
     "prefix": [
       {
-        "value": "Rusty",
         "rarityWeight": 50,
         "traits": {
           "durability": {
@@ -47,10 +46,10 @@
             "value": 0.8,
             "type": "number"
           }
-        }
+        },
+        "name": "Rusty"
       },
       {
-        "value": "Old",
         "rarityWeight": 50,
         "traits": {
           "durability": {
@@ -61,10 +60,10 @@
             "value": 0.9,
             "type": "number"
           }
-        }
+        },
+        "name": "Old"
       },
       {
-        "value": "Simple",
         "rarityWeight": 50,
         "traits": {
           "durability": {
@@ -75,10 +74,10 @@
             "value": 1.0,
             "type": "number"
           }
-        }
+        },
+        "name": "Simple"
       },
       {
-        "value": "Sharp",
         "rarityWeight": 30,
         "traits": {
           "damageBonus": {
@@ -93,10 +92,10 @@
             "value": 90,
             "type": "number"
           }
-        }
+        },
+        "name": "Sharp"
       },
       {
-        "value": "Enchanted",
         "rarityWeight": 15,
         "traits": {
           "magicDamage": {
@@ -119,10 +118,10 @@
             "value": 130,
             "type": "number"
           }
-        }
+        },
+        "name": "Enchanted"
       },
       {
-        "value": "Blessed",
         "rarityWeight": 15,
         "traits": {
           "damageBonus": {
@@ -141,10 +140,10 @@
             "value": 140,
             "type": "number"
           }
-        }
+        },
+        "name": "Blessed"
       },
       {
-        "value": "Dragon",
         "rarityWeight": 4,
         "traits": {
           "visualColor": {
@@ -171,10 +170,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "Dragon"
       },
       {
-        "value": "Ancient",
         "rarityWeight": 4,
         "traits": {
           "wisdomBonus": {
@@ -197,10 +196,10 @@
             "value": 250,
             "type": "number"
           }
-        }
+        },
+        "name": "Ancient"
       },
       {
-        "value": "Celestial",
         "rarityWeight": 4,
         "traits": {
           "visualColor": {
@@ -231,10 +230,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Celestial"
       },
       {
-        "value": "Godslayer",
         "rarityWeight": 1,
         "traits": {
           "visualColor": {
@@ -269,10 +268,10 @@
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "Godslayer"
       },
       {
-        "value": "Eternal",
         "rarityWeight": 1,
         "traits": {
           "healthRegen": {
@@ -303,10 +302,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "Eternal"
       },
       {
-        "value": "Divine",
         "rarityWeight": 1,
         "traits": {
           "lifeSteal": {
@@ -345,338 +344,10 @@
             "value": 50,
             "type": "number"
           }
-        }
-      }
-    ],
-    "material": [
-      {
-        "value": "Iron",
-        "rarityWeight": 10,
-        "traits": {
-          "weightMultiplier": {
-            "value": 1.0,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 2,
-            "type": "number"
-          },
-          "durability": {
-            "value": 100,
-            "type": "number"
-          },
-          "constitutionBonus": {
-            "value": 5,
-            "type": "number"
-          }
-        }
+        },
+        "name": "Divine"
       },
       {
-        "value": "Steel",
-        "rarityWeight": 20,
-        "traits": {
-          "damageBonus": {
-            "value": 3,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 5,
-            "type": "number"
-          },
-          "durability": {
-            "value": 120,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Silver",
-        "rarityWeight": 30,
-        "traits": {
-          "damageVsUndead": {
-            "value": 10,
-            "type": "number"
-          },
-          "damageVsDemonic": {
-            "value": 10,
-            "type": "number"
-          },
-          "visualColor": {
-            "value": "silver",
-            "type": "string"
-          },
-          "durability": {
-            "value": 90,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Mithril",
-        "rarityWeight": 50,
-        "traits": {
-          "weightMultiplier": {
-            "value": 0.7,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "glowEffect": {
-            "value": true,
-            "type": "boolean"
-          },
-          "visualColor": {
-            "value": "silver",
-            "type": "string"
-          },
-          "durability": {
-            "value": 150,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Adamantine",
-        "rarityWeight": 80,
-        "traits": {
-          "damageBonus": {
-            "value": 8,
-            "type": "number"
-          },
-          "armorPiercing": {
-            "value": 20,
-            "type": "number"
-          },
-          "durability": {
-            "value": 250,
-            "type": "number"
-          },
-          "visualColor": {
-            "value": "deep_green",
-            "type": "string"
-          }
-        }
-      },
-      {
-        "value": "Dragonbone",
-        "rarityWeight": 100,
-        "traits": {
-          "damageBonus": {
-            "value": 12,
-            "type": "number"
-          },
-          "resistFire": {
-            "value": 30,
-            "type": "number"
-          },
-          "damageMultiplier": {
-            "value": 1.2,
-            "type": "number"
-          },
-          "durability": {
-            "value": 300,
-            "type": "number"
-          },
-          "visualColor": {
-            "value": "bone_white",
-            "type": "string"
-          }
-        }
-      },
-      {
-        "value": "Elven",
-        "rarityWeight": 60,
-        "traits": {
-          "weightMultiplier": {
-            "value": 0.8,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 10,
-            "type": "number"
-          },
-          "dexterityBonus": {
-            "value": 2,
-            "type": "number"
-          },
-          "durability": {
-            "value": 140,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Dwarven",
-        "rarityWeight": 55,
-        "traits": {
-          "damageBonus": {
-            "value": 6,
-            "type": "number"
-          },
-          "strengthBonus": {
-            "value": 2,
-            "type": "number"
-          },
-          "durability": {
-            "value": 200,
-            "type": "number"
-          },
-          "weightMultiplier": {
-            "value": 1.2,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Obsidian",
-        "rarityWeight": 40,
-        "traits": {
-          "damageBonus": {
-            "value": 7,
-            "type": "number"
-          },
-          "criticalMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          },
-          "durability": {
-            "value": 80,
-            "type": "number"
-          },
-          "visualColor": {
-            "value": "black",
-            "type": "string"
-          }
-        }
-      },
-      {
-        "value": "Crystal",
-        "rarityWeight": 65,
-        "traits": {
-          "magicDamage": {
-            "value": 8,
-            "type": "number"
-          },
-          "manaBonus": {
-            "value": 20,
-            "type": "number"
-          },
-          "glowEffect": {
-            "value": true,
-            "type": "boolean"
-          },
-          "durability": {
-            "value": 110,
-            "type": "number"
-          },
-          "visualColor": {
-            "value": "rainbow",
-            "type": "string"
-          }
-        }
-      }
-    ],
-    "quality": [
-      {
-        "value": "Fine",
-        "rarityWeight": 15,
-        "traits": {
-          "durability": {
-            "value": 120,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 1,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Superior",
-        "rarityWeight": 25,
-        "traits": {
-          "durability": {
-            "value": 150,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 2,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Exceptional",
-        "rarityWeight": 35,
-        "traits": {
-          "durability": {
-            "value": 180,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 3,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Masterwork",
-        "rarityWeight": 50,
-        "traits": {
-          "durability": {
-            "value": 220,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 10,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Legendary",
-        "rarityWeight": 80,
-        "traits": {
-          "durability": {
-            "value": 300,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 10,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 15,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          },
-          "allStatsBonus": {
-            "value": 1,
-            "type": "number"
-          }
-        }
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Flaming",
         "rarityWeight": 35,
         "traits": {
           "fireDamage": {
@@ -695,10 +366,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Flaming"
       },
       {
-        "value": "Frozen",
         "rarityWeight": 35,
         "traits": {
           "iceDamage": {
@@ -717,10 +388,10 @@
             "value": "icy_blue",
             "type": "string"
           }
-        }
+        },
+        "name": "Frozen"
       },
       {
-        "value": "Lightning",
         "rarityWeight": 38,
         "traits": {
           "lightningDamage": {
@@ -739,10 +410,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Lightning"
       },
       {
-        "value": "Venomous",
         "rarityWeight": 32,
         "traits": {
           "poisonDamage": {
@@ -761,10 +432,10 @@
             "value": "toxic_green",
             "type": "string"
           }
-        }
+        },
+        "name": "Venomous"
       },
       {
-        "value": "Holy",
         "rarityWeight": 50,
         "traits": {
           "holyDamage": {
@@ -787,10 +458,10 @@
             "value": "golden_white",
             "type": "string"
           }
-        }
+        },
+        "name": "Holy"
       },
       {
-        "value": "Demonic",
         "rarityWeight": 55,
         "traits": {
           "darkDamage": {
@@ -809,10 +480,10 @@
             "value": "dark_purple",
             "type": "string"
           }
-        }
+        },
+        "name": "Demonic"
       },
       {
-        "value": "Ethereal",
         "rarityWeight": 60,
         "traits": {
           "magicDamage": {
@@ -831,10 +502,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Ethereal"
       },
       {
-        "value": "Cursed",
         "rarityWeight": 30,
         "traits": {
           "damageBonus": {
@@ -853,22 +524,22 @@
             "value": "sickly_green",
             "type": "string"
           }
-        }
+        },
+        "name": "Cursed"
       }
     ],
     "suffix": [
       {
-        "value": "of Slaying",
         "rarityWeight": 50,
         "traits": {
           "damageBonus": {
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Slaying"
       },
       {
-        "value": "of Sharpness",
         "rarityWeight": 50,
         "traits": {
           "criticalChance": {
@@ -879,10 +550,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "of Sharpness"
       },
       {
-        "value": "of Power",
         "rarityWeight": 30,
         "traits": {
           "damageMultiplier": {
@@ -893,10 +564,10 @@
             "value": 1,
             "type": "number"
           }
-        }
+        },
+        "name": "of Power"
       },
       {
-        "value": "of Speed",
         "rarityWeight": 30,
         "traits": {
           "attackSpeed": {
@@ -907,10 +578,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Speed"
       },
       {
-        "value": "of Accuracy",
         "rarityWeight": 15,
         "traits": {
           "hitBonus": {
@@ -921,10 +592,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Accuracy"
       },
       {
-        "value": "of Fire",
         "rarityWeight": 30,
         "traits": {
           "fireDamage": {
@@ -935,10 +606,10 @@
             "value": "fire",
             "type": "string"
           }
-        }
+        },
+        "name": "of Fire"
       },
       {
-        "value": "of Ice",
         "rarityWeight": 30,
         "traits": {
           "iceDamage": {
@@ -953,10 +624,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of Ice"
       },
       {
-        "value": "of Lightning",
         "rarityWeight": 30,
         "traits": {
           "lightningDamage": {
@@ -967,10 +638,10 @@
             "value": "lightning",
             "type": "string"
           }
-        }
+        },
+        "name": "of Lightning"
       },
       {
-        "value": "of Venom",
         "rarityWeight": 15,
         "traits": {
           "poisonDamage": {
@@ -981,10 +652,10 @@
             "value": 8,
             "type": "number"
           }
-        }
+        },
+        "name": "of Venom"
       },
       {
-        "value": "of Destruction",
         "rarityWeight": 4,
         "traits": {
           "damageMultiplier": {
@@ -999,10 +670,10 @@
             "value": 15,
             "type": "number"
           }
-        }
+        },
+        "name": "of Destruction"
       },
       {
-        "value": "of the Warrior",
         "rarityWeight": 30,
         "traits": {
           "strengthBonus": {
@@ -1013,10 +684,10 @@
             "value": 4,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Warrior"
       },
       {
-        "value": "of the Hero",
         "rarityWeight": 15,
         "traits": {
           "allStatsBonus": {
@@ -1031,10 +702,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Hero"
       },
       {
-        "value": "of the Champion",
         "rarityWeight": 4,
         "traits": {
           "allStatsBonus": {
@@ -1049,10 +720,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Champion"
       },
       {
-        "value": "of the Dragon",
         "rarityWeight": 4,
         "traits": {
           "damageVsDragons": {
@@ -1067,10 +738,10 @@
             "value": 12,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Dragon"
       },
       {
-        "value": "of the Phoenix",
         "rarityWeight": 2,
         "traits": {
           "fireDamage": {
@@ -1089,10 +760,10 @@
             "value": 50,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Phoenix"
       },
       {
-        "value": "of Bloodletting",
         "rarityWeight": 15,
         "traits": {
           "bleedDamage": {
@@ -1103,10 +774,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "of Bloodletting"
       },
       {
-        "value": "of Piercing",
         "rarityWeight": 30,
         "traits": {
           "armorPiercing": {
@@ -1117,10 +788,10 @@
             "value": 4,
             "type": "number"
           }
-        }
+        },
+        "name": "of Piercing"
       },
       {
-        "value": "of Sundering",
         "rarityWeight": 15,
         "traits": {
           "armorBreak": {
@@ -1131,10 +802,10 @@
             "value": 8,
             "type": "number"
           }
-        }
+        },
+        "name": "of Sundering"
       },
       {
-        "value": "of Crushing",
         "rarityWeight": 30,
         "traits": {
           "damageVsArmored": {
@@ -1149,10 +820,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "of Crushing"
       },
       {
-        "value": "of Life Stealing",
         "rarityWeight": 4,
         "traits": {
           "lifeSteal": {
@@ -1163,10 +834,10 @@
             "value": 6,
             "type": "number"
           }
-        }
+        },
+        "name": "of Life Stealing"
       },
       {
-        "value": "of Maiming",
         "rarityWeight": 15,
         "traits": {
           "crippleChance": {
@@ -1177,10 +848,10 @@
             "value": 7,
             "type": "number"
           }
-        }
+        },
+        "name": "of Maiming"
       },
       {
-        "value": "of Quickness",
         "rarityWeight": 15,
         "traits": {
           "attackSpeed": {
@@ -1191,10 +862,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "of Quickness"
       },
       {
-        "value": "of the Assassin",
         "rarityWeight": 4,
         "traits": {
           "backstabDamage": {
@@ -1209,10 +880,10 @@
             "value": 4,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Assassin"
       },
       {
-        "value": "of the Berserker",
         "rarityWeight": 15,
         "traits": {
           "damageWhenLowHealth": {
@@ -1227,10 +898,10 @@
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Berserker"
       },
       {
-        "value": "of the Demon",
         "rarityWeight": 4,
         "traits": {
           "darkDamage": {
@@ -1245,10 +916,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of the Demon"
       },
       {
-        "value": "of the Gods",
         "rarityWeight": 1,
         "traits": {
           "allStatsBonus": {
@@ -1267,10 +938,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of the Gods"
       },
       {
-        "value": "of Souls",
         "rarityWeight": 2,
         "traits": {
           "soulTrap": {
@@ -1285,10 +956,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Souls"
       },
       {
-        "value": "of Eternity",
         "rarityWeight": 1,
         "traits": {
           "durability": {
@@ -1303,10 +974,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of Eternity"
       },
       {
-        "value": "of the Void",
         "rarityWeight": 2,
         "traits": {
           "voidDamage": {
@@ -1321,10 +992,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Void"
       },
       {
-        "value": "of Annihilation",
         "rarityWeight": 1,
         "traits": {
           "damageMultiplier": {
@@ -1339,7 +1010,8 @@
             "value": 50,
             "type": "number"
           }
-        }
+        },
+        "name": "of Annihilation"
       }
     ]
   },

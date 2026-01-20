@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Naming patterns for shadow essences",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -28,20 +28,20 @@
   "components": {
     "intensity": [
       {
-        "value": "Dark",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Dark"
       },
       {
-        "value": "Abyssal",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Abyssal"
       },
       {
-        "value": "Murky",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Murky"
       },
       {
-        "value": "Faint",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Faint"
       }
     ]
   }

@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Undead enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "condition",
@@ -30,146 +30,146 @@
   "components": {
     "condition": [
       {
-        "value": "Rotting",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Rotting"
       },
       {
-        "value": "Decayed",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Decayed"
       },
       {
-        "value": "Skeletal",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Skeletal"
       },
       {
-        "value": "Withered",
-        "rarityWeight": 14
+        "rarityWeight": 14,
+        "name": "Withered"
       },
       {
-        "value": "Decrepit",
-        "rarityWeight": 16
+        "rarityWeight": 16,
+        "name": "Decrepit"
       },
       {
-        "value": "Festering",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Festering"
       },
       {
-        "value": "Lurching",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Lurching"
       },
       {
-        "value": "Shambling",
-        "rarityWeight": 8
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Ancient",
-        "rarityWeight": 35
-      },
-      {
-        "value": "Cursed",
-        "rarityWeight": 30
-      },
-      {
-        "value": "Risen",
-        "rarityWeight": 15
-      },
-      {
-        "value": "Vengeful",
-        "rarityWeight": 25
-      },
-      {
-        "value": "Restless",
-        "rarityWeight": 22
-      },
-      {
-        "value": "Tormented",
-        "rarityWeight": 28
-      },
-      {
-        "value": "Spectral",
-        "rarityWeight": 40
-      },
-      {
-        "value": "Ethereal",
-        "rarityWeight": 45
-      },
-      {
-        "value": "Dread",
-        "rarityWeight": 50
+        "rarityWeight": 8,
+        "name": "Shambling"
       }
     ],
     "origin": [
       {
-        "value": "Plague",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Plague"
       },
       {
-        "value": "Drowned",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Drowned"
       },
       {
-        "value": "Frozen",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Frozen"
       },
       {
-        "value": "Bloated",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Bloated"
       },
       {
-        "value": "Shadow",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Shadow"
       },
       {
-        "value": "Frost",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Frost"
       },
       {
-        "value": "Void",
-        "rarityWeight": 55
+        "rarityWeight": 55,
+        "name": "Void"
       },
       {
-        "value": "Crypt",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Crypt"
       }
     ],
     "title": [
       {
-        "value": "Knight",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Knight"
       },
       {
-        "value": "Lord",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Lord"
       },
       {
-        "value": "Warrior",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Warrior"
       },
       {
-        "value": "Archer",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Archer"
       },
       {
-        "value": "Mage",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Mage"
       },
       {
-        "value": "Necromancer",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Necromancer"
       },
       {
-        "value": "King",
-        "rarityWeight": 90
+        "rarityWeight": 90,
+        "name": "King"
       },
       {
-        "value": "the Undying",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "the Undying"
       },
       {
-        "value": "the Eternal",
-        "rarityWeight": 85
+        "rarityWeight": 85,
+        "name": "the Eternal"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 35,
+        "name": "Ancient"
+      },
+      {
+        "rarityWeight": 30,
+        "name": "Cursed"
+      },
+      {
+        "rarityWeight": 15,
+        "name": "Risen"
+      },
+      {
+        "rarityWeight": 25,
+        "name": "Vengeful"
+      },
+      {
+        "rarityWeight": 22,
+        "name": "Restless"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Tormented"
+      },
+      {
+        "rarityWeight": 40,
+        "name": "Spectral"
+      },
+      {
+        "rarityWeight": 45,
+        "name": "Ethereal"
+      },
+      {
+        "rarityWeight": 50,
+        "name": "Dread"
       }
     ]
   },

@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Plant creature name generation patterns with weight-based rarity components",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "age",
@@ -22,7 +22,7 @@
     "notes": [
       "base_token: Resolves to item name from plants/catalog.json",
       "plant_variety: Includes carnivorous plants, treants, myconids, awakened plants",
-      "weight_ranges: Young (5) → Primordial (80), Vine (5) → Primal (35)",
+      "weight_ranges: Young (5) \u2192 Primordial (80), Vine (5) \u2192 Primal (35)",
       "traits: Most plants vulnerable to fire, some rooted, some mobile",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
@@ -31,106 +31,106 @@
   "components": {
     "age": [
       {
-        "value": "Young",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Young"
       },
       {
-        "value": "Mature",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Mature"
       },
       {
-        "value": "Ancient",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Ancient"
       },
       {
-        "value": "Elder",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Elder"
       },
       {
-        "value": "Primordial",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "Primordial"
       }
     ],
     "type": [
       {
-        "value": "Thorn",
-        "rarityWeight": 6
+        "rarityWeight": 6,
+        "name": "Thorn"
       },
       {
-        "value": "Vine",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Vine"
       },
       {
-        "value": "Bramble",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Bramble"
       },
       {
-        "value": "Moss",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Moss"
       },
       {
-        "value": "Fungal",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Fungal"
       },
       {
-        "value": "Awakened",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Awakened"
       },
       {
-        "value": "Primal",
-        "rarityWeight": 35
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Overgrown",
-        "rarityWeight": 8
-      },
-      {
-        "value": "Carnivorous",
-        "rarityWeight": 12
-      },
-      {
-        "value": "Venomous",
-        "rarityWeight": 15
-      },
-      {
-        "value": "Savage",
-        "rarityWeight": 18
-      },
-      {
-        "value": "Mystical",
-        "rarityWeight": 28
-      },
-      {
-        "value": "Sacred",
-        "rarityWeight": 40
+        "rarityWeight": 35,
+        "name": "Primal"
       }
     ],
     "title": [
       {
-        "value": "Strangler",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Strangler"
       },
       {
-        "value": "Guardian",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Guardian"
       },
       {
-        "value": "Sentinel",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Sentinel"
       },
       {
-        "value": "Warden",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Warden"
       },
       {
-        "value": "Protector",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Protector"
       },
       {
-        "value": "Keeper",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Keeper"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 8,
+        "name": "Overgrown"
+      },
+      {
+        "rarityWeight": 12,
+        "name": "Carnivorous"
+      },
+      {
+        "rarityWeight": 15,
+        "name": "Venomous"
+      },
+      {
+        "rarityWeight": 18,
+        "name": "Savage"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Mystical"
+      },
+      {
+        "rarityWeight": 40,
+        "name": "Sacred"
       }
     ]
   },

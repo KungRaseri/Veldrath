@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "version": "4.0",
+    "version": "4.3",
     "type": "pattern_generation",
     "supportsTraits": true,
-    "lastUpdated": "2026-01-08",
+    "lastUpdated": "2026-01-19",
     "description": "Class-specific name generation for NPCs and player character titles",
     "componentKeys": [
       "prefix",
@@ -28,7 +28,6 @@
   "components": {
     "prefix": [
       {
-        "value": "Master",
         "rarityWeight": 10,
         "traits": {
           "levelRequirement": {
@@ -39,10 +38,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "Master"
       },
       {
-        "value": "Grand",
         "rarityWeight": 5,
         "traits": {
           "levelRequirement": {
@@ -53,10 +52,10 @@
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "Grand"
       },
       {
-        "value": "Legendary",
         "rarityWeight": 1,
         "traits": {
           "levelRequirement": {
@@ -67,10 +66,10 @@
             "value": 50,
             "type": "number"
           }
-        }
+        },
+        "name": "Legendary"
       },
       {
-        "value": "Elite",
         "rarityWeight": 15,
         "traits": {
           "levelRequirement": {
@@ -81,10 +80,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "Elite"
       },
       {
-        "value": "Veteran",
         "rarityWeight": 20,
         "traits": {
           "levelRequirement": {
@@ -95,10 +94,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Veteran"
       },
       {
-        "value": "Apprentice",
         "rarityWeight": 50,
         "traits": {
           "levelRequirement": {
@@ -109,111 +108,112 @@
             "value": 0,
             "type": "number"
           }
-        }
+        },
+        "name": "Apprentice"
       }
     ],
     "suffix": [
       {
-        "value": "the Brave",
         "rarityWeight": 30,
         "traits": {
           "strengthBonus": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "the Brave"
       },
       {
-        "value": "the Wise",
         "rarityWeight": 30,
         "traits": {
           "wisdomBonus": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "the Wise"
       },
       {
-        "value": "the Swift",
         "rarityWeight": 30,
         "traits": {
           "dexterityBonus": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "the Swift"
       },
       {
-        "value": "the Cunning",
         "rarityWeight": 30,
         "traits": {
           "intelligenceBonus": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "the Cunning"
       },
       {
-        "value": "the Mighty",
         "rarityWeight": 15,
         "traits": {
           "strengthBonus": {
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "the Mighty"
       },
       {
-        "value": "the Immortal",
         "rarityWeight": 10,
         "traits": {
           "constitutionBonus": {
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "the Immortal"
       }
     ],
     "title": [
       {
-        "value": "Slayer of Dragons",
         "rarityWeight": 5,
         "traits": {
           "questsCompleted": {
             "value": 100,
             "type": "number"
           }
-        }
+        },
+        "name": "Slayer of Dragons"
       },
       {
-        "value": "Champion of the Realm",
         "rarityWeight": 15,
         "traits": {
           "questsCompleted": {
             "value": 50,
             "type": "number"
           }
-        }
+        },
+        "name": "Champion of the Realm"
       },
       {
-        "value": "Defender of the Weak",
         "rarityWeight": 30,
         "traits": {
           "questsCompleted": {
             "value": 25,
             "type": "number"
           }
-        }
+        },
+        "name": "Defender of the Weak"
       },
       {
-        "value": "Wanderer",
         "rarityWeight": 50,
         "traits": {
           "questsCompleted": {
             "value": 0,
             "type": "number"
           }
-        }
+        },
+        "name": "Wanderer"
       }
     ]
   },

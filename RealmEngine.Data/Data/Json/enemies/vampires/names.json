@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Vampire name generation patterns with weight-based rarity components",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "age",
@@ -22,7 +22,7 @@
     "notes": [
       "base_token: Resolves to item name from vampires/catalog.json",
       "vampire_culture: Aristocratic undead with bloodlines and nobility titles",
-      "weight_ranges: Spawn (10) → Progenitor (100), Cursed (15) → Eternis (60)",
+      "weight_ranges: Spawn (10) \u2192 Progenitor (100), Cursed (15) \u2192 Eternis (60)",
       "traits: All vampires are undead, vulnerable to radiant, have regeneration",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
@@ -32,118 +32,118 @@
   "components": {
     "age": [
       {
-        "value": "Fledgling",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Fledgling"
       },
       {
-        "value": "Young",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Young"
       },
       {
-        "value": "Mature",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Mature"
       },
       {
-        "value": "Elder",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Elder"
       },
       {
-        "value": "Ancient",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "Ancient"
       },
       {
-        "value": "Primordial",
-        "rarityWeight": 100
+        "rarityWeight": 100,
+        "name": "Primordial"
       }
     ],
     "title": [
       {
-        "value": "Spawn",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Spawn"
       },
       {
-        "value": "Thrall",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Thrall"
       },
       {
-        "value": "Knight",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Knight"
       },
       {
-        "value": "Baron",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Baron"
       },
       {
-        "value": "Count",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Count"
       },
       {
-        "value": "Duke",
-        "rarityWeight": 65
+        "rarityWeight": 65,
+        "name": "Duke"
       },
       {
-        "value": "Prince",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "Prince"
       },
       {
-        "value": "Progenitor",
-        "rarityWeight": 100
+        "rarityWeight": 100,
+        "name": "Progenitor"
       }
     ],
     "bloodline": [
       {
-        "value": "Cursed",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Cursed"
       },
       {
-        "value": "Nightborn",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Nightborn"
       },
       {
-        "value": "Shadowblood",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Shadowblood"
       },
       {
-        "value": "Dracul",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Dracul"
       },
       {
-        "value": "Blackheart",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "Blackheart"
       },
       {
-        "value": "Eternis",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Eternis"
       },
       {
-        "value": "Crimson",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Crimson"
       }
     ],
-    "descriptive": [
+    "prefix": [
       {
-        "value": "Dark",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Dark"
       },
       {
-        "value": "Cunning",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Cunning"
       },
       {
-        "value": "Unholy",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Unholy"
       },
       {
-        "value": "Immortal",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Immortal"
       },
       {
-        "value": "Eternal",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Eternal"
       },
       {
-        "value": "Supreme",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Supreme"
       }
     ]
   },

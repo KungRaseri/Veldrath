@@ -432,9 +432,23 @@ def migrate_names_file(file_path: Path):
                     component['name'] = component.pop('value')
     
     # Update metadata
-    data['version'] = '4.3'
-    data['type'] = 'modifier_catalog'
-    data['lastUpdated'] = datetime.now().strftime('%Y-%m-%d')
+    if 'metadata' not in data:
+        data['metadata'] = {}
+    
+    data['metadata']['version'] = '4.3'
+    if 'type' not in data['metadata']:
+        data['metadata']['type'] = 'modifier_catalog'
+    data['metadata']['lastUpdated'] = datetime.now().strftime('%Y-%m-%d')
+    
+    # Remove old root-level fields if they exist
+    if 'version' in data:
+        del data['version']
+    if 'type' in data:
+        del data['type']
+    if 'lastUpdated' in data:
+        del data['lastUpdated']
+    if 'description' in data:
+        del data['description']
     
     # Write back
     try:

@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Naming patterns for defensive runes",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -28,20 +28,20 @@
   "components": {
     "suffix": [
       {
-        "value": "of the Guardian",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "of the Guardian"
       },
       {
-        "value": "of Resilience",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "of Resilience"
       },
       {
-        "value": "of the Titan",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "of the Titan"
       },
       {
-        "value": "of Shielding",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "of Shielding"
       }
     ]
   }

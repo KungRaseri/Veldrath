@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Naming patterns for offensive runes",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -28,20 +28,20 @@
   "components": {
     "suffix": [
       {
-        "value": "of Power",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "of Power"
       },
       {
-        "value": "of Might",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "of Might"
       },
       {
-        "value": "of Destruction",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "of Destruction"
       },
       {
-        "value": "of Wrath",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "of Wrath"
       }
     ]
   }

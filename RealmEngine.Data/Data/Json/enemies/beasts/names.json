@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Beast enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "size",
@@ -31,142 +31,142 @@
   "components": {
     "size": [
       {
-        "value": "Dire",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Dire"
       },
       {
-        "value": "Giant",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Giant"
       },
       {
-        "value": "Alpha",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Alpha"
       },
       {
-        "value": "Elder",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Elder"
       },
       {
-        "value": "Young",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Young"
       },
       {
-        "value": "Massive",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Massive"
       },
       {
-        "value": "Colossal",
-        "rarityWeight": 50
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Wild",
-        "rarityWeight": 8
-      },
-      {
-        "value": "Rabid",
-        "rarityWeight": 15
-      },
-      {
-        "value": "Feral",
-        "rarityWeight": 12
-      },
-      {
-        "value": "Savage",
-        "rarityWeight": 18
-      },
-      {
-        "value": "Primal",
-        "rarityWeight": 22
-      },
-      {
-        "value": "Ancient",
-        "rarityWeight": 35
-      },
-      {
-        "value": "Monstrous",
-        "rarityWeight": 28
-      },
-      {
-        "value": "Vicious",
-        "rarityWeight": 16
-      },
-      {
-        "value": "Enraged",
-        "rarityWeight": 20
-      },
-      {
-        "value": "Frenzied",
-        "rarityWeight": 24
-      },
-      {
-        "value": "Bloodthirsty",
-        "rarityWeight": 30
+        "rarityWeight": 50,
+        "name": "Colossal"
       }
     ],
     "origin": [
       {
-        "value": "Mountain",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Mountain"
       },
       {
-        "value": "Forest",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Forest"
       },
       {
-        "value": "Desert",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Desert"
       },
       {
-        "value": "Arctic",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Arctic"
       },
       {
-        "value": "Swamp",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Swamp"
       },
       {
-        "value": "Volcanic",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Volcanic"
       },
       {
-        "value": "Shadow",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Shadow"
       },
       {
-        "value": "Abyssal",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Abyssal"
       }
     ],
     "title": [
       {
-        "value": "of the Night",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "of the Night"
       },
       {
-        "value": "of the Wild",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "of the Wild"
       },
       {
-        "value": "of the Hunt",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "of the Hunt"
       },
       {
-        "value": "of Blood",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "of Blood"
       },
       {
-        "value": "the Destroyer",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "the Destroyer"
       },
       {
-        "value": "the Terror",
-        "rarityWeight": 55
+        "rarityWeight": 55,
+        "name": "the Terror"
       },
       {
-        "value": "the Apex",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "the Apex"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 8,
+        "name": "Wild"
+      },
+      {
+        "rarityWeight": 15,
+        "name": "Rabid"
+      },
+      {
+        "rarityWeight": 12,
+        "name": "Feral"
+      },
+      {
+        "rarityWeight": 18,
+        "name": "Savage"
+      },
+      {
+        "rarityWeight": 22,
+        "name": "Primal"
+      },
+      {
+        "rarityWeight": 35,
+        "name": "Ancient"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Monstrous"
+      },
+      {
+        "rarityWeight": 16,
+        "name": "Vicious"
+      },
+      {
+        "rarityWeight": 20,
+        "name": "Enraged"
+      },
+      {
+        "rarityWeight": 24,
+        "name": "Frenzied"
+      },
+      {
+        "rarityWeight": 30,
+        "name": "Bloodthirsty"
       }
     ]
   },

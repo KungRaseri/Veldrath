@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Troll name generation patterns with weight-based rarity components",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "age",
@@ -22,7 +22,7 @@
     "notes": [
       "base_token: Resolves to item name from trolls/catalog.json",
       "troll_nature: Large regenerating creatures with elemental variants",
-      "weight_ranges: Young (10) → Ancient (70), Cave (12) → Volcanic (30)",
+      "weight_ranges: Young (10) \u2192 Ancient (70), Cave (12) \u2192 Volcanic (30)",
       "regeneration: All trolls have regeneration trait, vulnerable to fire",
       "Upgraded to v4.0 with supportsTraits metadata"
     ],
@@ -31,102 +31,102 @@
   "components": {
     "age": [
       {
-        "value": "Young",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Young"
       },
       {
-        "value": "Common",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Common"
       },
       {
-        "value": "Mature",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Mature"
       },
       {
-        "value": "Elder",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Elder"
       },
       {
-        "value": "Ancient",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Ancient"
       }
     ],
     "habitat": [
       {
-        "value": "Cave",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Cave"
       },
       {
-        "value": "Mountain",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Mountain"
       },
       {
-        "value": "Forest",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Forest"
       },
       {
-        "value": "Swamp",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Swamp"
       },
       {
-        "value": "Frost",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Frost"
       },
       {
-        "value": "Volcanic",
-        "rarityWeight": 30
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Savage",
-        "rarityWeight": 12
-      },
-      {
-        "value": "Brutal",
-        "rarityWeight": 15
-      },
-      {
-        "value": "Raging",
-        "rarityWeight": 20
-      },
-      {
-        "value": "Unstoppable",
-        "rarityWeight": 28
-      },
-      {
-        "value": "Primordial",
-        "rarityWeight": 40
-      },
-      {
-        "value": "Legendary",
-        "rarityWeight": 60
+        "rarityWeight": 30,
+        "name": "Volcanic"
       }
     ],
     "title": [
       {
-        "value": "Brute",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Brute"
       },
       {
-        "value": "Destroyer",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Destroyer"
       },
       {
-        "value": "Ravager",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Ravager"
       },
       {
-        "value": "Warlord",
-        "rarityWeight": 32
+        "rarityWeight": 32,
+        "name": "Warlord"
       },
       {
-        "value": "Chieftain",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "Chieftain"
       },
       {
-        "value": "King",
-        "rarityWeight": 65
+        "rarityWeight": 65,
+        "name": "King"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 12,
+        "name": "Savage"
+      },
+      {
+        "rarityWeight": 15,
+        "name": "Brutal"
+      },
+      {
+        "rarityWeight": 20,
+        "name": "Raging"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Unstoppable"
+      },
+      {
+        "rarityWeight": 40,
+        "name": "Primordial"
+      },
+      {
+        "rarityWeight": 60,
+        "name": "Legendary"
       }
     ]
   },

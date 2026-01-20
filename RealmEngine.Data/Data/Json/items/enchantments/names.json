@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Enchantment naming system using convention-based positioning (_prefix/_suffix suffixes)",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -33,7 +33,6 @@
   "components": {
     "element_prefix": [
       {
-        "value": "Flaming",
         "rarityWeight": 30,
         "traits": {
           "fireDamage": {
@@ -44,10 +43,10 @@
             "value": "fire",
             "type": "string"
           }
-        }
+        },
+        "name": "Flaming"
       },
       {
-        "value": "Frozen",
         "rarityWeight": 30,
         "traits": {
           "iceDamage": {
@@ -62,10 +61,10 @@
             "value": 0.15,
             "type": "number"
           }
-        }
+        },
+        "name": "Frozen"
       },
       {
-        "value": "Shocking",
         "rarityWeight": 30,
         "traits": {
           "lightningDamage": {
@@ -76,10 +75,10 @@
             "value": "lightning",
             "type": "string"
           }
-        }
+        },
+        "name": "Shocking"
       },
       {
-        "value": "Venomous",
         "rarityWeight": 35,
         "traits": {
           "poisonDamage": {
@@ -94,10 +93,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Venomous"
       },
       {
-        "value": "Radiant",
         "rarityWeight": 50,
         "traits": {
           "holyDamage": {
@@ -108,10 +107,10 @@
             "value": "holy",
             "type": "string"
           }
-        }
+        },
+        "name": "Radiant"
       },
       {
-        "value": "Shadowy",
         "rarityWeight": 50,
         "traits": {
           "darkDamage": {
@@ -122,10 +121,10 @@
             "value": "dark",
             "type": "string"
           }
-        }
+        },
+        "name": "Shadowy"
       },
       {
-        "value": "Arcane",
         "rarityWeight": 60,
         "traits": {
           "arcaneDamage": {
@@ -136,12 +135,12 @@
             "value": "arcane",
             "type": "string"
           }
-        }
+        },
+        "name": "Arcane"
       }
     ],
     "element_suffix": [
       {
-        "value": "of Fire",
         "rarityWeight": 30,
         "traits": {
           "fireDamage": {
@@ -152,10 +151,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Fire"
       },
       {
-        "value": "of Ice",
         "rarityWeight": 30,
         "traits": {
           "iceDamage": {
@@ -166,10 +165,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Ice"
       },
       {
-        "value": "of Lightning",
         "rarityWeight": 30,
         "traits": {
           "lightningDamage": {
@@ -180,10 +179,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Lightning"
       },
       {
-        "value": "of the Storm",
         "rarityWeight": 80,
         "traits": {
           "lightningDamage": {
@@ -198,10 +197,10 @@
             "value": 8,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Storm"
       },
       {
-        "value": "of the Inferno",
         "rarityWeight": 100,
         "traits": {
           "fireDamage": {
@@ -216,22 +215,22 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Inferno"
       }
     ],
     "combat_suffix": [
       {
-        "value": "of Strength",
         "rarityWeight": 25,
         "traits": {
           "strength": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Strength"
       },
       {
-        "value": "of Power",
         "rarityWeight": 40,
         "traits": {
           "strength": {
@@ -242,10 +241,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Power"
       },
       {
-        "value": "of the Titan",
         "rarityWeight": 120,
         "traits": {
           "strength": {
@@ -260,20 +259,20 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Titan"
       },
       {
-        "value": "of Dexterity",
         "rarityWeight": 25,
         "traits": {
           "dexterity": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Dexterity"
       },
       {
-        "value": "of Agility",
         "rarityWeight": 40,
         "traits": {
           "dexterity": {
@@ -284,10 +283,10 @@
             "value": 0.05,
             "type": "number"
           }
-        }
+        },
+        "name": "of Agility"
       },
       {
-        "value": "of the Rogue",
         "rarityWeight": 100,
         "traits": {
           "dexterity": {
@@ -302,20 +301,20 @@
             "value": 0.1,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Rogue"
       },
       {
-        "value": "of Protection",
         "rarityWeight": 30,
         "traits": {
           "armor": {
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Protection"
       },
       {
-        "value": "of the Guardian",
         "rarityWeight": 90,
         "traits": {
           "armor": {
@@ -330,32 +329,32 @@
             "value": 0.05,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Guardian"
       }
     ],
     "magic_suffix": [
       {
-        "value": "of Intelligence",
         "rarityWeight": 25,
         "traits": {
           "intelligence": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Intelligence"
       },
       {
-        "value": "of Wisdom",
         "rarityWeight": 25,
         "traits": {
           "wisdom": {
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Wisdom"
       },
       {
-        "value": "of Sorcery",
         "rarityWeight": 60,
         "traits": {
           "intelligence": {
@@ -366,10 +365,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "of Sorcery"
       },
       {
-        "value": "of the Archmage",
         "rarityWeight": 150,
         "traits": {
           "intelligence": {
@@ -388,10 +387,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Archmage"
       },
       {
-        "value": "of Channeling",
         "rarityWeight": 45,
         "traits": {
           "castSpeed": {
@@ -402,7 +401,8 @@
             "value": -0.05,
             "type": "number"
           }
-        }
+        },
+        "name": "of Channeling"
       }
     ]
   },

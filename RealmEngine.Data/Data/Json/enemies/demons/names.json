@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Demon enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "rank",
@@ -30,130 +30,130 @@
   "components": {
     "rank": [
       {
-        "value": "Lesser",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Lesser"
       },
       {
-        "value": "Greater",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Greater"
       },
       {
-        "value": "Arch",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "Arch"
       },
       {
-        "value": "Prime",
-        "rarityWeight": 85
+        "rarityWeight": 85,
+        "name": "Prime"
       },
       {
-        "value": "Lord",
-        "rarityWeight": 90
+        "rarityWeight": 90,
+        "name": "Lord"
       }
     ],
     "aspect": [
       {
-        "value": "Fire",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Fire"
       },
       {
-        "value": "Shadow",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Shadow"
       },
       {
-        "value": "Blood",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Blood"
       },
       {
-        "value": "Chaos",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "Chaos"
       },
       {
-        "value": "Corruption",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "Corruption"
       },
       {
-        "value": "Void",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Void"
       },
       {
-        "value": "Plague",
-        "rarityWeight": 35
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Infernal",
-        "rarityWeight": 35
-      },
-      {
-        "value": "Abyssal",
-        "rarityWeight": 45
-      },
-      {
-        "value": "Hellborn",
-        "rarityWeight": 40
-      },
-      {
-        "value": "Cursed",
-        "rarityWeight": 28
-      },
-      {
-        "value": "Dark",
-        "rarityWeight": 22
-      },
-      {
-        "value": "Corrupted",
-        "rarityWeight": 32
-      },
-      {
-        "value": "Vile",
-        "rarityWeight": 30
-      },
-      {
-        "value": "Malevolent",
-        "rarityWeight": 38
-      },
-      {
-        "value": "Sinister",
-        "rarityWeight": 36
-      },
-      {
-        "value": "Wicked",
-        "rarityWeight": 34
+        "rarityWeight": 35,
+        "name": "Plague"
       }
     ],
     "title": [
       {
-        "value": "of the Abyss",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "of the Abyss"
       },
       {
-        "value": "of Torment",
-        "rarityWeight": 55
+        "rarityWeight": 55,
+        "name": "of Torment"
       },
       {
-        "value": "of Destruction",
-        "rarityWeight": 70
+        "rarityWeight": 70,
+        "name": "of Destruction"
       },
       {
-        "value": "of the Nine Hells",
-        "rarityWeight": 80
+        "rarityWeight": 80,
+        "name": "of the Nine Hells"
       },
       {
-        "value": "the Destroyer",
-        "rarityWeight": 75
+        "rarityWeight": 75,
+        "name": "the Destroyer"
       },
       {
-        "value": "the Defiler",
-        "rarityWeight": 65
+        "rarityWeight": 65,
+        "name": "the Defiler"
       },
       {
-        "value": "the Corruptor",
-        "rarityWeight": 68
+        "rarityWeight": 68,
+        "name": "the Corruptor"
       },
       {
-        "value": "Spawn of Chaos",
-        "rarityWeight": 72
+        "rarityWeight": 72,
+        "name": "Spawn of Chaos"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 35,
+        "name": "Infernal"
+      },
+      {
+        "rarityWeight": 45,
+        "name": "Abyssal"
+      },
+      {
+        "rarityWeight": 40,
+        "name": "Hellborn"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Cursed"
+      },
+      {
+        "rarityWeight": 22,
+        "name": "Dark"
+      },
+      {
+        "rarityWeight": 32,
+        "name": "Corrupted"
+      },
+      {
+        "rarityWeight": 30,
+        "name": "Vile"
+      },
+      {
+        "rarityWeight": 38,
+        "name": "Malevolent"
+      },
+      {
+        "rarityWeight": 36,
+        "name": "Sinister"
+      },
+      {
+        "rarityWeight": 34,
+        "name": "Wicked"
       }
     ]
   },

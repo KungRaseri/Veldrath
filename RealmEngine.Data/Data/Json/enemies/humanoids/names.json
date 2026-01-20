@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Humanoid enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "componentKeys": [
       "profession",
@@ -33,200 +33,200 @@
   "components": {
     "profession": [
       {
-        "value": "Bandit",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Bandit"
       },
       {
-        "value": "Thug",
-        "rarityWeight": 6
+        "rarityWeight": 6,
+        "name": "Thug"
       },
       {
-        "value": "Mercenary",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Mercenary"
       },
       {
-        "value": "Cultist",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Cultist"
       },
       {
-        "value": "Raider",
-        "rarityWeight": 8
+        "rarityWeight": 8,
+        "name": "Raider"
       },
       {
-        "value": "Brigand",
-        "rarityWeight": 9
+        "rarityWeight": 9,
+        "name": "Brigand"
       },
       {
-        "value": "Marauder",
-        "rarityWeight": 14
+        "rarityWeight": 14,
+        "name": "Marauder"
       },
       {
-        "value": "Assassin",
-        "rarityWeight": 25
+        "rarityWeight": 25,
+        "name": "Assassin"
       },
       {
-        "value": "Rogue",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Rogue"
       },
       {
-        "value": "Outlaw",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Outlaw"
       },
       {
-        "value": "Highwayman",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Highwayman"
       },
       {
-        "value": "Pirate",
-        "rarityWeight": 16
+        "rarityWeight": 16,
+        "name": "Pirate"
       },
       {
-        "value": "Smuggler",
-        "rarityWeight": 14
+        "rarityWeight": 14,
+        "name": "Smuggler"
       },
       {
-        "value": "Zealot",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Zealot"
       }
     ],
     "rank": [
       {
-        "value": "Novice",
-        "rarityWeight": 5
+        "rarityWeight": 5,
+        "name": "Novice"
       },
       {
-        "value": "Veteran",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Veteran"
       },
       {
-        "value": "Elite",
-        "rarityWeight": 28
+        "rarityWeight": 28,
+        "name": "Elite"
       },
       {
-        "value": "Captain",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "Captain"
       },
       {
-        "value": "Lieutenant",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "Lieutenant"
       },
       {
-        "value": "Champion",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "Champion"
       },
       {
-        "value": "Master",
-        "rarityWeight": 60
+        "rarityWeight": 60,
+        "name": "Master"
       },
       {
-        "value": "Lord",
-        "rarityWeight": 75
+        "rarityWeight": 75,
+        "name": "Lord"
       }
     ],
     "specialization": [
       {
-        "value": "Scout",
-        "rarityWeight": 10
+        "rarityWeight": 10,
+        "name": "Scout"
       },
       {
-        "value": "Warrior",
-        "rarityWeight": 12
+        "rarityWeight": 12,
+        "name": "Warrior"
       },
       {
-        "value": "Archer",
-        "rarityWeight": 14
+        "rarityWeight": 14,
+        "name": "Archer"
       },
       {
-        "value": "Mage",
-        "rarityWeight": 22
+        "rarityWeight": 22,
+        "name": "Mage"
       },
       {
-        "value": "Berserker",
-        "rarityWeight": 20
+        "rarityWeight": 20,
+        "name": "Berserker"
       },
       {
-        "value": "Enforcer",
-        "rarityWeight": 18
+        "rarityWeight": 18,
+        "name": "Enforcer"
       },
       {
-        "value": "Brute",
-        "rarityWeight": 15
+        "rarityWeight": 15,
+        "name": "Brute"
       },
       {
-        "value": "Sharpshooter",
-        "rarityWeight": 24
+        "rarityWeight": 24,
+        "name": "Sharpshooter"
       },
       {
-        "value": "Spellblade",
-        "rarityWeight": 32
-      }
-    ],
-    "descriptive": [
-      {
-        "value": "Rogue",
-        "rarityWeight": 12
-      },
-      {
-        "value": "Fallen",
-        "rarityWeight": 20
-      },
-      {
-        "value": "Corrupt",
-        "rarityWeight": 25
-      },
-      {
-        "value": "Zealous",
-        "rarityWeight": 18
-      },
-      {
-        "value": "Savage",
-        "rarityWeight": 16
-      },
-      {
-        "value": "Cunning",
-        "rarityWeight": 22
-      },
-      {
-        "value": "Ruthless",
-        "rarityWeight": 24
-      },
-      {
-        "value": "Bloodthirsty",
-        "rarityWeight": 28
+        "rarityWeight": 32,
+        "name": "Spellblade"
       }
     ],
     "title": [
       {
-        "value": "the Bloodthirsty",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "the Bloodthirsty"
       },
       {
-        "value": "the Wise",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "the Wise"
       },
       {
-        "value": "the Brave",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "the Brave"
       },
       {
-        "value": "the Cruel",
-        "rarityWeight": 38
+        "rarityWeight": 38,
+        "name": "the Cruel"
       },
       {
-        "value": "the Feared",
-        "rarityWeight": 50
+        "rarityWeight": 50,
+        "name": "the Feared"
       },
       {
-        "value": "the Merciless",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "the Merciless"
       },
       {
-        "value": "of the Shadows",
-        "rarityWeight": 42
+        "rarityWeight": 42,
+        "name": "of the Shadows"
       },
       {
-        "value": "the Slayer",
-        "rarityWeight": 48
+        "rarityWeight": 48,
+        "name": "the Slayer"
+      }
+    ],
+    "prefix": [
+      {
+        "rarityWeight": 12,
+        "name": "Rogue"
+      },
+      {
+        "rarityWeight": 20,
+        "name": "Fallen"
+      },
+      {
+        "rarityWeight": 25,
+        "name": "Corrupt"
+      },
+      {
+        "rarityWeight": 18,
+        "name": "Zealous"
+      },
+      {
+        "rarityWeight": 16,
+        "name": "Savage"
+      },
+      {
+        "rarityWeight": 22,
+        "name": "Cunning"
+      },
+      {
+        "rarityWeight": 24,
+        "name": "Ruthless"
+      },
+      {
+        "rarityWeight": 28,
+        "name": "Bloodthirsty"
       }
     ]
   },

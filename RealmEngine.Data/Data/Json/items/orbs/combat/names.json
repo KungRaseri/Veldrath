@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Naming patterns for combat orbs",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -28,20 +28,20 @@
   "components": {
     "suffix": [
       {
-        "value": "of Mastery",
-        "rarityWeight": 35
+        "rarityWeight": 35,
+        "name": "of Mastery"
       },
       {
-        "value": "of Excellence",
-        "rarityWeight": 40
+        "rarityWeight": 40,
+        "name": "of Excellence"
       },
       {
-        "value": "of the Warrior",
-        "rarityWeight": 30
+        "rarityWeight": 30,
+        "name": "of the Warrior"
       },
       {
-        "value": "of Prowess",
-        "rarityWeight": 45
+        "rarityWeight": 45,
+        "name": "of Prowess"
       }
     ]
   }

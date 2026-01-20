@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Unified armor naming system with prefix/suffix support and trait assignment (v4.2 - Hybrid Enhancement System)",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -32,79 +32,8 @@
     ]
   },
   "components": {
-    "quality": [
-      {
-        "value": "Fine",
-        "rarityWeight": 20,
-        "traits": {
-          "armorBonus": {
-            "value": 2,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.2,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Superior",
-        "rarityWeight": 30,
-        "traits": {
-          "armorBonus": {
-            "value": 4,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Masterwork",
-        "rarityWeight": 40,
-        "traits": {
-          "armorBonus": {
-            "value": 6,
-            "type": "number"
-          },
-          "durability": {
-            "value": 150,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Legendary",
-        "rarityWeight": 100,
-        "traits": {
-          "armorBonus": {
-            "value": 10,
-            "type": "number"
-          },
-          "durability": {
-            "value": 200,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 3.0,
-            "type": "number"
-          },
-          "glowEffect": {
-            "value": true,
-            "type": "boolean"
-          }
-        }
-      }
-    ],
     "prefix": [
       {
-        "value": "Sturdy",
         "rarityWeight": 50,
         "traits": {
           "durability": {
@@ -119,10 +48,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "Sturdy"
       },
       {
-        "value": "Reinforced",
         "rarityWeight": 50,
         "traits": {
           "durability": {
@@ -141,10 +70,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "Reinforced"
       },
       {
-        "value": "Hardened",
         "rarityWeight": 30,
         "traits": {
           "armorBonus": {
@@ -163,10 +92,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Hardened"
       },
       {
-        "value": "Forged",
         "rarityWeight": 30,
         "traits": {
           "armorBonus": {
@@ -185,10 +114,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Forged"
       },
       {
-        "value": "Masterwork",
         "rarityWeight": 15,
         "traits": {
           "armorBonus": {
@@ -207,10 +136,10 @@
             "value": 1.5,
             "type": "number"
           }
-        }
+        },
+        "name": "Masterwork"
       },
       {
-        "value": "Blessed",
         "rarityWeight": 15,
         "traits": {
           "armorBonus": {
@@ -233,10 +162,10 @@
             "value": 180,
             "type": "number"
           }
-        }
+        },
+        "name": "Blessed"
       },
       {
-        "value": "Ancient",
         "rarityWeight": 4,
         "traits": {
           "armorBonus": {
@@ -255,10 +184,10 @@
             "value": 2.0,
             "type": "number"
           }
-        }
+        },
+        "name": "Ancient"
       },
       {
-        "value": "Legendary",
         "rarityWeight": 1,
         "traits": {
           "armorBonus": {
@@ -281,10 +210,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Legendary"
       },
       {
-        "value": "Mythical",
         "rarityWeight": 1,
         "traits": {
           "armorBonus": {
@@ -307,10 +236,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Mythical"
       },
       {
-        "value": "Primordial",
         "rarityWeight": 1,
         "traits": {
           "armorBonus": {
@@ -337,10 +266,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Primordial"
       },
       {
-        "value": "Shadow",
         "rarityWeight": 15,
         "traits": {
           "stealthBonus": {
@@ -359,10 +288,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Shadow"
       },
       {
-        "value": "Radiant",
         "rarityWeight": 15,
         "traits": {
           "resistDark": {
@@ -389,10 +318,10 @@
             "value": 4,
             "type": "number"
           }
-        }
+        },
+        "name": "Radiant"
       },
       {
-        "value": "Runic",
         "rarityWeight": 4,
         "traits": {
           "resistMagic": {
@@ -415,10 +344,10 @@
             "value": 6,
             "type": "number"
           }
-        }
+        },
+        "name": "Runic"
       },
       {
-        "value": "Crystal",
         "rarityWeight": 15,
         "traits": {
           "resistMagic": {
@@ -437,10 +366,10 @@
             "value": "rainbow",
             "type": "string"
           }
-        }
+        },
+        "name": "Crystal"
       },
       {
-        "value": "Obsidian",
         "rarityWeight": 15,
         "traits": {
           "resistFire": {
@@ -459,10 +388,10 @@
             "value": "black",
             "type": "string"
           }
-        }
+        },
+        "name": "Obsidian"
       },
       {
-        "value": "Celestial",
         "rarityWeight": 1,
         "traits": {
           "resistAll": {
@@ -485,10 +414,10 @@
             "value": "divine_light",
             "type": "string"
           }
-        }
+        },
+        "name": "Celestial"
       },
       {
-        "value": "Infernal",
         "rarityWeight": 4,
         "traits": {
           "resistFire": {
@@ -507,10 +436,10 @@
             "value": "flame_red",
             "type": "string"
           }
-        }
+        },
+        "name": "Infernal"
       },
       {
-        "value": "Ethereal",
         "rarityWeight": 1,
         "traits": {
           "dodgeChance": {
@@ -529,10 +458,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Ethereal"
       },
       {
-        "value": "Spectral",
         "rarityWeight": 4,
         "traits": {
           "resistPhysical": {
@@ -551,10 +480,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Spectral"
       },
       {
-        "value": "Enchanted",
         "rarityWeight": 30,
         "traits": {
           "manaBonus": {
@@ -569,10 +498,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Enchanted"
       },
       {
-        "value": "Arcane",
         "rarityWeight": 15,
         "traits": {
           "spellPowerBonus": {
@@ -591,10 +520,10 @@
             "value": 4,
             "type": "number"
           }
-        }
+        },
+        "name": "Arcane"
       },
       {
-        "value": "Consecrated",
         "rarityWeight": 15,
         "traits": {
           "resistUndead": {
@@ -613,10 +542,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "Consecrated"
       },
       {
-        "value": "Cursed",
         "rarityWeight": 30,
         "traits": {
           "armorBonus": {
@@ -635,10 +564,10 @@
             "value": "sickly_green",
             "type": "string"
           }
-        }
+        },
+        "name": "Cursed"
       },
       {
-        "value": "Demon",
         "rarityWeight": 4,
         "traits": {
           "armorBonus": {
@@ -657,10 +586,10 @@
             "value": "dark_red",
             "type": "string"
           }
-        }
+        },
+        "name": "Demon"
       },
       {
-        "value": "Titan",
         "rarityWeight": 1,
         "traits": {
           "armorBonus": {
@@ -683,10 +612,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Titan"
       },
       {
-        "value": "Phoenix",
         "rarityWeight": 1,
         "traits": {
           "armorBonus": {
@@ -709,10 +638,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Phoenix"
       },
       {
-        "value": "Wyrm",
         "rarityWeight": 4,
         "traits": {
           "armorBonus": {
@@ -731,12 +660,10 @@
             "value": "dragon_scale",
             "type": "string"
           }
-        }
-      }
-    ],
-    "descriptive": [
+        },
+        "name": "Wyrm"
+      },
       {
-        "value": "Blazing",
         "rarityWeight": 35,
         "traits": {
           "resistFire": {
@@ -755,10 +682,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Blazing"
       },
       {
-        "value": "Frozen",
         "rarityWeight": 35,
         "traits": {
           "resistIce": {
@@ -777,10 +704,10 @@
             "value": "icy_blue",
             "type": "string"
           }
-        }
+        },
+        "name": "Frozen"
       },
       {
-        "value": "Storming",
         "rarityWeight": 38,
         "traits": {
           "resistLightning": {
@@ -795,10 +722,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Storming"
       },
       {
-        "value": "Holy",
         "rarityWeight": 50,
         "traits": {
           "resistDark": {
@@ -817,10 +744,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Holy"
       },
       {
-        "value": "Dark",
         "rarityWeight": 45,
         "traits": {
           "resistLight": {
@@ -835,10 +762,10 @@
             "value": "shadow_black",
             "type": "string"
           }
-        }
+        },
+        "name": "Dark"
       },
       {
-        "value": "Living",
         "rarityWeight": 60,
         "traits": {
           "healthRegen": {
@@ -853,12 +780,12 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Living"
       }
     ],
     "suffix": [
       {
-        "value": "of Protection",
         "rarityWeight": 50,
         "traits": {
           "armorBonus": {
@@ -869,10 +796,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "of Protection"
       },
       {
-        "value": "of Defense",
         "rarityWeight": 50,
         "traits": {
           "armorBonus": {
@@ -883,10 +810,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Defense"
       },
       {
-        "value": "of the Guardian",
         "rarityWeight": 30,
         "traits": {
           "armorBonus": {
@@ -905,10 +832,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Guardian"
       },
       {
-        "value": "of Fortitude",
         "rarityWeight": 30,
         "traits": {
           "constitutionBonus": {
@@ -923,10 +850,10 @@
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "of Fortitude"
       },
       {
-        "value": "of the Bear",
         "rarityWeight": 15,
         "traits": {
           "constitutionBonus": {
@@ -941,10 +868,10 @@
             "value": 30,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Bear"
       },
       {
-        "value": "of the Turtle",
         "rarityWeight": 15,
         "traits": {
           "armorBonus": {
@@ -959,50 +886,50 @@
             "value": -10,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Turtle"
       },
       {
-        "value": "of Fire Resistance",
         "rarityWeight": 30,
         "traits": {
           "resistFire": {
             "value": 25,
             "type": "number"
           }
-        }
+        },
+        "name": "of Fire Resistance"
       },
       {
-        "value": "of Ice Resistance",
         "rarityWeight": 30,
         "traits": {
           "resistIce": {
             "value": 25,
             "type": "number"
           }
-        }
+        },
+        "name": "of Ice Resistance"
       },
       {
-        "value": "of Lightning Resistance",
         "rarityWeight": 30,
         "traits": {
           "resistLightning": {
             "value": 25,
             "type": "number"
           }
-        }
+        },
+        "name": "of Lightning Resistance"
       },
       {
-        "value": "of Magic Resistance",
         "rarityWeight": 15,
         "traits": {
           "resistMagic": {
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "of Magic Resistance"
       },
       {
-        "value": "of Invulnerability",
         "rarityWeight": 1,
         "traits": {
           "damageReduction": {
@@ -1017,10 +944,10 @@
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "of Invulnerability"
       },
       {
-        "value": "of the Champion",
         "rarityWeight": 4,
         "traits": {
           "allStatsBonus": {
@@ -1035,10 +962,10 @@
             "value": 25,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Champion"
       },
       {
-        "value": "of the Crusader",
         "rarityWeight": 15,
         "traits": {
           "resistUndead": {
@@ -1053,10 +980,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Crusader"
       },
       {
-        "value": "of the Paladin",
         "rarityWeight": 4,
         "traits": {
           "resistAll": {
@@ -1071,10 +998,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Paladin"
       },
       {
-        "value": "of the Mountain",
         "rarityWeight": 4,
         "traits": {
           "armorBonus": {
@@ -1089,10 +1016,10 @@
             "value": 100,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Mountain"
       },
       {
-        "value": "of the Aegis",
         "rarityWeight": 1,
         "traits": {
           "armorBonus": {
@@ -1111,10 +1038,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of the Aegis"
       },
       {
-        "value": "of Regeneration",
         "rarityWeight": 15,
         "traits": {
           "healthRegen": {
@@ -1125,10 +1052,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Regeneration"
       },
       {
-        "value": "of Vitality",
         "rarityWeight": 30,
         "traits": {
           "healthBonus": {
@@ -1139,10 +1066,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Vitality"
       },
       {
-        "value": "of Stamina",
         "rarityWeight": 50,
         "traits": {
           "staminaBonus": {
@@ -1153,10 +1080,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Stamina"
       },
       {
-        "value": "of Thorns",
         "rarityWeight": 15,
         "traits": {
           "damageReflect": {
@@ -1167,10 +1094,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Thorns"
       },
       {
-        "value": "of the Dragon",
         "rarityWeight": 4,
         "traits": {
           "resistFire": {
@@ -1185,10 +1112,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "of the Dragon"
       },
       {
-        "value": "of the Phoenix",
         "rarityWeight": 2,
         "traits": {
           "resistFire": {
@@ -1203,10 +1130,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of the Phoenix"
       },
       {
-        "value": "of Absorption",
         "rarityWeight": 15,
         "traits": {
           "damageAbsorption": {
@@ -1217,10 +1144,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "of Absorption"
       },
       {
-        "value": "of Deflection",
         "rarityWeight": 30,
         "traits": {
           "dodgeChance": {
@@ -1231,10 +1158,10 @@
             "value": 2,
             "type": "number"
           }
-        }
+        },
+        "name": "of Deflection"
       },
       {
-        "value": "of Warding",
         "rarityWeight": 15,
         "traits": {
           "magicShield": {
@@ -1245,10 +1172,10 @@
             "value": 15,
             "type": "number"
           }
-        }
+        },
+        "name": "of Warding"
       },
       {
-        "value": "of Shadows",
         "rarityWeight": 4,
         "traits": {
           "stealthBonus": {
@@ -1267,10 +1194,10 @@
             "value": 6,
             "type": "number"
           }
-        }
+        },
+        "name": "of Shadows"
       },
       {
-        "value": "of Light",
         "rarityWeight": 15,
         "traits": {
           "resistDark": {
@@ -1285,10 +1212,10 @@
             "value": 10,
             "type": "number"
           }
-        }
+        },
+        "name": "of Light"
       },
       {
-        "value": "of the Void",
         "rarityWeight": 2,
         "traits": {
           "voidProtection": {
@@ -1303,10 +1230,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of the Void"
       },
       {
-        "value": "of Eternity",
         "rarityWeight": 1,
         "traits": {
           "durability": {
@@ -1321,10 +1248,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of Eternity"
       },
       {
-        "value": "of the Gods",
         "rarityWeight": 1,
         "traits": {
           "allStatsBonus": {
@@ -1343,7 +1270,8 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "of the Gods"
       }
     ]
   },

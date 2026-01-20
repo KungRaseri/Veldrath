@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Unified consumable naming system with enhanced effects and trait support (v4.2 - Hybrid Enhancement System)",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
     "type": "pattern_generation",
     "supportsTraits": true,
     "componentKeys": [
@@ -31,195 +31,8 @@
     "usage": "Pattern-based name generation for consumables. Pick components by rarityWeight and apply patterns to generate procedural names with trait stacking."
   },
   "components": {
-    "quality": [
-      {
-        "value": "Minor",
-        "rarityWeight": 5,
-        "traits": {
-          "powerMultiplier": {
-            "value": 0.5,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 0.7,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 0.4,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Lesser",
-        "rarityWeight": 8,
-        "traits": {
-          "powerMultiplier": {
-            "value": 0.75,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 0.85,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 0.7,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Common",
-        "rarityWeight": 10,
-        "traits": {
-          "powerMultiplier": {
-            "value": 1.0,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 1.0,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.0,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Greater",
-        "rarityWeight": 20,
-        "traits": {
-          "powerMultiplier": {
-            "value": 1.5,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 1.3,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.8,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Superior",
-        "rarityWeight": 30,
-        "traits": {
-          "powerMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 1.6,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 2.5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Major",
-        "rarityWeight": 40,
-        "traits": {
-          "powerMultiplier": {
-            "value": 2.5,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 3.5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Grand",
-        "rarityWeight": 55,
-        "traits": {
-          "powerMultiplier": {
-            "value": 3.0,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 2.5,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 5.0,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Masterwork",
-        "rarityWeight": 70,
-        "traits": {
-          "powerMultiplier": {
-            "value": 4.0,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 3.0,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 8.0,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Legendary",
-        "rarityWeight": 90,
-        "traits": {
-          "powerMultiplier": {
-            "value": 5.0,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 4.0,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 15.0,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "Divine",
-        "rarityWeight": 100,
-        "traits": {
-          "powerMultiplier": {
-            "value": 10.0,
-            "type": "number"
-          },
-          "durationMultiplier": {
-            "value": 10.0,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 30.0,
-            "type": "number"
-          },
-          "permanentEffect": {
-            "value": true,
-            "type": "boolean"
-          }
-        }
-      }
-    ],
     "effect": [
       {
-        "value": "Healing",
         "rarityWeight": 10,
         "traits": {
           "healingPower": {
@@ -230,10 +43,10 @@
             "value": "restoration",
             "type": "string"
           }
-        }
+        },
+        "name": "Healing"
       },
       {
-        "value": "Mana",
         "rarityWeight": 12,
         "traits": {
           "manaPower": {
@@ -244,10 +57,10 @@
             "value": "restoration",
             "type": "string"
           }
-        }
+        },
+        "name": "Mana"
       },
       {
-        "value": "Stamina",
         "rarityWeight": 10,
         "traits": {
           "staminaPower": {
@@ -258,10 +71,10 @@
             "value": "restoration",
             "type": "string"
           }
-        }
+        },
+        "name": "Stamina"
       },
       {
-        "value": "Strength",
         "rarityWeight": 15,
         "traits": {
           "strengthBonus": {
@@ -276,10 +89,10 @@
             "value": "attribute_buff",
             "type": "string"
           }
-        }
+        },
+        "name": "Strength"
       },
       {
-        "value": "Agility",
         "rarityWeight": 15,
         "traits": {
           "dexterityBonus": {
@@ -294,10 +107,10 @@
             "value": "attribute_buff",
             "type": "string"
           }
-        }
+        },
+        "name": "Agility"
       },
       {
-        "value": "Intelligence",
         "rarityWeight": 18,
         "traits": {
           "intelligenceBonus": {
@@ -312,10 +125,10 @@
             "value": "attribute_buff",
             "type": "string"
           }
-        }
+        },
+        "name": "Intelligence"
       },
       {
-        "value": "Vitality",
         "rarityWeight": 20,
         "traits": {
           "constitutionBonus": {
@@ -334,10 +147,10 @@
             "value": "attribute_buff",
             "type": "string"
           }
-        }
+        },
+        "name": "Vitality"
       },
       {
-        "value": "Rejuvenation",
         "rarityWeight": 25,
         "traits": {
           "healingPower": {
@@ -356,10 +169,10 @@
             "value": "restoration_overtime",
             "type": "string"
           }
-        }
+        },
+        "name": "Rejuvenation"
       },
       {
-        "value": "Restoration",
         "rarityWeight": 30,
         "traits": {
           "healingPower": {
@@ -374,10 +187,10 @@
             "value": "restoration",
             "type": "string"
           }
-        }
+        },
+        "name": "Restoration"
       },
       {
-        "value": "Regeneration",
         "rarityWeight": 28,
         "traits": {
           "healthRegen": {
@@ -392,10 +205,10 @@
             "value": "regeneration",
             "type": "string"
           }
-        }
+        },
+        "name": "Regeneration"
       },
       {
-        "value": "Protection",
         "rarityWeight": 22,
         "traits": {
           "armorBonus": {
@@ -414,10 +227,10 @@
             "value": "defensive",
             "type": "string"
           }
-        }
+        },
+        "name": "Protection"
       },
       {
-        "value": "Resistance",
         "rarityWeight": 24,
         "traits": {
           "resistAll": {
@@ -432,10 +245,10 @@
             "value": "defensive",
             "type": "string"
           }
-        }
+        },
+        "name": "Resistance"
       },
       {
-        "value": "Immunity",
         "rarityWeight": 50,
         "traits": {
           "resistAll": {
@@ -450,10 +263,10 @@
             "value": "defensive",
             "type": "string"
           }
-        }
+        },
+        "name": "Immunity"
       },
       {
-        "value": "Clarity",
         "rarityWeight": 16,
         "traits": {
           "intelligenceBonus": {
@@ -472,10 +285,10 @@
             "value": "mental",
             "type": "string"
           }
-        }
+        },
+        "name": "Clarity"
       },
       {
-        "value": "Focus",
         "rarityWeight": 18,
         "traits": {
           "criticalChance": {
@@ -490,10 +303,10 @@
             "value": "mental",
             "type": "string"
           }
-        }
+        },
+        "name": "Focus"
       },
       {
-        "value": "Curing",
         "rarityWeight": 20,
         "traits": {
           "curePoisonPower": {
@@ -508,10 +321,10 @@
             "value": "curing",
             "type": "string"
           }
-        }
+        },
+        "name": "Curing"
       },
       {
-        "value": "Antidote",
         "rarityWeight": 22,
         "traits": {
           "curePoisonPower": {
@@ -530,10 +343,10 @@
             "value": "curing",
             "type": "string"
           }
-        }
+        },
+        "name": "Antidote"
       },
       {
-        "value": "Purification",
         "rarityWeight": 35,
         "traits": {
           "removeCursePower": {
@@ -548,10 +361,10 @@
             "value": "curing",
             "type": "string"
           }
-        }
+        },
+        "name": "Purification"
       },
       {
-        "value": "Invisibility",
         "rarityWeight": 60,
         "traits": {
           "invisibility": {
@@ -566,10 +379,10 @@
             "value": "utility",
             "type": "string"
           }
-        }
+        },
+        "name": "Invisibility"
       },
       {
-        "value": "Levitation",
         "rarityWeight": 55,
         "traits": {
           "flight": {
@@ -584,10 +397,10 @@
             "value": "utility",
             "type": "string"
           }
-        }
+        },
+        "name": "Levitation"
       },
       {
-        "value": "Water Breathing",
         "rarityWeight": 18,
         "traits": {
           "waterBreathing": {
@@ -602,10 +415,10 @@
             "value": "utility",
             "type": "string"
           }
-        }
+        },
+        "name": "Water Breathing"
       },
       {
-        "value": "Night Vision",
         "rarityWeight": 16,
         "traits": {
           "nightVision": {
@@ -624,10 +437,10 @@
             "value": "utility",
             "type": "string"
           }
-        }
+        },
+        "name": "Night Vision"
       },
       {
-        "value": "Detection",
         "rarityWeight": 20,
         "traits": {
           "detectLife": {
@@ -650,10 +463,10 @@
             "value": "utility",
             "type": "string"
           }
-        }
+        },
+        "name": "Detection"
       },
       {
-        "value": "Haste",
         "rarityWeight": 45,
         "traits": {
           "movementSpeed": {
@@ -672,10 +485,10 @@
             "value": "combat_buff",
             "type": "string"
           }
-        }
+        },
+        "name": "Haste"
       },
       {
-        "value": "Berserker",
         "rarityWeight": 50,
         "traits": {
           "damageBonus": {
@@ -694,10 +507,10 @@
             "value": "combat_buff",
             "type": "string"
           }
-        }
+        },
+        "name": "Berserker"
       },
       {
-        "value": "Invulnerability",
         "rarityWeight": 90,
         "traits": {
           "invulnerable": {
@@ -712,10 +525,10 @@
             "value": "defensive",
             "type": "string"
           }
-        }
+        },
+        "name": "Invulnerability"
       },
       {
-        "value": "Teleportation",
         "rarityWeight": 75,
         "traits": {
           "teleport": {
@@ -730,10 +543,10 @@
             "value": "advanced",
             "type": "string"
           }
-        }
+        },
+        "name": "Teleportation"
       },
       {
-        "value": "Shapeshifting",
         "rarityWeight": 85,
         "traits": {
           "shapeshift": {
@@ -748,10 +561,10 @@
             "value": "advanced",
             "type": "string"
           }
-        }
+        },
+        "name": "Shapeshifting"
       },
       {
-        "value": "Resurrection",
         "rarityWeight": 100,
         "traits": {
           "resurrect": {
@@ -766,10 +579,10 @@
             "value": "legendary",
             "type": "string"
           }
-        }
+        },
+        "name": "Resurrection"
       },
       {
-        "value": "Divine Blessing",
         "rarityWeight": 95,
         "traits": {
           "allStatsBonus": {
@@ -792,12 +605,208 @@
             "value": "legendary",
             "type": "string"
           }
-        }
+        },
+        "name": "Divine Blessing"
       }
     ],
-    "descriptive": [
+    "suffix": [
       {
-        "value": "Ancient",
+        "rarityWeight": 15,
+        "traits": {
+          "healingPower": {
+            "value": 15,
+            "type": "number"
+          }
+        },
+        "name": "of Healing"
+      },
+      {
+        "rarityWeight": 18,
+        "traits": {
+          "manaPower": {
+            "value": 20,
+            "type": "number"
+          }
+        },
+        "name": "of Mana"
+      },
+      {
+        "rarityWeight": 20,
+        "traits": {
+          "strengthBonus": {
+            "value": 3,
+            "type": "number"
+          }
+        },
+        "name": "of Strength"
+      },
+      {
+        "rarityWeight": 22,
+        "traits": {
+          "movementSpeed": {
+            "value": 15,
+            "type": "number"
+          }
+        },
+        "name": "of Speed"
+      },
+      {
+        "rarityWeight": 30,
+        "traits": {
+          "damageBonus": {
+            "value": 10,
+            "type": "number"
+          },
+          "strengthBonus": {
+            "value": 5,
+            "type": "number"
+          }
+        },
+        "name": "of Power"
+      },
+      {
+        "rarityWeight": 25,
+        "traits": {
+          "strengthBonus": {
+            "value": 5,
+            "type": "number"
+          },
+          "constitutionBonus": {
+            "value": 3,
+            "type": "number"
+          }
+        },
+        "name": "of the Bear"
+      },
+      {
+        "rarityWeight": 28,
+        "traits": {
+          "dexterityBonus": {
+            "value": 5,
+            "type": "number"
+          },
+          "visionRadius": {
+            "value": 10,
+            "type": "number"
+          }
+        },
+        "name": "of the Eagle"
+      },
+      {
+        "rarityWeight": 32,
+        "traits": {
+          "dexterityBonus": {
+            "value": 4,
+            "type": "number"
+          },
+          "poisonImmunity": {
+            "value": true,
+            "type": "boolean"
+          }
+        },
+        "name": "of the Serpent"
+      },
+      {
+        "rarityWeight": 60,
+        "traits": {
+          "resurrect": {
+            "value": true,
+            "type": "boolean"
+          },
+          "resistFire": {
+            "value": 50,
+            "type": "number"
+          }
+        },
+        "name": "of the Phoenix"
+      },
+      {
+        "rarityWeight": 70,
+        "traits": {
+          "allStatsBonus": {
+            "value": 5,
+            "type": "number"
+          },
+          "resistAll": {
+            "value": 15,
+            "type": "number"
+          }
+        },
+        "name": "of the Dragon"
+      },
+      {
+        "rarityWeight": 24,
+        "traits": {
+          "healthBonus": {
+            "value": 30,
+            "type": "number"
+          },
+          "healthRegen": {
+            "value": 5,
+            "type": "number"
+          }
+        },
+        "name": "of Vitality"
+      },
+      {
+        "rarityWeight": 26,
+        "traits": {
+          "constitutionBonus": {
+            "value": 5,
+            "type": "number"
+          },
+          "staminaBonus": {
+            "value": 20,
+            "type": "number"
+          }
+        },
+        "name": "of Fortitude"
+      },
+      {
+        "rarityWeight": 35,
+        "traits": {
+          "intelligenceBonus": {
+            "value": 5,
+            "type": "number"
+          },
+          "manaBonus": {
+            "value": 30,
+            "type": "number"
+          }
+        },
+        "name": "of Wisdom"
+      },
+      {
+        "rarityWeight": 22,
+        "traits": {
+          "intelligenceBonus": {
+            "value": 3,
+            "type": "number"
+          },
+          "manaRegen": {
+            "value": 5,
+            "type": "number"
+          }
+        },
+        "name": "of Clarity"
+      },
+      {
+        "rarityWeight": 28,
+        "traits": {
+          "armorBonus": {
+            "value": 10,
+            "type": "number"
+          },
+          "damageReduction": {
+            "value": 5,
+            "type": "number"
+          }
+        },
+        "name": "of Protection"
+      }
+    ],
+    "prefix": [
+      {
         "rarityWeight": 40,
         "traits": {
           "powerMultiplier": {
@@ -808,10 +817,10 @@
             "value": 1.3,
             "type": "number"
           }
-        }
+        },
+        "name": "Ancient"
       },
       {
-        "value": "Mystical",
         "rarityWeight": 35,
         "traits": {
           "powerMultiplier": {
@@ -822,10 +831,10 @@
             "value": 20,
             "type": "number"
           }
-        }
+        },
+        "name": "Mystical"
       },
       {
-        "value": "Arcane",
         "rarityWeight": 38,
         "traits": {
           "spellPower": {
@@ -836,10 +845,10 @@
             "value": 1.4,
             "type": "number"
           }
-        }
+        },
+        "name": "Arcane"
       },
       {
-        "value": "Divine",
         "rarityWeight": 55,
         "traits": {
           "powerMultiplier": {
@@ -854,10 +863,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Divine"
       },
       {
-        "value": "Blessed",
         "rarityWeight": 45,
         "traits": {
           "powerMultiplier": {
@@ -868,10 +877,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Blessed"
       },
       {
-        "value": "Cursed",
         "rarityWeight": 30,
         "traits": {
           "powerMultiplier": {
@@ -886,10 +895,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Cursed"
       },
       {
-        "value": "Dark",
         "rarityWeight": 28,
         "traits": {
           "necroticDamage": {
@@ -900,10 +909,10 @@
             "value": 1.4,
             "type": "number"
           }
-        }
+        },
+        "name": "Dark"
       },
       {
-        "value": "Light",
         "rarityWeight": 32,
         "traits": {
           "holyDamage": {
@@ -914,10 +923,10 @@
             "value": 3,
             "type": "number"
           }
-        }
+        },
+        "name": "Light"
       },
       {
-        "value": "Shadow",
         "rarityWeight": 36,
         "traits": {
           "stealthBonus": {
@@ -928,10 +937,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Shadow"
       },
       {
-        "value": "Radiant",
         "rarityWeight": 42,
         "traits": {
           "resistDark": {
@@ -942,10 +951,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Radiant"
       },
       {
-        "value": "Ethereal",
         "rarityWeight": 50,
         "traits": {
           "dodgeChance": {
@@ -956,10 +965,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Ethereal"
       },
       {
-        "value": "Spectral",
         "rarityWeight": 48,
         "traits": {
           "resistPhysical": {
@@ -970,10 +979,10 @@
             "value": true,
             "type": "boolean"
           }
-        }
+        },
+        "name": "Spectral"
       },
       {
-        "value": "Infernal",
         "rarityWeight": 52,
         "traits": {
           "resistFire": {
@@ -984,10 +993,10 @@
             "value": 15,
             "type": "number"
           }
-        }
+        },
+        "name": "Infernal"
       },
       {
-        "value": "Celestial",
         "rarityWeight": 60,
         "traits": {
           "resistAll": {
@@ -998,10 +1007,10 @@
             "value": 5,
             "type": "number"
           }
-        }
+        },
+        "name": "Celestial"
       },
       {
-        "value": "Primordial",
         "rarityWeight": 75,
         "traits": {
           "powerMultiplier": {
@@ -1012,203 +1021,8 @@
             "value": true,
             "type": "boolean"
           }
-        }
-      }
-    ],
-    "suffix": [
-      {
-        "value": "of Healing",
-        "rarityWeight": 15,
-        "traits": {
-          "healingPower": {
-            "value": 15,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Mana",
-        "rarityWeight": 18,
-        "traits": {
-          "manaPower": {
-            "value": 20,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Strength",
-        "rarityWeight": 20,
-        "traits": {
-          "strengthBonus": {
-            "value": 3,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Speed",
-        "rarityWeight": 22,
-        "traits": {
-          "movementSpeed": {
-            "value": 15,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Power",
-        "rarityWeight": 30,
-        "traits": {
-          "damageBonus": {
-            "value": 10,
-            "type": "number"
-          },
-          "strengthBonus": {
-            "value": 5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of the Bear",
-        "rarityWeight": 25,
-        "traits": {
-          "strengthBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "constitutionBonus": {
-            "value": 3,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of the Eagle",
-        "rarityWeight": 28,
-        "traits": {
-          "dexterityBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "visionRadius": {
-            "value": 10,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of the Serpent",
-        "rarityWeight": 32,
-        "traits": {
-          "dexterityBonus": {
-            "value": 4,
-            "type": "number"
-          },
-          "poisonImmunity": {
-            "value": true,
-            "type": "boolean"
-          }
-        }
-      },
-      {
-        "value": "of the Phoenix",
-        "rarityWeight": 60,
-        "traits": {
-          "resurrect": {
-            "value": true,
-            "type": "boolean"
-          },
-          "resistFire": {
-            "value": 50,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of the Dragon",
-        "rarityWeight": 70,
-        "traits": {
-          "allStatsBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "resistAll": {
-            "value": 15,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Vitality",
-        "rarityWeight": 24,
-        "traits": {
-          "healthBonus": {
-            "value": 30,
-            "type": "number"
-          },
-          "healthRegen": {
-            "value": 5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Fortitude",
-        "rarityWeight": 26,
-        "traits": {
-          "constitutionBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "staminaBonus": {
-            "value": 20,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Wisdom",
-        "rarityWeight": 35,
-        "traits": {
-          "intelligenceBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "manaBonus": {
-            "value": 30,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Clarity",
-        "rarityWeight": 22,
-        "traits": {
-          "intelligenceBonus": {
-            "value": 3,
-            "type": "number"
-          },
-          "manaRegen": {
-            "value": 5,
-            "type": "number"
-          }
-        }
-      },
-      {
-        "value": "of Protection",
-        "rarityWeight": 28,
-        "traits": {
-          "armorBonus": {
-            "value": 10,
-            "type": "number"
-          },
-          "damageReduction": {
-            "value": 5,
-            "type": "number"
-          }
-        }
+        },
+        "name": "Primordial"
       }
     ]
   },
