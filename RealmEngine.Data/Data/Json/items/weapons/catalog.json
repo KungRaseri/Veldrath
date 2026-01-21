@@ -1958,8 +1958,8 @@
       },
       "items": [
         {
-          "name": "Wooden Club",
-          "slug": "wooden-club",
+          "name": "Club",
+          "slug": "club",
           "value": 1,
           "weight": 2.0,
           "damage": {

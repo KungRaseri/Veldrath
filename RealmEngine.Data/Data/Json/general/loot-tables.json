@@ -1,0 +1,211 @@
+{
+  "metadata": {
+    "description": "Loot table mappings - defines which material pools drop from various sources",
+    "version": "1.0",
+    "lastUpdated": "2026-01-21",
+    "type": "loot_tables",
+    "notes": [
+      "Keys are references to enemies, chests, or merchants",
+      "Supports wildcards: @enemies/beasts/* matches all beasts",
+      "Lookup order: specific → category wildcard → domain wildcard → default",
+      "Pool references point to material-pools.json entries"
+    ]
+  },
+  "sources": {
+    "enemies": {
+      "@enemies/humanoid/goblins:goblin-warrior": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/leathers/common",
+          "@material_pools/woods/common"
+        ]
+      },
+      "@enemies/humanoid/goblins:goblin-shaman": {
+        "pools": [
+          "@material_pools/fabrics/common",
+          "@material_pools/leathers/common",
+          "@material_pools/gems/common"
+        ]
+      },
+      "@enemies/humanoid/goblins/*": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/leathers/common"
+        ]
+      },
+      "@enemies/humanoid/orcs:orc-warrior": {
+        "pools": [
+          "@material_pools/metals/uncommon",
+          "@material_pools/leathers/uncommon"
+        ]
+      },
+      "@enemies/humanoid/orcs:orc-chieftain": {
+        "pools": [
+          "@material_pools/metals/rare",
+          "@material_pools/leathers/rare",
+          "@material_pools/gems/uncommon"
+        ]
+      },
+      "@enemies/humanoid/orcs/*": {
+        "pools": [
+          "@material_pools/metals/uncommon",
+          "@material_pools/leathers/common"
+        ]
+      },
+      "@enemies/humanoid/*": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/leathers/common",
+          "@material_pools/fabrics/common"
+        ]
+      },
+      "@enemies/beasts/wolves/*": {
+        "pools": [
+          "@material_pools/leathers/common",
+          "@material_pools/woods/common"
+        ]
+      },
+      "@enemies/beasts/*": {
+        "pools": [
+          "@material_pools/leathers/common",
+          "@material_pools/woods/common"
+        ]
+      },
+      "@enemies/undead/*": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/leathers/common"
+        ]
+      },
+      "@enemies/dragons/*": {
+        "pools": [
+          "@material_pools/metals/legendary",
+          "@material_pools/gems/legendary",
+          "@material_pools/leathers/epic"
+        ]
+      },
+      "@enemies/demons/*": {
+        "pools": [
+          "@material_pools/metals/rare",
+          "@material_pools/gems/rare"
+        ]
+      },
+      "@enemies/*/*": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/leathers/common"
+        ]
+      }
+    },
+    "chests": {
+      "common": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/leathers/common",
+          "@material_pools/fabrics/common",
+          "@material_pools/woods/common"
+        ]
+      },
+      "uncommon": {
+        "pools": [
+          "@material_pools/metals/uncommon",
+          "@material_pools/leathers/uncommon",
+          "@material_pools/fabrics/uncommon",
+          "@material_pools/gems/common"
+        ]
+      },
+      "rare": {
+        "pools": [
+          "@material_pools/metals/rare",
+          "@material_pools/leathers/rare",
+          "@material_pools/fabrics/rare",
+          "@material_pools/gems/uncommon"
+        ]
+      },
+      "epic": {
+        "pools": [
+          "@material_pools/metals/epic",
+          "@material_pools/leathers/epic",
+          "@material_pools/fabrics/epic",
+          "@material_pools/gems/rare"
+        ]
+      },
+      "legendary": {
+        "pools": [
+          "@material_pools/metals/legendary",
+          "@material_pools/leathers/legendary",
+          "@material_pools/fabrics/legendary",
+          "@material_pools/gems/legendary"
+        ]
+      }
+    },
+    "merchants": {
+      "blacksmith": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/metals/uncommon",
+          "@material_pools/metals/rare"
+        ]
+      },
+      "tailor": {
+        "pools": [
+          "@material_pools/fabrics/common",
+          "@material_pools/fabrics/uncommon",
+          "@material_pools/fabrics/rare"
+        ]
+      },
+      "leatherworker": {
+        "pools": [
+          "@material_pools/leathers/common",
+          "@material_pools/leathers/uncommon",
+          "@material_pools/leathers/rare"
+        ]
+      },
+      "woodworker": {
+        "pools": [
+          "@material_pools/woods/common",
+          "@material_pools/woods/uncommon",
+          "@material_pools/woods/rare"
+        ]
+      },
+      "jeweler": {
+        "pools": [
+          "@material_pools/gems/uncommon",
+          "@material_pools/gems/rare",
+          "@material_pools/gems/epic"
+        ]
+      },
+      "general_goods": {
+        "pools": [
+          "@material_pools/metals/common",
+          "@material_pools/fabrics/common",
+          "@material_pools/leathers/common",
+          "@material_pools/woods/common"
+        ]
+      }
+    }
+  },
+  "defaults": {
+    "enemy": {
+      "pools": [
+        "@material_pools/metals/common",
+        "@material_pools/leathers/common"
+      ]
+    },
+    "chest": {
+      "pools": [
+        "@material_pools/metals/common",
+        "@material_pools/leathers/common",
+        "@material_pools/fabrics/common"
+      ]
+    },
+    "merchant": {
+      "pools": [
+        "@material_pools/metals/common",
+        "@material_pools/fabrics/common",
+        "@material_pools/leathers/common",
+        "@material_pools/woods/common"
+      ]
+    }
+  }
+}

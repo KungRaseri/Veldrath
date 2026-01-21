@@ -55,8 +55,8 @@
           }
         },
         {
-          "name": "Cloth Tunic",
-          "slug": "cloth-tunic",
+          "name": "Tunic",
+          "slug": "tunic",
           "description": "Simple cloth garment providing basic coverage.",
           "value": 3,
           "weight": 1.0,
@@ -74,6 +74,7 @@
             }
           },
           "armorClass": "light",
+          "allowedMaterials": ["@properties/materials/fabrics"],
           "rarityWeight": 80,
           "requirements": {
             "level": 2,
@@ -102,6 +103,7 @@
             }
           },
           "armorClass": "light",
+          "allowedMaterials": ["@properties/materials/fabrics"],
           "rarityWeight": 50,
           "requirements": {
             "level": 5,
@@ -832,6 +834,7 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": ["@properties/materials/metals"],
           "rarityWeight": 15,
           "description": "Full body coverage of interlocking metal rings, heavy but protective.",
           "requirements": {
@@ -864,6 +867,7 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": ["@properties/materials/metals"],
           "rarityWeight": 13,
           "description": "Overlapping scales attached to a backing, providing flexible protection.",
           "requirements": {
@@ -896,6 +900,7 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": ["@properties/materials/metals"],
           "rarityWeight": 16,
           "description": "Metal rings sewn onto leather, offering better defense than plain hide.",
           "requirements": {
@@ -1419,6 +1424,7 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": ["@properties/materials/metals"],
           "rarityWeight": 5,
           "description": "Full armor of shaped metal plates, the pinnacle of protective gear.",
           "requirements": {

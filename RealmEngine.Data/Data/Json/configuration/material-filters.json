@@ -1,15 +1,39 @@
 {
   "metadata": {
     "description": "Item type material compatibility - defines which materials can be used for which item types",
-    "version": "5.1",
-    "lastUpdated": "2026-01-19",
+    "version": "5.2",
+    "lastUpdated": "2026-01-21",
     "type": "material_filter_config",
     "notes": [
       "Filters define valid material categories for each item type",
-      "weapons can use metals (for blades) or woods (for hafts/bows)",
-      "armor can use metals (for plate/chain) or leathers (for hide/padding)",
-      "accessories typically use gems, crystals, and precious metals"
+      "defaults section provides base allowed materials for item types",
+      "Individual items can override defaults with allowedMaterials field",
+      "Lookup order: item.allowedMaterials → defaults[itemType] → fail"
     ]
+  },
+  "defaults": {
+    "weapon": {
+      "description": "Default materials for weapons",
+      "allowedMaterials": [
+        "@properties/materials/metals",
+        "@properties/materials/woods"
+      ]
+    },
+    "armor": {
+      "description": "Default materials for armor (all types allowed, items override for specifics)",
+      "allowedMaterials": [
+        "@properties/materials/metals",
+        "@properties/materials/leathers",
+        "@properties/materials/fabrics"
+      ]
+    },
+    "accessory": {
+      "description": "Default materials for accessories",
+      "allowedMaterials": [
+        "@properties/materials/metals",
+        "@properties/materials/gems"
+      ]
+    }
   },
   "filters": {
     "weapon": {

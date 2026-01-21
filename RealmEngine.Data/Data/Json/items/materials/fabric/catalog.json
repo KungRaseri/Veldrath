@@ -1,0 +1,123 @@
+{
+  "metadata": {
+    "description": "Fabric material items - lootable cloth materials that reference property definitions",
+    "version": "4.0",
+    "lastUpdated": "2026-01-21",
+    "type": "material_items_catalog",
+    "notes": [
+      "These are actual inventory items that drop from enemies/chests",
+      "Each references a property definition in properties/materials/fabrics",
+      "Used in crafting system to apply fabric bonuses to armor"
+    ]
+  },
+  "items": [
+    {
+      "name": "Burlap Cloth",
+      "slug": "burlap-cloth",
+      "description": "Rough, coarse fabric. Common and inexpensive.",
+      "propertyRef": "@properties/materials/fabrics:burlap",
+      "stackSize": 100,
+      "rarityWeight": 100,
+      "baseValue": 1
+    },
+    {
+      "name": "Linen Cloth",
+      "slug": "linen-cloth",
+      "description": "Smooth, durable fabric woven from flax fibers.",
+      "propertyRef": "@properties/materials/fabrics:linen",
+      "stackSize": 100,
+      "rarityWeight": 90,
+      "baseValue": 3
+    },
+    {
+      "name": "Cotton Cloth",
+      "slug": "cotton-cloth",
+      "description": "Soft, breathable fabric suitable for everyday wear.",
+      "propertyRef": "@properties/materials/fabrics:cotton",
+      "stackSize": 100,
+      "rarityWeight": 70,
+      "baseValue": 5
+    },
+    {
+      "name": "Wool Cloth",
+      "slug": "wool-cloth",
+      "description": "Warm, insulating fabric sheared from sheep.",
+      "propertyRef": "@properties/materials/fabrics:wool",
+      "stackSize": 100,
+      "rarityWeight": 60,
+      "baseValue": 8
+    },
+    {
+      "name": "Silk Cloth",
+      "slug": "silk-cloth",
+      "description": "Luxurious, lightweight fabric spun from silk threads.",
+      "propertyRef": "@properties/materials/fabrics:silk",
+      "stackSize": 100,
+      "rarityWeight": 40,
+      "baseValue": 15
+    },
+    {
+      "name": "Velvet Cloth",
+      "slug": "velvet-cloth",
+      "description": "Rich, plush fabric with a soft pile.",
+      "propertyRef": "@properties/materials/fabrics:velvet",
+      "stackSize": 100,
+      "rarityWeight": 30,
+      "baseValue": 25
+    },
+    {
+      "name": "Mageweave Cloth",
+      "slug": "mageweave-cloth",
+      "description": "Fabric infused with magical energy, enhances spellcasting.",
+      "propertyRef": "@properties/materials/fabrics:mageweave",
+      "stackSize": 100,
+      "rarityWeight": 25,
+      "baseValue": 35
+    },
+    {
+      "name": "Runecloth",
+      "slug": "runecloth",
+      "description": "Ancient cloth inscribed with mystical runes.",
+      "propertyRef": "@properties/materials/fabrics:runecloth",
+      "stackSize": 100,
+      "rarityWeight": 20,
+      "baseValue": 50
+    },
+    {
+      "name": "Shimmercloth",
+      "slug": "shimmercloth",
+      "description": "Ethereal fabric that seems to shift between planes.",
+      "propertyRef": "@properties/materials/fabrics:shimmercloth",
+      "stackSize": 100,
+      "rarityWeight": 15,
+      "baseValue": 75
+    },
+    {
+      "name": "Ethereal Silk",
+      "slug": "ethereal-silk",
+      "description": "Otherworldly silk woven from spectral threads.",
+      "propertyRef": "@properties/materials/fabrics:ethereal-silk",
+      "stackSize": 100,
+      "rarityWeight": 10,
+      "baseValue": 100
+    },
+    {
+      "name": "Voidweave",
+      "slug": "voidweave",
+      "description": "Dark fabric that absorbs light, woven from void essence.",
+      "propertyRef": "@properties/materials/fabrics:voidweave",
+      "stackSize": 100,
+      "rarityWeight": 5,
+      "baseValue": 150
+    },
+    {
+      "name": "Starweave",
+      "slug": "starweave",
+      "description": "Celestial fabric shimmering with starlight.",
+      "propertyRef": "@properties/materials/fabrics:starweave",
+      "stackSize": 100,
+      "rarityWeight": 3,
+      "baseValue": 250
+    }
+  ]
+}

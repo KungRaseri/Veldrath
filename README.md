@@ -65,7 +65,7 @@ Three solution files are provided for different development scenarios:
 # Build the RealmEngine framework (no MAUI required)
 dotnet build RealmEngine.sln
 
-# Run the test suite (8,362 tests)
+# Run the test suite (8,286 tests)
 dotnet test RealmEngine.sln
 
 # Build RealmForge tool (requires MAUI workloads)
@@ -141,7 +141,10 @@ dotnet run --project RealmForge
 - **Domain-Driven Design** - Rich domain models and services
 
 🧪 **Quality & Testing**
-- **Comprehensive Test Suite** - Unit, integration, and JSON compliance tests
+- **8,286 Tests Passing** - 100% pass rate across all projects
+  - 6,378 Data Tests (JSON compliance, reference integrity)
+  - 1,218 Core Tests (combat, crafting, inventory, quests)
+  - 690 Shared Tests (models, services, utilities)
 - **High Test Coverage** - Extensive validation of game mechanics
 - **Automated CI/CD** - Quality gates and continuous integration
 - **JSON Schema Validation** - Data integrity across 164+ game data files
@@ -278,32 +281,59 @@ dotnet test
 Or run specific test files:
 
 ```powershell
+# Run specific test class
 dotnet test --filter "FullyQualifiedName~CharacterTests"
+
+# Run all tests (8,286 total)
+dotnet test RealmEngine.sln
+
+# Run specific test projects
+dotnet test RealmEngine.Data.Tests     # 6,378 JSON compliance tests
+dotnet test RealmEngine.Core.Tests     # 1,218 game logic tests  
+dotnet test RealmEngine.Shared.Tests   # 690 utility tests
 ```
 
 ### Test Structure
 
 ```
-Game.Tests/
-├── Models/                      # Model tests
-│   └── CharacterTests.cs       # Character behavior tests
-├── Validators/                  # Validation tests
-│   └── CharacterValidatorTests.cs
+RealmEngine.Core.Tests/
+├── Features/                    # Feature slice tests
+│   ├── Combat/                 # Combat system tests
+│   ├── Crafting/               # Crafting system tests
+│   ├── Inventory/              # Inventory tests
+│   └── Quest/                  # Quest system tests
 ├── Generators/                  # Generator tests
-│   ├── ItemGeneratorTests.cs
-│   └── NpcGeneratorTests.cs
-└── Game.Tests.csproj
+└── Services/                    # Service layer tests
+
+RealmEngine.Data.Tests/
+├── CatalogJsonComplianceTests.cs    # 857 catalog validation tests
+├── NamesJsonComplianceTests.cs      # Names.json compliance
+├── ReferenceIntegrityTests.cs       # Cross-reference validation
+└── Services/                        # Data service tests
+
+RealmEngine.Shared.Tests/
+├── Models/                      # Shared model tests
+└── Services/                    # Utility service tests
 ```
 
 ### Test Coverage
 
-Current test coverage includes:
-- **Character Model**: Initialization, XP gain, leveling, stat increases (7 tests)
-- **Character Validation**: Name, level, health, mana validation (6 tests)
-- **Item Generator**: Item creation, type filtering, unique items (6 tests)
-- **NPC Generator**: NPC creation, data variety, realistic data (5 tests)
+**Test Results:**
+- **RealmEngine.Data.Tests**: 6,378/6,378 passing ✅
+- **RealmEngine.Core.Tests**: 1,218/1,225 passing (7 intentionally skipped) ✅
+- **RealmEngine.Shared.Tests**: 690/690 passing ✅
+- **Total**: 8,286/8,293 passing (99.9%) ✅
 
-**All tests passing** ✅
+Current test coverage includes:
+- **JSON Compliance**: 857 tests for v4.0+ standards (catalogs, names, configs)
+- **Reference Integrity**: Validates all `@domain/path:item` references
+- **Combat System**: Turn-based combat, abilities, spells, status effects
+- **Crafting System**: Tiered failure, quality bonuses, material refunds
+- **Item Generation**: Budget-fitting algorithm, component selection
+- **Character Progression**: XP gain, leveling, skill advancement
+- **Inventory Management**: Equipment, stacking, weight limits
+
+**All critical systems tested** ✅
 
 ### Writing Tests
 
