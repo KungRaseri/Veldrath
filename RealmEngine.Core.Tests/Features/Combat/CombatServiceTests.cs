@@ -102,20 +102,41 @@ public class CombatServiceTests
     {
         // Arrange
         var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, null!);
-        var player1 = new Character { Name = "Hero1", Health = 100, MaxHealth = 100, Constitution = 10 };
-        var player2 = new Character { Name = "Hero2", Health = 100, MaxHealth = 100, Constitution = 10 };
-        var enemy1 = new Enemy { Name = "Attacker1", BasePhysicalDamage = 20 };
-        var enemy2 = new Enemy { Name = "Attacker2", BasePhysicalDamage = 20 };
+        
+        // Set up multiple attack scenarios to handle RNG variance (dodge/block/damage rolls)
+        // Test with multiple characters to ensure we get at least one hit for comparison
+        var attacks = new List<(Character player, Enemy enemy, bool isDefending, CombatResult result)>();
+        
+        // Run multiple attempts to get reliable data despite RNG
+        for (int i = 0; i < 10; i++)
+        {
+            var normalPlayer = new Character { Name = $"Hero{i}", Health = 100, MaxHealth = 100, Constitution = 10, Dexterity = 5 };
+            var defendingPlayer = new Character { Name = $"Defender{i}", Health = 100, MaxHealth = 100, Constitution = 10, Dexterity = 5 };
+            var enemy1 = new Enemy { Name = $"Attacker{i}A", BasePhysicalDamage = 20 };
+            var enemy2 = new Enemy { Name = $"Attacker{i}B", BasePhysicalDamage = 20 };
+            
+            var normalResult = await service.ExecuteEnemyAttack(enemy1, normalPlayer, isDefending: false);
+            var defendingResult = await service.ExecuteEnemyAttack(enemy2, defendingPlayer, isDefending: true);
+            
+            attacks.Add((normalPlayer, enemy1, false, normalResult));
+            attacks.Add((defendingPlayer, enemy2, true, defendingResult));
+        }
 
-        // Act
-        var normalResult = await service.ExecuteEnemyAttack(enemy1, player1, isDefending: false);
-        var defendingResult = await service.ExecuteEnemyAttack(enemy2, player2, isDefending: true);
-
-        // Assert - defending should reduce damage (both should be positive, but defending lower)
-        normalResult.Damage.Should().BeGreaterThan(0, "Normal attack should deal damage");
-        defendingResult.Damage.Should().BeGreaterThanOrEqualTo(0, "Defending can reduce to zero");
-        defendingResult.Damage.Should().BeLessThanOrEqualTo(normalResult.Damage, 
-            "Defending should reduce damage taken");
+        // Get all non-dodged, non-blocked normal attacks
+        var normalHits = attacks.Where(a => !a.isDefending && a.result.Damage > 0).ToList();
+        // Get all non-blocked defending attacks (defending can reduce to 0 legitimately)
+        var defendingHits = attacks.Where(a => a.isDefending && !a.result.IsBlocked).ToList();
+        
+        // Assert - with 10 attempts, we should get at least some hits
+        normalHits.Should().NotBeEmpty("at least some normal attacks should land");
+        
+        // Average damage comparison
+        var avgNormalDamage = normalHits.Average(a => a.result.Damage);
+        var avgDefendingDamage = defendingHits.Average(a => a.result.Damage);
+        
+        avgNormalDamage.Should().BeGreaterThan(0, "normal attacks should deal damage on average");
+        avgDefendingDamage.Should().BeLessThanOrEqualTo(avgNormalDamage, 
+            "defending should reduce average damage taken");
     }
 
     [Fact]

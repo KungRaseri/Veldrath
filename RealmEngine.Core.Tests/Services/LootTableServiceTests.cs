@@ -228,7 +228,7 @@ public class LootTableServiceTests
     [Fact]
     public void Should_Generate_Loot_With_Category_Preference()
     {
-        // Arrange
+        // Arrange - Use fixed seed for deterministic results
         var location = new Location
         {
             Id = "test",
@@ -243,18 +243,23 @@ public class LootTableServiceTests
             }
         };
 
-        // Act - Generate with preference for weapons
+        // Act - Generate larger sample with fixed seed for stability
+        // With 50% boost to weapons category
         var generatedLoot = _service.GenerateLootWithPreference(
             location, 
             "weapons/swords", 
-            count: 50);
+            count: 100,
+            seed: 42);
 
         // Assert
         var weaponCount = generatedLoot.Count(l => l.Contains("weapons"));
         var totalCount = generatedLoot.Count;
 
-        // With 50% boost to weapons, expect more than 33% (equal distribution)
-        weaponCount.Should().BeGreaterThan(totalCount / 3);
+        // With 50% boost to weapons, expect at least 38% (vs 33% baseline)
+        // Larger sample size (100) provides more stable distribution
+        var expectedMinimum = (int)(totalCount * 0.38); // 38 weapons minimum
+        weaponCount.Should().BeGreaterThanOrEqualTo(expectedMinimum,
+            $"with 50% preference boost and seed=42, weapons should be ~40-50% of loot");
     }
 
     [Fact]

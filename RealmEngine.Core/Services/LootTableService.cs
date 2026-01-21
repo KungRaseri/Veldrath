@@ -23,13 +23,15 @@ public class LootTableService
     /// <param name="logger">The logger.</param>
     /// <param name="budgetHelper">Optional budget helper for procedural loot generation.</param>
     /// <param name="itemGenerator">Optional item generator for procedural loot.</param>
+    /// <param name="seed">Optional random seed for deterministic results (useful for testing).</param>
     public LootTableService(
         ILogger<LootTableService> logger,
         BudgetHelperService? budgetHelper = null,
-        ItemGenerator? itemGenerator = null)
+        ItemGenerator? itemGenerator = null,
+        int? seed = null)
     {
         _logger = logger;
-        _random = new Random();
+        _random = seed.HasValue ? new Random(seed.Value) : new Random();
         _budgetHelper = budgetHelper;
         _itemGenerator = itemGenerator;
     }
@@ -192,16 +194,18 @@ public class LootTableService
     /// Selects a loot reference using weighted random selection.
     /// </summary>
     /// <param name="lootTable">The weighted loot table.</param>
+    /// <param name="random">Optional random instance to use (defaults to instance _random).</param>
     /// <returns>A randomly selected loot category, or null if table is empty.</returns>
-    private string? SelectWeightedLoot(Dictionary<string, int> lootTable)
+    private string? SelectWeightedLoot(Dictionary<string, int> lootTable, Random? random = null)
     {
         if (lootTable == null || !lootTable.Any())
         {
             return null;
         }
 
+        var rng = random ?? _random;
         var totalWeight = lootTable.Values.Sum();
-        var roll = _random.Next(totalWeight);
+        var roll = rng.Next(totalWeight);
         var cumulative = 0;
 
         foreach (var (category, weight) in lootTable)
@@ -224,11 +228,13 @@ public class LootTableService
     /// <param name="location">The location to generate loot for.</param>
     /// <param name="preferredCategory">The preferred loot category (e.g., "weapons/swords").</param>
     /// <param name="count">Number of items to generate.</param>
+    /// <param name="seed">Optional random seed for deterministic results (creates temporary RNG instance).</param>
     /// <returns>List of loot references, preferring the specified category.</returns>
     public List<string> GenerateLootWithPreference(
         Location location,
         string preferredCategory,
-        int count = 1)
+        int count = 1,
+        int? seed = null)
     {
         if (location == null || location.Loot == null || !location.Loot.Any())
         {
@@ -243,10 +249,13 @@ public class LootTableService
             lootTable[preferredCategory] = (int)(lootTable[preferredCategory] * 1.5);
         }
 
+        // Use provided seed or instance random
+        var random = seed.HasValue ? new Random(seed.Value) : _random;
+
         var generatedLoot = new List<string>();
         for (int i = 0; i < count; i++)
         {
-            var lootRef = SelectWeightedLoot(lootTable);
+            var lootRef = SelectWeightedLoot(lootTable, random);
             if (lootRef != null)
             {
                 generatedLoot.Add(lootRef);
