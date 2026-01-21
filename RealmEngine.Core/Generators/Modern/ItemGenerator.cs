@@ -364,15 +364,6 @@ public class ItemGenerator
                 
                 if (!string.IsNullOrEmpty(materialName))
                 {
-#pragma warning disable CS0618
-                    // Add material to Prefixes list (for backward compatibility)
-                    item.Prefixes.Add(new NameComponent
-                    {
-                        Token = "material",
-                        Value = materialName
-                    });
-#pragma warning restore CS0618
-                    
                     // Apply material traits
                     var traits = budgetResult.Material["traits"];
                     if (traits != null && traits.Type == JTokenType.Object)
@@ -425,16 +416,7 @@ public class ItemGenerator
                     // Determine if prefix or suffix based on token name
                     var isPrefixToken = token is "prefix" or "quality" or "descriptive";
                     
-#pragma warning disable CS0618
-                    if (isPrefixToken)
-                    {
-                        item.Prefixes.Add(new NameComponent { Token = token, Value = value });
-                    }
-                    else
-                    {
-                        item.Suffixes.Add(new NameComponent { Token = token, Value = value });
-                    }
-#pragma warning restore CS0618
+                    // Note: Component tracking not implemented yet - will be added when v4.3 migration completes
                 }
             }
 
@@ -751,10 +733,8 @@ public class ItemGenerator
     {
         var nameParts = new List<string>();
         
-        // NOTE: Prefixes/Suffixes lists are already populated by ApplyEnhancementsFromPatternAsync
-        // We just need to add enchantments and build the final name
+        // NOTE: Using new component system (Quality, Material, PrefixComponents, SuffixComponents)
         
-#pragma warning disable CS0618
         // 1. Prefix enchantments
         var prefixEnchantments = item.Enchantments
             .Where(e => e.Position == EnchantmentPosition.Prefix)
@@ -762,55 +742,40 @@ public class ItemGenerator
         
         foreach (var enchantment in prefixEnchantments)
         {
-            // Add to Prefixes list with special token
-            item.Prefixes.Insert(0, new NameComponent 
-            { 
-                Token = "enchantment_prefix", 
-                Value = enchantment.Name 
-            });
-            
             nameParts.Add(enchantment.Name);
         }
 
-        // 2. Pattern prefixes (quality, material, etc.) - already in Prefixes list
-        var patternPrefixes = item.Prefixes
-            .Where(p => p.Token != "enchantment_prefix")
-            .ToList();
+        // 2. Quality and Material
+        if (item.Quality != null)
+            nameParts.Add(item.Quality.Name);
             
-        foreach (var prefix in patternPrefixes)
+        if (item.Material != null)
+            nameParts.Add(item.Material.Name);
+
+        // 3. First prefix only (multiple tracked but only first displayed)
+        if (item.PrefixComponents.Count > 0)
         {
-            nameParts.Add(prefix.Value);
+            nameParts.Add(item.PrefixComponents[0].Name);
         }
 
-        // 3. Base name
+        // 4. Base name
         nameParts.Add(item.BaseName);
 
-        // 4. Pattern suffixes - already in Suffixes list
-        var patternSuffixes = item.Suffixes
-            .Where(s => s.Token != "enchantment_suffix")
-            .ToList();
-            
-        foreach (var suffix in patternSuffixes)
+        // 5. First suffix only (multiple tracked but only first displayed)
+        if (item.SuffixComponents.Count > 0)
         {
-            nameParts.Add(suffix.Value);
+            nameParts.Add(item.SuffixComponents[0].Name);
         }
 
-        // 5. Suffix enchantments
+        // 6. Suffix enchantments
         var suffixEnchantments = item.Enchantments
             .Where(e => e.Position == EnchantmentPosition.Suffix)
             .ToList();
         
         foreach (var enchantment in suffixEnchantments)
         {
-            item.Suffixes.Add(new NameComponent 
-            { 
-                Token = "enchantment_suffix", 
-                Value = enchantment.Name 
-            });
-            
             nameParts.Add(enchantment.Name);
         }
-#pragma warning restore CS0618
 
         // 6. Socket indicator (separate from naming components per design decision)
         var socketsDisplay = item.GetSocketsDisplayText();
@@ -1153,15 +1118,6 @@ public class ItemGenerator
                     }
                 }
             }
-            
-            // Also add to obsolete Prefixes for backward compatibility (will be removed in v5.0)
-#pragma warning disable CS0618
-            item.Prefixes.Add(new NameComponent
-            {
-                Token = "quality",
-                Value = item.Quality.Name
-            });
-#pragma warning restore CS0618
         }
 
         // Apply components from budget
@@ -1170,17 +1126,7 @@ public class ItemGenerator
             var value = GetStringProperty(component, "value") ?? "";
             var token = GetStringProperty(component, "token") ?? "component";
             
-#pragma warning disable CS0618
-            // Determine if prefix or suffix based on typical naming
-            if (token.Contains("prefix") || token == "descriptive")
-            {
-                item.Prefixes.Add(new NameComponent { Token = token, Value = value });
-            }
-            else if (token.Contains("suffix") || token == "effect")
-            {
-                item.Suffixes.Add(new NameComponent { Token = token, Value = value });
-            }
-#pragma warning restore CS0618
+            // Note: Component tracking not implemented yet - will be added when v4.3 migration completes
         }
 
         // Apply base item stats
@@ -1251,28 +1197,24 @@ public class ItemGenerator
             nameParts.Add(item.Material.Name);
         }
 
-#pragma warning disable CS0618
-        // Prefixes
-        foreach (var prefix in item.Prefixes)
+        // First prefix only (multiple tracked but only first displayed)
+        if (item.PrefixComponents.Count > 0)
         {
-            if (prefix.Token != "quality" && !string.IsNullOrEmpty(prefix.Value))
-            {
-                nameParts.Add(prefix.Value);
-            }
+            nameParts.Add(item.PrefixComponents[0].Name);
         }
 
         // Base name
         nameParts.Add(item.BaseName);
 
-        // Suffixes
-        foreach (var suffix in item.Suffixes)
+        // First suffix only (multiple tracked but only first displayed)
+        if (item.SuffixComponents.Count > 0)
         {
-            if (!string.IsNullOrEmpty(suffix.Value))
-            {
-                nameParts.Add($"of {suffix.Value}");
-            }
+            // Add "of" prefix for suffix names that don't already have it
+            var suffixName = item.SuffixComponents[0].Name;
+            if (!suffixName.StartsWith("of ", StringComparison.OrdinalIgnoreCase))
+                suffixName = $"of {suffixName}";
+            nameParts.Add(suffixName);
         }
-#pragma warning restore CS0618
 
         return string.Join(" ", nameParts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }

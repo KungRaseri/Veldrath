@@ -382,10 +382,10 @@ public class ItemGeneratorBudgetTests
         item.Should().NotBeNull("High-level dragon generation should eventually succeed");
         
         // Name should follow pattern: [prefixes] [material] BaseName [suffixes]
-        if (item!.Prefixes.Any() && item.Suffixes.Any())
+        if (item!.PrefixComponents.Any() && item.SuffixComponents.Any())
         {
-            var firstPrefix = item.Prefixes.First().Value;
-            var firstSuffix = item.Suffixes.First().Value;
+            var firstPrefix = item.PrefixComponents.First().Name;
+            var firstSuffix = item.SuffixComponents.First().Name;
             
             var prefixIndex = item.Name.IndexOf(firstPrefix);
             var baseIndex = item.Name.IndexOf(item.BaseName);

@@ -165,13 +165,6 @@ public class Item : ITraitable
     // ========================================
 
     /// <summary>
-    /// Gets or sets the material this item is crafted from (e.g., \"iron\", \"steel\", \"mithril\").
-    /// Materials are baked into the item at generation time.
-    /// </summary>
-    [Obsolete("Use Material (ItemMaterial type) instead. This string property is ambiguous and will be removed in v5.0.")]
-    public string? MaterialName { get; set; }
-
-    /// <summary>
     /// Gets or sets the traits provided by this item's material.
     /// Materials contribute to the item's overall power level.
     /// </summary>
@@ -244,23 +237,6 @@ public class Item : ITraitable
     /// </summary>
     public List<ItemSuffix> SuffixComponents { get; set; } = new();
 
-    // ========================================
-    // OBSOLETE v4.0 Properties (Deprecated)
-    // ========================================
-
-    /// <summary>
-    /// Ordered list of prefix components (quality, material, enchantments, etc.) that appear before the base name.
-    /// Each component preserves its token identifier and display value.
-    /// </summary>
-    [Obsolete("Use Quality, Material, and PrefixComponents instead. This property mixes multiple component types ambiguously. Will be removed in v5.0.")]
-    public List<NameComponent> Prefixes { get; set; } = new();
-
-    /// <summary>
-    /// Ordered list of suffix components (enchantments, sockets, etc.) that appear after the base name.
-    /// Each component preserves its token identifier and display value.
-    /// </summary>
-    [Obsolete("Use SuffixComponents instead. This property will be removed in v5.0.")]
-    public List<NameComponent> Suffixes { get; set; } = new();
     /// <summary>
     /// Gets or sets the upgrade level of this item (+1, +2, +3, etc.).
     /// Higher upgrade levels increase attribute bonuses.
@@ -607,49 +583,6 @@ public class Item : ITraitable
     }
 
     /// <summary>
-    /// Gets the value of a specific prefix component by token name.
-    /// </summary>
-    /// <param name="token">The token name to search for (e.g., "quality", "material").</param>
-    /// <returns>The component value if found, otherwise null.</returns>
-#pragma warning disable CS0618 // Type or member is obsolete
-    public string? GetPrefixValue(string token)
-    {
-        return Prefixes.FirstOrDefault(p => p.Token == token)?.Value;
-    }
-
-    /// <summary>
-    /// Gets the value of a specific suffix component by token name.
-    /// </summary>
-    /// <param name="token">The token name to search for.</param>
-    /// <returns>The component value if found, otherwise null.</returns>
-    public string? GetSuffixValue(string token)
-    {
-        return Suffixes.FirstOrDefault(s => s.Token == token)?.Value;
-    }
-
-    /// <summary>
-    /// Rebuilds the full item name from naming components in the correct order.
-    /// Format: [Prefixes] [BaseName] [Suffixes]
-    /// </summary>
-    /// <returns>The properly composed item name.</returns>
-    public string ComposeNameFromComponents()
-    {
-        var parts = new List<string>();
-
-        // Add all prefixes in order
-        parts.AddRange(Prefixes.Select(p => p.Value));
-
-        // Add base name
-        if (!string.IsNullOrWhiteSpace(BaseName)) parts.Add(BaseName);
-
-        // Add all suffixes in order
-        parts.AddRange(Suffixes.Select(s => s.Value));
-
-        return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
-    }
-#pragma warning restore CS0618 // Type or member is obsolete
-
-    /// <summary>
     /// Get the display name for this item including upgrade level and enchantments.
     /// </summary>
     public string GetDisplayName()
@@ -744,24 +677,6 @@ public class Item : ITraitable
     /// Check if this item can be upgraded further.
     /// </summary>
     public bool CanUpgrade() => UpgradeLevel < GetMaxUpgradeLevel();
-
-    /// <summary>
-    /// Check if this item can accept an additional enchantment (legacy method for generation).
-    /// </summary>
-    [Obsolete("Use CanAddPlayerEnchantment() for player-applied enchantments")]
-    public bool CanAddEnchantment() => Enchantments.Count < MaxEnchantments;
-
-    /// <summary>
-    /// Check if this item has any enchantment slots (legacy method for generation).
-    /// </summary>
-    [Obsolete("Use HasPlayerEnchantmentSlots() for player-applied enchantments")]
-    public bool HasEnchantmentSlots() => MaxEnchantments > 0;
-
-    /// <summary>
-    /// Get the number of available (unfilled) enchantment slots (legacy method for generation).
-    /// </summary>
-    [Obsolete("Use AvailablePlayerEnchantmentSlots() for player-applied enchantments")]
-    public int AvailableEnchantmentSlots() => MaxEnchantments - Enchantments.Count;
 
     /// <summary>
     /// Bind this item to a specific character.
