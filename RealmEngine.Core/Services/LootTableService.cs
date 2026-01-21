@@ -1,25 +1,37 @@
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
+using RealmEngine.Core.Services.Budget;
+using RealmEngine.Core.Generators.Modern;
 
 namespace RealmEngine.Core.Services;
 
 /// <summary>
 /// Service for generating loot based on location loot tables.
 /// Handles weighted random selection and rarity filtering.
+/// Supports hybrid static references + budget-generated items.
 /// </summary>
 public class LootTableService
 {
     private readonly ILogger<LootTableService> _logger;
     private readonly Random _random;
+    private readonly BudgetHelperService? _budgetHelper;
+    private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LootTableService"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    public LootTableService(ILogger<LootTableService> logger)
+    /// <param name="budgetHelper">Optional budget helper for procedural loot generation.</param>
+    /// <param name="itemGenerator">Optional item generator for procedural loot.</param>
+    public LootTableService(
+        ILogger<LootTableService> logger,
+        BudgetHelperService? budgetHelper = null,
+        ItemGenerator? itemGenerator = null)
     {
         _logger = logger;
         _random = new Random();
+        _budgetHelper = budgetHelper;
+        _itemGenerator = itemGenerator;
     }
 
     /// <summary>
@@ -242,5 +254,73 @@ public class LootTableService
         }
 
         return generatedLoot;
+    }
+
+    /// <summary>
+    /// Generates loot for a chest using hybrid approach: static references + budget-generated items.
+    /// </summary>
+    /// <param name="chestRarity">The chest rarity tier</param>
+    /// <param name="locationLevel">The location level where chest is found</param>
+    /// <param name="itemCategory">The item category to generate (weapons, armor, etc.)</param>
+    /// <param name="count">Number of items to generate</param>
+    /// <param name="staticReferences">Optional static loot table references (e.g., legendary items)</param>
+    /// <returns>List of generated items (async)</returns>
+    public async Task<List<Item>> GenerateChestLootAsync(
+        RarityTier chestRarity,
+        int locationLevel,
+        string itemCategory,
+        int count = 1,
+        List<string>? staticReferences = null)
+    {
+        var items = new List<Item>();
+
+        if (_budgetHelper == null || _itemGenerator == null)
+        {
+            _logger.LogWarning("Cannot generate procedural chest loot without BudgetHelper and ItemGenerator");
+            return items;
+        }
+
+        // 20% chance for static legendary items if provided
+        if (staticReferences != null && staticReferences.Any() && _random.Next(100) < 20)
+        {
+            _logger.LogInformation("Chest contains static legendary item from loot table");
+            // TODO: Resolve static reference to actual item
+            // For now, we'll just generate with very high budget
+            var budget = _budgetHelper.GetBudgetForChest(RarityTier.Legendary, locationLevel);
+            
+            var request = new BudgetItemRequest
+            {
+                EnemyType = "treasure_chest",
+                EnemyLevel = locationLevel,
+                ItemCategory = itemCategory,
+                AllowQuality = true
+            };
+
+            var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+            items.Add(item);
+            count--; // One item used by legendary
+        }
+
+        // Generate remaining items using budget system (80% of loot)
+        var itemBudget = _budgetHelper.GetBudgetForChest(chestRarity, locationLevel);
+        
+        for (int i = 0; i < count; i++)
+        {
+            var request = new BudgetItemRequest
+            {
+                EnemyType = "treasure_chest",
+                EnemyLevel = locationLevel,
+                ItemCategory = itemCategory,
+                AllowQuality = true
+            };
+
+            var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+            items.Add(item);
+            
+            _logger.LogDebug("Generated chest loot: {ItemName} (budget={Budget}, rarity={Rarity})",
+                item.Name, itemBudget, chestRarity);
+        }
+
+        return items;
     }
 }

@@ -200,7 +200,7 @@ public class ItemGeneratorTests
     // Enhancement System v1.0 Tests (v4.2)
     // ========================================
 
-    [Fact(Skip = "Flaky test - budget generation can intermittently fail to produce 5+ items due to constraints")]
+    [Fact]
     public async Task Should_Apply_Materials_To_Items()
     {
         // Arrange

@@ -1,5 +1,6 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Services.Budget;
 using Serilog;
 
 namespace RealmEngine.Core.Features.Crafting.Services;
@@ -11,14 +12,20 @@ namespace RealmEngine.Core.Features.Crafting.Services;
 public class CraftingService
 {
     private readonly RecipeCatalogLoader _recipeCatalogLoader;
+    private readonly BudgetHelperService? _budgetHelper;
+    private readonly Random _random = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CraftingService"/> class.
     /// </summary>
     /// <param name="recipeCatalogLoader">The recipe catalog loader.</param>
-    public CraftingService(RecipeCatalogLoader recipeCatalogLoader)
+    /// <param name="budgetHelper">Optional budget helper for quality calculations.</param>
+    public CraftingService(
+        RecipeCatalogLoader recipeCatalogLoader,
+        BudgetHelperService? budgetHelper = null)
     {
         _recipeCatalogLoader = recipeCatalogLoader ?? throw new ArgumentNullException(nameof(recipeCatalogLoader));
+        _budgetHelper = budgetHelper;
     }
 
     /// <summary>
@@ -133,6 +140,95 @@ public class CraftingService
     }
 
     /// <summary>
+    /// Attempts to craft an item from a recipe, with variance and failure handling.
+    /// Failure reduces quality instead of destroying materials.
+    /// </summary>
+    /// <param name="character">The character attempting to craft.</param>
+    /// <param name="recipe">The recipe to craft.</param>
+    /// <param name="consumeMaterials">Whether to consume materials from inventory.</param>
+    /// <returns>Crafting result with item and outcome details.</returns>
+    public CraftingResult CraftItem(Character character, Recipe recipe, bool consumeMaterials = true)
+    {
+        if (!CanCraftRecipe(character, recipe, out var failureReason))
+        {
+            return new CraftingResult
+            {
+                Success = false,
+                FailureReason = failureReason
+            };
+        }
+
+        var craftingSkill = GetCraftingSkillForStation(recipe.RequiredStation);
+        var skill = character.Skills?.GetValueOrDefault(craftingSkill);
+        var characterSkillLevel = skill?.CurrentRank ?? 0;
+
+        // Calculate success and critical chances
+        int successChance, criticalChance;
+        if (_budgetHelper != null)
+        {
+            successChance = _budgetHelper.GetCraftingSuccessChance(characterSkillLevel, recipe.RequiredSkillLevel);
+            criticalChance = _budgetHelper.GetCraftingCriticalChance(characterSkillLevel, recipe.RequiredSkillLevel);
+        }
+        else
+        {
+            // Fallback if no budget helper
+            var skillDiff = characterSkillLevel - recipe.RequiredSkillLevel;
+            successChance = Math.Clamp(50 + (skillDiff * 2), 5, 99);
+            criticalChance = Math.Clamp(5 + (Math.Max(0, skillDiff) / 10), 5, 20);
+        }
+
+        // Roll for success
+        var successRoll = _random.Next(1, 101);
+        var criticalRoll = _random.Next(1, 101);
+        
+        var isSuccess = successRoll <= successChance;
+        var isCritical = isSuccess && criticalRoll <= criticalChance;
+
+        // Calculate quality tier
+        int qualityBonus;
+        if (_budgetHelper != null)
+        {
+            qualityBonus = _budgetHelper.GetCraftingQualityBonus(characterSkillLevel, recipe.RequiredSkillLevel, isCritical);
+        }
+        else
+        {
+            qualityBonus = (characterSkillLevel - recipe.RequiredSkillLevel) / 10;
+            if (isCritical) qualityBonus++;
+            qualityBonus = Math.Clamp(qualityBonus, 0, 3);
+        }
+
+        // On failure, reduce quality but still produce item
+        if (!isSuccess)
+        {
+            qualityBonus = Math.Max(0, qualityBonus - 2); // Failure reduces quality by 2 tiers
+            Log.Information("Crafting attempt failed for {Character}, producing lower quality item", character.Name);
+        }
+
+        // Consume materials if specified
+        if (consumeMaterials)
+        {
+            foreach (var material in recipe.Materials)
+            {
+                RemoveMaterialsFromInventory(character, material.ItemReference, material.Quantity);
+            }
+        }
+
+        // Create the crafted item
+        // TODO: Integrate with ItemGenerator to create actual item from recipe
+        var craftedItem = CreateItemFromRecipe(recipe, qualityBonus);
+
+        return new CraftingResult
+        {
+            Success = true,
+            Item = craftedItem,
+            WasCritical = isCritical,
+            QualityBonus = qualityBonus,
+            ActualQuality = (ItemRarity)Math.Clamp((int)recipe.MinQuality + qualityBonus, 
+                (int)recipe.MinQuality, (int)recipe.MaxQuality)
+        };
+    }
+
+    /// <summary>
     /// Calculates the quality of a crafted item based on character skill and recipe parameters.
     /// </summary>
     /// <param name="character">The character crafting the item.</param>
@@ -157,11 +253,72 @@ public class CraftingService
         var rarityBonus = skillOverRequirement > 0 ? Math.Min(skillOverRequirement / 10, rarityRange) : 0;
 
         // Random variance within rarity range
-        var random = new Random();
-        var finalRarity = minRarity + rarityBonus + random.Next(0, Math.Max(1, rarityRange - rarityBonus + 1));
+        var finalRarity = minRarity + rarityBonus + _random.Next(0, Math.Max(1, rarityRange - rarityBonus + 1));
 
         // Clamp to valid rarity range
         return Math.Clamp(finalRarity, minRarity, maxRarity);
+    }
+
+    /// <summary>
+    /// Creates a basic item from a recipe with quality bonus applied.
+    /// TODO: Replace with ItemGenerator integration for full procedural generation.
+    /// </summary>
+    private Item CreateItemFromRecipe(Recipe recipe, int qualityBonus)
+    {
+        var baseRarity = (int)recipe.MinQuality + qualityBonus;
+        baseRarity = Math.Clamp(baseRarity, (int)recipe.MinQuality, (int)recipe.MaxQuality);
+
+        return new Item
+        {
+            Id = recipe.OutputItemReference,
+            Name = recipe.Name,
+            Description = $"Crafted {recipe.Name}",
+            Type = DetermineItemType(recipe.Category),
+            Rarity = (ItemRarity)baseRarity,
+            Price = recipe.Materials.Sum(m => m.Quantity * 10), // Estimate
+            StackSize = 1,
+            IsStackable = false
+        };
+    }
+
+    /// <summary>
+    /// Determines item type from recipe category.
+    /// </summary>
+    private ItemType DetermineItemType(string category)
+    {
+        return category.ToLowerInvariant() switch
+        {
+            "weapons" => ItemType.Weapon,
+            "armor" => ItemType.Chest,
+            "shields" => ItemType.Shield,
+            "consumables" => ItemType.Consumable,
+            _ => ItemType.Consumable
+        };
+    }
+
+    /// <summary>
+    /// Removes materials from character inventory.
+    /// </summary>
+    private void RemoveMaterialsFromInventory(Character character, string itemReference, int quantity)
+    {
+        if (character.Inventory == null) return;
+
+        var itemName = itemReference.Contains(':')
+            ? itemReference.Split(':')[1].Split('?')[0]
+            : itemReference;
+
+        var removed = 0;
+        character.Inventory.RemoveAll(item =>
+        {
+            if (removed >= quantity) return false;
+            if (item.Id == itemName || item.Name == itemName ||
+                item.Id == itemReference || item.Name == itemReference)
+            {
+                removed++;
+                return true;
+            }
+            return false;
+        });
     }
 
     /// <summary>

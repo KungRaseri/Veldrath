@@ -1,4 +1,6 @@
 using RealmEngine.Shared.Models;
+using RealmEngine.Core.Services.Budget;
+using RealmEngine.Core.Generators.Modern;
 using Serilog;
 
 namespace RealmEngine.Core.Services;
@@ -7,6 +9,7 @@ namespace RealmEngine.Core.Services;
 /// Service for managing NPC shop economy, including hybrid inventory,
 /// player trading, item decay, and dynamic pricing.
 /// Implements the v4.0 shop economy system from NPC catalog.
+/// Supports hybrid static catalog + budget-generated inventory.
 /// </summary>
 public class ShopEconomyService
 {
@@ -14,14 +17,23 @@ public class ShopEconomyService
     private DateTime _lastRefreshDate = DateTime.UtcNow.Date;
     private readonly ItemCatalogLoader _catalogLoader;
     private readonly Random _random = new();
+    private readonly BudgetHelperService? _budgetHelper;
+    private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
     /// Initializes a new instance of the ShopEconomyService class.
     /// </summary>
     /// <param name="catalogLoader">The item catalog loader (optional, defaults to Data/Json path).</param>
-    public ShopEconomyService(ItemCatalogLoader? catalogLoader = null)
+    /// <param name="budgetHelper">Optional budget helper for procedural inventory generation.</param>
+    /// <param name="itemGenerator">Optional item generator for procedural inventory.</param>
+    public ShopEconomyService(
+        ItemCatalogLoader? catalogLoader = null,
+        BudgetHelperService? budgetHelper = null,
+        ItemGenerator? itemGenerator = null)
     {
         _catalogLoader = catalogLoader ?? new ItemCatalogLoader();
+        _budgetHelper = budgetHelper;
+        _itemGenerator = itemGenerator;
     }
 
     /// <summary>

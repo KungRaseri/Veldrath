@@ -994,29 +994,15 @@ public class ItemGenerator
     /// <summary>
     /// Generate an item using budget-based generation (v2.0).
     /// Uses forward-building approach with material pools and budget constraints.
+    /// Always succeeds by fitting components to available budget.
     /// </summary>
     /// <param name="request">Budget generation request parameters.</param>
     /// <returns>Generated item with full budget breakdown.</returns>
-    public async Task<Item?> GenerateItemWithBudgetAsync(BudgetItemRequest request)
+    public async Task<Item> GenerateItemWithBudgetAsync(BudgetItemRequest request)
     {
-        try
-        {
-            var budgetResult = await BudgetGenerator.GenerateItemAsync(request);
-            if (budgetResult == null)
-            {
-                _logger.LogWarning("Budget generation failed for request: {EnemyType} level {Level}", 
-                    request.EnemyType, request.EnemyLevel);
-                return null;
-            }
-
-            var item = ConvertBudgetResultToItem(budgetResult, request.ItemCategory);
-            return item;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating item with budget");
-            return null;
-        }
+        var budgetResult = await BudgetGenerator.GenerateItemAsync(request);
+        var item = ConvertBudgetResultToItem(budgetResult, request.ItemCategory);
+        return item;
     }
 
     /// <summary>
@@ -1029,10 +1015,7 @@ public class ItemGenerator
         for (int i = 0; i < count; i++)
         {
             var item = await GenerateItemWithBudgetAsync(request);
-            if (item != null)
-            {
-                items.Add(item);
-            }
+            items.Add(item);
         }
 
         return items;
@@ -1107,7 +1090,7 @@ public class ItemGenerator
                 foreach (var prop in traitsObj.Properties())
                 {
                     var traitValue = prop.Value;
-                    if (traitValue != null)
+                    if (traitValue != null && traitValue.Type != JTokenType.Object)
                     {
                         item.Quality.Traits[prop.Name] = new TraitValue
                         {

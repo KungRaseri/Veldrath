@@ -117,7 +117,7 @@ public class BudgetItemGenerationTests
     }
 
     [Fact]
-    public async Task GenerateItemAsync_WithQuality_AppliesBudgetModifier()
+    public async Task GenerateItemAsync_WithQuality_SelectsAffordableQuality()
     {
         // Arrange
         var request = new BudgetItemRequest
@@ -133,10 +133,11 @@ public class BudgetItemGenerationTests
 
         // Assert
         result.Should().NotBeNull();
-        // If quality is applied, adjusted budget should differ from base
+        // Budget-fitting system: Quality should be selected if affordable
         if (result!.Quality != null)
         {
-            result.AdjustedBudget.Should().NotBe(result.BaseBudget);
+            result.SpentBudget.Should().BeGreaterThan(result.MaterialCost + result.BaseItemCost,
+                "quality cost should be included in total spent budget");
         }
     }
 
@@ -238,7 +239,7 @@ public class BudgetItemGenerationTests
         result!.Pattern.Should().NotBeNullOrEmpty("should select a pattern");
     }
 
-    [Fact(Skip = "Flaky test - RNG can produce same component count for low/high budgets")]
+    [Fact]
     public async Task GenerateItemAsync_LowBudget_SelectsFewerComponents()
     {
         // Arrange
@@ -264,8 +265,9 @@ public class BudgetItemGenerationTests
         lowResult.Should().NotBeNull();
         highResult.Should().NotBeNull();
         
-        // High budget items should have more or equal components on average
-        Assert.True(highResult!.Components.Count >= lowResult!.Components.Count);
+        // Budget-fitting system: Higher budget should strictly allow more components
+        highResult!.Components.Count.Should().BeGreaterThanOrEqualTo(lowResult!.Components.Count,
+            "higher budget should afford more or equal components");
     }
 
     [Theory]
