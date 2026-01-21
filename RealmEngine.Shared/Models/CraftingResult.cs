@@ -34,4 +34,14 @@ public class CraftingResult
     /// Failure reason if crafting was not possible.
     /// </summary>
     public string? FailureReason { get; set; }
+
+    /// <summary>
+    /// Failure severity level (0=success, 1=marginal, 2=moderate, 3=critical).
+    /// </summary>
+    public int FailureSeverity { get; set; }
+
+    /// <summary>
+    /// Materials that were refunded due to critical failure.
+    /// </summary>
+    public List<(string ItemReference, int Quantity)> RefundedMaterials { get; set; } = new();
 }

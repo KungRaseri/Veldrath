@@ -184,6 +184,26 @@ public class CraftingService
         var isSuccess = successRoll <= successChance;
         var isCritical = isSuccess && criticalRoll <= criticalChance;
 
+        // Determine failure severity if failed
+        int failureSeverity = 0;
+        int qualityReduction = 0;
+        int materialRefundPercent = 0;
+
+        if (!isSuccess && _budgetHelper != null)
+        {
+            failureSeverity = _budgetHelper.GetCraftingFailureSeverity(successRoll, successChance);
+            qualityReduction = _budgetHelper.GetQualityReductionForFailure(failureSeverity);
+            materialRefundPercent = _budgetHelper.GetMaterialRefundPercentage(failureSeverity);
+        }
+        else if (!isSuccess)
+        {
+            // Fallback if no budget helper
+            var margin = successRoll - successChance;
+            failureSeverity = margin <= 10 ? 1 : margin <= 30 ? 2 : 3;
+            qualityReduction = failureSeverity;
+            materialRefundPercent = failureSeverity == 3 ? 50 : 0;
+        }
+
         // Calculate quality tier
         int qualityBonus;
         if (_budgetHelper != null)
@@ -197,19 +217,49 @@ public class CraftingService
             qualityBonus = Math.Clamp(qualityBonus, 0, 3);
         }
 
-        // On failure, reduce quality but still produce item
+        // Apply quality reduction on failure
         if (!isSuccess)
         {
-            qualityBonus = Math.Max(0, qualityBonus - 2); // Failure reduces quality by 2 tiers
-            Log.Information("Crafting attempt failed for {Character}, producing lower quality item", character.Name);
+            qualityBonus = Math.Max(0, qualityBonus - qualityReduction);
+            
+            var severityText = failureSeverity switch
+            {
+                1 => "marginal failure",
+                2 => "moderate failure",
+                3 => "critical failure",
+                _ => "failure"
+            };
+            
+            Log.Information("Crafting {Severity} for {Character} (roll={Roll} vs {Chance}%), producing quality {Quality}", 
+                severityText, character.Name, successRoll, successChance, qualityBonus);
         }
 
-        // Consume materials if specified
+        // Handle materials and refunds
+        var refundedMaterials = new List<(string ItemReference, int Quantity)>();
+        
         if (consumeMaterials)
         {
             foreach (var material in recipe.Materials)
             {
-                RemoveMaterialsFromInventory(character, material.ItemReference, material.Quantity);
+                var consumedQuantity = material.Quantity;
+                var refundQuantity = 0;
+
+                // Calculate refund for critical failures
+                if (materialRefundPercent > 0)
+                {
+                    refundQuantity = (int)Math.Ceiling(material.Quantity * (materialRefundPercent / 100.0));
+                    consumedQuantity = material.Quantity - refundQuantity;
+                    
+                    if (refundQuantity > 0)
+                    {
+                        refundedMaterials.Add((material.ItemReference, refundQuantity));
+                        Log.Information("Critical failure: Refunded {Quantity}x {Material} ({Percent}%)", 
+                            refundQuantity, material.ItemReference, materialRefundPercent);
+                    }
+                }
+
+                // Remove consumed materials
+                RemoveMaterialsFromInventory(character, material.ItemReference, consumedQuantity);
             }
         }
 
@@ -224,7 +274,9 @@ public class CraftingService
             WasCritical = isCritical,
             QualityBonus = qualityBonus,
             ActualQuality = (ItemRarity)Math.Clamp((int)recipe.MinQuality + qualityBonus, 
-                (int)recipe.MinQuality, (int)recipe.MaxQuality)
+                (int)recipe.MinQuality, (int)recipe.MaxQuality),
+            FailureSeverity = failureSeverity,
+            RefundedMaterials = refundedMaterials
         };
     }
 

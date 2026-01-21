@@ -184,6 +184,63 @@ public class BudgetHelperService
     }
 
     /// <summary>
+    /// Calculate failure severity based on how far below success threshold the roll was.
+    /// </summary>
+    /// <param name="successRoll">The roll result (1-100)</param>
+    /// <param name="successChance">The required success chance</param>
+    /// <returns>Failure severity: 0=success, 1=marginal, 2=moderate, 3=critical</returns>
+    public int GetCraftingFailureSeverity(int successRoll, int successChance)
+    {
+        // Success - no failure
+        if (successRoll <= successChance)
+            return 0;
+
+        // Calculate how far below success threshold
+        var failureMargin = successRoll - successChance;
+
+        // Tiered failure system:
+        // 1-10 points below = Marginal failure
+        // 11-30 points below = Moderate failure  
+        // 31+ points below = Critical failure
+        return failureMargin switch
+        {
+            <= 10 => 1, // Marginal
+            <= 30 => 2, // Moderate
+            _ => 3      // Critical
+        };
+    }
+
+    /// <summary>
+    /// Get quality reduction for a failure severity level.
+    /// </summary>
+    /// <param name="failureSeverity">The failure severity (1-3)</param>
+    /// <returns>Number of quality tiers to reduce</returns>
+    public int GetQualityReductionForFailure(int failureSeverity)
+    {
+        return failureSeverity switch
+        {
+            1 => 1, // Marginal: -1 tier
+            2 => 2, // Moderate: -2 tiers
+            3 => 3, // Critical: -3 tiers
+            _ => 0  // Success: no reduction
+        };
+    }
+
+    /// <summary>
+    /// Get material refund percentage for a failure severity level.
+    /// </summary>
+    /// <param name="failureSeverity">The failure severity (1-3)</param>
+    /// <returns>Percentage of materials to refund (0-50)</returns>
+    public int GetMaterialRefundPercentage(int failureSeverity)
+    {
+        return failureSeverity switch
+        {
+            3 => 50, // Critical failure: 50% refund
+            _ => 0   // All other cases: no refund
+        };
+    }
+
+    /// <summary>
     /// Get budget range for quest reward items based on quest difficulty.
     /// </summary>
     /// <param name="questLevel">The quest level</param>
