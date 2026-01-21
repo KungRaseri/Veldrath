@@ -7,45 +7,37 @@
   },
   "types": {
     "goblin": {
-      "materialPool": "humanoid_low",
       "budgetMultiplier": 1.0,
       "description": "Basic goblin enemies - low-tier materials"
     },
     "orc": {
-      "materialPool": "humanoid_mid",
       "budgetMultiplier": 1.2,
       "description": "Orc warriors - mid-tier materials, slightly better budget"
     },
     "troll": {
-      "materialPool": "beast_common",
       "budgetMultiplier": 1.3,
       "materialPercentage": 0.35,
       "description": "Trolls - beast-like materials, higher material percentage"
     },
     "knight": {
-      "materialPool": "humanoid_mid",
       "budgetMultiplier": 1.3,
       "description": "Human knights - quality steel and silver equipment"
     },
     "elite_knight": {
-      "materialPool": "humanoid_high",
       "budgetMultiplier": 1.8,
       "description": "Elite knights - high-tier materials"
     },
     "dragon": {
-      "materialPool": "dragon_hoard",
       "budgetMultiplier": 2.5,
       "materialPercentage": 0.4,
       "description": "Dragons - legendary material hoarders, 40% material budget"
     },
     "fire_elemental": {
-      "materialPool": "elemental_fire",
       "budgetMultiplier": 1.5,
       "materialPercentage": 0.5,
       "description": "Fire elementals - obsidian and fire-themed materials, heavy material focus"
     },
     "ice_elemental": {
-      "materialPool": "elemental",
       "budgetMultiplier": 1.5,
       "materialPercentage": 0.5,
       "description": "Ice elementals - crystal and frost materials, heavy material focus"

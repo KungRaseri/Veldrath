@@ -71,12 +71,13 @@ public class BudgetItemGenerationService
                 materialBudget, componentBudget);
 
             // Step 3: Select material from pool (ALWAYS succeeds - picks cheapest if needed)
-            var material = await _materialPoolService.SelectMaterialAsync(request.EnemyType, materialBudget);
+            var materialType = GetMaterialTypeForCategory(request.ItemCategory);
+            var material = await _materialPoolService.SelectMaterialAsync(materialType, materialBudget);
             if (material == null)
             {
                 // Fallback: Get ANY material from pool and use it regardless of cost
-                _logger.LogWarning("No affordable material found, using fallback for enemy type '{EnemyType}'", request.EnemyType);
-                material = await GetFallbackMaterialAsync(request.EnemyType);
+                _logger.LogWarning("No affordable material found, using fallback for category '{Category}'", request.ItemCategory);
+                material = await GetFallbackMaterialAsync(materialType);
             }
 
             var materialCost = _budgetCalculator.CalculateMaterialCost(material);
@@ -173,21 +174,37 @@ public class BudgetItemGenerationService
     /// Get a fallback material when budget is too low for any material in the pool.
     /// Returns the cheapest material available.
     /// </summary>
-    private async Task<JToken> GetFallbackMaterialAsync(string enemyType)
+    private async Task<JToken> GetFallbackMaterialAsync(string materialType)
     {
         // Try to get any material from the pool
-        var material = await _materialPoolService.SelectMaterialAsync(enemyType, int.MaxValue);
+        var material = await _materialPoolService.SelectMaterialAsync(materialType, int.MaxValue);
         if (material != null)
             return material;
 
         // Ultimate fallback: Create a basic material token
-        _logger.LogWarning("No materials found in pool for {EnemyType}, using generic material", enemyType);
+        _logger.LogWarning("No materials found in pool for {MaterialType}, using generic material", materialType);
         return JToken.FromObject(new
         {
             name = "Iron",
             rarityWeight = 100,
             description = "Basic material"
         });
+    }
+    
+    /// <summary>
+    /// Maps item category to the appropriate material type pool.
+    /// </summary>
+    private static string GetMaterialTypeForCategory(string category)
+    {
+        return category?.ToLower() switch
+        {
+            "weapons" => "metals",
+            "armor" => "metals", // Plate/chainmail
+            "clothing" => "fabrics",
+            "accessories" => "gems",
+            "shields" => "woods",
+            _ => "metals" // Default to metals
+        };
     }
 
     /// <summary>

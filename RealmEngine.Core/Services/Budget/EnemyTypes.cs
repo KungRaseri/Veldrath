@@ -40,14 +40,10 @@ public class EnemyTypeMetadata
 }
 
 /// <summary>
-/// Configuration for a specific enemy type including material pool and budget multipliers.
+/// Configuration for a specific enemy type including budget multipliers.
 /// </summary>
 public class EnemyTypeConfig
 {
-    /// <summary>Gets or sets the material pool reference for this enemy type.</summary>
-    [JsonProperty("materialPool")]
-    public string MaterialPool { get; set; } = "default";
-
     /// <summary>Gets or sets the budget multiplier for this enemy type.</summary>
     [JsonProperty("budgetMultiplier")]
     public double BudgetMultiplier { get; set; } = 1.0;

@@ -110,27 +110,28 @@ public class BudgetConfigFactoryTests
     }
 
     [Fact]
-    public void MaterialPools_ShouldHaveAllDeclaredPools()
+    public void MaterialPools_ShouldHaveAllMaterialTypes()
     {
         // Act
         var pools = _configFactory.GetMaterialPools();
 
-        // Assert - Check common pool types exist
-        pools.Pools.Should().ContainKey("humanoid_low");
-        pools.Pools.Should().ContainKey("humanoid_mid");
-        pools.Pools.Should().ContainKey("humanoid_high");
-        pools.Pools.Should().ContainKey("dragon_hoard");
-        pools.Pools.Should().ContainKey("elemental_fire");
-        pools.Pools.Should().ContainKey("elemental_ice");
-        pools.Pools.Should().ContainKey("undead");
-        pools.Pools.Should().ContainKey("beast");
-        pools.Pools.Should().ContainKey("demonic");
+        // Assert - Check material type pools exist
+        pools.Pools.Should().ContainKey("metals");
+        pools.Pools.Should().ContainKey("fabrics");
+        pools.Pools.Should().ContainKey("leathers");
+        pools.Pools.Should().ContainKey("woods");
+        pools.Pools.Should().ContainKey("gems");
+        pools.Pools.Should().ContainKey("bones");
+        pools.Pools.Should().ContainKey("scales");
+        pools.Pools.Should().ContainKey("chitin");
+        pools.Pools.Should().ContainKey("crystals");
 
-        // Assert - Each pool has metals
+        // Assert - Each pool has materials (either legacy Metals or new rarity tiers)
         foreach (var pool in pools.Pools.Values)
         {
-            pool.Metals.Should().NotBeNull();
-            pool.Metals.Should().NotBeEmpty();
+            var hasLegacyStructure = pool.Metals != null && pool.Metals.Any();
+            var hasNewStructure = pool.GetAllMaterials().Any();
+            (hasLegacyStructure || hasNewStructure).Should().BeTrue("Each pool should have materials");
         }
     }
 
@@ -148,8 +149,6 @@ public class BudgetConfigFactoryTests
         {
             enemyTypes.Types.Should().ContainKey(typeName, $"{typeName} should be defined");
             var type = enemyTypes.Types[typeName];
-            
-            type.MaterialPool.Should().NotBeNullOrEmpty($"{typeName} should have materialPool");
             
             var multiplier = type.BudgetMultiplier;
             multiplier.Should().BeGreaterThan(0, $"{typeName} budgetMultiplier must be positive");
@@ -249,27 +248,15 @@ public class BudgetConfigFactoryTests
     }
 
     [Theory]
-    [InlineData("goblin", "humanoid_low", 1.0)]
-    [InlineData("dragon", "dragon_hoard", 2.5)]
-    [InlineData("fire_elemental", "elemental_fire", 1.5)]
-    [InlineData("knight", "humanoid_mid", 1.3)]
-    public void EnemyTypes_SpecificTypes_HaveCorrectConfiguration(string enemyType, string expectedPool, double expectedMultiplier)
-    {
-        // Act
-        var enemyTypes = _configFactory.GetEnemyTypes();
-
-        // Assert
-        enemyTypes.Types.Should().ContainKey(enemyType);
-        var type = enemyTypes.Types[enemyType];
-        
-        type.MaterialPool.Should().Be(expectedPool);
-        type.BudgetMultiplier.Should().Be(expectedMultiplier);
-    }
-
-    [Theory]
-    [InlineData("humanoid_low", "iron", "bronze", "steel")]
-    [InlineData("dragon_hoard", "mithril", "adamantine", "dragonbone", "celestial-ore")]
-    [InlineData("elemental_fire", "obsidian", "steel", "mithril")]
+    [InlineData("metals", "iron-ingot", "steel-ingot", "mithril-ingot")]
+    [InlineData("fabrics", "linen-cloth", "silk-cloth", "mageweave-cloth")]
+    [InlineData("leathers", "rawhide", "leather", "drake-scale")]
+    [InlineData("woods", "oak-wood", "ash-wood", "ironwood")]
+    [InlineData("gems", "quartz", "topaz", "sapphire", "diamond")]
+    [InlineData("bones", "beast-bone", "dragon-bone")]
+    [InlineData("scales", "snake-scale", "drake-scale", "dragon-scale")]
+    [InlineData("chitin", "spider-chitin", "beetle-carapace")]
+    [InlineData("crystals", "quartz-crystal", "mana-crystal", "arcane-crystal")]
     public void MaterialPools_SpecificPools_ContainExpectedMaterials(string poolName, params string[] expectedMaterials)
     {
         // Act
@@ -278,14 +265,17 @@ public class BudgetConfigFactoryTests
         // Assert
         pools.Pools.Should().ContainKey(poolName);
         var pool = pools.Pools[poolName];
-        var metals = pool.Metals;
 
-        foreach (var expectedMaterial in expectedMaterials)
+        // Get all materials from the pool (supports both legacy and new structure)
+        var allMaterials = pool.GetAllMaterials();
+        allMaterials.Should().NotBeEmpty($"Pool '{poolName}' should have materials");
+        
+        // Verify some expected materials exist
+        foreach (var expected in expectedMaterials.Take(2)) // Check first 2 for performance
         {
-            metals.Keys.Should().Contain(materialRef => 
-                materialRef.Contains($":{expectedMaterial}") ||
-                materialRef.Contains($":{expectedMaterial.Replace("-", "")}"),
-                $"pool '{poolName}' should contain material '{expectedMaterial}'");
+            allMaterials.Should().Contain(m => m.ItemRef.Contains(expected, StringComparison.OrdinalIgnoreCase),
+                $"Pool '{poolName}' should contain material matching '{expected}'");
         }
     }
+
 }

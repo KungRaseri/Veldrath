@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "description": "Bone materials for tribal and necromantic crafting",
+    "version": "1.0",
+    "lastUpdated": "2026-01-21",
+    "type": "item_catalog",
+    "totalItems": 5
+  },
+  "material_types": {
+    "bone": {
+      "items": [
+        {
+          "slug": "beast-bone",
+          "name": "Beast Bone",
+          "description": "Common animal bone, suitable for basic weapons and totems.",
+          "rarityWeight": 70,
+          "value": 3,
+          "weight": 0.5,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["bone", "crafting", "tribal"]
+        },
+        {
+          "slug": "drake-bone",
+          "name": "Drake Bone",
+          "description": "Lightweight but strong bone from a lesser drake.",
+          "rarityWeight": 35,
+          "value": 25,
+          "weight": 0.4,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["bone", "crafting", "drake", "exotic"]
+        },
+        {
+          "slug": "dragon-bone",
+          "name": "Dragon Bone",
+          "description": "Nearly unbreakable bone from a true dragon.",
+          "rarityWeight": 12,
+          "value": 150,
+          "weight": 0.6,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["bone", "crafting", "dragon", "legendary"]
+        },
+        {
+          "slug": "demon-bone",
+          "name": "Demon Bone",
+          "description": "Cursed bone from infernal creatures, radiates dark energy.",
+          "rarityWeight": 15,
+          "value": 100,
+          "weight": 0.4,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["bone", "crafting", "demonic", "cursed"]
+        },
+        {
+          "slug": "ancient-bone",
+          "name": "Ancient Bone",
+          "description": "Fossilized bone from a long-extinct creature, incredibly durable.",
+          "rarityWeight": 20,
+          "value": 60,
+          "weight": 0.8,
+          "stackSize": 15,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["bone", "crafting", "ancient", "fossil"]
+        }
+      ]
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "description": "Loot table mappings - defines which material pools drop from various sources",
-    "version": "1.0",
+    "version": "4.0",
     "lastUpdated": "2026-01-21",
     "type": "loot_tables",
     "notes": [
@@ -13,40 +13,26 @@
   },
   "sources": {
     "enemies": {
-      "@enemies/humanoid/goblins:goblin-warrior": {
+      "@enemies/goblinoids:goblin": {
         "pools": [
           "@material_pools/metals/common",
           "@material_pools/leathers/common",
           "@material_pools/woods/common"
         ]
       },
-      "@enemies/humanoid/goblins:goblin-shaman": {
-        "pools": [
-          "@material_pools/fabrics/common",
-          "@material_pools/leathers/common",
-          "@material_pools/gems/common"
-        ]
-      },
-      "@enemies/humanoid/goblins/*": {
+      "@enemies/goblinoids/*": {
         "pools": [
           "@material_pools/metals/common",
           "@material_pools/leathers/common"
         ]
       },
-      "@enemies/humanoid/orcs:orc-warrior": {
+      "@enemies/orcs:orc": {
         "pools": [
           "@material_pools/metals/uncommon",
           "@material_pools/leathers/uncommon"
         ]
       },
-      "@enemies/humanoid/orcs:orc-chieftain": {
-        "pools": [
-          "@material_pools/metals/rare",
-          "@material_pools/leathers/rare",
-          "@material_pools/gems/uncommon"
-        ]
-      },
-      "@enemies/humanoid/orcs/*": {
+      "@enemies/orcs/*": {
         "pools": [
           "@material_pools/metals/uncommon",
           "@material_pools/leathers/common"

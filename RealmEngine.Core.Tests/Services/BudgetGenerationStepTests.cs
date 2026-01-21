@@ -99,13 +99,13 @@ public class BudgetGenerationStepTests
     public async Task Step3_MaterialSelection_Works()
     {
         // Arrange
-        string enemyType = "goblin";
-        int materialBudget = 2; // 30% of 5
+        string materialType = "metals";
+        int materialBudget = 40; // About 40% of 100 budget
         
-        _output.WriteLine($"Selecting material for '{enemyType}' with budget {materialBudget}");
+        _output.WriteLine($"Selecting material from '{materialType}' pool with budget {materialBudget}");
         
-        // Act
-        var material = await _materialPoolService.SelectMaterialAsync(enemyType, materialBudget);
+        // Act - Use "metals" pool for weapon materials
+        var material = await _materialPoolService.SelectMaterialAsync(materialType, materialBudget);
         
         // Assert
         if (material == null)
@@ -113,36 +113,26 @@ public class BudgetGenerationStepTests
             _output.WriteLine("FAILED: Material is null");
             
             // Diagnostic info
-            var hasGoblinType = _enemyTypes.Types.ContainsKey(enemyType);
-            _output.WriteLine($"Enemy type '{enemyType}' exists: {hasGoblinType}");
+            _output.WriteLine($"Material pool '{materialType}' exists: {_materialPools.Pools.ContainsKey(materialType)}");
             
-            if (hasGoblinType)
+            if (_materialPools.Pools.TryGetValue(materialType, out var pool))
             {
-                var goblinConfig = _enemyTypes.Types[enemyType];
-                _output.WriteLine($"Material pool: {goblinConfig.MaterialPool}");
+                var allMaterials = pool.GetAllMaterials();
+                _output.WriteLine($"Materials in pool: {allMaterials.Count()}");
                 
-                var hasPool = _materialPools.Pools.ContainsKey(goblinConfig.MaterialPool);
-                _output.WriteLine($"Pool '{goblinConfig.MaterialPool}' exists: {hasPool}");
-                
-                if (hasPool)
+                foreach (var matRef in allMaterials.Take(5))
                 {
-                    var pool = _materialPools.Pools[goblinConfig.MaterialPool];
-                    _output.WriteLine($"Pool has {pool.Metals.Count} metals");
-                    
-                    foreach (var (materialRef, entry) in pool.Metals.Take(3))
+                    _output.WriteLine($"  - {matRef.ItemRef} (weight: {matRef.RarityWeight})");
+                    var resolved = await _referenceResolver.ResolveToObjectAsync(matRef.ItemRef);
+                    if (resolved != null)
                     {
-                        _output.WriteLine($"  - {materialRef} (weight: {entry.RarityWeight})");
-                        var resolved = await _referenceResolver.ResolveToObjectAsync(materialRef);
-                        if (resolved != null)
-                        {
-                            var cost = _budgetCalculator.CalculateMaterialCost(resolved);
-                            var affordable = _budgetCalculator.CanAfford(materialBudget, cost);
-                            _output.WriteLine($"    Resolved: cost={cost}, affordable={affordable}");
-                        }
-                        else
-                        {
-                            _output.WriteLine($"    FAILED to resolve reference");
-                        }
+                        var cost = _budgetCalculator.CalculateMaterialCost(resolved);
+                        var affordable = _budgetCalculator.CanAfford(materialBudget, cost);
+                        _output.WriteLine($"    Resolved: cost={cost}, affordable={affordable}");
+                    }
+                    else
+                    {
+                        _output.WriteLine($"    FAILED to resolve reference");
                     }
                 }
             }
@@ -154,7 +144,7 @@ public class BudgetGenerationStepTests
             _output.WriteLine($"SUCCESS: Selected '{name}' with cost {cost}");
         }
         
-        material.Should().NotBeNull("Material selection should succeed for level 1 goblin");
+        material.Should().NotBeNull("Material selection should succeed for metals pool with 40 budget");
     }
 
     [Fact]
@@ -325,8 +315,8 @@ public class BudgetGenerationStepTests
         _output.WriteLine($"  Material (30%): {materialBudget}");
         _output.WriteLine($"  Component (70%): {componentBudget}\n");
         
-        // Step 2: Select material
-        var material = await _materialPoolService.SelectMaterialAsync(enemyType, materialBudget);
+        // Step 2: Select material (metals for weapons)
+        var material = await _materialPoolService.SelectMaterialAsync("metals", materialBudget);
         if (material == null)
         {
             _output.WriteLine("FAILED at Step 2: Material selection returned null\n");

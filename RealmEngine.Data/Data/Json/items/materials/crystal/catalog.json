@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "description": "Magical crystal materials for enchantment and arcane crafting",
+    "version": "1.0",
+    "lastUpdated": "2026-01-21",
+    "type": "item_catalog",
+    "totalItems": 6
+  },
+  "material_types": {
+    "crystal": {
+      "items": [
+        {
+          "slug": "quartz-crystal",
+          "name": "Quartz Crystal",
+          "description": "Clear crystal that resonates with minor magical energies.",
+          "rarityWeight": 65,
+          "value": 12,
+          "weight": 0.3,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "crystal",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["crystal", "crafting", "magical"]
+        },
+        {
+          "slug": "mana-crystal",
+          "name": "Mana Crystal",
+          "description": "Crystallized magical energy, glows with blue light.",
+          "rarityWeight": 40,
+          "value": 30,
+          "weight": 0.2,
+          "stackSize": 30,
+          "itemType": "material",
+          "subType": "crystal",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["crystal", "crafting", "magical", "mana"]
+        },
+        {
+          "slug": "void-crystal",
+          "name": "Void Crystal",
+          "description": "Dark crystal that absorbs light and magic.",
+          "rarityWeight": 18,
+          "value": 75,
+          "weight": 0.4,
+          "stackSize": 15,
+          "itemType": "material",
+          "subType": "crystal",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["crystal", "crafting", "magical", "void", "dark"]
+        },
+        {
+          "slug": "light-crystal",
+          "name": "Light Crystal",
+          "description": "Radiant crystal that emanates pure light.",
+          "rarityWeight": 22,
+          "value": 65,
+          "weight": 0.1,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "crystal",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["crystal", "crafting", "magical", "light", "holy"]
+        },
+        {
+          "slug": "shadow-crystal",
+          "name": "Shadow Crystal",
+          "description": "Smoky crystal infused with shadow essence.",
+          "rarityWeight": 25,
+          "value": 55,
+          "weight": 0.15,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "crystal",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["crystal", "crafting", "magical", "shadow"]
+        },
+        {
+          "slug": "arcane-crystal",
+          "name": "Arcane Crystal",
+          "description": "Perfect crystal containing raw arcane power.",
+          "rarityWeight": 10,
+          "value": 150,
+          "weight": 0.25,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "crystal",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["crystal", "crafting", "magical", "arcane", "legendary"]
+        }
+      ]
+    }
+  }
+}

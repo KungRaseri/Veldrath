@@ -44,23 +44,18 @@ public class MaterialPoolService
     }
 
     /// <summary>
-    /// Select a material from the appropriate pool for an enemy type, constrained by budget.
+    /// Selects a material from the specified material type pool within the budget.
+    /// Material type should be: metals, fabrics, leathers, woods, gems, bones, scales, chitin, or crystals.
+    /// Returns a material JToken on success, null on failure.
     /// </summary>
-    public async Task<JToken?> SelectMaterialAsync(string enemyType, int availableBudget)
+    public async Task<JToken?> SelectMaterialAsync(string materialType, int availableBudget)
     {
         try
         {
-            // Get enemy type config
-            if (!_enemyTypes.Types.TryGetValue(enemyType, out var enemyConfig))
+            // Get material pool directly by type (metals, fabrics, leathers, etc.)
+            if (!_materialPools.Pools.TryGetValue(materialType, out var pool))
             {
-                _logger.LogWarning("Enemy type {EnemyType} not found, using default pool", enemyType);
-                enemyConfig = new EnemyTypeConfig { MaterialPool = "default" };
-            }
-
-            // Get material pool
-            if (!_materialPools.Pools.TryGetValue(enemyConfig.MaterialPool, out var pool))
-            {
-                _logger.LogError("Material pool {PoolName} not found", enemyConfig.MaterialPool);
+                _logger.LogError("Material type pool {MaterialType} not found. Valid types: metals, fabrics, leathers, woods, gems, bones, scales, chitin, crystals", materialType);
                 return null;
             }
 
@@ -68,7 +63,28 @@ public class MaterialPoolService
             var allMaterials = new List<(JToken Material, int Cost, int Weight)>();
             var affordableMaterials = new List<(JToken Material, int Cost, int Weight)>();
 
-            foreach (var (materialRef, entry) in pool.Metals)
+            // Support both old (Metals dictionary) and new (rarity tier) structures
+            var materialRefs = new List<(string Ref, int Weight)>();
+            
+            if (pool.Metals != null && pool.Metals.Any())
+            {
+                // LEGACY: Old structure with Metals dictionary
+                foreach (var (materialRef, entry) in pool.Metals)
+                {
+                    materialRefs.Add((materialRef, entry.RarityWeight));
+                }
+            }
+            else
+            {
+                // NEW: Rarity tier structure - get all materials across all tiers
+                foreach (var matRef in pool.GetAllMaterials())
+                {
+                    materialRefs.Add((matRef.ItemRef, matRef.RarityWeight));
+                }
+            }
+
+            // Resolve and evaluate all material references
+            foreach (var (materialRef, weight) in materialRefs)
             {
                 var resolved = await _referenceResolver.ResolveToObjectAsync(materialRef);
                 if (resolved == null)
@@ -78,7 +94,7 @@ public class MaterialPoolService
                 }
 
                 var cost = _budgetCalculator.CalculateMaterialCost(resolved);
-                var materialEntry = (resolved, cost, entry.RarityWeight);
+                var materialEntry = (resolved, cost, weight);
                 allMaterials.Add(materialEntry);
                 
                 if (_budgetCalculator.CanAfford(availableBudget, cost))
@@ -92,14 +108,13 @@ public class MaterialPoolService
             {
                 if (!allMaterials.Any())
                 {
-                    _logger.LogError("No materials found in pool {PoolName} for enemy type {EnemyType}", 
-                        enemyConfig.MaterialPool, enemyType);
+                    _logger.LogError("No materials found in pool {MaterialType}", materialType);
                     return null;
                 }
                 
                 var cheapest = allMaterials.OrderBy(m => m.Cost).First();
-                _logger.LogInformation("Budget {Budget} too low, using cheapest material {MaterialName} (cost={Cost})", 
-                    availableBudget, GetStringProperty(cheapest.Material, "name"), cheapest.Cost);
+                _logger.LogInformation("Budget {Budget} too low for {MaterialType}, using cheapest material {MaterialName} (cost={Cost})", 
+                    availableBudget, materialType, GetStringProperty(cheapest.Material, "name"), cheapest.Cost);
                 return cheapest.Material;
             }
 
@@ -109,7 +124,7 @@ public class MaterialPoolService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error selecting material for enemy type {EnemyType}", enemyType);
+            _logger.LogError(ex, "Error selecting material from {MaterialType} pool", materialType);
             return null;
         }
     }

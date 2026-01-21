@@ -208,7 +208,6 @@ public class BudgetConfigFactory
             {
                 ["default"] = new EnemyTypeConfig
                 {
-                    MaterialPool = "default",
                     BudgetMultiplier = 1.0,
                     Description = "Default enemy type"
                 }

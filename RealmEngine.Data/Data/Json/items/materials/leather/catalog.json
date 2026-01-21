@@ -1,13 +1,70 @@
 {
   "metadata": {
-    "description": "Leather materials for crafting following two-tier system (raw → refined → component)",
-    "version": "5.1",
-    "lastUpdated": "2026-01-11",
-    "type": "item_catalog"
+    "description": "Leather materials for crafting - from raw hides to exotic dragon leather",
+    "version": "5.2",
+    "lastUpdated": "2026-01-21",
+    "type": "item_catalog",
+    "totalItems": 14
   },
   "material_types": {
     "leather": {
       "items": [
+        {
+          "slug": "scraps",
+          "name": "Leather Scraps",
+          "description": "Torn bits of leather, barely usable.",
+          "rarityWeight": 90,
+          "value": 1,
+          "weight": 0.1,
+          "stackSize": 100,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["leather", "crafting", "raw"]
+        },
+        {
+          "slug": "rawhide",
+          "name": "Rawhide",
+          "description": "Untanned animal hide, needs processing.",
+          "rarityWeight": 80,
+          "value": 2,
+          "weight": 0.3,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["leather", "crafting", "raw"]
+        },
+        {
+          "slug": "hide",
+          "name": "Hide",
+          "description": "Tanned animal hide, ready for basic use.",
+          "rarityWeight": 60,
+          "value": 4,
+          "weight": 0.4,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined"]
+        },
+        {
+          "slug": "leather",
+          "name": "Leather",
+          "description": "Quality tanned leather suitable for armor.",
+          "rarityWeight": 50,
+          "value": 8,
+          "weight": 0.5,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined"]
+        },
         {
           "slug": "cured-leather",
           "name": "Cured Leather",
@@ -76,12 +133,133 @@
           "subType": "leather",
           "tier": "component",
           "traits": {},
-          "tags": [
-            "leather",
-            "crafting",
-            "armor-component",
-            "straps"
-          ]
+          "tags": ["leather", "crafting", "armor-component", "straps"]
+        },
+        {
+          "slug": "thick-leather",
+          "name": "Thick Leather",
+          "description": "Heavy-grade leather with extra durability.",
+          "rarityWeight": 40,
+          "value": 15,
+          "weight": 0.6,
+          "stackSize": 30,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined"]
+        },
+        {
+          "slug": "studded-leather",
+          "name": "Studded Leather",
+          "description": "Leather reinforced with metal studs.",
+          "rarityWeight": 35,
+          "value": 20,
+          "weight": 0.8,
+          "stackSize": 30,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined"]
+        },
+        {
+          "slug": "hardened-leather",
+          "name": "Hardened Leather",
+          "description": "Boiled and treated leather, rigid and protective.",
+          "rarityWeight": 30,
+          "value": 25,
+          "weight": 0.7,
+          "stackSize": 30,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined"]
+        },
+        {
+          "slug": "reinforced-leather",
+          "name": "Reinforced Leather",
+          "description": "Leather reinforced with metal plates, provides excellent protection.",
+          "rarityWeight": 25,
+          "value": 35,
+          "weight": 0.9,
+          "stackSize": 25,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["leather", "crafting", "refined", "reinforced"]
+        },
+        {
+          "slug": "drake-scale",
+          "name": "Drake Scale",
+          "description": "Scaled hide from a lesser drake, tough and flexible.",
+          "rarityWeight": 20,
+          "value": 50,
+          "weight": 0.5,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["leather", "crafting", "exotic", "drake"]
+        },
+        {
+          "slug": "chimera-hide",
+          "name": "Chimera Hide",
+          "description": "Hide from a chimera, resistant to multiple elements.",
+          "rarityWeight": 18,
+          "value": 80,
+          "weight": 0.6,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["leather", "crafting", "exotic", "magical"]
+        },
+        {
+          "slug": "shadow-leather",
+          "name": "Shadow Leather",
+          "description": "Leather infused with shadow magic, enhances stealth.",
+          "rarityWeight": 15,
+          "value": 120,
+          "weight": 0.3,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["leather", "crafting", "exotic", "shadow"]
+        },
+        {
+          "slug": "dragon-leather",
+          "name": "Dragon Leather",
+          "description": "Tanned dragon hide, nearly indestructible.",
+          "rarityWeight": 10,
+          "value": 200,
+          "weight": 0.7,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["leather", "crafting", "legendary", "dragon"]
+        },
+        {
+          "slug": "demon-hide",
+          "name": "Demon Hide",
+          "description": "Hide from a demon, burns with hellfire.",
+          "rarityWeight": 8,
+          "value": 250,
+          "weight": 0.5,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "leather",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["leather", "crafting", "legendary", "demonic"]
         }
       ]
     }

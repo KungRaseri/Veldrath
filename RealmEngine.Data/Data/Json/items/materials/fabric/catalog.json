@@ -3,23 +3,26 @@
     "description": "Fabric material items - lootable cloth materials that reference property definitions",
     "version": "4.0",
     "lastUpdated": "2026-01-21",
-    "type": "material_items_catalog",
+    "type": "item_catalog",
+    "totalItems": 12,
     "notes": [
       "These are actual inventory items that drop from enemies/chests",
       "Each references a property definition in properties/materials/fabrics",
       "Used in crafting system to apply fabric bonuses to armor"
     ]
   },
-  "items": [
-    {
-      "name": "Burlap Cloth",
-      "slug": "burlap-cloth",
-      "description": "Rough, coarse fabric. Common and inexpensive.",
-      "propertyRef": "@properties/materials/fabrics:burlap",
-      "stackSize": 100,
-      "rarityWeight": 100,
-      "baseValue": 1
-    },
+  "material_types": {
+    "fabric": {
+      "items": [
+        {
+          "name": "Burlap Cloth",
+          "slug": "burlap-cloth",
+          "description": "Rough, coarse fabric. Common and inexpensive.",
+          "propertyRef": "@properties/materials/fabrics:burlap",
+          "stackSize": 100,
+          "rarityWeight": 100,
+          "baseValue": 1
+        },
     {
       "name": "Linen Cloth",
       "slug": "linen-cloth",
@@ -69,7 +72,7 @@
       "name": "Mageweave Cloth",
       "slug": "mageweave-cloth",
       "description": "Fabric infused with magical energy, enhances spellcasting.",
-      "propertyRef": "@properties/materials/fabrics:mageweave",
+      "propertyRef": "@items/materials/fabric:mageweave-cloth",
       "stackSize": 100,
       "rarityWeight": 25,
       "baseValue": 35
@@ -78,7 +81,7 @@
       "name": "Runecloth",
       "slug": "runecloth",
       "description": "Ancient cloth inscribed with mystical runes.",
-      "propertyRef": "@properties/materials/fabrics:runecloth",
+      "propertyRef": "@items/materials/fabric:runecloth",
       "stackSize": 100,
       "rarityWeight": 20,
       "baseValue": 50
@@ -119,5 +122,7 @@
       "rarityWeight": 3,
       "baseValue": 250
     }
-  ]
+      ]
+    }
+  }
 }

@@ -115,6 +115,7 @@
     },
     "gems": {
       "common": [
+        { "itemRef": "@items/materials/gem:rough-gemstone", "rarityWeight": 85 },
         { "itemRef": "@items/materials/gem:quartz", "rarityWeight": 80 },
         { "itemRef": "@items/materials/gem:amber", "rarityWeight": 70 }
       ],
@@ -134,6 +135,68 @@
       "legendary": [
         { "itemRef": "@items/materials/gem:star-sapphire", "rarityWeight": 10 },
         { "itemRef": "@items/materials/gem:dragon-tear", "rarityWeight": 5 }
+      ]
+    },
+    "bones": {
+      "common": [
+        { "itemRef": "@items/materials/bone:beast-bone", "rarityWeight": 70 }
+      ],
+      "uncommon": [
+        { "itemRef": "@items/materials/bone:ancient-bone", "rarityWeight": 20 }
+      ],
+      "rare": [
+        { "itemRef": "@items/materials/bone:drake-bone", "rarityWeight": 35 },
+        { "itemRef": "@items/materials/bone:demon-bone", "rarityWeight": 15 }
+      ],
+      "epic": [],
+      "legendary": [
+        { "itemRef": "@items/materials/bone:dragon-bone", "rarityWeight": 12 }
+      ]
+    },
+    "scales": {
+      "common": [
+        { "itemRef": "@items/materials/scale:snake-scale", "rarityWeight": 60 },
+        { "itemRef": "@items/materials/scale:lizard-scale", "rarityWeight": 50 }
+      ],
+      "uncommon": [
+        { "itemRef": "@items/materials/scale:drake-scale", "rarityWeight": 28 }
+      ],
+      "rare": [],
+      "epic": [
+        { "itemRef": "@items/materials/scale:dragon-scale", "rarityWeight": 8 }
+      ],
+      "legendary": [
+        { "itemRef": "@items/materials/scale:basilisk-scale", "rarityWeight": 5 }
+      ]
+    },
+    "chitin": {
+      "common": [
+        { "itemRef": "@items/materials/chitin:spider-chitin", "rarityWeight": 55 },
+        { "itemRef": "@items/materials/chitin:beetle-carapace", "rarityWeight": 45 }
+      ],
+      "uncommon": [
+        { "itemRef": "@items/materials/chitin:scorpion-shell", "rarityWeight": 30 },
+        { "itemRef": "@items/materials/chitin:mantis-plate", "rarityWeight": 20 }
+      ],
+      "rare": [],
+      "epic": [],
+      "legendary": []
+    },
+    "crystals": {
+      "common": [
+        { "itemRef": "@items/materials/crystal:quartz-crystal", "rarityWeight": 65 }
+      ],
+      "uncommon": [
+        { "itemRef": "@items/materials/crystal:mana-crystal", "rarityWeight": 40 }
+      ],
+      "rare": [
+        { "itemRef": "@items/materials/crystal:light-crystal", "rarityWeight": 22 },
+        { "itemRef": "@items/materials/crystal:shadow-crystal", "rarityWeight": 25 },
+        { "itemRef": "@items/materials/crystal:void-crystal", "rarityWeight": 18 }
+      ],
+      "epic": [],
+      "legendary": [
+        { "itemRef": "@items/materials/crystal:arcane-crystal", "rarityWeight": 10 }
       ]
     }
   },

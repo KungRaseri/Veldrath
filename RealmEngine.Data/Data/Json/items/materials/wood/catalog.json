@@ -1,13 +1,56 @@
 {
   "metadata": {
-    "description": "Wood materials for crafting following two-tier system (raw → refined → component)",
-    "version": "5.1",
-    "lastUpdated": "2026-01-11",
-    "type": "item_catalog"
+    "description": "Wood materials for crafting - from common pine to legendary world tree",
+    "version": "5.2",
+    "lastUpdated": "2026-01-21",
+    "type": "item_catalog",
+    "totalItems": 13
   },
   "material_types": {
     "wood": {
       "items": [
+        {
+          "slug": "pine-wood",
+          "name": "Pine Wood",
+          "description": "Common softwood, easy to work with.",
+          "rarityWeight": 85,
+          "value": 1,
+          "weight": 0.8,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["wood", "crafting", "raw"]
+        },
+        {
+          "slug": "birch-wood",
+          "name": "Birch Wood",
+          "description": "Light and flexible wood from birch trees.",
+          "rarityWeight": 75,
+          "value": 2,
+          "weight": 0.7,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["wood", "crafting", "raw"]
+        },
+        {
+          "slug": "oak-wood",
+          "name": "Oak Wood",
+          "description": "Strong hardwood suitable for weapons and shields.",
+          "rarityWeight": 60,
+          "value": 4,
+          "weight": 1.2,
+          "stackSize": 50,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["wood", "crafting", "refined"]
+        },
         {
           "slug": "oak-plank",
           "name": "Oak Plank",
@@ -57,12 +100,147 @@
           "subType": "wood",
           "tier": "component",
           "traits": {},
-          "tags": [
-            "wood",
-            "crafting",
-            "weapon-component",
-            "handle"
-          ]
+          "tags": ["wood", "crafting", "weapon-component", "handle"]
+        },
+        {
+          "slug": "ash-wood",
+          "name": "Ash Wood",
+          "description": "Resilient wood with excellent shock absorption.",
+          "rarityWeight": 45,
+          "value": 6,
+          "weight": 1.0,
+          "stackSize": 40,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["wood", "crafting", "refined"]
+        },
+        {
+          "slug": "maple-wood",
+          "name": "Maple Wood",
+          "description": "Fine-grained wood ideal for bows and staves.",
+          "rarityWeight": 40,
+          "value": 8,
+          "weight": 0.9,
+          "stackSize": 40,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["wood", "crafting", "refined"]
+        },
+        {
+          "slug": "walnut-wood",
+          "name": "Walnut Wood",
+          "description": "Dense, dark wood with beautiful grain.",
+          "rarityWeight": 35,
+          "value": 12,
+          "weight": 1.1,
+          "stackSize": 30,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "refined",
+          "traits": {},
+          "tags": ["wood", "crafting", "refined"]
+        },
+        {
+          "slug": "mahogany-wood",
+          "name": "Mahogany Wood",
+          "description": "Exotic reddish wood, prized for quality.",
+          "rarityWeight": 28,
+          "value": 20,
+          "weight": 1.0,
+          "stackSize": 30,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["wood", "crafting", "exotic"]
+        },
+        {
+          "slug": "ebony-wood",
+          "name": "Ebony Wood",
+          "description": "Jet-black hardwood, extremely dense.",
+          "rarityWeight": 22,
+          "value": 35,
+          "weight": 1.5,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["wood", "crafting", "exotic"]
+        },
+        {
+          "slug": "ironwood",
+          "name": "Ironwood",
+          "description": "Wood as hard as iron, extremely durable.",
+          "rarityWeight": 20,
+          "value": 50,
+          "weight": 1.8,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "exotic",
+          "traits": {},
+          "tags": ["wood", "crafting", "exotic"]
+        },
+        {
+          "slug": "ancient-oak",
+          "name": "Ancient Oak",
+          "description": "Wood from thousand-year-old oaks, imbued with nature magic.",
+          "rarityWeight": 15,
+          "value": 100,
+          "weight": 1.3,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["wood", "crafting", "legendary", "magical"]
+        },
+        {
+          "slug": "darkwood",
+          "name": "Darkwood",
+          "description": "Shadow-infused wood from cursed forests.",
+          "rarityWeight": 12,
+          "value": 120,
+          "weight": 0.8,
+          "stackSize": 10,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["wood", "crafting", "legendary", "shadow"]
+        },
+        {
+          "slug": "world-tree-wood",
+          "name": "World Tree Wood",
+          "description": "Branch from the legendary World Tree, pulses with life.",
+          "rarityWeight": 8,
+          "value": 200,
+          "weight": 1.0,
+          "stackSize": 5,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["wood", "crafting", "legendary", "divine"]
+        },
+        {
+          "slug": "petrified-elderwood",
+          "name": "Petrified Elderwood",
+          "description": "Ancient fossilized wood, harder than stone.",
+          "rarityWeight": 5,
+          "value": 250,
+          "weight": 2.0,
+          "stackSize": 5,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["wood", "crafting", "legendary", "ancient"]
         }
       ]
     }

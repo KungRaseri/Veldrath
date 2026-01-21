@@ -92,6 +92,39 @@
         },
         {
           "level": 3,
+          "slug": "goblin-warrior",
+          "name": "Goblin Warrior",
+          "rarityWeight": 100,
+          "xp": 20,
+          "attributes": {
+            "constitution": 12,
+            "wisdom": 10,
+            "strength": 12,
+            "dexterity": 15,
+            "intelligence": 8,
+            "charisma": 8
+          },
+          "stats": {
+            "attack": "strength_mod + level + 6",
+            "speed": "30 + dexterity_mod * 5",
+            "defense": "10 + dexterity_mod + constitution_mod + 3",
+            "health": "constitution_mod * 2 + level * 5 + 20"
+          },
+          "combat": {
+            "abilityUnlocks": {
+              "3": [
+                "@abilities/active/offensive:*"
+              ]
+            },
+            "abilities": [
+              "@abilities/active/offensive:*",
+              "@abilities/active/offensive:*"
+            ]
+          },
+          "traits": {}
+        },
+        {
+          "level": 4,
           "slug": "goblin-shaman",
           "name": "Goblin Shaman",
           "rarityWeight": 98,
