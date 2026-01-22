@@ -1,0 +1,43 @@
+{
+  "version": "5.1",
+  "type": "item_catalog",
+  "lastUpdated": "2026-01-22",
+  "description": "Ceramic material items that drop as loot and reference ceramic properties.",
+  "categories": [
+    {
+      "category": "ceramic",
+      "items": [
+        {
+          "name": "Clay Pot",
+          "rarityWeight": 60,
+          "propertyRef": "@properties/materials/ceramics:clay",
+          "description": "A simple clay vessel that can be broken down for crafting."
+        },
+        {
+          "name": "Terracotta Fragment",
+          "rarityWeight": 40,
+          "propertyRef": "@properties/materials/ceramics:terracotta",
+          "description": "Fired red clay fragment with improved durability."
+        },
+        {
+          "name": "Stoneware Shard",
+          "rarityWeight": 25,
+          "propertyRef": "@properties/materials/ceramics:stoneware",
+          "description": "Dense ceramic fragment from high-temperature firing."
+        },
+        {
+          "name": "Porcelain Piece",
+          "rarityWeight": 12,
+          "propertyRef": "@properties/materials/ceramics:porcelain",
+          "description": "Refined white ceramic known for its strength and beauty."
+        },
+        {
+          "name": "Mystic Ceramic Shard",
+          "rarityWeight": 4,
+          "propertyRef": "@properties/materials/ceramics:mystic-ceramic",
+          "description": "Magically infused ceramic that pulses with arcane energy."
+        }
+      ]
+    }
+  ]
+}

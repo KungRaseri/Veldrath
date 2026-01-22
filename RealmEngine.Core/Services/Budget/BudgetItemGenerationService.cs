@@ -254,9 +254,17 @@ public class BudgetItemGenerationService
             }
         }
 
-        // Special case: For armor, check ArmorClass to determine material type
+        // Special case: For armor category, check item properties
         if (category?.ToLower() == "armor")
         {
+            // Shields have blockChance property - use woods
+            if (baseItem["blockChance"] != null)
+            {
+                materialTypes.Add("woods");
+                return materialTypes;
+            }
+            
+            // Non-shield armor: Check ArmorClass to determine material type
             var armorClass = baseItem["armorClass"]?.Value<string>()?.ToLower();
             var armorMaterialType = armorClass switch
             {

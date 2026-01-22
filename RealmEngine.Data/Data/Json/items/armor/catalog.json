@@ -46,7 +46,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 100,
           "requirements": {
             "level": 1,
@@ -75,7 +77,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 80,
           "requirements": {
             "level": 2,
@@ -104,7 +108,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 50,
           "requirements": {
             "level": 5,
@@ -137,7 +143,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 22,
           "requirements": {
             "level": 10,
@@ -170,7 +178,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 24,
           "requirements": {
             "level": 10,
@@ -203,7 +213,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 25,
           "requirements": {
             "level": 10,
@@ -235,7 +247,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 1,
           "description": "An ornamental headpiece symbolizing authority and status, offering minimal protection.",
           "requirements": {
@@ -268,7 +282,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 2,
           "description": "A simple metal band worn around the forehead, more decorative than protective.",
           "requirements": {
@@ -301,7 +317,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 24,
           "description": "A lightweight sleeveless garment offering basic torso protection without restricting movement.",
           "requirements": {
@@ -334,7 +352,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 22,
           "description": "A close-fitting jacket made of leather or thick fabric, favored for its comfort and flexibility.",
           "requirements": {
@@ -367,7 +387,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 24,
           "description": "Simple handwear providing grip and basic protection from the elements.",
           "requirements": {
@@ -400,7 +422,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 22,
           "description": "Leather arm guards protecting the forearms from slashes and arrows.",
           "requirements": {
@@ -433,7 +457,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 25,
           "description": "Padded handwear offering warmth and minimal protection, limiting finger dexterity.",
           "requirements": {
@@ -466,7 +492,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 18,
           "description": "Articulated plates protecting the upper thighs and groin area.",
           "requirements": {
@@ -499,7 +527,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 25,
           "description": "Basic footwear offering protection from rough terrain with minimal weight.",
           "requirements": {
@@ -532,7 +562,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 25,
           "description": "Open footwear providing ventilation in hot climates at the cost of protection.",
           "requirements": {
@@ -565,7 +597,9 @@
             }
           },
           "armorClass": "light",
-          "allowedMaterials": ["@properties/materials/fabrics:*"],
+          "allowedMaterials": [
+            "@properties/materials/fabrics:*"
+          ],
           "rarityWeight": 22,
           "description": "A decorative cloak that provides minimal protection while displaying status.",
           "requirements": {
@@ -602,6 +636,10 @@
             }
           },
           "blockChance": 15,
+          "allowedMaterials": [
+            "@properties/materials/woods:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 15,
           "description": "A defensive tool held in hand to block attacks and protect the body.",
           "requirements": {
@@ -638,6 +676,10 @@
             }
           },
           "blockChance": 10,
+          "allowedMaterials": [
+            "@properties/materials/woods:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 18,
           "description": "A small round shield held in the fist, used for parrying rather than full coverage.",
           "requirements": {
@@ -674,6 +716,10 @@
             }
           },
           "blockChance": 25,
+          "allowedMaterials": [
+            "@properties/materials/woods:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 8,
           "description": "A massive rectangular shield offering near-total body coverage.",
           "requirements": {
@@ -710,6 +756,10 @@
             }
           },
           "blockChance": 18,
+          "allowedMaterials": [
+            "@properties/materials/woods:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "A large teardrop-shaped shield providing excellent coverage, especially for cavalry.",
           "requirements": {
@@ -742,6 +792,10 @@
             }
           },
           "blockChance": 12,
+          "allowedMaterials": [
+            "@properties/materials/woods:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 16,
           "description": "A compact triangular shield offering good protection without excessive weight.",
           "requirements": {
@@ -785,6 +839,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "A streamlined helmet with a tail protecting the neck, offering good visibility.",
           "requirements": {
@@ -817,6 +875,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "A long shirt of chainmail extending to the knees, providing extensive coverage.",
           "requirements": {
@@ -849,7 +911,9 @@
             }
           },
           "armorClass": "medium",
-          "allowedMaterials": ["@properties/materials/metals:*"],
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 15,
           "description": "Full body coverage of interlocking metal rings, heavy but protective.",
           "requirements": {
@@ -882,7 +946,9 @@
             }
           },
           "armorClass": "medium",
-          "allowedMaterials": ["@properties/materials/metals:*"],
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 13,
           "description": "Overlapping scales attached to a backing, providing flexible protection.",
           "requirements": {
@@ -915,7 +981,9 @@
             }
           },
           "armorClass": "medium",
-          "allowedMaterials": ["@properties/materials/metals:*"],
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 16,
           "description": "Metal rings sewn onto leather, offering better defense than plain hide.",
           "requirements": {
@@ -948,6 +1016,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "Horizontal metal bands fastened to leather and chainmail backing.",
           "requirements": {
@@ -980,6 +1052,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 18,
           "description": "Forearm guards made of metal plates, protecting from wrist to elbow.",
           "requirements": {
@@ -1012,6 +1088,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 16,
           "description": "Fitted leg armor providing protection while allowing freedom of movement.",
           "requirements": {
@@ -1044,6 +1124,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 15,
           "description": "Chainmail leg armor covering from waist to foot, offering flexible protection.",
           "requirements": {
@@ -1076,6 +1160,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 18,
           "description": "Sturdy footwear reinforced for combat, balancing protection and mobility.",
           "requirements": {
@@ -1108,6 +1196,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 15,
           "description": "Plate armor covering the shoulders, protecting against overhead strikes.",
           "requirements": {
@@ -1140,6 +1232,10 @@
             }
           },
           "armorClass": "medium",
+          "allowedMaterials": [
+            "@properties/materials/leathers:*",
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 16,
           "description": "Protective plates or padding worn over the shoulders.",
           "requirements": {
@@ -1183,6 +1279,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "A solid metal helmet providing excellent head protection in battle.",
           "requirements": {
@@ -1215,6 +1314,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 14,
           "description": "A protective head covering designed to deflect blows and projectiles.",
           "requirements": {
@@ -1247,6 +1349,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 10,
           "description": "A fully enclosed helmet offering maximum protection at the cost of visibility.",
           "requirements": {
@@ -1279,6 +1384,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 8,
           "description": "A sophisticated helmet that completely encases the head with articulated visors.",
           "requirements": {
@@ -1311,6 +1419,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 10,
           "description": "A helmet that covers the entire head with openings for eyes and mouth.",
           "requirements": {
@@ -1343,6 +1454,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 6,
           "description": "A fitted breastplate protecting the torso, often ornately decorated.",
           "requirements": {
@@ -1375,6 +1489,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 10,
           "description": "A solid metal plate covering the chest, the core of any plate armor.",
           "requirements": {
@@ -1407,6 +1524,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 8,
           "description": "Heavy armor protecting the vital organs of the torso.",
           "requirements": {
@@ -1439,7 +1559,9 @@
             }
           },
           "armorClass": "heavy",
-          "allowedMaterials": ["@properties/materials/metals:*"],
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 5,
           "description": "Full armor of shaped metal plates, the pinnacle of protective gear.",
           "requirements": {
@@ -1472,6 +1594,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 15,
           "description": "Reinforced gloves designed to protect hands while maintaining dexterity.",
           "requirements": {
@@ -1504,6 +1629,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "Shin armor protecting the lower legs from knee to ankle.",
           "requirements": {
@@ -1536,6 +1664,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "Articulated plate footwear providing complete protection for the feet.",
           "requirements": {
@@ -1568,6 +1699,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 13,
           "description": "Pointed plate boots designed for mounted combat, protecting feet and ankles.",
           "requirements": {
@@ -1600,6 +1734,9 @@
             }
           },
           "armorClass": "heavy",
+          "allowedMaterials": [
+            "@properties/materials/metals:*"
+          ],
           "rarityWeight": 12,
           "description": "Large shoulder plates providing extensive protection to the upper arms and shoulders.",
           "requirements": {

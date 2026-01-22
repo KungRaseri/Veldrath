@@ -1,0 +1,37 @@
+{
+  "version": "5.1",
+  "type": "item_catalog",
+  "lastUpdated": "2026-01-22",
+  "description": "Paper material items that drop as loot and reference paper properties.",
+  "categories": [
+    {
+      "category": "paper",
+      "items": [
+        {
+          "name": "Parchment Sheet",
+          "rarityWeight": 55,
+          "propertyRef": "@properties/materials/papers:parchment",
+          "description": "Animal skin treated and stretched for writing."
+        },
+        {
+          "name": "Rice Paper",
+          "rarityWeight": 35,
+          "propertyRef": "@properties/materials/papers:rice-paper",
+          "description": "Delicate paper made from rice plant fibers."
+        },
+        {
+          "name": "Vellum Page",
+          "rarityWeight": 20,
+          "propertyRef": "@properties/materials/papers:vellum",
+          "description": "High-quality writing surface made from calfskin."
+        },
+        {
+          "name": "Mystic Papyrus",
+          "rarityWeight": 6,
+          "propertyRef": "@properties/materials/papers:mystic-papyrus",
+          "description": "Ancient paper woven with magical fibers that resists damage."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "version": "5.1",
+  "type": "item_catalog",
+  "lastUpdated": "2026-01-22",
+  "description": "Ice material items that drop as loot and reference ice properties. Magically preserved to never melt.",
+  "categories": [
+    {
+      "category": "ice",
+      "items": [
+        {
+          "name": "Frozen Water",
+          "rarityWeight": 50,
+          "propertyRef": "@properties/materials/ice:common-ice",
+          "description": "Magically preserved ice that never melts."
+        },
+        {
+          "name": "Glacial Ice Chunk",
+          "rarityWeight": 32,
+          "propertyRef": "@properties/materials/ice:glacial-ice",
+          "description": "Ancient ice from frozen glaciers, incredibly dense."
+        },
+        {
+          "name": "Permafrost Shard",
+          "rarityWeight": 20,
+          "propertyRef": "@properties/materials/ice:permafrost",
+          "description": "Eternally frozen earth and ice, harder than steel."
+        },
+        {
+          "name": "Eternal Ice Crystal",
+          "rarityWeight": 10,
+          "propertyRef": "@properties/materials/ice:eternal-ice",
+          "description": "Ice that has existed since the dawn of time, utterly unbreakable."
+        },
+        {
+          "name": "Black Ice Fragment",
+          "rarityWeight": 5,
+          "propertyRef": "@properties/materials/ice:black-ice",
+          "description": "Dark ice from the void between planes, cold beyond measure."
+        },
+        {
+          "name": "Prismatic Ice",
+          "rarityWeight": 2,
+          "propertyRef": "@properties/materials/ice:prismatic-ice",
+          "description": "Rainbow-hued ice that refracts magical energy."
+        }
+      ]
+    }
+  ]
+}

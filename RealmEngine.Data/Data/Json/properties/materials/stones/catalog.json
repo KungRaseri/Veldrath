@@ -1,0 +1,226 @@
+{
+  "metadata": {
+    "description": "Stone material properties for crafting system - primitive weapons and tools",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 8,
+    "usage": "Stone materials for primitive weapons like clubs, hammers, axes. Lower durability but common availability.",
+    "notes": [
+      "Stone materials focus on strength/constitution bonuses with lower durability",
+      "Best suited for blunt weapons and primitive tools",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "stone_types": {
+    "stone": {
+      "items": [
+        {
+          "slug": "granite",
+          "name": "Granite",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 0,
+            "charisma": 0,
+            "strength": 8,
+            "constitution": 8,
+            "wisdom": 0
+          },
+          "traits": {
+            "durability": 30,
+            "weight": 1.5,
+            "strength": 50
+          },
+          "displayName": "Granite",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 1,
+              "value": 1
+            }
+          },
+          "rarityWeight": 80
+        },
+        {
+          "slug": "flint",
+          "name": "Flint",
+          "attributes": {
+            "dexterity": 3,
+            "intelligence": 0,
+            "charisma": 0,
+            "strength": 5,
+            "constitution": 5,
+            "wisdom": 0
+          },
+          "traits": {
+            "durability": 25,
+            "weight": 1.2,
+            "strength": 45,
+            "sharpness": 40
+          },
+          "displayName": "Flint",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 2,
+              "value": 2
+            }
+          },
+          "rarityWeight": 70
+        },
+        {
+          "slug": "obsidian",
+          "name": "Obsidian",
+          "attributes": {
+            "dexterity": 5,
+            "intelligence": 3,
+            "charisma": 2,
+            "strength": 8,
+            "constitution": 5,
+            "wisdom": 3
+          },
+          "traits": {
+            "durability": 20,
+            "weight": 1.1,
+            "strength": 40,
+            "sharpness": 60,
+            "enchantability": 15
+          },
+          "displayName": "Obsidian",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 3,
+              "critChance": 2,
+              "value": 4
+            }
+          },
+          "rarityWeight": 35
+        },
+        {
+          "slug": "sandstone",
+          "name": "Sandstone",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 0,
+            "charisma": 0,
+            "strength": 3,
+            "constitution": 3,
+            "wisdom": 0
+          },
+          "traits": {
+            "durability": 15,
+            "weight": 1.3,
+            "strength": 30
+          },
+          "displayName": "Sandstone",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 0,
+              "value": 1
+            }
+          },
+          "rarityWeight": 90
+        },
+        {
+          "slug": "limestone",
+          "name": "Limestone",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 0,
+            "charisma": 0,
+            "strength": 5,
+            "constitution": 5,
+            "wisdom": 0
+          },
+          "traits": {
+            "durability": 20,
+            "weight": 1.4,
+            "strength": 35
+          },
+          "displayName": "Limestone",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 0,
+              "value": 1
+            }
+          },
+          "rarityWeight": 85
+        },
+        {
+          "slug": "basalt",
+          "name": "Basalt",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 0,
+            "charisma": 0,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 0
+          },
+          "traits": {
+            "durability": 35,
+            "weight": 1.6,
+            "strength": 55
+          },
+          "displayName": "Basalt",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 1,
+              "value": 2
+            }
+          },
+          "rarityWeight": 65
+        },
+        {
+          "slug": "marble",
+          "name": "Marble",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 2,
+            "charisma": 5,
+            "strength": 5,
+            "constitution": 5,
+            "wisdom": 2
+          },
+          "traits": {
+            "durability": 25,
+            "weight": 1.3,
+            "strength": 40
+          },
+          "displayName": "Marble",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 0,
+              "value": 5
+            }
+          },
+          "rarityWeight": 50
+        },
+        {
+          "slug": "jade",
+          "name": "Jade",
+          "attributes": {
+            "dexterity": 3,
+            "intelligence": 5,
+            "charisma": 8,
+            "strength": 8,
+            "constitution": 8,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 40,
+            "weight": 1.2,
+            "strength": 50,
+            "enchantability": 25
+          },
+          "displayName": "Jade",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 2,
+              "value": 12
+            }
+          },
+          "rarityWeight": 20
+        }
+      ]
+    }
+  }
+}

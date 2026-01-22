@@ -1,13 +1,134 @@
 {
   "metadata": {
-    "description": "Stone and gem materials for enchanting",
-    "version": "4.0",
-    "lastUpdated": "2026-01-10",
-    "type": "items_materials_catalog"
+    "description": "Stone materials for primitive weapons and tools",
+    "version": "5.0",
+    "lastUpdated": "2026-01-22",
+    "type": "items_materials_catalog",
+    "totalItems": 9
   },
   "material_types": {
     "stone": {
       "items": [
+        {
+          "slug": "granite-chunk",
+          "name": "Granite Chunk",
+          "description": "Rough granite suitable for primitive weapons.",
+          "propertyRef": "@properties/materials/stones:granite",
+          "rarityWeight": 80,
+          "value": 2,
+          "weight": 1.5,
+          "stackable": true,
+          "maxStack": 50,
+          "traits": {
+            "material": "granite",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "flint-piece",
+          "name": "Flint Piece",
+          "description": "Sharp flint that can be knapped into weapons.",
+          "propertyRef": "@properties/materials/stones:flint",
+          "rarityWeight": 70,
+          "value": 3,
+          "weight": 1.2,
+          "stackable": true,
+          "maxStack": 50,
+          "traits": {
+            "material": "flint",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "obsidian-shard",
+          "name": "Obsidian Shard",
+          "description": "Volcanic glass with razor-sharp edges.",
+          "propertyRef": "@properties/materials/stones:obsidian",
+          "rarityWeight": 35,
+          "value": 8,
+          "weight": 1.1,
+          "stackable": true,
+          "maxStack": 30,
+          "traits": {
+            "material": "obsidian",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "sandstone-block",
+          "name": "Sandstone Block",
+          "description": "Soft sandstone, easily worked but fragile.",
+          "propertyRef": "@properties/materials/stones:sandstone",
+          "rarityWeight": 90,
+          "value": 1,
+          "weight": 1.3,
+          "stackable": true,
+          "maxStack": 50,
+          "traits": {
+            "material": "sandstone",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "limestone-chunk",
+          "name": "Limestone Chunk",
+          "description": "Sturdy limestone for basic construction.",
+          "propertyRef": "@properties/materials/stones:limestone",
+          "rarityWeight": 85,
+          "value": 2,
+          "weight": 1.4,
+          "stackable": true,
+          "maxStack": 50,
+          "traits": {
+            "material": "limestone",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "basalt-chunk",
+          "name": "Basalt Chunk",
+          "description": "Dense volcanic rock with excellent strength.",
+          "propertyRef": "@properties/materials/stones:basalt",
+          "rarityWeight": 65,
+          "value": 4,
+          "weight": 1.6,
+          "stackable": true,
+          "maxStack": 40,
+          "traits": {
+            "material": "basalt",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "marble-block",
+          "name": "Marble Block",
+          "description": "Elegant marble prized for decorative weapons.",
+          "propertyRef": "@properties/materials/stones:marble",
+          "rarityWeight": 50,
+          "value": 10,
+          "weight": 1.3,
+          "stackable": true,
+          "maxStack": 30,
+          "traits": {
+            "material": "marble",
+            "category": "stone"
+          }
+        },
+        {
+          "slug": "jade-stone",
+          "name": "Jade Stone",
+          "description": "Mystical jade with natural magical properties.",
+          "propertyRef": "@properties/materials/stones:jade",
+          "rarityWeight": 20,
+          "value": 25,
+          "weight": 1.2,
+          "stackable": true,
+          "maxStack": 20,
+          "traits": {
+            "material": "jade",
+            "category": "stone"
+          }
+        },
         {
           "slug": "runestone",
           "name": "Runestone",

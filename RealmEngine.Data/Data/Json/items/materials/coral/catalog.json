@@ -1,0 +1,43 @@
+{
+  "version": "5.1",
+  "type": "item_catalog",
+  "lastUpdated": "2026-01-22",
+  "description": "Coral material items that drop as loot and reference coral properties.",
+  "categories": [
+    {
+      "category": "coral",
+      "items": [
+        {
+          "name": "Red Coral Branch",
+          "rarityWeight": 45,
+          "propertyRef": "@properties/materials/corals:red-coral",
+          "description": "Vibrant red coral harvested from shallow reefs."
+        },
+        {
+          "name": "Black Coral Fragment",
+          "rarityWeight": 30,
+          "propertyRef": "@properties/materials/corals:black-coral",
+          "description": "Dark coral from the ocean depths, prized for its rarity."
+        },
+        {
+          "name": "Brain Coral Piece",
+          "rarityWeight": 20,
+          "propertyRef": "@properties/materials/corals:brain-coral",
+          "description": "Intricate coral formation resembling brain tissue."
+        },
+        {
+          "name": "Fire Coral Shard",
+          "rarityWeight": 10,
+          "propertyRef": "@properties/materials/corals:fire-coral",
+          "description": "Stinging coral that burns to the touch, magically preserved."
+        },
+        {
+          "name": "Deep Sea Coral",
+          "rarityWeight": 3,
+          "propertyRef": "@properties/materials/corals:deep-sea-coral",
+          "description": "Ancient coral from the darkest depths, imbued with primordial magic."
+        }
+      ]
+    }
+  ]
+}

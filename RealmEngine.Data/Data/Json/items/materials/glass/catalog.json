@@ -1,0 +1,43 @@
+{
+  "version": "5.1",
+  "type": "item_catalog",
+  "lastUpdated": "2026-01-22",
+  "description": "Glass material items that drop as loot and reference glass properties.",
+  "categories": [
+    {
+      "category": "glass",
+      "items": [
+        {
+          "name": "Glass Shard",
+          "rarityWeight": 55,
+          "propertyRef": "@properties/materials/glass:common-glass",
+          "description": "Simple glass fragment, sharp and fragile."
+        },
+        {
+          "name": "Stained Glass Fragment",
+          "rarityWeight": 35,
+          "propertyRef": "@properties/materials/glass:stained-glass",
+          "description": "Colorful glass piece from an artistic creation."
+        },
+        {
+          "name": "Obsidian Shard",
+          "rarityWeight": 22,
+          "propertyRef": "@properties/materials/glass:volcanic-glass",
+          "description": "Natural volcanic glass, razor-sharp and jet black."
+        },
+        {
+          "name": "Crystal Glass",
+          "rarityWeight": 12,
+          "propertyRef": "@properties/materials/glass:crystal-glass",
+          "description": "Exceptionally clear and strong glass with crystalline structure."
+        },
+        {
+          "name": "Ethereal Glass",
+          "rarityWeight": 4,
+          "propertyRef": "@properties/materials/glass:ethereal-glass",
+          "description": "Translucent glass that seems to shift between material planes."
+        }
+      ]
+    }
+  ]
+}
