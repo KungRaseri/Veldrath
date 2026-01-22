@@ -302,23 +302,30 @@ public class ItemGenerator
             // Calculate final rarity from total weight
             item.Rarity = ConvertWeightToRarity(item.TotalRarityWeight);
 
-            // Generate sockets based on item rarity and type
-            try
+            // Generate sockets based on item rarity and type (only for items that should have sockets)
+            if (ShouldHaveSockets(category))
             {
-                var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
-                if (socketList.Count > 0)
+                try
                 {
-                    // Group sockets by type for the dictionary structure
-                    item.Sockets = socketList
-                        .GroupBy(s => s.Type)
-                        .ToDictionary(g => g.Key, g => g.ToList());
-                    
-                    _logger.LogDebug("Generated {SocketCount} sockets for {ItemName}", socketList.Count, item.Name);
+                    var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
+                    if (socketList.Count > 0)
+                    {
+                        // Group sockets by type for the dictionary structure
+                        item.Sockets = socketList
+                            .GroupBy(s => s.Type)
+                            .ToDictionary(g => g.Key, g => g.ToList());
+                        
+                        _logger.LogDebug("Generated {SocketCount} sockets for {ItemName}", socketList.Count, item.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
                 }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
+                _logger.LogDebug("Skipping socket generation for {Category} item {ItemName}", category, item.Name);
             }
 
             // Update item name with enhancements

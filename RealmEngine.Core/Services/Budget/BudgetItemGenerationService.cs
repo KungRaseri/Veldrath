@@ -70,8 +70,16 @@ public class BudgetItemGenerationService
             _logger.LogDebug("Budget split: Material={MaterialBudget}, Components={ComponentBudget}", 
                 materialBudget, componentBudget);
 
-            // Step 3: Select material from pool (only for items that use materials)
-            var materialType = GetMaterialTypeForCategory(request.ItemCategory);
+            // Step 3: Select cheapest base item FIRST (so we can check its allowedMaterials)
+            var baseItem = await SelectCheapestBaseItemAsync(request.ItemCategory);
+            var baseItemCost = _budgetCalculator.CalculateMaterialCost(baseItem);
+
+            _logger.LogDebug("Base item selected: {ItemName} (cost={Cost})", 
+                GetStringProperty(baseItem, "name"), baseItemCost);
+
+            // Step 4: Select material from pool (only for items that use materials)
+            // Check base item's allowedMaterials field first, then fall back to category default
+            var materialType = GetMaterialTypeForItem(baseItem, request.ItemCategory);
             JToken? material = null;
             int materialCost = 0;
 
@@ -95,13 +103,6 @@ public class BudgetItemGenerationService
                 _logger.LogDebug("Skipping material selection for category '{Category}' (doesn't use materials)", 
                     request.ItemCategory);
             }
-
-            // Step 4: Select cheapest base item (ALWAYS succeeds)
-            var baseItem = await SelectCheapestBaseItemAsync(request.ItemCategory);
-            var baseItemCost = _budgetCalculator.CalculateMaterialCost(baseItem);
-
-            _logger.LogDebug("Base item selected: {ItemName} (cost={Cost})", 
-                GetStringProperty(baseItem, "name"), baseItemCost);
 
             // Step 5: Calculate remaining budget for enhancements
             var remainingBudget = componentBudget - baseItemCost;
@@ -200,6 +201,39 @@ public class BudgetItemGenerationService
             rarityWeight = 100,
             description = "Basic material"
         });
+    }
+    
+    /// <summary>
+    /// Determines material type for an item by checking its allowedMaterials field.
+    /// Falls back to category defaults if allowedMaterials is not specified.
+    /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
+    /// </summary>
+    private static string? GetMaterialTypeForItem(JToken baseItem, string category)
+    {
+        // Check if item has allowedMaterials field
+        var allowedMaterials = baseItem["allowedMaterials"];
+        if (allowedMaterials != null && allowedMaterials.Type == JTokenType.Array)
+        {
+            var firstMaterial = allowedMaterials.FirstOrDefault();
+            if (firstMaterial != null)
+            {
+                var materialRef = firstMaterial.Value<string>();
+                // Extract material type from reference like "@properties/materials/fabrics:*"
+                if (!string.IsNullOrEmpty(materialRef) && materialRef.Contains("/materials/"))
+                {
+                    var parts = materialRef.Split('/');
+                    if (parts.Length >= 3)
+                    {
+                        var typePart = parts[2]; // "fabrics:*" or just "fabrics"
+                        var materialType = typePart.Split(':')[0]; // Remove :* wildcard
+                        return materialType;
+                    }
+                }
+            }
+        }
+
+        // Fall back to category default
+        return GetMaterialTypeForCategory(category);
     }
     
     /// <summary>
