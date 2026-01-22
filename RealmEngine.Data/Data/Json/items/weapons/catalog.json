@@ -28,9 +28,9 @@
       },
       "items": [
         {
-          "name": "Rusty Blade",
-          "slug": "rusty-blade",
-          "description": "A corroded blade barely holding an edge, suitable only for desperate situations.",
+          "name": "Blade",
+          "slug": "blade",
+          "description": "A simple blade suitable for basic combat.",
           "value": 1,
           "weight": 2.5,
           "damage": {
@@ -358,8 +358,8 @@
       },
       "items": [
         {
-          "name": "Broken Dagger",
-          "slug": "broken-dagger",
+          "name": "Dagger",
+          "slug": "dagger",
           "value": 1,
           "weight": 0.5,
           "damage": {

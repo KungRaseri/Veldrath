@@ -93,6 +93,24 @@ public class MaterialPoolService
                     continue;
                 }
 
+                // Check if this is a material item (with propertyRef) - resolve to property instead
+                var propertyRef = GetStringProperty(resolved, "propertyRef");
+                if (!string.IsNullOrEmpty(propertyRef))
+                {
+                    _logger.LogDebug("Material item {ItemName} has propertyRef {PropertyRef}, resolving to property",
+                        GetStringProperty(resolved, "name"), propertyRef);
+                    var propertyResolved = await _referenceResolver.ResolveToObjectAsync(propertyRef);
+                    if (propertyResolved != null)
+                    {
+                        resolved = propertyResolved;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to resolve propertyRef {PropertyRef} for material {MaterialRef}, using item instead",
+                            propertyRef, materialRef);
+                    }
+                }
+
                 var cost = _budgetCalculator.CalculateMaterialCost(resolved);
                 var materialEntry = (resolved, cost, weight);
                 allMaterials.Add(materialEntry);

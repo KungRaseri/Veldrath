@@ -1136,9 +1136,10 @@ public class ItemGenerator
             var totalSocketCount = result.Sockets.Values.Sum(list => list.Count);
             _logger.LogDebug("Applied {SocketCount} sockets from budget result for {ItemName}", totalSocketCount, item.Name);
         }
-        else
+        else if (ShouldHaveSockets(category))
         {
             // Fallback to legacy SocketGenerator if budget generation didn't provide sockets
+            // BUT only for item types that should have sockets
             try
             {
                 var socketList = SocketGenerator.GenerateSockets(item.Rarity, item.Type, item.Material?.Name);
@@ -1156,6 +1157,10 @@ public class ItemGenerator
             {
                 _logger.LogWarning(ex, "Failed to generate sockets for {ItemName}, continuing without sockets", item.Name);
             }
+        }
+        else
+        {
+            _logger.LogDebug("Skipping socket generation for {Category} item {ItemName}", category, item.Name);
         }
 
         return item;
@@ -1499,6 +1504,37 @@ public class ItemGenerator
         }
 
         return material;
+    }
+
+    /// <summary>
+    /// Determines if an item category should have sockets.
+    /// Only weapons, armor, shields, and accessories get sockets.
+    /// </summary>
+    private static bool ShouldHaveSockets(string category)
+    {
+        return category?.ToLower() switch
+        {
+            "weapons" => true,
+            "armor" => true,
+            "shields" => true,
+            "clothing" => true,
+            "accessories" => true,
+            // These don't get sockets:
+            "consumables" => false,
+            "potions" => false,
+            "scrolls" => false,
+            "books" => false,
+            "keys" => false,
+            "quest" => false,
+            "materials" => false,
+            "enchantments" => false,
+            "gems" => false,
+            "runes" => false,
+            "crystals" => false,
+            "orbs" => false,
+            "essences" => false,
+            _ => false // Default to no sockets for unknown types
+        };
     }
 
     #endregion
