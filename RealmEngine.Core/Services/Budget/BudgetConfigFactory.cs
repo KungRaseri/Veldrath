@@ -15,6 +15,7 @@ public class BudgetConfigFactory
     private BudgetConfig? _budgetConfig;
     private MaterialPools? _materialPools;
     private EnemyTypes? _enemyTypes;
+    private MaterialFilterConfig? _materialFilters;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BudgetConfigFactory"/> class.
@@ -137,8 +138,68 @@ public class BudgetConfigFactory
         _budgetConfig = null;
         _materialPools = null;
         _enemyTypes = null;
+        _materialFilters = null;
         
         _logger.LogInformation("Budget system configurations cleared, will reload on next access");
+    }
+
+    /// <summary>
+    /// Load or get cached material filter configuration.
+    /// </summary>
+    public MaterialFilterConfig GetMaterialFilters()
+    {
+        if (_materialFilters != null)
+            return _materialFilters;
+
+        try
+        {
+            var configFile = _dataCache.GetFile("configuration/material-filters.json");
+            if (configFile?.JsonData == null)
+            {
+                _logger.LogError("Failed to load material-filters.json");
+                return CreateDefaultMaterialFilters();
+            }
+
+            _materialFilters = configFile.JsonData.ToObject<MaterialFilterConfig>();
+            if (_materialFilters == null)
+            {
+                _logger.LogError("Failed to deserialize material-filters.json");
+                return CreateDefaultMaterialFilters();
+            }
+
+            _logger.LogInformation("Material filter configuration loaded successfully");
+            return _materialFilters;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading material filter configuration");
+            return CreateDefaultMaterialFilters();
+        }
+    }
+
+    private MaterialFilterConfig CreateDefaultMaterialFilters()
+    {
+        _logger.LogWarning("Using default material filter configuration");
+        return new MaterialFilterConfig
+        {
+            Defaults = new Dictionary<string, DefaultMaterialFilter>
+            {
+                ["unknown"] = new DefaultMaterialFilter { AllowedMaterials = new List<string>() }
+            },
+            Categories = new Dictionary<string, CategoryMaterialFilter>
+            {
+                ["weapons"] = new CategoryMaterialFilter
+                {
+                    DefaultMaterials = new List<string> { "metals" },
+                    Types = new Dictionary<string, TypeMaterialFilter>()
+                },
+                ["armor"] = new CategoryMaterialFilter
+                {
+                    DefaultMaterials = new List<string> { "metals" },
+                    Types = new Dictionary<string, TypeMaterialFilter>()
+                }
+            }
+        };
     }
 
     private BudgetConfig CreateDefaultBudgetConfig()

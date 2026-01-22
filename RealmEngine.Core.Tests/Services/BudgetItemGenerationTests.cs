@@ -53,6 +53,7 @@ public class BudgetItemGenerationTests
             _referenceResolver,
             budgetCalculator,
             materialPoolService,
+            configFactory,
             loggerFactory.CreateLogger<BudgetItemGenerationService>());
     }
 

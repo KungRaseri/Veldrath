@@ -92,6 +92,7 @@ public class ItemGenerator
                     _referenceResolver,
                     budgetCalculator,
                     materialPoolService,
+                    configFactory,
                     _loggerFactory.CreateLogger<BudgetItemGenerationService>());
             }
             return _budgetGenerator;

@@ -15,6 +15,7 @@ public class BudgetItemGenerationService
     private readonly ReferenceResolverService _referenceResolver;
     private readonly BudgetCalculator _budgetCalculator;
     private readonly MaterialPoolService _materialPoolService;
+    private readonly BudgetConfigFactory _configFactory;
     private readonly ILogger<BudgetItemGenerationService> _logger;
     private readonly Random _random;
 
@@ -25,18 +26,21 @@ public class BudgetItemGenerationService
     /// <param name="referenceResolver">The reference resolver service.</param>
     /// <param name="budgetCalculator">The budget calculator.</param>
     /// <param name="materialPoolService">The material pool service.</param>
+    /// <param name="configFactory">The budget config factory.</param>
     /// <param name="logger">The logger instance.</param>
     public BudgetItemGenerationService(
         GameDataCache dataCache,
         ReferenceResolverService referenceResolver,
         BudgetCalculator budgetCalculator,
         MaterialPoolService materialPoolService,
+        BudgetConfigFactory configFactory,
         ILogger<BudgetItemGenerationService> logger)
     {
         _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
         _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
         _budgetCalculator = budgetCalculator ?? throw new ArgumentNullException(nameof(budgetCalculator));
         _materialPoolService = materialPoolService ?? throw new ArgumentNullException(nameof(materialPoolService));
+        _configFactory = configFactory ?? throw new ArgumentNullException(nameof(configFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _random = new Random();
     }
@@ -216,16 +220,14 @@ public class BudgetItemGenerationService
     
     /// <summary>
     /// Determines all possible material types for an item by checking its allowedMaterials field.
-    /// Returns multiple material types if item specifies them (e.g., club can be wood or stone).
-    /// Falls back to category defaults if allowedMaterials is not specified.
-    /// For armor, checks ArmorClass property (heavy=metals, light=fabrics).
+    /// Falls back to material-filters.json configuration using property matching and category defaults.
     /// Returns empty list for item types that don't use materials (consumables, scrolls, etc.)
     /// </summary>
-    private static List<string> GetMaterialTypesForItem(JToken baseItem, string category)
+    private List<string> GetMaterialTypesForItem(JToken baseItem, string category)
     {
         var materialTypes = new List<string>();
         
-        // Check if item has allowedMaterials field
+        // Step 1: Check if item has explicit allowedMaterials field
         var allowedMaterials = baseItem["allowedMaterials"];
         if (allowedMaterials != null && allowedMaterials.Type == JTokenType.Array)
         {
@@ -250,83 +252,126 @@ public class BudgetItemGenerationService
             
             if (materialTypes.Any())
             {
+                _logger.LogDebug("Using explicit allowedMaterials from item: {Materials}", string.Join(", ", materialTypes));
                 return materialTypes; // Use explicit allowedMaterials
             }
         }
 
-        // Special case: For armor category, check item properties
-        if (category?.ToLower() == "armor")
+        // Step 2: Fall back to material-filters.json configuration
+        var config = _configFactory.GetMaterialFilters();
+        var categoryKey = category?.ToLower() ?? "unknown";
+
+        if (config.Categories.TryGetValue(categoryKey, out var categoryFilter))
         {
-            // Shields have blockChance property - use woods
-            if (baseItem["blockChance"] != null)
+            // Step 2a: Check property-based matches first (e.g., armorClass, blockChance)
+            if (categoryFilter.PropertyMatches != null)
             {
-                materialTypes.Add("woods");
-                return materialTypes;
+                foreach (var match in categoryFilter.PropertyMatches)
+                {
+                    var propertyToken = baseItem[match.Property];
+                    if (propertyToken != null)
+                    {
+                        // Check condition
+                        if (match.Condition == "exists")
+                        {
+                            _logger.LogDebug("Property match: {Property} exists, using materials: {Materials}",
+                                match.Property, string.Join(", ", match.AllowedMaterials));
+                            return match.AllowedMaterials.ToList();
+                        }
+                        
+                        // Check value match
+                        if (match.Value != null)
+                        {
+                            var propertyValue = propertyToken.Value<string>()?.ToLower();
+                            if (propertyValue == match.Value.ToLower())
+                            {
+                                _logger.LogDebug("Property match: {Property}={Value}, using materials: {Materials}",
+                                    match.Property, match.Value, string.Join(", ", match.AllowedMaterials));
+                                return match.AllowedMaterials.ToList();
+                            }
+                        }
+                    }
+                }
             }
-            
-            // Non-shield armor: Check ArmorClass to determine material type
-            var armorClass = baseItem["armorClass"]?.Value<string>()?.ToLower();
-            var armorMaterialType = armorClass switch
+
+            // Step 2b: Check type-specific overrides (e.g., heavy-blades, light-armor)
+            var itemType = GetStringProperty(baseItem, "slug") ?? GetStringProperty(baseItem, "name")?.ToLower();
+            if (!string.IsNullOrEmpty(itemType))
             {
-                "heavy" => "metals",    // Plate, chainmail
-                "light" => "fabrics",   // Cloth, leather
-                "medium" => "leathers", // Studded leather, hide
-                _ => "metals"           // Default to metals if armorClass not specified
-            };
-            materialTypes.Add(armorMaterialType);
-            return materialTypes;
+                // First try exact type match
+                if (categoryFilter.Types.TryGetValue(itemType, out var typeFilter))
+                {
+                    _logger.LogDebug("Type match: {Type}, using materials: {Materials}",
+                        itemType, string.Join(", ", typeFilter.AllowedMaterials));
+                    return typeFilter.AllowedMaterials.ToList();
+                }
+
+                // Try category from catalog structure (e.g., "heavy-blades" from weapon_types)
+                var weaponType = FindWeaponTypeFromItem(baseItem);
+                if (!string.IsNullOrEmpty(weaponType) && categoryFilter.Types.TryGetValue(weaponType, out var weaponTypeFilter))
+                {
+                    _logger.LogDebug("Weapon type match: {Type}, using materials: {Materials}",
+                        weaponType, string.Join(", ", weaponTypeFilter.AllowedMaterials));
+                    return weaponTypeFilter.AllowedMaterials.ToList();
+                }
+            }
+
+            // Step 2c: Use category default materials
+            if (categoryFilter.DefaultMaterials.Any())
+            {
+                _logger.LogDebug("Using category default materials for '{Category}': {Materials}",
+                    categoryKey, string.Join(", ", categoryFilter.DefaultMaterials));
+                return categoryFilter.DefaultMaterials.ToList();
+            }
         }
 
-        // Fall back to category defaults
-        var categoryMaterialType = GetMaterialTypeForCategory(category ?? "unknown");
-        if (categoryMaterialType != null)
+        // Step 3: Check defaults for unknown categories
+        if (config.Defaults.TryGetValue("unknown", out var defaultFilter))
         {
-            materialTypes.Add(categoryMaterialType);
+            _logger.LogDebug("Using unknown default materials: {Materials}", 
+                string.Join(", ", defaultFilter.AllowedMaterials));
+            return defaultFilter.AllowedMaterials.ToList();
         }
-        
+
+        // Step 4: No materials found (consumables, scrolls, etc.)
+        _logger.LogDebug("No materials configured for category '{Category}'", categoryKey);
         return materialTypes;
     }
-    
-    /// <summary>
-    /// Determines material type for an item by checking its allowedMaterials field.
-    /// Falls back to category defaults if allowedMaterials is not specified.
-    /// For armor, checks ArmorClass property (heavy=metals, light=fabrics).
-    /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
-    /// </summary>
-    [Obsolete("Use GetMaterialTypesForItem instead to support multiple material types")]
-    private static string? GetMaterialTypeForItem(JToken baseItem, string category)
-    {
-        var materialTypes = GetMaterialTypesForItem(baseItem, category);
-        return materialTypes.FirstOrDefault();
-    }
-    
-    /// <summary>
-    /// Maps item category to the appropriate material type pool.
-    /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
-    /// Note: For weapons, this returns "metals" but MaterialPoolService will also check "woods" pool.
-    /// </summary>
-    private static string? GetMaterialTypeForCategory(string category)
-    {
-        return category?.ToLower() switch
-        {
-            "weapons" => "metals", // Also checks woods in MaterialPoolService
-            "armor" => "metals",   // Handled by GetMaterialTypeForItem based on ArmorClass
-            "clothing" => "fabrics",
-            "accessories" => "gems",
-            "shields" => "woods",
-            // These don't use materials:
-            "consumables" => null,
-            "potions" => null,
-            "scrolls" => null,
-            "books" => null,
-            "keys" => null,
-            "quest" => null,
-            "materials" => null, // Materials themselves don't need materials
-            "enchantments" => null, // Enchantment scrolls don't use materials
-            _ => null // Default to no material for unknown types
-        };
-    }
 
+    /// <summary>
+    /// Find weapon type from item by checking parent weapon_types structure in catalog
+    /// </summary>
+    private string? FindWeaponTypeFromItem(JToken baseItem)
+    {
+        try
+        {
+            // Try to navigate up to find weapon_type parent
+            var parent = baseItem.Parent;
+            while (parent != null)
+            {
+                if (parent is JProperty prop && parent.Parent?.Parent is JProperty typeProperty)
+                {
+                    // Check if we're inside weapon_types
+                    if (typeProperty.Name == "weapon_types" || typeProperty.Name == "armor_types")
+                    {
+                        // The property name before "items" array is the type
+                        if (prop.Name == "items" && prop.Parent is JObject parentObj)
+                        {
+                            var typeName = ((JProperty)parentObj.Parent!)?.Name;
+                            return typeName;
+                        }
+                    }
+                }
+                parent = parent.Parent;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error finding weapon type from item structure");
+        }
+        return null;
+    }
+    
     /// <summary>
     /// Create a minimal valid item when generation fails completely.
     /// Ensures we always return something rather than null.
