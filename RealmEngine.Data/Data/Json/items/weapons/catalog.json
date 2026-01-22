@@ -1981,6 +1981,7 @@
               "type": "number"
             }
           },
+          "allowedMaterials": ["@properties/materials/woods:*", "@properties/materials/stones:*"],
           "rarityWeight": 100,
           "description": "A crude bludgeon carved from a sturdy branch, effective despite its simplicity.",
           "requirements": {
@@ -2014,6 +2015,7 @@
               "type": "number"
             }
           },
+          "allowedMaterials": ["@properties/materials/woods:*", "@properties/materials/stones:*"],
           "rarityWeight": 70,
           "description": "A solid wooden weapon reinforced with metal studs.",
           "requirements": {
@@ -2461,6 +2463,7 @@
               "type": "number"
             }
           },
+          "allowedMaterials": ["@properties/materials/woods:*"],
           "rarityWeight": 20,
           "description": "A wooden pole often used by travelers and mages as both walking aid and weapon.",
           "requirements": {
@@ -2502,6 +2505,7 @@
               "type": "number"
             }
           },
+          "allowedMaterials": ["@properties/materials/woods:*"],
           "rarityWeight": 20,
           "description": "A sturdy wooden staff wielded with both hands, offering reach and defensive capability.",
           "requirements": {
@@ -2625,6 +2629,7 @@
               "type": "number"
             }
           },
+          "allowedMaterials": ["@properties/materials/metals:*", "@properties/materials/crystals:*"],
           "rarityWeight": 10,
           "description": "A short metal rod infused with magical energy, serving as both focus and weapon.",
           "requirements": {

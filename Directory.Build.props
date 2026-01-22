@@ -7,5 +7,11 @@
     
     <!-- Version will be set by build script to: $(VersionMajor).$(VersionMinor).$(VersionPatch)-$(GitHash) -->
     <!-- Example: 0.1.42-a3f2c1d -->
+    
+    <!-- Default version properties (overridden by build script) -->
+    <Version Condition="'$(Version)' == ''">$(VersionMajor).$(VersionMinor).0</Version>
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(VersionMajor).$(VersionMinor).0</AssemblyVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(VersionMajor).$(VersionMinor).0.0</FileVersion>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(VersionMajor).$(VersionMinor).0-dev</InformationalVersion>
   </PropertyGroup>
 </Project>

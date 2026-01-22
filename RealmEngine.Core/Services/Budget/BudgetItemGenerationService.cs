@@ -79,18 +79,29 @@ public class BudgetItemGenerationService
 
             // Step 4: Select material from pool (only for items that use materials)
             // Check base item's allowedMaterials field first, then fall back to category default
-            var materialType = GetMaterialTypeForItem(baseItem, request.ItemCategory);
+            var materialTypes = GetMaterialTypesForItem(baseItem, request.ItemCategory);
             JToken? material = null;
             int materialCost = 0;
 
-            if (materialType != null)
+            if (materialTypes != null && materialTypes.Any())
             {
-                material = await _materialPoolService.SelectMaterialAsync(materialType, materialBudget);
+                // Try each allowed material type in order until one succeeds
+                foreach (var materialType in materialTypes)
+                {
+                    material = await _materialPoolService.SelectMaterialAsync(materialType, materialBudget);
+                    if (material != null)
+                    {
+                        _logger.LogDebug("Material type '{MaterialType}' succeeded", materialType);
+                        break;
+                    }
+                    _logger.LogDebug("No affordable material found for type '{MaterialType}', trying next...", materialType);
+                }
+                
                 if (material == null)
                 {
-                    // Fallback: Get ANY material from pool and use it regardless of cost
-                    _logger.LogWarning("No affordable material found, using fallback for category '{Category}'", request.ItemCategory);
-                    material = await GetFallbackMaterialAsync(materialType);
+                    // Final fallback: Get ANY material from first pool and use it regardless of cost
+                    _logger.LogWarning("No affordable material found in any pool, using fallback for category '{Category}'", request.ItemCategory);
+                    material = await GetFallbackMaterialAsync(materialTypes.First());
                 }
 
                 materialCost = _budgetCalculator.CalculateMaterialCost(material);
@@ -204,20 +215,23 @@ public class BudgetItemGenerationService
     }
     
     /// <summary>
-    /// Determines material type for an item by checking its allowedMaterials field.
+    /// Determines all possible material types for an item by checking its allowedMaterials field.
+    /// Returns multiple material types if item specifies them (e.g., club can be wood or stone).
     /// Falls back to category defaults if allowedMaterials is not specified.
-    /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
+    /// For armor, checks ArmorClass property (heavy=metals, light=fabrics).
+    /// Returns empty list for item types that don't use materials (consumables, scrolls, etc.)
     /// </summary>
-    private static string? GetMaterialTypeForItem(JToken baseItem, string category)
+    private static List<string> GetMaterialTypesForItem(JToken baseItem, string category)
     {
+        var materialTypes = new List<string>();
+        
         // Check if item has allowedMaterials field
         var allowedMaterials = baseItem["allowedMaterials"];
         if (allowedMaterials != null && allowedMaterials.Type == JTokenType.Array)
         {
-            var firstMaterial = allowedMaterials.FirstOrDefault();
-            if (firstMaterial != null)
+            foreach (var materialRefToken in allowedMaterials)
             {
-                var materialRef = firstMaterial.Value<string>();
+                var materialRef = materialRefToken.Value<string>();
                 // Extract material type from reference like "@properties/materials/fabrics:*"
                 if (!string.IsNullOrEmpty(materialRef) && materialRef.Contains("/materials/"))
                 {
@@ -226,26 +240,69 @@ public class BudgetItemGenerationService
                     {
                         var typePart = parts[2]; // "fabrics:*" or just "fabrics"
                         var materialType = typePart.Split(':')[0]; // Remove :* wildcard
-                        return materialType;
+                        if (!string.IsNullOrEmpty(materialType))
+                        {
+                            materialTypes.Add(materialType);
+                        }
                     }
                 }
             }
+            
+            if (materialTypes.Any())
+            {
+                return materialTypes; // Use explicit allowedMaterials
+            }
         }
 
-        // Fall back to category default
-        return GetMaterialTypeForCategory(category);
+        // Special case: For armor, check ArmorClass to determine material type
+        if (category?.ToLower() == "armor")
+        {
+            var armorClass = baseItem["armorClass"]?.Value<string>()?.ToLower();
+            var armorMaterialType = armorClass switch
+            {
+                "heavy" => "metals",    // Plate, chainmail
+                "light" => "fabrics",   // Cloth, leather
+                "medium" => "leathers", // Studded leather, hide
+                _ => "metals"           // Default to metals if armorClass not specified
+            };
+            materialTypes.Add(armorMaterialType);
+            return materialTypes;
+        }
+
+        // Fall back to category defaults
+        var categoryMaterialType = GetMaterialTypeForCategory(category ?? "unknown");
+        if (categoryMaterialType != null)
+        {
+            materialTypes.Add(categoryMaterialType);
+        }
+        
+        return materialTypes;
+    }
+    
+    /// <summary>
+    /// Determines material type for an item by checking its allowedMaterials field.
+    /// Falls back to category defaults if allowedMaterials is not specified.
+    /// For armor, checks ArmorClass property (heavy=metals, light=fabrics).
+    /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
+    /// </summary>
+    [Obsolete("Use GetMaterialTypesForItem instead to support multiple material types")]
+    private static string? GetMaterialTypeForItem(JToken baseItem, string category)
+    {
+        var materialTypes = GetMaterialTypesForItem(baseItem, category);
+        return materialTypes.FirstOrDefault();
     }
     
     /// <summary>
     /// Maps item category to the appropriate material type pool.
     /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
+    /// Note: For weapons, this returns "metals" but MaterialPoolService will also check "woods" pool.
     /// </summary>
     private static string? GetMaterialTypeForCategory(string category)
     {
         return category?.ToLower() switch
         {
-            "weapons" => "metals",
-            "armor" => "metals", // Plate/chainmail
+            "weapons" => "metals", // Also checks woods in MaterialPoolService
+            "armor" => "metals",   // Handled by GetMaterialTypeForItem based on ArmorClass
             "clothing" => "fabrics",
             "accessories" => "gems",
             "shields" => "woods",
@@ -257,6 +314,7 @@ public class BudgetItemGenerationService
             "keys" => null,
             "quest" => null,
             "materials" => null, // Materials themselves don't need materials
+            "enchantments" => null, // Enchantment scrolls don't use materials
             _ => null // Default to no material for unknown types
         };
     }
