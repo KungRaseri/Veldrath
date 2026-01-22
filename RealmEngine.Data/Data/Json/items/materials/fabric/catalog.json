@@ -72,7 +72,7 @@
       "name": "Mageweave Cloth",
       "slug": "mageweave-cloth",
       "description": "Fabric infused with magical energy, enhances spellcasting.",
-      "propertyRef": "@items/materials/fabric:mageweave-cloth",
+      "propertyRef": "@properties/materials/fabrics:spidersilk",
       "stackSize": 100,
       "rarityWeight": 25,
       "baseValue": 35
@@ -81,7 +81,7 @@
       "name": "Runecloth",
       "slug": "runecloth",
       "description": "Ancient cloth inscribed with mystical runes.",
-      "propertyRef": "@items/materials/fabric:runecloth",
+      "propertyRef": "@properties/materials/fabrics:moonweave",
       "stackSize": 100,
       "rarityWeight": 20,
       "baseValue": 50

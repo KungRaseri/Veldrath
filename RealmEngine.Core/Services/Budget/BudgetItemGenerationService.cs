@@ -70,20 +70,31 @@ public class BudgetItemGenerationService
             _logger.LogDebug("Budget split: Material={MaterialBudget}, Components={ComponentBudget}", 
                 materialBudget, componentBudget);
 
-            // Step 3: Select material from pool (ALWAYS succeeds - picks cheapest if needed)
+            // Step 3: Select material from pool (only for items that use materials)
             var materialType = GetMaterialTypeForCategory(request.ItemCategory);
-            var material = await _materialPoolService.SelectMaterialAsync(materialType, materialBudget);
-            if (material == null)
+            JToken? material = null;
+            int materialCost = 0;
+
+            if (materialType != null)
             {
-                // Fallback: Get ANY material from pool and use it regardless of cost
-                _logger.LogWarning("No affordable material found, using fallback for category '{Category}'", request.ItemCategory);
-                material = await GetFallbackMaterialAsync(materialType);
+                material = await _materialPoolService.SelectMaterialAsync(materialType, materialBudget);
+                if (material == null)
+                {
+                    // Fallback: Get ANY material from pool and use it regardless of cost
+                    _logger.LogWarning("No affordable material found, using fallback for category '{Category}'", request.ItemCategory);
+                    material = await GetFallbackMaterialAsync(materialType);
+                }
+
+                materialCost = _budgetCalculator.CalculateMaterialCost(material);
+
+                _logger.LogDebug("Material selected: {MaterialName} (cost={Cost})", 
+                    GetStringProperty(material, "name"), materialCost);
             }
-
-            var materialCost = _budgetCalculator.CalculateMaterialCost(material);
-
-            _logger.LogDebug("Material selected: {MaterialName} (cost={Cost})", 
-                GetStringProperty(material, "name"), materialCost);
+            else
+            {
+                _logger.LogDebug("Skipping material selection for category '{Category}' (doesn't use materials)", 
+                    request.ItemCategory);
+            }
 
             // Step 4: Select cheapest base item (ALWAYS succeeds)
             var baseItem = await SelectCheapestBaseItemAsync(request.ItemCategory);
@@ -193,8 +204,9 @@ public class BudgetItemGenerationService
     
     /// <summary>
     /// Maps item category to the appropriate material type pool.
+    /// Returns null for item types that don't use materials (consumables, scrolls, etc.)
     /// </summary>
-    private static string GetMaterialTypeForCategory(string category)
+    private static string? GetMaterialTypeForCategory(string category)
     {
         return category?.ToLower() switch
         {
@@ -203,7 +215,15 @@ public class BudgetItemGenerationService
             "clothing" => "fabrics",
             "accessories" => "gems",
             "shields" => "woods",
-            _ => "metals" // Default to metals
+            // These don't use materials:
+            "consumables" => null,
+            "potions" => null,
+            "scrolls" => null,
+            "books" => null,
+            "keys" => null,
+            "quest" => null,
+            "materials" => null, // Materials themselves don't need materials
+            _ => null // Default to no material for unknown types
         };
     }
 
