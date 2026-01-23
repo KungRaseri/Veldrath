@@ -38,8 +38,12 @@ public interface IApocalypseTimer
 
     /// <summary>
     /// Add bonus minutes to the timer.
+    /// Returns result info for Godot UI to display.
     /// </summary>
-    void AddBonusTime(int minutes, string reason = "Quest completed");
+    /// <param name="minutes">Minutes to add.</param>
+    /// <param name="reason">Reason for bonus time.</param>
+    /// <returns>Information about the bonus time awarded.</returns>
+    BonusTimeResult AddBonusTime(int minutes, string reason = "Quest completed");
 
     /// <summary>
     /// Get formatted time remaining string.
@@ -52,9 +56,11 @@ public interface IApocalypseTimer
     string GetColoredTimeDisplay();
 
     /// <summary>
-    /// Check and show time warnings.
+    /// Check and return time warnings if they should be triggered.
+    /// Returns warning info for Godot UI to display.
     /// </summary>
-    void CheckTimeWarnings();
+    /// <returns>Warning info if a warning should be shown, null otherwise.</returns>
+    TimeWarningResult? CheckTimeWarnings();
 
     /// <summary>
     /// Get total time limit with bonuses.

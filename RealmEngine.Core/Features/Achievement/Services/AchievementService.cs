@@ -6,22 +6,20 @@ namespace RealmEngine.Core.Features.Achievements.Services;
 
 /// <summary>
 /// Provides services for managing achievements, including unlocking, checking criteria, and retrieving achievement data.
+/// Pure domain logic - UI notifications handled by Godot.
 /// </summary>
 public class AchievementService
 {
     private readonly SaveGameService _saveGameService;
     private readonly List<Achievement> _allAchievements;
-    private readonly IGameUI _console;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AchievementService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    /// <param name="console">The game UI console.</param>
-    public AchievementService(SaveGameService saveGameService, IGameUI console)
+    public AchievementService(SaveGameService saveGameService)
     {
         _saveGameService = saveGameService;
-        _console = console;
         _allAchievements = InitializeAchievements();
     }
 
@@ -31,7 +29,6 @@ public class AchievementService
     protected AchievementService()
     {
         _saveGameService = null!;
-        _console = null!;
         _allAchievements = new List<Achievement>();
     }
 
@@ -61,9 +58,7 @@ public class AchievementService
         saveGame.UnlockedAchievements.Add(achievementId);
         _saveGameService.SaveGame(saveGame);
 
-        // Show unlock notification
-        ShowAchievementUnlock(achievement);
-
+        // Note: UI notification handled by Godot via achievement return value
         Log.Information("Achievement unlocked: {AchievementId} - {Title}", achievementId, achievement.Title);
 
         return await Task.FromResult(achievement);
@@ -135,19 +130,6 @@ public class AchievementService
             AchievementType.Deathless => saveGame.DeathCount == 0 && saveGame.CompletedQuests.Any(q => q.Id == "main_06_final_boss"),
             _ => false
         };
-    }
-
-    private void ShowAchievementUnlock(Achievement achievement)
-    {
-        _console.Clear();
-        _console.ShowSuccess("═══════════════════════════════════════");
-        _console.ShowSuccess("      ACHIEVEMENT UNLOCKED!            ");
-        _console.ShowSuccess("═══════════════════════════════════════");
-        _console.WriteText($"  {achievement.Icon} {achievement.Title}");
-        _console.WriteText($"  {achievement.Description}");
-        _console.WriteText($"  Points: {achievement.Points}");
-        _console.ShowSuccess("═══════════════════════════════════════");
-        Thread.Sleep(3000);
     }
 
     private List<Achievement> InitializeAchievements()

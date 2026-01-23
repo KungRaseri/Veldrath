@@ -7,10 +7,10 @@ namespace RealmEngine.Core.Services;
 /// <summary>
 /// Manages the countdown timer for Apocalypse mode.
 /// This is a shared service, not a feature, as it's infrastructure.
+/// Pure domain logic - UI handled by Godot.
 /// </summary>
 public class ApocalypseTimer : IApocalypseTimer
 {
-    private readonly IGameUI _console;
     private DateTime _startTime;
     private int _totalMinutes = 240; // 4 hours = 240 minutes
     private int _bonusMinutes = 0;
@@ -24,10 +24,8 @@ public class ApocalypseTimer : IApocalypseTimer
     /// <summary>
     /// Initializes a new instance of the <see cref="ApocalypseTimer"/> class.
     /// </summary>
-    /// <param name="console">The game UI console.</param>
-    public ApocalypseTimer(IGameUI console)
+    public ApocalypseTimer()
     {
-        _console = console;
     }
 
     /// <summary>
@@ -115,26 +113,25 @@ public class ApocalypseTimer : IApocalypseTimer
 
     /// <summary>
     /// Add bonus minutes to the timer.
+    /// Returns result info for Godot UI to display.
     /// </summary>
     /// <param name="minutes">The minutes to add.</param>
     /// <param name="reason">The reason for the bonus time.</param>
-    public void AddBonusTime(int minutes, string reason = "Quest completed")
+    /// <returns>Information about the bonus time awarded.</returns>
+    public BonusTimeResult AddBonusTime(int minutes, string reason = "Quest completed")
     {
         _bonusMinutes += minutes;
-
-        _console.Clear();
-        _console.ShowSuccess("═══════════════════════════════════════");
-        _console.ShowSuccess("      BONUS TIME AWARDED!              ");
-        _console.ShowSuccess("═══════════════════════════════════════");
-        _console.WriteText($"  Reason: {reason}");
-        _console.WriteText($"  Bonus: +{minutes} minutes");
-        _console.WriteText($"  New Total: {GetRemainingMinutes()} minutes remaining");
-        _console.ShowSuccess("═══════════════════════════════════════");
+        var remaining = GetRemainingMinutes();
 
         Log.Information("Bonus time awarded: {Minutes} minutes. Reason: {Reason}. Remaining: {Remaining}",
-            minutes, reason, GetRemainingMinutes());
+            minutes, reason, remaining);
 
-        Thread.Sleep(2000);
+        return new BonusTimeResult
+        {
+            MinutesAdded = minutes,
+            Reason = reason,
+            TotalRemainingMinutes = remaining
+        };
     }
 
     /// <summary>
@@ -171,44 +168,52 @@ public class ApocalypseTimer : IApocalypseTimer
     }
 
     /// <summary>
-    /// Check and show time warnings.
+    /// Check if time warnings should be triggered and return warning info.
+    /// Godot handles displaying warnings.
     /// </summary>
-    public void CheckTimeWarnings()
+    /// <returns>Time warning info if a warning should be shown, null otherwise.</returns>
+    public TimeWarningResult? CheckTimeWarnings()
     {
         var remaining = GetRemainingMinutes();
 
         if (remaining <= 60 && !_hasShownOneHourWarning)
         {
             _hasShownOneHourWarning = true;
-            ShowTimeWarning("1 HOUR REMAINING!", "The apocalypse draws near...");
+            Log.Warning("Apocalypse timer warning: 1 HOUR REMAINING!");
+            return new TimeWarningResult
+            {
+                Title = "1 HOUR REMAINING!",
+                Message = "The apocalypse draws near...",
+                RemainingMinutes = remaining,
+                TimeFormatted = GetFormattedTimeRemaining()
+            };
         }
         else if (remaining <= 30 && !_hasShownThirtyMinWarning)
         {
             _hasShownThirtyMinWarning = true;
-            ShowTimeWarning("30 MINUTES REMAINING!", "Time is running out!");
+            Log.Warning("Apocalypse timer warning: 30 MINUTES REMAINING!");
+            return new TimeWarningResult
+            {
+                Title = "30 MINUTES REMAINING!",
+                Message = "Time is running out!",
+                RemainingMinutes = remaining,
+                TimeFormatted = GetFormattedTimeRemaining()
+            };
         }
         else if (remaining <= 10 && !_hasShownTenMinWarning)
         {
             _hasShownTenMinWarning = true;
-            ShowTimeWarning("10 MINUTES REMAINING!", "The end is imminent!");
+            Log.Warning("Apocalypse timer warning: 10 MINUTES REMAINING!");
+            return new TimeWarningResult
+            {
+                Title = "10 MINUTES REMAINING!",
+                Message = "The end is imminent!",
+                RemainingMinutes = remaining,
+                TimeFormatted = GetFormattedTimeRemaining()
+            };
         }
-    }
 
-    /// <summary>
-    /// Show a time warning to the player.
-    /// </summary>
-    private void ShowTimeWarning(string title, string message)
-    {
-        _console.Clear();
-        _console.ShowWarning("═══════════════════════════════════════");
-        _console.ShowWarning($"      {title}");
-        _console.ShowWarning("═══════════════════════════════════════");
-        _console.WriteText($"  {message}");
-        _console.WriteText($"  Time Left: {GetFormattedTimeRemaining()}");
-        _console.ShowWarning("═══════════════════════════════════════");
-
-        Log.Warning("Apocalypse timer warning: {Title}", title);
-        Thread.Sleep(3000);
+        return null;
     }
 
     /// <summary>

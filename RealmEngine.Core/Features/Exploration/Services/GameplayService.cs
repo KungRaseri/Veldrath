@@ -7,63 +7,105 @@ namespace RealmEngine.Core.Features.Exploration;
 
 /// <summary>
 /// Handles in-game operations like saving and resting.
+/// Pure domain logic - UI feedback handled by Godot.
 /// </summary>
 public class GameplayService
 {
     private readonly SaveGameService _saveGameService;
-    private readonly IGameUI _console;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameplayService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    /// <param name="console">The game UI.</param>
-    public GameplayService(SaveGameService saveGameService, IGameUI console)
+    public GameplayService(SaveGameService saveGameService)
     {
         _saveGameService = saveGameService;
-        _console = console;
     }
 
     /// <summary>
     /// Rest and recover health and mana to maximum.
     /// </summary>
-    public void Rest(Character player)
+    /// <param name="player">The player character.</param>
+    /// <returns>Result info for UI display.</returns>
+    public RestResult Rest(Character player)
     {
-        if (player == null) return;
+        if (player == null)
+        {
+            return new RestResult { Success = false, ErrorMessage = "No player character" };
+        }
 
-        _console.ShowInfo("You rest and recover...");
+        var healthRecovered = player.MaxHealth - player.Health;
+        var manaRecovered = player.MaxMana - player.Mana;
 
         player.Health = player.MaxHealth;
         player.Mana = player.MaxMana;
 
-        _console.ShowSuccess("Fully rested!");
+        Log.Information("Player {PlayerName} rested. HP: +{HP}, Mana: +{Mana}",
+            player.Name, healthRecovered, manaRecovered);
 
-        Log.Information("Player {PlayerName} rested", player.Name);
+        return new RestResult
+        {
+            Success = true,
+            HealthRecovered = healthRecovered,
+            ManaRecovered = manaRecovered
+        };
     }
 
     /// <summary>
     /// Save the current game state.
     /// </summary>
-    public void SaveGame(Character player, List<Item> inventory, string? currentSaveId)
+    /// <param name="player">The player character.</param>
+    /// <param name="inventory">The player's inventory.</param>
+    /// <param name="currentSaveId">The current save ID.</param>
+    /// <returns>Result indicating success or failure.</returns>
+    public SaveResult SaveGame(Character player, List<Item> inventory, string? currentSaveId)
     {
         if (player == null)
         {
-            _console.ShowError("No active game to save!");
-            return;
+            return new SaveResult { Success = false, ErrorMessage = "No active game to save" };
         }
-
-        _console.ShowInfo("Saving game...");
 
         try
         {
             _saveGameService.SaveGame(player, inventory, currentSaveId);
-            _console.ShowSuccess("Game saved successfully!");
             Log.Information("Game saved for player {PlayerName}", player.Name);
+            
+            return new SaveResult { Success = true };
         }
         catch (Exception ex)
         {
-            _console.ShowError($"Failed to save game: {ex.Message}");
-            Log.Error(ex, "Failed to save game");
+            Log.Error(ex, "Failed to save game for {PlayerName}", player.Name);
+            return new SaveResult { Success = false, ErrorMessage = ex.Message };
         }
     }
+}
+
+/// <summary>
+/// Result of a rest operation.
+/// </summary>
+public class RestResult
+{
+    /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
+    public bool Success { get; set; }
+    
+    /// <summary>Gets or sets the amount of health recovered.</summary>
+    public int HealthRecovered { get; set; }
+    
+    /// <summary>Gets or sets the amount of mana recovered.</summary>
+    public int ManaRecovered { get; set; }
+    
+    /// <summary>Gets or sets the error message if failed.</summary>
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// Result of a save operation.
+/// </summary>
+public class SaveResult
+{
+    /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
+    public bool Success { get; set; }
+    
+    /// <summary>Gets or sets the error message if failed.</summary>
+    public string? ErrorMessage { get; set; }
 }

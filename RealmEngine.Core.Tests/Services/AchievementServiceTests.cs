@@ -12,14 +12,12 @@ namespace RealmEngine.Core.Tests.Services;
 public class AchievementServiceTests
 {
     private readonly Mock<SaveGameService> _mockSaveGameService;
-    private readonly Mock<IGameUI> _mockGameUI;
     private readonly AchievementService _service;
 
     public AchievementServiceTests()
     {
         _mockSaveGameService = new Mock<SaveGameService>();
-        _mockGameUI = new Mock<IGameUI>();
-        _service = new AchievementService(_mockSaveGameService.Object, _mockGameUI.Object);
+        _service = new AchievementService(_mockSaveGameService.Object);
     }
 
     [Fact]

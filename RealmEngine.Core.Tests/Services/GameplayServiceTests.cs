@@ -12,14 +12,12 @@ namespace RealmEngine.Core.Tests.Services;
 public class GameplayServiceTests
 {
     private readonly Mock<SaveGameService> _mockSaveGameService;
-    private readonly Mock<IGameUI> _mockGameUI;
     private readonly GameplayService _service;
 
     public GameplayServiceTests()
     {
         _mockSaveGameService = new Mock<SaveGameService>();
-        _mockGameUI = new Mock<IGameUI>();
-        _service = new GameplayService(_mockSaveGameService.Object, _mockGameUI.Object);
+        _service = new GameplayService(_mockSaveGameService.Object);
     }
 
     [Fact]
@@ -63,27 +61,29 @@ public class GameplayServiceTests
     }
 
     [Fact]
-    public void Rest_Should_Display_Messages()
+    public void Rest_Should_Return_Success_Result()
     {
         // Arrange
         var player = new Character { Name = "Test Player", Health = 50, MaxHealth = 100, Mana = 30, MaxMana = 100 };
 
         // Act
-        _service.Rest(player);
+        var result = _service.Rest(player);
 
         // Assert
-        _mockGameUI.Verify(ui => ui.ShowInfo(It.Is<string>(s => s.Contains("rest"))), Times.Once);
-        _mockGameUI.Verify(ui => ui.ShowSuccess("Fully rested!"), Times.Once);
+        result.Success.Should().BeTrue();
+        result.HealthRecovered.Should().Be(50);
+        result.ManaRecovered.Should().Be(70);
     }
 
     [Fact]
     public void Rest_Should_Handle_Null_Player_Gracefully()
     {
         // Act
-        var act = () => _service.Rest(null!);
+        var result = _service.Rest(null!);
 
         // Assert
-        act.Should().NotThrow("should handle null player gracefully");
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("No player");
     }
 
     [Fact]
@@ -95,9 +95,10 @@ public class GameplayServiceTests
         var saveId = "save-123";
 
         // Act
-        _service.SaveGame(player, inventory, saveId);
+        var result = _service.SaveGame(player, inventory, saveId);
 
         // Assert
+        result.Success.Should().BeTrue();
         _mockSaveGameService.Verify(
             s => s.SaveGame(player, inventory, saveId),
             Times.Once,
@@ -105,7 +106,7 @@ public class GameplayServiceTests
     }
 
     [Fact]
-    public void SaveGame_Should_Display_Success_Message()
+    public void SaveGame_Should_Return_Success_On_Successful_Save()
     {
         // Arrange
         var player = new Character { Name = "Test Player" };
@@ -113,15 +114,15 @@ public class GameplayServiceTests
         _mockSaveGameService.Setup(s => s.SaveGame(It.IsAny<Character>(), It.IsAny<List<Item>>(), It.IsAny<string>()));
 
         // Act
-        _service.SaveGame(player, inventory, null);
+        var result = _service.SaveGame(player, inventory, null);
 
         // Assert
-        _mockGameUI.Verify(ui => ui.ShowInfo(It.Is<string>(s => s.Contains("Saving"))), Times.Once);
-        _mockGameUI.Verify(ui => ui.ShowSuccess(It.Is<string>(s => s.Contains("saved successfully"))), Times.Once);
+        result.Success.Should().BeTrue();
+        result.ErrorMessage.Should().BeNullOrEmpty();
     }
 
     [Fact]
-    public void SaveGame_Should_Display_Error_Message_On_Failure()
+    public void SaveGame_Should_Return_Error_On_Failure()
     {
         // Arrange
         var player = new Character { Name = "Test Player" };
@@ -131,23 +132,25 @@ public class GameplayServiceTests
             .Throws(new Exception("Disk error"));
 
         // Act
-        _service.SaveGame(player, inventory, null);
+        var result = _service.SaveGame(player, inventory, null);
 
         // Assert
-        _mockGameUI.Verify(ui => ui.ShowError(It.Is<string>(s => s.Contains("Failed to save"))), Times.Once);
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Disk error");
     }
 
     [Fact]
-    public void SaveGame_Should_Show_Error_When_Player_Is_Null()
+    public void SaveGame_Should_Return_Error_When_Player_Is_Null()
     {
         // Arrange
         var inventory = new List<Item>();
 
         // Act
-        _service.SaveGame(null!, inventory, null);
+        var result = _service.SaveGame(null!, inventory, null);
 
         // Assert
-        _mockGameUI.Verify(ui => ui.ShowError("No active game to save!"), Times.Once);
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("No active game");
         _mockSaveGameService.Verify(s => s.SaveGame(It.IsAny<Character>(), It.IsAny<List<Item>>(), It.IsAny<string>()),
             Times.Never,
             "should not attempt save when player is null");
