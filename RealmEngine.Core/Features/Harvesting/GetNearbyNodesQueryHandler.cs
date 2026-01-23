@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Features.Harvesting;
 
@@ -9,74 +11,81 @@ namespace RealmEngine.Core.Features.Harvesting;
 public class GetNearbyNodesQueryHandler : IRequestHandler<GetNearbyNodesQuery, NearbyNodesResult>
 {
     private readonly ILogger<GetNearbyNodesQueryHandler> _logger;
-    // TODO: Add INodeRepository when persistence is implemented
-    // TODO: Add ILocationRepository for location info
+    private readonly INodeRepository _nodeRepository;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the GetNearbyNodesQueryHandler class.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="nodeRepository">Repository for accessing harvesting nodes.</param>
+    /// <param name="saveGameService">Service for accessing current game state and character location.</param>
     public GetNearbyNodesQueryHandler(
-        ILogger<GetNearbyNodesQueryHandler> logger)
+        ILogger<GetNearbyNodesQueryHandler> logger,
+        INodeRepository nodeRepository,
+        ISaveGameService saveGameService)
     {
         _logger = logger;
+        _nodeRepository = nodeRepository;
+        _saveGameService = saveGameService;
     }
 
     /// <inheritdoc />
     public async Task<NearbyNodesResult> Handle(GetNearbyNodesQuery request, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask; // TODO: Replace with actual async repository calls
-        
         try
         {
+            // Determine location to query
+            string locationId;
+            if (!string.IsNullOrEmpty(request.LocationId))
+            {
+                locationId = request.LocationId;
+            }
+            else
+            {
+                // Get character's current location from save game
+                var currentSave = _saveGameService.GetCurrentSave();
+                if (currentSave == null)
+                {
+                    _logger.LogWarning("No active save game found for character {CharacterName}", request.CharacterName);
+                    return new NearbyNodesResult
+                    {
+                        Success = false,
+                        Nodes = new List<NearbyNodeInfo>()
+                    };
+                }
+                
+                // Use last visited location or default to "starting-area"
+                locationId = currentSave.VisitedLocations.LastOrDefault() ?? "starting-area";
+            }
+
             _logger.LogInformation(
                 "Character {CharacterName} querying nearby nodes in location {LocationId}",
-                request.CharacterName, request.LocationId ?? "current"
+                request.CharacterName, locationId
             );
 
-            // TODO: Get character's location if not provided
-            // TODO: Query nodes from repository
-
-            // Mock data for demonstration
-            var mockNodes = new List<NearbyNodeInfo>
+            // Query nodes from repository
+            var nodes = await _nodeRepository.GetNodesByLocationAsync(locationId);
+            
+            // Map nodes to DTOs
+            var nodeInfos = new List<NearbyNodeInfo>();
+            foreach (var node in nodes)
             {
-                new NearbyNodeInfo
+                nodeInfos.Add(new NearbyNodeInfo
                 {
-                    NodeId = "node_copper_1",
-                    DisplayName = "Copper Vein",
-                    NodeType = "ore_vein",
-                    MaterialTier = "common",
-                    HealthPercent = 85,
-                    CanHarvest = true,
-                    StateDescription = "Healthy",
-                    IsRichNode = false
-                },
-                new NearbyNodeInfo
-                {
-                    NodeId = "node_oak_1",
-                    DisplayName = "Oak Tree",
-                    NodeType = "tree",
-                    MaterialTier = "common",
-                    HealthPercent = 60,
-                    CanHarvest = true,
-                    StateDescription = "Depleted",
-                    IsRichNode = false
-                },
-                new NearbyNodeInfo
-                {
-                    NodeId = "node_iron_1",
-                    DisplayName = "Iron Vein",
-                    NodeType = "ore_vein",
-                    MaterialTier = "uncommon",
-                    HealthPercent = 5,
-                    CanHarvest = false,
-                    StateDescription = "Empty - Regenerating",
-                    IsRichNode = false
-                }
-            };
+                    NodeId = node.NodeId,
+                    DisplayName = node.DisplayName,
+                    NodeType = node.NodeType,
+                    MaterialTier = node.MaterialTier,
+                    HealthPercent = node.GetHealthPercent(),
+                    CanHarvest = node.CanHarvest(),
+                    StateDescription = node.GetNodeState().ToString(),
+                    IsRichNode = node.IsRichNode
+                });
+            }
 
             // Apply filters
-            var filteredNodes = mockNodes;
+            var filteredNodes = nodeInfos;
             if (request.OnlyHarvestable)
             {
                 filteredNodes = filteredNodes.Where(n => n.CanHarvest).ToList();
@@ -89,16 +98,19 @@ public class GetNearbyNodesQueryHandler : IRequestHandler<GetNearbyNodesQuery, N
                     .ToList();
             }
 
+            _logger.LogDebug("Found {Count} nodes in {Location} (filtered from {Total})",
+                filteredNodes.Count, locationId, nodes.Count);
+
             return new NearbyNodesResult
             {
                 Success = true,
-                LocationId = request.LocationId ?? "test_location",
-                LocationName = "Mountain Pass",
-                BiomeType = "mountains",
+                LocationId = locationId,
+                LocationName = locationId, // Could be enhanced with location service
+                BiomeType = "unknown", // Could be enhanced with location service
                 Nodes = filteredNodes,
-                TotalNodes = mockNodes.Count,
-                HarvestablNodes = mockNodes.Count(n => n.CanHarvest),
-                DepletedNodes = mockNodes.Count(n => !n.CanHarvest)
+                TotalNodes = nodes.Count,
+                HarvestablNodes = filteredNodes.Count(n => n.CanHarvest),
+                DepletedNodes = filteredNodes.Count(n => !n.CanHarvest)
             };
         }
         catch (Exception ex)
