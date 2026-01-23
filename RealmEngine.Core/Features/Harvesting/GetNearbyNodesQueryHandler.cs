@@ -12,12 +12,17 @@ public class GetNearbyNodesQueryHandler : IRequestHandler<GetNearbyNodesQuery, N
     // TODO: Add INodeRepository when persistence is implemented
     // TODO: Add ILocationRepository for location info
 
+    /// <summary>
+    /// Initializes a new instance of the GetNearbyNodesQueryHandler class.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
     public GetNearbyNodesQueryHandler(
         ILogger<GetNearbyNodesQueryHandler> logger)
     {
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<NearbyNodesResult> Handle(GetNearbyNodesQuery request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // TODO: Replace with actual async repository calls

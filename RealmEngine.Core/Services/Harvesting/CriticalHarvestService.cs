@@ -12,6 +12,11 @@ public class CriticalHarvestService
     private readonly HarvestingConfig _config;
     private readonly Random _random;
 
+    /// <summary>
+    /// Initializes a new instance of the CriticalHarvestService class.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="config">Harvesting configuration.</param>
     public CriticalHarvestService(
         ILogger<CriticalHarvestService> logger,
         HarvestingConfig config)

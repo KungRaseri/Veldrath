@@ -22,6 +22,16 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
     // TODO: Add ISkillService for character skill lookups and XP awarding
     // TODO: Add IToolService for tool durability tracking
 
+    /// <summary>
+    /// Initializes a new instance of the HarvestNodeCommandHandler class.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="calculator">Service for calculating harvest yields.</param>
+    /// <param name="toolValidator">Service for validating tool requirements.</param>
+    /// <param name="criticalService">Service for critical harvest calculations.</param>
+    /// <param name="lootTableService">Service for loading loot tables.</param>
+    /// <param name="nodeRepository">Repository for node persistence.</param>
+    /// <param name="inventoryService">Service for inventory management.</param>
     public HarvestNodeCommandHandler(
         ILogger<HarvestNodeCommandHandler> logger,
         HarvestCalculatorService calculator,
@@ -40,6 +50,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
         _inventoryService = inventoryService;
     }
 
+    /// <inheritdoc />
     public async Task<HarvestResult> Handle(HarvestNodeCommand request, CancellationToken cancellationToken)
     {
         try

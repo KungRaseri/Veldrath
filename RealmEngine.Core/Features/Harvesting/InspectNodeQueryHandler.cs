@@ -13,12 +13,17 @@ public class InspectNodeQueryHandler : IRequestHandler<InspectNodeQuery, NodeIns
     // TODO: Add ICharacterRepository for skill lookups
     // TODO: Add ILootTableService for possible materials
 
+    /// <summary>
+    /// Initializes a new instance of the InspectNodeQueryHandler class.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
     public InspectNodeQueryHandler(
         ILogger<InspectNodeQueryHandler> logger)
     {
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<NodeInspectionResult> Handle(InspectNodeQuery request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // TODO: Replace with actual async repository calls

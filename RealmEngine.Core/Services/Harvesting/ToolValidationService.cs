@@ -11,6 +11,11 @@ public class ToolValidationService
     private readonly ILogger<ToolValidationService> _logger;
     private readonly HarvestingConfig _config;
 
+    /// <summary>
+    /// Initializes a new instance of the ToolValidationService class.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="config">Harvesting configuration.</param>
     public ToolValidationService(
         ILogger<ToolValidationService> logger,
         HarvestingConfig config)
