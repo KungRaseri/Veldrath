@@ -4,7 +4,7 @@
     "version": "5.1",
     "lastUpdated": "2026-01-22",
     "type": "materials_properties_catalog",
-    "totalMaterials": 7,
+    "totalMaterials": 9,
     "usage": "Bone materials for weapons, armor, and necromantic items. Light weight with unique properties.",
     "notes": [
       "Bone materials focus on wisdom/intelligence with necromancy themes",
@@ -231,6 +231,68 @@
             }
           },
           "rarityWeight": 3
+        },
+        {
+          "slug": "demonbone",
+          "name": "Demon Bone",
+          "attributes": {
+            "dexterity": 8,
+            "intelligence": 15,
+            "charisma": -12,
+            "strength": 18,
+            "constitution": 12,
+            "wisdom": 10
+          },
+          "traits": {
+            "durability": 48,
+            "weight": 0.5,
+            "enchantability": 55,
+            "fireResist": 20
+          },
+          "displayName": "Demon Bone",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 12,
+              "fireDamage": 8,
+              "value": 100
+            },
+            "armor": {
+              "armorRating": 15,
+              "fireResist": 15,
+              "value": 100
+            }
+          },
+          "rarityWeight": 15
+        },
+        {
+          "slug": "fossilizedbone",
+          "name": "Fossilized Bone",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 5,
+            "charisma": 0,
+            "strength": 15,
+            "constitution": 18,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 55,
+            "weight": 1.2,
+            "enchantability": 25
+          },
+          "displayName": "Fossilized Bone",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 10,
+              "value": 60
+            },
+            "armor": {
+              "armorRating": 18,
+              "defenseBonus": 5,
+              "value": 60
+            }
+          },
+          "rarityWeight": 20
         }
       ]
     }

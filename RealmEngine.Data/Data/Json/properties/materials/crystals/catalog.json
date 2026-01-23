@@ -4,7 +4,7 @@
     "version": "5.1",
     "lastUpdated": "2026-01-22",
     "type": "materials_properties_catalog",
-    "totalMaterials": 9,
+    "totalMaterials": 12,
     "usage": "Crystal materials for magical weapons, staves, and enchanted items. High enchantability and mana bonuses.",
     "notes": [
       "Crystal materials focus on intelligence, wisdom, and spell power",
@@ -265,6 +265,87 @@
             }
           },
           "rarityWeight": 10
+        },
+        {
+          "slug": "mana-crystal",
+          "name": "Mana Crystal",
+          "attributes": {
+            "dexterity": 0,
+            "intelligence": 12,
+            "charisma": 5,
+            "strength": 0,
+            "constitution": 0,
+            "wisdom": 10
+          },
+          "traits": {
+            "durability": 32,
+            "weight": 0.8,
+            "enchantability": 45,
+            "manaBonus": 25
+          },
+          "displayName": "Mana Crystal",
+          "itemTypeTraits": {
+            "weapon": {
+              "spellPower": 12,
+              "manaRegen": 5,
+              "value": 30
+            }
+          },
+          "rarityWeight": 40
+        },
+        {
+          "slug": "light-crystal",
+          "name": "Light Crystal",
+          "attributes": {
+            "dexterity": 3,
+            "intelligence": 14,
+            "charisma": 10,
+            "strength": 0,
+            "constitution": 5,
+            "wisdom": 12
+          },
+          "traits": {
+            "durability": 35,
+            "weight": 0.6,
+            "enchantability": 50,
+            "manaBonus": 20
+          },
+          "displayName": "Light Crystal",
+          "itemTypeTraits": {
+            "weapon": {
+              "spellPower": 15,
+              "holyDamage": 10,
+              "value": 65
+            }
+          },
+          "rarityWeight": 22
+        },
+        {
+          "slug": "shadow-crystal",
+          "name": "Shadow Crystal",
+          "attributes": {
+            "dexterity": 8,
+            "intelligence": 13,
+            "charisma": -5,
+            "strength": 0,
+            "constitution": 3,
+            "wisdom": 10
+          },
+          "traits": {
+            "durability": 33,
+            "weight": 0.7,
+            "enchantability": 48,
+            "manaBonus": 18
+          },
+          "displayName": "Shadow Crystal",
+          "itemTypeTraits": {
+            "weapon": {
+              "spellPower": 14,
+              "shadowDamage": 12,
+              "value": 55
+            }
+          },
+          "rarityWeight": 25
         }
       ]
     }
