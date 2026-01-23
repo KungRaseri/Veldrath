@@ -1,0 +1,34 @@
+{
+  "version": "4.0",
+  "type": "loot_table",
+  "description": "Loot table for copper ore veins",
+  "lastUpdated": "2026-01-22",
+  "drops": [
+    {
+      "materialRef": "@items/materials/ore:copper-ore",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 100,
+      "rarityWeight": 90,
+      "isBonusDrop": false
+    },
+    {
+      "materialRef": "@items/materials/ore:tin-ore",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 15,
+      "rarityWeight": 30,
+      "isBonusDrop": true,
+      "requiresCritical": false
+    },
+    {
+      "materialRef": "@items/materials/ore:tin-ore",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 5,
+      "rarityWeight": 10,
+      "isBonusDrop": true,
+      "requiresCritical": false
+    }
+  ]
+}

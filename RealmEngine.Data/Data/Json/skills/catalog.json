@@ -3,8 +3,8 @@
     "version": "4.2",
     "type": "skills_catalog",
     "description": "Complete character skill system with attributes, combat, magic, and professions",
-    "totalSkills": 54,
-    "lastUpdated": "2026-01-08"
+    "totalSkills": 55,
+    "lastUpdated": "2026-01-22"
   },
   "skill_types": {
     "attribute_strength": {
@@ -3685,6 +3685,63 @@
                 {
                   "action": "identify_plant",
                   "xpAmount": 10
+                }
+              ],
+              "type": "array"
+            }
+          },
+          "rarityWeight": 100
+        },
+        {
+          "slug": "woodcutting",
+          "name": "Woodcutting",
+          "displayName": "Woodcutting",
+          "description": "Chopping trees and gathering wood",
+          "traits": {
+            "baseXPCost": {
+              "value": 150,
+              "type": "number"
+            },
+            "costMultiplier": {
+              "value": 0.8,
+              "type": "number"
+            },
+            "maxRank": {
+              "value": 100,
+              "type": "number"
+            },
+            "craftingType": {
+              "value": "gathering",
+              "type": "string"
+            },
+            "effects": {
+              "value": [
+                {
+                  "effectType": "wood_yield",
+                  "effectValue": 0.01,
+                  "appliesTo": "woodcutting"
+                },
+                {
+                  "effectType": "rare_find_chance",
+                  "effectValue": 0.005,
+                  "appliesTo": "woodcutting"
+                }
+              ],
+              "type": "array"
+            },
+            "xpActions": {
+              "value": [
+                {
+                  "action": "chop_tree",
+                  "xpAmount": 5
+                },
+                {
+                  "action": "find_rare_wood",
+                  "xpAmount": 25
+                },
+                {
+                  "action": "harvest_ironwood",
+                  "xpAmount": 40
                 }
               ],
               "type": "array"

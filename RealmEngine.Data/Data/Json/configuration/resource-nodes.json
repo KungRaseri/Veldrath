@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "type": "resource_node_catalog",
+    "lastUpdated": "2026-01-22",
+    "description": "Catalog of harvestable resource nodes with properties and spawn rules",
+    "totalNodes": 12
+  },
+  "node_types": {
+    "ore_veins": {
+      "copper_vein": {
+        "name": "Copper Vein",
+        "tier": "common",
+        "skill": "@skills/profession:mining",
+        "minToolTier": 0,
+        "health": 100,
+        "baseYield": 2,
+        "lootTable": "ore_veins_copper",
+        "biomes": ["mountains", "caves", "hills"],
+        "rarityWeight": 60,
+        "icon": "Pickaxe"
+      },
+      "iron_vein": {
+        "name": "Iron Vein",
+        "tier": "uncommon",
+        "skill": "@skills/profession:mining",
+        "minToolTier": 1,
+        "health": 150,
+        "baseYield": 2,
+        "lootTable": "ore_veins_iron",
+        "biomes": ["mountains", "deep_caves"],
+        "rarityWeight": 40,
+        "icon": "Pickaxe"
+      },
+      "silver_vein": {
+        "name": "Silver Vein",
+        "tier": "rare",
+        "skill": "@skills/profession:mining",
+        "minToolTier": 2,
+        "health": 200,
+        "baseYield": 2,
+        "lootTable": "ore_veins_silver",
+        "biomes": ["mountains", "deep_caves"],
+        "rarityWeight": 25,
+        "icon": "Pickaxe"
+      },
+      "mithril_vein": {
+        "name": "Mithril Vein",
+        "tier": "epic",
+        "skill": "@skills/profession:mining",
+        "minToolTier": 3,
+        "health": 300,
+        "baseYield": 1,
+        "lootTable": "ore_veins_mithril",
+        "biomes": ["deep_caves", "ancient_mines"],
+        "rarityWeight": 10,
+        "icon": "Pickaxe"
+      }
+    },
+    "trees": {
+      "oak_tree": {
+        "name": "Oak Tree",
+        "tier": "common",
+        "skill": "@skills/profession:woodcutting",
+        "minToolTier": 0,
+        "health": 120,
+        "baseYield": 3,
+        "lootTable": "trees_oak",
+        "biomes": ["forest", "plains"],
+        "rarityWeight": 70,
+        "icon": "TreePine"
+      },
+      "ash_tree": {
+        "name": "Ash Tree",
+        "tier": "uncommon",
+        "skill": "@skills/profession:woodcutting",
+        "minToolTier": 1,
+        "health": 150,
+        "baseYield": 3,
+        "lootTable": "trees_ash",
+        "biomes": ["forest", "hills"],
+        "rarityWeight": 45,
+        "icon": "TreePine"
+      },
+      "yew_tree": {
+        "name": "Yew Tree",
+        "tier": "rare",
+        "skill": "@skills/profession:woodcutting",
+        "minToolTier": 2,
+        "health": 200,
+        "baseYield": 2,
+        "lootTable": "trees_yew",
+        "biomes": ["forest", "ancient_grove"],
+        "rarityWeight": 20,
+        "icon": "TreePine"
+      },
+      "ironwood_tree": {
+        "name": "Ironwood Tree",
+        "tier": "epic",
+        "skill": "@skills/profession:woodcutting",
+        "minToolTier": 3,
+        "health": 300,
+        "baseYield": 2,
+        "lootTable": "trees_ironwood",
+        "biomes": ["ancient_grove", "mystical_forest"],
+        "rarityWeight": 8,
+        "icon": "TreePine"
+      }
+    },
+    "herb_patches": {
+      "common_herbs": {
+        "name": "Herb Patch",
+        "tier": "common",
+        "skill": "@skills/profession:herbalism",
+        "minToolTier": 0,
+        "health": 80,
+        "baseYield": 2,
+        "lootTable": "herbs_common",
+        "biomes": ["plains", "forest", "meadow"],
+        "rarityWeight": 65,
+        "icon": "Leaf"
+      },
+      "medicinal_herbs": {
+        "name": "Medicinal Herb Patch",
+        "tier": "uncommon",
+        "skill": "@skills/profession:herbalism",
+        "minToolTier": 0,
+        "health": 100,
+        "baseYield": 2,
+        "lootTable": "herbs_medicinal",
+        "biomes": ["forest", "swamp"],
+        "rarityWeight": 40,
+        "icon": "Leaf"
+      },
+      "alchemical_herbs": {
+        "name": "Alchemical Herb Patch",
+        "tier": "rare",
+        "skill": "@skills/profession:herbalism",
+        "minToolTier": 0,
+        "health": 120,
+        "baseYield": 1,
+        "lootTable": "herbs_alchemical",
+        "biomes": ["magical_grove", "ancient_ruins"],
+        "rarityWeight": 20,
+        "icon": "Leaf"
+      },
+      "magical_herbs": {
+        "name": "Magical Herb Patch",
+        "tier": "epic",
+        "skill": "@skills/profession:herbalism",
+        "minToolTier": 0,
+        "health": 150,
+        "baseYield": 1,
+        "lootTable": "herbs_magical",
+        "biomes": ["magical_grove", "mystical_forest"],
+        "rarityWeight": 10,
+        "icon": "Leaf"
+      }
+    }
+  }
+}

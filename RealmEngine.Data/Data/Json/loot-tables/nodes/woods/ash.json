@@ -1,0 +1,34 @@
+{
+  "version": "4.0",
+  "type": "loot_table",
+  "description": "Loot table for ash trees",
+  "lastUpdated": "2026-01-22",
+  "drops": [
+    {
+      "materialRef": "@items/materials/wood:ash-wood",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 100,
+      "rarityWeight": 90,
+      "isBonusDrop": false
+    },
+    {
+      "materialRef": "@items/materials/wood:pine-wood",
+      "minQuantity": 1,
+      "maxQuantity": 2,
+      "dropChance": 30,
+      "rarityWeight": 45,
+      "isBonusDrop": true,
+      "requiresCritical": false
+    },
+    {
+      "materialRef": "@items/materials/wood:birch-wood",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 8,
+      "rarityWeight": 12,
+      "isBonusDrop": true,
+      "requiresCritical": false
+    }
+  ]
+}

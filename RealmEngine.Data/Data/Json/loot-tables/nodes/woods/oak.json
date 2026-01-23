@@ -1,0 +1,34 @@
+{
+  "version": "4.0",
+  "type": "loot_table",
+  "description": "Loot table for oak trees",
+  "lastUpdated": "2026-01-22",
+  "drops": [
+    {
+      "materialRef": "@items/materials/wood:oak-wood",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 100,
+      "rarityWeight": 95,
+      "isBonusDrop": false
+    },
+    {
+      "materialRef": "@items/materials/wood:pine-wood",
+      "minQuantity": 1,
+      "maxQuantity": 2,
+      "dropChance": 25,
+      "rarityWeight": 40,
+      "isBonusDrop": true,
+      "requiresCritical": false
+    },
+    {
+      "materialRef": "@items/materials/wood:birch-wood",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 10,
+      "rarityWeight": 15,
+      "isBonusDrop": true,
+      "requiresCritical": false
+    }
+  ]
+}
