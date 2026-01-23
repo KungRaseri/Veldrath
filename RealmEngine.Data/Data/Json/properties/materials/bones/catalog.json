@@ -233,7 +233,7 @@
           "rarityWeight": 3
         },
         {
-          "slug": "demonbone",
+          "slug": "demon-bone",
           "name": "Demon Bone",
           "attributes": {
             "dexterity": 8,
@@ -265,7 +265,7 @@
           "rarityWeight": 15
         },
         {
-          "slug": "fossilizedbone",
+          "slug": "fossilized-bone",
           "name": "Fossilized Bone",
           "attributes": {
             "dexterity": 0,

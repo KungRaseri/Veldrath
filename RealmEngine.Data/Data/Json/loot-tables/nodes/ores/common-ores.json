@@ -1,32 +1,32 @@
 {
   "version": "4.0",
   "type": "loot_table",
-  "description": "Loot table for copper ore veins",
+  "description": "Loot table for common ore nodes (copper, tin, iron)",
   "lastUpdated": "2026-01-22",
   "drops": [
     {
       "materialRef": "@items/materials/ore:copper-ore",
-      "minQuantity": 1,
-      "maxQuantity": 1,
+      "minQuantity": 2,
+      "maxQuantity": 5,
       "dropChance": 100,
-      "rarityWeight": 90,
+      "rarityWeight": 70,
       "isBonusDrop": false
     },
     {
       "materialRef": "@items/materials/ore:tin-ore",
       "minQuantity": 1,
-      "maxQuantity": 1,
-      "dropChance": 15,
-      "rarityWeight": 30,
+      "maxQuantity": 3,
+      "dropChance": 50,
+      "rarityWeight": 40,
       "isBonusDrop": true,
       "requiresCritical": false
     },
     {
-      "materialRef": "@items/materials/gems:rough-quartz",
+      "materialRef": "@items/materials/ore:iron-ore",
       "minQuantity": 1,
-      "maxQuantity": 1,
-      "dropChance": 5,
-      "rarityWeight": 10,
+      "maxQuantity": 2,
+      "dropChance": 25,
+      "rarityWeight": 20,
       "isBonusDrop": true,
       "requiresCritical": false
     }

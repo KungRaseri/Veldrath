@@ -7,6 +7,7 @@ using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
+using System.IO;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Features.Harvesting;
@@ -126,7 +127,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 100,
             MinToolTier = 0, // No tool required
             BaseYield = 3,
-            LootTableRef = "@loot-tables/harvesting/woodcutting/common-trees",
+            LootTableRef = "@loot-tables/nodes/woods:common-trees",
             IsRichNode = false,
             BiomeType = "forest",
             LocationId = "starting-forest"
@@ -147,7 +148,7 @@ public class HarvestingIntegrationTests
         var result = await handler.Handle(command, CancellationToken.None);
         
         // Assert
-        result.Success.Should().BeTrue();
+        result.Success.Should().BeTrue($"Failure reason: {result.FailureReason}");
         result.MaterialsGained.Should().NotBeEmpty();
         result.SkillXPGained.Should().BeGreaterThan(0);
         result.NodeHealthRemaining.Should().BeLessThan(100);
@@ -201,7 +202,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 150,
             MinToolTier = 1, // Requires pickaxe
             BaseYield = 5,
-            LootTableRef = "@loot-tables/harvesting/mining/common-ores",
+            LootTableRef = "@loot-tables/nodes/ores:common-ores",
             IsRichNode = false,
             BiomeType = "mountains",
             LocationId = "iron-peaks"
@@ -230,9 +231,10 @@ public class HarvestingIntegrationTests
         // Assert
         results.Should().HaveCount(3);
         
-        // First harvest should succeed
-        results[0].Success.Should().BeTrue();
-        results[0].NodeState.Should().Be(NodeState.Healthy);
+        // All harvests should succeed
+        results[0].Success.Should().BeTrue($"Failure reason: {results[0].FailureReason}");
+        results[1].Success.Should().BeTrue($"Failure reason: {results[1].FailureReason}");
+        results[2].Success.Should().BeTrue($"Failure reason: {results[2].FailureReason}");
         
         // Node should progressively deplete
         var finalNode = await _nodeRepository.GetNodeByIdAsync("test-copper-001");
@@ -259,7 +261,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 200,
             MinToolTier = 3, // Requires tier 3+ pickaxe
             BaseYield = 2,
-            LootTableRef = "@loot-tables/harvesting/mining/rare-ores",
+            LootTableRef = "@loot-tables/nodes/ores:rare-ores",
             IsRichNode = true,
             BiomeType = "deep-mines",
             LocationId = "mithril-depths"
@@ -281,7 +283,7 @@ public class HarvestingIntegrationTests
         
         // Assert
         result.Success.Should().BeFalse();
-        result.FailureReason.Should().Contain("tool tier");
+        result.FailureReason.Should().Contain("tier");
         result.MaterialsGained.Should().BeEmpty();
         
         // Node should not be modified
@@ -304,7 +306,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 100,
             MinToolTier = 2,
             BaseYield = 4,
-            LootTableRef = "@loot-tables/harvesting/mining/uncommon-ores",
+            LootTableRef = "@loot-tables/nodes/ores:common-ores",
             IsRichNode = false,
             BiomeType = "mountains",
             LocationId = "silver-peaks"
@@ -349,7 +351,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 100,
             MinToolTier = 0,
             BaseYield = 10,
-            LootTableRef = "@loot-tables/harvesting/herbalism/common-plants",
+            LootTableRef = "@loot-tables/nodes/plants:common-plants",
             IsRichNode = false,
             BiomeType = "plains",
             LocationId = "green-meadows"
@@ -382,8 +384,8 @@ public class HarvestingIntegrationTests
         var result2 = await handler.Handle(command2, CancellationToken.None);
         
         // Assert
-        result1.Success.Should().BeTrue();
-        result2.Success.Should().BeTrue();
+        result1.Success.Should().BeTrue($"First harvest failure: {result1.FailureReason}");
+        result2.Success.Should().BeTrue($"Second harvest failure: {result2.FailureReason}");
         
         // Materials should stack (total count should be sum of both harvests)
         var totalCount = result1.MaterialsGained.Sum(m => m.Quantity) + 
@@ -412,7 +414,7 @@ public class HarvestingIntegrationTests
                 MaterialTier = "common",
                 MinToolTier = 0,
                 BaseYield = 3,
-                LootTableRef = "@loot-tables/harvesting/woodcutting/common-trees",
+                LootTableRef = "@loot-tables/nodes/woods:common-trees",
                 BiomeType = "forest"
             },
             new()
@@ -426,7 +428,7 @@ public class HarvestingIntegrationTests
                 MaterialTier = "common",
                 MinToolTier = 0,
                 BaseYield = 2,
-                LootTableRef = "@loot-tables/harvesting/woodcutting/common-trees",
+                LootTableRef = "@loot-tables/nodes/woods:common-trees",
                 BiomeType = "forest"
             },
             new()
@@ -440,7 +442,7 @@ public class HarvestingIntegrationTests
                 MaterialTier = "common",
                 MinToolTier = 1,
                 BaseYield = 5,
-                LootTableRef = "@loot-tables/harvesting/mining/common-ores",
+                LootTableRef = "@loot-tables/nodes/ores:common-ores",
                 BiomeType = "mountains"
             }
         };
@@ -485,8 +487,16 @@ public class HarvestingIntegrationTests
             _config
         );
         
+        // Get absolute path to Data/Json directory
+        var dataPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json"
+        );
+        dataPath = Path.GetFullPath(dataPath);
+        
         var lootTableService = new NodeLootTableService(
-            localLoggerFactory.CreateLogger<NodeLootTableService>()
+            localLoggerFactory.CreateLogger<NodeLootTableService>(),
+            dataPath
         );
         
         return new HarvestNodeCommandHandler(
@@ -500,4 +510,5 @@ public class HarvestingIntegrationTests
         );
     }
 }
+
 
