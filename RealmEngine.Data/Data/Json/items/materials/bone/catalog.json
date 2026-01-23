@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Bone materials for tribal and necromantic crafting",
     "version": "1.0",
-    "lastUpdated": "2026-01-21",
+    "lastUpdated": "2026-01-23",
     "type": "item_catalog",
-    "totalItems": 5
+    "totalItems": 7
   },
   "material_types": {
     "bone": {
@@ -83,6 +83,36 @@
           "tier": "refined",
           "traits": {},
           "tags": ["bone", "crafting", "ancient", "fossil"]
+        },
+        {
+          "slug": "bone-fragment",
+          "name": "Bone Fragment",
+          "description": "Small shard of bone from undead creatures, useful for dark rituals.",
+          "propertyRef": "@properties/materials/bones:bone",
+          "rarityWeight": 80,
+          "value": 2,
+          "weight": 0.1,
+          "stackSize": 100,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["bone", "crafting", "undead", "fragment"]
+        },
+        {
+          "slug": "lich-phylactery-fragment",
+          "name": "Lich Phylactery Fragment",
+          "description": "Shattered piece of a lich's soul vessel, thrums with necromantic power.",
+          "propertyRef": "@properties/materials/bones:bone",
+          "rarityWeight": 3,
+          "value": 500,
+          "weight": 0.2,
+          "stackSize": 1,
+          "itemType": "material",
+          "subType": "bone",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["bone", "crafting", "lich", "phylactery", "legendary", "cursed"]
         }
       ]
     }

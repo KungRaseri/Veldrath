@@ -11,6 +11,7 @@ public class NodeSpawnerServiceTests
 {
     private readonly Mock<ILogger<NodeSpawnerService>> _loggerMock;
     private readonly Mock<ILogger<ResourceNodeLoaderService>> _loaderLoggerMock;
+    private readonly GameDataCache _dataCache;
     private readonly string _testDataPath;
 
     public NodeSpawnerServiceTests()
@@ -18,16 +19,20 @@ public class NodeSpawnerServiceTests
         _loggerMock = new Mock<ILogger<NodeSpawnerService>>();
         _loaderLoggerMock = new Mock<ILogger<ResourceNodeLoaderService>>();
         
-        // ResourceNodeLoaderService expects the base Data/Json path, not the full file path
+        // ResourceNodeLoaderService expects the base Data/Json path
         var projectRoot = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..");
         _testDataPath = Path.GetFullPath(Path.Combine(projectRoot, "RealmEngine.Data", "Data", "Json"));
+
+        // Initialize GameDataCache
+        _dataCache = new GameDataCache(_testDataPath);
+        _dataCache.LoadAllData();
     }
 
     [Fact]
     public void SpawnNodes_Should_Return_Nodes_For_Valid_Biome()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -43,7 +48,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Return_Empty_List_For_Invalid_Biome()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -62,7 +67,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Respect_Density_Rules(string density, int minCount, int maxCount)
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -76,7 +81,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Generate_Unique_Node_IDs()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -91,7 +96,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Set_Full_Health_On_Spawn()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -107,7 +112,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Set_IsExhausted_To_False()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -122,7 +127,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Set_LocationId_Correctly()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act
@@ -137,7 +142,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Apply_Weighted_Random_Selection()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act - Spawn many nodes to test probability distribution
@@ -162,7 +167,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Throw_On_Null_LocationId()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act & Assert
@@ -174,7 +179,7 @@ public class NodeSpawnerServiceTests
     public void SpawnNodes_Should_Throw_On_Null_Biome()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
 
         // Act & Assert
@@ -186,7 +191,7 @@ public class NodeSpawnerServiceTests
     public void RespawnNode_Should_Restore_Exhausted_Node_After_Cooldown()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
         var nodes = spawner.SpawnNodes("test_location", "forest", "medium");
         var node = nodes.First();
@@ -209,7 +214,7 @@ public class NodeSpawnerServiceTests
     public void RespawnNode_Should_Not_Respawn_Before_Cooldown()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
         var nodes = spawner.SpawnNodes("test_location", "forest", "medium");
         var node = nodes.First();
@@ -231,7 +236,7 @@ public class NodeSpawnerServiceTests
     public void RespawnNode_Should_Return_False_For_Non_Exhausted_Node()
     {
         // Arrange
-        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _testDataPath);
+        var nodeLoader = new ResourceNodeLoaderService(_loaderLoggerMock.Object, _dataCache);
         var spawner = new NodeSpawnerService(_loggerMock.Object, nodeLoader);
         var nodes = spawner.SpawnNodes("test_location", "forest", "medium");
         var node = nodes.First();

@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Wood materials for crafting - from common pine to legendary world tree",
     "version": "5.2",
-    "lastUpdated": "2026-01-21",
+    "lastUpdated": "2026-01-23",
     "type": "item_catalog",
-    "totalItems": 13
+    "totalItems": 15
   },
   "material_types": {
     "wood": {
@@ -241,6 +241,34 @@
           "tier": "legendary",
           "traits": {},
           "tags": ["wood", "crafting", "legendary", "ancient"]
+        },
+        {
+          "slug": "oak-log",
+          "name": "Oak Log",
+          "description": "Whole oak log freshly harvested from tree.",
+          "rarityWeight": 60,
+          "value": 5,
+          "weight": 2.0,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["wood", "crafting", "raw", "log"]
+        },
+        {
+          "slug": "birch-log",
+          "name": "Birch Log",
+          "description": "Whole birch log freshly harvested from tree.",
+          "rarityWeight": 70,
+          "value": 3,
+          "weight": 1.5,
+          "stackSize": 20,
+          "itemType": "material",
+          "subType": "wood",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["wood", "crafting", "raw", "log"]
         }
       ]
     }

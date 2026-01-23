@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Fabric material items - lootable cloth materials that reference property definitions",
     "version": "4.0",
-    "lastUpdated": "2026-01-21",
+    "lastUpdated": "2026-01-23",
     "type": "item_catalog",
-    "totalItems": 12,
+    "totalItems": 15,
     "notes": [
       "These are actual inventory items that drop from enemies/chests",
       "Each references a property definition in properties/materials/fabrics",
@@ -121,6 +121,33 @@
       "stackSize": 100,
       "rarityWeight": 3,
       "baseValue": 250
+    },
+    {
+      "name": "Flax",
+      "slug": "flax",
+      "description": "Raw flax fibers, can be woven into linen cloth.",
+      "propertyRef": "@properties/materials/fabrics:linen",
+      "stackSize": 100,
+      "rarityWeight": 85,
+      "baseValue": 1
+    },
+    {
+      "name": "Cotton",
+      "slug": "cotton",
+      "description": "Raw cotton fibers, soft and versatile.",
+      "propertyRef": "@properties/materials/fabrics:cotton",
+      "stackSize": 100,
+      "rarityWeight": 75,
+      "baseValue": 2
+    },
+    {
+      "name": "Hemp",
+      "slug": "hemp",
+      "description": "Durable hemp fibers, excellent for rope and coarse cloth.",
+      "propertyRef": "@properties/materials/fabrics:hemp",
+      "stackSize": 100,
+      "rarityWeight": 80,
+      "baseValue": 1
     }
       ]
     }

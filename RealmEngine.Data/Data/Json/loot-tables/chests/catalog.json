@@ -64,7 +64,7 @@
       "goldRange": [20, 80],
       "guaranteedDrops": [
         {
-          "materialRef": "@items/materials/leathers:goblin-hide",
+          "materialRef": "@items/materials/leather:goblin-hide",
           "minQuantity": 3,
           "maxQuantity": 10,
           "dropChance": 80,
@@ -78,7 +78,7 @@
       "goldRange": [1000, 5000],
       "guaranteedDrops": [
         {
-          "materialRef": "@items/materials/leathers:dragon-scale",
+          "materialRef": "@items/materials/leather:dragon-scale",
           "minQuantity": 5,
           "maxQuantity": 15,
           "dropChance": 100,
@@ -99,7 +99,7 @@
           "rarityWeight": 70
         },
         {
-          "materialRef": "@items/materials/gems:rough-quartz",
+          "materialRef": "@items/materials/gem:rough-quartz",
           "minQuantity": 1,
           "maxQuantity": 5,
           "dropChance": 50,
@@ -113,7 +113,7 @@
       "goldRange": [500, 2000],
       "guaranteedDrops": [
         {
-          "materialRef": "@items/materials/bones:ancient-bone",
+          "materialRef": "@items/materials/bone:ancient-bone",
           "minQuantity": 2,
           "maxQuantity": 8,
           "dropChance": 70,
@@ -156,3 +156,5 @@
     }
   }
 }
+
+

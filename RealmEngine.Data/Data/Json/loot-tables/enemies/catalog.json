@@ -23,7 +23,7 @@
         "goblin": {
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:goblin-hide",
+              "materialRef": "@items/materials/leather:goblin-hide",
               "minQuantity": 1,
               "maxQuantity": 3,
               "dropChance": 100,
@@ -36,7 +36,7 @@
           "additionalPools": ["@material_pools/metals/uncommon"],
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:goblin-hide",
+              "materialRef": "@items/materials/leather:goblin-hide",
               "minQuantity": 2,
               "maxQuantity": 4,
               "dropChance": 100,
@@ -55,7 +55,7 @@
           "dropChance": 50,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:orc-hide",
+              "materialRef": "@items/materials/leather:orc-hide",
               "minQuantity": 1,
               "maxQuantity": 2,
               "dropChance": 80,
@@ -73,7 +73,7 @@
           "dropChance": 80,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/gems:ruby",
+              "materialRef": "@items/materials/gem:ruby",
               "minQuantity": 1,
               "maxQuantity": 1,
               "dropChance": 25,
@@ -94,7 +94,7 @@
         "wolf": {
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:wolf-pelt",
+              "materialRef": "@items/materials/leather:wolf-pelt",
               "minQuantity": 1,
               "maxQuantity": 2,
               "dropChance": 100,
@@ -107,7 +107,7 @@
           "dropChance": 60,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:dire-wolf-pelt",
+              "materialRef": "@items/materials/leather:dire-wolf-pelt",
               "minQuantity": 2,
               "maxQuantity": 3,
               "dropChance": 100,
@@ -121,7 +121,7 @@
           "dropChance": 50,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:bear-hide",
+              "materialRef": "@items/materials/leather:bear-hide",
               "minQuantity": 2,
               "maxQuantity": 5,
               "dropChance": 100,
@@ -142,7 +142,7 @@
         "skeleton": {
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/bones:bone-fragment",
+              "materialRef": "@items/materials/bone:bone-fragment",
               "minQuantity": 1,
               "maxQuantity": 5,
               "dropChance": 100,
@@ -154,7 +154,7 @@
           "goldRange": [0, 5],
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:rotten-flesh",
+              "materialRef": "@items/materials/leather:rotten-flesh",
               "minQuantity": 1,
               "maxQuantity": 3,
               "dropChance": 100,
@@ -168,7 +168,7 @@
           "dropChance": 100,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/bones:lich-phylactery-fragment",
+              "materialRef": "@items/materials/bone:lich-phylactery-fragment",
               "minQuantity": 1,
               "maxQuantity": 1,
               "dropChance": 100,
@@ -193,7 +193,7 @@
           "dropChance": 80,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:dragon-scale",
+              "materialRef": "@items/materials/leather:dragon-scale",
               "minQuantity": 3,
               "maxQuantity": 8,
               "dropChance": 100,
@@ -204,14 +204,14 @@
         "dragon-adult": {
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/leathers:dragon-scale",
+              "materialRef": "@items/materials/leather:dragon-scale",
               "minQuantity": 10,
               "maxQuantity": 20,
               "dropChance": 100,
               "rarityWeight": 20
             },
             {
-              "materialRef": "@items/materials/gems:dragon-heart",
+              "materialRef": "@items/materials/gem:dragon-heart",
               "minQuantity": 1,
               "maxQuantity": 1,
               "dropChance": 100,
@@ -240,7 +240,7 @@
           "dropChance": 100,
           "guaranteedDrops": [
             {
-              "materialRef": "@items/materials/gems:demon-core",
+              "materialRef": "@items/materials/gem:demon-core",
               "minQuantity": 1,
               "maxQuantity": 1,
               "dropChance": 100,
@@ -252,3 +252,5 @@
     }
   }
 }
+
+

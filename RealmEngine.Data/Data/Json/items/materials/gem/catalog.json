@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Gemstones for jewelry and enchanting - from common quartz to legendary dragon tears",
     "version": "5.2",
-    "lastUpdated": "2026-01-21",
+    "lastUpdated": "2026-01-23",
     "type": "item_catalog",
-    "totalItems": 11
+    "totalItems": 14
   },
   "material_types": {
     "gem": {
@@ -176,6 +176,48 @@
           "tier": "raw",
           "traits": {},
           "tags": ["gem", "raw", "legendary", "dragon", "unique"]
+        },
+        {
+          "slug": "rough-quartz",
+          "name": "Rough Quartz",
+          "description": "Unpolished quartz crystal, common mining byproduct.",
+          "rarityWeight": 85,
+          "value": 3,
+          "weight": 0.1,
+          "stackSize": 100,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "raw",
+          "traits": {},
+          "tags": ["gem", "raw", "common", "quartz"]
+        },
+        {
+          "slug": "dragon-heart",
+          "name": "Dragon Heart",
+          "description": "Crystalline heart from a slain dragon, pulses with ancient power.",
+          "rarityWeight": 3,
+          "value": 1000,
+          "weight": 0.5,
+          "stackSize": 1,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["gem", "legendary", "dragon", "heart", "unique"]
+        },
+        {
+          "slug": "demon-core",
+          "name": "Demon Core",
+          "description": "Corrupted essence of a demon lord, radiates malevolent energy.",
+          "rarityWeight": 2,
+          "value": 800,
+          "weight": 0.3,
+          "stackSize": 1,
+          "itemType": "material",
+          "subType": "gem",
+          "tier": "legendary",
+          "traits": {},
+          "tags": ["gem", "legendary", "demon", "core", "cursed"]
         }
       ]
     }

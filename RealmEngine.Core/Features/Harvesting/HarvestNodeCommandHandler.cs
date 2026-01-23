@@ -16,7 +16,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
     private readonly HarvestCalculatorService _calculator;
     private readonly ToolValidationService _toolValidator;
     private readonly CriticalHarvestService _criticalService;
-    private readonly NodeLootTableService _lootTableService;
+    private readonly LootTableService _lootTableService;
     private readonly INodeRepository _nodeRepository;
     private readonly IInventoryService _inventoryService;
     // TODO: Add ISkillService for character skill lookups and XP awarding
@@ -37,7 +37,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
         HarvestCalculatorService calculator,
         ToolValidationService toolValidator,
         CriticalHarvestService criticalService,
-        NodeLootTableService lootTableService,
+        LootTableService lootTableService,
         INodeRepository nodeRepository,
         IInventoryService inventoryService)
     {
@@ -115,7 +115,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
             var yield = _calculator.CalculateYield(node, skillRank, toolTier, isCritical);
 
             // Roll loot table for actual materials
-            var materials = _lootTableService.RollLootDrops(node.LootTableRef, yield, isCritical);
+            var materials = _lootTableService.RollHarvestingDrops(node.LootTableRef, yield, isCritical);
 
             // Calculate node depletion
             var depletion = _calculator.CalculateDepletion(node, skillRank, toolTier, toolValidation.HasNoTool);

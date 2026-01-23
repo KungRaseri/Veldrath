@@ -127,7 +127,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 100,
             MinToolTier = 0, // No tool required
             BaseYield = 3,
-            LootTableRef = "@loot-tables/nodes/woods:common-trees",
+            LootTableRef = "@loot-tables/harvesting/woods:common-trees",
             IsRichNode = false,
             BiomeType = "forest",
             LocationId = "starting-forest"
@@ -202,7 +202,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 150,
             MinToolTier = 1, // Requires pickaxe
             BaseYield = 5,
-            LootTableRef = "@loot-tables/nodes/ores:common-ores",
+            LootTableRef = "@loot-tables/harvesting/ores:common-ores",
             IsRichNode = false,
             BiomeType = "mountains",
             LocationId = "iron-peaks"
@@ -261,7 +261,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 200,
             MinToolTier = 3, // Requires tier 3+ pickaxe
             BaseYield = 2,
-            LootTableRef = "@loot-tables/nodes/ores:rare-ores",
+            LootTableRef = "@loot-tables/harvesting/ores:rare-ores",
             IsRichNode = true,
             BiomeType = "deep-mines",
             LocationId = "mithril-depths"
@@ -306,7 +306,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 100,
             MinToolTier = 2,
             BaseYield = 4,
-            LootTableRef = "@loot-tables/nodes/ores:common-ores",
+            LootTableRef = "@loot-tables/harvesting/ores:common-ores",
             IsRichNode = false,
             BiomeType = "mountains",
             LocationId = "silver-peaks"
@@ -351,7 +351,7 @@ public class HarvestingIntegrationTests
             MaxHealth = 100,
             MinToolTier = 0,
             BaseYield = 10,
-            LootTableRef = "@loot-tables/nodes/plants:common-plants",
+            LootTableRef = "@loot-tables/harvesting/plants:common-plants",
             IsRichNode = false,
             BiomeType = "plains",
             LocationId = "green-meadows"
@@ -414,7 +414,7 @@ public class HarvestingIntegrationTests
                 MaterialTier = "common",
                 MinToolTier = 0,
                 BaseYield = 3,
-                LootTableRef = "@loot-tables/nodes/woods:common-trees",
+                LootTableRef = "@loot-tables/harvesting/woods:common-trees",
                 BiomeType = "forest"
             },
             new()
@@ -428,7 +428,7 @@ public class HarvestingIntegrationTests
                 MaterialTier = "common",
                 MinToolTier = 0,
                 BaseYield = 2,
-                LootTableRef = "@loot-tables/nodes/woods:common-trees",
+                LootTableRef = "@loot-tables/harvesting/woods:common-trees",
                 BiomeType = "forest"
             },
             new()
@@ -442,7 +442,7 @@ public class HarvestingIntegrationTests
                 MaterialTier = "common",
                 MinToolTier = 1,
                 BaseYield = 5,
-                LootTableRef = "@loot-tables/nodes/ores:common-ores",
+                LootTableRef = "@loot-tables/harvesting/ores:common-ores",
                 BiomeType = "mountains"
             }
         };
@@ -494,9 +494,13 @@ public class HarvestingIntegrationTests
         );
         dataPath = Path.GetFullPath(dataPath);
         
-        var lootTableService = new NodeLootTableService(
-            localLoggerFactory.CreateLogger<NodeLootTableService>(),
-            dataPath
+        // Initialize GameDataCache
+        var dataCache = new GameDataCache(dataPath);
+        dataCache.LoadAllData();
+        
+        var lootTableService = new LootTableService(
+            localLoggerFactory.CreateLogger<LootTableService>(),
+            dataCache
         );
         
         return new HarvestNodeCommandHandler(

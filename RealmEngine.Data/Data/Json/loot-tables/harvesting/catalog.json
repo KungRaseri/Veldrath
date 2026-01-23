@@ -110,7 +110,7 @@
               "requiresCritical": false
             },
             {
-              "materialRef": "@items/materials/gems:rough-quartz",
+              "materialRef": "@items/materials/gem:rough-quartz",
               "minQuantity": 1,
               "maxQuantity": 1,
               "dropChance": 5,
@@ -202,7 +202,7 @@
         "common-plants": {
           "drops": [
             {
-              "materialRef": "@items/materials/fiber:flax",
+              "materialRef": "@items/materials/fabric:flax",
               "minQuantity": 3,
               "maxQuantity": 10,
               "dropChance": 100,
@@ -210,7 +210,7 @@
               "isBonusDrop": false
             },
             {
-              "materialRef": "@items/materials/fiber:cotton",
+              "materialRef": "@items/materials/fabric:cotton",
               "minQuantity": 2,
               "maxQuantity": 7,
               "dropChance": 60,
@@ -219,7 +219,7 @@
               "requiresCritical": false
             },
             {
-              "materialRef": "@items/materials/fiber:hemp",
+              "materialRef": "@items/materials/fabric:hemp",
               "minQuantity": 1,
               "maxQuantity": 5,
               "dropChance": 40,
@@ -233,3 +233,5 @@
     }
   }
 }
+
+

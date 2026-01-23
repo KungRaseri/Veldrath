@@ -2,9 +2,9 @@
   "metadata": {
     "description": "Raw ores used in refining and blacksmithing",
     "version": "4.0",
-    "lastUpdated": "2026-01-10",
+    "lastUpdated": "2026-01-23",
     "type": "item_catalog",
-    "totalItems": 4
+    "totalItems": 5
   },
   "material_types": {
     "ore": {
@@ -62,6 +62,20 @@
           "maxStack": 99,
           "traits": {
             "material": "mithril",
+            "category": "ore"
+          }
+        },
+        {
+          "name": "Adamantite Ore",
+          "slug": "adamantite-ore",
+          "description": "Incredibly rare and durable ore, the hardest known material",
+          "rarityWeight": 5,
+          "value": 150,
+          "weight": 1.5,
+          "stackable": true,
+          "maxStack": 99,
+          "traits": {
+            "material": "adamantite",
             "category": "ore"
           }
         }

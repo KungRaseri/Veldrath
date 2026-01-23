@@ -68,7 +68,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodeById_Should_Return_Correct_Node()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -86,7 +86,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodeById_Should_Return_Null_For_NonExistent_Node()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -100,7 +100,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodesByBiome_Should_Return_Matching_Nodes()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -117,7 +117,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodesByTier_Should_Return_Matching_Nodes()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -133,7 +133,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodesBySkill_Should_Return_Matching_Nodes()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -151,7 +151,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodesBySkill_Should_Find_Woodcutting_Nodes()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -167,7 +167,7 @@ namespace RealmEngine.Data.Tests.Services
         public void ClearCache_Should_Force_Reload()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
             var initialCount = service.GetAllNodes().Count;
 
@@ -185,7 +185,7 @@ namespace RealmEngine.Data.Tests.Services
         public void LoadNodes_Should_Parse_All_Required_Fields()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -209,7 +209,7 @@ namespace RealmEngine.Data.Tests.Services
         public void LoadNodes_Should_Handle_Multiple_Node_Categories()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
@@ -227,7 +227,7 @@ namespace RealmEngine.Data.Tests.Services
         public void GetNodesByBiome_Should_Be_Case_Insensitive()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
             service.LoadNodes();
 
             // Act
