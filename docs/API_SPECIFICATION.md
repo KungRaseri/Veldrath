@@ -307,7 +307,42 @@ Temporary conditions affecting combat and exploration with damage-over-time, cro
 
 ---
 
-### 8. Crafting System ✅
+### 8. Item Generation System ✅
+**NEW** - Procedural item generation with quantity control, budget management, and category filtering.
+
+**Commands:**
+- `GenerateRandomItemsCommand` - Generate random items from any/all categories
+- `GenerateItemsByCategoryCommand` - Generate items from specific category
+
+**Queries:**
+- `GetAvailableItemCategoriesQuery` - List all available item categories with metadata
+
+**Generation Modes:**
+- **Simple Catalog-Based**: Fast generation from catalog (no materials/enchantments)
+- **Budget-Based**: Full enhancement system with materials, enchantments, and sockets
+
+**Parameters:**
+- `Quantity` (1-1000): Number of items to generate
+- `Category`: Target category or "random" for variety
+- `MinBudget`/`MaxBudget`: Control item quality (10-80+)
+- `UseBudgetGeneration`: Toggle enhancement system
+
+**Key Properties:**
+- `RequestedQuantity`, `ActualQuantity`
+- `Items` (generated items list)
+- `CategoriesUsed`, `ErrorMessage`
+
+**Supported Categories:**
+- Weapons: swords, axes, maces, daggers, staves, bows, crossbows, spears, fist-weapons
+- Armor: light, medium, heavy, shields
+- Accessories: amulets, rings, cloaks, belts
+- Consumables: potions, food, scrolls
+
+**See:** [ItemGeneration/README.md](../RealmEngine.Core/Features/ItemGeneration/README.md) for detailed usage
+
+---
+
+### 9. Crafting System ✅
 Recipe-based crafting with materials, tools, and skill requirements.
 
 **Commands:**
@@ -329,7 +364,7 @@ Recipe-based crafting with materials, tools, and skill requirements.
 
 ---
 
-### 5. Harvesting System
+### 10. Harvesting System
 Resource gathering from nodes (ores, trees, herbs) with tool requirements and skill progression.
 
 **Commands:**
