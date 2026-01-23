@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 using RealmEngine.Shared.Models.Harvesting;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace RealmEngine.Data.Services
@@ -11,24 +10,24 @@ namespace RealmEngine.Data.Services
     /// <summary>
     /// Service responsible for loading and caching resource node definitions from JSON.
     /// Provides fast lookup of node types by ID and supports filtering by biome/tier.
+    /// Uses GameDataCache for efficient data access.
     /// </summary>
     public class ResourceNodeLoaderService
     {
         private readonly ILogger<ResourceNodeLoaderService> _logger;
-        private readonly string _dataPath;
+        private readonly GameDataCache _dataCache;
         private Dictionary<string, HarvestableNodeReference>? _nodeCache;
-        private JObject? _rawNodeData;
         private bool _isLoaded;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResourceNodeLoaderService"/> class.
         /// </summary>
         /// <param name="logger">The logger instance for diagnostic output.</param>
-        /// <param name="dataPath">The path to the resource-nodes.json file relative to the application root.</param>
-        public ResourceNodeLoaderService(ILogger<ResourceNodeLoaderService> logger, string dataPath)
+        /// <param name="dataCache">The game data cache instance.</param>
+        public ResourceNodeLoaderService(ILogger<ResourceNodeLoaderService> logger, GameDataCache dataCache)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _dataPath = dataPath ?? throw new ArgumentNullException(nameof(dataPath));
+            _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
             _isLoaded = false;
         }
 
@@ -44,21 +43,19 @@ namespace RealmEngine.Data.Services
                 return;
             }
 
-            var filePath = Path.Combine(_dataPath, "configuration", "resource-nodes.json");
-            
-            if (!File.Exists(filePath))
+            var cachedFile = _dataCache.GetFile("configuration/resource-nodes.json");
+            if (cachedFile == null)
             {
-                _logger.LogError("Resource nodes file not found: {FilePath}", filePath);
-                throw new FileNotFoundException($"Resource nodes file not found: {filePath}");
+                _logger.LogError("Resource nodes file not found in cache: configuration/resource-nodes.json");
+                throw new FileNotFoundException("Resource nodes file not found: configuration/resource-nodes.json");
             }
 
             try
             {
-                var json = File.ReadAllText(filePath);
-                _rawNodeData = JObject.Parse(json);
+                var rawNodeData = cachedFile.JsonData;
                 _nodeCache = new Dictionary<string, HarvestableNodeReference>();
 
-                var nodeTypes = _rawNodeData["node_types"] as JObject;
+                var nodeTypes = rawNodeData["node_types"] as JObject;
                 if (nodeTypes == null)
                 {
                     _logger.LogError("Invalid resource-nodes.json structure: missing 'node_types'");
@@ -91,11 +88,11 @@ namespace RealmEngine.Data.Services
                 }
 
                 _isLoaded = true;
-                _logger.LogInformation("Loaded {NodeCount} resource nodes from {FilePath}", _nodeCache.Count, filePath);
+                _logger.LogInformation("Loaded {NodeCount} resource nodes from cache", _nodeCache.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load resource nodes from {FilePath}", filePath);
+                _logger.LogError(ex, "Failed to load resource nodes from cache");
                 throw;
             }
         }
@@ -219,7 +216,6 @@ namespace RealmEngine.Data.Services
         public void ClearCache()
         {
             _nodeCache?.Clear();
-            _rawNodeData = null;
             _isLoaded = false;
             _logger.LogDebug("Resource node cache cleared");
         }

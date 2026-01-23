@@ -111,6 +111,8 @@ public class GameDataCache : IDisposable
                     ? _pathsByType[JsonFileType.ConfigFile.ToString()].Count : 0,
                 ComponentFiles = _pathsByType.ContainsKey(JsonFileType.ComponentData.ToString())
                     ? _pathsByType[JsonFileType.ComponentData.ToString()].Count : 0,
+                LootTableFiles = _pathsByType.ContainsKey(JsonFileType.LootTableCatalog.ToString())
+                    ? _pathsByType[JsonFileType.LootTableCatalog.ToString()].Count : 0,
                 Domains = _pathsByDomain.Keys.ToList(),
                 CacheHits = _cacheHits,
                 CacheMisses = _cacheMisses,
@@ -357,6 +359,19 @@ public class GameDataCache : IDisposable
     /// Gets all component data files
     /// </summary>
     public IEnumerable<CachedJsonFile> GetAllComponentData() => GetFilesByType(JsonFileType.ComponentData);
+
+    /// <summary>
+    /// Gets all loot table catalog files
+    /// </summary>
+    public IEnumerable<CachedJsonFile> GetAllLootTables() => GetFilesByType(JsonFileType.LootTableCatalog);
+
+    /// <summary>
+    /// Gets a specific loot table catalog by subdomain (e.g., "harvesting", "enemies", "chests")
+    /// </summary>
+    public CachedJsonFile? GetLootTableCatalog(string subdomain)
+    {
+        return GetFile($"loot-tables/{subdomain}/catalog.json");
+    }
 
     /// <summary>
     /// Gets all available domains (top-level categories like 'abilities', 'npcs', etc.)
@@ -611,7 +626,14 @@ public class GameDataCache : IDisposable
             return JsonFileType.ConfigFile;
 
         if (fileName == "catalog.json")
+        {
+            // Loot table catalogs are in loot-tables domain
+            var domain = ExtractDomain(relativePath);
+            if (domain == "loot-tables")
+                return JsonFileType.LootTableCatalog;
+            
             return JsonFileType.GenericCatalog;
+        }
 
         if (fileName == "names.json")
             return JsonFileType.NamesFile;
@@ -686,6 +708,7 @@ public class GameDataCache : IDisposable
         Log.Information("  Names: {Names}", stats.NamesFiles);
         Log.Information("  Configs: {Configs}", stats.ConfigFiles);
         Log.Information("  Component Data: {Components}", stats.ComponentFiles);
+        Log.Information("  Loot Tables: {LootTables}", stats.LootTableFiles);
         Log.Information("  Domains: {Domains}", string.Join(", ", stats.Domains));
     }
 
@@ -813,6 +836,11 @@ public class DataCacheStats
     public int ComponentFiles { get; set; }
     
     /// <summary>
+    /// Number of loot table catalog files
+    /// </summary>
+    public int LootTableFiles { get; set; }
+    
+    /// <summary>
     /// List of all available domains
     /// </summary>
     public List<string> Domains { get; set; } = new();
@@ -877,5 +905,10 @@ public enum JsonFileType
     /// <summary>
     /// Configuration file (.cbconfig.json) for ContentBuilder metadata
     /// </summary>
-    ConfigFile
+    ConfigFile,
+    
+    /// <summary>
+    /// Loot table catalog file (loot-tables/*/catalog.json)
+    /// </summary>
+    LootTableCatalog
 }
