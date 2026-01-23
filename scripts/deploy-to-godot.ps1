@@ -273,8 +273,22 @@ if ($DeployRealmForge -eq "y" -or $DeployRealmForge -eq "Y") {
 }
 
 # ============================================
-# 4. Generate Deployment Info & Changelog
+# 4. Deploy Release Notes & Generate Deployment Info
 # ============================================
+Write-Host "Deploying release notes..." -ForegroundColor Yellow
+
+# Copy release-notes.md from package
+$ReleaseNotesSource = Join-Path $PackageRoot "release-notes.md"
+$ReleaseNotesDest = Join-Path $GodotProjectPath "RELEASE_NOTES.md"
+
+if (Test-Path $ReleaseNotesSource) {
+    Copy-Item -Path $ReleaseNotesSource -Destination $ReleaseNotesDest -Force
+    Write-Host "✓ Release notes deployed (RELEASE_NOTES.md)" -ForegroundColor Green
+    Write-Host "  → Contains git diff since last tag and API changes" -ForegroundColor Gray
+} else {
+    Write-Host "⚠ No release-notes.md found in package" -ForegroundColor Yellow
+}
+
 Write-Host "Generating deployment info..." -ForegroundColor Yellow
 
 $DeploymentInfo = @{
@@ -404,6 +418,9 @@ if ($DeployRealmForge -eq "y" -or $DeployRealmForge -eq "Y") {
 }
 if ($HasChanges) {
     Write-Host "  - API Changelog updated (CHANGELOG_API.md)" -ForegroundColor Cyan
+}
+if (Test-Path $ReleaseNotesDest) {
+    Write-Host "  - Release Notes with Git Diff (RELEASE_NOTES.md)" -ForegroundColor Cyan
 }
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Cyan
