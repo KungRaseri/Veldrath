@@ -12,6 +12,7 @@ namespace RealmEngine.Data.Tests.Services
     public class ResourceNodeLoaderServiceTests
     {
         private readonly Mock<ILogger<ResourceNodeLoaderService>> _loggerMock;
+        private readonly GameDataCache _dataCache;
         private readonly string _testDataPath;
 
         public ResourceNodeLoaderServiceTests()
@@ -25,13 +26,17 @@ namespace RealmEngine.Data.Tests.Services
                 "RealmEngine.Data", "Data", "Json"
             );
             _testDataPath = Path.GetFullPath(_testDataPath);
+
+            // Initialize GameDataCache
+            _dataCache = new GameDataCache(_testDataPath);
+            _dataCache.LoadAllData();
         }
 
         [Fact]
         public void LoadNodes_Should_Load_All_Nodes_Successfully()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
 
             // Act
             service.LoadNodes();
@@ -46,7 +51,7 @@ namespace RealmEngine.Data.Tests.Services
         public void LoadNodes_Should_Cache_Results()
         {
             // Arrange
-            var service = new ResourceNodeLoaderService(_loggerMock.Object, _testDataPath);
+            var service = new ResourceNodeLoaderService(_loggerMock.Object, _dataCache);
 
             // Act
             service.LoadNodes();
