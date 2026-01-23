@@ -1,0 +1,237 @@
+{
+  "metadata": {
+    "description": "Character stat growth and progression configuration",
+    "version": "4.0",
+    "lastUpdated": "2026-01-23",
+    "type": "growth_stats_config",
+    "notes": [
+      "Stat growth is defined per class using JSON references to @classes domain",
+      "Base values pulled from class catalog, growth rates defined here for global tuning",
+      "Derived stats (HP, mana, damage) calculated from primary stats",
+      "Stat caps prevent infinite scaling and maintain balance",
+      "Growth multipliers allow per-class customization without hardcoding"
+    ]
+  },
+  "derivedStats": {
+    "health": {
+      "formula": "base + (constitution * 10) + (level * classHealthGrowth)",
+      "description": "Total HP calculated from constitution and class growth"
+    },
+    "mana": {
+      "formula": "base + (intelligence * 5) + (wisdom * 5) + (level * classManaGrowth)",
+      "description": "Total mana calculated from intelligence, wisdom, and class growth"
+    },
+    "physicalDamage": {
+      "formula": "strength * 0.5 + weaponDamage",
+      "description": "Physical damage bonus from strength"
+    },
+    "magicalDamage": {
+      "formula": "intelligence * 0.5 + spellPower",
+      "description": "Magical damage bonus from intelligence"
+    },
+    "criticalChance": {
+      "formula": "0.05 + (dexterity * 0.001)",
+      "description": "Base 5% + 0.1% per dexterity point"
+    },
+    "criticalDamage": {
+      "formula": "1.5 + (strength * 0.002)",
+      "description": "Base 150% + 0.2% per strength point"
+    },
+    "armor": {
+      "formula": "constitution * 2 + equipmentArmor",
+      "description": "Physical damage reduction"
+    },
+    "magicResist": {
+      "formula": "wisdom * 2 + equipmentResist",
+      "description": "Magical damage reduction"
+    },
+    "dodge": {
+      "formula": "0.05 + (dexterity * 0.001)",
+      "description": "Base 5% + 0.1% per dexterity point"
+    },
+    "block": {
+      "formula": "0.05 + (constitution * 0.0005)",
+      "description": "Base 5% + 0.05% per constitution point"
+    }
+  },
+  "statCaps": {
+    "softCaps": {
+      "description": "Stats experience diminishing returns after these values",
+      "strength": 100,
+      "dexterity": 100,
+      "constitution": 100,
+      "intelligence": 100,
+      "wisdom": 100,
+      "charisma": 100,
+      "diminishingFactor": 0.5
+    },
+    "hardCaps": {
+      "description": "Stats cannot exceed these values",
+      "strength": 200,
+      "dexterity": 200,
+      "constitution": 200,
+      "intelligence": 200,
+      "wisdom": 200,
+      "charisma": 200
+    }
+  },
+  "classGrowthMultipliers": {
+    "description": "Multipliers applied to base stat growth per class (uses JSON references)",
+    "growth": [
+      {
+        "classRef": "@classes/warrior:Fighter",
+        "multipliers": {
+          "strengthGrowth": 1.2,
+          "constitutionGrowth": 1.1,
+          "dexterityGrowth": 0.9,
+          "intelligenceGrowth": 0.7,
+          "wisdomGrowth": 0.8,
+          "charismaGrowth": 0.8
+        }
+      },
+      {
+        "classRef": "@classes/warrior:Berserker",
+        "multipliers": {
+          "strengthGrowth": 1.3,
+          "constitutionGrowth": 1.0,
+          "dexterityGrowth": 0.9,
+          "intelligenceGrowth": 0.6,
+          "wisdomGrowth": 0.7,
+          "charismaGrowth": 0.7
+        }
+      },
+      {
+        "classRef": "@classes/warrior:Paladin",
+        "multipliers": {
+          "strengthGrowth": 1.1,
+          "constitutionGrowth": 1.0,
+          "dexterityGrowth": 0.8,
+          "intelligenceGrowth": 0.8,
+          "wisdomGrowth": 1.1,
+          "charismaGrowth": 1.0
+        }
+      },
+      {
+        "classRef": "@classes/mage:Wizard",
+        "multipliers": {
+          "strengthGrowth": 0.6,
+          "constitutionGrowth": 0.7,
+          "dexterityGrowth": 0.8,
+          "intelligenceGrowth": 1.3,
+          "wisdomGrowth": 1.1,
+          "charismaGrowth": 0.9
+        }
+      },
+      {
+        "classRef": "@classes/mage:Sorcerer",
+        "multipliers": {
+          "strengthGrowth": 0.6,
+          "constitutionGrowth": 0.7,
+          "dexterityGrowth": 0.8,
+          "intelligenceGrowth": 1.2,
+          "wisdomGrowth": 1.0,
+          "charismaGrowth": 1.2
+        }
+      },
+      {
+        "classRef": "@classes/mage:Warlock",
+        "multipliers": {
+          "strengthGrowth": 0.7,
+          "constitutionGrowth": 0.8,
+          "dexterityGrowth": 0.8,
+          "intelligenceGrowth": 1.1,
+          "wisdomGrowth": 1.0,
+          "charismaGrowth": 1.2
+        }
+      },
+      {
+        "classRef": "@classes/cleric:Priest",
+        "multipliers": {
+          "strengthGrowth": 0.7,
+          "constitutionGrowth": 1.0,
+          "dexterityGrowth": 0.8,
+          "intelligenceGrowth": 1.0,
+          "wisdomGrowth": 1.3,
+          "charismaGrowth": 1.1
+        }
+      },
+      {
+        "classRef": "@classes/cleric:Templar",
+        "multipliers": {
+          "strengthGrowth": 1.0,
+          "constitutionGrowth": 1.1,
+          "dexterityGrowth": 0.8,
+          "intelligenceGrowth": 0.8,
+          "wisdomGrowth": 1.2,
+          "charismaGrowth": 1.0
+        }
+      },
+      {
+        "classRef": "@classes/rogue:Thief",
+        "multipliers": {
+          "strengthGrowth": 0.9,
+          "constitutionGrowth": 0.8,
+          "dexterityGrowth": 1.3,
+          "intelligenceGrowth": 1.0,
+          "wisdomGrowth": 0.9,
+          "charismaGrowth": 0.8
+        }
+      },
+      {
+        "classRef": "@classes/rogue:Assassin",
+        "multipliers": {
+          "strengthGrowth": 1.0,
+          "constitutionGrowth": 0.7,
+          "dexterityGrowth": 1.3,
+          "intelligenceGrowth": 1.1,
+          "wisdomGrowth": 0.8,
+          "charismaGrowth": 0.7
+        }
+      },
+      {
+        "classRef": "@classes/rogue:Swashbuckler",
+        "multipliers": {
+          "strengthGrowth": 0.9,
+          "constitutionGrowth": 0.8,
+          "dexterityGrowth": 1.2,
+          "intelligenceGrowth": 1.0,
+          "wisdomGrowth": 0.8,
+          "charismaGrowth": 1.2
+        }
+      },
+      {
+        "classRef": "@classes/ranger:Archer",
+        "multipliers": {
+          "strengthGrowth": 0.9,
+          "constitutionGrowth": 0.9,
+          "dexterityGrowth": 1.3,
+          "intelligenceGrowth": 0.9,
+          "wisdomGrowth": 1.0,
+          "charismaGrowth": 0.8
+        }
+      },
+      {
+        "classRef": "@classes/ranger:Beastmaster",
+        "multipliers": {
+          "strengthGrowth": 0.9,
+          "constitutionGrowth": 1.0,
+          "dexterityGrowth": 1.2,
+          "intelligenceGrowth": 0.9,
+          "wisdomGrowth": 1.1,
+          "charismaGrowth": 0.9
+        }
+      }
+    ]
+  },
+  "statPointAllocation": {
+    "pointsPerLevel": 5,
+    "description": "Free stat points to distribute on level up",
+    "minimumPerStat": 1,
+    "maximumPerStat": 3
+  },
+  "respecSystem": {
+    "enabled": true,
+    "costFormula": "level * 100",
+    "description": "Gold cost to reset stat allocations"
+  }
+}

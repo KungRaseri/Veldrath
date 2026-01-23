@@ -86,6 +86,8 @@ public class ItemGenerator
                     materialPools,
                     enemyTypes,
                     _loggerFactory.CreateLogger<MaterialPoolService>());
+                
+                var generationRulesService = new ItemGenerationRulesService(_dataCache);
 
                 _budgetGenerator = new BudgetItemGenerationService(
                     _dataCache,
@@ -93,6 +95,7 @@ public class ItemGenerator
                     budgetCalculator,
                     materialPoolService,
                     configFactory,
+                    generationRulesService,
                     _loggerFactory.CreateLogger<BudgetItemGenerationService>());
             }
             return _budgetGenerator;

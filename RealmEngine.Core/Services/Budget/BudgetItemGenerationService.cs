@@ -16,6 +16,7 @@ public class BudgetItemGenerationService
     private readonly BudgetCalculator _budgetCalculator;
     private readonly MaterialPoolService _materialPoolService;
     private readonly BudgetConfigFactory _configFactory;
+    private readonly ItemGenerationRulesService _generationRulesService;
     private readonly ILogger<BudgetItemGenerationService> _logger;
     private readonly Random _random;
 
@@ -27,6 +28,7 @@ public class BudgetItemGenerationService
     /// <param name="budgetCalculator">The budget calculator.</param>
     /// <param name="materialPoolService">The material pool service.</param>
     /// <param name="configFactory">The budget config factory.</param>
+    /// <param name="generationRulesService">The item generation rules service.</param>
     /// <param name="logger">The logger instance.</param>
     public BudgetItemGenerationService(
         GameDataCache dataCache,
@@ -34,6 +36,7 @@ public class BudgetItemGenerationService
         BudgetCalculator budgetCalculator,
         MaterialPoolService materialPoolService,
         BudgetConfigFactory configFactory,
+        ItemGenerationRulesService generationRulesService,
         ILogger<BudgetItemGenerationService> logger)
     {
         _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
@@ -41,6 +44,7 @@ public class BudgetItemGenerationService
         _budgetCalculator = budgetCalculator ?? throw new ArgumentNullException(nameof(budgetCalculator));
         _materialPoolService = materialPoolService ?? throw new ArgumentNullException(nameof(materialPoolService));
         _configFactory = configFactory ?? throw new ArgumentNullException(nameof(configFactory));
+        _generationRulesService = generationRulesService ?? throw new ArgumentNullException(nameof(generationRulesService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _random = new Random();
     }
@@ -148,11 +152,13 @@ public class BudgetItemGenerationService
             var patternString = GetStringProperty(pattern, "pattern");
             var patternCost = _budgetCalculator.GetPatternCost(patternString);
 
-            // Step 8: Fill remaining budget with affordable components
+            // Step 8: Fill remaining budget with affordable components (enforcing generation rules limits)
+            var rarityTier = CalculateRarityTier(baseBudget);
             var components = await SelectAffordableComponentsAsync(
                 request.ItemCategory, 
                 patternString, 
-                remainingBudget);
+                remainingBudget,
+                rarityTier);
 
             // Step 9: Generate sockets based on total budget
             var totalSpent = materialCost + baseItemCost + qualityCost + patternCost + components.Sum(c => c.Cost);
@@ -492,7 +498,8 @@ public class BudgetItemGenerationService
     private Task<List<(JToken Component, int Cost)>> SelectAffordableComponentsAsync(
         string category,
         string patternString,
-        int availableBudget)
+        int availableBudget,
+        string rarityTier = "common")
     {
         var result = new List<(JToken Component, int Cost)>();
 
@@ -590,9 +597,16 @@ public class BudgetItemGenerationService
     private Task<List<(JToken Component, int Cost)>> SelectComponentsAsync(
         string category,
         string patternString,
-        int availableBudget)
+        int availableBudget,
+        string rarityTier = "common")
     {
         var result = new List<(JToken Component, int Cost)>();
+        
+        // Get component limits for this rarity tier
+        var maxPrefixes = _generationRulesService.GetMaxPrefixes(rarityTier);
+        var maxSuffixes = _generationRulesService.GetMaxSuffixes(rarityTier);
+        var prefixCount = 0;
+        var suffixCount = 0;
 
         var namesPath = $"items/{category}/names.json";
         if (!_dataCache.FileExists(namesPath))
@@ -614,6 +628,21 @@ public class BudgetItemGenerationService
             // Skip base and quality tokens
             if (token == "base" || token == "quality")
                 continue;
+            
+            // Check if we've hit component limits for this rarity tier
+            var isPrefix = token.Contains("prefix");
+            var isSuffix = token.Contains("suffix");
+            
+            if (isPrefix && prefixCount >= maxPrefixes)
+            {
+                _logger.LogDebug("Skipping prefix - reached limit of {Max} for {Rarity}", maxPrefixes, rarityTier);
+                continue;
+            }
+            if (isSuffix && suffixCount >= maxSuffixes)
+            {
+                _logger.LogDebug("Skipping suffix - reached limit of {Max} for {Rarity}", maxSuffixes, rarityTier);
+                continue;
+            }
 
             var componentArray = components[token];
             if (componentArray == null)
@@ -633,6 +662,10 @@ public class BudgetItemGenerationService
                 var cost = _budgetCalculator.CalculateComponentCost(selected);
                 result.Add((selected, cost));
                 availableBudget -= cost;
+                
+                // Track component counts
+                if (isPrefix) prefixCount++;
+                if (isSuffix) suffixCount++;
             }
         }
 
@@ -909,6 +942,22 @@ public class BudgetItemGenerationService
             "armor" => "Armor",
             "accessories" => "Accessory",
             _ => "Weapon" // Default to weapon if unknown
+        };
+    }
+
+    /// <summary>
+    /// Calculate rarity tier string from budget for generation rules enforcement.
+    /// Uses budget ranges to determine component limits (common, uncommon, rare, epic, legendary).
+    /// </summary>
+    private static string CalculateRarityTier(int budget)
+    {
+        return budget switch
+        {
+            >= 400 => "legendary",
+            >= 250 => "epic",
+            >= 150 => "rare",
+            >= 75 => "uncommon",
+            _ => "common"
         };
     }
 

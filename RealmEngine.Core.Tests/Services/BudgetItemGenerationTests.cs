@@ -47,6 +47,8 @@ public class BudgetItemGenerationTests
             materialPools,
             enemyTypes,
             loggerFactory.CreateLogger<MaterialPoolService>());
+        
+        var generationRulesService = new ItemGenerationRulesService(_dataCache);
 
         _generator = new BudgetItemGenerationService(
             _dataCache,
@@ -54,6 +56,7 @@ public class BudgetItemGenerationTests
             budgetCalculator,
             materialPoolService,
             configFactory,
+            generationRulesService,
             loggerFactory.CreateLogger<BudgetItemGenerationService>());
     }
 
