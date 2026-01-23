@@ -1,343 +1,177 @@
-using RealmEngine.Core.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Services;
 
 /// <summary>
-/// Service for managing level-up attribute allocation and skill selection.
+/// Service for level-up calculations and progression logic.
+/// Contains domain logic for character advancement, skill availability, and stat calculations.
+/// NO UI CODE - All presentation handled by Godot.
 /// </summary>
 public class LevelUpService
 {
-    private readonly IGameUI _console;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="LevelUpService"/> class.
+    /// Calculate the experience required to reach a specific level.
+    /// Formula: Level * 100
     /// </summary>
-    /// <param name="console">The game UI console.</param>
-    public LevelUpService(IGameUI console)
+    public int CalculateExperienceForLevel(int level)
     {
-        _console = console;
+        if (level < 1) return 0;
+        return level * 100;
     }
 
     /// <summary>
-    /// Process all pending level-ups for a character.
+    /// Calculate the total experience needed from level 1 to reach a target level.
     /// </summary>
-    /// <param name="character">The character to process level-ups for.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task ProcessPendingLevelUpsAsync(Character character)
+    public int CalculateTotalExperienceForLevel(int level)
     {
-        var unprocessedLevelUps = character.PendingLevelUps
-            .Where(l => !l.IsProcessed)
-            .OrderBy(l => l.NewLevel)
+        if (level < 1) return 0;
+        
+        int total = 0;
+        for (int i = 1; i < level; i++)
+        {
+            total += CalculateExperienceForLevel(i);
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// Calculate attribute points awarded for a level up.
+    /// Base: 3 points per level
+    /// Bonus: +2 points every 5 levels (5, 10, 15, 20, etc.)
+    /// </summary>
+    public int CalculateAttributePointsForLevel(int level)
+    {
+        int basePoints = 3;
+        int bonusPoints = (level % 5 == 0) ? 2 : 0;
+        return basePoints + bonusPoints;
+    }
+
+    /// <summary>
+    /// Calculate skill points awarded for a level up.
+    /// Base: 1 point per level
+    /// Bonus: +1 point every 5 levels (5, 10, 15, 20, etc.)
+    /// </summary>
+    public int CalculateSkillPointsForLevel(int level)
+    {
+        int basePoints = 1;
+        int bonusPoints = (level % 5 == 0) ? 1 : 0;
+        return basePoints + bonusPoints;
+    }
+
+    /// <summary>
+    /// Preview stat changes if character levels up.
+    /// Returns projected HP, Mana, and points gained.
+    /// </summary>
+    public LevelUpPreview PreviewLevelUp(Character character, int targetLevel)
+    {
+        if (targetLevel <= character.Level)
+        {
+            throw new ArgumentException("Target level must be higher than current level");
+        }
+
+        int attributePointsGained = 0;
+        int skillPointsGained = 0;
+
+        for (int level = character.Level + 1; level <= targetLevel; level++)
+        {
+            attributePointsGained += CalculateAttributePointsForLevel(level);
+            skillPointsGained += CalculateSkillPointsForLevel(level);
+        }
+
+        // Use character's built-in calculation methods
+        int newMaxHealth = character.GetMaxHealth();
+        int newMaxMana = character.GetMaxMana();
+
+        return new LevelUpPreview
+        {
+            CurrentLevel = character.Level,
+            TargetLevel = targetLevel,
+            AttributePointsGained = attributePointsGained,
+            SkillPointsGained = skillPointsGained,
+            CurrentMaxHealth = character.MaxHealth,
+            NewMaxHealth = newMaxHealth,
+            CurrentMaxMana = character.MaxMana,
+            NewMaxMana = newMaxMana,
+            HealthGain = newMaxHealth - character.MaxHealth,
+            ManaGain = newMaxMana - character.MaxMana
+        };
+    }
+
+    /// <summary>
+    /// Validate attribute point allocation request.
+    /// Ensures character has enough unspent points and values are non-negative.
+    /// </summary>
+    public (bool IsValid, string ErrorMessage) ValidateAttributeAllocation(
+        Character character,
+        Dictionary<string, int> attributeAllocations)
+    {
+        if (attributeAllocations == null || !attributeAllocations.Any())
+        {
+            return (false, "No attributes specified for allocation");
+        }
+
+        // Validate all values are non-negative first
+        if (attributeAllocations.Values.Any(v => v < 0))
+        {
+            return (false, "Cannot allocate negative points");
+        }
+
+        int totalPointsRequested = attributeAllocations.Values.Sum();
+
+        if (totalPointsRequested <= 0)
+        {
+            return (false, "Must allocate at least 1 point");
+        }
+
+        if (totalPointsRequested > character.UnspentAttributePoints)
+        {
+            return (false, $"Not enough points. Requested: {totalPointsRequested}, Available: {character.UnspentAttributePoints}");
+        }
+
+        // Validate attribute names
+        var validAttributes = new[] { "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma" };
+        var invalidAttributes = attributeAllocations.Keys
+            .Where(k => !validAttributes.Contains(k.ToLower()))
             .ToList();
 
-        if (!unprocessedLevelUps.Any())
+        if (invalidAttributes.Any())
         {
-            return;
+            return (false, $"Invalid attributes: {string.Join(", ", invalidAttributes)}");
         }
 
-        foreach (var levelUp in unprocessedLevelUps)
-        {
-            await ProcessSingleLevelUpAsync(character, levelUp);
-            levelUp.IsProcessed = true;
-        }
-
-        // Clean up old processed level-ups (keep last 5 for history)
-        var processedCount = character.PendingLevelUps.Count(l => l.IsProcessed);
-        if (processedCount > 5)
-        {
-            character.PendingLevelUps.RemoveAll(l =>
-                l.IsProcessed &&
-                l.NewLevel < character.Level - 5);
-        }
+        return (true, string.Empty);
     }
 
     /// <summary>
-    /// Process a single level-up with player choices.
+    /// Get all skills available for a character based on level and class.
+    /// Returns skills the character can learn or improve.
     /// </summary>
-    private async Task ProcessSingleLevelUpAsync(Character character, LevelUpInfo levelUp)
+    public List<Skill> GetAvailableSkills(Character character)
     {
-        _console.Clear();
-        _console.ShowBanner(
-            $"🌟 LEVEL {levelUp.NewLevel} 🌟",
-            $"Congratulations! You have reached level {levelUp.NewLevel}!"
-        );
+        var allSkills = GetAllSkills();
 
-        // Show what was gained
-        _console.ShowPanel(
-            "Level-Up Rewards",
-            $"[green]+{levelUp.AttributePointsGained} Attribute Points[/]\n" +
-            $"[cyan]+{levelUp.SkillPointsGained} Skill Point(s)[/]\n" +
-            $"[yellow]Health & Mana fully restored![/]",
-            "green"
-        );
+        return allSkills
+            .Where(s => s.RequiredLevel <= character.Level)
+            .Where(s =>
+            {
+                // If not learned yet, it's available
+                if (!character.Skills.ContainsKey(s.Name))
+                    return true;
 
-        Console.WriteLine();
-        _console.PressAnyKey("Press any key to allocate your points...");
-
-        // Allocate attribute points
-        if (character.UnspentAttributePoints > 0)
-        {
-            await AllocateAttributePointsAsync(character);
-        }
-
-        // Select skills (if available)
-        if (character.UnspentSkillPoints > 0)
-        {
-            await SelectSkillsAsync(character);
-        }
-
-        _console.Clear();
-        _console.ShowSuccess($"Level {levelUp.NewLevel} complete! You are now more powerful!");
-        await Task.Delay(300);
+                // If learned but not maxed, it's available
+                var learned = character.Skills[s.Name];
+                return learned.CurrentRank < s.MaxRank;
+            })
+            .ToList();
     }
 
     /// <summary>
-    /// Interactive attribute point allocation.
+    /// Get all skills in the game.
+    /// TODO: Move to JSON data files and load via IDataService
     /// </summary>
-    private async Task AllocateAttributePointsAsync(Character character)
+    private List<Skill> GetAllSkills()
     {
-        _console.Clear();
-
-        var allocation = new AttributePointAllocation();
-        bool done = false;
-
-        while (!done)
-        {
-            _console.ShowBanner(
-                "Attribute Point Allocation",
-                $"You have {character.UnspentAttributePoints - allocation.TotalPointsAllocated} points remaining"
-            );
-
-            // Show current attributes and preview
-            DisplayAttributeAllocationPreview(character, allocation);
-
-            Console.WriteLine();
-
-            var choices = new List<string>
-            {
-                $"Strength ({character.Strength} → {character.Strength + allocation.StrengthPoints})",
-                $"Dexterity ({character.Dexterity} → {character.Dexterity + allocation.DexterityPoints})",
-                $"Constitution ({character.Constitution} → {character.Constitution + allocation.ConstitutionPoints})",
-                $"Intelligence ({character.Intelligence} → {character.Intelligence + allocation.IntelligencePoints})",
-                $"Wisdom ({character.Wisdom} → {character.Wisdom + allocation.WisdomPoints})",
-                $"Charisma ({character.Charisma} → {character.Charisma + allocation.CharismaPoints})",
-                "[dim]─────────────[/]",
-                "[yellow]Reset Allocation[/]"
-            };
-
-            if (allocation.TotalPointsAllocated == character.UnspentAttributePoints)
-            {
-                choices.Add("[green bold]✓ Confirm Allocation[/]");
-            }
-
-            var choice = _console.ShowMenu("Allocate points to:", choices.ToArray());
-
-            if (choice.StartsWith("Strength"))
-            {
-                if (allocation.TotalPointsAllocated < character.UnspentAttributePoints)
-                {
-                    allocation.StrengthPoints++;
-                }
-                else
-                {
-                    _console.ShowWarning("No points remaining!");
-                    await Task.Delay(200);
-                }
-            }
-            else if (choice.StartsWith("Dexterity"))
-            {
-                if (allocation.TotalPointsAllocated < character.UnspentAttributePoints)
-                {
-                    allocation.DexterityPoints++;
-                }
-                else
-                {
-                    _console.ShowWarning("No points remaining!");
-                    await Task.Delay(200);
-                }
-            }
-            else if (choice.StartsWith("Constitution"))
-            {
-                if (allocation.TotalPointsAllocated < character.UnspentAttributePoints)
-                {
-                    allocation.ConstitutionPoints++;
-                }
-                else
-                {
-                    _console.ShowWarning("No points remaining!");
-                    await Task.Delay(200);
-                }
-            }
-            else if (choice.StartsWith("Intelligence"))
-            {
-                if (allocation.TotalPointsAllocated < character.UnspentAttributePoints)
-                {
-                    allocation.IntelligencePoints++;
-                }
-                else
-                {
-                    _console.ShowWarning("No points remaining!");
-                    await Task.Delay(200);
-                }
-            }
-            else if (choice.StartsWith("Wisdom"))
-            {
-                if (allocation.TotalPointsAllocated < character.UnspentAttributePoints)
-                {
-                    allocation.WisdomPoints++;
-                }
-                else
-                {
-                    _console.ShowWarning("No points remaining!");
-                    await Task.Delay(200);
-                }
-            }
-            else if (choice.StartsWith("Charisma"))
-            {
-                if (allocation.TotalPointsAllocated < character.UnspentAttributePoints)
-                {
-                    allocation.CharismaPoints++;
-                }
-                else
-                {
-                    _console.ShowWarning("No points remaining!");
-                    await Task.Delay(200);
-                }
-            }
-            else if (choice.Contains("Reset"))
-            {
-                allocation.Reset();
-                _console.ShowInfo("Allocation reset.");
-                await Task.Delay(200);
-            }
-            else if (choice.Contains("Confirm"))
-            {
-                // Apply the allocation
-                character.Strength += allocation.StrengthPoints;
-                character.Dexterity += allocation.DexterityPoints;
-                character.Constitution += allocation.ConstitutionPoints;
-                character.Intelligence += allocation.IntelligencePoints;
-                character.Wisdom += allocation.WisdomPoints;
-                character.Charisma += allocation.CharismaPoints;
-
-                character.UnspentAttributePoints -= allocation.TotalPointsAllocated;
-
-                // Recalculate vitals with new CON/WIS
-                var oldMaxHealth = character.MaxHealth;
-                var oldMaxMana = character.MaxMana;
-
-                character.MaxHealth = character.GetMaxHealth();
-                character.MaxMana = character.GetMaxMana();
-
-                // Heal for the increased amount
-                character.Health += (character.MaxHealth - oldMaxHealth);
-                character.Mana += (character.MaxMana - oldMaxMana);
-
-                _console.ShowSuccess("Attributes increased!");
-                await Task.Delay(300);
-                done = true;
-            }
-
-            _console.Clear();
-        }
-    }
-
-    /// <summary>
-    /// Display attribute allocation preview.
-    /// </summary>
-    private void DisplayAttributeAllocationPreview(Character character, AttributePointAllocation allocation)
-    {
-        // Note: In production, Godot UI will handle display formatting
-        // This ConsoleUI display is for backend testing only
-        _console.ShowMessage($"STR: {character.Strength} + {allocation.StrengthPoints}");
-        _console.ShowMessage($"DEX: {character.Dexterity} + {allocation.DexterityPoints}");
-        _console.ShowMessage($"CON: {character.Constitution} + {allocation.ConstitutionPoints}");
-        _console.ShowMessage($"INT: {character.Intelligence} + {allocation.IntelligencePoints}");
-        _console.ShowMessage($"WIS: {character.Wisdom} + {allocation.WisdomPoints}");
-        _console.ShowMessage($"CHA: {character.Charisma} + {allocation.CharismaPoints}");
-    }
-
-    /// <summary>
-    /// Interactive skill selection.
-    /// </summary>
-    private async Task SelectSkillsAsync(Character character)
-    {
-        _console.Clear();
-
-        bool done = false;
-        int pointsUsed = 0;
-
-        while (!done && pointsUsed < character.UnspentSkillPoints)
-        {
-            _console.ShowBanner(
-                "Skill Selection",
-                $"You have {character.UnspentSkillPoints - pointsUsed} skill point(s) remaining"
-            );
-
-            // Get available skills for this character
-            var availableSkills = GetAvailableSkills(character);
-
-            if (!availableSkills.Any())
-            {
-                _console.ShowWarning("No skills available at your current level.");
-                await Task.Delay(300);
-                break;
-            }
-
-            var skillChoices = availableSkills
-                .Select(s => $"{s.Name} (Rank {s.CurrentRank}/{s.MaxRank}) - {s.Description}")
-                .ToList();
-            skillChoices.Add("[dim]Skip for now[/]");
-
-            var choice = _console.ShowMenu("Select a skill to improve:", skillChoices.ToArray());
-
-            if (choice.Contains("Skip"))
-            {
-                done = true;
-            }
-            else
-            {
-                var selectedSkill = availableSkills[skillChoices.IndexOf(choice)];
-
-                // Upgrade or learn the skill
-                var existingSkill = character.Skills.ContainsKey(selectedSkill.Name) 
-                    ? character.Skills[selectedSkill.Name] 
-                    : null;
-
-                if (existingSkill != null)
-                {
-                    existingSkill.CurrentRank++;
-                    _console.ShowSuccess($"{selectedSkill.Name} increased to rank {existingSkill.CurrentRank}!");
-                }
-                else
-                {
-                    var newSkill = new CharacterSkill
-                    {
-                        SkillId = selectedSkill.Name,
-                        CurrentRank = 1,
-                        CurrentXP = 0,
-                        TotalXP = 0
-                    };
-                    character.Skills[selectedSkill.Name] = newSkill;
-                    _console.ShowSuccess($"Learned {selectedSkill.Name} (Rank 1)!");
-                }
-
-                pointsUsed++;
-                await Task.Delay(300);
-                _console.Clear();
-            }
-        }
-
-        character.UnspentSkillPoints -= pointsUsed;
-    }
-
-    /// <summary>
-    /// Get skills available for the character based on level and class.
-    /// </summary>
-    private List<Skill> GetAvailableSkills(Character character)
-    {
-        var allSkills = new List<Skill>
+        return new List<Skill>
         {
             new Skill
             {
@@ -412,17 +246,83 @@ public class LevelUpService
                 Effect = "Increases maximum mana"
             }
         };
-
-        // Filter skills based on level requirement and current ranks
-        return allSkills
-            .Where(s => s.RequiredLevel <= character.Level)
-            .Where(s =>
-            {
-                if (!character.Skills.ContainsKey(s.Name))
-                    return true;
-                var learned = character.Skills[s.Name];
-                return learned.CurrentRank < s.MaxRank;
-            })
-            .ToList();
     }
+
+    /// <summary>
+    /// Calculate how many levels a character can gain with their current experience.
+    /// </summary>
+    public int CalculateLevelsGainableFromExperience(int currentLevel, int currentExperience)
+    {
+        int levelsGained = 0;
+        int tempLevel = currentLevel;
+        int tempXP = currentExperience;
+
+        while (tempXP >= CalculateExperienceForLevel(tempLevel))
+        {
+            tempXP -= CalculateExperienceForLevel(tempLevel);
+            tempLevel++;
+            levelsGained++;
+
+            // Safety cap at 100 levels
+            if (levelsGained >= 100) break;
+        }
+
+        return levelsGained;
+    }
+}
+
+/// <summary>
+/// Preview information for a level-up.
+/// </summary>
+public class LevelUpPreview
+{
+    /// <summary>
+    /// Gets or sets the character's current level.
+    /// </summary>
+    public int CurrentLevel { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the target level to preview.
+    /// </summary>
+    public int TargetLevel { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the total attribute points gained.
+    /// </summary>
+    public int AttributePointsGained { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the total skill points gained.
+    /// </summary>
+    public int SkillPointsGained { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the current maximum health.
+    /// </summary>
+    public int CurrentMaxHealth { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the new maximum health after leveling.
+    /// </summary>
+    public int NewMaxHealth { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the current maximum mana.
+    /// </summary>
+    public int CurrentMaxMana { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the new maximum mana after leveling.
+    /// </summary>
+    public int NewMaxMana { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the health gained from leveling.
+    /// </summary>
+    public int HealthGain { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the mana gained from leveling.
+    /// </summary>
+    public int ManaGain { get; set; }
 }
