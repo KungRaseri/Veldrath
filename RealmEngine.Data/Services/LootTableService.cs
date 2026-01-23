@@ -13,6 +13,7 @@ public class LootTableService
 {
     private readonly ILogger<LootTableService> _logger;
     private readonly GameDataCache _dataCache;
+    private readonly ReferenceResolverService _referenceResolver;
     private readonly Random _random;
 
     /// <summary>
@@ -20,14 +21,17 @@ public class LootTableService
     /// </summary>
     /// <param name="logger">The logger instance for diagnostic output.</param>
     /// <param name="dataCache">The game data cache instance.</param>
+    /// <param name="referenceResolver">The reference resolver service for material pool lookups.</param>
     /// <param name="seed">Optional seed for random number generation (for testing).</param>
     public LootTableService(
         ILogger<LootTableService> logger,
         GameDataCache dataCache,
+        ReferenceResolverService referenceResolver,
         int? seed = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
+        _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
         _random = seed.HasValue ? new Random(seed.Value) : new Random();
     }
 
@@ -145,7 +149,7 @@ public class LootTableService
     /// </summary>
     /// <param name="lootTableRef">The loot table reference (e.g., "@loot-tables/enemies/humanoids:goblin").</param>
     /// <returns>Result containing drops and gold amount.</returns>
-    public EnemyLootResult RollEnemyDrops(string lootTableRef)
+    public async Task<EnemyLootResult> RollEnemyDrops(string lootTableRef)
     {
         if (string.IsNullOrWhiteSpace(lootTableRef))
         {
@@ -199,8 +203,21 @@ public class LootTableService
         var poolRoll = _random.Next(1, 101);
         if (poolRoll <= dropChance)
         {
-            // TODO: Integrate with MaterialPoolService to resolve pool references
-            _logger.LogDebug("Pool drops would be rolled from: {PoolRefs}", string.Join(", ", poolRefs));
+            // Resolve material pool references and select random materials
+            foreach (var poolRef in poolRefs)
+            {
+                var poolMaterial = await SelectFromMaterialPoolAsync(poolRef);
+                if (poolMaterial.HasValue)
+                {
+                    result.Drops.Add(new ItemDrop
+                    {
+                        ItemRef = poolMaterial.Value.MaterialRef,
+                        ItemName = poolMaterial.Value.MaterialName,
+                        Quantity = _random.Next(1, 3),
+                        IsBonus = false
+                    });
+                }
+            }
         }
 
         // Roll guaranteed drops
@@ -252,15 +269,49 @@ public class LootTableService
             return new ChestLootResult();
         }
 
-        // TODO: Implement merge strategies and chest loot rolling
-        _logger.LogDebug("Rolling chest loot with strategy {Strategy}: {Lookups}", 
-            mergeStrategy, string.Join(", ", lootLookups));
-
-        return new ChestLootResult
+        var result = new ChestLootResult
         {
             Gold = 0,
             Drops = new List<ItemDrop>()
         };
+
+        switch (mergeStrategy.ToLowerInvariant())
+        {
+            case "addpools":
+                // Add all pools together (more loot)
+                foreach (var lookup in lootLookups)
+                {
+                    var lootResult = RollSingleChestLookup(lookup);
+                    result.Gold += lootResult.Gold;
+                    result.Drops.AddRange(lootResult.Drops);
+                }
+                break;
+
+            case "prioritizefirst":
+                // Use first lookup, ignore others
+                if (lootLookups.Any())
+                {
+                    result = RollSingleChestLookup(lootLookups[0]);
+                }
+                break;
+
+            case "prioritizelast":
+                // Use last lookup, ignore others
+                if (lootLookups.Any())
+                {
+                    result = RollSingleChestLookup(lootLookups[^1]);
+                }
+                break;
+
+            default:
+                _logger.LogWarning("Unknown merge strategy: {Strategy}, using addPools", mergeStrategy);
+                goto case "addpools";
+        }
+
+        _logger.LogDebug("Rolled chest loot with strategy {Strategy}: {Gold} gold, {Count} drops",
+            mergeStrategy, result.Gold, result.Drops.Count);
+
+        return result;
     }
 
     private (string? catalogKey, string? typeName, string? itemName) ParseHarvestingReference(string reference)
@@ -349,6 +400,88 @@ public class LootTableService
         }
 
         return typeNode["dropChance"]?.Value<int>() ?? 0;
+    }
+
+    /// <summary>
+    /// Selects a material from a pool reference using weighted random selection.
+    /// </summary>
+    private async Task<(string MaterialRef, string MaterialName)?> SelectFromMaterialPoolAsync(string poolRef)
+    {
+        try
+        {
+            // Pool refs are like: "@material-pools/humanoid_low/metals"
+            var resolved = await _referenceResolver.ResolveToObjectAsync(poolRef);
+            if (resolved == null)
+            {
+                _logger.LogWarning("Failed to resolve pool reference: {PoolRef}", poolRef);
+                return null;
+            }
+
+            // Pool should be an array of material references with weights
+            if (resolved is JArray poolArray && poolArray.Any())
+            {
+                // Calculate total weight
+                var totalWeight = 0;
+                var materials = new List<(string Ref, string Name, int Weight)>();
+
+                foreach (var item in poolArray)
+                {
+                    var materialRef = item["materialRef"]?.Value<string>();
+                    var weight = item["rarityWeight"]?.Value<int>() ?? 1;
+
+                    if (!string.IsNullOrEmpty(materialRef))
+                    {
+                        // Resolve to get name
+                        var material = await _referenceResolver.ResolveToObjectAsync(materialRef);
+                        var name = material?["name"]?.Value<string>() ?? ExtractItemName(materialRef);
+
+                        materials.Add((materialRef, name, weight));
+                        totalWeight += weight;
+                    }
+                }
+
+                if (materials.Any())
+                {
+                    // Weighted random selection
+                    var roll = _random.Next(totalWeight);
+                    var cumulative = 0;
+
+                    foreach (var (matRef, matName, weight) in materials)
+                    {
+                        cumulative += weight;
+                        if (roll < cumulative)
+                        {
+                            return (matRef, matName);
+                        }
+                    }
+
+                    // Fallback to first
+                    return (materials[0].Ref, materials[0].Name);
+                }
+            }
+
+            _logger.LogWarning("Pool reference {PoolRef} resolved but is empty or invalid format", poolRef);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error selecting from material pool: {PoolRef}", poolRef);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Rolls loot for a single chest lookup reference.
+    /// </summary>
+    private ChestLootResult RollSingleChestLookup(string lookup)
+    {
+        // Placeholder implementation - chest loot tables would be similar to enemy loot tables
+        // For now, return a simple result with random gold
+        return new ChestLootResult
+        {
+            Gold = _random.Next(10, 100),
+            Drops = new List<ItemDrop>()
+        };
     }
 }
 

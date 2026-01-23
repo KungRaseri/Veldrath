@@ -293,21 +293,38 @@ public class LootTableService
         if (staticReferences != null && staticReferences.Any() && _random.Next(100) < 20)
         {
             _logger.LogInformation("Chest contains static legendary item from loot table");
-            // TODO: Resolve static reference to actual item
-            // For now, we'll just generate with very high budget
-            var budget = _budgetHelper.GetBudgetForChest(RarityTier.Legendary, locationLevel);
             
-            var request = new BudgetItemRequest
+            // Select random static reference
+            var selectedRef = staticReferences[_random.Next(staticReferences.Count)];
+            
+            // Try to resolve and generate from reference
+            if (selectedRef.StartsWith("@"))
             {
-                EnemyType = "treasure_chest",
-                EnemyLevel = locationLevel,
-                ItemCategory = itemCategory,
-                AllowQuality = true
-            };
+                // Parse reference: @items/weapons/swords:legendary-blade
+                var parts = selectedRef.TrimStart('@').Split(':');
+                if (parts.Length == 2)
+                {
+                    var pathParts = parts[0].Split('/');
+                    var category = pathParts.Length >= 2 ? pathParts[1] : pathParts[0];
+                    var itemName = parts[1];
 
-            var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
-            items.Add(item);
-            count--; // One item used by legendary
+                    var staticItem = await _itemGenerator.GenerateItemByNameAsync(category, itemName, hydrate: true);
+                    if (staticItem != null)
+                    {
+                        items.Add(staticItem);
+                        count--;
+                        _logger.LogInformation("Generated static legendary item: {ItemName}", staticItem.Name);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to resolve static reference: {Ref}", selectedRef);
+                    }
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Invalid static reference format (expected @reference): {Ref}", selectedRef);
+            }
         }
 
         // Generate remaining items using budget system (80% of loot)

@@ -2,6 +2,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Harvesting;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
@@ -498,9 +499,25 @@ public class HarvestingIntegrationTests
         var dataCache = new GameDataCache(dataPath);
         dataCache.LoadAllData();
         
+        var referenceResolver = new ReferenceResolverService(
+            dataCache,
+            localLoggerFactory.CreateLogger<ReferenceResolverService>()
+        );
+        
         var lootTableService = new LootTableService(
             localLoggerFactory.CreateLogger<LootTableService>(),
-            dataCache
+            dataCache,
+            referenceResolver
+        );
+        
+        var skillCatalogService = new SkillCatalogService(
+            dataCache,
+            localLoggerFactory.CreateLogger<SkillCatalogService>()
+        );
+        
+        var skillProgressionService = new SkillProgressionService(
+            skillCatalogService,
+            localLoggerFactory.CreateLogger<SkillProgressionService>()
         );
         
         return new HarvestNodeCommandHandler(
@@ -510,7 +527,8 @@ public class HarvestingIntegrationTests
             criticalService,
             lootTableService,
             _nodeRepository,
-            _inventoryService
+            _inventoryService,
+            skillProgressionService
         );
     }
 }

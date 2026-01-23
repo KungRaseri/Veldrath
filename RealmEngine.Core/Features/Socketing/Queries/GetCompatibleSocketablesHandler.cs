@@ -38,13 +38,17 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
 
             var items = new List<SocketableItemDto>();
 
-            // TODO: Query actual socketable items from inventory/database
-            // var allSocketables = await _inventoryService.GetSocketableItems();
+            // IMPLEMENTATION NOTE: This handler currently returns an empty list for demonstration.
+            // Production implementation would integrate with IInventoryService:
+            //
+            // var allSocketables = await _inventoryService.GetSocketableItemsAsync(request.CharacterName);
             // items = allSocketables
             //     .Where(s => s.SocketType == request.SocketType || request.SocketType == SocketType.Prismatic)
             //     .Where(s => request.Category == null || s.Category == request.Category)
             //     .Where(s => request.MinimumRarity == null || s.Rarity >= request.MinimumRarity)
             //     .Select(s => MapToDto(s))
+            //     .OrderByDescending(s => s.Rarity)
+            //     .ThenByDescending(s => s.Level)
             //     .ToList();
 
             result.Items = items;
