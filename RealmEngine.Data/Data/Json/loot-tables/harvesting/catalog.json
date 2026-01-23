@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "description": "Loot tables for harvesting resource nodes - defines drops from woods, ores, plants, and other harvestable sources",
+    "version": "5.0",
+    "lastUpdated": "2026-01-22",
+    "type": "loot_table_catalog"
+  },
+  "types": {
+    "woods": {
+      "poolRefs": ["@material_pools/woods/common"],
+      "dropChance": 100,
+      "quantityRange": [1, 3],
+      "nodes": {
+        "oak": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/wood:oak-wood",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 100,
+              "rarityWeight": 95,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/wood:pine-wood",
+              "minQuantity": 1,
+              "maxQuantity": 2,
+              "dropChance": 25,
+              "rarityWeight": 40,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            },
+            {
+              "materialRef": "@items/materials/wood:birch-wood",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 10,
+              "rarityWeight": 15,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        },
+        "ash": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/wood:ash-wood",
+              "minQuantity": 1,
+              "maxQuantity": 2,
+              "dropChance": 100,
+              "rarityWeight": 85,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/wood:oak-wood",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 15,
+              "rarityWeight": 30,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        },
+        "common-trees": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/wood:oak-log",
+              "minQuantity": 1,
+              "maxQuantity": 3,
+              "dropChance": 100,
+              "rarityWeight": 60,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/wood:birch-log",
+              "minQuantity": 1,
+              "maxQuantity": 2,
+              "dropChance": 40,
+              "rarityWeight": 30,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        }
+      }
+    },
+    "ores": {
+      "poolRefs": ["@material_pools/metals/common"],
+      "dropChance": 100,
+      "quantityRange": [1, 5],
+      "nodes": {
+        "copper": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/ore:copper-ore",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 100,
+              "rarityWeight": 90,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/ore:tin-ore",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 15,
+              "rarityWeight": 30,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            },
+            {
+              "materialRef": "@items/materials/gems:rough-quartz",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 5,
+              "rarityWeight": 10,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        },
+        "iron": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/ore:iron-ore",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 100,
+              "rarityWeight": 80,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/ore:copper-ore",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 10,
+              "rarityWeight": 25,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        },
+        "common-ores": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/ore:copper-ore",
+              "minQuantity": 2,
+              "maxQuantity": 5,
+              "dropChance": 100,
+              "rarityWeight": 60,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/ore:tin-ore",
+              "minQuantity": 1,
+              "maxQuantity": 3,
+              "dropChance": 50,
+              "rarityWeight": 40,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            },
+            {
+              "materialRef": "@items/materials/ore:iron-ore",
+              "minQuantity": 1,
+              "maxQuantity": 2,
+              "dropChance": 25,
+              "rarityWeight": 30,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        },
+        "rare-ores": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/ore:mithril-ore",
+              "minQuantity": 1,
+              "maxQuantity": 2,
+              "dropChance": 100,
+              "rarityWeight": 20,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/ore:adamantite-ore",
+              "minQuantity": 1,
+              "maxQuantity": 1,
+              "dropChance": 30,
+              "rarityWeight": 10,
+              "isBonusDrop": true,
+              "requiresCritical": true
+            }
+          ]
+        }
+      }
+    },
+    "plants": {
+      "poolRefs": ["@material_pools/plants/common"],
+      "dropChance": 100,
+      "quantityRange": [2, 10],
+      "nodes": {
+        "common-plants": {
+          "drops": [
+            {
+              "materialRef": "@items/materials/fiber:flax",
+              "minQuantity": 3,
+              "maxQuantity": 10,
+              "dropChance": 100,
+              "rarityWeight": 60,
+              "isBonusDrop": false
+            },
+            {
+              "materialRef": "@items/materials/fiber:cotton",
+              "minQuantity": 2,
+              "maxQuantity": 7,
+              "dropChance": 60,
+              "rarityWeight": 40,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            },
+            {
+              "materialRef": "@items/materials/fiber:hemp",
+              "minQuantity": 1,
+              "maxQuantity": 5,
+              "dropChance": 40,
+              "rarityWeight": 25,
+              "isBonusDrop": true,
+              "requiresCritical": false
+            }
+          ]
+        }
+      }
+    }
+  }
+}
