@@ -622,7 +622,7 @@ public class GameDataCache : IDisposable
             return JsonFileType.ConfigFile;
         
         // Recognize game configuration files
-        if (fileName == "socket_config.json" || fileName == "budget_config.json")
+        if (fileName == "socket_config.json" || fileName == "socket-config.json" || fileName == "budget-config.json")
             return JsonFileType.ConfigFile;
 
         if (fileName == "catalog.json")

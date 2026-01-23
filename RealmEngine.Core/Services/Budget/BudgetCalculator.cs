@@ -5,7 +5,7 @@ namespace RealmEngine.Core.Services.Budget;
 
 /// <summary>
 /// Calculates budget costs for materials, components, and enchantments.
-/// Uses formulas from budget_config.json.
+/// Uses formulas from budget-config.json.
 /// </summary>
 public class BudgetCalculator
 {

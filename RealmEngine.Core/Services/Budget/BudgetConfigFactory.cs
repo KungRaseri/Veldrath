@@ -38,17 +38,17 @@ public class BudgetConfigFactory
 
         try
         {
-            var configFile = _dataCache.GetFile("general/budget_config.json");
+            var configFile = _dataCache.GetFile("general/budget-config.json");
             if (configFile?.JsonData == null)
             {
-                _logger.LogError("Failed to load budget_config.json");
+                _logger.LogError("Failed to load budget-config.json");
                 return CreateDefaultBudgetConfig();
             }
 
             _budgetConfig = configFile.JsonData.ToObject<BudgetConfig>();
             if (_budgetConfig == null)
             {
-                _logger.LogError("Failed to deserialize budget_config.json");
+                _logger.LogError("Failed to deserialize budget-config.json");
                 return CreateDefaultBudgetConfig();
             }
 
