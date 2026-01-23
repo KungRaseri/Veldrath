@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Data.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
 
 namespace RealmEngine.Core.Features.Harvesting;
@@ -16,27 +17,31 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
     private readonly ToolValidationService _toolValidator;
     private readonly CriticalHarvestService _criticalService;
     private readonly NodeLootTableService _lootTableService;
-    // TODO: Add INodeRepository when persistence is implemented
-    // TODO: Add ICharacterRepository for skill lookups
+    private readonly INodeRepository _nodeRepository;
+    private readonly IInventoryService _inventoryService;
+    // TODO: Add ISkillService for character skill lookups and XP awarding
+    // TODO: Add IToolService for tool durability tracking
 
     public HarvestNodeCommandHandler(
         ILogger<HarvestNodeCommandHandler> logger,
         HarvestCalculatorService calculator,
         ToolValidationService toolValidator,
         CriticalHarvestService criticalService,
-        NodeLootTableService lootTableService)
+        NodeLootTableService lootTableService,
+        INodeRepository nodeRepository,
+        IInventoryService inventoryService)
     {
         _logger = logger;
         _calculator = calculator;
         _toolValidator = toolValidator;
         _criticalService = criticalService;
         _lootTableService = lootTableService;
+        _nodeRepository = nodeRepository;
+        _inventoryService = inventoryService;
     }
 
     public async Task<HarvestResult> Handle(HarvestNodeCommand request, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask; // TODO: Replace with actual async repository calls
-        
         try
         {
             _logger.LogInformation(
@@ -44,9 +49,18 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
                 request.CharacterName, request.NodeId
             );
 
-            // TODO: Load node from repository
-            // For now, create a mock node for demonstration
-            var node = CreateMockNode(request.NodeId);
+            // Load node from repository
+            var node = await _nodeRepository.GetNodeByIdAsync(request.NodeId);
+            if (node == null)
+            {
+                _logger.LogWarning("Node {NodeId} not found", request.NodeId);
+                return new HarvestResult
+                {
+                    Success = false,
+                    FailureReason = "Resource node not found.",
+                    Message = "This resource no longer exists."
+                };
+            }
 
             // Validate node can be harvested
             if (!node.CanHarvest())
@@ -106,10 +120,14 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
                 ? 0 
                 : _calculator.CalculateDurabilityLoss(node, toolTier, isCritical);
 
-            // TODO: Save node state to repository
-            // TODO: Award skill XP to character
-            // TODO: Apply tool durability loss
-            // TODO: Add materials to inventory
+            // Save node state to repository
+            await _nodeRepository.SaveNodeAsync(node);
+
+            // Add materials to character inventory
+            await _inventoryService.AddItemsAsync(request.CharacterName, materials);
+
+            // TODO: Award skill XP to character via ISkillService
+            // TODO: Apply tool durability loss via IToolService
 
             var result = new HarvestResult
             {
@@ -147,23 +165,5 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
         }
     }
 
-    // Mock methods - replace with actual repository/service calls
-    private HarvestableNode CreateMockNode(string nodeId)
-    {
-        return new HarvestableNode
-        {
-            NodeId = nodeId,
-            NodeType = "copper_vein",
-            DisplayName = "Copper Vein",
-            MaterialTier = "common",
-            CurrentHealth = 80,
-            MaxHealth = 100,
-            MinToolTier = 0,
-            BaseYield = 2,
-            LocationId = "test_location",
-            BiomeType = "mountains",
-            LootTableRef = "@loot-tables/nodes/ores:copper",
-            IsRichNode = false
-        };
-    }
 }
+

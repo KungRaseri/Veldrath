@@ -59,7 +59,7 @@ public interface INodeRepository
     Task<bool> RemoveNodeAsync(string nodeId);
 
     /// <summary>
-    /// Gets all nodes that need regeneration (health < max and enough time has passed).
+    /// Gets all nodes that need regeneration (health less than max and enough time has passed).
     /// </summary>
     /// <returns>A list of nodes ready for regeneration.</returns>
     Task<List<HarvestableNode>> GetNodesReadyForRegenerationAsync();

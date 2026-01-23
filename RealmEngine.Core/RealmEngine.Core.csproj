@@ -8,6 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Enforce XML documentation for public APIs (CS1591) -->
+    <!-- DO NOT CHANGE THIS -->
     <NoWarn></NoWarn>
     
     <!-- NuGet Package Metadata -->
