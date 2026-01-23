@@ -1,7 +1,9 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
+using RealmEngine.Core.Generators.Modern;
 using Serilog;
+using Serilog.Core;
 
 namespace RealmEngine.Core.Features.Crafting.Services;
 
@@ -13,19 +15,24 @@ public class CraftingService
 {
     private readonly RecipeCatalogLoader _recipeCatalogLoader;
     private readonly BudgetHelperService? _budgetHelper;
+    private readonly ItemGenerator? _itemGenerator;
     private readonly Random _random = new();
+    private static readonly ILogger _logger = Log.ForContext<CraftingService>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CraftingService"/> class.
     /// </summary>
     /// <param name="recipeCatalogLoader">The recipe catalog loader.</param>
     /// <param name="budgetHelper">Optional budget helper for quality calculations.</param>
+    /// <param name="itemGenerator">Optional item generator for procedural crafted items.</param>
     public CraftingService(
         RecipeCatalogLoader recipeCatalogLoader,
-        BudgetHelperService? budgetHelper = null)
+        BudgetHelperService? budgetHelper = null,
+        ItemGenerator? itemGenerator = null)
     {
         _recipeCatalogLoader = recipeCatalogLoader ?? throw new ArgumentNullException(nameof(recipeCatalogLoader));
         _budgetHelper = budgetHelper;
+        _itemGenerator = itemGenerator;
     }
 
     /// <summary>
@@ -147,7 +154,7 @@ public class CraftingService
     /// <param name="recipe">The recipe to craft.</param>
     /// <param name="consumeMaterials">Whether to consume materials from inventory.</param>
     /// <returns>Crafting result with item and outcome details.</returns>
-    public CraftingResult CraftItem(Character character, Recipe recipe, bool consumeMaterials = true)
+    public async Task<CraftingResult> CraftItemAsync(Character character, Recipe recipe, bool consumeMaterials = true)
     {
         if (!CanCraftRecipe(character, recipe, out var failureReason))
         {
@@ -264,8 +271,7 @@ public class CraftingService
         }
 
         // Create the crafted item
-        // TODO: Integrate with ItemGenerator to create actual item from recipe
-        var craftedItem = CreateItemFromRecipe(recipe, qualityBonus);
+        var craftedItem = await CreateItemFromRecipeAsync(recipe, qualityBonus, character);
 
         return new CraftingResult
         {
@@ -312,21 +318,61 @@ public class CraftingService
     }
 
     /// <summary>
-    /// Creates a basic item from a recipe with quality bonus applied.
-    /// TODO: Replace with ItemGenerator integration for full procedural generation.
+    /// Creates an item from a recipe with quality bonus applied.
+    /// Uses ItemGenerator if available for full procedural generation, otherwise creates basic item.
     /// </summary>
-    private Item CreateItemFromRecipe(Recipe recipe, int qualityBonus)
+    private async Task<Item> CreateItemFromRecipeAsync(Recipe recipe, int qualityBonus, Character character)
     {
         var baseRarity = (int)recipe.MinQuality + qualityBonus;
         baseRarity = Math.Clamp(baseRarity, (int)recipe.MinQuality, (int)recipe.MaxQuality);
+        var rarity = (ItemRarity)baseRarity;
 
+        // Try to use ItemGenerator if available and output is a JSON reference
+        if (_itemGenerator != null && recipe.OutputItemReference.StartsWith("@"))
+        {
+            try
+            {
+                _logger.Debug("Using ItemGenerator for crafted item: {Ref}", recipe.OutputItemReference);
+
+                // Parse reference format: @items/weapons/swords:iron-longsword
+                var parts = recipe.OutputItemReference.TrimStart('@').Split(':');
+                if (parts.Length == 2)
+                {
+                    var pathParts = parts[0].Split('/');
+                    var category = pathParts.Length >= 2 ? pathParts[1] : pathParts[0]; // e.g., "weapons"
+                    var itemName = parts[1]; // e.g., "iron-longsword"
+
+                    var item = await _itemGenerator.GenerateItemByNameAsync(category, itemName, hydrate: true);
+
+                    if (item != null)
+                    {
+                        // Override rarity with crafted quality
+                        item.Rarity = rarity;
+
+                        _logger.Information("Generated procedural crafted item: {Name} ({Rarity})",
+                            item.Name, item.Rarity);
+                        return item;
+                    }
+                }
+
+                _logger.Warning("Could not parse item reference {Ref}, falling back to basic item",
+                    recipe.OutputItemReference);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error generating item from reference {Ref}, falling back to basic item",
+                    recipe.OutputItemReference);
+            }
+        }
+
+        // Fallback: Create basic item
         return new Item
         {
             Id = recipe.OutputItemReference,
             Name = recipe.Name,
             Description = $"Crafted {recipe.Name}",
             Type = DetermineItemType(recipe.Category),
-            Rarity = (ItemRarity)baseRarity,
+            Rarity = rarity,
             Price = recipe.Materials.Sum(m => m.Quantity * 10), // Estimate
             StackSize = 1,
             IsStackable = false

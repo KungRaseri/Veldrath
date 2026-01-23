@@ -875,6 +875,8 @@ public class BudgetItemGenerationService
             var orbWeight = socketTypeWeights["Orb"]?.Value<int>() ?? 25;
             var typeWeightTotal = gemWeight + runeWeight + crystalWeight + orbWeight;
 
+            var allSockets = new List<(SocketType type, Socket socket)>();
+
             for (int i = 0; i < socketCount; i++)
             {
                 // Randomly select socket type
@@ -890,19 +892,28 @@ public class BudgetItemGenerationService
                 else
                     socketType = SocketType.Orb;
 
-                // Add socket to appropriate list
-                if (!sockets.ContainsKey(socketType))
-                {
-                    sockets[socketType] = new List<Socket>();
-                }
-
-                sockets[socketType].Add(new Socket
+                var socket = new Socket
                 {
                     Type = socketType,
                     Content = null,
                     IsLocked = false,
-                    LinkGroup = -1 // TODO: Implement socket linking based on linkChances in config
-                });
+                    LinkGroup = -1 // Assigned below based on link chances
+                };
+
+                allSockets.Add((socketType, socket));
+            }
+
+            // Apply socket linking based on link chances configuration
+            AssignSocketLinks(allSockets, socketCount, rarity, socketConfig);
+
+            // Group sockets by type
+            foreach (var (socketType, socket) in allSockets)
+            {
+                if (!sockets.ContainsKey(socketType))
+                {
+                    sockets[socketType] = new List<Socket>();
+                }
+                sockets[socketType].Add(socket);
             }
 
             _logger.LogDebug("Generated {Count} sockets for {Rarity} {ItemType}", socketCount, rarity, itemType);
@@ -913,6 +924,81 @@ public class BudgetItemGenerationService
         }
 
         return sockets;
+    }
+
+    /// <summary>
+    /// Assigns link groups to sockets based on link chance configuration.
+    /// Linked sockets can provide bonus effects when all are filled.
+    /// </summary>
+    private void AssignSocketLinks(
+        List<(SocketType type, Socket socket)> sockets,
+        int socketCount,
+        ItemRarity rarity,
+        CachedJsonFile socketConfig)
+    {
+        // Get link chances for this rarity
+        var linkChances = socketConfig.JsonData["linkChances"]?[rarity.ToString()];
+        if (linkChances == null)
+        {
+            _logger.LogDebug("No link chances configured for rarity {Rarity}, sockets will be unlinked", rarity);
+            return;
+        }
+
+        // Parse link chances array [2-link%, 3-link%, 4-link%, 5-link%, 6-link%]
+        var chances = linkChances["chances"]?.Values<int>().ToArray();
+        if (chances == null || chances.Length == 0)
+        {
+            _logger.LogDebug("Empty link chances for rarity {Rarity}", rarity);
+            return;
+        }
+
+        // Determine the largest link group possible
+        int currentLinkGroup = 0;
+        int socketsRemaining = socketCount;
+        int socketIndex = 0;
+
+        while (socketsRemaining > 0)
+        {
+            // Determine link size for this group (starting from largest possible)
+            int linkSize = Math.Min(socketsRemaining, Math.Min(chances.Length + 1, 6));
+            bool linkedCreated = false;
+
+            // Try to create a link group from largest to smallest
+            for (int size = linkSize; size >= 2; size--)
+            {
+                if (size - 2 >= chances.Length)
+                    continue;
+
+                int chance = chances[size - 2]; // Array is 0-indexed for 2-link, 3-link, etc.
+                int roll = _random.Next(100);
+
+                if (roll < chance)
+                {
+                    // Create link group
+                    for (int i = 0; i < size && socketIndex < sockets.Count; i++)
+                    {
+                        sockets[socketIndex].socket.LinkGroup = currentLinkGroup;
+                        socketIndex++;
+                    }
+
+                    _logger.LogDebug("Created {Size}-link group (group {Group}) for {Rarity} item",
+                        size, currentLinkGroup, rarity);
+
+                    socketsRemaining -= size;
+                    currentLinkGroup++;
+                    linkedCreated = true;
+                    break;
+                }
+            }
+
+            // If no link created, mark next socket as unlinked
+            if (!linkedCreated && socketIndex < sockets.Count)
+            {
+                sockets[socketIndex].socket.LinkGroup = -1;
+                socketIndex++;
+                socketsRemaining--;
+            }
+        }
     }
 
     /// <summary>
