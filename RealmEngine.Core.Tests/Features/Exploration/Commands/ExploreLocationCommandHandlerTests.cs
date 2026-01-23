@@ -16,7 +16,6 @@ public class ExploreLocationCommandHandlerTests
 {
     private readonly Mock<IMediator> _mockMediator;
     private readonly Mock<GameStateService> _mockGameState;
-    private readonly Mock<IGameUI> _mockConsole;
     private readonly ExploreLocationCommandHandler _handler;
     private readonly Character _player;
 
@@ -24,13 +23,12 @@ public class ExploreLocationCommandHandlerTests
     {
         _mockMediator = new Mock<IMediator>();
         _mockGameState = new Mock<GameStateService>();
-        _mockConsole = new Mock<IGameUI>();
         _player = new Character { Name = "Hero", Level = 1, Experience = 0, Gold = 0, Health = 100, MaxHealth = 100 };
 
         _mockGameState.SetupGet(s => s.Player).Returns(_player);
         _mockGameState.SetupGet(s => s.CurrentLocation).Returns("Forest");
 
-        _handler = new ExploreLocationCommandHandler(_mockMediator.Object, _mockGameState.Object, _mockConsole.Object);
+        _handler = new ExploreLocationCommandHandler(_mockMediator.Object, _mockGameState.Object);
     }
 
     [Fact]
@@ -44,7 +42,6 @@ public class ExploreLocationCommandHandlerTests
 
         // Assert - Result could be combat or peaceful, just verify it succeeds
         result.Success.Should().BeTrue();
-        _mockConsole.Verify(c => c.ShowInfo(It.IsAny<string>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -134,8 +131,6 @@ public class ExploreLocationCommandHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _mockConsole.Verify(c => c.ShowInfo(It.Is<string>(s => s.Contains("Exploring"))), Times.Once);
-        _mockConsole.Verify(c => c.ShowMessage("Exploring..."), Times.Once);
     }
 
     [Fact]

@@ -12,17 +12,14 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class RestCommandHandler : IRequestHandler<RestCommand, RestResult>
 {
     private readonly GameStateService _gameState;
-    private readonly IGameUI _console;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RestCommandHandler"/> class.
     /// </summary>
     /// <param name="gameState">The game state service.</param>
-    /// <param name="console">The game UI.</param>
-    public RestCommandHandler(GameStateService gameState, IGameUI console)
+    public RestCommandHandler(GameStateService gameState)
     {
         _gameState = gameState;
-        _console = console;
     }
 
     /// <summary>
@@ -42,15 +39,11 @@ public class RestCommandHandler : IRequestHandler<RestCommand, RestResult>
                 return Task.FromResult(new RestResult(false, ErrorMessage: "No active player"));
             }
 
-            _console.ShowInfo("You rest and recover...");
-
             var healthRecovered = player.MaxHealth - player.Health;
             var manaRecovered = player.MaxMana - player.Mana;
 
             player.Health = player.MaxHealth;
             player.Mana = player.MaxMana;
-
-            _console.ShowSuccess("Fully rested!");
 
             Log.Information("Player {PlayerName} rested", player.Name);
 

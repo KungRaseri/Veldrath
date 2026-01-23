@@ -13,7 +13,6 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 public class TravelToLocationCommandHandlerTests
 {
     private readonly Mock<GameStateService> _mockGameState;
-    private readonly Mock<IGameUI> _mockConsole;
     private readonly TravelToLocationCommandHandler _handler;
 
     public TravelToLocationCommandHandlerTests()
@@ -26,8 +25,7 @@ public class TravelToLocationCommandHandlerTests
         _mockGameState.Setup(s => s.UpdateLocation(It.IsAny<string>()))
             .Callback<string>(location => _mockGameState.Object.CurrentLocation = location);
         
-        _mockConsole = new Mock<IGameUI>();
-        _handler = new TravelToLocationCommandHandler(_mockGameState.Object, _mockConsole.Object);
+        _handler = new TravelToLocationCommandHandler(_mockGameState.Object);
     }
 
     [Fact]
@@ -44,7 +42,6 @@ public class TravelToLocationCommandHandlerTests
         result.Success.Should().BeTrue();
         result.NewLocation.Should().Be(destination);
         result.ErrorMessage.Should().BeNull();
-        _mockConsole.Verify(c => c.ShowSuccess(It.IsAny<string>()), Times.Once);
     }
 
     [Fact]

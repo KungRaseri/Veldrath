@@ -33,4 +33,6 @@ public record HandlePlayerDeathResult
     public int XPLost { get; init; }
     /// <summary>Gets the hall of fame entry ID if permadeath occurred.</summary>
     public string? HallOfFameId { get; init; }
+    /// <summary>Gets the hall of fame entry if permadeath occurred (for display in Godot).</summary>
+    public HallOfFameEntry? HallOfFameEntry { get; init; }
 }

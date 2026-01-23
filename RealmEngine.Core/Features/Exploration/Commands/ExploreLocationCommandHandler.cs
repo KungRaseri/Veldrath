@@ -14,7 +14,6 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
 {
     private readonly IMediator _mediator;
     private readonly GameStateService _gameState;
-    private readonly IGameUI _console;
     private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
@@ -22,13 +21,11 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
     /// </summary>
     /// <param name="mediator">The mediator.</param>
     /// <param name="gameState">The game state service.</param>
-    /// <param name="console">The game UI.</param>
     /// <param name="itemGenerator">Optional item generator for location loot.</param>
-    public ExploreLocationCommandHandler(IMediator mediator, GameStateService gameState, IGameUI console, ItemGenerator? itemGenerator = null)
+    public ExploreLocationCommandHandler(IMediator mediator, GameStateService gameState, ItemGenerator? itemGenerator = null)
     {
         _mediator = mediator;
         _gameState = gameState;
-        _console = console;
         _itemGenerator = itemGenerator;
     }
 
@@ -44,11 +41,8 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
         {
             var player = _gameState.Player;
 
-            _console.ShowInfo($"Exploring {_gameState.CurrentLocation}...");
-
-            // Simulate exploration
-            _console.ShowMessage("Exploring...");
-            await Task.Delay(500); // Brief pause for immersion
+            // Simulate exploration with brief delay
+            await Task.Delay(500);
 
             // 60% chance of combat encounter, 40% chance of peaceful exploration
             var encounterRoll = Random.Shared.Next(100);
@@ -56,7 +50,6 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             if (encounterRoll < 60)
             {
                 // Combat encounter!
-                _console.ShowWarning("You encounter an enemy!");
                 await Task.Delay(300);
                 return new ExploreLocationResult(true, CombatTriggered: true);
             }
@@ -71,8 +64,6 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             {
                 await _mediator.Publish(new PlayerLeveledUp(player.Name, player.Level), cancellationToken);
             }
-
-            _console.ShowSuccess($"Gained {xpGained} XP!");
 
             // Find gold
             var goldFound = Random.Shared.Next(5, 25);
@@ -89,7 +80,6 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
                 {
                     player.Inventory.Add(item);
                     itemFound = item.Name;
-                    _console.ShowSuccess($"Found: {GetRarityColor(item.Rarity)}{item.Name}[/]!");
                 }
             }
 
@@ -132,18 +122,5 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
 
         var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
         return item;
-    }
-
-    private static string GetRarityColor(ItemRarity rarity)
-    {
-        return rarity switch
-        {
-            ItemRarity.Common => "[white]",
-            ItemRarity.Uncommon => "[green]",
-            ItemRarity.Rare => "[blue]",
-            ItemRarity.Epic => "[purple]",
-            ItemRarity.Legendary => "[orange1]",
-            _ => "[grey]"
-        };
     }
 }

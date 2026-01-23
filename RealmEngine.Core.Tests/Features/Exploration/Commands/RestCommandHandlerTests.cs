@@ -14,14 +14,12 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 public class RestCommandHandlerTests
 {
     private readonly Mock<GameStateService> _mockGameState;
-    private readonly Mock<IGameUI> _mockConsole;
     private readonly RestCommandHandler _handler;
 
     public RestCommandHandlerTests()
     {
         _mockGameState = new Mock<GameStateService>();
-        _mockConsole = new Mock<IGameUI>();
-        _handler = new RestCommandHandler(_mockGameState.Object, _mockConsole.Object);
+        _handler = new RestCommandHandler(_mockGameState.Object);
     }
 
     [Fact]
@@ -49,7 +47,6 @@ public class RestCommandHandlerTests
         player.Mana.Should().Be(100);
         result.HealthRecovered.Should().Be(50);
         result.ManaRecovered.Should().Be(70);
-        _mockConsole.Verify(c => c.ShowSuccess("Fully rested!"), Times.Once);
     }
 
     [Fact]
@@ -198,8 +195,6 @@ public class RestCommandHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _mockConsole.Verify(c => c.ShowInfo("You rest and recover..."), Times.Once);
-        _mockConsole.Verify(c => c.ShowSuccess("Fully rested!"), Times.Once);
     }
 
     [Fact]

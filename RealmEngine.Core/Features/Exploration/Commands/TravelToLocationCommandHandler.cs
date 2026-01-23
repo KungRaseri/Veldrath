@@ -12,17 +12,14 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class TravelToLocationCommandHandler : IRequestHandler<TravelToLocationCommand, TravelToLocationResult>
 {
     private readonly GameStateService _gameState;
-    private readonly IGameUI _console;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TravelToLocationCommandHandler"/> class.
     /// </summary>
     /// <param name="gameState">The game state service.</param>
-    /// <param name="console">The game UI.</param>
-    public TravelToLocationCommandHandler(GameStateService gameState, IGameUI console)
+    public TravelToLocationCommandHandler(GameStateService gameState)
     {
         _gameState = gameState;
-        _console = console;
     }
 
     /// <summary>
@@ -47,7 +44,6 @@ public class TravelToLocationCommandHandler : IRequestHandler<TravelToLocationCo
 
             _gameState.UpdateLocation(request.Destination);
 
-            _console.ShowSuccess($"Traveled to {_gameState.CurrentLocation}");
             Log.Information("Player traveled to {Location}", _gameState.CurrentLocation);
 
             return Task.FromResult(new TravelToLocationResult(true, NewLocation: _gameState.CurrentLocation));

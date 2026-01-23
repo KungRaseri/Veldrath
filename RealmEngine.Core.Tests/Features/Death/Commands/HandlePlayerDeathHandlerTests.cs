@@ -20,9 +20,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        var player = new Character
+                var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -50,8 +48,7 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -76,9 +73,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        var player = new Character
+                var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -116,8 +111,7 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -142,9 +136,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        var player = new Character
+                var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -177,8 +169,7 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -202,9 +193,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        var player = new Character
+                var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -237,8 +226,7 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -262,15 +250,12 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns((SaveGame?)null);
+                mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns((SaveGame?)null);
 
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var player = new Character { Name = "Hero" };
         var command = new HandlePlayerDeathCommand
@@ -296,9 +281,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        var player = new Character
+                var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -328,8 +311,7 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -352,9 +334,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>();
         var mockSaveGameService = new Mock<SaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-        var mockConsole = new Mock<IGameUI>();
-
-        var player = new Character
+                var player = new Character
         {
             Name = "Legendary Hero",
             Level = 20,
@@ -389,8 +369,7 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object,
-            mockConsole.Object);
+            mockHallOfFame.Object);
 
         var command = new HandlePlayerDeathCommand
         {

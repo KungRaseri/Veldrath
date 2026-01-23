@@ -12,22 +12,18 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class EncounterNPCCommandHandler : IRequestHandler<EncounterNPCCommand, EncounterNPCResult>
 {
     private readonly ISaveGameService _saveGameService;
-    private readonly IGameUI _console;
     private readonly ILogger<EncounterNPCCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EncounterNPCCommandHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    /// <param name="console">The game UI.</param>
     /// <param name="logger">The logger.</param>
     public EncounterNPCCommandHandler(
         ISaveGameService saveGameService,
-        IGameUI console,
         ILogger<EncounterNPCCommandHandler> logger)
     {
         _saveGameService = saveGameService;
-        _console = console;
         _logger = logger;
     }
 
