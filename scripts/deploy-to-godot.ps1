@@ -273,9 +273,9 @@ if ($DeployRealmForge -eq "y" -or $DeployRealmForge -eq "Y") {
 }
 
 # ============================================
-# 4. Deploy Release Notes & Generate Deployment Info
+# 4. Deploy Release Notes & API Documentation
 # ============================================
-Write-Host "Deploying release notes..." -ForegroundColor Yellow
+Write-Host "Deploying documentation..." -ForegroundColor Yellow
 
 # Copy release-notes.md from package
 $ReleaseNotesSource = Join-Path $PackageRoot "release-notes.md"
@@ -287,6 +287,18 @@ if (Test-Path $ReleaseNotesSource) {
     Write-Host "  → Contains git diff since last tag and API changes" -ForegroundColor Gray
 } else {
     Write-Host "⚠ No release-notes.md found in package" -ForegroundColor Yellow
+}
+
+# Copy API_SPECIFICATION.md from package
+$ApiDocSource = Join-Path $PackageRoot "API_SPECIFICATION.md"
+$ApiDocDest = Join-Path $GodotProjectPath "API_SPECIFICATION.md"
+
+if (Test-Path $ApiDocSource) {
+    Copy-Item -Path $ApiDocSource -Destination $ApiDocDest -Force
+    Write-Host "✓ API documentation deployed (API_SPECIFICATION.md)" -ForegroundColor Green
+    Write-Host "  → Complete API reference and integration guide" -ForegroundColor Gray
+} else {
+    Write-Host "⚠ No API_SPECIFICATION.md found in package" -ForegroundColor Yellow
 }
 
 Write-Host "Generating deployment info..." -ForegroundColor Yellow
@@ -421,6 +433,9 @@ if ($HasChanges) {
 }
 if (Test-Path $ReleaseNotesDest) {
     Write-Host "  - Release Notes with Git Diff (RELEASE_NOTES.md)" -ForegroundColor Cyan
+}
+if (Test-Path $ApiDocDest) {
+    Write-Host "  - API Documentation (API_SPECIFICATION.md)" -ForegroundColor Cyan
 }
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Cyan
