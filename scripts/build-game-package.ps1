@@ -190,40 +190,65 @@ $(if ($LatestTag) { "- **Latest Tag:** ``$LatestTag`` (commit: ``$TagCommit``)" 
         # Get stats about the changes
         $DiffStats = git -C $SolutionRoot diff --stat "$LatestTag..HEAD" -- $ApiPaths 2>$null
         
+        # Format commit log - one per line
+        $FormattedCommitLog = $CommitLog -split "`n" | ForEach-Object { "- $_" }
+        
+        # Get file status (added/modified/deleted) for each changed API file
+        $FileStatusList = @()
+        foreach ($file in $ChangedApiFiles) {
+            $status = git -C $SolutionRoot diff --name-status "$LatestTag..HEAD" -- $file 2>$null
+            if ($status -match '^([AMD])') {
+                $statusChar = switch ($matches[1]) {
+                    'A' { '+' }
+                    'M' { '±' }
+                    'D' { '-' }
+                    default { ' ' }
+                }
+                $FileStatusList += "$statusChar $file"
+            }
+        }
+        
         $ReleaseNotes += @"
 
 ## Changes Since Tag ``$LatestTag``
 **Commits:** $CommitCount
 
 ### Commit History
-``````
-$CommitLog
-``````
+$($FormattedCommitLog -join "`n")
 
 ## API Changes Summary
 **Changed Files:** $($ChangedApiFiles.Count)
 
 $(if ($DiffStats) {
-    "### Change Statistics`n``````"
+    "### Change Statistics"
+    "``````text"
     $DiffStats
     "``````"
+    ""
 })
 
 $(if ($ChangedApiFiles) {
-    "### Modified API Files`n``````"
-    $ChangedApiFiles -join "`n"
+    "### Modified API Files"
+    "``````diff"
+    $FileStatusList -join "`n"
     "``````"
+    "**Legend:** ``+`` = Added, ``±`` = Modified, ``-`` = Deleted"
+    ""
 } else {
     "*(No API changes detected)*"
+    ""
 })
 
 ## Detailed API Diff
 <details>
-<summary>Click to expand full diff ($($ChangedApiFiles.Count) files)</summary>
+<summary>Click to expand full diff ($($ChangedApiFiles.Count) files changed)</summary>
 
 ``````diff
 $ApiDiff
 ``````
+
+**Note:** Lines starting with `+` are additions, `-` are deletions.
+
 </details>
 
 "@
