@@ -18,8 +18,8 @@
   },
   "yieldCalculation": {
     "skillScaling": 0.003,
-    "toolBonusPerTier": 0.10,
-    "maxToolBonus": 0.30,
+    "toolBonusPerTier": 0.1,
+    "maxToolBonus": 0.3,
     "criticalMultiplier": 2.0,
     "exhaustedPenalty": 0.5,
     "description": "Formula: baseYield × (1.0 + skillRank × skillScaling + toolBonus) × critMultiplier"
@@ -30,7 +30,7 @@
     "toolBonusPerTier": 0.01,
     "richNodeBonus": 0.05,
     "bonusMaterialChance": 0.25,
-    "rareDropChance": 0.10,
+    "rareDropChance": 0.1,
     "durabilityReduction": 0.5,
     "xpBonus": 1.5,
     "description": "Critical harvests provide 2x yield, bonus materials, and reduced tool durability loss"

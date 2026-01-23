@@ -25,31 +25,48 @@
       "types": {
         "heavy-blades": {
           "description": "Swords, longswords, greatswords",
-          "allowedMaterials": ["metals"]
+          "allowedMaterials": [
+            "metals"
+          ]
         },
         "light-blades": {
           "description": "Daggers, rapiers, shortswords",
-          "allowedMaterials": ["metals"]
+          "allowedMaterials": [
+            "metals"
+          ]
         },
         "axes": {
           "description": "Axes, battleaxes, greataxes",
-          "allowedMaterials": ["metals"]
+          "allowedMaterials": [
+            "metals"
+          ]
         },
         "blunt": {
           "description": "Maces, warhammers, clubs",
-          "allowedMaterials": ["metals", "woods", "stones"]
+          "allowedMaterials": [
+            "metals",
+            "woods",
+            "stones"
+          ]
         },
         "polearms": {
           "description": "Spears, halberds, pikes",
-          "allowedMaterials": ["metals"]
+          "allowedMaterials": [
+            "metals"
+          ]
         },
         "bows": {
           "description": "Bows, longbows, crossbows",
-          "allowedMaterials": ["woods"]
+          "allowedMaterials": [
+            "woods"
+          ]
         },
         "staves": {
           "description": "Staves, quarterstaffs",
-          "allowedMaterials": ["woods", "metals"]
+          "allowedMaterials": [
+            "woods",
+            "metals"
+          ]
         }
       }
     },
@@ -63,43 +80,61 @@
           "property": "blockChance",
           "condition": "exists",
           "description": "Shields use woods and metals",
-          "allowedMaterials": ["woods", "metals"]
+          "allowedMaterials": [
+            "woods",
+            "metals"
+          ]
         },
         {
           "property": "armorClass",
           "value": "light",
           "description": "Light armor uses fabrics",
-          "allowedMaterials": ["fabrics"]
+          "allowedMaterials": [
+            "fabrics"
+          ]
         },
         {
           "property": "armorClass",
           "value": "medium",
           "description": "Medium armor uses leathers",
-          "allowedMaterials": ["leathers"]
+          "allowedMaterials": [
+            "leathers"
+          ]
         },
         {
           "property": "armorClass",
           "value": "heavy",
           "description": "Heavy armor uses metals",
-          "allowedMaterials": ["metals"]
+          "allowedMaterials": [
+            "metals"
+          ]
         }
       ],
       "types": {
         "light-armor": {
           "description": "Cloth, robes, padded armor",
-          "allowedMaterials": ["fabrics"]
+          "allowedMaterials": [
+            "fabrics"
+          ]
         },
         "medium-armor": {
           "description": "Leather, hide, studded leather",
-          "allowedMaterials": ["leathers"]
+          "allowedMaterials": [
+            "leathers"
+          ]
         },
         "heavy-armor": {
           "description": "Chainmail, plate, scale mail",
-          "allowedMaterials": ["metals"]
+          "allowedMaterials": [
+            "metals"
+          ]
         },
         "shields": {
           "description": "Bucklers, shields, tower shields",
-          "allowedMaterials": ["woods", "metals"]
+          "allowedMaterials": [
+            "woods",
+            "metals"
+          ]
         }
       }
     },
@@ -119,15 +154,25 @@
       "types": {
         "rings": {
           "description": "Rings and bands",
-          "allowedMaterials": ["metals", "gems"]
+          "allowedMaterials": [
+            "metals",
+            "gems"
+          ]
         },
         "amulets": {
           "description": "Necklaces and amulets",
-          "allowedMaterials": ["metals", "gems"]
+          "allowedMaterials": [
+            "metals",
+            "gems"
+          ]
         },
         "trinkets": {
           "description": "Magical trinkets",
-          "allowedMaterials": ["gems", "crystals", "bones"]
+          "allowedMaterials": [
+            "gems",
+            "crystals",
+            "bones"
+          ]
         }
       }
     },

@@ -62,7 +62,7 @@
     }
   },
   "displayRules": {
-    "nameFormat": "[Quality] [Material] [Prefix\u2081] [BaseName] [Suffix\u2081]",
+    "nameFormat": "[Quality] [Material] [Prefix₁] [BaseName] [Suffix₁]",
     "showAllComponents": false,
     "showFirstPrefixOnly": true,
     "showFirstSuffixOnly": true,

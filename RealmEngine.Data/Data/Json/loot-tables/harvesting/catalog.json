@@ -2,16 +2,23 @@
   "metadata": {
     "description": "Loot tables for harvesting resource nodes - defines drops from woods, ores, plants, and other harvestable sources",
     "version": "5.0",
-    "lastUpdated": "2026-01-22",
+    "lastUpdated": "2026-01-23",
     "type": "loot_table_catalog"
   },
   "types": {
     "woods": {
-      "poolRefs": ["@material_pools/woods/common"],
+      "poolRefs": [
+        "@material_pools/woods/common"
+      ],
       "dropChance": 100,
-      "quantityRange": [1, 3],
-      "nodes": {
-        "oak": {
+      "quantityRange": [
+        1,
+        3
+      ],
+      "items": [
+        {
+          "slug": "oak",
+          "name": "Oak",
           "drops": [
             {
               "materialRef": "@items/materials/wood:oak-wood",
@@ -41,7 +48,9 @@
             }
           ]
         },
-        "ash": {
+        {
+          "slug": "ash",
+          "name": "Ash",
           "drops": [
             {
               "materialRef": "@items/materials/wood:ash-wood",
@@ -62,7 +71,9 @@
             }
           ]
         },
-        "common-trees": {
+        {
+          "slug": "common-trees",
+          "name": "Common Trees",
           "drops": [
             {
               "materialRef": "@items/materials/wood:oak-log",
@@ -83,14 +94,21 @@
             }
           ]
         }
-      }
+      ]
     },
     "ores": {
-      "poolRefs": ["@material_pools/metals/common"],
+      "poolRefs": [
+        "@material_pools/metals/common"
+      ],
       "dropChance": 100,
-      "quantityRange": [1, 5],
-      "nodes": {
-        "copper": {
+      "quantityRange": [
+        1,
+        5
+      ],
+      "items": [
+        {
+          "slug": "copper",
+          "name": "Copper",
           "drops": [
             {
               "materialRef": "@items/materials/ore:copper-ore",
@@ -120,7 +138,9 @@
             }
           ]
         },
-        "iron": {
+        {
+          "slug": "iron",
+          "name": "Iron",
           "drops": [
             {
               "materialRef": "@items/materials/ore:iron-ore",
@@ -141,7 +161,9 @@
             }
           ]
         },
-        "common-ores": {
+        {
+          "slug": "common-ores",
+          "name": "Common Ores",
           "drops": [
             {
               "materialRef": "@items/materials/ore:copper-ore",
@@ -171,7 +193,9 @@
             }
           ]
         },
-        "rare-ores": {
+        {
+          "slug": "rare-ores",
+          "name": "Rare Ores",
           "drops": [
             {
               "materialRef": "@items/materials/ore:mithril-ore",
@@ -192,14 +216,21 @@
             }
           ]
         }
-      }
+      ]
     },
     "plants": {
-      "poolRefs": ["@material_pools/plants/common"],
+      "poolRefs": [
+        "@material_pools/plants/common"
+      ],
       "dropChance": 100,
-      "quantityRange": [2, 10],
-      "nodes": {
-        "common-plants": {
+      "quantityRange": [
+        2,
+        10
+      ],
+      "items": [
+        {
+          "slug": "common-plants",
+          "name": "Common Plants",
           "drops": [
             {
               "materialRef": "@items/materials/fabric:flax",
@@ -229,9 +260,7 @@
             }
           ]
         }
-      }
+      ]
     }
   }
 }
-
-

@@ -507,6 +507,38 @@ public class ReferenceResolverService
             }
         }
 
+        // LOOT TABLES: Try "types" structure (types.woods.nodes, types.enemies, etc.)
+        var typesProperty = catalog["types"] as JObject;
+        if (typesProperty != null && category != null)
+        {
+            var categoryData = typesProperty[category];
+            if (categoryData != null)
+            {
+                // Loot tables use "nodes" for harvesting or direct items for enemies
+                var nodes = categoryData["nodes"] as JObject;
+                if (nodes != null)
+                {
+                    // Harvesting loot tables: woods.nodes.oak, ores.nodes.iron
+                    foreach (var node in nodes.Children<JProperty>())
+                    {
+                        result.Add(node.Value);
+                    }
+                }
+                else
+                {
+                    // Enemy loot tables: humanoids.enemies.goblin, beasts.enemies.wolf
+                    var enemies = categoryData["enemies"] as JObject;
+                    if (enemies != null)
+                    {
+                        foreach (var enemy in enemies.Children<JProperty>())
+                        {
+                            result.Add(enemy.Value);
+                        }
+                    }
+                }
+            }
+        }
+
         // If no items found for the specific category, return ALL items from ALL subcategories
         // This handles cases like @items/consumables:* where "consumables" is the path, not a category
         if (result.Count == 0)

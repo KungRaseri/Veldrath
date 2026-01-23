@@ -22,7 +22,11 @@
           "subType": "crystal",
           "tier": "raw",
           "traits": {},
-          "tags": ["crystal", "crafting", "magical"]
+          "tags": [
+            "crystal",
+            "crafting",
+            "magical"
+          ]
         },
         {
           "slug": "mana-crystal",
@@ -37,7 +41,12 @@
           "subType": "crystal",
           "tier": "refined",
           "traits": {},
-          "tags": ["crystal", "crafting", "magical", "mana"]
+          "tags": [
+            "crystal",
+            "crafting",
+            "magical",
+            "mana"
+          ]
         },
         {
           "slug": "void-crystal",
@@ -52,7 +61,13 @@
           "subType": "crystal",
           "tier": "exotic",
           "traits": {},
-          "tags": ["crystal", "crafting", "magical", "void", "dark"]
+          "tags": [
+            "crystal",
+            "crafting",
+            "magical",
+            "void",
+            "dark"
+          ]
         },
         {
           "slug": "light-crystal",
@@ -67,7 +82,13 @@
           "subType": "crystal",
           "tier": "exotic",
           "traits": {},
-          "tags": ["crystal", "crafting", "magical", "light", "holy"]
+          "tags": [
+            "crystal",
+            "crafting",
+            "magical",
+            "light",
+            "holy"
+          ]
         },
         {
           "slug": "shadow-crystal",
@@ -82,7 +103,12 @@
           "subType": "crystal",
           "tier": "exotic",
           "traits": {},
-          "tags": ["crystal", "crafting", "magical", "shadow"]
+          "tags": [
+            "crystal",
+            "crafting",
+            "magical",
+            "shadow"
+          ]
         },
         {
           "slug": "arcane-crystal",
@@ -97,7 +123,13 @@
           "subType": "crystal",
           "tier": "legendary",
           "traits": {},
-          "tags": ["crystal", "crafting", "magical", "arcane", "legendary"]
+          "tags": [
+            "crystal",
+            "crafting",
+            "magical",
+            "arcane",
+            "legendary"
+          ]
         }
       ]
     }

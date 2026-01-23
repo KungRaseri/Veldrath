@@ -22,7 +22,11 @@
           "subType": "bone",
           "tier": "raw",
           "traits": {},
-          "tags": ["bone", "crafting", "tribal"]
+          "tags": [
+            "bone",
+            "crafting",
+            "tribal"
+          ]
         },
         {
           "slug": "drake-bone",
@@ -37,7 +41,12 @@
           "subType": "bone",
           "tier": "refined",
           "traits": {},
-          "tags": ["bone", "crafting", "drake", "exotic"]
+          "tags": [
+            "bone",
+            "crafting",
+            "drake",
+            "exotic"
+          ]
         },
         {
           "slug": "dragon-bone",
@@ -52,7 +61,12 @@
           "subType": "bone",
           "tier": "legendary",
           "traits": {},
-          "tags": ["bone", "crafting", "dragon", "legendary"]
+          "tags": [
+            "bone",
+            "crafting",
+            "dragon",
+            "legendary"
+          ]
         },
         {
           "slug": "demon-bone",
@@ -67,7 +81,12 @@
           "subType": "bone",
           "tier": "exotic",
           "traits": {},
-          "tags": ["bone", "crafting", "demonic", "cursed"]
+          "tags": [
+            "bone",
+            "crafting",
+            "demonic",
+            "cursed"
+          ]
         },
         {
           "slug": "ancient-bone",
@@ -82,7 +101,12 @@
           "subType": "bone",
           "tier": "refined",
           "traits": {},
-          "tags": ["bone", "crafting", "ancient", "fossil"]
+          "tags": [
+            "bone",
+            "crafting",
+            "ancient",
+            "fossil"
+          ]
         },
         {
           "slug": "bone-fragment",
@@ -97,7 +121,12 @@
           "subType": "bone",
           "tier": "raw",
           "traits": {},
-          "tags": ["bone", "crafting", "undead", "fragment"]
+          "tags": [
+            "bone",
+            "crafting",
+            "undead",
+            "fragment"
+          ]
         },
         {
           "slug": "lich-phylactery-fragment",
@@ -112,7 +141,14 @@
           "subType": "bone",
           "tier": "legendary",
           "traits": {},
-          "tags": ["bone", "crafting", "lich", "phylactery", "legendary", "cursed"]
+          "tags": [
+            "bone",
+            "crafting",
+            "lich",
+            "phylactery",
+            "legendary",
+            "cursed"
+          ]
         }
       ]
     }

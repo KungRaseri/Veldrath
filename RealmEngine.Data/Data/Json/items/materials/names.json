@@ -7,8 +7,12 @@
     "supportsTraits": true,
     "totalPatterns": 1,
     "raritySystem": "weight-based",
-    "componentKeys": ["quality"],
-    "patternTokens": ["{quality}"],
+    "componentKeys": [
+      "quality"
+    ],
+    "patternTokens": [
+      "{quality}"
+    ],
     "notes": [
       "Quality modifiers affect budget calculation",
       "Negative budgetModifier = discount (easier to afford)",

@@ -22,7 +22,12 @@
           "subType": "scale",
           "tier": "raw",
           "traits": {},
-          "tags": ["scale", "crafting", "reptile", "flexible"]
+          "tags": [
+            "scale",
+            "crafting",
+            "reptile",
+            "flexible"
+          ]
         },
         {
           "slug": "lizard-scale",
@@ -37,7 +42,11 @@
           "subType": "scale",
           "tier": "raw",
           "traits": {},
-          "tags": ["scale", "crafting", "reptile"]
+          "tags": [
+            "scale",
+            "crafting",
+            "reptile"
+          ]
         },
         {
           "slug": "drake-scale",
@@ -52,7 +61,12 @@
           "subType": "scale",
           "tier": "refined",
           "traits": {},
-          "tags": ["scale", "crafting", "drake", "fire-resistant"]
+          "tags": [
+            "scale",
+            "crafting",
+            "drake",
+            "fire-resistant"
+          ]
         },
         {
           "slug": "dragon-scale",
@@ -67,7 +81,12 @@
           "subType": "scale",
           "tier": "legendary",
           "traits": {},
-          "tags": ["scale", "crafting", "dragon", "legendary"]
+          "tags": [
+            "scale",
+            "crafting",
+            "dragon",
+            "legendary"
+          ]
         },
         {
           "slug": "basilisk-scale",
@@ -82,7 +101,13 @@
           "subType": "scale",
           "tier": "legendary",
           "traits": {},
-          "tags": ["scale", "crafting", "basilisk", "petrifying", "legendary"]
+          "tags": [
+            "scale",
+            "crafting",
+            "basilisk",
+            "petrifying",
+            "legendary"
+          ]
         }
       ]
     }

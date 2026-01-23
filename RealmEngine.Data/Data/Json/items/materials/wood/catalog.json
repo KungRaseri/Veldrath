@@ -21,7 +21,11 @@
           "subType": "wood",
           "tier": "raw",
           "traits": {},
-          "tags": ["wood", "crafting", "raw"]
+          "tags": [
+            "wood",
+            "crafting",
+            "raw"
+          ]
         },
         {
           "slug": "birch-wood",
@@ -35,7 +39,11 @@
           "subType": "wood",
           "tier": "raw",
           "traits": {},
-          "tags": ["wood", "crafting", "raw"]
+          "tags": [
+            "wood",
+            "crafting",
+            "raw"
+          ]
         },
         {
           "slug": "oak-wood",
@@ -49,7 +57,11 @@
           "subType": "wood",
           "tier": "refined",
           "traits": {},
-          "tags": ["wood", "crafting", "refined"]
+          "tags": [
+            "wood",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "oak-plank",
@@ -100,7 +112,12 @@
           "subType": "wood",
           "tier": "component",
           "traits": {},
-          "tags": ["wood", "crafting", "weapon-component", "handle"]
+          "tags": [
+            "wood",
+            "crafting",
+            "weapon-component",
+            "handle"
+          ]
         },
         {
           "slug": "ash-wood",
@@ -114,7 +131,11 @@
           "subType": "wood",
           "tier": "refined",
           "traits": {},
-          "tags": ["wood", "crafting", "refined"]
+          "tags": [
+            "wood",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "maple-wood",
@@ -128,7 +149,11 @@
           "subType": "wood",
           "tier": "refined",
           "traits": {},
-          "tags": ["wood", "crafting", "refined"]
+          "tags": [
+            "wood",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "walnut-wood",
@@ -142,7 +167,11 @@
           "subType": "wood",
           "tier": "refined",
           "traits": {},
-          "tags": ["wood", "crafting", "refined"]
+          "tags": [
+            "wood",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "mahogany-wood",
@@ -156,7 +185,11 @@
           "subType": "wood",
           "tier": "exotic",
           "traits": {},
-          "tags": ["wood", "crafting", "exotic"]
+          "tags": [
+            "wood",
+            "crafting",
+            "exotic"
+          ]
         },
         {
           "slug": "ebony-wood",
@@ -170,7 +203,11 @@
           "subType": "wood",
           "tier": "exotic",
           "traits": {},
-          "tags": ["wood", "crafting", "exotic"]
+          "tags": [
+            "wood",
+            "crafting",
+            "exotic"
+          ]
         },
         {
           "slug": "ironwood",
@@ -184,7 +221,11 @@
           "subType": "wood",
           "tier": "exotic",
           "traits": {},
-          "tags": ["wood", "crafting", "exotic"]
+          "tags": [
+            "wood",
+            "crafting",
+            "exotic"
+          ]
         },
         {
           "slug": "ancient-oak",
@@ -198,7 +239,12 @@
           "subType": "wood",
           "tier": "legendary",
           "traits": {},
-          "tags": ["wood", "crafting", "legendary", "magical"]
+          "tags": [
+            "wood",
+            "crafting",
+            "legendary",
+            "magical"
+          ]
         },
         {
           "slug": "darkwood",
@@ -212,7 +258,12 @@
           "subType": "wood",
           "tier": "legendary",
           "traits": {},
-          "tags": ["wood", "crafting", "legendary", "shadow"]
+          "tags": [
+            "wood",
+            "crafting",
+            "legendary",
+            "shadow"
+          ]
         },
         {
           "slug": "world-tree-wood",
@@ -226,7 +277,12 @@
           "subType": "wood",
           "tier": "legendary",
           "traits": {},
-          "tags": ["wood", "crafting", "legendary", "divine"]
+          "tags": [
+            "wood",
+            "crafting",
+            "legendary",
+            "divine"
+          ]
         },
         {
           "slug": "petrified-elderwood",
@@ -240,7 +296,12 @@
           "subType": "wood",
           "tier": "legendary",
           "traits": {},
-          "tags": ["wood", "crafting", "legendary", "ancient"]
+          "tags": [
+            "wood",
+            "crafting",
+            "legendary",
+            "ancient"
+          ]
         },
         {
           "slug": "oak-log",
@@ -254,7 +315,12 @@
           "subType": "wood",
           "tier": "raw",
           "traits": {},
-          "tags": ["wood", "crafting", "raw", "log"]
+          "tags": [
+            "wood",
+            "crafting",
+            "raw",
+            "log"
+          ]
         },
         {
           "slug": "birch-log",
@@ -268,7 +334,12 @@
           "subType": "wood",
           "tier": "raw",
           "traits": {},
-          "tags": ["wood", "crafting", "raw", "log"]
+          "tags": [
+            "wood",
+            "crafting",
+            "raw",
+            "log"
+          ]
         }
       ]
     }

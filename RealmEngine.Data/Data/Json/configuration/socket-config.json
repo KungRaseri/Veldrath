@@ -13,23 +13,49 @@
   },
   "socketCounts": {
     "Common": {
-      "chances": [50, 50],
+      "chances": [
+        50,
+        50
+      ],
       "description": "0-1 sockets: 50% for 0, 50% for 1"
     },
     "Uncommon": {
-      "chances": [30, 40, 30],
+      "chances": [
+        30,
+        40,
+        30
+      ],
       "description": "0-2 sockets: 30% for 0, 40% for 1, 30% for 2"
     },
     "Rare": {
-      "chances": [10, 40, 30, 20],
+      "chances": [
+        10,
+        40,
+        30,
+        20
+      ],
       "description": "0-3 sockets: 10% for 0, 40% for 1, 30% for 2, 20% for 3"
     },
     "Epic": {
-      "chances": [0, 20, 30, 50, 30],
+      "chances": [
+        0,
+        20,
+        30,
+        50,
+        30
+      ],
       "description": "1-4 sockets: 20% for 1, 30% for 2, 50% for 3, 30% for 4"
     },
     "Legendary": {
-      "chances": [0, 0, 30, 30, 40, 20, 10],
+      "chances": [
+        0,
+        0,
+        30,
+        30,
+        40,
+        20,
+        10
+      ],
       "description": "2-6 sockets: 30% for 2, 30% for 3, 40% for 4, 20% for 5, 10% for 6"
     }
   },

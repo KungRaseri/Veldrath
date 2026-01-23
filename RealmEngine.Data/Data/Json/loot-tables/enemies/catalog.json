@@ -17,7 +17,10 @@
         "@material_pools/metals/common",
         "@material_pools/leathers/common"
       ],
-      "goldRange": [5, 20],
+      "goldRange": [
+        5,
+        20
+      ],
       "dropChance": 30,
       "enemies": {
         "goblin": {
@@ -32,8 +35,13 @@
           ]
         },
         "goblin-warrior": {
-          "goldRange": [8, 25],
-          "additionalPools": ["@material_pools/metals/uncommon"],
+          "goldRange": [
+            8,
+            25
+          ],
+          "additionalPools": [
+            "@material_pools/metals/uncommon"
+          ],
           "guaranteedDrops": [
             {
               "materialRef": "@items/materials/leather:goblin-hide",
@@ -45,13 +53,25 @@
           ]
         },
         "orc": {
-          "poolRefs": ["@material_pools/metals/uncommon", "@material_pools/leathers/uncommon"],
-          "goldRange": [15, 40],
+          "poolRefs": [
+            "@material_pools/metals/uncommon",
+            "@material_pools/leathers/uncommon"
+          ],
+          "goldRange": [
+            15,
+            40
+          ],
           "dropChance": 40
         },
         "orc-warrior": {
-          "poolRefs": ["@material_pools/metals/uncommon", "@material_pools/leathers/uncommon"],
-          "goldRange": [20, 50],
+          "poolRefs": [
+            "@material_pools/metals/uncommon",
+            "@material_pools/leathers/uncommon"
+          ],
+          "goldRange": [
+            20,
+            50
+          ],
           "dropChance": 50,
           "guaranteedDrops": [
             {
@@ -64,12 +84,22 @@
           ]
         },
         "bandit": {
-          "goldRange": [10, 30],
-          "additionalPools": ["@material_pools/fabrics/common"]
+          "goldRange": [
+            10,
+            30
+          ],
+          "additionalPools": [
+            "@material_pools/fabrics/common"
+          ]
         },
         "bandit-chief": {
-          "poolRefs": ["@material_pools/metals/rare"],
-          "goldRange": [50, 150],
+          "poolRefs": [
+            "@material_pools/metals/rare"
+          ],
+          "goldRange": [
+            50,
+            150
+          ],
           "dropChance": 80,
           "guaranteedDrops": [
             {
@@ -88,7 +118,10 @@
         "@material_pools/leathers/common",
         "@material_pools/woods/common"
       ],
-      "goldRange": [0, 5],
+      "goldRange": [
+        0,
+        5
+      ],
       "dropChance": 40,
       "enemies": {
         "wolf": {
@@ -103,7 +136,9 @@
           ]
         },
         "dire-wolf": {
-          "poolRefs": ["@material_pools/leathers/uncommon"],
+          "poolRefs": [
+            "@material_pools/leathers/uncommon"
+          ],
           "dropChance": 60,
           "guaranteedDrops": [
             {
@@ -116,8 +151,13 @@
           ]
         },
         "bear": {
-          "poolRefs": ["@material_pools/leathers/uncommon"],
-          "goldRange": [0, 10],
+          "poolRefs": [
+            "@material_pools/leathers/uncommon"
+          ],
+          "goldRange": [
+            0,
+            10
+          ],
           "dropChance": 50,
           "guaranteedDrops": [
             {
@@ -136,7 +176,10 @@
         "@material_pools/metals/common",
         "@material_pools/leathers/common"
       ],
-      "goldRange": [0, 10],
+      "goldRange": [
+        0,
+        10
+      ],
       "dropChance": 25,
       "enemies": {
         "skeleton": {
@@ -151,7 +194,10 @@
           ]
         },
         "zombie": {
-          "goldRange": [0, 5],
+          "goldRange": [
+            0,
+            5
+          ],
           "guaranteedDrops": [
             {
               "materialRef": "@items/materials/leather:rotten-flesh",
@@ -163,8 +209,14 @@
           ]
         },
         "lich": {
-          "poolRefs": ["@material_pools/metals/legendary", "@material_pools/gems/legendary"],
-          "goldRange": [500, 2000],
+          "poolRefs": [
+            "@material_pools/metals/legendary",
+            "@material_pools/gems/legendary"
+          ],
+          "goldRange": [
+            500,
+            2000
+          ],
           "dropChance": 100,
           "guaranteedDrops": [
             {
@@ -184,12 +236,21 @@
         "@material_pools/gems/legendary",
         "@material_pools/leathers/epic"
       ],
-      "goldRange": [1000, 5000],
+      "goldRange": [
+        1000,
+        5000
+      ],
       "dropChance": 100,
       "enemies": {
         "dragon-wyrmling": {
-          "poolRefs": ["@material_pools/metals/rare", "@material_pools/gems/rare"],
-          "goldRange": [100, 500],
+          "poolRefs": [
+            "@material_pools/metals/rare",
+            "@material_pools/gems/rare"
+          ],
+          "goldRange": [
+            100,
+            500
+          ],
           "dropChance": 80,
           "guaranteedDrops": [
             {
@@ -226,17 +287,31 @@
         "@material_pools/metals/rare",
         "@material_pools/gems/rare"
       ],
-      "goldRange": [50, 200],
+      "goldRange": [
+        50,
+        200
+      ],
       "dropChance": 60,
       "enemies": {
         "imp": {
-          "poolRefs": ["@material_pools/metals/uncommon"],
-          "goldRange": [10, 40],
+          "poolRefs": [
+            "@material_pools/metals/uncommon"
+          ],
+          "goldRange": [
+            10,
+            40
+          ],
           "dropChance": 40
         },
         "demon-lord": {
-          "poolRefs": ["@material_pools/metals/legendary", "@material_pools/gems/legendary"],
-          "goldRange": [500, 2000],
+          "poolRefs": [
+            "@material_pools/metals/legendary",
+            "@material_pools/gems/legendary"
+          ],
+          "goldRange": [
+            500,
+            2000
+          ],
           "dropChance": 100,
           "guaranteedDrops": [
             {
@@ -252,5 +327,3 @@
     }
   }
 }
-
-

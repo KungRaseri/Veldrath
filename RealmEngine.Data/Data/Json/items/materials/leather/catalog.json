@@ -21,7 +21,11 @@
           "subType": "leather",
           "tier": "raw",
           "traits": {},
-          "tags": ["leather", "crafting", "raw"]
+          "tags": [
+            "leather",
+            "crafting",
+            "raw"
+          ]
         },
         {
           "slug": "rawhide",
@@ -35,7 +39,11 @@
           "subType": "leather",
           "tier": "raw",
           "traits": {},
-          "tags": ["leather", "crafting", "raw"]
+          "tags": [
+            "leather",
+            "crafting",
+            "raw"
+          ]
         },
         {
           "slug": "hide",
@@ -49,7 +57,11 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "leather",
@@ -63,7 +75,11 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "cured-leather",
@@ -133,7 +149,12 @@
           "subType": "leather",
           "tier": "component",
           "traits": {},
-          "tags": ["leather", "crafting", "armor-component", "straps"]
+          "tags": [
+            "leather",
+            "crafting",
+            "armor-component",
+            "straps"
+          ]
         },
         {
           "slug": "thick-leather",
@@ -147,7 +168,11 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "studded-leather",
@@ -161,7 +186,11 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "hardened-leather",
@@ -175,7 +204,11 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined"
+          ]
         },
         {
           "slug": "reinforced-leather",
@@ -189,7 +222,12 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "refined", "reinforced"]
+          "tags": [
+            "leather",
+            "crafting",
+            "refined",
+            "reinforced"
+          ]
         },
         {
           "slug": "drake-scale",
@@ -203,7 +241,12 @@
           "subType": "leather",
           "tier": "exotic",
           "traits": {},
-          "tags": ["leather", "crafting", "exotic", "drake"]
+          "tags": [
+            "leather",
+            "crafting",
+            "exotic",
+            "drake"
+          ]
         },
         {
           "slug": "chimera-hide",
@@ -217,7 +260,12 @@
           "subType": "leather",
           "tier": "exotic",
           "traits": {},
-          "tags": ["leather", "crafting", "exotic", "magical"]
+          "tags": [
+            "leather",
+            "crafting",
+            "exotic",
+            "magical"
+          ]
         },
         {
           "slug": "shadow-leather",
@@ -231,7 +279,12 @@
           "subType": "leather",
           "tier": "exotic",
           "traits": {},
-          "tags": ["leather", "crafting", "exotic", "shadow"]
+          "tags": [
+            "leather",
+            "crafting",
+            "exotic",
+            "shadow"
+          ]
         },
         {
           "slug": "dragon-leather",
@@ -245,7 +298,12 @@
           "subType": "leather",
           "tier": "legendary",
           "traits": {},
-          "tags": ["leather", "crafting", "legendary", "dragon"]
+          "tags": [
+            "leather",
+            "crafting",
+            "legendary",
+            "dragon"
+          ]
         },
         {
           "slug": "demon-hide",
@@ -259,7 +317,12 @@
           "subType": "leather",
           "tier": "legendary",
           "traits": {},
-          "tags": ["leather", "crafting", "legendary", "demonic"]
+          "tags": [
+            "leather",
+            "crafting",
+            "legendary",
+            "demonic"
+          ]
         },
         {
           "slug": "goblin-hide",
@@ -273,7 +336,12 @@
           "subType": "leather",
           "tier": "raw",
           "traits": {},
-          "tags": ["leather", "crafting", "goblin", "monster"]
+          "tags": [
+            "leather",
+            "crafting",
+            "goblin",
+            "monster"
+          ]
         },
         {
           "slug": "orc-hide",
@@ -287,7 +355,12 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "orc", "monster"]
+          "tags": [
+            "leather",
+            "crafting",
+            "orc",
+            "monster"
+          ]
         },
         {
           "slug": "wolf-pelt",
@@ -301,7 +374,12 @@
           "subType": "leather",
           "tier": "raw",
           "traits": {},
-          "tags": ["leather", "crafting", "wolf", "beast"]
+          "tags": [
+            "leather",
+            "crafting",
+            "wolf",
+            "beast"
+          ]
         },
         {
           "slug": "dire-wolf-pelt",
@@ -315,7 +393,13 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "dire-wolf", "beast", "rare"]
+          "tags": [
+            "leather",
+            "crafting",
+            "dire-wolf",
+            "beast",
+            "rare"
+          ]
         },
         {
           "slug": "bear-hide",
@@ -329,7 +413,12 @@
           "subType": "leather",
           "tier": "refined",
           "traits": {},
-          "tags": ["leather", "crafting", "bear", "beast"]
+          "tags": [
+            "leather",
+            "crafting",
+            "bear",
+            "beast"
+          ]
         },
         {
           "slug": "rotten-flesh",
@@ -343,7 +432,12 @@
           "subType": "leather",
           "tier": "raw",
           "traits": {},
-          "tags": ["leather", "crafting", "undead", "gross"]
+          "tags": [
+            "leather",
+            "crafting",
+            "undead",
+            "gross"
+          ]
         },
         {
           "slug": "dragon-scale",
@@ -357,7 +451,13 @@
           "subType": "leather",
           "tier": "legendary",
           "traits": {},
-          "tags": ["leather", "crafting", "dragon", "legendary", "scale"]
+          "tags": [
+            "leather",
+            "crafting",
+            "dragon",
+            "legendary",
+            "scale"
+          ]
         }
       ]
     }

@@ -15,638 +15,638 @@
   "metal_types": {
     "metal": {
       "items": [
-    {
-      "slug": "copper",
-      "name": "Copper",
-      "attributes": {
-        "dexterity": 5,
-        "intelligence": 5,
-        "charisma": 5,
-        "strength": 5,
-        "constitution": 5,
-        "wisdom": 5
-      },
-      "traits": {
-        "durability": 40,
-        "weight": 0.9,
-        "enchantability": 20
-      },
-      "displayName": "Copper",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 0,
-          "value": 2
+        {
+          "slug": "copper",
+          "name": "Copper",
+          "attributes": {
+            "dexterity": 5,
+            "intelligence": 5,
+            "charisma": 5,
+            "strength": 5,
+            "constitution": 5,
+            "wisdom": 5
+          },
+          "traits": {
+            "durability": 40,
+            "weight": 0.9,
+            "enchantability": 20
+          },
+          "displayName": "Copper",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 0,
+              "value": 2
+            },
+            "armor": {
+              "armorRating": 2,
+              "defenseBonus": 0,
+              "value": 3
+            }
+          },
+          "rarityWeight": 95
         },
-        "armor": {
-          "armorRating": 2,
-          "defenseBonus": 0,
-          "value": 3
+        {
+          "slug": "tin",
+          "name": "Tin",
+          "attributes": {
+            "dexterity": 5,
+            "intelligence": 5,
+            "charisma": 5,
+            "strength": 5,
+            "constitution": 5,
+            "wisdom": 5
+          },
+          "traits": {
+            "durability": 35,
+            "weight": 0.8,
+            "enchantability": 18
+          },
+          "displayName": "Tin",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 0,
+              "value": 1
+            },
+            "armor": {
+              "armorRating": 1,
+              "defenseBonus": 0,
+              "value": 2
+            }
+          },
+          "rarityWeight": 90
+        },
+        {
+          "slug": "iron",
+          "name": "Iron",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 80,
+            "weight": 1.5,
+            "enchantability": 30
+          },
+          "displayName": "Iron",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 2,
+              "value": 10
+            },
+            "armor": {
+              "armorRating": 5,
+              "defenseBonus": 2,
+              "value": 15
+            }
+          },
+          "rarityWeight": 60
+        },
+        {
+          "slug": "bronze",
+          "name": "Bronze",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 60,
+            "weight": 1.0,
+            "enchantability": 35
+          },
+          "displayName": "Bronze",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 1,
+              "value": 8
+            },
+            "armor": {
+              "armorRating": 4,
+              "defenseBonus": 1,
+              "corrosionResist": 50,
+              "value": 10
+            }
+          },
+          "rarityWeight": 50
+        },
+        {
+          "slug": "steel",
+          "name": "Steel",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 120,
+            "weight": 1.1,
+            "enchantability": 45
+          },
+          "displayName": "Steel",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 4,
+              "critChance": 2,
+              "value": 30
+            },
+            "armor": {
+              "armorRating": 12,
+              "defenseBonus": 5,
+              "resistPhysical": 10,
+              "value": 50
+            }
+          },
+          "rarityWeight": 40
+        },
+        {
+          "slug": "silver",
+          "name": "Silver",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 70,
+            "weight": 0.9,
+            "enchantability": 70
+          },
+          "displayName": "Silver",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 3,
+              "bonusVsUndead": 10,
+              "bonusVsLycanthropes": 15,
+              "value": 50
+            },
+            "armor": {
+              "armorRating": 8,
+              "defenseBonus": -2,
+              "resistMagic": 5,
+              "bonusVsUndead": 5,
+              "value": 60
+            }
+          },
+          "rarityWeight": 25
+        },
+        {
+          "slug": "electrum",
+          "name": "Electrum",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 55,
+            "weight": 0.95,
+            "enchantability": 85
+          },
+          "displayName": "Electrum",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 3,
+              "bonusLightningDamage": 8,
+              "value": 80
+            },
+            "armor": {
+              "armorRating": 9,
+              "defenseBonus": 1,
+              "resistLightning": 15,
+              "value": 90
+            }
+          },
+          "rarityWeight": 18
+        },
+        {
+          "slug": "cold-iron",
+          "name": "Cold Iron",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 100,
+            "weight": 1.8,
+            "enchantability": 40
+          },
+          "displayName": "Cold Iron",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 4,
+              "bonusVsFey": 12,
+              "bonusVsDemons": 10,
+              "value": 40
+            },
+            "armor": {
+              "armorRating": 10,
+              "resistMagic": 8,
+              "bonusVsFey": 8,
+              "value": 55
+            }
+          },
+          "rarityWeight": 22
+        },
+        {
+          "slug": "obsidian",
+          "name": "Obsidian",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 30,
+            "weight": 0.8,
+            "enchantability": 80
+          },
+          "displayName": "Obsidian",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 6,
+              "sharpness": 95,
+              "brittle": true,
+              "bonusShadowDamage": 20,
+              "value": 45
+            },
+            "armor": {
+              "armorRating": 3,
+              "defenseBonus": -5,
+              "resistShadow": 15,
+              "value": 30
+            }
+          },
+          "rarityWeight": 20
+        },
+        {
+          "slug": "mithril",
+          "name": "Mithril",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 200,
+            "weight": 0.5,
+            "enchantability": 90,
+            "glowEffect": true
+          },
+          "displayName": "Mithril",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 6,
+              "critChance": 5,
+              "attackSpeed": 10,
+              "value": 100
+            },
+            "armor": {
+              "armorRating": 13,
+              "defenseBonus": 6,
+              "dexterityBonus": 2,
+              "resistPhysical": 12,
+              "value": 150
+            }
+          },
+          "rarityWeight": 10
+        },
+        {
+          "slug": "darksteel",
+          "name": "Darksteel",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 250,
+            "weight": 1.4,
+            "enchantability": 75,
+            "visualColor": "dark_purple"
+          },
+          "displayName": "Darksteel",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 7,
+              "lifesteal": 3,
+              "bonusNecroticDamage": 10,
+              "bonusVsHoly": 15,
+              "value": 120
+            },
+            "armor": {
+              "armorRating": 16,
+              "defenseBonus": 8,
+              "resistShadow": 20,
+              "lifesteal": 2,
+              "value": 140
+            }
+          },
+          "rarityWeight": 12
+        },
+        {
+          "slug": "adamantine",
+          "name": "Adamantine",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 300,
+            "weight": 1.3,
+            "enchantability": 60,
+            "indestructible": true
+          },
+          "displayName": "Adamantine",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 8,
+              "armorPenetration": 20,
+              "critDamage": 25,
+              "value": 150
+            },
+            "armor": {
+              "armorRating": 22,
+              "defenseBonus": 15,
+              "resistPhysical": 30,
+              "resistMagic": 15,
+              "thorns": 10,
+              "value": 200
+            }
+          },
+          "rarityWeight": 5
+        },
+        {
+          "slug": "dragon-steel",
+          "name": "Dragon Steel",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 120,
+            "weight": 1.2,
+            "enchantability": 95,
+            "legendary": true
+          },
+          "displayName": "Dragon Steel",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 10,
+              "bonusFireDamage": 15,
+              "bonusVsDragons": 20,
+              "value": 300
+            },
+            "armor": {
+              "armorRating": 20,
+              "defenseBonus": 10,
+              "resistFire": 50,
+              "bonusVsDragons": 10,
+              "value": 350
+            }
+          },
+          "rarityWeight": 3
+        },
+        {
+          "slug": "godforged",
+          "name": "Godforged",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 9999,
+            "weight": 0.0,
+            "enchantability": 100,
+            "glowEffect": true,
+            "visualColor": "divine_gold",
+            "legendary": true
+          },
+          "displayName": "Godforged",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 25,
+              "bonusAllDamage": 30,
+              "critChance": 15,
+              "critDamage": 50,
+              "attackSpeed": 20,
+              "allStatsBonus": 5,
+              "bonusVsAll": 20,
+              "value": 1000
+            },
+            "armor": {
+              "armorRating": 35,
+              "defenseBonus": 25,
+              "strengthBonus": 5,
+              "constitutionBonus": 5,
+              "resistPhysical": 50,
+              "resistMagic": 40,
+              "thorns": 20,
+              "value": 1500
+            }
+          },
+          "rarityWeight": 1
+        },
+        {
+          "slug": "dragonbone",
+          "name": "Dragonbone",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 150,
+            "weight": 0.8,
+            "enchantability": 85,
+            "organic": true,
+            "legendary": true
+          },
+          "displayName": "Dragonbone",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 12,
+              "bonusDragonSlaying": 30,
+              "critChance": 10,
+              "value": 400
+            },
+            "armor": {
+              "armorRating": 18,
+              "defenseBonus": 12,
+              "resistFire": 40,
+              "resistPhysical": 25,
+              "value": 450
+            }
+          },
+          "rarityWeight": 2
+        },
+        {
+          "slug": "celestial-ore",
+          "name": "Celestial Ore",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 200,
+            "weight": 1.0,
+            "enchantability": 95,
+            "glowEffect": true,
+            "visualColor": "celestial_blue",
+            "legendary": true
+          },
+          "displayName": "Celestial Ore",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 15,
+              "bonusHolyDamage": 20,
+              "bonusVsUndead": 35,
+              "bonusVsDemons": 35,
+              "value": 500
+            },
+            "armor": {
+              "armorRating": 25,
+              "defenseBonus": 18,
+              "resistHoly": 50,
+              "resistDark": 30,
+              "blessedProtection": 15,
+              "value": 600
+            }
+          },
+          "rarityWeight": 1
+        },
+        {
+          "slug": "crystal",
+          "name": "Crystal",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 80,
+            "weight": 0.5,
+            "enchantability": 75,
+            "brittle": true
+          },
+          "displayName": "Crystal",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 6,
+              "bonusIceDamage": 12,
+              "critChance": 8,
+              "value": 120
+            },
+            "armor": {
+              "armorRating": 14,
+              "defenseBonus": 8,
+              "resistIce": 40,
+              "resistFire": -10,
+              "value": 150
+            },
+            "socket": {
+              "bonusMana": 25,
+              "spellPower": 10,
+              "value": 100
+            }
+          },
+          "rarityWeight": 8
+        },
+        {
+          "slug": "void-crystal",
+          "name": "Void Crystal",
+          "attributes": {
+            "dexterity": 10,
+            "intelligence": 8,
+            "charisma": 8,
+            "strength": 10,
+            "constitution": 10,
+            "wisdom": 8
+          },
+          "traits": {
+            "durability": 90,
+            "weight": 0.3,
+            "enchantability": 90,
+            "cursed": true,
+            "visualColor": "void_black",
+            "legendary": true
+          },
+          "displayName": "Void Crystal",
+          "itemTypeTraits": {
+            "weapon": {
+              "damage": 14,
+              "bonusDarkDamage": 25,
+              "lifeDrain": 10,
+              "bonusVsCelestial": 30,
+              "value": 450
+            },
+            "armor": {
+              "armorRating": 20,
+              "defenseBonus": 14,
+              "resistDark": 50,
+              "resistHoly": -20,
+              "shadowCloak": 15,
+              "value": 500
+            },
+            "socket": {
+              "bonusDarkDamage": 15,
+              "lifeDrain": 5,
+              "curseResistance": 10,
+              "value": 300
+            }
+          },
+          "rarityWeight": 2
         }
-      },
-      "rarityWeight": 95
-    },
-    {
-      "slug": "tin",
-      "name": "Tin",
-      "attributes": {
-        "dexterity": 5,
-        "intelligence": 5,
-        "charisma": 5,
-        "strength": 5,
-        "constitution": 5,
-        "wisdom": 5
-      },
-      "traits": {
-        "durability": 35,
-        "weight": 0.8,
-        "enchantability": 18
-      },
-      "displayName": "Tin",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 0,
-          "value": 1
-        },
-        "armor": {
-          "armorRating": 1,
-          "defenseBonus": 0,
-          "value": 2
-        }
-      },
-      "rarityWeight": 90
-    },
-    {
-      "slug": "iron",
-      "name": "Iron",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 80,
-        "weight": 1.5,
-        "enchantability": 30
-      },
-      "displayName": "Iron",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 2,
-          "value": 10
-        },
-        "armor": {
-          "armorRating": 5,
-          "defenseBonus": 2,
-          "value": 15
-        }
-      },
-      "rarityWeight": 60
-    },
-    {
-      "slug": "bronze",
-      "name": "Bronze",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 60,
-        "weight": 1.0,
-        "enchantability": 35
-      },
-      "displayName": "Bronze",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 1,
-          "value": 8
-        },
-        "armor": {
-          "armorRating": 4,
-          "defenseBonus": 1,
-          "corrosionResist": 50,
-          "value": 10
-        }
-      },
-      "rarityWeight": 50
-    },
-    {
-      "slug": "steel",
-      "name": "Steel",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 120,
-        "weight": 1.1,
-        "enchantability": 45
-      },
-      "displayName": "Steel",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 4,
-          "critChance": 2,
-          "value": 30
-        },
-        "armor": {
-          "armorRating": 12,
-          "defenseBonus": 5,
-          "resistPhysical": 10,
-          "value": 50
-        }
-      },
-      "rarityWeight": 40
-    },
-    {
-      "slug": "silver",
-      "name": "Silver",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 70,
-        "weight": 0.9,
-        "enchantability": 70
-      },
-      "displayName": "Silver",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 3,
-          "bonusVsUndead": 10,
-          "bonusVsLycanthropes": 15,
-          "value": 50
-        },
-        "armor": {
-          "armorRating": 8,
-          "defenseBonus": -2,
-          "resistMagic": 5,
-          "bonusVsUndead": 5,
-          "value": 60
-        }
-      },
-      "rarityWeight": 25
-    },
-    {
-      "slug": "electrum",
-      "name": "Electrum",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 55,
-        "weight": 0.95,
-        "enchantability": 85
-      },
-      "displayName": "Electrum",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 3,
-          "bonusLightningDamage": 8,
-          "value": 80
-        },
-        "armor": {
-          "armorRating": 9,
-          "defenseBonus": 1,
-          "resistLightning": 15,
-          "value": 90
-        }
-      },
-      "rarityWeight": 18
-    },
-    {
-      "slug": "cold-iron",
-      "name": "Cold Iron",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 100,
-        "weight": 1.8,
-        "enchantability": 40
-      },
-      "displayName": "Cold Iron",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 4,
-          "bonusVsFey": 12,
-          "bonusVsDemons": 10,
-          "value": 40
-        },
-        "armor": {
-          "armorRating": 10,
-          "resistMagic": 8,
-          "bonusVsFey": 8,
-          "value": 55
-        }
-      },
-      "rarityWeight": 22
-    },
-    {
-      "slug": "obsidian",
-      "name": "Obsidian",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 30,
-        "weight": 0.8,
-        "enchantability": 80
-      },
-      "displayName": "Obsidian",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 6,
-          "sharpness": 95,
-          "brittle": true,
-          "bonusShadowDamage": 20,
-          "value": 45
-        },
-        "armor": {
-          "armorRating": 3,
-          "defenseBonus": -5,
-          "resistShadow": 15,
-          "value": 30
-        }
-      },
-      "rarityWeight": 20
-    },
-    {
-      "slug": "mithril",
-      "name": "Mithril",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 200,
-        "weight": 0.5,
-        "enchantability": 90,
-        "glowEffect": true
-      },
-      "displayName": "Mithril",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 6,
-          "critChance": 5,
-          "attackSpeed": 10,
-          "value": 100
-        },
-        "armor": {
-          "armorRating": 13,
-          "defenseBonus": 6,
-          "dexterityBonus": 2,
-          "resistPhysical": 12,
-          "value": 150
-        }
-      },
-      "rarityWeight": 10
-    },
-    {
-      "slug": "darksteel",
-      "name": "Darksteel",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 250,
-        "weight": 1.4,
-        "enchantability": 75,
-        "visualColor": "dark_purple"
-      },
-      "displayName": "Darksteel",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 7,
-          "lifesteal": 3,
-          "bonusNecroticDamage": 10,
-          "bonusVsHoly": 15,
-          "value": 120
-        },
-        "armor": {
-          "armorRating": 16,
-          "defenseBonus": 8,
-          "resistShadow": 20,
-          "lifesteal": 2,
-          "value": 140
-        }
-      },
-      "rarityWeight": 12
-    },
-    {
-      "slug": "adamantine",
-      "name": "Adamantine",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 300,
-        "weight": 1.3,
-        "enchantability": 60,
-        "indestructible": true
-      },
-      "displayName": "Adamantine",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 8,
-          "armorPenetration": 20,
-          "critDamage": 25,
-          "value": 150
-        },
-        "armor": {
-          "armorRating": 22,
-          "defenseBonus": 15,
-          "resistPhysical": 30,
-          "resistMagic": 15,
-          "thorns": 10,
-          "value": 200
-        }
-      },
-      "rarityWeight": 5
-    },
-    {
-      "slug": "dragon-steel",
-      "name": "Dragon Steel",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 120,
-        "weight": 1.2,
-        "enchantability": 95,
-        "legendary": true
-      },
-      "displayName": "Dragon Steel",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 10,
-          "bonusFireDamage": 15,
-          "bonusVsDragons": 20,
-          "value": 300
-        },
-        "armor": {
-          "armorRating": 20,
-          "defenseBonus": 10,
-          "resistFire": 50,
-          "bonusVsDragons": 10,
-          "value": 350
-        }
-      },
-      "rarityWeight": 3
-    },
-    {
-      "slug": "godforged",
-      "name": "Godforged",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 9999,
-        "weight": 0.0,
-        "enchantability": 100,
-        "glowEffect": true,
-        "visualColor": "divine_gold",
-        "legendary": true
-      },
-      "displayName": "Godforged",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 25,
-          "bonusAllDamage": 30,
-          "critChance": 15,
-          "critDamage": 50,
-          "attackSpeed": 20,
-          "allStatsBonus": 5,
-          "bonusVsAll": 20,
-          "value": 1000
-        },
-        "armor": {
-          "armorRating": 35,
-          "defenseBonus": 25,
-          "strengthBonus": 5,
-          "constitutionBonus": 5,
-          "resistPhysical": 50,
-          "resistMagic": 40,
-          "thorns": 20,
-          "value": 1500
-        }
-      },
-      "rarityWeight": 1
-    },
-    {
-      "slug": "dragonbone",
-      "name": "Dragonbone",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 150,
-        "weight": 0.8,
-        "enchantability": 85,
-        "organic": true,
-        "legendary": true
-      },
-      "displayName": "Dragonbone",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 12,
-          "bonusDragonSlaying": 30,
-          "critChance": 10,
-          "value": 400
-        },
-        "armor": {
-          "armorRating": 18,
-          "defenseBonus": 12,
-          "resistFire": 40,
-          "resistPhysical": 25,
-          "value": 450
-        }
-      },
-      "rarityWeight": 2
-    },
-    {
-      "slug": "celestial-ore",
-      "name": "Celestial Ore",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 200,
-        "weight": 1.0,
-        "enchantability": 95,
-        "glowEffect": true,
-        "visualColor": "celestial_blue",
-        "legendary": true
-      },
-      "displayName": "Celestial Ore",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 15,
-          "bonusHolyDamage": 20,
-          "bonusVsUndead": 35,
-          "bonusVsDemons": 35,
-          "value": 500
-        },
-        "armor": {
-          "armorRating": 25,
-          "defenseBonus": 18,
-          "resistHoly": 50,
-          "resistDark": 30,
-          "blessedProtection": 15,
-          "value": 600
-        }
-      },
-      "rarityWeight": 1
-    },
-    {
-      "slug": "crystal",
-      "name": "Crystal",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 80,
-        "weight": 0.5,
-        "enchantability": 75,
-        "brittle": true
-      },
-      "displayName": "Crystal",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 6,
-          "bonusIceDamage": 12,
-          "critChance": 8,
-          "value": 120
-        },
-        "armor": {
-          "armorRating": 14,
-          "defenseBonus": 8,
-          "resistIce": 40,
-          "resistFire": -10,
-          "value": 150
-        },
-        "socket": {
-          "bonusMana": 25,
-          "spellPower": 10,
-          "value": 100
-        }
-      },
-      "rarityWeight": 8
-    },
-    {
-      "slug": "void-crystal",
-      "name": "Void Crystal",
-      "attributes": {
-        "dexterity": 10,
-        "intelligence": 8,
-        "charisma": 8,
-        "strength": 10,
-        "constitution": 10,
-        "wisdom": 8
-      },
-      "traits": {
-        "durability": 90,
-        "weight": 0.3,
-        "enchantability": 90,
-        "cursed": true,
-        "visualColor": "void_black",
-        "legendary": true
-      },
-      "displayName": "Void Crystal",
-      "itemTypeTraits": {
-        "weapon": {
-          "damage": 14,
-          "bonusDarkDamage": 25,
-          "lifeDrain": 10,
-          "bonusVsCelestial": 30,
-          "value": 450
-        },
-        "armor": {
-          "armorRating": 20,
-          "defenseBonus": 14,
-          "resistDark": 50,
-          "resistHoly": -20,
-          "shadowCloak": 15,
-          "value": 500
-        },
-        "socket": {
-          "bonusDarkDamage": 15,
-          "lifeDrain": 5,
-          "curseResistance": 10,
-          "value": 300
-        }
-      },
-      "rarityWeight": 2
-    }
       ]
     }
   }

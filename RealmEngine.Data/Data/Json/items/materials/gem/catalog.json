@@ -21,7 +21,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "crafting", "raw", "uncut"]
+          "tags": [
+            "gem",
+            "crafting",
+            "raw",
+            "uncut"
+          ]
         },
         {
           "slug": "quartz",
@@ -35,7 +40,11 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "common"]
+          "tags": [
+            "gem",
+            "raw",
+            "common"
+          ]
         },
         {
           "slug": "amber",
@@ -49,7 +58,11 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "organic"]
+          "tags": [
+            "gem",
+            "raw",
+            "organic"
+          ]
         },
         {
           "slug": "topaz",
@@ -63,7 +76,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "uncommon", "yellow"]
+          "tags": [
+            "gem",
+            "raw",
+            "uncommon",
+            "yellow"
+          ]
         },
         {
           "slug": "amethyst",
@@ -77,7 +95,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "uncommon", "purple"]
+          "tags": [
+            "gem",
+            "raw",
+            "uncommon",
+            "purple"
+          ]
         },
         {
           "slug": "ruby",
@@ -91,7 +114,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "rare", "red"]
+          "tags": [
+            "gem",
+            "raw",
+            "rare",
+            "red"
+          ]
         },
         {
           "slug": "sapphire",
@@ -105,7 +133,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "rare", "blue"]
+          "tags": [
+            "gem",
+            "raw",
+            "rare",
+            "blue"
+          ]
         },
         {
           "slug": "emerald",
@@ -119,7 +152,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "rare", "green"]
+          "tags": [
+            "gem",
+            "raw",
+            "rare",
+            "green"
+          ]
         },
         {
           "slug": "diamond",
@@ -133,7 +171,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "epic", "diamond"]
+          "tags": [
+            "gem",
+            "raw",
+            "epic",
+            "diamond"
+          ]
         },
         {
           "slug": "black-pearl",
@@ -147,7 +190,13 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "epic", "black", "pearl"]
+          "tags": [
+            "gem",
+            "raw",
+            "epic",
+            "black",
+            "pearl"
+          ]
         },
         {
           "slug": "star-sapphire",
@@ -161,7 +210,13 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "legendary", "blue", "celestial"]
+          "tags": [
+            "gem",
+            "raw",
+            "legendary",
+            "blue",
+            "celestial"
+          ]
         },
         {
           "slug": "dragon-tear",
@@ -175,7 +230,13 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "legendary", "dragon", "unique"]
+          "tags": [
+            "gem",
+            "raw",
+            "legendary",
+            "dragon",
+            "unique"
+          ]
         },
         {
           "slug": "rough-quartz",
@@ -189,7 +250,12 @@
           "subType": "gem",
           "tier": "raw",
           "traits": {},
-          "tags": ["gem", "raw", "common", "quartz"]
+          "tags": [
+            "gem",
+            "raw",
+            "common",
+            "quartz"
+          ]
         },
         {
           "slug": "dragon-heart",
@@ -203,7 +269,13 @@
           "subType": "gem",
           "tier": "legendary",
           "traits": {},
-          "tags": ["gem", "legendary", "dragon", "heart", "unique"]
+          "tags": [
+            "gem",
+            "legendary",
+            "dragon",
+            "heart",
+            "unique"
+          ]
         },
         {
           "slug": "demon-core",
@@ -217,7 +289,13 @@
           "subType": "gem",
           "tier": "legendary",
           "traits": {},
-          "tags": ["gem", "legendary", "demon", "core", "cursed"]
+          "tags": [
+            "gem",
+            "legendary",
+            "demon",
+            "core",
+            "cursed"
+          ]
         }
       ]
     }

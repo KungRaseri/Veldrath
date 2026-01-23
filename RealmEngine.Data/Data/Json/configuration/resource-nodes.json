@@ -16,7 +16,11 @@
         "health": 100,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/ores:copper",
-        "biomes": ["mountains", "caves", "hills"],
+        "biomes": [
+          "mountains",
+          "caves",
+          "hills"
+        ],
         "rarityWeight": 60,
         "icon": "Pickaxe"
       },
@@ -28,7 +32,10 @@
         "health": 150,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/ores:iron",
-        "biomes": ["mountains", "deep_caves"],
+        "biomes": [
+          "mountains",
+          "deep_caves"
+        ],
         "rarityWeight": 40,
         "icon": "Pickaxe"
       },
@@ -40,7 +47,10 @@
         "health": 200,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/ores:rare-ores",
-        "biomes": ["mountains", "deep_caves"],
+        "biomes": [
+          "mountains",
+          "deep_caves"
+        ],
         "rarityWeight": 25,
         "icon": "Pickaxe"
       },
@@ -52,7 +62,10 @@
         "health": 300,
         "baseYield": 1,
         "lootTable": "@loot-tables/harvesting/ores:rare-ores",
-        "biomes": ["deep_caves", "ancient_mines"],
+        "biomes": [
+          "deep_caves",
+          "ancient_mines"
+        ],
         "rarityWeight": 10,
         "icon": "Pickaxe"
       }
@@ -66,7 +79,10 @@
         "health": 120,
         "baseYield": 3,
         "lootTable": "@loot-tables/harvesting/woods:oak",
-        "biomes": ["forest", "plains"],
+        "biomes": [
+          "forest",
+          "plains"
+        ],
         "rarityWeight": 70,
         "icon": "TreePine"
       },
@@ -78,7 +94,10 @@
         "health": 150,
         "baseYield": 3,
         "lootTable": "@loot-tables/harvesting/woods:ash",
-        "biomes": ["forest", "hills"],
+        "biomes": [
+          "forest",
+          "hills"
+        ],
         "rarityWeight": 45,
         "icon": "TreePine"
       },
@@ -90,7 +109,10 @@
         "health": 200,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/woods:common-trees",
-        "biomes": ["forest", "ancient_grove"],
+        "biomes": [
+          "forest",
+          "ancient_grove"
+        ],
         "rarityWeight": 20,
         "icon": "TreePine"
       },
@@ -102,7 +124,10 @@
         "health": 300,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/woods:common-trees",
-        "biomes": ["ancient_grove", "mystical_forest"],
+        "biomes": [
+          "ancient_grove",
+          "mystical_forest"
+        ],
         "rarityWeight": 8,
         "icon": "TreePine"
       }
@@ -116,7 +141,11 @@
         "health": 80,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/plants:common-plants",
-        "biomes": ["plains", "forest", "meadow"],
+        "biomes": [
+          "plains",
+          "forest",
+          "meadow"
+        ],
         "rarityWeight": 65,
         "icon": "Leaf"
       },
@@ -128,7 +157,10 @@
         "health": 100,
         "baseYield": 2,
         "lootTable": "@loot-tables/harvesting/plants:common-plants",
-        "biomes": ["forest", "swamp"],
+        "biomes": [
+          "forest",
+          "swamp"
+        ],
         "rarityWeight": 40,
         "icon": "Leaf"
       },
@@ -140,7 +172,10 @@
         "health": 120,
         "baseYield": 1,
         "lootTable": "@loot-tables/harvesting/plants:common-plants",
-        "biomes": ["magical_grove", "ancient_ruins"],
+        "biomes": [
+          "magical_grove",
+          "ancient_ruins"
+        ],
         "rarityWeight": 20,
         "icon": "Leaf"
       },
@@ -152,7 +187,10 @@
         "health": 150,
         "baseYield": 1,
         "lootTable": "@loot-tables/harvesting/plants:common-plants",
-        "biomes": ["magical_grove", "mystical_forest"],
+        "biomes": [
+          "magical_grove",
+          "mystical_forest"
+        ],
         "rarityWeight": 10,
         "icon": "Leaf"
       }

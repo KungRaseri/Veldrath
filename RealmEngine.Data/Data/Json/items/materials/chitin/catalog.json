@@ -22,7 +22,12 @@
           "subType": "chitin",
           "tier": "raw",
           "traits": {},
-          "tags": ["chitin", "crafting", "insect", "lightweight"]
+          "tags": [
+            "chitin",
+            "crafting",
+            "insect",
+            "lightweight"
+          ]
         },
         {
           "slug": "beetle-carapace",
@@ -37,7 +42,12 @@
           "subType": "chitin",
           "tier": "raw",
           "traits": {},
-          "tags": ["chitin", "crafting", "insect", "hard"]
+          "tags": [
+            "chitin",
+            "crafting",
+            "insect",
+            "hard"
+          ]
         },
         {
           "slug": "scorpion-shell",
@@ -52,7 +62,12 @@
           "subType": "chitin",
           "tier": "refined",
           "traits": {},
-          "tags": ["chitin", "crafting", "insect", "scorpion"]
+          "tags": [
+            "chitin",
+            "crafting",
+            "insect",
+            "scorpion"
+          ]
         },
         {
           "slug": "mantis-plate",
@@ -67,7 +82,13 @@
           "subType": "chitin",
           "tier": "refined",
           "traits": {},
-          "tags": ["chitin", "crafting", "insect", "sharp", "mantis"]
+          "tags": [
+            "chitin",
+            "crafting",
+            "insect",
+            "sharp",
+            "mantis"
+          ]
         }
       ]
     }

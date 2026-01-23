@@ -13,170 +13,410 @@
   "pools": {
     "metals": {
       "common": [
-        { "itemRef": "@items/materials/ingot:copper-ingot", "rarityWeight": 80 },
-        { "itemRef": "@items/materials/ingot:tin-ingot", "rarityWeight": 75 },
-        { "itemRef": "@items/materials/ingot:iron-ingot", "rarityWeight": 60 },
-        { "itemRef": "@items/materials/ingot:bronze-ingot", "rarityWeight": 50 }
+        {
+          "itemRef": "@items/materials/ingot:copper-ingot",
+          "rarityWeight": 80
+        },
+        {
+          "itemRef": "@items/materials/ingot:tin-ingot",
+          "rarityWeight": 75
+        },
+        {
+          "itemRef": "@items/materials/ingot:iron-ingot",
+          "rarityWeight": 60
+        },
+        {
+          "itemRef": "@items/materials/ingot:bronze-ingot",
+          "rarityWeight": 50
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/ingot:steel-ingot", "rarityWeight": 50 },
-        { "itemRef": "@items/materials/ingot:silver-ingot", "rarityWeight": 40 },
-        { "itemRef": "@items/materials/ingot:cold-iron-ingot", "rarityWeight": 30 }
+        {
+          "itemRef": "@items/materials/ingot:steel-ingot",
+          "rarityWeight": 50
+        },
+        {
+          "itemRef": "@items/materials/ingot:silver-ingot",
+          "rarityWeight": 40
+        },
+        {
+          "itemRef": "@items/materials/ingot:cold-iron-ingot",
+          "rarityWeight": 30
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/ingot:mithril-ingot", "rarityWeight": 30 },
-        { "itemRef": "@items/materials/ingot:adamantine-ingot", "rarityWeight": 20 },
-        { "itemRef": "@items/materials/ingot:darksteel-ingot", "rarityWeight": 25 }
+        {
+          "itemRef": "@items/materials/ingot:mithril-ingot",
+          "rarityWeight": 30
+        },
+        {
+          "itemRef": "@items/materials/ingot:adamantine-ingot",
+          "rarityWeight": 20
+        },
+        {
+          "itemRef": "@items/materials/ingot:darksteel-ingot",
+          "rarityWeight": 25
+        }
       ],
       "epic": [
-        { "itemRef": "@items/materials/ingot:dragon-steel-ingot", "rarityWeight": 20 },
-        { "itemRef": "@items/materials/ingot:dragonbone-ingot", "rarityWeight": 15 },
-        { "itemRef": "@items/materials/ingot:obsidian-ingot", "rarityWeight": 18 }
+        {
+          "itemRef": "@items/materials/ingot:dragon-steel-ingot",
+          "rarityWeight": 20
+        },
+        {
+          "itemRef": "@items/materials/ingot:dragonbone-ingot",
+          "rarityWeight": 15
+        },
+        {
+          "itemRef": "@items/materials/ingot:obsidian-ingot",
+          "rarityWeight": 18
+        }
       ],
       "legendary": [
-        { "itemRef": "@items/materials/ingot:celestial-ore-ingot", "rarityWeight": 10 },
-        { "itemRef": "@items/materials/ingot:godforged-ingot", "rarityWeight": 5 },
-        { "itemRef": "@items/materials/ingot:void-crystal-ingot", "rarityWeight": 8 }
+        {
+          "itemRef": "@items/materials/ingot:celestial-ore-ingot",
+          "rarityWeight": 10
+        },
+        {
+          "itemRef": "@items/materials/ingot:godforged-ingot",
+          "rarityWeight": 5
+        },
+        {
+          "itemRef": "@items/materials/ingot:void-crystal-ingot",
+          "rarityWeight": 8
+        }
       ]
     },
     "fabrics": {
       "common": [
-        { "itemRef": "@items/materials/fabric:burlap-cloth", "rarityWeight": 100 },
-        { "itemRef": "@items/materials/fabric:linen-cloth", "rarityWeight": 90 },
-        { "itemRef": "@items/materials/fabric:cotton-cloth", "rarityWeight": 70 }
+        {
+          "itemRef": "@items/materials/fabric:burlap-cloth",
+          "rarityWeight": 100
+        },
+        {
+          "itemRef": "@items/materials/fabric:linen-cloth",
+          "rarityWeight": 90
+        },
+        {
+          "itemRef": "@items/materials/fabric:cotton-cloth",
+          "rarityWeight": 70
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/fabric:wool-cloth", "rarityWeight": 60 },
-        { "itemRef": "@items/materials/fabric:silk-cloth", "rarityWeight": 40 },
-        { "itemRef": "@items/materials/fabric:velvet-cloth", "rarityWeight": 30 }
+        {
+          "itemRef": "@items/materials/fabric:wool-cloth",
+          "rarityWeight": 60
+        },
+        {
+          "itemRef": "@items/materials/fabric:silk-cloth",
+          "rarityWeight": 40
+        },
+        {
+          "itemRef": "@items/materials/fabric:velvet-cloth",
+          "rarityWeight": 30
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/fabric:mageweave-cloth", "rarityWeight": 25 },
-        { "itemRef": "@items/materials/fabric:runecloth", "rarityWeight": 20 }
+        {
+          "itemRef": "@items/materials/fabric:mageweave-cloth",
+          "rarityWeight": 25
+        },
+        {
+          "itemRef": "@items/materials/fabric:runecloth",
+          "rarityWeight": 20
+        }
       ],
       "epic": [
-        { "itemRef": "@items/materials/fabric:shimmercloth", "rarityWeight": 15 }
+        {
+          "itemRef": "@items/materials/fabric:shimmercloth",
+          "rarityWeight": 15
+        }
       ],
       "legendary": [
-        { "itemRef": "@items/materials/fabric:ethereal-silk", "rarityWeight": 10 },
-        { "itemRef": "@items/materials/fabric:voidweave", "rarityWeight": 5 },
-        { "itemRef": "@items/materials/fabric:starweave", "rarityWeight": 3 }
+        {
+          "itemRef": "@items/materials/fabric:ethereal-silk",
+          "rarityWeight": 10
+        },
+        {
+          "itemRef": "@items/materials/fabric:voidweave",
+          "rarityWeight": 5
+        },
+        {
+          "itemRef": "@items/materials/fabric:starweave",
+          "rarityWeight": 3
+        }
       ]
     },
     "leathers": {
       "common": [
-        { "itemRef": "@items/materials/leather:scraps", "rarityWeight": 90 },
-        { "itemRef": "@items/materials/leather:rawhide", "rarityWeight": 80 },
-        { "itemRef": "@items/materials/leather:hide", "rarityWeight": 60 },
-        { "itemRef": "@items/materials/leather:leather", "rarityWeight": 50 }
+        {
+          "itemRef": "@items/materials/leather:scraps",
+          "rarityWeight": 90
+        },
+        {
+          "itemRef": "@items/materials/leather:rawhide",
+          "rarityWeight": 80
+        },
+        {
+          "itemRef": "@items/materials/leather:hide",
+          "rarityWeight": 60
+        },
+        {
+          "itemRef": "@items/materials/leather:leather",
+          "rarityWeight": 50
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/leather:thick-leather", "rarityWeight": 40 },
-        { "itemRef": "@items/materials/leather:studded-leather", "rarityWeight": 35 },
-        { "itemRef": "@items/materials/leather:hardened-leather", "rarityWeight": 30 }
+        {
+          "itemRef": "@items/materials/leather:thick-leather",
+          "rarityWeight": 40
+        },
+        {
+          "itemRef": "@items/materials/leather:studded-leather",
+          "rarityWeight": 35
+        },
+        {
+          "itemRef": "@items/materials/leather:hardened-leather",
+          "rarityWeight": 30
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/leather:reinforced-leather", "rarityWeight": 25 },
-        { "itemRef": "@items/materials/leather:drake-scale", "rarityWeight": 20 }
+        {
+          "itemRef": "@items/materials/leather:reinforced-leather",
+          "rarityWeight": 25
+        },
+        {
+          "itemRef": "@items/materials/leather:drake-scale",
+          "rarityWeight": 20
+        }
       ],
       "epic": [
-        { "itemRef": "@items/materials/leather:chimera-hide", "rarityWeight": 18 },
-        { "itemRef": "@items/materials/leather:shadow-leather", "rarityWeight": 15 }
+        {
+          "itemRef": "@items/materials/leather:chimera-hide",
+          "rarityWeight": 18
+        },
+        {
+          "itemRef": "@items/materials/leather:shadow-leather",
+          "rarityWeight": 15
+        }
       ],
       "legendary": [
-        { "itemRef": "@items/materials/leather:dragon-leather", "rarityWeight": 10 },
-        { "itemRef": "@items/materials/leather:demon-hide", "rarityWeight": 8 }
+        {
+          "itemRef": "@items/materials/leather:dragon-leather",
+          "rarityWeight": 10
+        },
+        {
+          "itemRef": "@items/materials/leather:demon-hide",
+          "rarityWeight": 8
+        }
       ]
     },
     "woods": {
       "common": [
-        { "itemRef": "@items/materials/wood:pine-wood", "rarityWeight": 85 },
-        { "itemRef": "@items/materials/wood:birch-wood", "rarityWeight": 75 },
-        { "itemRef": "@items/materials/wood:oak-wood", "rarityWeight": 60 }
+        {
+          "itemRef": "@items/materials/wood:pine-wood",
+          "rarityWeight": 85
+        },
+        {
+          "itemRef": "@items/materials/wood:birch-wood",
+          "rarityWeight": 75
+        },
+        {
+          "itemRef": "@items/materials/wood:oak-wood",
+          "rarityWeight": 60
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/wood:ash-wood", "rarityWeight": 45 },
-        { "itemRef": "@items/materials/wood:maple-wood", "rarityWeight": 40 },
-        { "itemRef": "@items/materials/wood:walnut-wood", "rarityWeight": 35 }
+        {
+          "itemRef": "@items/materials/wood:ash-wood",
+          "rarityWeight": 45
+        },
+        {
+          "itemRef": "@items/materials/wood:maple-wood",
+          "rarityWeight": 40
+        },
+        {
+          "itemRef": "@items/materials/wood:walnut-wood",
+          "rarityWeight": 35
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/wood:mahogany-wood", "rarityWeight": 28 },
-        { "itemRef": "@items/materials/wood:ebony-wood", "rarityWeight": 22 },
-        { "itemRef": "@items/materials/wood:ironwood", "rarityWeight": 20 }
+        {
+          "itemRef": "@items/materials/wood:mahogany-wood",
+          "rarityWeight": 28
+        },
+        {
+          "itemRef": "@items/materials/wood:ebony-wood",
+          "rarityWeight": 22
+        },
+        {
+          "itemRef": "@items/materials/wood:ironwood",
+          "rarityWeight": 20
+        }
       ],
       "epic": [
-        { "itemRef": "@items/materials/wood:ancient-oak", "rarityWeight": 15 },
-        { "itemRef": "@items/materials/wood:darkwood", "rarityWeight": 12 }
+        {
+          "itemRef": "@items/materials/wood:ancient-oak",
+          "rarityWeight": 15
+        },
+        {
+          "itemRef": "@items/materials/wood:darkwood",
+          "rarityWeight": 12
+        }
       ],
       "legendary": [
-        { "itemRef": "@items/materials/wood:world-tree-wood", "rarityWeight": 8 },
-        { "itemRef": "@items/materials/wood:petrified-elderwood", "rarityWeight": 5 }
+        {
+          "itemRef": "@items/materials/wood:world-tree-wood",
+          "rarityWeight": 8
+        },
+        {
+          "itemRef": "@items/materials/wood:petrified-elderwood",
+          "rarityWeight": 5
+        }
       ]
     },
     "gems": {
       "common": [
-        { "itemRef": "@items/materials/gem:rough-gemstone", "rarityWeight": 85 },
-        { "itemRef": "@items/materials/gem:quartz", "rarityWeight": 80 },
-        { "itemRef": "@items/materials/gem:amber", "rarityWeight": 70 }
+        {
+          "itemRef": "@items/materials/gem:rough-gemstone",
+          "rarityWeight": 85
+        },
+        {
+          "itemRef": "@items/materials/gem:quartz",
+          "rarityWeight": 80
+        },
+        {
+          "itemRef": "@items/materials/gem:amber",
+          "rarityWeight": 70
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/gem:topaz", "rarityWeight": 50 },
-        { "itemRef": "@items/materials/gem:amethyst", "rarityWeight": 45 }
+        {
+          "itemRef": "@items/materials/gem:topaz",
+          "rarityWeight": 50
+        },
+        {
+          "itemRef": "@items/materials/gem:amethyst",
+          "rarityWeight": 45
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/gem:sapphire", "rarityWeight": 30 },
-        { "itemRef": "@items/materials/gem:emerald", "rarityWeight": 28 },
-        { "itemRef": "@items/materials/gem:ruby", "rarityWeight": 25 }
+        {
+          "itemRef": "@items/materials/gem:sapphire",
+          "rarityWeight": 30
+        },
+        {
+          "itemRef": "@items/materials/gem:emerald",
+          "rarityWeight": 28
+        },
+        {
+          "itemRef": "@items/materials/gem:ruby",
+          "rarityWeight": 25
+        }
       ],
       "epic": [
-        { "itemRef": "@items/materials/gem:diamond", "rarityWeight": 18 },
-        { "itemRef": "@items/materials/gem:black-pearl", "rarityWeight": 15 }
+        {
+          "itemRef": "@items/materials/gem:diamond",
+          "rarityWeight": 18
+        },
+        {
+          "itemRef": "@items/materials/gem:black-pearl",
+          "rarityWeight": 15
+        }
       ],
       "legendary": [
-        { "itemRef": "@items/materials/gem:star-sapphire", "rarityWeight": 10 },
-        { "itemRef": "@items/materials/gem:dragon-tear", "rarityWeight": 5 }
+        {
+          "itemRef": "@items/materials/gem:star-sapphire",
+          "rarityWeight": 10
+        },
+        {
+          "itemRef": "@items/materials/gem:dragon-tear",
+          "rarityWeight": 5
+        }
       ]
     },
     "bones": {
       "common": [
-        { "itemRef": "@items/materials/bone:beast-bone", "rarityWeight": 70 }
+        {
+          "itemRef": "@items/materials/bone:beast-bone",
+          "rarityWeight": 70
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/bone:ancient-bone", "rarityWeight": 20 }
+        {
+          "itemRef": "@items/materials/bone:ancient-bone",
+          "rarityWeight": 20
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/bone:drake-bone", "rarityWeight": 35 },
-        { "itemRef": "@items/materials/bone:demon-bone", "rarityWeight": 15 }
+        {
+          "itemRef": "@items/materials/bone:drake-bone",
+          "rarityWeight": 35
+        },
+        {
+          "itemRef": "@items/materials/bone:demon-bone",
+          "rarityWeight": 15
+        }
       ],
       "epic": [],
       "legendary": [
-        { "itemRef": "@items/materials/bone:dragon-bone", "rarityWeight": 12 }
+        {
+          "itemRef": "@items/materials/bone:dragon-bone",
+          "rarityWeight": 12
+        }
       ]
     },
     "scales": {
       "common": [
-        { "itemRef": "@items/materials/scale:snake-scale", "rarityWeight": 60 },
-        { "itemRef": "@items/materials/scale:lizard-scale", "rarityWeight": 50 }
+        {
+          "itemRef": "@items/materials/scale:snake-scale",
+          "rarityWeight": 60
+        },
+        {
+          "itemRef": "@items/materials/scale:lizard-scale",
+          "rarityWeight": 50
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/scale:drake-scale", "rarityWeight": 28 }
+        {
+          "itemRef": "@items/materials/scale:drake-scale",
+          "rarityWeight": 28
+        }
       ],
       "rare": [],
       "epic": [
-        { "itemRef": "@items/materials/scale:dragon-scale", "rarityWeight": 8 }
+        {
+          "itemRef": "@items/materials/scale:dragon-scale",
+          "rarityWeight": 8
+        }
       ],
       "legendary": [
-        { "itemRef": "@items/materials/scale:basilisk-scale", "rarityWeight": 5 }
+        {
+          "itemRef": "@items/materials/scale:basilisk-scale",
+          "rarityWeight": 5
+        }
       ]
     },
     "chitin": {
       "common": [
-        { "itemRef": "@items/materials/chitin:spider-chitin", "rarityWeight": 55 },
-        { "itemRef": "@items/materials/chitin:beetle-carapace", "rarityWeight": 45 }
+        {
+          "itemRef": "@items/materials/chitin:spider-chitin",
+          "rarityWeight": 55
+        },
+        {
+          "itemRef": "@items/materials/chitin:beetle-carapace",
+          "rarityWeight": 45
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/chitin:scorpion-shell", "rarityWeight": 30 },
-        { "itemRef": "@items/materials/chitin:mantis-plate", "rarityWeight": 20 }
+        {
+          "itemRef": "@items/materials/chitin:scorpion-shell",
+          "rarityWeight": 30
+        },
+        {
+          "itemRef": "@items/materials/chitin:mantis-plate",
+          "rarityWeight": 20
+        }
       ],
       "rare": [],
       "epic": [],
@@ -184,19 +424,37 @@
     },
     "crystals": {
       "common": [
-        { "itemRef": "@items/materials/crystal:quartz-crystal", "rarityWeight": 65 }
+        {
+          "itemRef": "@items/materials/crystal:quartz-crystal",
+          "rarityWeight": 65
+        }
       ],
       "uncommon": [
-        { "itemRef": "@items/materials/crystal:mana-crystal", "rarityWeight": 40 }
+        {
+          "itemRef": "@items/materials/crystal:mana-crystal",
+          "rarityWeight": 40
+        }
       ],
       "rare": [
-        { "itemRef": "@items/materials/crystal:light-crystal", "rarityWeight": 22 },
-        { "itemRef": "@items/materials/crystal:shadow-crystal", "rarityWeight": 25 },
-        { "itemRef": "@items/materials/crystal:void-crystal", "rarityWeight": 18 }
+        {
+          "itemRef": "@items/materials/crystal:light-crystal",
+          "rarityWeight": 22
+        },
+        {
+          "itemRef": "@items/materials/crystal:shadow-crystal",
+          "rarityWeight": 25
+        },
+        {
+          "itemRef": "@items/materials/crystal:void-crystal",
+          "rarityWeight": 18
+        }
       ],
       "epic": [],
       "legendary": [
-        { "itemRef": "@items/materials/crystal:arcane-crystal", "rarityWeight": 10 }
+        {
+          "itemRef": "@items/materials/crystal:arcane-crystal",
+          "rarityWeight": 10
+        }
       ]
     }
   },

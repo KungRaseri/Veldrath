@@ -12,9 +12,17 @@
   },
   "rarity": {
     "common": {
-      "poolRefs": ["@material_pools/metals/common"],
-      "itemCount": [1, 3],
-      "goldRange": [10, 50]
+      "poolRefs": [
+        "@material_pools/metals/common"
+      ],
+      "itemCount": [
+        1,
+        3
+      ],
+      "goldRange": [
+        10,
+        50
+      ]
     },
     "uncommon": {
       "poolRefs": [
@@ -23,8 +31,14 @@
         "@material_pools/fabrics/uncommon",
         "@material_pools/gems/common"
       ],
-      "itemCount": [2, 5],
-      "goldRange": [50, 150]
+      "itemCount": [
+        2,
+        5
+      ],
+      "goldRange": [
+        50,
+        150
+      ]
     },
     "rare": {
       "poolRefs": [
@@ -33,8 +47,14 @@
         "@material_pools/fabrics/rare",
         "@material_pools/gems/uncommon"
       ],
-      "itemCount": [3, 6],
-      "goldRange": [150, 500]
+      "itemCount": [
+        3,
+        6
+      ],
+      "goldRange": [
+        150,
+        500
+      ]
     },
     "epic": {
       "poolRefs": [
@@ -43,8 +63,14 @@
         "@material_pools/fabrics/epic",
         "@material_pools/gems/rare"
       ],
-      "itemCount": [4, 8],
-      "goldRange": [500, 1500]
+      "itemCount": [
+        4,
+        8
+      ],
+      "goldRange": [
+        500,
+        1500
+      ]
     },
     "legendary": {
       "poolRefs": [
@@ -53,15 +79,29 @@
         "@material_pools/fabrics/legendary",
         "@material_pools/gems/legendary"
       ],
-      "itemCount": [5, 10],
-      "goldRange": [1500, 5000]
+      "itemCount": [
+        5,
+        10
+      ],
+      "goldRange": [
+        1500,
+        5000
+      ]
     }
   },
   "location": {
     "goblin-cave": {
-      "poolRefs": ["@material_pools/leathers/common"],
-      "itemCount": [2, 4],
-      "goldRange": [20, 80],
+      "poolRefs": [
+        "@material_pools/leathers/common"
+      ],
+      "itemCount": [
+        2,
+        4
+      ],
+      "goldRange": [
+        20,
+        80
+      ],
       "guaranteedDrops": [
         {
           "materialRef": "@items/materials/leather:goblin-hide",
@@ -73,9 +113,17 @@
       ]
     },
     "dragon-peak": {
-      "poolRefs": ["@material_pools/metals/legendary"],
-      "itemCount": [5, 10],
-      "goldRange": [1000, 5000],
+      "poolRefs": [
+        "@material_pools/metals/legendary"
+      ],
+      "itemCount": [
+        5,
+        10
+      ],
+      "goldRange": [
+        1000,
+        5000
+      ],
       "guaranteedDrops": [
         {
           "materialRef": "@items/materials/leather:dragon-scale",
@@ -87,9 +135,17 @@
       ]
     },
     "abandoned-mine": {
-      "poolRefs": ["@material_pools/metals/uncommon"],
-      "itemCount": [3, 6],
-      "goldRange": [100, 300],
+      "poolRefs": [
+        "@material_pools/metals/uncommon"
+      ],
+      "itemCount": [
+        3,
+        6
+      ],
+      "goldRange": [
+        100,
+        300
+      ],
       "guaranteedDrops": [
         {
           "materialRef": "@items/materials/ore:iron-ore",
@@ -108,9 +164,18 @@
       ]
     },
     "ancient-tomb": {
-      "poolRefs": ["@material_pools/metals/rare", "@material_pools/gems/rare"],
-      "itemCount": [4, 8],
-      "goldRange": [500, 2000],
+      "poolRefs": [
+        "@material_pools/metals/rare",
+        "@material_pools/gems/rare"
+      ],
+      "itemCount": [
+        4,
+        8
+      ],
+      "goldRange": [
+        500,
+        2000
+      ],
       "guaranteedDrops": [
         {
           "materialRef": "@items/materials/bone:ancient-bone",
@@ -128,18 +193,29 @@
         "@material_pools/leathers/uncommon",
         "@material_pools/metals/rare"
       ],
-      "itemCount": [1, 2]
+      "itemCount": [
+        1,
+        2
+      ]
     },
     "weapons": {
       "poolRefs": [
         "@material_pools/metals/rare",
         "@material_pools/woods/uncommon"
       ],
-      "itemCount": [1, 1]
+      "itemCount": [
+        1,
+        1
+      ]
     },
     "consumables": {
-      "poolRefs": ["@material_pools/plants/common"],
-      "itemCount": [3, 8]
+      "poolRefs": [
+        "@material_pools/plants/common"
+      ],
+      "itemCount": [
+        3,
+        8
+      ]
     },
     "materials": {
       "poolRefs": [
@@ -147,14 +223,24 @@
         "@material_pools/leathers/common",
         "@material_pools/fabrics/common"
       ],
-      "itemCount": [5, 15]
+      "itemCount": [
+        5,
+        15
+      ]
     },
     "gems": {
-      "poolRefs": ["@material_pools/gems/uncommon", "@material_pools/gems/rare"],
-      "itemCount": [1, 3],
-      "goldRange": [100, 500]
+      "poolRefs": [
+        "@material_pools/gems/uncommon",
+        "@material_pools/gems/rare"
+      ],
+      "itemCount": [
+        1,
+        3
+      ],
+      "goldRange": [
+        100,
+        500
+      ]
     }
   }
 }
-
-
