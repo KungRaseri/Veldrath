@@ -416,6 +416,46 @@ public class ReferenceResolverService
             }
         }
 
+        // Try standard "types" structure (without underscore suffix - used by loot tables)
+        var typesProperty = catalog["types"] as JObject;
+        if (typesProperty != null && category != null)
+        {
+            var categoryData = typesProperty[category];
+            if (categoryData != null)
+            {
+                // Try items array (standard structure)
+                var items = categoryData["items"] as JArray;
+                if (items != null)
+                {
+                    foreach (var item in items)
+                    {
+                        // Prefer slug (exact match), fallback to case-insensitive name
+                        if (item["slug"]?.ToString() == itemName || 
+                            string.Equals(item["name"]?.ToString(), itemName, StringComparison.OrdinalIgnoreCase))
+                            return item;
+                    }
+                }
+                
+                // Try nodes object (loot tables: harvesting)
+                var nodes = categoryData["nodes"] as JObject;
+                if (nodes != null)
+                {
+                    var node = nodes[itemName];
+                    if (node != null)
+                        return node;
+                }
+                
+                // Try enemies object (loot tables: enemies)
+                var enemies = categoryData["enemies"] as JObject;
+                if (enemies != null)
+                {
+                    var enemy = enemies[itemName];
+                    if (enemy != null)
+                        return enemy;
+                }
+            }
+        }
+
         // Fallback: Try flat items[] array structure (used by materials subdirectories)
         // This handles catalogs without *_types wrapper, like items/materials/ingots/catalog.json
         var flatItems = catalog["items"] as JArray;
@@ -507,33 +547,46 @@ public class ReferenceResolverService
             }
         }
 
-        // LOOT TABLES: Try "types" structure (types.woods.nodes, types.enemies, etc.)
+        // Try standard "types" structure (without underscore suffix - used by loot tables and others)
         var typesProperty = catalog["types"] as JObject;
-        if (typesProperty != null && category != null)
+        if (typesProperty != null && category != null && result.Count == 0)
         {
             var categoryData = typesProperty[category];
             if (categoryData != null)
             {
-                // Loot tables use "nodes" for harvesting or direct items for enemies
+                // Try items array (standard structure)
+                var items = categoryData["items"] as JArray;
+                if (items != null)
+                {
+                    foreach (var item in items)
+                        result.Add(item);
+                }
+                
+                // Try nodes object (loot tables: harvesting)
                 var nodes = categoryData["nodes"] as JObject;
                 if (nodes != null)
                 {
-                    // Harvesting loot tables: woods.nodes.oak, ores.nodes.iron
-                    foreach (var node in nodes.Children<JProperty>())
+                    foreach (var nodeProperty in nodes.Children<JProperty>())
                     {
-                        result.Add(node.Value);
+                        // Clone the node and inject the name for matching
+                        var nodeWithName = (JObject)nodeProperty.Value.DeepClone();
+                        nodeWithName["name"] = nodeProperty.Name;
+                        nodeWithName["slug"] = nodeProperty.Name;
+                        result.Add(nodeWithName);
                     }
                 }
-                else
+                
+                // Try enemies object (loot tables: enemies)
+                var enemies = categoryData["enemies"] as JObject;
+                if (enemies != null)
                 {
-                    // Enemy loot tables: humanoids.enemies.goblin, beasts.enemies.wolf
-                    var enemies = categoryData["enemies"] as JObject;
-                    if (enemies != null)
+                    foreach (var enemyProperty in enemies.Children<JProperty>())
                     {
-                        foreach (var enemy in enemies.Children<JProperty>())
-                        {
-                            result.Add(enemy.Value);
-                        }
+                        // Clone the enemy and inject the name for matching
+                        var enemyWithName = (JObject)enemyProperty.Value.DeepClone();
+                        enemyWithName["name"] = enemyProperty.Name;
+                        enemyWithName["slug"] = enemyProperty.Name;
+                        result.Add(enemyWithName);
                     }
                 }
             }
