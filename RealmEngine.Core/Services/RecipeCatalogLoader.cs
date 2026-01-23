@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 using Serilog;
 
 namespace RealmEngine.Core.Services;
@@ -11,17 +12,17 @@ namespace RealmEngine.Core.Services;
 /// </summary>
 public class RecipeCatalogLoader
 {
-    private readonly string _dataPath;
+    private readonly GameDataCache _dataCache;
     private readonly Dictionary<string, List<Recipe>> _cache = new();
     private List<Recipe>? _allRecipesCache;
 
     /// <summary>
     /// Initializes a new instance of the RecipeCatalogLoader class.
     /// </summary>
-    /// <param name="dataPath">The root path to the Data/Json folder (default: "Data/Json").</param>
-    public RecipeCatalogLoader(string dataPath = "Data/Json")
+    /// <param name="dataCache">The game data cache service.</param>
+    public RecipeCatalogLoader(GameDataCache dataCache)
     {
-        _dataPath = dataPath;
+        _dataCache = dataCache;
     }
 
     /// <summary>
@@ -35,9 +36,10 @@ public class RecipeCatalogLoader
             return _allRecipesCache;
         }
 
-        var recipesPath = Path.Combine(_dataPath, "recipes", "catalog.json");
+        var recipesPath = "recipes/catalog.json";
+        var recipesFile = _dataCache.GetFile(recipesPath);
         
-        if (!File.Exists(recipesPath))
+        if (recipesFile == null)
         {
             Log.Warning("Recipe catalog not found: {RecipesPath}", recipesPath);
             return new List<Recipe>();
@@ -45,8 +47,7 @@ public class RecipeCatalogLoader
 
         try
         {
-            var jsonContent = File.ReadAllText(recipesPath);
-            var catalog = JObject.Parse(jsonContent);
+            var catalog = recipesFile.JsonData;
             var allRecipes = new List<Recipe>();
 
             var recipeTypes = catalog["recipe_types"] as JObject;

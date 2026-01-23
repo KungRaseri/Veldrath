@@ -1,6 +1,7 @@
 using FluentAssertions;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Services;
@@ -12,14 +13,15 @@ namespace RealmEngine.Core.Tests.Services;
 [Trait("Category", "Service")]
 public class RecipeCatalogLoaderTests
 {
-    private readonly string _testDataPath;
+    private readonly GameDataCache _dataCache;
     private readonly RecipeCatalogLoader _loader;
 
     public RecipeCatalogLoaderTests()
     {
         // Use actual game data path - recipes catalog exists at RealmEngine.Data/Data/Json/recipes/catalog.json
-        _testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
-        _loader = new RecipeCatalogLoader(_testDataPath);
+        var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
+        _dataCache = new GameDataCache(testDataPath);
+        _loader = new RecipeCatalogLoader(_dataCache);
     }
 
     #region LoadAllRecipes Tests

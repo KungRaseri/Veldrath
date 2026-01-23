@@ -1,4 +1,5 @@
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Core.Generators.Modern;
 using Serilog;
@@ -23,15 +24,15 @@ public class ShopEconomyService
     /// <summary>
     /// Initializes a new instance of the ShopEconomyService class.
     /// </summary>
-    /// <param name="catalogLoader">The item catalog loader (optional, defaults to Data/Json path).</param>
+    /// <param name="catalogLoader">The item catalog loader.</param>
     /// <param name="budgetHelper">Optional budget helper for procedural inventory generation.</param>
     /// <param name="itemGenerator">Optional item generator for procedural inventory.</param>
     public ShopEconomyService(
-        ItemCatalogLoader? catalogLoader = null,
+        ItemCatalogLoader catalogLoader,
         BudgetHelperService? budgetHelper = null,
         ItemGenerator? itemGenerator = null)
     {
-        _catalogLoader = catalogLoader ?? new ItemCatalogLoader();
+        _catalogLoader = catalogLoader;
         _budgetHelper = budgetHelper;
         _itemGenerator = itemGenerator;
     }

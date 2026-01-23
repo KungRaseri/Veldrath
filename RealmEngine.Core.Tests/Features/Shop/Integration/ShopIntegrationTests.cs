@@ -7,6 +7,7 @@ using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Shop.Commands;
 using RealmEngine.Core.Services;
+using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Xunit;
@@ -47,6 +48,12 @@ public class ShopIntegrationTests : IDisposable
 
         // Register MediatR with shop command handlers
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(BrowseShopCommand).Assembly));
+
+        // Register GameDataCache and ItemCatalogLoader
+        var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
+        var dataCache = new GameDataCache(testDataPath);
+        services.AddSingleton(dataCache);
+        services.AddSingleton<ItemCatalogLoader>();
 
         // Register core services
         services.AddSingleton(mockRepository.Object);

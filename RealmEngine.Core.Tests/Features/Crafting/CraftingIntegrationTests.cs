@@ -5,6 +5,7 @@ using RealmEngine.Core.Features.Crafting.Commands;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Tests.Features.Crafting;
 
@@ -25,7 +26,8 @@ public class CraftingIntegrationTests
             "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json"
         );
 
-        _recipeCatalogLoader = new RecipeCatalogLoader(testDataPath);
+        var dataCache = new GameDataCache(testDataPath);
+        _recipeCatalogLoader = new RecipeCatalogLoader(dataCache);
         _craftingService = new CraftingService(_recipeCatalogLoader);
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CraftRecipeHandler).Assembly));

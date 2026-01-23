@@ -1,8 +1,8 @@
 using Newtonsoft.Json.Linq;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 using Serilog;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace RealmEngine.Core.Features.Reputation.Services;
@@ -12,16 +12,16 @@ namespace RealmEngine.Core.Features.Reputation.Services;
 /// </summary>
 public class FactionDataService
 {
-    private readonly string _dataPath;
+    private readonly GameDataCache _dataCache;
     private List<Faction>? _cachedFactions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FactionDataService"/> class.
     /// </summary>
-    /// <param name="dataPath">The base data path for the game.</param>
-    public FactionDataService(string dataPath)
+    /// <param name="dataCache">The game data cache service.</param>
+    public FactionDataService(GameDataCache dataCache)
     {
-        _dataPath = dataPath;
+        _dataCache = dataCache;
     }
 
     /// <summary>
@@ -34,9 +34,10 @@ public class FactionDataService
             return _cachedFactions;
         }
 
-        var catalogPath = Path.Combine(_dataPath, "Data", "Json", "organizations", "factions", "catalog.json");
+        var catalogPath = "organizations/factions/catalog.json";
+        var catalogFile = _dataCache.GetFile(catalogPath);
         
-        if (!File.Exists(catalogPath))
+        if (catalogFile == null)
         {
             Log.Warning("Faction catalog not found at {Path}", catalogPath);
             return new List<Faction>();
@@ -44,8 +45,7 @@ public class FactionDataService
 
         try
         {
-            var json = File.ReadAllText(catalogPath);
-            var catalog = JObject.Parse(json);
+            var catalog = catalogFile.JsonData;
 
             var factions = new List<Faction>();
 

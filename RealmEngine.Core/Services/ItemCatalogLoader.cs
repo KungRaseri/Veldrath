@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 using Serilog;
 
 namespace RealmEngine.Core.Services;
@@ -11,16 +12,16 @@ namespace RealmEngine.Core.Services;
 /// </summary>
 public class ItemCatalogLoader
 {
-    private readonly string _dataPath;
+    private readonly GameDataCache _dataCache;
     private readonly Dictionary<string, List<ItemTemplate>> _cache = new();
 
     /// <summary>
     /// Initializes a new instance of the ItemCatalogLoader class.
     /// </summary>
-    /// <param name="dataPath">The root path to the Data/Json folder (default: "Data/Json").</param>
-    public ItemCatalogLoader(string dataPath = "Data/Json")
+    /// <param name="dataCache">The game data cache service.</param>
+    public ItemCatalogLoader(GameDataCache dataCache)
     {
-        _dataPath = dataPath;
+        _dataCache = dataCache;
     }
 
     /// <summary>
@@ -38,9 +39,10 @@ public class ItemCatalogLoader
             return _cache[cacheKey];
         }
 
-        var catalogPath = Path.Combine(_dataPath, "items", category, "catalog.json");
+        var catalogPath = $"items/{category}/catalog.json";
+        var catalogFile = _dataCache.GetFile(catalogPath);
         
-        if (!File.Exists(catalogPath))
+        if (catalogFile == null)
         {
             Log.Warning("Catalog file not found: {CatalogPath}", catalogPath);
             return new List<ItemTemplate>();
@@ -48,8 +50,7 @@ public class ItemCatalogLoader
 
         try
         {
-            var jsonContent = File.ReadAllText(catalogPath);
-            var catalog = JObject.Parse(jsonContent);
+            var catalog = catalogFile.JsonData;
             var items = new List<ItemTemplate>();
 
             // Parse catalog structure

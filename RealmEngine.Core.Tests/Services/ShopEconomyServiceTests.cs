@@ -1,6 +1,7 @@
 using FluentAssertions;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Tests.Services;
 
@@ -11,10 +12,15 @@ namespace RealmEngine.Core.Tests.Services;
 public class ShopEconomyServiceTests
 {
     private readonly ShopEconomyService _service;
+    private readonly GameDataCache _dataCache;
+    private readonly ItemCatalogLoader _catalogLoader;
 
     public ShopEconomyServiceTests()
     {
-        _service = new ShopEconomyService();
+        var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
+        _dataCache = new GameDataCache(testDataPath);
+        _catalogLoader = new ItemCatalogLoader(_dataCache);
+        _service = new ShopEconomyService(_catalogLoader);
     }
 
     [Fact]

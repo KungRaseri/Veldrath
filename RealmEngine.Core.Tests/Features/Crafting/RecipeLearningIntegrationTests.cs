@@ -6,6 +6,7 @@ using RealmEngine.Core.Features.Crafting.Queries;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
+using RealmEngine.Data.Services;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Features.Crafting;
@@ -28,7 +29,9 @@ public class RecipeLearningIntegrationTests : IDisposable
         
         // Add services with correct data path
         var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
-        services.AddSingleton<RecipeCatalogLoader>(sp => new RecipeCatalogLoader(testDataPath));
+        var dataCache = new GameDataCache(testDataPath);
+        services.AddSingleton(dataCache);
+        services.AddSingleton<RecipeCatalogLoader>(sp => new RecipeCatalogLoader(dataCache));
         services.AddSingleton<CraftingService>();
         
         _serviceProvider = services.BuildServiceProvider();
