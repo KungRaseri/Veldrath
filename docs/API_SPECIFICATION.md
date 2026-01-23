@@ -147,7 +147,7 @@ Turn-based combat with abilities, spell `Level`, `Experience`
 
 ---
 
-### 2. Combat System
+### 2. Combat System ✅
 Turn-based combat with abilities, status effects, and tactical options.
 
 **Commands:**
@@ -155,14 +155,13 @@ Turn-based combat with abilities, status effects, and tactical options.
 - `DefendActionCommand` - Raise defenses for damage reduction
 - `FleeFromCombatCommand` - Attempt to escape from battle
 - `UseCombatItemCommand` - Use consumable items during combat
-- `ApplyStatusEffectCommand` - Apply buffs/debuffs
+- `ApplyStatusEffectCommand` - Apply buffs/debuffs to targets
 - `ProcessStatusEffectsCommand` - Process ongoing effects each turn
 - `EncounterBossCommand` - Initiate boss battle
 
 **Queries:**
-- `GetCombatStateQuery` - Get current combat status
-- `GetEnemyStatsQuery` - Retrieve enemy information
-- `GetAvailableCombatActionsQuery` - List valid actions
+- `GetCombatStateQuery` - Get current combat status and turn order
+- `GetEnemyInfoQuery` - Retrieve enemy stats and abilities
 
 **Key Properties:**
 - `PlayerHealth`, `EnemyHealth`
@@ -176,18 +175,16 @@ Turn-based combat with abilities, status effects, and tactical options.
 Equipment, consumables, materials, weight limits, and gear management.
 
 **Commands:**
-- `AddItemToInventoryCommand` - Add item to player inventory
-- `RemoveItemFromInventoryCommand` - Remove/drop items
-- `MoveItemCommand` - Reorganize inventory slots
-- `SortInventoryCommand` - Auto-sort by type/rarity/value
 - `EquipItemCommand` - Equip weapons, armor, accessories
 - `UnequipItemCommand` - Remove equipped items
+- `DropItemCommand` - Drop items from inventory
+- `SortInventoryCommand` - Auto-sort by type/rarity/value
+- `UseItemCommand` - Consume or activate items
 
 **Queries:**
 - `GetInventoryQuery` - Get full inventory with filters
 - `GetEquippedItemsQuery` - List currently equipped gear
-- `GetInventoryStatsQuery` - Weight, capacity, value totals
-- `SearchInventoryQuery` - Find items by name/type/trait
+- `GetItemInfoQuery` - Get detailed item information
 
 **Key Properties:**
 - `Items` (collection), `MaxSlots`, `CurrentWeight`, `MaxWeight`
@@ -203,13 +200,10 @@ Equipment, consumables, materials, weight limits, and gear management.
 **Commands:**
 - `LearnAbilityCommand` - Learn new ability (class/level validation)
 - `UseAbilityCommand` - Execute ability with cooldowns and costs
-- `GetActiveAbilitiesCommand` - List abilities ready to use
 
 **Queries:**
-- `GetLearnedAbilitiesQuery` - Show all learned abilities
 - `GetAvailableAbilitiesQuery` - Abilities character can learn
-- `GetAbilityCooldownsQuery` - View cooldown timers
-- `GetPassiveBonusesQuery` - Calculate passive ability bonuses
+- `GetLearnedAbilitiesQuery` - Show all learned abilities
 
 **Ability Types:**
 - **Active (177)**: Offensive, defensive, support, utility, control, summon, mobility
@@ -229,14 +223,12 @@ Equipment, consumables, materials, weight limits, and gear management.
 **54 total skills** organized into 5 categories with ranks 0-100 progression through use.
 
 **Commands:**
-- `IncreaseSkillLevelCommand` - Progress skill rank
-- `AwardSkillXpCommand` - Grant skill experience
-- `CheckSkillRequirementCommand` - Validate skill prerequisites
+- `AwardSkillXPCommand` - Grant skill experience
+- `SetStartingSkillsCommand` - Initialize character skills
 
 **Queries:**
 - `GetSkillProgressQuery` - View skill level and XP
 - `GetAllSkillsProgressQuery` - All skills overview
-- `GetSkillBonusesQuery` - Calculate skill-based bonuses
 
 **Skill Categories:**
 - **10. Enchanting System ✅)**: Athletics, Acrobatics, Stealth, Arcana, etc.
@@ -258,7 +250,6 @@ Equipment, consumables, materials, weight limits, and gear management.
 **Commands:**
 - `LearnSpellCommand` - Add spell to spellbook
 - `CastSpellCommand` - Cast spell with mana cost and skill checks
-- `ForgetSpellCommand` - Remove spell from memory
 
 **Queries:**
 - `GetLearnableSpellsQuery` - Spells available for current level
@@ -283,16 +274,14 @@ Equipment, consumables, materials, weight limits, and gear management.
 ### 7. Status Effects System ✅
 Temporary conditions affecting combat and exploration with damage-over-time, crowd control, and stat modifications.
 
-**Commands:**
-- `ApplyStatusEffectCommand` - Apply effect to target
-- `RemoveStatusEffectCommand` - Clear specific effect
-- `ProcessStatusEffectsCommand` - Tick all active effects
-- `ResistStatusEffectCommand` - Attempt to resist application
+**Note:** Status effects are applied via `ApplyStatusEffectCommand` and processed via `ProcessStatusEffectsCommand` (both in Combat feature).
 
-**Queries:**
-- `GetActiveStatusEffectsQuery` - List current effects
-- `GetStatusEffectDetailsQuery` - Effect information
-- `GetResistancesQuery` - View resistances and immunities
+**Commands:** (See Combat System)
+- `ApplyStatusEffectCommand` - Apply effect to target
+- `ProcessStatusEffectsCommand` - Tick all active effects
+
+**Queries:** (Domain Service)
+- Status effect queries handled by combat state inspection
 
 **Effect Categories:**
 - **Damage-Over-Time**: Poison, Burning, Bleeding, Frostbite
@@ -348,14 +337,10 @@ Recipe-based crafting with materials, tools, and skill requirements.
 **Commands:**
 - `CraftItemCommand` - Craft item from recipe and materials
 - `LearnRecipeCommand` - Add recipe to known list
-- `DiscoverRecipeCommand` - Unlock recipe through gameplay
 - `RepairItemCommand` - Restore item durability
 
 **Queries:**
 - `GetKnownRecipesQuery` - List all learned recipes
-- `GetCraftableItemsQuery` - Recipes with available materials
-- `GetRecipeDetailsQuery` - View requirements and output
-- `PreviewCraftingCostQuery` - Calculate material/gold cost
 
 **Key Properties:**
 - `RecipeRef`, `RequiredMaterials`, `RequiredTools`
@@ -364,18 +349,15 @@ Recipe-based crafting with materials, tools, and skill requirements.
 
 ---
 
-### 10. Harvesting System
+### 10. Harvesting System ✅
 Resource gathering from nodes (ores, trees, herbs) with tool requirements and skill progression.
 
 **Commands:**
 - `HarvestNodeCommand` - Extract resources from harvestable node
-- `SpawnResourceNodeCommand` - Generate node at location
-- `DepleteNodeCommand` - Mark node as exhausted
 
 **Queries:**
 - `GetNearbyNodesQuery` - Find harvestable nodes in area
 - `InspectNodeQuery` - Preview node rewards and requirements
-- `GetHarvestingStatsQuery` - View gathering statistics
 
 **Key Properties:**
 - `NodeId`, `NodeType` (OreVein, Tree, Herb, etc.)
@@ -385,18 +367,16 @@ Resource gathering from nodes (ores, trees, herbs) with tool requirements and sk
 
 ---
 
-### 6. Enchanting System
+### 11. Enchanting System ✅
 Apply magical enchantments to items for stat bonuses.
 
 **Commands:**
-- `ApplyEnchantmentCommand` - Add enchantment to item
+- `EnchantItemCommand` - Add enchantment to item
 - `RemoveEnchantmentCommand` - Strip enchantment from item
-- `AddEnchantmentSlotCommand` - Increase enchantment capacity
+- `TransferEnchantmentCommand` - Move enchantment between items
 
-**Queries:**
-- `GetAvailableEnchantsQuery` - List applicable enchantments
-- `GetEnchantmentCostQuery` - Calculate application cost
-- `PreviewEnchantmentQuery` - Show stat changes before applying
+**Queries:** (Domain Service)
+- Enchantment queries handled by item inspection services
 
 **Key Properties:**
 - `EnchantmentRef`, `EnchantmentSlots`, `MaxSlots`
@@ -405,19 +385,19 @@ Apply magical enchantments to items for stat bonuses.
 
 ---
 
-### 11. Socketing System ✅
+### 12. Socketing System ✅
 Insert gems/runes into socketed items for customization.
 
 **Commands:**
 - `SocketItemCommand` - Insert socketable into item
-- `RemoveSocketedItemCommand` - Extract socketable
+- `UnsocketItemCommand` - Extract socketable
 - `SocketMultipleItemsCommand` - Batch socket operation
 
 **Queries:**
 - `GetCompatibleSocketablesQuery` - List compatible gems/runes
 - `GetSocketInfoQuery` - View item socket details
-- `SocketPreviewQuery` - Preview stat changes
-- `GetSocketCostQuery` - Calculate operation cost
+- `GetSocketPreviewQuery` - Preview stat changes before socketing
+- `GetUnsocketCostQuery` - Calculate removal cost
 
 **Key Properties:**
 - `SocketSlots`, `FilledSockets`, `SocketType`
@@ -426,17 +406,14 @@ Insert gems/runes into socketed items for customization.
 
 ---
 
-### 12. Upgrading System ✅
+### 13. Upgrading System ✅
 Enhance items to higher tiers (+1, +2, +3, etc.) with increased stats.
 
 **Commands:**
 - `UpgradeItemCommand` - Increase item tier (+1, +2, etc.)
-- `ResetUpgradeLevelCommand` - Reset to base stats
 
-**Queries:**
-- `GetUpgradeCostQuery` - Calculate materials/gold needed
-- `GetUpgradeChanceQuery` - Success/failure probability
-- `GetMaxUpgradeLevelQuery` - Max tier for item type
+**Queries:** (Domain Service)
+- Upgrade cost/chance calculations handled by ItemGenerator service
 
 **Key Properties:**
 - `UpgradeLevel` (+0, +1, +2, ... +10)
@@ -445,16 +422,14 @@ Enhance items to higher tiers (+1, +2, +3, etc.) with increased stats.
 
 ---
 
-### 13. Salvaging System ✅
+### 14. Salvaging System ✅
 Break down items into raw materials for crafting.
 
 **Commands:**
 - `SalvageItemCommand` - Dismantle item into components
-- `SalvageMultipleItemsCommand` - Batch salvage
 
-**Queries:**
-- `GetSalvagePreviewQuery` - Preview materials from salvage
-- `GetSalvageValueQuery` - Calculate material value
+**Queries:** (Domain Service)
+- Salvage preview handled by ItemGenerator service
 
 **Key Properties:**
 - `SalvagedMaterials` (list), `SalvageYield`
@@ -462,19 +437,18 @@ Break down items into raw materials for crafting.
 
 ---
 
-### 14. Shop & Economy ✅
+### 15. Shop & Economy ✅
 Buy/sell items with NPCs, dynamic pricing, and merchant inventories.
 
 **Commands:**
 - `BuyFromShopCommand` - Purchase item from merchant
 - `SellToShopCommand` - Sell item to merchant
+- `BrowseShopCommand` - View merchant inventory
 - `RefreshMerchantInventoryCommand` - Regenerate shop stock
 
 **Queries:**
-- `GetMerchantInventoryQuery` - View merchant's wares
 - `GetMerchantInfoQuery` - Merchant details and disposition
 - `CheckAffordabilityQuery` - Verify player can afford item
-- `GetPriceQuoteQuery` - Get buy/sell prices
 
 **Key Properties:**
 - `MerchantId`, `MerchantType`, `ShopInventory`
@@ -483,21 +457,20 @@ Buy/sell items with NPCs, dynamic pricing, and merchant inventories.
 
 ---
 
-### 15. Quest System ✅
+### 16. Quest System ✅
 Story quests, side quests, objectives, and rewards.
 
 **Commands:**
-- `AcceptQuestCommand` - Add quest to active list
-- `AdvanceQuestObjectiveCommand` - Progress quest objective
+- `StartQuestCommand` - Add quest to active list
+- `UpdateQuestProgressCommand` - Progress quest objectives
 - `CompleteQuestCommand` - Finalize quest and claim rewards
-- `AbandonQuestCommand` - Drop active quest
+- `SetStartingQuestsCommand` - Initialize starting quests
 
 **Queries:**
 - `GetAvailableQuestsQuery` - List quests player can accept
 - `GetActiveQuestsQuery` - Show current quests
 - `GetCompletedQuestsQuery` - Quest history
 - `GetMainQuestChainQuery` - Story progression quests
-- `GetQuestDetailsQuery` - Full quest information
 
 **Key Properties:**
 - `QuestRef`, `QuestName`, `QuestType` (Main, Side, Daily)
@@ -506,19 +479,22 @@ Story quests, side quests, objectives, and rewards.
 
 ---
 
-### 16. Progression System ✅
+### 17. Progression System ✅
 Level ups, skill trees, ability unlocks, and stat growth.
 
 **Commands:**
-- `GainExperienceCommand` - Award XP to character
-- `LevelUpCommand` - Increase character level
 - `AllocateAttributePointsCommand` - Spend points on attributes
+- `LevelUpCommand` - Increase character level
+- `GainExperienceCommand` - Award XP to character
+- `UnlockClassFeatureCommand` - Unlock class-specific features
 - `RespecCharacterCommand` - Reset character progression
+- `SetStartingAbilitiesCommand` - Initialize starting abilities
 
 **Queries:**
 - `GetCharacterProgressionQuery` - View all progression stats
 - `GetNextLevelRequirementQuery` - XP needed for next level
-- `GetAvailablePerksQuery` - Unlockable character perks
+- `GetAvailableClassFeaturesQuery` - List unlockable class features
+- `GetRespecCostQuery` - Calculate respec cost
 
 **Key Properties:**
 - `Level`, `Experience`, `NextLevelXP`
@@ -527,18 +503,15 @@ Level ups, skill trees, ability unlocks, and stat growth.
 
 ---
 
-### 17. Reputation System ✅
+### 18. Reputation System ✅
 Track relationships with factions, guilds, and NPCs.
 
 **Commands:**
 - `ModifyReputationCommand` - Change faction standing
 - `JoinFactionCommand` - Become faction member
-- `LeaveFactionCommand` - Leave faction
 
 **Queries:**
 - `GetReputationQuery` - View reputation with faction
-- `GetAllFactionsQuery` - List all factions
-- `GetFactionBenefitsQuery` - Perks for current standing
 
 **Key Properties:**
 - `FactionId`, `ReputationLevel` (Hostile, Neutral, Friendly, etc.)
@@ -547,19 +520,16 @@ Track relationships with factions, guilds, and NPCs.
 
 ---
 
-### 14. Party System
+### 19. Party System ✅
 Manage party members, formations, and group actions.
 
 **Commands:**
-- `Ad8. Party System ✅mand` - Recruit companion
+- `AddPartyMemberCommand` - Recruit companion
 - `RemovePartyMemberCommand` - Dismiss companion
-- `ChangePartyLeaderCommand` - Switch active character
-- `SetFormationCommand` - Arrange party positions
+- `SetPartyLeaderCommand` - Switch active character
 
 **Queries:**
-- `GetPartyQuery` - List all party members
-- `GetPartyStatsQuery` - Aggregate party statistics
-- `GetPartyCapacityQuery` - Max party size
+- `GetPartyMembersQuery` - List all party members
 
 **Key Properties:**
 - `PartyMembers` (list), `PartyLeader`, `MaxSize`
@@ -567,19 +537,25 @@ Manage party members, formations, and group actions.
 
 ---
 
-### 15. Exploration System
+### 20. Exploration System ✅
 Map traversal, location discovery, and fast travel.
 
 **Commands:**
-- `Mo9. Exploration System ✅- Travel to new area
+- `MoveToLocationCommand` - Travel to new area
 - `DiscoverLocationCommand` - Unlock map location
 - `UnlockFastTravelCommand` - Enable fast travel point
-- `SearchAreaCommand` - Find hidden items/secrets
+- `FastTravelCommand` - Instant travel to discovered location
+- `SearchLocationCommand` - Find hidden items/secrets
+- `EnterDungeonCommand` - Enter instanced dungeon
+- `ExitDungeonCommand` - Leave current dungeon
+- `RestAtInnCommand` - Rest to restore health/mana
 
 **Queries:**
 - `GetCurrentLocationQuery` - Player's current position
 - `GetDiscoveredLocationsQuery` - Unlocked map areas
 - `GetFastTravelPointsQuery` - Available fast travel destinations
+- `GetLocationDetailsQuery` - Get location information
+- `GetNearbyLocationsQuery` - Adjacent explorable areas
 
 **Key Properties:**
 - `LocationId`, `LocationName`, `LocationType`
@@ -588,17 +564,15 @@ Map traversal, location discovery, and fast travel.
 
 ---
 
-### 16. Achievement System
+### 21. Achievement System ✅
 Track player accomplishments and milestones.
 
 **Commands:**
-- `U20. Achievement System ✅d` - Award achievement
-- `TrackProgressCommand` - Update achievement progress
+- `UnlockAchievementCommand` - Award achievement
+- `TrackAchievementProgressCommand` - Update achievement progress
 
 **Queries:**
 - `GetUnlockedAchievementsQuery` - Earned achievements
-- `GetAchievementProgressQuery` - Progress on specific achievement
-- `GetAllAchievementsQuery` - Full achievement list
 
 **Key Properties:**
 - `AchievementId`, `AchievementName`, `Description`
@@ -626,7 +600,7 @@ Handle character death, respawn, and penalties.
 
 ---
 
-### 22. Difficulty System ✅
+### 22. Difficulty System 📋
 Adjustable challenge levels with enemy scaling, death penalties, and reward multipliers.
 
 **Commands:**
@@ -676,11 +650,9 @@ Persistent game state management with LiteDB.
 - `SaveGameCommand` - Persist current game state
 - `LoadGameCommand` - Load saved game
 - `DeleteSaveCommand` - Remove save file
-- `CreateBackupCommand` - Backup current save
 
 **Queries:**
 - `GetAllSavesQuery` - List all save files
-- `GetMostRecentSaveQuery` - Latest save
 - `GetSaveDetailsQuery` - Metadata for specific save
 
 **Key Properties:**
@@ -690,14 +662,14 @@ Persistent game state management with LiteDB.
 
 ---
 
-### 25. New Game Plus ✅
+### 25. New Game Plus 📋
 Start new playthrough with bonuses and increased difficulty after completing the game.
 
-**Commands:**
+**Commands:** (Planned)
 - `StartNewGamePlusCommand` - Start NG+ with bonuses
 - `IncrementNewGamePlusLevelCommand` - Increase NG+ tier
 
-**Queries:**
+**Queries:** (Planned)
 - `GetNewGamePlusBonusesQuery` - View NG+ benefits
 - `GetCarryOverItemsQuery` - Items that transfer to NG+
 
@@ -729,6 +701,53 @@ The following features are **designed but not yet implemented** in the backend:
 - Tutorial system (UI-dependent)
 - Keybind customization (UI-dependent)
 - Most QoL features require Godot implementation
+
+---
+
+## Potential Feature Expansions
+
+The following commands/queries could enhance existing features in future iterations:
+
+### Combat Enhancements
+- `SwitchTargetCommand` - Change combat target mid-fight
+- `GetAvailableCombatActionsQuery` - List valid actions based on current state
+- `PreviewAttackResultQuery` - Show estimated damage/hit chance before attacking
+- `CounterAttackCommand` - Reactive combat mechanic
+
+### Inventory Enhancements
+- `TransferItemCommand` - Move items between characters/storage
+- `SearchInventoryQuery` - Find items by name/type/trait/material
+- `GetInventoryStatsQuery` - Calculate weight, capacity, total value
+- `CompareItemsQuery` - Side-by-side stat comparison
+- `FavoriteItemCommand` - Mark items as favorites to prevent accidental sale/salvage
+
+### Crafting Enhancements
+- `PreviewCraftingResultQuery` - Show item stats before crafting
+- `GetCraftableItemsQuery` - Filter recipes by available materials
+- `DiscoverRecipeCommand` - Unlock recipe through exploration/combat
+- `MassProduceCommand` - Craft multiple items at once
+
+### Progression Enhancements
+- `GetAvailablePerksQuery` - Show unlockable character perks by level
+- `PreviewLevelUpQuery` - Show stat gains before leveling
+- `GetBuildSuggestionsQuery` - AI-recommended builds for playstyle
+
+### Exploration Enhancements
+- `GetAdjacentLocationsQuery` - Find connected areas from current location
+- `GetLocationDangerLevelQuery` - Estimate area difficulty
+- `SearchAreaCommand` - Find hidden items/secrets in location
+
+### Enchanting Enhancements
+- `PreviewEnchantmentQuery` - Show stat changes before applying
+- `GetAvailableEnchantsQuery` - List applicable enchantments for item
+- `GetEnchantmentCostQuery` - Calculate application cost
+
+### Social/Economy Enhancements
+- `GetPriceQuoteQuery` - Get buy/sell prices with reputation modifiers
+- `BarterCommand` - Negotiate prices with merchants
+- `GetFactionBenefitsQuery` - View perks for current reputation standing
+
+**Note:** These are suggestions for future development. Implementing them would require coordination between backend logic and Godot UI.
 
 ---
 
