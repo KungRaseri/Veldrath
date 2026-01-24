@@ -126,7 +126,8 @@
             }
           ],
           "slug": "bandit-chief",
-          "name": "Bandit Chief"
+          "name": "Bandit Chief",
+          "rarityWeight": 25
         }
       ]
     },
@@ -152,7 +153,8 @@
             }
           ],
           "slug": "wolf",
-          "name": "Wolf"
+          "name": "Wolf",
+          "rarityWeight": 50
         },
         {
           "poolRefs": [
@@ -169,7 +171,8 @@
             }
           ],
           "slug": "dire-wolf",
-          "name": "Dire Wolf"
+          "name": "Dire Wolf",
+          "rarityWeight": 30
         },
         {
           "poolRefs": [
@@ -190,7 +193,8 @@
             }
           ],
           "slug": "bear",
-          "name": "Bear"
+          "name": "Bear",
+          "rarityWeight": 35
         }
       ]
     },
@@ -216,7 +220,8 @@
             }
           ],
           "slug": "skeleton",
-          "name": "Skeleton"
+          "name": "Skeleton",
+          "rarityWeight": 50
         },
         {
           "goldRange": [
@@ -233,7 +238,8 @@
             }
           ],
           "slug": "zombie",
-          "name": "Zombie"
+          "name": "Zombie",
+          "rarityWeight": 50
         },
         {
           "poolRefs": [
@@ -255,7 +261,8 @@
             }
           ],
           "slug": "lich",
-          "name": "Lich"
+          "name": "Lich",
+          "rarityWeight": 5
         }
       ]
     },
@@ -291,7 +298,8 @@
             }
           ],
           "slug": "dragon-wyrmling",
-          "name": "Dragon Wyrmling"
+          "name": "Dragon Wyrmling",
+          "rarityWeight": 25
         },
         {
           "guaranteedDrops": [
@@ -311,7 +319,8 @@
             }
           ],
           "slug": "dragon-adult",
-          "name": "Dragon Adult"
+          "name": "Dragon Adult",
+          "rarityWeight": 5
         }
       ]
     },
@@ -336,7 +345,8 @@
           ],
           "dropChance": 40,
           "slug": "imp",
-          "name": "Imp"
+          "name": "Imp",
+          "rarityWeight": 40
         },
         {
           "poolRefs": [
@@ -358,7 +368,8 @@
             }
           ],
           "slug": "demon-lord",
-          "name": "Demon Lord"
+          "name": "Demon Lord",
+          "rarityWeight": 3
         }
       ]
     }

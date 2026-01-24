@@ -169,6 +169,7 @@
         {
           "slug": "common-ores",
           "name": "Common Ores",
+          "rarityWeight": 70,
           "drops": [
             {
               "materialRef": "@items/materials/ore:copper-ore",
@@ -201,6 +202,7 @@
         {
           "slug": "rare-ores",
           "name": "Rare Ores",
+          "rarityWeight": 25,
           "drops": [
             {
               "materialRef": "@items/materials/ore:mithril-ore",
@@ -236,6 +238,7 @@
         {
           "slug": "common-plants",
           "name": "Common Plants",
+          "rarityWeight": 70,
           "drops": [
             {
               "materialRef": "@items/materials/fabric:flax",
