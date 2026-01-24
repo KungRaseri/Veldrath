@@ -5,7 +5,7 @@
     "lastUpdated": "2026-01-23",
     "type": "loot_table_catalog"
   },
-  "types": {
+  "harvesting_types": {
     "woods": {
       "poolRefs": [
         "@material_pools/woods/common"
@@ -19,6 +19,7 @@
         {
           "slug": "oak",
           "name": "Oak",
+          "rarityWeight": 60,
           "drops": [
             {
               "materialRef": "@items/materials/wood:oak-wood",
@@ -51,6 +52,7 @@
         {
           "slug": "ash",
           "name": "Ash",
+          "rarityWeight": 50,
           "drops": [
             {
               "materialRef": "@items/materials/wood:ash-wood",

@@ -11,7 +11,7 @@
       "Any unspecified field inherits from type defaults"
     ]
   },
-  "types": {
+  "enemy_types": {
     "humanoids": {
       "poolRefs": [
         "@material_pools/metals/common",
@@ -34,7 +34,8 @@
             }
           ],
           "slug": "goblin",
-          "name": "Goblin"
+          "name": "Goblin",
+          "rarityWeight": 60
         },
         {
           "goldRange": [
@@ -54,7 +55,8 @@
             }
           ],
           "slug": "goblin-warrior",
-          "name": "Goblin Warrior"
+          "name": "Goblin Warrior",
+          "rarityWeight": 40
         },
         {
           "poolRefs": [

@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "version": "1.0",
+    "version": "5.1",
     "type": "resource_node_catalog",
     "lastUpdated": "2026-01-22",
     "description": "Catalog of harvestable resource nodes with properties and spawn rules",

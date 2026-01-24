@@ -164,7 +164,7 @@ public class SaveGameService : ISaveGameService, IDisposable
     /// <summary>
     /// Load a game by save ID and restore all state.
     /// </summary>
-    public SaveGame? LoadGame(string saveId)
+    public virtual SaveGame? LoadGame(string saveId)
     {
         try
         {

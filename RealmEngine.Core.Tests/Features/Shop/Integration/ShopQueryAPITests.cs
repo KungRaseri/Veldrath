@@ -54,6 +54,12 @@ public class ShopQueryAPITests : IDisposable
         services.AddSingleton(mockRepository.Object);
         services.AddSingleton<SaveGameService>();
         services.AddSingleton<ISaveGameService>(sp => sp.GetRequiredService<SaveGameService>());
+        
+        // Register GameDataCache with required dataRootPath
+        var dataPath = Path.Combine(AppContext.BaseDirectory, "..\\..\\..\\..\\RealmEngine.Data\\Data\\Json");
+        services.AddSingleton(new RealmEngine.Data.Services.GameDataCache(dataPath));
+        
+        services.AddSingleton<ItemCatalogLoader>();
         services.AddSingleton<ShopEconomyService>();
 
         _serviceProvider = services.BuildServiceProvider();

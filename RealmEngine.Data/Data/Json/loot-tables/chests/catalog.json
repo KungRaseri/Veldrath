@@ -10,7 +10,7 @@
       "Example: chest with [@loot-tables/chests/location:dragon-peak, @loot-tables/chests/rarity:legendary]"
     ]
   },
-  "types": {
+  "chest_types": {
     "rarity": {
       "items": [
         {
@@ -26,7 +26,8 @@
             50
           ],
           "slug": "common",
-          "name": "Common"
+          "name": "Common",
+          "rarityWeight": 60
         },
         {
           "poolRefs": [
@@ -44,7 +45,8 @@
             150
           ],
           "slug": "uncommon",
-          "name": "Uncommon"
+          "name": "Uncommon",
+          "rarityWeight": 30
         },
         {
           "poolRefs": [

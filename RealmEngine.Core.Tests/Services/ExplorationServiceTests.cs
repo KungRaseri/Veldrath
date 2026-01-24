@@ -21,7 +21,6 @@ public class ExplorationServiceTests
     private readonly Mock<GameStateService> _mockGameState;
     private readonly Mock<SaveGameService> _mockSaveGameService;
     private readonly StubLocationGenerator _locationGenerator;
-    private readonly Mock<ItemGenerator> _mockItemGenerator;
     private readonly ExplorationService _service;
     
     private class StubLocationGenerator : LocationGenerator
@@ -54,7 +53,6 @@ public class ExplorationServiceTests
         _mockGameState = new Mock<GameStateService>();
         _mockSaveGameService = new Mock<SaveGameService>();
         _locationGenerator = new StubLocationGenerator();
-        _mockItemGenerator = new Mock<ItemGenerator>();
 
         var testPlayer = new Character
         {
@@ -67,13 +65,22 @@ public class ExplorationServiceTests
         };
         _mockGameState.Setup(g => g.Player).Returns(testPlayer);
         _mockGameState.Setup(g => g.CurrentLocation).Returns("Test Town");
+        _mockSaveGameService.Setup(s => s.GetCurrentSave()).Returns(new SaveGame
+        {
+            Character = testPlayer,
+            DroppedItemsAtLocations = new Dictionary<string, List<Item>>()
+        });
+
+        // Mock GetDroppedItemsQuery to return empty list
+        _mockMediator.Setup(m => m.Send(It.IsAny<GetDroppedItemsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GetDroppedItemsResult { Items = new List<Item>() });
 
         _service = new ExplorationService(
             _mockMediator.Object,
             _mockGameState.Object,
             _mockSaveGameService.Object,
             _locationGenerator,
-            _mockItemGenerator.Object);
+            itemGenerator: null);
     }
 
     [Fact]

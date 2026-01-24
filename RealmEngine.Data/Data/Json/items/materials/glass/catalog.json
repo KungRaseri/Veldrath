@@ -1,11 +1,13 @@
 {
-  "version": "5.1",
-  "type": "item_catalog",
-  "lastUpdated": "2026-01-22",
-  "description": "Glass material items that drop as loot and reference glass properties.",
-  "categories": [
-    {
-      "category": "glass",
+  "metadata": {
+    "description": "Glass material items that drop as loot and reference glass properties.",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "item_catalog",
+    "totalItems": 5
+  },
+  "material_types": {
+    "glass": {
       "items": [
         {
           "name": "Glass Shard",
@@ -39,5 +41,5 @@
         }
       ]
     }
-  ]
+  }
 }

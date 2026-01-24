@@ -1,11 +1,13 @@
 {
-  "version": "5.1",
-  "type": "item_catalog",
-  "lastUpdated": "2026-01-22",
-  "description": "Ice material items that drop as loot and reference ice properties. Magically preserved to never melt.",
-  "categories": [
-    {
-      "category": "ice",
+  "metadata": {
+    "description": "Ice material items that drop as loot and reference ice properties. Magically preserved to never melt.",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "item_catalog",
+    "totalItems": 6
+  },
+  "material_types": {
+    "ice": {
       "items": [
         {
           "name": "Frozen Water",
@@ -45,5 +47,5 @@
         }
       ]
     }
-  ]
+  }
 }

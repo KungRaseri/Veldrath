@@ -123,7 +123,7 @@
         }
       },
       {
-        "classRef": "@classes/mage:Sorcerer",
+        "classRef": "@classes/mage:wizard",
         "multipliers": {
           "strengthGrowth": 0.6,
           "constitutionGrowth": 0.7,
@@ -134,7 +134,7 @@
         }
       },
       {
-        "classRef": "@classes/mage:Warlock",
+        "classRef": "@classes/mage:necromancer",
         "multipliers": {
           "strengthGrowth": 0.7,
           "constitutionGrowth": 0.8,
@@ -156,7 +156,7 @@
         }
       },
       {
-        "classRef": "@classes/cleric:Templar",
+        "classRef": "@classes/cleric:paladin",
         "multipliers": {
           "strengthGrowth": 1.0,
           "constitutionGrowth": 1.1,
@@ -200,7 +200,7 @@
         }
       },
       {
-        "classRef": "@classes/ranger:Archer",
+        "classRef": "@classes/ranger:hunter",
         "multipliers": {
           "strengthGrowth": 0.9,
           "constitutionGrowth": 0.9,
