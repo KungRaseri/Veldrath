@@ -557,10 +557,74 @@ Map traversal, location discovery, and fast travel.
 - `GetLocationDetailsQuery` - Get location information
 - `GetNearbyLocationsQuery` - Adjacent explorable areas
 
+**Domain Service (ExplorationService):**
+- `ExploreAsync()` → `ExplorationResult` - Perform exploration at current location (60% combat, 40% peaceful)
+- `GetAvailableLocations()` → `TravelResult` - Get locations available for travel
+- `TravelToLocation(string locationName)` → `TravelResult` - Travel to specific location
+- `RecoverDroppedItems(string location)` → `bool` - Recover items dropped at location
+- `GetKnownLocationsAsync()` → `IReadOnlyList<Location>` - Get all discovered locations
+
+**Result DTOs:**
+
+*ExplorationResult*
+- `Success` (bool) - Operation succeeded
+- `CombatEncounter` (bool) - True if combat triggered (60% chance)
+- `CurrentLocation` (string) - Current location name
+- `XpGained` (int) - Experience reward (10-30 for peaceful)
+- `GoldGained` (int) - Gold reward (5-25 for peaceful)
+- `ItemFound` (Item?) - Optional item loot (30% chance)
+- `LeveledUp` (bool) - Player leveled up from XP
+- `NewLevel` (int?) - New level if leveled up
+- `ErrorMessage` (string?) - Error details if failed
+
+*TravelResult*
+- `Success` (bool) - Operation succeeded
+- `CurrentLocation` (string) - Current location name
+- `AvailableLocations` (List<Location>) - Locations available for travel
+- `DroppedItemsAtLocation` (List<Item>) - Items dropped at this location
+- `ErrorMessage` (string?) - Error details if failed
+
 **Key Properties:**
 - `LocationId`, `LocationName`, `LocationType`
 - `IsDiscovered`, `IsFastTravelPoint`
 - `AdjacentLocations`, `RequiredLevel`
+
+**Integration Example:**
+```csharp
+// Explore current location
+var result = await _explorationService.ExploreAsync();
+
+if (result.CombatEncounter)
+{
+    InitiateCombat(result.CurrentLocation);
+}
+else
+{
+    ShowRewards($"+{result.XpGained} XP, +{result.GoldGained} gold");
+    if (result.ItemFound != null)
+    {
+        ShowItemFound(result.ItemFound);
+    }
+    if (result.LeveledUp)
+    {
+        ShowLevelUp(result.NewLevel.Value);
+    }
+}
+
+// Get available travel destinations
+var locations = await _explorationService.GetAvailableLocations();
+var chosen = ShowLocationMenu(locations.AvailableLocations);
+
+// Travel to chosen location
+var travelResult = await _explorationService.TravelToLocation(chosen);
+if (travelResult.DroppedItemsAtLocation.Any())
+{
+    if (ConfirmRecovery($"Found {travelResult.DroppedItemsAtLocation.Count} dropped items!"))
+    {
+        _explorationService.RecoverDroppedItems(travelResult.CurrentLocation);
+    }
+}
+```
 
 ---
 
@@ -581,48 +645,114 @@ Track player accomplishments and milestones.
 
 ---
 
-### 21. Death System ✅
-Handle character death, respawn, and penalties.
+### 21. Death & Respawn System ✅
+Handle character death, respawn mechanics, and difficulty-based penalties.
 
 **Commands:**
-- `ProcessDeathCommand` - Handle death consequences
-- `RespawnCommand` - Revive character at checkpoint
-- `ApplyDeathPenaltyCommand` - XP loss, item drops, etc.
+- `HandlePlayerDeathCommand` - Process death, calculate penalties, handle permadeath
+- `RespawnCommand` - Revive character at respawn location with stat restoration
 
 **Queries:**
-- `GetDeathPenaltyQuery` - Calculate death consequences
-- `GetRespawnLocationQuery` - Determine spawn point
+- `GetRespawnLocationQuery` - Get available respawn points (Hub Town + discovered safe zones)
+
+**Respawn Mechanics:**
+- **Location Selection**: Smart location based on death region (Hub Town default)
+- **Safe Zones**: Discovered towns, villages, and sanctuaries become respawn points
+- **Health/Mana Restoration**: 100% on Easy/Normal, 75% on Expert+
+- **Cooldowns**: 0-5 seconds based on difficulty
+- **Resurrection Sickness**: Debuff duration scales with difficulty and death count
+
+**Death Penalties (Difficulty-Based):**
+- **Easy**: 5% gold loss, 0% XP loss, no item drops
+- **Normal**: 10% gold loss, 5% XP loss, no item drops
+- **Hard**: 15% gold loss, 10% XP loss, 25% chance to drop items
+- **Expert/Ironman**: 20% gold loss, 15% XP loss, 50% chance to drop items
+- **Permadeath/Apocalypse**: Character deleted, Hall of Fame entry created
 
 **Key Properties:**
-- `IsDead`, `DeathCount`, `LastDeathTime`
-- `DeathPenalty` (XP loss, durability loss, etc.)
-- `RespawnPoint`, `SoulLocation`
+- `IsDead`, `DeathCount`, `LastDeathTime`, `LastDeathLocation`
+- `DeathPenalty` (gold/XP loss, item drops), `HallOfFameEntry` (for permadeath)
+- `RespawnLocation`, `ResurrectionSicknessStacks`
+
+**Integration Example:**
+```csharp
+// Get available respawn points
+var locations = await _mediator.Send(new GetRespawnLocationQuery());
+ShowRespawnMenu(locations.AvailableLocations);
+
+// Respawn player at chosen location
+var result = await _mediator.Send(new RespawnCommand 
+{ 
+    Player = currentCharacter,
+    RespawnLocation = "Sanctuary of Light" // Optional, defaults to Hub Town
+});
+TeleportPlayer(result.RespawnLocation);
+UpdateHealthBar(result.Health, currentCharacter.MaxHealth);
+```
 
 ---
 
-### 22. Difficulty System 📋
+### 22. Difficulty System ✅
 Adjustable challenge levels with enemy scaling, death penalties, and reward multipliers.
 
 **Commands:**
-- `SetDifficultyCommand` - Change difficulty level
-- `ApplyDifficultyModifiersCommand` - Apply scaling to enemies
+- `SetDifficultyCommand` - Change difficulty level, initializes apocalypse timer if applicable
 
 **Queries:**
-- `GetDifficultySettingsQuery` - View current difficulty
-- `GetAvailableDifficultiesQuery` - List all difficulty modes
-- `GetDifficultyModifiersQuery` - View scaling multipliers
+- `GetDifficultySettingsQuery` - View current difficulty settings with all multipliers
+- `GetAvailableDifficultiesQuery` - List all 7 difficulty modes with current selection
 
-**Difficulty Modes:**
-- **Casual**: 0.75× enemy strength, no death penalty, story focus
-- **Normal**: 1.0× enemy strength, moderate penalties, standard rewards
-- **Hard**: 1.5× enemy strength, harsher penalties, +50% rewards
-- **Nightmare**: 2.0× enemy strength, permadeath, +100% rewards
-- **Apocalypse**: 3.0× enemy strength, permadeath + time pressure, +200% rewards
+**Difficulty Levels (7 Total):**
+
+| Difficulty | Enemy Dmg | Enemy HP | Player Dmg | Gold/XP | Death Penalty | Special |
+|------------|-----------|----------|------------|---------|---------------|--------|
+| **Easy** | 0.75× | 0.75× | 1.25× | 1.25× | 5% gold, 0% XP | Manual save enabled |
+| **Normal** | 1.0× | 1.0× | 1.0× | 1.0× | 10% gold, 5% XP | Manual save enabled |
+| **Hard** | 1.25× | 1.25× | 0.9× | 1.25× | 15% gold, 10% XP | Manual save enabled |
+| **Expert** | 1.5× | 1.5× | 0.8× | 1.5× | 20% gold, 15% XP | Manual save enabled |
+| **Ironman** | 1.75× | 1.75× | 0.75× | 1.75× | 20% gold, 15% XP | Auto-save only |
+| **Permadeath** | 2.0× | 2.0× | 0.7× | 2.0× | 100% (character deleted) | Auto-save only, Hall of Fame |
+| **Apocalypse** | 2.5× | 2.5× | 0.6× | 2.5× | 100% (character deleted) | 240-minute time limit, auto-save |
+
+**Domain Service (DifficultyService):**
+- `CalculatePlayerDamage()` - Adjust player damage based on difficulty
+- `CalculateEnemyDamage()` - Adjust enemy damage based on difficulty
+- `CalculateEnemyHealth()` - Scale enemy HP based on difficulty
+- `CalculateGoldReward()` - Apply difficulty bonus to gold drops
+- `CalculateXPReward()` - Apply difficulty bonus to XP gains
+- `CalculateGoldLoss()` - Calculate gold penalty on death
+- `CalculateXPLoss()` - Calculate XP penalty on death
+- `CanManualSave()` - Check if manual saving is allowed
+- `IsPermadeath()` - Check if difficulty has permadeath
+- `IsApocalypseMode()` - Check if apocalypse timer is active
 
 **Key Properties:**
-- `DifficultyLevel`, `EnemyHealthMultiplier`, `EnemyDamageMultiplier`
-- `DeathPenaltyType`, `RewardMultiplier`
-- `IsPermadeathEnabled`, `TimePressureEnabled`
+- `Name`, `PlayerDamageMultiplier`, `EnemyDamageMultiplier`, `EnemyHealthMultiplier`
+- `GoldRewardMultiplier`, `XPRewardMultiplier`
+- `GoldLossPercentage`, `XPLossPercentage`, `ItemDropChance`
+- `AutoSaveOnly`, `IsPermadeath`, `ApocalypseTimeLimitMinutes`
+
+**Integration Example:**
+```csharp
+// Get available difficulties for menu
+var result = await _mediator.Send(new GetAvailableDifficultiesQuery());
+foreach (var difficulty in result.Difficulties) 
+{
+    AddMenuOption(difficulty.Name, difficulty.Description);
+}
+
+// Set difficulty and handle apocalypse mode
+var setResult = await _mediator.Send(new SetDifficultyCommand { DifficultyName = "Hard" });
+if (setResult.ApocalypseModeEnabled) 
+{
+    ShowTimerUI(setResult.ApocalypseTimeLimitMinutes.Value);
+}
+
+// Calculate adjusted values using DifficultyService
+var difficulty = await _mediator.Send(new GetDifficultySettingsQuery());
+var adjustedDamage = _difficultyService.CalculateEnemyDamage(baseDamage, difficulty.Settings);
+var goldDrop = _difficultyService.CalculateGoldReward(baseGold, difficulty.Settings);
+```
 
 ---
 
@@ -654,15 +784,137 @@ Persistent game state management with LiteDB.
 **Queries:**
 - `GetAllSavesQuery` - List all save files
 - `GetSaveDetailsQuery` - Metadata for specific save
+- `GetMostRecentSaveQuery` - Get most recently saved game
+
+**Domain Service (LoadGameService):**
+- `LoadGame(int saveId)` → `LoadGameResult` - Load saved game and restore apocalypse timer
+- `GetAllSaves()` → `List<SaveGame>` - Get all available save games for menu display
+
+**Result DTOs:**
+
+*LoadGameResult*
+- `Success` (bool) - Operation succeeded
+- `SaveGame` (SaveGame?) - Loaded save game data
+- `ApocalypseMode` (bool) - True if apocalypse mode is active
+- `ApocalypseTimeExpired` (bool) - True if timer expired while away
+- `ApocalypseRemainingMinutes` (int?) - Minutes remaining on apocalypse timer
+- `ErrorMessage` (string?) - Error details if failed
 
 **Key Properties:**
 - `SaveId`, `SaveName`, `SaveDate`
 - `Character` (full state), `Playtime`
 - `Location`, `QuestProgress`, `InventorySnapshot`
+- `ApocalypseMode`, `ApocalypseStartTime`, `ApocalypseBonusMinutes`
+
+**Integration Example:**
+```csharp
+// Get available saves for menu
+var saves = _loadGameService.GetAllSaves();
+DisplaySaveMenu(saves);
+
+// User selects save #3
+var result = _loadGameService.LoadGame(selectedSaveId: 3);
+
+if (result.Success)
+{
+    LoadCharacter(result.SaveGame.Character);
+    
+    if (result.ApocalypseMode)
+    {
+        if (result.ApocalypseTimeExpired)
+        {
+            ShowGameOver("Time ran out!");
+        }
+        else
+        {
+            ShowApocalypseTimer(result.ApocalypseRemainingMinutes.Value);
+        }
+    }
+}
+else
+{
+    ShowError(result.ErrorMessage);
+}
+```
 
 ---
 
-### 25. New Game Plus 📋
+### 25. Procedural Generation System ✅
+CQRS wrappers for procedural content generation (items, enemies, NPCs).
+
+**Commands:**
+- `GenerateItemCommand` - Generate items by category or budget
+- `GenerateEnemyCommand` - Generate enemies with optional level scaling
+- `GenerateNPCCommand` - Generate NPCs by category with traits
+
+**Generation Modes:**
+
+**Items:**
+- **Budget-Based**: `BudgetRequest` with `MinBudget`/`MaxBudget`, `AllowedTypes`, `ForbiddenMaterials`
+- **Category-Based**: Direct category like "weapons/swords", "armor/light-armor", "consumables/potions"
+- **Hydration**: Optional full property resolution (default: true)
+
+**Enemies:**
+- **Category-Based**: "beasts", "undead", "humanoid", "elemental", "demons"
+- **Level Scaling**: Optional level parameter applies scaling (MaxHealth × Level)
+- **Hydration**: Optional full property resolution
+
+**NPCs:**
+- **Category-Based**: "merchants", "guards", "quest-givers", "trainers"
+- **Traits**: Procedural personality traits, dialogue, inventory
+- **Hydration**: Optional full property resolution
+
+**Integration Example:**
+```csharp
+// Generate loot for chest (budget-based)
+var lootResult = await _mediator.Send(new GenerateItemCommand 
+{
+    BudgetRequest = new BudgetItemRequest 
+    {
+        MinBudget = 500,
+        MaxBudget = 1000,
+        AllowedTypes = new[] { "weapons", "armor" },
+        ForbiddenMaterials = new[] { "wood", "leather" }
+    }
+});
+if (lootResult.Success) 
+{
+    AddToChest(lootResult.Item);
+}
+
+// Generate enemy encounter (level-scaled)
+var enemyResult = await _mediator.Send(new GenerateEnemyCommand 
+{
+    Category = "undead",
+    Level = playerLevel + 2,
+    Hydrate = true
+});
+if (enemyResult.Success) 
+{
+    SpawnEnemy(enemyResult.Enemy);
+}
+
+// Generate merchant NPC
+var npcResult = await _mediator.Send(new GenerateNPCCommand 
+{
+    Category = "merchants",
+    Hydrate = true
+});
+if (npcResult.Success) 
+{
+    SpawnNPC(npcResult.NPC);
+    PopulateMerchantInventory(npcResult.NPC);
+}
+```
+
+**Key Properties:**
+- **GenerateItemResult**: `Success`, `Item` (with stats, materials, enchantments), `ErrorMessage`
+- **GenerateEnemyResult**: `Success`, `Enemy` (with abilities, stats, loot table), `ErrorMessage`
+- **GenerateNPCResult**: `Success`, `NPC` (with traits, inventory, dialogue), `ErrorMessage`
+
+---
+
+### 26. New Game Plus 📋
 Start new playthrough with bonuses and increased difficulty after completing the game.
 
 **Commands:** (Planned)

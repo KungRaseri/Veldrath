@@ -12,13 +12,13 @@ namespace RealmEngine.Core.Features.Exploration;
 
 /// <summary>
 /// Service for handling exploration, travel, and location-based events.
+/// Pure domain logic - UI handled by Godot.
 /// </summary>
 public class ExplorationService
 {
     private readonly IMediator _mediator;
     private readonly GameStateService _gameState;
     private readonly SaveGameService _saveGameService;
-    private readonly IGameUI _console;
     private readonly LocationGenerator _locationGenerator;
     private readonly ItemGenerator? _itemGenerator;
 
@@ -28,7 +28,7 @@ public class ExplorationService
     /// <summary>
     /// Initializes a new instance of the <see cref="ExplorationService"/> class for mocking.
     /// </summary>
-    protected ExplorationService() { _mediator = null!; _gameState = null!; _saveGameService = null!; _console = null!; _locationGenerator = null!; }
+    protected ExplorationService() { _mediator = null!; _gameState = null!; _saveGameService = null!; _locationGenerator = null!; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExplorationService"/> class.
@@ -36,15 +36,13 @@ public class ExplorationService
     /// <param name="mediator">The mediator.</param>
     /// <param name="gameState">The game state service.</param>
     /// <param name="saveGameService">The save game service.</param>
-    /// <param name="console">The game UI.</param>
     /// <param name="locationGenerator">The location generator.</param>
     /// <param name="itemGenerator">The item generator (optional).</param>
-    public ExplorationService(IMediator mediator, GameStateService gameState, SaveGameService saveGameService, IGameUI console, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null)
+    public ExplorationService(IMediator mediator, GameStateService gameState, SaveGameService saveGameService, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null)
     {
         _mediator = mediator;
         _gameState = gameState;
         _saveGameService = saveGameService;
-        _console = console;
         _locationGenerator = locationGenerator;
         _itemGenerator = itemGenerator;
     }
@@ -74,47 +72,45 @@ public class ExplorationService
 
     /// <summary>
     /// Perform exploration at the current location.
-    /// Returns true if combat should be initiated.
+    /// Godot handles displaying results and initiating combat.
     /// </summary>
-    public async Task<bool> ExploreAsync()
+    /// <returns>Exploration result with combat encounter flag, rewards, and loot.</returns>
+    public async Task<ExplorationResult> ExploreAsync()
     {
         var player = _gameState.Player;
 
-        _console.ShowInfo($"Exploring {_gameState.CurrentLocation}...");
-
-        // Simulate exploration
-        _console.ShowMessage("Exploring...");
-        await Task.Delay(500); // Brief pause for immersion
-
         // 60% chance of combat encounter, 40% chance of peaceful exploration
         var encounterRoll = Random.Shared.Next(100);
+        bool combatEncounter = encounterRoll < 60;
 
-        if (encounterRoll < 60)
+        if (combatEncounter)
         {
-            // Combat encounter!
-            _console.ShowWarning("You encounter an enemy!");
-            await Task.Delay(300);
-            return true; // Indicates combat should start
+            return new ExplorationResult
+            {
+                Success = true,
+                CombatEncounter = true,
+                CurrentLocation = _gameState.CurrentLocation
+            };
         }
 
         // Peaceful exploration - gain some XP
         var xpGained = Random.Shared.Next(10, 30);
+        var oldLevel = player.Level;
         player.GainExperience(xpGained);
+        bool leveledUp = player.Level > oldLevel;
 
-        // Check if leveled up
-        var newLevel = player.Level;
-        if (newLevel > player.Level - 1)
+        if (leveledUp)
         {
-            await _mediator.Publish(new PlayerLeveledUp(player.Name, newLevel));
+            await _mediator.Publish(new PlayerLeveledUp(player.Name, player.Level));
         }
-
-        _console.ShowSuccess($"Gained {xpGained} XP!");
 
         // Find gold
         var goldFound = Random.Shared.Next(5, 25);
         player.Gold += goldFound;
         await _mediator.Publish(new GoldGained(player.Name, goldFound));
 
+        Item? itemFound = null;
+        
         // Random chance to find an item (30% chance)
         if (Random.Shared.Next(100) < 30)
         {
@@ -142,19 +138,31 @@ public class ExplorationService
                     if (item != null)
                     {
                         player.Inventory.Add(item);
-                        _console.ShowSuccess($"Found: {item.Name}!");
+                        itemFound = item;
                     }
                 }
             }
         }
 
-        return false; // No combat
+        return new ExplorationResult
+        {
+            Success = true,
+            CombatEncounter = false,
+            CurrentLocation = _gameState.CurrentLocation,
+            XpGained = xpGained,
+            GoldGained = goldFound,
+            ItemFound = itemFound,
+            LeveledUp = leveledUp,
+            NewLevel = leveledUp ? player.Level : null
+        };
     }
 
     /// <summary>
-    /// Allow player to travel to a different location.
+    /// Get available travel locations.
+    /// Godot uses this to display location selection menu.
     /// </summary>
-    public async Task TravelToLocation()
+    /// <returns>Available locations and dropped items info.</returns>
+    public async Task<TravelResult> GetAvailableLocations()
     {
         await InitializeLocationsAsync();
         
@@ -162,54 +170,82 @@ public class ExplorationService
             .Where(loc => loc.Name != _gameState.CurrentLocation)
             .ToList();
 
-        if (!availableLocations.Any())
+        return new TravelResult
         {
-            _console.ShowInfo("No other locations available.");
-            return;
-        }
-
-        var locationNames = availableLocations.Select(l => l.Name).ToArray();
-        var choice = _console.ShowMenu(
-            $"Current Location: {_gameState.CurrentLocation}\n\nWhere would you like to travel?",
-            locationNames.Concat(new[] { "Cancel" }).ToArray()
-        );
-
-        if (choice == "Cancel")
-            return;
-
-        _gameState.UpdateLocation(choice);
-
-        _console.ShowSuccess($"Traveled to {_gameState.CurrentLocation}");
-
-        // Check for dropped items at the new location
-        await CheckForDroppedItemsAsync(choice);
+            Success = true,
+            CurrentLocation = _gameState.CurrentLocation,
+            AvailableLocations = availableLocations
+        };
     }
 
     /// <summary>
-    /// Check for dropped items at the current location and allow player to recover them.
+    /// Travel to a specific location.
+    /// Godot handles location selection UI.
     /// </summary>
-    private async Task CheckForDroppedItemsAsync(string location)
+    /// <param name="locationName">The location to travel to.</param>
+    /// <returns>Travel result with dropped items at new location.</returns>
+    public async Task<TravelResult> TravelToLocation(string locationName)
+    {
+        await InitializeLocationsAsync();
+        
+        var availableLocations = _knownLocations
+            .Where(loc => loc.Name != _gameState.CurrentLocation)
+            .ToList();
+
+        var destination = availableLocations.FirstOrDefault(l => l.Name == locationName);
+        
+        if (destination == null)
+        {
+            return new TravelResult
+            {
+                Success = false,
+                ErrorMessage = "Location not found or already at that location.",
+                CurrentLocation = _gameState.CurrentLocation
+            };
+        }
+
+        _gameState.UpdateLocation(locationName);
+
+        // Check for dropped items at the new location
+        var droppedItems = await CheckForDroppedItemsAsync(locationName);
+
+        return new TravelResult
+        {
+            Success = true,
+            CurrentLocation = locationName,
+            AvailableLocations = availableLocations,
+            DroppedItemsAtLocation = droppedItems
+        };
+    }
+
+    /// <summary>
+    /// Check for dropped items at a specific location.
+    /// </summary>
+    /// <param name="location">The location to check.</param>
+    /// <returns>List of dropped items at location.</returns>
+    private async Task<List<Item>> CheckForDroppedItemsAsync(string location)
     {
         var result = await _mediator.Send(new GetDroppedItemsQuery { Location = location });
+        return result.HasItems ? result.Items : new List<Item>();
+    }
 
-        if (result.HasItems)
+    /// <summary>
+    /// Recover dropped items at current location.
+    /// Godot handles confirmation UI.
+    /// </summary>
+    /// <param name="location">The location to recover items from.</param>
+    /// <returns>True if items were recovered.</returns>
+    public bool RecoverDroppedItems(string location)
+    {
+        var saveGame = _saveGameService.GetCurrentSave();
+        if (saveGame != null && saveGame.Character != null && saveGame.DroppedItemsAtLocations.ContainsKey(location))
         {
-            _console.ShowWarning($"\n⚠️  You see your dropped items here! ({result.Items.Count} items)");
-
-            if (_console.Confirm("Retrieve your items?"))
-            {
-                // Recover items
-                var saveGame = _saveGameService.GetCurrentSave();
-                if (saveGame != null && saveGame.Character != null)
-                {
-                    saveGame.Character.Inventory.AddRange(result.Items);
-                    saveGame.DroppedItemsAtLocations.Remove(location);
-
-                    _console.ShowSuccess($"Recovered {result.Items.Count} items!");
-                    await Task.Delay(1500);
-                }
-            }
+            var items = saveGame.DroppedItemsAtLocations[location];
+            saveGame.Character.Inventory.AddRange(items);
+            saveGame.DroppedItemsAtLocations.Remove(location);
+            return true;
         }
+        return false;
     }
 
     /// <summary>
@@ -220,17 +256,58 @@ public class ExplorationService
         await InitializeLocationsAsync();
         return _knownLocations.AsReadOnly();
     }
+}
 
-    private static string GetRarityColor(ItemRarity rarity)
-    {
-        return rarity switch
-        {
-            ItemRarity.Common => "[white]",
-            ItemRarity.Uncommon => "[green]",
-            ItemRarity.Rare => "[blue]",
-            ItemRarity.Epic => "[purple]",
-            ItemRarity.Legendary => "[orange1]",
-            _ => "[grey]"
-        };
-    }
+/// <summary>
+/// Result of an exploration action.
+/// </summary>
+public class ExplorationResult
+{
+    /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
+    public bool Success { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether combat was encountered.</summary>
+    public bool CombatEncounter { get; set; }
+
+    /// <summary>Gets or sets the current location name.</summary>
+    public string CurrentLocation { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the XP gained from exploration.</summary>
+    public int XpGained { get; set; }
+
+    /// <summary>Gets or sets the gold gained from exploration.</summary>
+    public int GoldGained { get; set; }
+
+    /// <summary>Gets or sets the item found during exploration.</summary>
+    public Item? ItemFound { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the player leveled up.</summary>
+    public bool LeveledUp { get; set; }
+
+    /// <summary>Gets or sets the new level if leveled up.</summary>
+    public int? NewLevel { get; set; }
+
+    /// <summary>Gets or sets the error message if failed.</summary>
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// Result of a travel operation.
+/// </summary>
+public class TravelResult
+{
+    /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
+    public bool Success { get; set; }
+
+    /// <summary>Gets or sets the current location name.</summary>
+    public string CurrentLocation { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the available locations to travel to.</summary>
+    public List<Location> AvailableLocations { get; set; } = new();
+
+    /// <summary>Gets or sets dropped items at the location.</summary>
+    public List<Item> DroppedItemsAtLocation { get; set; } = new();
+
+    /// <summary>Gets or sets the error message if failed.</summary>
+    public string? ErrorMessage { get; set; }
 }

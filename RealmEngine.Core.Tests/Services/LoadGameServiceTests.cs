@@ -13,196 +13,125 @@ public class LoadGameServiceTests
 {
     private readonly Mock<SaveGameService> _mockSaveGameService;
     private readonly Mock<IApocalypseTimer> _mockApocalypseTimer;
-    private readonly Mock<IGameUI> _mockGameUI;
     private readonly LoadGameService _service;
 
     public LoadGameServiceTests()
     {
         _mockSaveGameService = new Mock<SaveGameService>();
         _mockApocalypseTimer = new Mock<IApocalypseTimer>();
-        _mockGameUI = new Mock<IGameUI>();
         _service = new LoadGameService(
             _mockSaveGameService.Object,
-            _mockApocalypseTimer.Object,
-            _mockGameUI.Object);
+            _mockApocalypseTimer.Object);
     }
 
     [Fact]
-    public async Task LoadGameAsync_Should_Return_Null_When_No_Saves_Exist()
+    public void LoadGame_Should_Return_Error_When_Save_Not_Found()
     {
         // Arrange
-        _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(new List<SaveGame>());
+        _mockSaveGameService.Setup(s => s.LoadGame(It.IsAny<string>())).Returns((SaveGame?)null);
 
         // Act
-        var result = await _service.LoadGameAsync();
+        var result = _service.LoadGame(999);
 
         // Assert
-        result.SelectedSave.Should().BeNull();
-        result.LoadSuccessful.Should().BeFalse();
-        _mockGameUI.Verify(ui => ui.ShowWarning("No saved games found!"), Times.Once);
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+        result.SaveGame.Should().BeNull();
     }
 
     [Fact]
-    public async Task LoadGameAsync_Should_Display_Available_Saves()
+    public void LoadGame_Should_Return_SaveGame_When_Found()
+    {
+        // Arrange
+        var testSave = new SaveGame
+        {
+            Id = "1",
+            Character = new Character { Name = "TestHero", Level = 5, ClassName = "Warrior" },
+            SaveDate = DateTime.Now
+        };
+        _mockSaveGameService.Setup(s => s.LoadGame("1")).Returns(testSave);
+
+        // Act
+        var result = _service.LoadGame(1);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.SaveGame.Should().NotBeNull();
+        result.SaveGame!.Character.Name.Should().Be("TestHero");
+        result.ApocalypseMode.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadGame_Should_Restore_Apocalypse_Timer_When_ApocalypseMode_Active()
+    {
+        // Arrange
+        var testSave = new SaveGame
+        {
+            Id = "1",
+            Character = new Character { Name = "TestHero", Level = 10, ClassName = "Mage" },
+            ApocalypseMode = true,
+            ApocalypseStartTime = DateTime.Now.AddMinutes(-30),
+            ApocalypseBonusMinutes = 10
+        };
+        _mockSaveGameService.Setup(s => s.LoadGame("1")).Returns(testSave);
+        _mockApocalypseTimer.Setup(t => t.IsExpired()).Returns(false);
+        _mockApocalypseTimer.Setup(t => t.GetRemainingMinutes()).Returns(220);
+
+        // Act
+        var result = _service.LoadGame(1);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.ApocalypseMode.Should().BeTrue();
+        result.ApocalypseTimeExpired.Should().BeFalse();
+        result.ApocalypseRemainingMinutes.Should().Be(220);
+        _mockApocalypseTimer.Verify(t => t.StartFromSave(
+            testSave.ApocalypseStartTime.Value,
+            testSave.ApocalypseBonusMinutes), Times.Once);
+    }
+
+    [Fact]
+    public void LoadGame_Should_Detect_Expired_Apocalypse_Timer()
+    {
+        // Arrange
+        var testSave = new SaveGame
+        {
+            Id = "1",
+            Character = new Character { Name = "TestHero", Level = 15, ClassName = "Rogue" },
+            ApocalypseMode = true,
+            ApocalypseStartTime = DateTime.Now.AddMinutes(-300), // 5 hours ago
+            ApocalypseBonusMinutes = 0
+        };
+        _mockSaveGameService.Setup(s => s.LoadGame("1")).Returns(testSave);
+        _mockApocalypseTimer.Setup(t => t.IsExpired()).Returns(true);
+
+        // Act
+        var result = _service.LoadGame(1);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.ApocalypseMode.Should().BeTrue();
+        result.ApocalypseTimeExpired.Should().BeTrue();
+        result.ApocalypseRemainingMinutes.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetAllSaves_Should_Return_All_Save_Games()
     {
         // Arrange
         var saves = new List<SaveGame>
         {
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero1", ClassName = "Warrior", Level = 10 },
-                SaveDate = DateTime.Now.AddHours(-5),
-                PlayTimeMinutes = 120
-            },
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero2", ClassName = "Mage", Level = 15 },
-                SaveDate = DateTime.Now.AddDays(-2),
-                PlayTimeMinutes = 300
-            }
+            new() { Id = "1", Character = new Character { Name = "Hero1", Level = 5 } },
+            new() { Id = "2", Character = new Character { Name = "Hero2", Level = 10 } }
         };
         _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(saves);
 
-        // Mock user selecting "Back to Menu"
-        _mockGameUI.Setup(ui => ui.ShowMenu(It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns("Back to Menu");
-
         // Act
-        var result = await _service.LoadGameAsync();
+        var result = _service.GetAllSaves();
 
         // Assert
-        _mockGameUI.Verify(ui => ui.ShowBanner("Load Game", It.IsAny<string>()), Times.Once);
-        _mockGameUI.Verify(ui => ui.ShowTable(
-            It.IsAny<string>(),
-            It.IsAny<string[]>(),
-            It.IsAny<List<string[]>>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task LoadGameAsync_Should_Return_Null_When_User_Cancels()
-    {
-        // Arrange
-        var saves = new List<SaveGame>
-        {
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero1", ClassName = "Warrior", Level = 10 },
-                SaveDate = DateTime.Now,
-                PlayTimeMinutes = 60
-            }
-        };
-        _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(saves);
-        _mockGameUI.Setup(ui => ui.ShowMenu(It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns("Back to Menu");
-
-        // Act
-        var result = await _service.LoadGameAsync();
-
-        // Assert
-        result.SelectedSave.Should().BeNull();
-        result.LoadSuccessful.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task LoadGameAsync_Should_Return_Selected_Save()
-    {
-        // Arrange
-        var saves = new List<SaveGame>
-        {
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero1", ClassName = "Warrior", Level = 10 },
-                SaveDate = DateTime.Now,
-                PlayTimeMinutes = 60
-            }
-        };
-        _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(saves);
-        _mockGameUI.Setup(ui => ui.ShowMenu(It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns("Hero1 - Level 10 Warrior");
-
-        // Act
-        var result = await _service.LoadGameAsync();
-
-        // Assert
-        result.SelectedSave.Should().NotBeNull();
-        result.LoadSuccessful.Should().BeTrue();
-        result.SelectedSave!.Character.Name.Should().Be("Hero1");
-    }
-
-    [Fact]
-    public async Task LoadGameAsync_Should_Display_Welcome_Back_Message()
-    {
-        // Arrange
-        var saves = new List<SaveGame>
-        {
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero1", ClassName = "Warrior", Level = 10 },
-                SaveDate = DateTime.Now,
-                PlayTimeMinutes = 60
-            }
-        };
-        _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(saves);
-        _mockGameUI.Setup(ui => ui.ShowMenu(It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns("Hero1 - Level 10 Warrior");
-
-        // Act
-        var result = await _service.LoadGameAsync();
-
-        // Assert
-        _mockGameUI.Verify(ui => ui.ShowSuccess(It.Is<string>(s => s.Contains("Welcome back, Hero1"))), Times.Once);
-    }
-
-    [Fact]
-    public async Task LoadGameAsync_Should_Navigate_To_Delete_Menu()
-    {
-        // Arrange
-        var saves = new List<SaveGame>
-        {
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero1", ClassName = "Warrior", Level = 10 },
-                SaveDate = DateTime.Now,
-                PlayTimeMinutes = 60
-            }
-        };
-        _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(saves);
-        _mockGameUI.Setup(ui => ui.ShowMenu(It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns("Delete a Save");
-
-        // Act
-        var result = await _service.LoadGameAsync();
-
-        // Assert
-        result.SelectedSave.Should().BeNull("should return null after navigating to delete menu");
-        result.LoadSuccessful.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task LoadGameAsync_Should_Handle_Apocalypse_Timer_Restoration()
-    {
-        // Arrange
-        var saves = new List<SaveGame>
-        {
-            new SaveGame
-            {
-                Character = new Character { Name = "Hero1", ClassName = "Warrior", Level = 10 },
-                SaveDate = DateTime.Now,
-                PlayTimeMinutes = 60,
-                ApocalypseMode = true,
-                ApocalypseStartTime = DateTime.Now.AddHours(-2)
-            }
-        };
-        _mockSaveGameService.Setup(s => s.GetAllSaves()).Returns(saves);
-        _mockGameUI.Setup(ui => ui.ShowMenu(It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns("Hero1 - Level 10 Warrior");
-
-        // Act
-        var result = await _service.LoadGameAsync();
-
-        // Assert
-        result.SelectedSave.Should().NotBeNull();
-        result.SelectedSave!.ApocalypseMode.Should().BeTrue();
-        // ApocalypseTimer restoration logic is called internally
+        result.Should().HaveCount(2);
+        result[0].Character.Name.Should().Be("Hero1");
+        result[1].Character.Name.Should().Be("Hero2");
     }
 }

@@ -6,187 +6,121 @@ using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.SaveLoad;
 
 /// <summary>
-/// Handles loading saved games and deleting saves.
+/// Handles loading saved games.
+/// Pure domain logic - UI handled by Godot.
 /// </summary>
 public class LoadGameService
 {
     private readonly SaveGameService _saveGameService;
     private readonly IApocalypseTimer _apocalypseTimer;
-    private readonly IGameUI _console;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoadGameService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="apocalypseTimer">The apocalypse timer.</param>
-    /// <param name="console">The game UI console.</param>
-    public LoadGameService(SaveGameService saveGameService, IApocalypseTimer apocalypseTimer, IGameUI console)
+    public LoadGameService(SaveGameService saveGameService, IApocalypseTimer apocalypseTimer)
     {
         _saveGameService = saveGameService;
         _apocalypseTimer = apocalypseTimer;
-        _console = console;
     }
 
     /// <summary>
-    /// Shows the load game menu and returns the selected save.
-    /// Returns null if user cancelled or no saves exist.
+    /// Loads a saved game by ID and restores apocalypse timer if applicable.
+    /// Godot handles save selection UI.
     /// </summary>
-    public async Task<(SaveGame? SelectedSave, bool LoadSuccessful)> LoadGameAsync()
+    /// <param name="saveId">The save game ID to load.</param>
+    /// <returns>Load game result with apocalypse status.</returns>
+    public LoadGameResult LoadGame(int saveId)
     {
         try
         {
-            var saves = _saveGameService.GetAllSaves();
-
-            if (!saves.Any())
+            var save = _saveGameService.LoadGame(saveId.ToString());
+            
+            if (save == null)
             {
-                _console.ShowWarning("No saved games found!");
-                await Task.Delay(500);
-                return (null, false);
-            }
-
-            _console.Clear();
-            _console.ShowBanner("Load Game", "Select a save to continue your adventure");
-
-            // Display saves in a table
-            var headers = new[] { "Player", "Class", "Level", "Last Played", "Play Time" };
-            var rows = saves.Select(s =>
-            {
-                var timeSinceSave = DateTime.Now - s.SaveDate;
-                var timeAgo = timeSinceSave.TotalHours < 24
-                    ? $"{(int)timeSinceSave.TotalHours}h ago"
-                    : $"{(int)timeSinceSave.TotalDays}d ago";
-
-                var playTime = s.PlayTimeMinutes < 60
-                    ? $"{s.PlayTimeMinutes}m"
-                    : $"{s.PlayTimeMinutes / 60}h {s.PlayTimeMinutes % 60}m";
-
-                return new[]
+                return new LoadGameResult
                 {
-                    s.Character.Name,
-                    s.Character.ClassName,
-                    s.Character.Level.ToString(),
-                    timeAgo,
-                    playTime
+                    Success = false,
+                    ErrorMessage = "Save game not found."
                 };
-            }).ToList();
-
-            _console.ShowTable("Available Saves", headers, rows);
-
-            // Build menu options
-            var menuOptions = saves.Select(s =>
-                $"{s.Character.Name} - Level {s.Character.Level} {s.Character.ClassName}"
-            ).ToList();
-            menuOptions.Add("Delete a Save");
-            menuOptions.Add("Back to Menu");
-
-            var choice = _console.ShowMenu("Select save:", menuOptions.ToArray());
-
-            if (choice == "Back to Menu")
-            {
-                return (null, false);
             }
 
-            if (choice == "Delete a Save")
-            {
-                await DeleteSaveAsync(saves);
-                return (null, false);
-            }
-
-            // Find selected save
-            var selectedIndex = menuOptions.IndexOf(choice);
-            var selectedSave = saves[selectedIndex];
-
-            // Load the save
-            _console.ShowMessage("Loading game...");
-
-            _console.ShowSuccess($"Welcome back, {selectedSave.Character.Name}!");
-            Log.Information("Game loaded for player {PlayerName}", selectedSave.Character.Name);
+            Log.Information("Game loaded for player {PlayerName}", save.Character.Name);
 
             // Restore apocalypse timer if applicable
-            if (selectedSave.ApocalypseMode && selectedSave.ApocalypseStartTime.HasValue)
+            bool timeExpired = false;
+            int? remainingMinutes = null;
+            
+            if (save.ApocalypseMode && save.ApocalypseStartTime.HasValue)
             {
-                _apocalypseTimer.StartFromSave(selectedSave.ApocalypseStartTime.Value, selectedSave.ApocalypseBonusMinutes);
+                _apocalypseTimer.StartFromSave(save.ApocalypseStartTime.Value, save.ApocalypseBonusMinutes);
 
                 // Check if time expired while they were away
                 if (_apocalypseTimer.IsExpired())
                 {
-                    _console.ShowError("Time has run out! The apocalypse occurred while you were gone.");
-                    await Task.Delay(1500);
-                    // Return to GameEngine which will handle the apocalypse game over
-                    return (selectedSave, true);
+                    timeExpired = true;
+                    Log.Warning("Apocalypse time expired for player {PlayerName}", save.Character.Name);
                 }
-
-                // Show time remaining
-                var remaining = _apocalypseTimer.GetRemainingMinutes();
-                _console.ShowWarning($"Apocalypse Mode: {remaining} minutes remaining!");
-
-                if (remaining < 60)
+                else
                 {
-                    _console.ShowError("WARNING: Less than 1 hour remaining!");
+                    remainingMinutes = _apocalypseTimer.GetRemainingMinutes();
+                    Log.Information("Apocalypse timer restored: {Minutes} minutes remaining", remainingMinutes);
                 }
-
-                await Task.Delay(1000);
             }
 
-            await Task.Delay(500);
-
-            return (selectedSave, true);
+            return new LoadGameResult
+            {
+                Success = true,
+                SaveGame = save,
+                ApocalypseMode = save.ApocalypseMode,
+                ApocalypseTimeExpired = timeExpired,
+                ApocalypseRemainingMinutes = remainingMinutes
+            };
         }
         catch (Exception ex)
         {
-            _console.ShowError($"Failed to load game: {ex.Message}");
-            Log.Error(ex, "Failed to load game");
-            await Task.Delay(500);
-            return (null, false);
+            Log.Error(ex, "Failed to load game with ID {SaveId}", saveId);
+            return new LoadGameResult
+            {
+                Success = false,
+                ErrorMessage = $"Failed to load game: {ex.Message}"
+            };
         }
     }
 
     /// <summary>
-    /// Handles save deletion with confirmation.
+    /// Gets all available save games.
+    /// Godot uses this to display save selection menu.
     /// </summary>
-    private async Task DeleteSaveAsync(List<SaveGame> saves)
+    /// <returns>List of all save games.</returns>
+    public List<SaveGame> GetAllSaves()
     {
-        _console.Clear();
-        _console.ShowBanner("Delete Save", "⚠️ This action cannot be undone!");
-
-        var menuOptions = saves.Select(s =>
-            $"{s.Character.Name} - Level {s.Character.Level} {s.Character.ClassName}"
-        ).ToList();
-        menuOptions.Add("Cancel");
-
-        var choice = _console.ShowMenu("Select save to delete:", menuOptions.ToArray());
-
-        if (choice == "Cancel")
-        {
-            await LoadGameAsync(); // Return to load menu
-            return;
-        }
-
-        var selectedIndex = menuOptions.IndexOf(choice);
-        var selectedSave = saves[selectedIndex];
-
-        if (_console.Confirm($"Delete save for {selectedSave.Character.Name}?"))
-        {
-            try
-            {
-                _saveGameService.DeleteSave(selectedSave.Id);
-                _console.ShowSuccess("Save deleted successfully!");
-                Log.Information("Save deleted for player {PlayerName}", selectedSave.Character.Name);
-                await Task.Delay(300);
-
-                // Return to load menu
-                await LoadGameAsync();
-            }
-            catch (Exception ex)
-            {
-                _console.ShowError($"Failed to delete save: {ex.Message}");
-                Log.Error(ex, "Failed to delete save");
-                await Task.Delay(500);
-            }
-        }
-        else
-        {
-            await LoadGameAsync(); // Return to load menu
-        }
+        return _saveGameService.GetAllSaves();
     }
+}
+
+/// <summary>
+/// Result of a load game operation.
+/// Contains save game data and apocalypse timer status.
+/// </summary>
+public class LoadGameResult
+{
+    /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
+    public bool Success { get; set; }
+
+    /// <summary>Gets or sets the loaded save game.</summary>
+    public SaveGame? SaveGame { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether apocalypse mode is active.</summary>
+    public bool ApocalypseMode { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether apocalypse time expired.</summary>
+    public bool ApocalypseTimeExpired { get; set; }
+
+    /// <summary>Gets or sets the apocalypse time remaining in minutes.</summary>
+    public int? ApocalypseRemainingMinutes { get; set; }
+
+    /// <summary>Gets or sets the error message if failed.</summary>
+    public string? ErrorMessage { get; set; }
 }
