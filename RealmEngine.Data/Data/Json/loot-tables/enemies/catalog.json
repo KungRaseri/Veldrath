@@ -69,7 +69,8 @@
           ],
           "dropChance": 40,
           "slug": "orc",
-          "name": "Orc"
+          "name": "Orc",
+          "rarityWeight": 45
         },
         {
           "poolRefs": [
@@ -91,7 +92,8 @@
             }
           ],
           "slug": "orc-warrior",
-          "name": "Orc Warrior"
+          "name": "Orc Warrior",
+          "rarityWeight": 35
         },
         {
           "goldRange": [
@@ -102,7 +104,8 @@
             "@material_pools/fabrics/common"
           ],
           "slug": "bandit",
-          "name": "Bandit"
+          "name": "Bandit",
+          "rarityWeight": 40
         },
         {
           "poolRefs": [

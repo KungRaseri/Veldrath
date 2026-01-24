@@ -76,6 +76,7 @@
         {
           "slug": "common-trees",
           "name": "Common Trees",
+          "rarityWeight": 70,
           "drops": [
             {
               "materialRef": "@items/materials/wood:oak-log",
@@ -111,6 +112,7 @@
         {
           "slug": "copper",
           "name": "Copper",
+          "rarityWeight": 80,
           "drops": [
             {
               "materialRef": "@items/materials/ore:copper-ore",
@@ -143,6 +145,7 @@
         {
           "slug": "iron",
           "name": "Iron",
+          "rarityWeight": 70,
           "drops": [
             {
               "materialRef": "@items/materials/ore:iron-ore",

@@ -64,7 +64,8 @@
             500
           ],
           "slug": "rare",
-          "name": "Rare"
+          "name": "Rare",
+          "rarityWeight": 20
         },
         {
           "poolRefs": [
@@ -82,7 +83,8 @@
             1500
           ],
           "slug": "epic",
-          "name": "Epic"
+          "name": "Epic",
+          "rarityWeight": 10
         },
         {
           "poolRefs": [
@@ -100,7 +102,8 @@
             5000
           ],
           "slug": "legendary",
-          "name": "Legendary"
+          "name": "Legendary",
+          "rarityWeight": 5
         }
       ]
     },
@@ -128,7 +131,8 @@
             }
           ],
           "slug": "goblin-cave",
-          "name": "Goblin Cave"
+          "name": "Goblin Cave",
+          "rarityWeight": 50
         },
         {
           "poolRefs": [
@@ -152,7 +156,8 @@
             }
           ],
           "slug": "dragon-peak",
-          "name": "Dragon Peak"
+          "name": "Dragon Peak",
+          "rarityWeight": 5
         },
         {
           "poolRefs": [
@@ -183,7 +188,8 @@
             }
           ],
           "slug": "abandoned-mine",
-          "name": "Abandoned Mine"
+          "name": "Abandoned Mine",
+          "rarityWeight": 35
         },
         {
           "poolRefs": [
@@ -208,7 +214,8 @@
             }
           ],
           "slug": "ancient-tomb",
-          "name": "Ancient Tomb"
+          "name": "Ancient Tomb",
+          "rarityWeight": 15
         }
       ]
     },
@@ -224,7 +231,8 @@
             2
           ],
           "slug": "armor",
-          "name": "Armor"
+          "name": "Armor",
+          "rarityWeight": 40
         },
         {
           "poolRefs": [
@@ -236,7 +244,8 @@
             1
           ],
           "slug": "weapons",
-          "name": "Weapons"
+          "name": "Weapons",
+          "rarityWeight": 40
         },
         {
           "poolRefs": [
@@ -247,7 +256,8 @@
             8
           ],
           "slug": "consumables",
-          "name": "Consumables"
+          "name": "Consumables",
+          "rarityWeight": 60
         },
         {
           "poolRefs": [
@@ -260,7 +270,8 @@
             15
           ],
           "slug": "materials",
-          "name": "Materials"
+          "name": "Materials",
+          "rarityWeight": 70
         },
         {
           "poolRefs": [
@@ -276,7 +287,8 @@
             500
           ],
           "slug": "gems",
-          "name": "Gems"
+          "name": "Gems",
+          "rarityWeight": 25
         }
       ]
     }
