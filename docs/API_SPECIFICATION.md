@@ -83,11 +83,21 @@ RealmEngine.Data/          # Data access, repositories, JSON loading
 
 ```csharp
 // In Godot C# project (or any .NET consumer)
-services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AttackEnemyCommand).Assembly));
-services.AddSingleton<IDataCache, GameDataCache>();
+using RealmEngine.Core;
+
+// 1. Register MediatR
+services.AddMediatR(cfg => 
+    cfg.RegisterServicesFromAssembly(typeof(AttackEnemyCommand).Assembly));
+
+// 2. Register RealmEngine Data services (cache, repositories, reference resolver)
+services.AddRealmEngineData("Data/Json");  // Path to JSON data folder
+
+// 3. Register RealmEngine Core services (generators, validators)
+services.AddRealmEngineCore();
+
+// 4. Register additional services as needed
 services.AddScoped<ISaveGameService, SaveGameService>();
 services.AddScoped<ICharacterRepository, CharacterRepository>();
-// ... register other services
 ```
 
 ### Typical Workflow
@@ -840,12 +850,13 @@ else
 ---
 
 ### 25. Procedural Generation System ✅
-CQRS wrappers for procedural content generation (items, enemies, NPCs).
+CQRS wrappers for procedural content generation (items, enemies, NPCs, abilities).
 
 **Commands:**
 - `GenerateItemCommand` - Generate items by category or budget
 - `GenerateEnemyCommand` - Generate enemies with optional level scaling
 - `GenerateNPCCommand` - Generate NPCs by category with traits
+- `GenerateAbilityCommand` - Generate abilities by category/subcategory
 
 **Generation Modes:**
 
@@ -862,6 +873,12 @@ CQRS wrappers for procedural content generation (items, enemies, NPCs).
 **NPCs:**
 - **Category-Based**: "merchants", "guards", "quest-givers", "trainers"
 - **Traits**: Procedural personality traits, dialogue, inventory
+- **Hydration**: Optional full property resolution
+
+**Abilities:**
+- **Category/Subcategory**: "active/offensive", "passive/defensive", "reactive/on-hit", "ultimate"
+- **Specific or Random**: Generate by name or random selection
+- **Count**: Generate multiple abilities in one call
 - **Hydration**: Optional full property resolution
 
 **Integration Example:**
@@ -905,12 +922,29 @@ if (npcResult.Success)
     SpawnNPC(npcResult.NPC);
     PopulateMerchantInventory(npcResult.NPC);
 }
+
+// Generate starting abilities for class
+var abilityResult = await _mediator.Send(new GenerateAbilityCommand 
+{
+    Category = "active",
+    Subcategory = "offensive",
+    Count = 3,
+    Hydrate = true
+});
+if (abilityResult.Success) 
+{
+    foreach (var ability in abilityResult.Abilities)
+    {
+        LearnAbility(character, ability);
+    }
+}
 ```
 
 **Key Properties:**
 - **GenerateItemResult**: `Success`, `Item` (with stats, materials, enchantments), `ErrorMessage`
 - **GenerateEnemyResult**: `Success`, `Enemy` (with abilities, stats, loot table), `ErrorMessage`
 - **GenerateNPCResult**: `Success`, `NPC` (with traits, inventory, dialogue), `ErrorMessage`
+- **GenerateAbilityResult**: `Success`, `Ability`, `Abilities` (list), `ErrorMessage`
 
 ---
 
@@ -1253,21 +1287,20 @@ using RealmEngine.Data;
 
 var services = new ServiceCollection();
 
-// Register MediatR
+// Register MediatR (handles all Commands/Queries)
 services.AddMediatR(cfg => 
     cfg.RegisterServicesFromAssembly(typeof(AttackEnemyCommand).Assembly));
 
-// Register data services
-services.AddSingleton<IDataCache, GameDataCache>(sp => 
-    new GameDataCache("path/to/Data/Json", sp.GetRequiredService<ILogger<GameDataCache>>()));
+// Register RealmEngine Data services (cache, repositories, reference resolver)
+services.AddRealmEngineData("path/to/Data/Json");
+
+// Register RealmEngine Core services (all generators including AbilityGenerator, CharacterClassGenerator)
+services.AddRealmEngineCore();
+
+// Register additional game services
 services.AddScoped<ISaveGameService, SaveGameService>();
 services.AddScoped<ICharacterRepository, CharacterRepository>();
 services.AddScoped<INodeRepository, InMemoryNodeRepository>();
-
-// Register game services
-services.AddScoped<IItemGenerator, ItemGenerator>();
-services.AddScoped<ILootTableService, LootTableService>();
-services.AddScoped<IReferenceResolverService, ReferenceResolverService>();
 
 var serviceProvider = services.BuildServiceProvider();
 ```
