@@ -68,18 +68,35 @@ public class LootTableService
 
         var catalog = catalogFile.JsonData;
 
-        // Navigate: catalog.types[typeName].nodes[nodeName].drops
-        var typeNode = catalog["types"]?[typeName];
+        // Navigate: catalog.harvesting_types[typeName].items[] - find by slug
+        var typeNode = catalog["harvesting_types"]?[typeName];
         if (typeNode == null)
         {
-            _logger.LogWarning("Type not found in catalog: {TypeName}", typeName);
+            _logger.LogWarning("Type not found in harvesting catalog: {TypeName}", typeName);
             return new List<ItemDrop>();
         }
 
-        var nodeData = typeNode["nodes"]?[nodeName];
+        // Find item in items array by slug
+        var itemsArray = typeNode["items"] as JArray;
+        if (itemsArray == null)
+        {
+            _logger.LogWarning("No items array found for type: {TypeName}", typeName);
+            return new List<ItemDrop>();
+        }
+
+        JObject? nodeData = null;
+        foreach (var item in itemsArray.OfType<JObject>())
+        {
+            if (item["slug"]?.Value<string>() == nodeName)
+            {
+                nodeData = item;
+                break;
+            }
+        }
+
         if (nodeData == null)
         {
-            _logger.LogWarning("Node not found in type: {NodeName}", nodeName);
+            _logger.LogWarning("Node not found in items array: {NodeName}", nodeName);
             return new List<ItemDrop>();
         }
 
@@ -174,17 +191,34 @@ public class LootTableService
 
         var catalog = catalogFile.JsonData;
 
-        var typeNode = catalog["types"]?[typeName];
+        var typeNode = catalog["enemy_types"]?[typeName];
         if (typeNode == null)
         {
             _logger.LogWarning("Enemy type not found: {TypeName}", typeName);
             return new EnemyLootResult();
         }
 
-        var enemyData = typeNode["enemies"]?[enemyName];
+        // Find enemy in items array by slug
+        var itemsArray = typeNode["items"] as JArray;
+        if (itemsArray == null)
+        {
+            _logger.LogWarning("No items array found for enemy type: {TypeName}", typeName);
+            return new EnemyLootResult();
+        }
+
+        JObject? enemyData = null;
+        foreach (var item in itemsArray.OfType<JObject>())
+        {
+            if (item["slug"]?.Value<string>() == enemyName)
+            {
+            enemyData = item;
+                break;
+            }
+        }
+
         if (enemyData == null)
         {
-            _logger.LogWarning("Enemy not found: {EnemyName}", enemyName);
+            _logger.LogWarning("Enemy not found in items array: {EnemyName}", enemyName);
             return new EnemyLootResult();
         }
 
