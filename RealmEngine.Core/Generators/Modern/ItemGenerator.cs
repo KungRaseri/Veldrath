@@ -105,6 +105,7 @@ public class ItemGenerator
     /// <summary>
     /// Generates a list of random items from a specific category.
     /// Items may include materials, enchantments, and gem sockets based on the Hybrid Enhancement System.
+    /// Supports both direct catalogs (items/weapons/catalog.json) and subcategory catalogs (items/gems/blue/catalog.json).
     /// </summary>
     /// <param name="category">The item category (e.g., "weapons", "armor", "consumables").</param>
     /// <param name="count">The number of items to generate (default: 10).</param>
@@ -114,17 +115,34 @@ public class ItemGenerator
     {
         try
         {
+            List<JToken>? items = null;
+
+            // Try direct catalog first (e.g., items/weapons/catalog.json)
             var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-            if (catalogFile?.JsonData == null)
+            if (catalogFile?.JsonData != null)
             {
-                return new List<Item>();
+                items = GetItemsFromCatalog(catalogFile.JsonData)?.ToList();
             }
 
-            var catalog = catalogFile.JsonData;
-            var items = GetItemsFromCatalog(catalog);
+            // If no direct catalog, aggregate items from all subcategory catalogs
+            if (items == null || !items.Any())
+            {
+                items = new List<JToken>();
+                var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category);
+                
+                foreach (var subcatalog in subcategoryCatalogs)
+                {
+                    var subcategoryItems = GetItemsFromCatalog(subcatalog.JsonData);
+                    if (subcategoryItems != null && subcategoryItems.Any())
+                    {
+                        items.AddRange(subcategoryItems);
+                    }
+                }
+            }
             
             if (items == null || !items.Any())
             {
+                _logger.LogWarning("No items found for category {Category}", category);
                 return new List<Item>();
             }
 
@@ -159,6 +177,7 @@ public class ItemGenerator
     /// <summary>
     /// Generates a specific item by name from a category.
     /// The item will include enhancement system features (materials, enchantments, gem sockets).
+    /// Supports both direct catalogs and subcategory catalogs.
     /// </summary>
     /// <param name="category">The item category to search in.</param>
     /// <param name="itemName">The name of the item to generate.</param>
@@ -168,16 +187,38 @@ public class ItemGenerator
     {
         try
         {
+            List<JToken>? items = null;
+
+            // Try direct catalog first
             var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-            if (catalogFile?.JsonData == null)
+            if (catalogFile?.JsonData != null)
             {
-                return null;
+                items = GetItemsFromCatalog(catalogFile.JsonData)?.ToList();
             }
 
-            var catalog = catalogFile.JsonData;
-            var items = GetItemsFromCatalog(catalog);
+            // If no direct catalog, aggregate items from subcategories
+            if (items == null || !items.Any())
+            {
+                items = new List<JToken>();
+                var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category);
+                
+                foreach (var subcatalog in subcategoryCatalogs)
+                {
+                    var subcategoryItems = GetItemsFromCatalog(subcatalog.JsonData);
+                    if (subcategoryItems != null && subcategoryItems.Any())
+                    {
+                        items.AddRange(subcategoryItems);
+                    }
+                }
+            }
+
+            if (items == null || !items.Any())
+            {
+                _logger.LogWarning("No items found in category {Category}", category);
+                return null;
+            }
             
-            var catalogItem = items?.FirstOrDefault(i => 
+            var catalogItem = items.FirstOrDefault(i => 
                 string.Equals(GetStringProperty(i, "name"), itemName, StringComparison.OrdinalIgnoreCase));
 
             if (catalogItem != null)
