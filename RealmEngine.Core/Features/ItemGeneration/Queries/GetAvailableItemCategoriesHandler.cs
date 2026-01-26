@@ -14,33 +14,6 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
     private readonly ILogger<GetAvailableItemCategoriesHandler> _logger;
 
     /// <summary>
-    /// Known item category paths to check.
-    /// </summary>
-    private static readonly string[] KnownCategories = new[]
-    {
-        "weapons/swords",
-        "weapons/axes",
-        "weapons/maces",
-        "weapons/daggers",
-        "weapons/staves",
-        "weapons/bows",
-        "weapons/crossbows",
-        "weapons/spears",
-        "weapons/fist-weapons",
-        "armor/light",
-        "armor/medium",
-        "armor/heavy",
-        "armor/shields",
-        "accessories/amulets",
-        "accessories/rings",
-        "accessories/cloaks",
-        "accessories/belts",
-        "consumables/potions",
-        "consumables/food",
-        "consumables/scrolls"
-    };
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="GetAvailableItemCategoriesHandler"/> class.
     /// </summary>
     /// <param name="dataCache">The game data cache.</param>
@@ -67,7 +40,10 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
         {
             var categories = new List<ItemCategoryInfo>();
 
-            foreach (var category in KnownCategories)
+            // Dynamically discover all item categories from the cache
+            var itemSubdomains = _dataCache.GetSubdomainsForDomain("items");
+
+            foreach (var category in itemSubdomains.OrderBy(c => c))
             {
                 // Apply filter if provided
                 if (!string.IsNullOrWhiteSpace(request.FilterPattern))
@@ -79,24 +55,39 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
                     }
                 }
 
+                // Check if this category has either a direct catalog or subcategory catalogs
                 var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-                if (catalogFile?.JsonData != null)
+                var hasDirectCatalog = catalogFile?.JsonData != null;
+                
+                // Also check if there are any catalog files in subcategories
+                var hasSubcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).Any();
+
+                if (hasDirectCatalog || hasSubcategoryCatalogs)
                 {
                     var categoryInfo = new ItemCategoryInfo
                     {
                         Category = category,
                         DisplayName = GetDisplayName(category),
-                        ParentCategory = GetParentCategory(category)
+                        ParentCategory = null // Top-level categories have no parent
                     };
 
                     // Check for names file
                     var namesFile = _dataCache.GetFile($"items/{category}/names.json");
                     categoryInfo.HasNamesFile = namesFile?.JsonData != null;
 
-                    // Count items if requested
+                    // Count items if requested (counts all items across all types/subcategories)
                     if (request.IncludeItemCounts)
                     {
-                        categoryInfo.ItemCount = CountItemsInCatalog(catalogFile.JsonData);
+                        if (hasDirectCatalog)
+                        {
+                            categoryInfo.ItemCount = CountItemsInCatalog(catalogFile!.JsonData);
+                        }
+                        else
+                        {
+                            // Count items across all subcategory catalogs
+                            var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category);
+                            categoryInfo.ItemCount = subcategoryCatalogs.Sum(c => CountItemsInCatalog(c.JsonData));
+                        }
                     }
 
                     categories.Add(categoryInfo);
@@ -145,31 +136,52 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
 
     /// <summary>
     /// Counts the number of items in a catalog.
+    /// Handles both old structure (items[]) and new structure (weapon_types, armor_types, etc.).
     /// </summary>
     private int CountItemsInCatalog(JToken catalog)
     {
         try
         {
-            // Try "items" array first
+            int totalCount = 0;
+
+            // Try new structure: weapon_types, armor_types, consumable_types, etc.
+            // Each type has an items[] array
+            var typeCollections = catalog.Children<JProperty>()
+                .Where(p => p.Name.EndsWith("_types") && p.Value.Type == JTokenType.Object)
+                .ToList();
+
+            if (typeCollections.Any())
+            {
+                foreach (var typeCollection in typeCollections)
+                {
+                    var types = typeCollection.Value.Children<JProperty>();
+                    foreach (var type in types)
+                    {
+                        var typeItems = type.Value["items"];
+                        if (typeItems != null && typeItems.Type == JTokenType.Array)
+                        {
+                            totalCount += typeItems.Count();
+                        }
+                    }
+                }
+                return totalCount;
+            }
+
+            // Try old structure: direct items[] array
             var itemsArray = catalog["items"];
             if (itemsArray != null && itemsArray.Type == JTokenType.Array)
             {
                 return itemsArray.Count();
             }
 
-            // Try "catalog" array
+            // Try "catalog" array (legacy)
             var catalogArray = catalog["catalog"];
             if (catalogArray != null && catalogArray.Type == JTokenType.Array)
             {
                 return catalogArray.Count();
             }
 
-            // Count all array properties
-            var arrayProperties = catalog.Children<JProperty>()
-                .Where(p => p.Value.Type == JTokenType.Array)
-                .ToList();
-
-            return arrayProperties.Sum(p => p.Value.Count());
+            return 0;
         }
         catch
         {

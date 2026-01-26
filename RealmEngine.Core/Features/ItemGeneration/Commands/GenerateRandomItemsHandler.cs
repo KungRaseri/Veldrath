@@ -19,33 +19,6 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
     private readonly Random _random;
 
     /// <summary>
-    /// Available item categories for random selection.
-    /// </summary>
-    private static readonly string[] AllCategories = new[]
-    {
-        "weapons/swords",
-        "weapons/axes",
-        "weapons/maces",
-        "weapons/daggers",
-        "weapons/staves",
-        "weapons/bows",
-        "weapons/crossbows",
-        "weapons/spears",
-        "weapons/fist-weapons",
-        "armor/light",
-        "armor/medium",
-        "armor/heavy",
-        "armor/shields",
-        "accessories/amulets",
-        "accessories/rings",
-        "accessories/cloaks",
-        "accessories/belts",
-        "consumables/potions",
-        "consumables/food",
-        "consumables/scrolls"
-    };
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="GenerateRandomItemsHandler"/> class.
     /// </summary>
     /// <param name="dataCache">The game data cache.</param>
@@ -60,6 +33,16 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
         _itemGenerator = itemGenerator ?? throw new ArgumentNullException(nameof(itemGenerator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _random = new Random();
+    }
+
+    /// <summary>
+    /// Gets all available item categories by dynamically discovering them from the cache.
+    /// </summary>
+    private List<string> GetAllCategories()
+    {
+        return _dataCache.GetSubdomainsForDomain("items")
+            .Where(cat => !string.IsNullOrWhiteSpace(cat))
+            .ToList();
     }
 
     /// <summary>
@@ -156,11 +139,13 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
         if (string.IsNullOrWhiteSpace(categoryFilter) || 
             categoryFilter.Equals("random", StringComparison.OrdinalIgnoreCase))
         {
-            // Verify which categories actually exist
-            foreach (var category in AllCategories)
+            // Dynamically discover all available categories
+            var allCategories = GetAllCategories();
+            foreach (var category in allCategories)
             {
                 var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-                if (catalogFile?.JsonData != null)
+                var hasSubcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).Any();
+                if (catalogFile?.JsonData != null || hasSubcategoryCatalogs)
                 {
                     categories.Add(category);
                 }
@@ -170,22 +155,25 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 
         // Check if specific category exists
         var specifiedCatalog = _dataCache.GetFile($"items/{categoryFilter}/catalog.json");
-        if (specifiedCatalog?.JsonData != null)
+        var hasSpecifiedSubcatalogs = _dataCache.GetCatalogsBySubdomain("items", categoryFilter).Any();
+        if (specifiedCatalog?.JsonData != null || hasSpecifiedSubcatalogs)
         {
             categories.Add(categoryFilter);
             return Task.FromResult(categories);
         }
 
-        // Check for wildcard patterns (e.g., "weapons/*")
+        // Check for wildcard patterns (e.g., "weapons/*" - though now just "weapons" works)
         if (categoryFilter.Contains('*'))
         {
             var pattern = categoryFilter.Replace("*", "");
-            foreach (var category in AllCategories)
+            var allCategories = GetAllCategories();
+            foreach (var category in allCategories)
             {
                 if (category.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
                 {
                     var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-                    if (catalogFile?.JsonData != null)
+                    var hasSubcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).Any();
+                    if (catalogFile?.JsonData != null || hasSubcategoryCatalogs)
                     {
                         categories.Add(category);
                     }
