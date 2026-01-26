@@ -11,7 +11,7 @@
         {
           "rarityWeight": 50,
           "slug": "sapphire",
-          "name": "sapphire",
+          "name": "Sapphire",
           "attributes": {
             "constitution": 10,
             "intelligence": 8,
@@ -34,7 +34,7 @@
         {
           "rarityWeight": 60,
           "slug": "aquamarine",
-          "name": "aquamarine",
+          "name": "Aquamarine",
           "attributes": {
             "constitution": 10,
             "intelligence": 8,

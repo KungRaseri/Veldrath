@@ -9,7 +9,7 @@
     "red": {
       "items": [
         {
-          "name": "ruby",
+          "name": "Ruby",
           "slug": "ruby",
           "rarityWeight": 50,
           "attributes": {
@@ -32,7 +32,7 @@
           }
         },
         {
-          "name": "garnet",
+          "name": "Garnet",
           "slug": "garnet",
           "rarityWeight": 60,
           "attributes": {
@@ -55,7 +55,7 @@
           }
         },
         {
-          "name": "bloodstone",
+          "name": "Bloodstone",
           "slug": "bloodstone",
           "rarityWeight": 40,
           "attributes": {
