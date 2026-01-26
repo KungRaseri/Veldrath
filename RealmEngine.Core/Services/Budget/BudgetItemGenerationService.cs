@@ -412,29 +412,74 @@ public class BudgetItemGenerationService
     }
 
     /// <summary>
+    /// Get all items from a category, checking direct catalog first, then aggregating subcategories.
+    /// </summary>
+    private List<JToken>? GetItemsForCategory(string category)
+    {
+        // Try direct catalog first
+        var catalogPath = $"items/{category}/catalog.json";
+        if (_dataCache.FileExists(catalogPath))
+        {
+            var catalogFile = _dataCache.GetFile(catalogPath);
+            if (catalogFile?.JsonData != null)
+            {
+                var items = GetItemsFromCatalog(catalogFile.JsonData);
+                if (items != null && items.Any())
+                {
+                    return items.ToList();
+                }
+            }
+        }
+
+        // If no direct catalog, aggregate subcategories
+        var allItems = new List<JToken>();
+        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category);
+        
+        foreach (var subcatalog in subcategoryCatalogs)
+        {
+            var subcategoryItems = GetItemsFromCatalog(subcatalog.JsonData);
+            if (subcategoryItems != null && subcategoryItems.Any())
+            {
+                allItems.AddRange(subcategoryItems);
+            }
+        }
+
+        return allItems.Any() ? allItems : null;
+    }
+
+    /// <summary>
+    /// Get names.json data for a category, checking direct file first, then aggregating subcategories.
+    /// </summary>
+    private JToken? GetNamesDataForCategory(string category)
+    {
+        // Try direct names.json first
+        var namesPath = $"items/{category}/names.json";
+        if (_dataCache.FileExists(namesPath))
+        {
+            var namesFile = _dataCache.GetFile(namesPath);
+            if (namesFile?.JsonData != null)
+            {
+                return namesFile.JsonData;
+            }
+        }
+
+        // If no direct names file, try to find names.json in subcategories
+        var subcategoryFiles = _dataCache.GetFilesBySubdomain("items", category, excludeConfigFiles: false);
+        var subcategoryNamesFile = subcategoryFiles?.FirstOrDefault(f => f.RelativePath.EndsWith("/names.json", StringComparison.OrdinalIgnoreCase));
+        
+        return subcategoryNamesFile?.JsonData;
+    }
+
+    /// <summary>
     /// Select the cheapest base item in the category.
     /// Always succeeds by picking the item with lowest cost.
     /// </summary>
     private Task<JToken> SelectCheapestBaseItemAsync(string category)
     {
-        var catalogPath = $"items/{category}/catalog.json";
-        if (!_dataCache.FileExists(catalogPath))
-        {
-            _logger.LogWarning("Catalog not found at {Path}, using fallback base item", catalogPath);
-            return Task.FromResult(JToken.FromObject(new { name = "Basic Item", rarityWeight = 100 }));
-        }
-
-        var catalogFile = _dataCache.GetFile(catalogPath);
-        if (catalogFile?.JsonData == null)
-        {
-            _logger.LogWarning("Catalog JsonData is null at {Path}, using fallback", catalogPath);
-            return Task.FromResult(JToken.FromObject(new { name = "Basic Item", rarityWeight = 100 }));
-        }
-
-        var items = GetItemsFromCatalog(catalogFile.JsonData);
+        var items = GetItemsForCategory(category);
         if (items == null || !items.Any())
         {
-            _logger.LogWarning("No items found in catalog {Path}, using fallback", catalogPath);
+            _logger.LogWarning("No items found for category {Category}, using fallback base item", category);
             return Task.FromResult(JToken.FromObject(new { name = "Basic Item", rarityWeight = 100 }));
         }
 
@@ -509,15 +554,11 @@ public class BudgetItemGenerationService
             return Task.FromResult(result);
         }
 
-        var namesPath = $"items/{category}/names.json";
-        if (!_dataCache.FileExists(namesPath))
+        var namesData = GetNamesDataForCategory(category);
+        if (namesData == null)
             return Task.FromResult(result);
 
-        var namesFile = _dataCache.GetFile(namesPath);
-        if (namesFile?.JsonData == null)
-            return Task.FromResult(result);
-
-        var components = namesFile.JsonData["components"];
+        var components = namesData["components"];
         if (components == null)
             return Task.FromResult(result);
 
@@ -569,28 +610,21 @@ public class BudgetItemGenerationService
 
     private Task<JToken> SelectPatternAsync(string category)
     {
-        var namesPath = $"items/{category}/names.json";
-        if (!_dataCache.FileExists(namesPath))
+        var namesData = GetNamesDataForCategory(category);
+        if (namesData == null)
         {
-            _logger.LogWarning("Pattern file not found at {Path}, using default pattern", namesPath);
+            _logger.LogWarning("Pattern file not found for category {Category}, using default pattern", category);
             return Task.FromResult(JToken.FromObject(new { pattern = "{base}", rarityWeight = 100 }));
         }
 
-        var namesFile = _dataCache.GetFile(namesPath);
-        if (namesFile?.JsonData == null)
-        {
-            _logger.LogWarning("Pattern file JsonData is null at {Path}, using default pattern", namesPath);
-            return Task.FromResult(JToken.FromObject(new { pattern = "{base}", rarityWeight = 100 }));
-        }
-
-        var patterns = namesFile.JsonData["patterns"];
+        var patterns = namesData["patterns"];
         if (patterns == null || !patterns.Any())
         {
-            _logger.LogWarning("No patterns found in {Path}, using default pattern", namesPath);
+            _logger.LogWarning("No patterns found for category {Category}, using default pattern", category);
             return Task.FromResult(JToken.FromObject(new { pattern = "{base}", rarityWeight = 100 }));
         }
 
-        _logger.LogDebug("Pattern selection: Found {Count} patterns in {Path}", patterns.Count(), namesPath);
+        _logger.LogDebug("Pattern selection: Found {Count} patterns for category {Category}", patterns.Count(), category);
         return Task.FromResult(SelectWeightedRandomPattern(patterns) ?? JToken.FromObject(new { pattern = "{base}", rarityWeight = 100 }));
     }
 
@@ -608,15 +642,11 @@ public class BudgetItemGenerationService
         var prefixCount = 0;
         var suffixCount = 0;
 
-        var namesPath = $"items/{category}/names.json";
-        if (!_dataCache.FileExists(namesPath))
+        var namesData = GetNamesDataForCategory(category);
+        if (namesData == null)
             return Task.FromResult(result);
 
-        var namesFile = _dataCache.GetFile(namesPath);
-        if (namesFile?.JsonData == null)
-            return Task.FromResult(result);
-
-        var components = namesFile.JsonData["components"];
+        var components = namesData["components"];
         if (components == null)
             return Task.FromResult(result);
 

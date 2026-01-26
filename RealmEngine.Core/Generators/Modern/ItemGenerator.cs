@@ -473,38 +473,49 @@ public class ItemGenerator
             }
 
             // Legacy pattern-based support for enchantments and sockets
+            // Try direct names.json first, then check subcategories
+            JToken? namesData = null;
             var namesPath = $"items/{category}/names.json";
             if (_dataCache.FileExists(namesPath))
             {
                 var namesFile = _dataCache.GetFile(namesPath);
-                if (namesFile?.JsonData != null)
-                {
-                    var patterns = namesFile.JsonData["patterns"];
-                    if (patterns != null)
-                    {
-                        var pattern = GetRandomWeightedPattern(patterns);
-                        if (pattern != null)
-                        {
-                            // Apply enchantments from enchantmentSlots
-                            var enchantmentSlots = pattern["enchantmentSlots"];
-                            if (enchantmentSlots != null && enchantmentSlots.Any())
-                            {
-                                await GenerateEnchantmentsAsync(item, enchantmentSlots);
-                            }
+                namesData = namesFile?.JsonData;
+            }
+            else
+            {
+                // Try to find names.json in subcategories
+                var subcategoryFiles = _dataCache.GetFilesBySubdomain("items", category, excludeConfigFiles: false);
+                var subcategoryNamesFile = subcategoryFiles?.FirstOrDefault(f => f.RelativePath.EndsWith("/names.json", StringComparison.OrdinalIgnoreCase));
+                namesData = subcategoryNamesFile?.JsonData;
+            }
 
-                            // Generate sockets from socketSlots
-                            var socketSlots = pattern["socketSlots"];
-                            if (socketSlots != null)
+            if (namesData != null)
+            {
+                var patterns = namesData["patterns"];
+                if (patterns != null)
+                {
+                    var pattern = GetRandomWeightedPattern(patterns);
+                    if (pattern != null)
+                    {
+                        // Apply enchantments from enchantmentSlots
+                        var enchantmentSlots = pattern["enchantmentSlots"];
+                        if (enchantmentSlots != null && enchantmentSlots.Any())
+                        {
+                            await GenerateEnchantmentsAsync(item, enchantmentSlots);
+                        }
+
+                        // Generate sockets from socketSlots
+                        var socketSlots = pattern["socketSlots"];
+                        if (socketSlots != null)
+                        {
+                            GenerateSockets(item, socketSlots);
+                        }
+                        else
+                        {
+                            var gemSocketCount = pattern["gemSocketCount"];
+                            if (gemSocketCount != null)
                             {
-                                GenerateSockets(item, socketSlots);
-                            }
-                            else
-                            {
-                                var gemSocketCount = pattern["gemSocketCount"];
-                                if (gemSocketCount != null)
-                                {
-                                    GenerateGemSocketsLegacy(item, gemSocketCount);
-                                }
+                                GenerateGemSocketsLegacy(item, gemSocketCount);
                             }
                         }
                     }
