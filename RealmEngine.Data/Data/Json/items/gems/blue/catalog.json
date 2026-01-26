@@ -57,7 +57,7 @@
         {
           "rarityWeight": 55,
           "slug": "lapis-lazuli",
-          "name": "lapis-lazuli",
+          "name": "Lapis Lazuli",
           "attributes": {
             "constitution": 10,
             "intelligence": 8,
@@ -80,7 +80,7 @@
         {
           "rarityWeight": 20,
           "slug": "blue-diamond",
-          "name": "blue-diamond",
+          "name": "Blue Diamond",
           "attributes": {
             "constitution": 10,
             "intelligence": 8,

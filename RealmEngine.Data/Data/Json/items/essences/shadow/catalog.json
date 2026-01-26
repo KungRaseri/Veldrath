@@ -11,7 +11,7 @@
         {
           "rarityWeight": 55,
           "slug": "shadow-essence",
-          "name": "shadow-essence",
+          "name": "Shadow Essence",
           "attributes": {
             "intelligence": 8,
             "constitution": 10,
@@ -34,7 +34,7 @@
         {
           "rarityWeight": 35,
           "slug": "void-essence",
-          "name": "void-essence",
+          "name": "Void Essence",
           "attributes": {
             "intelligence": 8,
             "constitution": 10,
@@ -57,7 +57,7 @@
         {
           "rarityWeight": 45,
           "slug": "twilight-essence",
-          "name": "twilight-essence",
+          "name": "Twilight Essence",
           "attributes": {
             "intelligence": 8,
             "constitution": 10,

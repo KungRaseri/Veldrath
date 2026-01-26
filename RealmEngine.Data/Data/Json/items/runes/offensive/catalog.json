@@ -10,7 +10,7 @@
       "items": [
         {
           "slug": "fury-rune",
-          "name": "fury-rune",
+          "name": "Fury Rune",
           "rarityWeight": 50,
           "attributes": {
             "dexterity": 10,
@@ -33,7 +33,7 @@
         },
         {
           "slug": "piercing-rune",
-          "name": "piercing-rune",
+          "name": "Piercing Rune",
           "rarityWeight": 45,
           "attributes": {
             "dexterity": 10,
@@ -56,7 +56,7 @@
         },
         {
           "slug": "devastation-rune",
-          "name": "devastation-rune",
+          "name": "Devastation Rune",
           "rarityWeight": 30,
           "attributes": {
             "dexterity": 10,
@@ -79,7 +79,7 @@
         },
         {
           "slug": "rune-of-power",
-          "name": "rune-of-power",
+          "name": "Rune Of Power",
           "rarityWeight": 45,
           "attributes": {},
           "traits": {

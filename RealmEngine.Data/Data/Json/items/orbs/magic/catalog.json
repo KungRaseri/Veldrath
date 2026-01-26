@@ -10,7 +10,7 @@
       "items": [
         {
           "slug": "sorcery-orb",
-          "name": "sorcery-orb",
+          "name": "Sorcery Orb",
           "rarityWeight": 50,
           "attributes": {
             "constitution": 10,
@@ -33,7 +33,7 @@
         },
         {
           "slug": "mysticism-orb",
-          "name": "mysticism-orb",
+          "name": "Mysticism Orb",
           "rarityWeight": 45,
           "attributes": {
             "constitution": 10,
@@ -56,7 +56,7 @@
         },
         {
           "slug": "arcana-orb",
-          "name": "arcana-orb",
+          "name": "Arcana Orb",
           "rarityWeight": 35,
           "attributes": {
             "constitution": 10,
@@ -83,7 +83,7 @@
         },
         {
           "slug": "orb-of-flames",
-          "name": "orb-of-flames",
+          "name": "Orb Of Flames",
           "rarityWeight": 45,
           "attributes": {},
           "traits": {

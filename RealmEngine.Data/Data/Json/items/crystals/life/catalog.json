@@ -11,7 +11,7 @@
         {
           "slug": "life-crystal",
           "rarityWeight": 60,
-          "name": "life-crystal",
+          "name": "Life Crystal",
           "attributes": {
             "constitution": 10,
             "dexterity": 10,
@@ -34,7 +34,7 @@
         {
           "slug": "vitality-crystal",
           "rarityWeight": 45,
-          "name": "vitality-crystal",
+          "name": "Vitality Crystal",
           "attributes": {
             "constitution": 10,
             "dexterity": 10,
@@ -61,7 +61,7 @@
         {
           "slug": "rejuvenation-crystal",
           "rarityWeight": 35,
-          "name": "rejuvenation-crystal",
+          "name": "Rejuvenation Crystal",
           "attributes": {
             "constitution": 10,
             "dexterity": 10,

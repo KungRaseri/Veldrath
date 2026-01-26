@@ -10,7 +10,7 @@
       "items": [
         {
           "slug": "strike-orb",
-          "name": "strike-orb",
+          "name": "Strike Orb",
           "rarityWeight": 55,
           "attributes": {
             "intelligence": 8,
@@ -33,7 +33,7 @@
         },
         {
           "slug": "berserk-orb",
-          "name": "berserk-orb",
+          "name": "Berserk Orb",
           "rarityWeight": 40,
           "attributes": {
             "intelligence": 8,
@@ -56,7 +56,7 @@
         },
         {
           "slug": "precision-orb",
-          "name": "precision-orb",
+          "name": "Precision Orb",
           "rarityWeight": 45,
           "attributes": {
             "intelligence": 8,
@@ -79,7 +79,7 @@
         },
         {
           "slug": "orb-of-combat-mastery",
-          "name": "orb-of-combat-mastery",
+          "name": "Orb Of Combat Mastery",
           "rarityWeight": 40,
           "attributes": {},
           "traits": {

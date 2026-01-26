@@ -10,7 +10,7 @@
       "items": [
         {
           "rarityWeight": 55,
-          "name": "protection-rune",
+          "name": "Protection Rune",
           "slug": "protection-rune",
           "attributes": {
             "constitution": 10,
@@ -33,7 +33,7 @@
         },
         {
           "rarityWeight": 50,
-          "name": "warding-rune",
+          "name": "Warding Rune",
           "slug": "warding-rune",
           "attributes": {
             "constitution": 10,
@@ -56,7 +56,7 @@
         },
         {
           "rarityWeight": 40,
-          "name": "fortitude-rune",
+          "name": "Fortitude Rune",
           "slug": "fortitude-rune",
           "attributes": {
             "constitution": 10,
@@ -79,7 +79,7 @@
         },
         {
           "rarityWeight": 45,
-          "name": "rune-of-fortitude",
+          "name": "Rune Of Fortitude",
           "slug": "rune-of-fortitude",
           "attributes": {},
           "traits": {
