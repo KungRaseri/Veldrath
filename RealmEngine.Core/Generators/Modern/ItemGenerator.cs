@@ -118,10 +118,14 @@ public class ItemGenerator
             List<JToken>? items = null;
 
             // Try direct catalog first (e.g., items/weapons/catalog.json)
-            var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-            if (catalogFile?.JsonData != null)
+            var catalogPath = $"items/{category}/catalog.json";
+            if (_dataCache.FileExists(catalogPath))
             {
-                items = GetItemsFromCatalog(catalogFile.JsonData)?.ToList();
+                var catalogFile = _dataCache.GetFile(catalogPath);
+                if (catalogFile?.JsonData != null)
+                {
+                    items = GetItemsFromCatalog(catalogFile.JsonData)?.ToList();
+                }
             }
 
             // If no direct catalog, aggregate items from all subcategory catalogs
@@ -190,10 +194,14 @@ public class ItemGenerator
             List<JToken>? items = null;
 
             // Try direct catalog first
-            var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-            if (catalogFile?.JsonData != null)
+            var catalogPath = $"items/{category}/catalog.json";
+            if (_dataCache.FileExists(catalogPath))
             {
-                items = GetItemsFromCatalog(catalogFile.JsonData)?.ToList();
+                var catalogFile = _dataCache.GetFile(catalogPath);
+                if (catalogFile?.JsonData != null)
+                {
+                    items = GetItemsFromCatalog(catalogFile.JsonData)?.ToList();
+                }
             }
 
             // If no direct catalog, aggregate items from subcategories

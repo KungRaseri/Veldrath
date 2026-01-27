@@ -66,9 +66,9 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
     {
         var leafCategories = new List<string>();
         
-        // Check if this category has a direct catalog file
-        var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-        if (catalogFile?.JsonData != null)
+        // Check if this category has a direct catalog file (use FileExists to avoid cache miss warnings)
+        var catalogPath = $"items/{category}/catalog.json";
+        if (_dataCache.FileExists(catalogPath))
         {
             // This is a leaf category with a catalog
             leafCategories.Add(category);
