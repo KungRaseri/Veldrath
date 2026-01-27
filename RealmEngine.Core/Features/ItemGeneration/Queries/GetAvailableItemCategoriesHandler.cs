@@ -55,37 +55,34 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
                     }
                 }
 
-                // Check if this category has either a direct catalog or subcategory catalogs
-                var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-                var hasDirectCatalog = catalogFile?.JsonData != null;
+                // Discover actual usable categories (leaf nodes with catalogs)
+                var usableCategories = DiscoverLeafCategories(category);
                 
-                // Also check if there are any catalog files in subcategories
-                var hasSubcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).Any();
-
-                if (hasDirectCatalog || hasSubcategoryCatalogs)
+                foreach (var usableCategory in usableCategories)
                 {
+                    var catalogFile = _dataCache.GetFile($"items/{usableCategory}/catalog.json");
+                    var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", usableCategory).ToList();
+                    
                     var categoryInfo = new ItemCategoryInfo
                     {
-                        Category = category,
-                        DisplayName = GetDisplayName(category),
-                        ParentCategory = null // Top-level categories have no parent
+                        Category = usableCategory,
+                        DisplayName = GetDisplayName(usableCategory),
+                        ParentCategory = GetParentCategory(usableCategory)
                     };
 
                     // Check for names file
-                    var namesFile = _dataCache.GetFile($"items/{category}/names.json");
+                    var namesFile = _dataCache.GetFile($"items/{usableCategory}/names.json");
                     categoryInfo.HasNamesFile = namesFile?.JsonData != null;
 
-                    // Count items if requested (counts all items across all types/subcategories)
+                    // Count items if requested
                     if (request.IncludeItemCounts)
                     {
-                        if (hasDirectCatalog)
+                        if (catalogFile?.JsonData != null)
                         {
-                            categoryInfo.ItemCount = CountItemsInCatalog(catalogFile!.JsonData);
+                            categoryInfo.ItemCount = CountItemsInCatalog(catalogFile.JsonData);
                         }
-                        else
+                        else if (subcategoryCatalogs.Any())
                         {
-                            // Count items across all subcategory catalogs
-                            var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category);
                             categoryInfo.ItemCount = subcategoryCatalogs.Sum(c => CountItemsInCatalog(c.JsonData));
                         }
                     }
@@ -111,6 +108,53 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
             result.ErrorMessage = $"Failed to retrieve categories: {ex.Message}";
             return Task.FromResult(result);
         }
+    }
+
+    /// <summary>
+    /// Discovers leaf categories (ones with actual catalog files) for a given parent category.
+    /// If the category has a direct catalog, returns it. Otherwise, recursively checks subcategories.
+    /// </summary>
+    /// <param name="category">The category to check</param>
+    /// <returns>List of usable leaf categories</returns>
+    private List<string> DiscoverLeafCategories(string category)
+    {
+        var leafCategories = new List<string>();
+        
+        // Check if this category has a direct catalog file
+        var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
+        if (catalogFile?.JsonData != null)
+        {
+            // This is a leaf category with a catalog
+            leafCategories.Add(category);
+            return leafCategories;
+        }
+        
+        // Check if it has subcategory catalogs (deeper nesting)
+        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
+        if (subcategoryCatalogs.Any())
+        {
+            // This category has data via subcategories, so it's usable
+            leafCategories.Add(category);
+            return leafCategories;
+        }
+        
+        // No direct catalog or subcategory catalogs, check child subdirectories
+        var allSubdomains = _dataCache.GetSubdomainsForDomain("items");
+        var childCategories = allSubdomains
+            .Where(s => s.StartsWith(category + "/", StringComparison.OrdinalIgnoreCase))
+            .Where(s => s.Split('/').Length == category.Split('/').Length + 1) // Only immediate children
+            .ToList();
+        
+        if (childCategories.Any())
+        {
+            // Recursively check each child
+            foreach (var child in childCategories)
+            {
+                leafCategories.AddRange(DiscoverLeafCategories(child));
+            }
+        }
+        
+        return leafCategories;
     }
 
     /// <summary>

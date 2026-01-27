@@ -37,12 +37,70 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 
     /// <summary>
     /// Gets all available item categories by dynamically discovering them from the cache.
+    /// Returns only leaf categories that have actual catalog files (not parent-only directories).
     /// </summary>
     private List<string> GetAllCategories()
     {
-        return _dataCache.GetSubdomainsForDomain("items")
+        var allSubdomains = _dataCache.GetSubdomainsForDomain("items")
             .Where(cat => !string.IsNullOrWhiteSpace(cat))
             .ToList();
+        
+        var leafCategories = new List<string>();
+        
+        foreach (var category in allSubdomains)
+        {
+            leafCategories.AddRange(DiscoverLeafCategories(category));
+        }
+        
+        // Remove duplicates and return
+        return leafCategories.Distinct().ToList();
+    }
+    
+    /// <summary>
+    /// Discovers leaf categories (ones with actual catalog files) for a given parent category.
+    /// If the category has a direct catalog, returns it. Otherwise, recursively checks subcategories.
+    /// </summary>
+    /// <param name="category">The category to check</param>
+    /// <returns>List of usable leaf categories</returns>
+    private List<string> DiscoverLeafCategories(string category)
+    {
+        var leafCategories = new List<string>();
+        
+        // Check if this category has a direct catalog file
+        var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
+        if (catalogFile?.JsonData != null)
+        {
+            // This is a leaf category with a catalog
+            leafCategories.Add(category);
+            return leafCategories;
+        }
+        
+        // Check if it has subcategory catalogs (deeper nesting)
+        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
+        if (subcategoryCatalogs.Any())
+        {
+            // This category has data via subcategories, so it's usable
+            leafCategories.Add(category);
+            return leafCategories;
+        }
+        
+        // No direct catalog or subcategory catalogs, check child subdirectories
+        var allSubdomains = _dataCache.GetSubdomainsForDomain("items");
+        var childCategories = allSubdomains
+            .Where(s => s.StartsWith(category + "/", StringComparison.OrdinalIgnoreCase))
+            .Where(s => s.Split('/').Length == category.Split('/').Length + 1) // Only immediate children
+            .ToList();
+        
+        if (childCategories.Any())
+        {
+            // Recursively check each child
+            foreach (var child in childCategories)
+            {
+                leafCategories.AddRange(DiscoverLeafCategories(child));
+            }
+        }
+        
+        return leafCategories;
     }
 
     /// <summary>
@@ -139,46 +197,27 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
         if (string.IsNullOrWhiteSpace(categoryFilter) || 
             categoryFilter.Equals("random", StringComparison.OrdinalIgnoreCase))
         {
-            // Dynamically discover all available categories
-            var allCategories = GetAllCategories();
-            foreach (var category in allCategories)
-            {
-                var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-                var hasSubcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).Any();
-                if (catalogFile?.JsonData != null || hasSubcategoryCatalogs)
-                {
-                    categories.Add(category);
-                }
-            }
+            // GetAllCategories now returns only valid leaf categories
+            categories = GetAllCategories();
             return Task.FromResult(categories);
         }
 
-        // Check if specific category exists
-        var specifiedCatalog = _dataCache.GetFile($"items/{categoryFilter}/catalog.json");
-        var hasSpecifiedSubcatalogs = _dataCache.GetCatalogsBySubdomain("items", categoryFilter).Any();
-        if (specifiedCatalog?.JsonData != null || hasSpecifiedSubcatalogs)
+        // Check if specific category exists and discover its leaf categories
+        var leafCategories = DiscoverLeafCategories(categoryFilter);
+        if (leafCategories.Any())
         {
-            categories.Add(categoryFilter);
+            categories.AddRange(leafCategories);
             return Task.FromResult(categories);
         }
 
-        // Check for wildcard patterns (e.g., "weapons/*" - though now just "weapons" works)
+        // Check for wildcard patterns (e.g., "weapons/*")
         if (categoryFilter.Contains('*'))
         {
             var pattern = categoryFilter.Replace("*", "");
             var allCategories = GetAllCategories();
-            foreach (var category in allCategories)
-            {
-                if (category.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
-                {
-                    var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
-                    var hasSubcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).Any();
-                    if (catalogFile?.JsonData != null || hasSubcategoryCatalogs)
-                    {
-                        categories.Add(category);
-                    }
-                }
-            }
+            categories = allCategories
+                .Where(c => c.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
         return Task.FromResult(categories);
