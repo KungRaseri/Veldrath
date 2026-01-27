@@ -129,16 +129,7 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
             return leafCategories;
         }
         
-        // Check if it has subcategory catalogs (deeper nesting)
-        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
-        if (subcategoryCatalogs.Any())
-        {
-            // This category has data via subcategories, so it's usable
-            leafCategories.Add(category);
-            return leafCategories;
-        }
-        
-        // No direct catalog or subcategory catalogs, check child subdirectories
+        // No direct catalog found, check for child subdirectories
         var allSubdomains = _dataCache.GetSubdomainsForDomain("items");
         var childCategories = allSubdomains
             .Where(s => s.StartsWith(category + "/", StringComparison.OrdinalIgnoreCase))
@@ -151,6 +142,17 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
             foreach (var child in childCategories)
             {
                 leafCategories.AddRange(DiscoverLeafCategories(child));
+            }
+        }
+        else
+        {
+            // No children found, check if this category has catalogs via deeper nesting
+            // (e.g., items/materials/metals/catalog.json when checking "materials")
+            var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
+            if (subcategoryCatalogs.Any())
+            {
+                // This category has data via deeper subcategories, so it's usable as-is
+                leafCategories.Add(category);
             }
         }
         
