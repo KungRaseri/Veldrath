@@ -112,7 +112,7 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
 
     /// <summary>
     /// Discovers leaf categories (ones with actual catalog files) for a given parent category.
-    /// If the category has a direct catalog, returns it. Otherwise, recursively checks subcategories.
+    /// Returns the paths where actual catalog.json files exist.
     /// </summary>
     /// <param name="category">The category to check</param>
     /// <returns>List of usable leaf categories</returns>
@@ -129,30 +129,26 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
             return leafCategories;
         }
         
-        // No direct catalog found, check for child subdirectories
-        var allSubdomains = _dataCache.GetSubdomainsForDomain("items");
-        var childCategories = allSubdomains
-            .Where(s => s.StartsWith(category + "/", StringComparison.OrdinalIgnoreCase))
-            .Where(s => s.Split('/').Length == category.Split('/').Length + 1) // Only immediate children
-            .ToList();
-        
-        if (childCategories.Any())
+        // No direct catalog, check for catalogs in subcategories
+        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
+        if (subcategoryCatalogs.Any())
         {
-            // Recursively check each child
-            foreach (var child in childCategories)
+            // Extract the directory paths from catalog files
+            foreach (var catalog in subcategoryCatalogs)
             {
-                leafCategories.AddRange(DiscoverLeafCategories(child));
-            }
-        }
-        else
-        {
-            // No children found, check if this category has catalogs via deeper nesting
-            // (e.g., items/materials/metals/catalog.json when checking "materials")
-            var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
-            if (subcategoryCatalogs.Any())
-            {
-                // This category has data via deeper subcategories, so it's usable as-is
-                leafCategories.Add(category);
+                // catalog.RelativePath is like "items/crystals/life/catalog.json"
+                // We want to extract "crystals/life"
+                var path = catalog.RelativePath;
+                if (path.StartsWith("items/", StringComparison.OrdinalIgnoreCase) &&
+                    path.EndsWith("/catalog.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Remove "items/" prefix and "/catalog.json" suffix
+                    var categoryPath = path.Substring(6, path.Length - 6 - 13); // "items/".Length=6, "/catalog.json".Length=13
+                    if (!string.IsNullOrEmpty(categoryPath) && !leafCategories.Contains(categoryPath))
+                    {
+                        leafCategories.Add(categoryPath);
+                    }
+                }
             }
         }
         
