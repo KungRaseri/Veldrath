@@ -412,62 +412,37 @@ public class BudgetItemGenerationService
     }
 
     /// <summary>
-    /// Get all items from a category, checking direct catalog first, then aggregating subcategories.
+    /// Get all items from a leaf category by loading its catalog directly.
     /// </summary>
     private List<JToken>? GetItemsForCategory(string category)
     {
-        // Try direct catalog first
+        // Load direct catalog for this leaf category
         var catalogPath = $"items/{category}/catalog.json";
-        if (_dataCache.FileExists(catalogPath))
-        {
-            var catalogFile = _dataCache.GetFile(catalogPath);
-            if (catalogFile?.JsonData != null)
-            {
-                var items = GetItemsFromCatalog(catalogFile.JsonData);
-                if (items != null && items.Any())
-                {
-                    return items.ToList();
-                }
-            }
-        }
-
-        // If no direct catalog, aggregate subcategories
-        var allItems = new List<JToken>();
-        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category);
+        var catalogFile = _dataCache.GetFile(catalogPath);
         
-        foreach (var subcatalog in subcategoryCatalogs)
+        if (catalogFile?.JsonData != null)
         {
-            var subcategoryItems = GetItemsFromCatalog(subcatalog.JsonData);
-            if (subcategoryItems != null && subcategoryItems.Any())
+            var items = GetItemsFromCatalog(catalogFile.JsonData);
+            if (items != null && items.Any())
             {
-                allItems.AddRange(subcategoryItems);
+                return items.ToList();
             }
         }
 
-        return allItems.Any() ? allItems : null;
+        _logger.LogWarning("No items found in catalog: {Path}", catalogPath);
+        return null;
     }
 
     /// <summary>
-    /// Get names.json data for a category, checking direct file first, then aggregating subcategories.
+    /// Get names.json data for a leaf category.
     /// </summary>
     private JToken? GetNamesDataForCategory(string category)
     {
-        // Try direct names.json first
+        // Load direct names.json for this leaf category
         var namesPath = $"items/{category}/names.json";
-        if (_dataCache.FileExists(namesPath))
-        {
-            var namesFile = _dataCache.GetFile(namesPath);
-            if (namesFile?.JsonData != null)
-            {
-                return namesFile.JsonData;
-            }
-        }
-
-        // If no direct names file, try to find names.json in subcategories
-        var subcategoryFiles = _dataCache.GetFilesBySubdomain("items", category, excludeConfigFiles: false);
-        var subcategoryNamesFile = subcategoryFiles?.FirstOrDefault(f => f.RelativePath.EndsWith("/names.json", StringComparison.OrdinalIgnoreCase));
+        var namesFile = _dataCache.GetFile(namesPath);
         
-        return subcategoryNamesFile?.JsonData;
+        return namesFile?.JsonData;
     }
 
     /// <summary>
