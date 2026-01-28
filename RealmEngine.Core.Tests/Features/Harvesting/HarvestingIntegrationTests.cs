@@ -20,7 +20,7 @@ namespace RealmEngine.Core.Tests.Features.Harvesting;
 public class HarvestingIntegrationTests
 {
     private readonly InMemoryNodeRepository _nodeRepository;
-    private readonly InMemoryInventoryService _inventoryService;
+    private readonly RealmEngine.Core.Services.InMemoryInventoryService _inventoryService;
     private readonly HarvestingConfig _config;
     
     public HarvestingIntegrationTests()
@@ -109,8 +109,8 @@ public class HarvestingIntegrationTests
         _nodeRepository = new InMemoryNodeRepository(
             loggerFactory.CreateLogger<InMemoryNodeRepository>()
         );
-        _inventoryService = new InMemoryInventoryService(
-            loggerFactory.CreateLogger<InMemoryInventoryService>()
+        _inventoryService = new RealmEngine.Core.Services.InMemoryInventoryService(
+            loggerFactory.CreateLogger<RealmEngine.Core.Services.InMemoryInventoryService>()
         );
     }
     
@@ -504,8 +504,8 @@ public class HarvestingIntegrationTests
             localLoggerFactory.CreateLogger<ReferenceResolverService>()
         );
         
-        var lootTableService = new LootTableService(
-            localLoggerFactory.CreateLogger<LootTableService>(),
+        var lootTableService = new RealmEngine.Core.Services.LootTableService(
+            localLoggerFactory.CreateLogger<RealmEngine.Core.Services.LootTableService>(),
             dataCache,
             referenceResolver
         );

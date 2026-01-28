@@ -21,6 +21,13 @@ public class GenerateRandomItemsCommand : IRequest<GenerateRandomItemsResult>
     public string? Category { get; set; }
 
     /// <summary>
+    /// Optional category pattern for advanced filtering (e.g., "materials/*", "weapons/swords").
+    /// Supports wildcards. If both Category and CategoryPattern are provided, CategoryPattern takes precedence.
+    /// Examples: "*" (all), "materials/*" (all materials), "weapons/swords" (exact match).
+    /// </summary>
+    public string? CategoryPattern { get; set; }
+
+    /// <summary>
     /// Minimum budget per item (default: 10).
     /// </summary>
     public int MinBudget { get; set; } = 10;

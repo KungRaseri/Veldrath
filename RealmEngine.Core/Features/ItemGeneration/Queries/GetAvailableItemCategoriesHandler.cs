@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Services;
 using RealmEngine.Data.Services;
 using Newtonsoft.Json.Linq;
 
@@ -11,18 +12,22 @@ namespace RealmEngine.Core.Features.ItemGeneration.Queries;
 public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableItemCategoriesQuery, GetAvailableItemCategoriesResult>
 {
     private readonly GameDataCache _dataCache;
+    private readonly CategoryDiscoveryService _categoryDiscovery;
     private readonly ILogger<GetAvailableItemCategoriesHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetAvailableItemCategoriesHandler"/> class.
     /// </summary>
     /// <param name="dataCache">The game data cache.</param>
+    /// <param name="categoryDiscovery">The category discovery service.</param>
     /// <param name="logger">The logger instance.</param>
     public GetAvailableItemCategoriesHandler(
         GameDataCache dataCache,
+        CategoryDiscoveryService categoryDiscovery,
         ILogger<GetAvailableItemCategoriesHandler> logger)
     {
         _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
+        _categoryDiscovery = categoryDiscovery ?? throw new ArgumentNullException(nameof(categoryDiscovery));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -40,55 +45,40 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
         {
             var categories = new List<ItemCategoryInfo>();
 
-            // Dynamically discover all item categories from the cache
-            var itemSubdomains = _dataCache.GetSubdomainsForDomain("items");
+            // Get all leaf categories from cached discovery service
+            var leafCategories = string.IsNullOrWhiteSpace(request.FilterPattern)
+                ? _categoryDiscovery.GetLeafCategories("items")
+                : _categoryDiscovery.FindCategories("items", request.FilterPattern);
 
-            foreach (var category in itemSubdomains.OrderBy(c => c))
+            foreach (var category in leafCategories.OrderBy(c => c))
             {
-                // Apply filter if provided
-                if (!string.IsNullOrWhiteSpace(request.FilterPattern))
-                {
-                    var pattern = request.FilterPattern.Replace("*", "");
-                    if (!category.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-                }
-
-                // Discover actual usable categories (leaf nodes with catalogs)
-                var usableCategories = DiscoverLeafCategories(category);
+                var catalogFile = _dataCache.GetFile($"items/{category}/catalog.json");
                 
-                foreach (var usableCategory in usableCategories)
+                var categoryInfo = new ItemCategoryInfo
                 {
-                    var catalogFile = _dataCache.GetFile($"items/{usableCategory}/catalog.json");
-                    var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", usableCategory).ToList();
-                    
-                    var categoryInfo = new ItemCategoryInfo
-                    {
-                        Category = usableCategory,
-                        DisplayName = GetDisplayName(usableCategory),
-                        ParentCategory = GetParentCategory(usableCategory)
-                    };
+                    Category = category,
+                    DisplayName = GetDisplayName(category),
+                    ParentCategory = GetParentCategory(category)
+                };
 
-                    // Check for names file
-                    var namesFile = _dataCache.GetFile($"items/{usableCategory}/names.json");
-                    categoryInfo.HasNamesFile = namesFile?.JsonData != null;
+                // Check for names file
+                var namesFile = _dataCache.GetFile($"items/{category}/names.json");
+                categoryInfo.HasNamesFile = namesFile?.JsonData != null;
 
-                    // Count items if requested
-                    if (request.IncludeItemCounts)
-                    {
-                        if (catalogFile?.JsonData != null)
-                        {
-                            categoryInfo.ItemCount = CountItemsInCatalog(catalogFile.JsonData);
-                        }
-                        else if (subcategoryCatalogs.Any())
-                        {
-                            categoryInfo.ItemCount = subcategoryCatalogs.Sum(c => CountItemsInCatalog(c.JsonData));
-                        }
-                    }
-
-                    categories.Add(categoryInfo);
+                // Count items if requested
+                if (request.IncludeItemCounts && catalogFile?.JsonData != null)
+                {
+                    categoryInfo.ItemCount = CountItemsInCatalog(catalogFile.JsonData);
                 }
+
+                // Get category metadata if available
+                var catInfo = _categoryDiscovery.GetCategoryInfo("items", category);
+                if (catInfo != null)
+                {
+                    categoryInfo.ItemCount = catInfo.ItemCount;
+                }
+
+                categories.Add(categoryInfo);
             }
 
             result.Categories = categories;
@@ -108,51 +98,6 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
             result.ErrorMessage = $"Failed to retrieve categories: {ex.Message}";
             return Task.FromResult(result);
         }
-    }
-
-    /// <summary>
-    /// Discovers leaf categories (ones with actual catalog files) for a given parent category.
-    /// Returns the paths where actual catalog.json files exist.
-    /// </summary>
-    /// <param name="category">The category to check</param>
-    /// <returns>List of usable leaf categories</returns>
-    private List<string> DiscoverLeafCategories(string category)
-    {
-        var leafCategories = new List<string>();
-        
-        // Check if this category has a direct catalog file (use FileExists to avoid cache miss warnings)
-        var catalogPath = $"items/{category}/catalog.json";
-        if (_dataCache.FileExists(catalogPath))
-        {
-            // This is a leaf category with a catalog
-            leafCategories.Add(category);
-            return leafCategories;
-        }
-        
-        // No direct catalog, check for catalogs in subcategories
-        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
-        if (subcategoryCatalogs.Any())
-        {
-            // Extract the directory paths from catalog files
-            foreach (var catalog in subcategoryCatalogs)
-            {
-                // catalog.RelativePath is like "items/crystals/life/catalog.json"
-                // We want to extract "crystals/life"
-                var path = catalog.RelativePath;
-                if (path.StartsWith("items/", StringComparison.OrdinalIgnoreCase) &&
-                    path.EndsWith("/catalog.json", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Remove "items/" prefix and "/catalog.json" suffix
-                    var categoryPath = path.Substring(6, path.Length - 6 - 13); // "items/".Length=6, "/catalog.json".Length=13
-                    if (!string.IsNullOrEmpty(categoryPath) && !leafCategories.Contains(categoryPath))
-                    {
-                        leafCategories.Add(categoryPath);
-                    }
-                }
-            }
-        }
-        
-        return leafCategories;
     }
 
     /// <summary>

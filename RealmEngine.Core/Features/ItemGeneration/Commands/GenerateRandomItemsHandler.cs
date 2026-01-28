@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Models;
@@ -15,6 +16,7 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 {
     private readonly GameDataCache _dataCache;
     private readonly ItemGenerator _itemGenerator;
+    private readonly CategoryDiscoveryService _categoryDiscovery;
     private readonly ILogger<GenerateRandomItemsHandler> _logger;
     private readonly Random _random;
 
@@ -23,82 +25,28 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
     /// </summary>
     /// <param name="dataCache">The game data cache.</param>
     /// <param name="itemGenerator">The item generator service.</param>
+    /// <param name="categoryDiscovery">The category discovery service.</param>
     /// <param name="logger">The logger instance.</param>
     public GenerateRandomItemsHandler(
         GameDataCache dataCache,
         ItemGenerator itemGenerator,
+        CategoryDiscoveryService categoryDiscovery,
         ILogger<GenerateRandomItemsHandler> logger)
     {
         _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
         _itemGenerator = itemGenerator ?? throw new ArgumentNullException(nameof(itemGenerator));
+        _categoryDiscovery = categoryDiscovery ?? throw new ArgumentNullException(nameof(categoryDiscovery));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _random = new Random();
     }
 
     /// <summary>
-    /// Gets all available item categories by dynamically discovering them from the cache.
-    /// Returns only leaf categories that have actual catalog files (not parent-only directories).
+    /// Gets all available item categories using the cached category discovery service.
+    /// Returns only leaf categories that have actual catalog files.
     /// </summary>
     private List<string> GetAllCategories()
     {
-        var allSubdomains = _dataCache.GetSubdomainsForDomain("items")
-            .Where(cat => !string.IsNullOrWhiteSpace(cat))
-            .ToList();
-        
-        var leafCategories = new List<string>();
-        
-        foreach (var category in allSubdomains)
-        {
-            leafCategories.AddRange(DiscoverLeafCategories(category));
-        }
-        
-        // Remove duplicates and return
-        return leafCategories.Distinct().ToList();
-    }
-    
-    /// <summary>
-    /// Discovers leaf categories (ones with actual catalog files) for a given parent category.
-    /// Returns the paths where actual catalog.json files exist.
-    /// </summary>
-    /// <param name="category">The category to check</param>
-    /// <returns>List of usable leaf categories</returns>
-    private List<string> DiscoverLeafCategories(string category)
-    {
-        var leafCategories = new List<string>();
-        
-        // Check if this category has a direct catalog file (use FileExists to avoid cache miss warnings)
-        var catalogPath = $"items/{category}/catalog.json";
-        if (_dataCache.FileExists(catalogPath))
-        {
-            // This is a leaf category with a catalog
-            leafCategories.Add(category);
-            return leafCategories;
-        }
-        
-        // No direct catalog, check for catalogs in subcategories
-        var subcategoryCatalogs = _dataCache.GetCatalogsBySubdomain("items", category).ToList();
-        if (subcategoryCatalogs.Any())
-        {
-            // Extract the directory paths from catalog files
-            foreach (var catalog in subcategoryCatalogs)
-            {
-                // catalog.RelativePath is like "items/crystals/life/catalog.json"
-                // We want to extract "crystals/life"
-                var path = catalog.RelativePath;
-                if (path.StartsWith("items/", StringComparison.OrdinalIgnoreCase) &&
-                    path.EndsWith("/catalog.json", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Remove "items/" prefix and "/catalog.json" suffix
-                    var categoryPath = path.Substring(6, path.Length - 6 - 13); // "items/".Length=6, "/catalog.json".Length=13
-                    if (!string.IsNullOrEmpty(categoryPath) && !leafCategories.Contains(categoryPath))
-                    {
-                        leafCategories.Add(categoryPath);
-                    }
-                }
-            }
-        }
-        
-        return leafCategories;
+        return _categoryDiscovery.GetLeafCategories("items").ToList();
     }
 
     /// <summary>
@@ -132,11 +80,12 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
             }
 
             // Determine categories to use
-            var categoriesToUse = await DetermineCategoriesAsync(request.Category);
+            var categoriesToUse = await DetermineCategoriesAsync(request);
             if (categoriesToUse.Count == 0)
             {
+                var filterDesc = request.CategoryPattern ?? request.Category ?? "random";
                 result.Success = false;
-                result.ErrorMessage = $"No valid categories found for '{request.Category}'";
+                result.ErrorMessage = $"No valid categories found for '{filterDesc}'";
                 return result;
             }
 
@@ -186,36 +135,60 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 
     /// <summary>
     /// Determines which categories to use based on the request.
+    /// Supports CategoryPattern for wildcard matching (e.g., "materials/*", "*", "weapons/swords").
+    /// Falls back to Category for backward compatibility.
     /// </summary>
-    private Task<List<string>> DetermineCategoriesAsync(string? categoryFilter)
+    private Task<List<string>> DetermineCategoriesAsync(GenerateRandomItemsCommand request)
     {
         var categories = new List<string>();
 
+        // Priority 1: CategoryPattern (supports wildcards)
+        if (!string.IsNullOrWhiteSpace(request.CategoryPattern))
+        {
+            categories = _categoryDiscovery.FindCategories("items", request.CategoryPattern).ToList();
+            
+            if (categories.Any())
+            {
+                _logger.LogDebug("Using CategoryPattern '{Pattern}': found {Count} categories", 
+                    request.CategoryPattern, categories.Count);
+                return Task.FromResult(categories);
+            }
+            
+            _logger.LogWarning("CategoryPattern '{Pattern}' matched no categories", request.CategoryPattern);
+            return Task.FromResult(categories);
+        }
+
+        // Priority 2: Category (legacy, exact match or "random")
+        var categoryFilter = request.Category;
+        
         // If no filter or "random", get all available categories
         if (string.IsNullOrWhiteSpace(categoryFilter) || 
             categoryFilter.Equals("random", StringComparison.OrdinalIgnoreCase))
         {
-            // GetAllCategories now returns only valid leaf categories
             categories = GetAllCategories();
             return Task.FromResult(categories);
         }
 
-        // Check if specific category exists and discover its leaf categories
-        var leafCategories = DiscoverLeafCategories(categoryFilter);
-        if (leafCategories.Any())
+        // Check if it's a wildcard pattern (support legacy wildcard in Category field)
+        if (categoryFilter.Contains('*'))
         {
-            categories.AddRange(leafCategories);
+            categories = _categoryDiscovery.FindCategories("items", categoryFilter).ToList();
             return Task.FromResult(categories);
         }
 
-        // Check for wildcard patterns (e.g., "weapons/*")
-        if (categoryFilter.Contains('*'))
+        // Exact match or prefix - check if category exists as leaf
+        if (_categoryDiscovery.IsLeafCategory("items", categoryFilter))
         {
-            var pattern = categoryFilter.Replace("*", "");
-            var allCategories = GetAllCategories();
-            categories = allCategories
-                .Where(c => c.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            categories.Add(categoryFilter);
+            return Task.FromResult(categories);
+        }
+
+        // Try to find all leaf categories under this parent path
+        categories = _categoryDiscovery.FindCategories("items", $"{categoryFilter}/*").ToList();
+        
+        if (!categories.Any())
+        {
+            _logger.LogWarning("Category '{Category}' not found and has no subcategories", categoryFilter);
         }
 
         return Task.FromResult(categories);

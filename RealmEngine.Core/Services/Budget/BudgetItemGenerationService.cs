@@ -435,13 +435,24 @@ public class BudgetItemGenerationService
 
     /// <summary>
     /// Get names.json data for a leaf category.
+    /// Returns null for material subcategories since they only have catalog.json files.
     /// </summary>
     private JToken? GetNamesDataForCategory(string category)
     {
+        // Skip names.json lookup for material subcategories - they only have catalog.json
+        if (category?.StartsWith("materials/", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return null;
+        }
+        
         // Load direct names.json for this leaf category
         var namesPath = $"items/{category}/names.json";
-        var namesFile = _dataCache.GetFile(namesPath);
+        if (!_dataCache.FileExists(namesPath))
+        {
+            return null;
+        }
         
+        var namesFile = _dataCache.GetFile(namesPath);
         return namesFile?.JsonData;
     }
 

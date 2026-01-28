@@ -488,6 +488,18 @@ public class GameDataCache : IDisposable
     }
 
     /// <summary>
+    /// Checks if a path represents a leaf category (has a catalog.json file).
+    /// Does not trigger cache miss warnings.
+    /// </summary>
+    /// <param name="domain">Domain name (e.g., "items", "abilities")</param>
+    /// <param name="path">Category path (e.g., "weapons/swords", "materials/bone")</param>
+    /// <returns>True if the path has a catalog.json file</returns>
+    public bool IsLeafCategory(string domain, string path)
+    {
+        return FileExists($"{domain}/{path}/catalog.json");
+    }
+
+    /// <summary>
     /// Gets all names files in a specific domain (excludes .cbconfig.json automatically)
     /// </summary>
     /// <param name="domain">Domain name (e.g., 'abilities', 'npcs')</param>

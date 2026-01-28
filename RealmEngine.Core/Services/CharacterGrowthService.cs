@@ -1,7 +1,8 @@
 using Newtonsoft.Json.Linq;
 using Serilog;
+using RealmEngine.Data.Services;
 
-namespace RealmEngine.Data.Services;
+namespace RealmEngine.Core.Services;
 
 /// <summary>
 /// Service for loading character stat growth configuration from configuration/growth-stats.json

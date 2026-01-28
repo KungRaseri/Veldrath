@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services;
 using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core;
@@ -18,6 +19,9 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddRealmEngineCore(this IServiceCollection services)
     {
+        // Register category discovery service (singleton for caching)
+        services.AddSingleton<CategoryDiscoveryService>();
+        
         // Register generators
         services.AddScoped<ItemGenerator>();
         services.AddScoped<EnemyGenerator>();
@@ -25,8 +29,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<AbilityGenerator>();
         services.AddScoped<CharacterClassGenerator>();
         
-        // Register other core services as needed
-        // services.AddScoped<OtherService>();
+        // Register game logic services
+        services.AddScoped<LootTableService>();
+        services.AddScoped<CharacterGrowthService>();
+        services.AddScoped<InMemoryInventoryService>();
         
         return services;
     }
@@ -49,9 +55,7 @@ public static class ServiceCollectionExtensions
         
         // Register data services
         services.AddScoped<ReferenceResolverService>();
-        services.AddScoped<LootTableService>();
         services.AddScoped<ItemGenerationRulesService>();
-        services.AddScoped<CharacterGrowthService>();
         services.AddScoped<ExperienceConfigService>();
         services.AddScoped<ResourceNodeLoaderService>();
         

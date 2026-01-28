@@ -1,352 +1,553 @@
 using Microsoft.Extensions.Logging;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Services.Budget;
-using RealmEngine.Core.Generators.Modern;
+using Newtonsoft.Json.Linq;
+using RealmEngine.Shared.Models.Harvesting;
+using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Services;
 
 /// <summary>
-/// Service for generating loot based on location loot tables.
-/// Handles weighted random selection and rarity filtering.
-/// Supports hybrid static references + budget-generated items.
+/// Generic service for loading and processing loot tables across all game systems.
+/// Supports harvesting, enemies, chests with inheritance and override mechanics.
+/// Uses GameDataCache for efficient data access.
 /// </summary>
 public class LootTableService
 {
     private readonly ILogger<LootTableService> _logger;
+    private readonly GameDataCache _dataCache;
+    private readonly ReferenceResolverService _referenceResolver;
     private readonly Random _random;
-    private readonly BudgetHelperService? _budgetHelper;
-    private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LootTableService"/> class.
     /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="budgetHelper">Optional budget helper for procedural loot generation.</param>
-    /// <param name="itemGenerator">Optional item generator for procedural loot.</param>
-    /// <param name="seed">Optional random seed for deterministic results (useful for testing).</param>
+    /// <param name="logger">The logger instance for diagnostic output.</param>
+    /// <param name="dataCache">The game data cache instance.</param>
+    /// <param name="referenceResolver">The reference resolver service for material pool lookups.</param>
+    /// <param name="seed">Optional seed for random number generation (for testing).</param>
     public LootTableService(
         ILogger<LootTableService> logger,
-        BudgetHelperService? budgetHelper = null,
-        ItemGenerator? itemGenerator = null,
+        GameDataCache dataCache,
+        ReferenceResolverService referenceResolver,
         int? seed = null)
     {
-        _logger = logger;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
+        _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
         _random = seed.HasValue ? new Random(seed.Value) : new Random();
-        _budgetHelper = budgetHelper;
-        _itemGenerator = itemGenerator;
     }
 
     /// <summary>
-    /// Generates loot for a location based on its loot references.
+    /// Rolls loot drops for a harvestable node based on its loot table reference.
     /// </summary>
-    /// <param name="location">The location to generate loot for.</param>
-    /// <param name="count">Number of loot items to generate.</param>
-    /// <param name="minRarity">Minimum rarity filter (optional).</param>
-    /// <param name="maxRarity">Maximum rarity filter (optional).</param>
-    /// <returns>List of loot item references.</returns>
-    public List<string> GenerateLootForLocation(
-        Location location,
-        int count = 1,
-        ItemRarity? minRarity = null,
-        ItemRarity? maxRarity = null)
+    /// <param name="lootTableRef">The loot table reference (e.g., "@loot-tables/harvesting/woods:oak").</param>
+    /// <param name="baseYield">The base yield quantity calculated for the harvest.</param>
+    /// <param name="isCriticalHarvest">Whether this is a critical harvest (affects bonus drop chances).</param>
+    /// <returns>List of item drops with material references and quantities.</returns>
+    public List<ItemDrop> RollHarvestingDrops(string lootTableRef, int baseYield, bool isCriticalHarvest)
     {
-        if (location == null)
+        if (string.IsNullOrWhiteSpace(lootTableRef))
         {
-            _logger.LogWarning("Cannot generate loot for null location");
-            return new List<string>();
+            _logger.LogWarning("Cannot roll loot for null/empty loot table reference");
+            return new List<ItemDrop>();
         }
 
-        if (location.Loot == null || !location.Loot.Any())
+        // Parse the reference (format: @loot-tables/harvesting/woods:oak)
+        var (catalogKey, typeName, nodeName) = ParseHarvestingReference(lootTableRef);
+        if (catalogKey == null || typeName == null || nodeName == null)
         {
-            _logger.LogInformation("Location {LocationName} has no loot table", location.Name);
-            return new List<string>();
+            _logger.LogWarning("Invalid loot table reference format: {Reference}", lootTableRef);
+            return new List<ItemDrop>();
         }
 
-        var lootTable = BuildLootTable(location.Loot);
-        var generatedLoot = new List<string>();
-
-        for (int i = 0; i < count; i++)
+        // Get catalog from cache
+        var catalogFile = _dataCache.GetLootTableCatalog(catalogKey);
+        if (catalogFile == null)
         {
-            var lootRef = SelectWeightedLoot(lootTable);
-            if (lootRef != null)
+            _logger.LogWarning("Loot table catalog not found: {CatalogKey}", catalogKey);
+            return new List<ItemDrop>();
+        }
+
+        var catalog = catalogFile.JsonData;
+
+        // Navigate: catalog.harvesting_types[typeName].items[] - find by slug
+        var typeNode = catalog["harvesting_types"]?[typeName];
+        if (typeNode == null)
+        {
+            _logger.LogWarning("Type not found in harvesting catalog: {TypeName}", typeName);
+            return new List<ItemDrop>();
+        }
+
+        // Find item in items array by slug
+        var itemsArray = typeNode["items"] as JArray;
+        if (itemsArray == null)
+        {
+            _logger.LogWarning("No items array found for type: {TypeName}", typeName);
+            return new List<ItemDrop>();
+        }
+
+        JObject? nodeData = null;
+        foreach (var item in itemsArray.OfType<JObject>())
+        {
+            if (item["slug"]?.Value<string>() == nodeName)
             {
-                // Apply rarity filter if needed
-                // Note: Rarity filtering would require resolving the reference to check rarity
-                // For now, we return the reference and let the caller handle filtering
-                generatedLoot.Add(lootRef);
+                nodeData = item;
+                break;
             }
         }
 
-        _logger.LogDebug("Generated {Count} loot items for location {LocationName}", 
-            generatedLoot.Count, location.Name);
-
-        return generatedLoot;
-    }
-
-    /// <summary>
-    /// Gets the loot spawn weights for a location by category.
-    /// </summary>
-    /// <param name="location">The location to analyze.</param>
-    /// <returns>Dictionary of category to weight.</returns>
-    public Dictionary<string, int> GetLootSpawnWeights(Location location)
-    {
-        if (location == null || location.Loot == null)
+        if (nodeData == null)
         {
-            return new Dictionary<string, int>();
+            _logger.LogWarning("Node not found in items array: {NodeName}", nodeName);
+            return new List<ItemDrop>();
         }
 
-        return BuildLootTable(location.Loot);
-    }
+        var drops = new List<ItemDrop>();
+        var dropsArray = nodeData["drops"] as JArray;
 
-    /// <summary>
-    /// Gets all unique loot categories for a location.
-    /// </summary>
-    /// <param name="location">The location to analyze.</param>
-    /// <returns>List of loot categories.</returns>
-    public List<string> GetLootCategories(Location location)
-    {
-        if (location == null || location.Loot == null)
+        if (dropsArray == null)
         {
-            return new List<string>();
+            _logger.LogWarning("Node {NodeName} has no drops array", nodeName);
+            return drops;
         }
 
-        var categories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var lootRef in location.Loot)
+        foreach (var dropToken in dropsArray)
         {
-            var category = ExtractCategory(lootRef);
-            if (!string.IsNullOrEmpty(category))
+            var dropData = dropToken as JObject;
+            if (dropData == null) continue;
+
+            var materialRef = dropData["materialRef"]?.Value<string>();
+            var dropChance = dropData["dropChance"]?.Value<int>() ?? 0;
+            var isBonusDrop = dropData["isBonusDrop"]?.Value<bool>() ?? false;
+            var requiresCritical = dropData["requiresCritical"]?.Value<bool>() ?? false;
+
+            // Skip critical-only drops if not a critical harvest
+            if (requiresCritical && !isCriticalHarvest)
             {
-                categories.Add(category);
+                continue;
             }
-        }
 
-        return categories.ToList();
-    }
-
-    /// <summary>
-    /// Calculates the total loot weight for a location.
-    /// </summary>
-    /// <param name="location">The location to analyze.</param>
-    /// <returns>Total weight value.</returns>
-    public int GetTotalLootWeight(Location location)
-    {
-        if (location == null || location.Loot == null)
-        {
-            return 0;
-        }
-
-        var lootTable = BuildLootTable(location.Loot);
-        return lootTable.Values.Sum();
-    }
-
-    /// <summary>
-    /// Builds a weighted loot table from loot references.
-    /// Each reference adds 10 weight to its category.
-    /// </summary>
-    /// <param name="lootReferences">The loot references to process.</param>
-    /// <returns>Dictionary of category to weight.</returns>
-    private Dictionary<string, int> BuildLootTable(List<string> lootReferences)
-    {
-        var lootTable = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var lootRef in lootReferences)
-        {
-            if (lootRef.StartsWith("@items/", StringComparison.OrdinalIgnoreCase))
+            // Roll drop chance
+            var roll = _random.Next(1, 101);
+            if (roll > dropChance)
             {
-                var category = ExtractCategory(lootRef);
-                if (!string.IsNullOrEmpty(category))
+                continue; // Drop failed
+            }
+
+            // Calculate quantity
+            var minQuantity = dropData["minQuantity"]?.Value<int>() ?? 1;
+            var maxQuantity = dropData["maxQuantity"]?.Value<int>() ?? 1;
+            var quantity = _random.Next(minQuantity, maxQuantity + 1);
+
+            // Scale by base yield (only for non-bonus drops)
+            if (!isBonusDrop && baseYield > 1)
+            {
+                quantity = (int)Math.Ceiling(quantity * (baseYield / 1.0));
+            }
+
+            if (!string.IsNullOrEmpty(materialRef))
+            {
+                drops.Add(new ItemDrop
                 {
-                    lootTable[category] = lootTable.GetValueOrDefault(category, 0) + 10;
+                    ItemRef = materialRef,
+                    ItemName = ExtractItemName(materialRef),
+                    Quantity = quantity,
+                    IsBonus = isBonusDrop
+                });
+            }
+        }
+
+        _logger.LogDebug("Rolled {Count} drops for {Reference} (critical: {IsCritical})", 
+            drops.Count, lootTableRef, isCriticalHarvest);
+
+        return drops;
+    }
+
+    /// <summary>
+    /// Rolls loot drops for an enemy with inheritance from type defaults.
+    /// </summary>
+    /// <param name="lootTableRef">The loot table reference (e.g., "@loot-tables/enemies/humanoids:goblin").</param>
+    /// <returns>Result containing drops and gold amount.</returns>
+    public async Task<EnemyLootResult> RollEnemyDrops(string lootTableRef)
+    {
+        if (string.IsNullOrWhiteSpace(lootTableRef))
+        {
+            _logger.LogWarning("Cannot roll enemy loot for null/empty reference");
+            return new EnemyLootResult();
+        }
+
+        var (catalogKey, typeName, enemyName) = ParseHarvestingReference(lootTableRef);
+        if (catalogKey == null || typeName == null || enemyName == null)
+        {
+            _logger.LogWarning("Invalid enemy loot table reference: {Reference}", lootTableRef);
+            return new EnemyLootResult();
+        }
+
+        // Get catalog from cache
+        var catalogFile = _dataCache.GetLootTableCatalog(catalogKey);
+        if (catalogFile == null)
+        {
+            _logger.LogWarning("Enemy catalog not found: {CatalogKey}", catalogKey);
+            return new EnemyLootResult();
+        }
+
+        var catalog = catalogFile.JsonData;
+
+        var typeNode = catalog["enemy_types"]?[typeName];
+        if (typeNode == null)
+        {
+            _logger.LogWarning("Enemy type not found: {TypeName}", typeName);
+            return new EnemyLootResult();
+        }
+
+        // Find enemy in items array by slug
+        var itemsArray = typeNode["items"] as JArray;
+        if (itemsArray == null)
+        {
+            _logger.LogWarning("No items array found for enemy type: {TypeName}", typeName);
+            return new EnemyLootResult();
+        }
+
+        JObject? enemyData = null;
+        foreach (var item in itemsArray.OfType<JObject>())
+        {
+            if (item["slug"]?.Value<string>() == enemyName)
+            {
+            enemyData = item;
+                break;
+            }
+        }
+
+        if (enemyData == null)
+        {
+            _logger.LogWarning("Enemy not found in items array: {EnemyName}", enemyName);
+            return new EnemyLootResult();
+        }
+
+        // Apply inheritance: enemy-specific fields override type defaults
+        var poolRefs = GetPoolRefsWithInheritance(typeNode, enemyData);
+        var goldRange = GetGoldRangeWithInheritance(typeNode, enemyData);
+        var dropChance = GetDropChanceWithInheritance(typeNode, enemyData);
+
+        var result = new EnemyLootResult
+        {
+            Gold = _random.Next(goldRange.min, goldRange.max + 1),
+            Drops = new List<ItemDrop>()
+        };
+
+        // Roll pool-based drops
+        var poolRoll = _random.Next(1, 101);
+        if (poolRoll <= dropChance)
+        {
+            // Resolve material pool references and select random materials
+            foreach (var poolRef in poolRefs)
+            {
+                var poolMaterial = await SelectFromMaterialPoolAsync(poolRef);
+                if (poolMaterial.HasValue)
+                {
+                    result.Drops.Add(new ItemDrop
+                    {
+                        ItemRef = poolMaterial.Value.MaterialRef,
+                        ItemName = poolMaterial.Value.MaterialName,
+                        Quantity = _random.Next(1, 3),
+                        IsBonus = false
+                    });
                 }
             }
         }
 
-        return lootTable;
+        // Roll guaranteed drops
+        var guaranteedDrops = enemyData["guaranteedDrops"] as JArray;
+        if (guaranteedDrops != null)
+        {
+            foreach (var dropToken in guaranteedDrops)
+            {
+                var dropData = dropToken as JObject;
+                if (dropData == null) continue;
+
+                var materialRef = dropData["materialRef"]?.Value<string>();
+                var dropChance2 = dropData["dropChance"]?.Value<int>() ?? 100;
+
+                var roll = _random.Next(1, 101);
+                if (roll > dropChance2) continue;
+
+                var minQuantity = dropData["minQuantity"]?.Value<int>() ?? 1;
+                var maxQuantity = dropData["maxQuantity"]?.Value<int>() ?? 1;
+                var quantity = _random.Next(minQuantity, maxQuantity + 1);
+
+                if (!string.IsNullOrEmpty(materialRef))
+                {
+                    result.Drops.Add(new ItemDrop
+                    {
+                        ItemRef = materialRef,
+                        ItemName = ExtractItemName(materialRef),
+                        Quantity = quantity,
+                        IsBonus = false
+                    });
+                }
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
-    /// Extracts the category from an item reference.
-    /// Example: "@items/weapons/swords:*" -> "weapons/swords"
+    /// Rolls loot for a chest with support for multi-lookup merge strategies.
     /// </summary>
-    /// <param name="reference">The item reference.</param>
-    /// <returns>The category, or empty string if invalid.</returns>
-    private string ExtractCategory(string reference)
+    /// <param name="lootLookups">List of loot table references to merge.</param>
+    /// <param name="mergeStrategy">How to combine multiple lookups (addPools, prioritizeFirst, prioritizeLast).</param>
+    /// <returns>Result containing drops and gold amount.</returns>
+    public ChestLootResult RollChestDrops(List<string> lootLookups, string mergeStrategy = "addPools")
     {
-        if (!reference.StartsWith("@items/", StringComparison.OrdinalIgnoreCase))
+        if (lootLookups == null || lootLookups.Count == 0)
         {
-            return string.Empty;
+            _logger.LogWarning("Cannot roll chest loot with empty lookups");
+            return new ChestLootResult();
         }
 
-        // Remove "@items/" prefix
-        var refPart = reference.Substring(7);
+        var result = new ChestLootResult
+        {
+            Gold = 0,
+            Drops = new List<ItemDrop>()
+        };
+
+        switch (mergeStrategy.ToLowerInvariant())
+        {
+            case "addpools":
+                // Add all pools together (more loot)
+                foreach (var lookup in lootLookups)
+                {
+                    var lootResult = RollSingleChestLookup(lookup);
+                    result.Gold += lootResult.Gold;
+                    result.Drops.AddRange(lootResult.Drops);
+                }
+                break;
+
+            case "prioritizefirst":
+                // Use first lookup, ignore others
+                if (lootLookups.Any())
+                {
+                    result = RollSingleChestLookup(lootLookups[0]);
+                }
+                break;
+
+            case "prioritizelast":
+                // Use last lookup, ignore others
+                if (lootLookups.Any())
+                {
+                    result = RollSingleChestLookup(lootLookups[^1]);
+                }
+                break;
+
+            default:
+                _logger.LogWarning("Unknown merge strategy: {Strategy}, using addPools", mergeStrategy);
+                goto case "addpools";
+        }
+
+        _logger.LogDebug("Rolled chest loot with strategy {Strategy}: {Gold} gold, {Count} drops",
+            mergeStrategy, result.Gold, result.Drops.Count);
+
+        return result;
+    }
+
+    private (string? catalogKey, string? typeName, string? itemName) ParseHarvestingReference(string reference)
+    {
+        // Format: @loot-tables/harvesting/woods:oak
+        if (!reference.StartsWith("@loot-tables/"))
+            return (null, null, null);
+
+        var withoutPrefix = reference.Substring("@loot-tables/".Length);
+        var parts = withoutPrefix.Split(':');
+        if (parts.Length != 2)
+            return (null, null, null);
+
+        var pathParts = parts[0].Split('/');
+        if (pathParts.Length != 2)
+            return (null, null, null);
+
+        return (pathParts[0], pathParts[1], parts[1]);
+    }
+
+    private string ExtractItemName(string? materialRef)
+    {
+        if (string.IsNullOrWhiteSpace(materialRef))
+            return "Unknown Material";
+
+        // Get the part after the last colon
+        var colonIndex = materialRef.LastIndexOf(':');
+        if (colonIndex < 0)
+            return "Unknown Material";
+
+        var itemId = materialRef.Substring(colonIndex + 1);
         
-        // Find colon separator
-        var colonIndex = refPart.IndexOf(':');
-        if (colonIndex > 0)
+        // Convert kebab-case to Title Case
+        var words = itemId.Split('-');
+        var titleCase = string.Join(" ", words.Select(w => 
+            char.ToUpper(w[0]) + w.Substring(1).ToLower()));
+        
+        return titleCase;
+    }
+
+    private List<string> GetPoolRefsWithInheritance(JToken typeNode, JToken enemyNode)
+    {
+        // Check for additionalPools (additive inheritance)
+        var additionalPools = enemyNode["additionalPools"] as JArray;
+        if (additionalPools != null)
         {
-            return refPart.Substring(0, colonIndex);
+            var basePools = typeNode["poolRefs"]?.ToObject<List<string>>() ?? new List<string>();
+            var extraPools = additionalPools.ToObject<List<string>>() ?? new List<string>();
+            return basePools.Concat(extraPools).ToList();
         }
 
-        return refPart;
+        // Check for poolRefs override (replace inheritance)
+        var enemyPools = enemyNode["poolRefs"] as JArray;
+        if (enemyPools != null)
+        {
+            return enemyPools.ToObject<List<string>>() ?? new List<string>();
+        }
+
+        // Default: inherit from type
+        return typeNode["poolRefs"]?.ToObject<List<string>>() ?? new List<string>();
+    }
+
+    private (int min, int max) GetGoldRangeWithInheritance(JToken typeNode, JToken enemyNode)
+    {
+        var enemyGoldRange = enemyNode["goldRange"] as JArray;
+        if (enemyGoldRange != null && enemyGoldRange.Count == 2)
+        {
+            return (enemyGoldRange[0].Value<int>(), enemyGoldRange[1].Value<int>());
+        }
+
+        var typeGoldRange = typeNode["goldRange"] as JArray;
+        if (typeGoldRange != null && typeGoldRange.Count == 2)
+        {
+            return (typeGoldRange[0].Value<int>(), typeGoldRange[1].Value<int>());
+        }
+
+        return (0, 0);
+    }
+
+    private int GetDropChanceWithInheritance(JToken typeNode, JToken enemyNode)
+    {
+        var enemyChance = enemyNode["dropChance"]?.Value<int>();
+        if (enemyChance.HasValue)
+        {
+            return enemyChance.Value;
+        }
+
+        return typeNode["dropChance"]?.Value<int>() ?? 0;
     }
 
     /// <summary>
-    /// Selects a loot reference using weighted random selection.
+    /// Selects a material from a pool reference using weighted random selection.
     /// </summary>
-    /// <param name="lootTable">The weighted loot table.</param>
-    /// <param name="random">Optional random instance to use (defaults to instance _random).</param>
-    /// <returns>A randomly selected loot category, or null if table is empty.</returns>
-    private string? SelectWeightedLoot(Dictionary<string, int> lootTable, Random? random = null)
+    private async Task<(string MaterialRef, string MaterialName)?> SelectFromMaterialPoolAsync(string poolRef)
     {
-        if (lootTable == null || !lootTable.Any())
+        try
         {
+            // Pool refs are like: "@material-pools/humanoid_low/metals"
+            var resolved = await _referenceResolver.ResolveToObjectAsync(poolRef);
+            if (resolved == null)
+            {
+                _logger.LogWarning("Failed to resolve pool reference: {PoolRef}", poolRef);
+                return null;
+            }
+
+            // Pool should be an array of material references with weights
+            if (resolved is JArray poolArray && poolArray.Any())
+            {
+                // Calculate total weight
+                var totalWeight = 0;
+                var materials = new List<(string Ref, string Name, int Weight)>();
+
+                foreach (var item in poolArray)
+                {
+                    var materialRef = item["materialRef"]?.Value<string>();
+                    var weight = item["rarityWeight"]?.Value<int>() ?? 1;
+
+                    if (!string.IsNullOrEmpty(materialRef))
+                    {
+                        // Resolve to get name
+                        var material = await _referenceResolver.ResolveToObjectAsync(materialRef);
+                        var name = material?["name"]?.Value<string>() ?? ExtractItemName(materialRef);
+
+                        materials.Add((materialRef, name, weight));
+                        totalWeight += weight;
+                    }
+                }
+
+                if (materials.Any())
+                {
+                    // Weighted random selection
+                    var roll = _random.Next(totalWeight);
+                    var cumulative = 0;
+
+                    foreach (var (matRef, matName, weight) in materials)
+                    {
+                        cumulative += weight;
+                        if (roll < cumulative)
+                        {
+                            return (matRef, matName);
+                        }
+                    }
+
+                    // Fallback to first
+                    return (materials[0].Ref, materials[0].Name);
+                }
+            }
+
+            _logger.LogWarning("Pool reference {PoolRef} resolved but is empty or invalid format", poolRef);
             return null;
         }
-
-        var rng = random ?? _random;
-        var totalWeight = lootTable.Values.Sum();
-        var roll = rng.Next(totalWeight);
-        var cumulative = 0;
-
-        foreach (var (category, weight) in lootTable)
+        catch (Exception ex)
         {
-            cumulative += weight;
-            if (roll < cumulative)
-            {
-                // Return a wildcard reference for this category
-                return $"@items/{category}:*";
-            }
+            _logger.LogError(ex, "Error selecting from material pool: {PoolRef}", poolRef);
+            return null;
         }
-
-        // Fallback to first category (should never reach here)
-        return $"@items/{lootTable.Keys.First()}:*";
     }
 
     /// <summary>
-    /// Generates loot with specific category preference.
+    /// Rolls loot for a single chest lookup reference.
     /// </summary>
-    /// <param name="location">The location to generate loot for.</param>
-    /// <param name="preferredCategory">The preferred loot category (e.g., "weapons/swords").</param>
-    /// <param name="count">Number of items to generate.</param>
-    /// <param name="seed">Optional random seed for deterministic results (creates temporary RNG instance).</param>
-    /// <returns>List of loot references, preferring the specified category.</returns>
-    public List<string> GenerateLootWithPreference(
-        Location location,
-        string preferredCategory,
-        int count = 1,
-        int? seed = null)
+    private ChestLootResult RollSingleChestLookup(string lookup)
     {
-        if (location == null || location.Loot == null || !location.Loot.Any())
+        // Placeholder implementation - chest loot tables would be similar to enemy loot tables
+        // For now, return a simple result with random gold
+        return new ChestLootResult
         {
-            return new List<string>();
-        }
-
-        var lootTable = BuildLootTable(location.Loot);
-        
-        // Boost the preferred category weight by 50%
-        if (lootTable.ContainsKey(preferredCategory))
-        {
-            lootTable[preferredCategory] = (int)(lootTable[preferredCategory] * 1.5);
-        }
-
-        // Use provided seed or instance random
-        var random = seed.HasValue ? new Random(seed.Value) : _random;
-
-        var generatedLoot = new List<string>();
-        for (int i = 0; i < count; i++)
-        {
-            var lootRef = SelectWeightedLoot(lootTable, random);
-            if (lootRef != null)
-            {
-                generatedLoot.Add(lootRef);
-            }
-        }
-
-        return generatedLoot;
+            Gold = _random.Next(10, 100),
+            Drops = new List<ItemDrop>()
+        };
     }
+}
 
+/// <summary>
+/// Result of rolling enemy loot drops.
+/// </summary>
+public class EnemyLootResult
+{
     /// <summary>
-    /// Generates loot for a chest using hybrid approach: static references + budget-generated items.
+    /// Gold amount dropped.
     /// </summary>
-    /// <param name="chestRarity">The chest rarity tier</param>
-    /// <param name="locationLevel">The location level where chest is found</param>
-    /// <param name="itemCategory">The item category to generate (weapons, armor, etc.)</param>
-    /// <param name="count">Number of items to generate</param>
-    /// <param name="staticReferences">Optional static loot table references (e.g., legendary items)</param>
-    /// <returns>List of generated items (async)</returns>
-    public async Task<List<Item>> GenerateChestLootAsync(
-        RarityTier chestRarity,
-        int locationLevel,
-        string itemCategory,
-        int count = 1,
-        List<string>? staticReferences = null)
-    {
-        var items = new List<Item>();
+    public int Gold { get; set; }
+    
+    /// <summary>
+    /// List of item drops with quantities.
+    /// </summary>
+    public List<ItemDrop> Drops { get; set; } = new List<ItemDrop>();
+}
 
-        if (_budgetHelper == null || _itemGenerator == null)
-        {
-            _logger.LogWarning("Cannot generate procedural chest loot without BudgetHelper and ItemGenerator");
-            return items;
-        }
-
-        // 20% chance for static legendary items if provided
-        if (staticReferences != null && staticReferences.Any() && _random.Next(100) < 20)
-        {
-            _logger.LogInformation("Chest contains static legendary item from loot table");
-            
-            // Select random static reference
-            var selectedRef = staticReferences[_random.Next(staticReferences.Count)];
-            
-            // Try to resolve and generate from reference
-            if (selectedRef.StartsWith("@"))
-            {
-                // Parse reference: @items/weapons/swords:legendary-blade
-                var parts = selectedRef.TrimStart('@').Split(':');
-                if (parts.Length == 2)
-                {
-                    var pathParts = parts[0].Split('/');
-                    var category = pathParts.Length >= 2 ? pathParts[1] : pathParts[0];
-                    var itemName = parts[1];
-
-                    var staticItem = await _itemGenerator.GenerateItemByNameAsync(category, itemName, hydrate: true);
-                    if (staticItem != null)
-                    {
-                        items.Add(staticItem);
-                        count--;
-                        _logger.LogInformation("Generated static legendary item: {ItemName}", staticItem.Name);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to resolve static reference: {Ref}", selectedRef);
-                    }
-                }
-            }
-            else
-            {
-                _logger.LogWarning("Invalid static reference format (expected @reference): {Ref}", selectedRef);
-            }
-        }
-
-        // Generate remaining items using budget system (80% of loot)
-        var itemBudget = _budgetHelper.GetBudgetForChest(chestRarity, locationLevel);
-        
-        for (int i = 0; i < count; i++)
-        {
-            var request = new BudgetItemRequest
-            {
-                EnemyType = "treasure_chest",
-                EnemyLevel = locationLevel,
-                ItemCategory = itemCategory,
-                AllowQuality = true
-            };
-
-            var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
-            items.Add(item);
-            
-            _logger.LogDebug("Generated chest loot: {ItemName} (budget={Budget}, rarity={Rarity})",
-                item.Name, itemBudget, chestRarity);
-        }
-
-        return items;
-    }
+/// <summary>
+/// Result of rolling chest loot drops.
+/// </summary>
+public class ChestLootResult
+{
+    /// <summary>
+    /// Gold amount in chest.
+    /// </summary>
+    public int Gold { get; set; }
+    
+    /// <summary>
+    /// List of item drops with quantities.
+    /// </summary>
+    public List<ItemDrop> Drops { get; set; } = new List<ItemDrop>();
 }

@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
 
-namespace RealmEngine.Data.Services;
+namespace RealmEngine.Core.Services;
 
 /// <summary>
 /// In-memory implementation of IInventoryService for testing and development.

@@ -317,6 +317,9 @@ public class ItemGenerator
                 "armor" => ItemType.Chest,
                 "consumables" => ItemType.Consumable,
                 "shields" => ItemType.Shield,
+                var c when c.StartsWith("materials/", StringComparison.OrdinalIgnoreCase) => ItemType.Material,
+                var c when c.StartsWith("gems/", StringComparison.OrdinalIgnoreCase) => ItemType.Material,
+                var c when c.StartsWith("crystals/", StringComparison.OrdinalIgnoreCase) => ItemType.Material,
                 _ => ItemType.Consumable
             };
 
