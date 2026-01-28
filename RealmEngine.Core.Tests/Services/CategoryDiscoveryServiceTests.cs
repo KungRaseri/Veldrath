@@ -21,16 +21,11 @@ public class CategoryDiscoveryServiceTests : IDisposable
         // Use relative path to test data
         _testDataPath = Path.Combine(
             Directory.GetCurrentDirectory(),
-            "..", "..", "..", "..", "Data", "Json");
-
-        if (!Directory.Exists(_testDataPath))
-        {
-            _testDataPath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Data", "Json");
-        }
+            "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
 
         _dataCache = new GameDataCache(_testDataPath, null);
+        _dataCache.LoadAllData();
+        
         var logger = NullLogger<CategoryDiscoveryService>.Instance;
         _service = new CategoryDiscoveryService(_dataCache, logger);
     }
