@@ -2,7 +2,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Services.Harvesting;
+using RealmEngine.Core.Services.Budget;
+using RealmEngine.Core.Features.Combat;
+using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Features.CharacterCreation.Services;
+using RealmEngine.Core.Features.Quests.Services;
+using RealmEngine.Core.Features.Reputation.Services;
+using RealmEngine.Core.Features.Party.Services;
+using RealmEngine.Core.Features.Difficulty.Services;
+using RealmEngine.Core.Features.Death;
+using RealmEngine.Core.Features.Death.Services;
+using RealmEngine.Core.Features.Victory.Services;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Data.Services;
+using RealmEngine.Data.Repositories;
+using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core;
 
@@ -22,17 +38,76 @@ public static class ServiceCollectionExtensions
         // Register category discovery service (singleton for caching)
         services.AddSingleton<CategoryDiscoveryService>();
         
-        // Register generators
+        // Register generators (all available)
         services.AddScoped<ItemGenerator>();
         services.AddScoped<EnemyGenerator>();
         services.AddScoped<NpcGenerator>();
         services.AddScoped<AbilityGenerator>();
         services.AddScoped<CharacterClassGenerator>();
+        services.AddScoped<LocationGenerator>();
+        services.AddScoped<QuestGenerator>();
+        services.AddScoped<OrganizationGenerator>();
+        services.AddScoped<DialogueGenerator>();
+        services.AddScoped<GemGenerator>();
+        services.AddScoped<EssenceGenerator>();
+        services.AddScoped<EnchantmentGenerator>();
+        services.AddScoped<SocketGenerator>();
+        services.AddScoped<RuneGenerator>();
+        services.AddScoped<OrbGenerator>();
+        services.AddScoped<CrystalGenerator>();
         
         // Register game logic services
         services.AddScoped<LootTableService>();
         services.AddScoped<CharacterGrowthService>();
         services.AddScoped<InMemoryInventoryService>();
+        services.AddScoped<ShopEconomyService>();
+        services.AddScoped<LevelUpService>();
+        services.AddScoped<GameStateService>();
+        
+        // Register harvesting services
+        services.AddScoped<HarvestCalculatorService>();
+        services.AddScoped<CriticalHarvestService>();
+        services.AddScoped<ToolValidationService>();
+        services.AddScoped<HarvestingConfigService>();
+        
+        // Register budget generation services
+        services.AddScoped<BudgetItemGenerationService>();
+        services.AddScoped<MaterialPoolService>();
+        services.AddScoped<BudgetHelperService>();
+        
+        // Register config/utility services
+        services.AddScoped<RarityConfigService>();
+        services.AddScoped<DescriptiveTextService>();
+        services.AddScoped<NodeSpawnerService>();
+        services.AddScoped<ReactiveAbilityService>();
+        
+        // Register catalog services
+        services.AddScoped<AbilityCatalogService>();
+        services.AddScoped<SpellCatalogService>();
+        services.AddScoped<SkillCatalogService>();
+        
+        // Register feature services
+        services.AddScoped<SaveGameService>();
+        services.AddScoped<LoadGameService>();
+        services.AddScoped<CombatService>();
+        services.AddScoped<ExplorationService>();
+        services.AddScoped<CharacterInitializationService>();
+        services.AddScoped<QuestService>();
+        services.AddScoped<QuestProgressService>();
+        services.AddScoped<QuestRewardService>();
+        services.AddScoped<QuestInitializationService>();
+        services.AddScoped<MainQuestService>();
+        services.AddScoped<ReputationService>();
+        services.AddScoped<FactionDataService>();
+        services.AddScoped<PartyService>();
+        services.AddScoped<PartyAIService>();
+        services.AddScoped<DifficultyService>();
+        services.AddScoped<DeathService>();
+        services.AddScoped<RespawnService>();
+        services.AddScoped<VictoryService>();
+        services.AddScoped<NewGamePlusService>();
+        services.AddScoped<SpellCastingService>();
+        services.AddScoped<SkillProgressionService>();
         
         return services;
     }
@@ -58,6 +133,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ItemGenerationRulesService>();
         services.AddScoped<ExperienceConfigService>();
         services.AddScoped<ResourceNodeLoaderService>();
+        
+        // Register repositories
+        services.AddScoped<ISaveGameRepository, SaveGameRepository>();
+        services.AddScoped<INodeRepository, InMemoryNodeRepository>();
+        services.AddScoped<ICharacterClassRepository, CharacterClassRepository>();
+        services.AddScoped<IHallOfFameRepository, HallOfFameRepository>();
+        services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
         
         return services;
     }
