@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
@@ -80,13 +81,27 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DescriptiveTextService>();
         services.AddScoped<NodeSpawnerService>();
         services.AddScoped<ReactiveAbilityService>();
+        services.AddScoped<PassiveBonusCalculator>();
         
         // Register catalog services
         services.AddScoped<AbilityCatalogService>();
         services.AddScoped<SpellCatalogService>();
         services.AddScoped<SkillCatalogService>();
         
-        // Register feature services
+        // Register interfaces to implementations
+        services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
+        services.AddScoped<ISaveGameService, SaveGameService>();
+        services.AddScoped<IInventoryService, InMemoryInventoryService>();
+        services.AddScoped<IPassiveBonusCalculator, PassiveBonusCalculator>();
+        
+        // Register repositories (interfaces defined in Shared, implementations in Data)
+        services.AddScoped<ISaveGameRepository, SaveGameRepository>();
+        services.AddScoped<INodeRepository, InMemoryNodeRepository>();
+        services.AddScoped<ICharacterClassRepository, CharacterClassRepository>();
+        services.AddScoped<IHallOfFameRepository, HallOfFameRepository>();
+        services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
+        
+        // Register feature services (concrete implementations)
         services.AddScoped<SaveGameService>();
         services.AddScoped<LoadGameService>();
         services.AddScoped<CombatService>();
@@ -134,12 +149,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ExperienceConfigService>();
         services.AddScoped<ResourceNodeLoaderService>();
         
-        // Register repositories
-        services.AddScoped<ISaveGameRepository, SaveGameRepository>();
-        services.AddScoped<INodeRepository, InMemoryNodeRepository>();
-        services.AddScoped<ICharacterClassRepository, CharacterClassRepository>();
-        services.AddScoped<IHallOfFameRepository, HallOfFameRepository>();
-        services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
+        // Note: Repositories are registered in AddRealmEngineCore since they're used by Core services
+        // and the interface/implementation split requires them to be in Core's DI scope
         
         return services;
     }
