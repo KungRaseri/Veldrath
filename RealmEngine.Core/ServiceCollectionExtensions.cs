@@ -9,7 +9,9 @@ using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Core.Features.Combat;
+using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Features.Exploration.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.CharacterCreation.Services;
 using RealmEngine.Core.Features.Quests.Services;
@@ -21,6 +23,8 @@ using RealmEngine.Core.Features.Death.Services;
 using RealmEngine.Core.Features.Victory.Services;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.Crafting.Services;
+using RealmEngine.Core.Features.Socketing;
+using RealmEngine.Core.Features.Achievements.Services;
 using RealmEngine.Data.Services;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
@@ -99,9 +103,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<PassiveBonusCalculator>();
         
         // Register catalog services (singletons for shared catalogs)
+        // NOTE: These catalog services require InitializeAsync() to be called after DI container is built
+        // Example: await serviceProvider.GetRequiredService<AbilityCatalogService>().InitializeAsync();
         services.AddSingleton<AbilityCatalogService>();
-        services.AddScoped<SpellCatalogService>();
-        services.AddScoped<SkillCatalogService>();
+        services.AddSingleton<SpellCatalogService>();  // Changed from Scoped to Singleton for caching
+        services.AddSingleton<SkillCatalogService>();  // Changed from Scoped to Singleton for caching
         
         // Register interfaces to implementations
         services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
@@ -139,6 +145,16 @@ public static class ServiceCollectionExtensions
         services.AddScoped<NewGamePlusService>();
         services.AddScoped<SpellCastingService>();
         services.AddScoped<SkillProgressionService>();
+        services.AddScoped<GameplayService>();
+        services.AddScoped<SocketService>();
+        
+        // Register combat AI services
+        services.AddScoped<EnemySpellCastingService>();
+        services.AddScoped<EnemyAbilityAIService>();
+        
+        // Register additional feature services
+        services.AddScoped<DungeonGeneratorService>();
+        services.AddScoped<AchievementService>();
         
         return services;
     }

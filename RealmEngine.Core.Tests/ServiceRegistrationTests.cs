@@ -23,6 +23,7 @@ using RealmEngine.Core.Features.SaveLoad.Commands;
 using RealmEngine.Core.Features.SaveLoad.Queries;
 using RealmEngine.Core.Features.Shop.Commands;
 using RealmEngine.Core.Features.Shop.Queries;
+using RealmEngine.Core.Features.Socketing;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
@@ -268,6 +269,16 @@ public class ServiceRegistrationTests
 
         // Assert
         service.Should().NotBeNull("AbilityCatalogService should be registered (required by GetAvailableAbilitiesHandler)");
+    }
+
+    [Fact]
+    public void SpellCatalogService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<SpellCatalogService>();
+
+        // Assert
+        service.Should().NotBeNull("SpellCatalogService should be registered as singleton (required by GetLearnableSpellsHandler)");
     }
 
     [Fact]
@@ -587,7 +598,9 @@ public class ServiceRegistrationTests
             typeof(LoadGameService),
             typeof(CombatService),
             typeof(CraftingService),
-            typeof(ExplorationService)
+            typeof(ExplorationService),
+            typeof(GameplayService),
+            typeof(SocketService)
         };
 
         var failures = new List<string>();
@@ -612,6 +625,26 @@ public class ServiceRegistrationTests
 
         // Assert
         failures.Should().BeEmpty($"All {featureServices.Length} feature services should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    [Fact]
+    public void GameplayService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<GameplayService>();
+
+        // Assert
+        service.Should().NotBeNull("GameplayService should be registered (handles rest, recovery)");
+    }
+
+    [Fact]
+    public void SocketService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<SocketService>();
+
+        // Assert
+        service.Should().NotBeNull("SocketService should be registered (handles socket validation and operations)");
     }
 
     #endregion
