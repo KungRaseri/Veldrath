@@ -17,6 +17,7 @@ using RealmEngine.Core.Features.Death;
 using RealmEngine.Core.Features.Death.Services;
 using RealmEngine.Core.Features.Victory.Services;
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Data.Services;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
@@ -71,10 +72,21 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ToolValidationService>();
         services.AddScoped<HarvestingConfigService>();
         
-        // Register budget generation services
+        // Register budget configuration factory and services
+        services.AddSingleton<BudgetConfigFactory>();
+        services.AddSingleton<BudgetConfig>(sp => 
+        {
+            var factory = sp.GetRequiredService<BudgetConfigFactory>();
+            return factory.GetBudgetConfig();
+        });
+        services.AddSingleton<BudgetCalculator>();
         services.AddScoped<BudgetItemGenerationService>();
         services.AddScoped<MaterialPoolService>();
         services.AddScoped<BudgetHelperService>();
+        
+        // Register catalog loaders
+        services.AddSingleton<RecipeCatalogLoader>();
+        services.AddSingleton<ItemCatalogLoader>();
         
         // Register config/utility services
         services.AddScoped<RarityConfigService>();
@@ -83,8 +95,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ReactiveAbilityService>();
         services.AddScoped<PassiveBonusCalculator>();
         
-        // Register catalog services
-        services.AddScoped<AbilityCatalogService>();
+        // Register catalog services (singletons for shared catalogs)
+        services.AddSingleton<AbilityCatalogService>();
         services.AddScoped<SpellCatalogService>();
         services.AddScoped<SkillCatalogService>();
         
@@ -105,6 +117,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SaveGameService>();
         services.AddScoped<LoadGameService>();
         services.AddScoped<CombatService>();
+        services.AddScoped<CraftingService>();
         services.AddScoped<ExplorationService>();
         services.AddScoped<CharacterInitializationService>();
         services.AddScoped<QuestService>();

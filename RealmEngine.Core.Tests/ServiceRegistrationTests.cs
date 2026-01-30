@@ -1,0 +1,769 @@
+using FluentAssertions;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using RealmEngine.Core;
+using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.CharacterCreation.Commands;
+using RealmEngine.Core.Features.Combat;
+using RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
+using RealmEngine.Core.Features.Crafting.Commands;
+using RealmEngine.Core.Features.Crafting.Queries;
+using RealmEngine.Core.Features.Crafting.Services;
+using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Features.Exploration.Commands;
+using RealmEngine.Core.Features.Inventory.Commands;
+using RealmEngine.Core.Features.ItemGeneration.Commands;
+using RealmEngine.Core.Features.LevelUp.Commands;
+using RealmEngine.Core.Features.Progression.Commands;
+using RealmEngine.Core.Features.Progression.Queries;
+using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Features.SaveLoad.Commands;
+using RealmEngine.Core.Features.SaveLoad.Queries;
+using RealmEngine.Core.Features.Shop.Commands;
+using RealmEngine.Core.Features.Shop.Queries;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services;
+using RealmEngine.Core.Services.Budget;
+using RealmEngine.Data;
+using RealmEngine.Data.Repositories;
+using RealmEngine.Data.Services;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
+using System.Reflection;
+using Xunit;
+
+namespace RealmEngine.Core.Tests;
+
+/// <summary>
+/// Comprehensive tests to ensure all services are properly registered in the DI container.
+/// These tests will catch missing registrations before runtime errors occur.
+/// </summary>
+public class ServiceRegistrationTests
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceCollection _services;
+
+    public ServiceRegistrationTests()
+    {
+        _services = new ServiceCollection();
+        
+        // Register logging (basic logging without console sink)
+        _services.AddLogging();
+        
+        // Register RealmEngine services FIRST (before MediatR)
+        // This ensures all handler dependencies are available when MediatR scans
+        _services.AddRealmEngineData("c:\\code\\console-game\\RealmEngine.Data\\Data\\Json");
+        _services.AddRealmEngineCore();
+        
+        // Override SaveGameRepository to use in-memory database for test isolation
+        // This must be done AFTER AddRealmEngineCore() which registers the default implementation
+        var descriptor = _services.FirstOrDefault(d => d.ServiceType == typeof(ISaveGameRepository));
+        if (descriptor != null)
+        {
+            _services.Remove(descriptor);
+        }
+        _services.AddScoped<ISaveGameRepository>(sp => 
+            new SaveGameRepository(":memory:"));
+        
+        // Register MediatR LAST so all handler dependencies are registered
+        _services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateCharacterCommand).Assembly));
+        
+        _serviceProvider = _services.BuildServiceProvider();
+    }
+
+    #region Core Interface Bindings
+
+    [Fact]
+    public void IApocalypseTimer_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<IApocalypseTimer>();
+
+        // Assert
+        service.Should().NotBeNull("IApocalypseTimer should be registered in DI container");
+        service.Should().BeOfType<ApocalypseTimer>("IApocalypseTimer should bind to ApocalypseTimer implementation");
+    }
+
+    [Fact]
+    public void ISaveGameService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ISaveGameService>();
+
+        // Assert
+        service.Should().NotBeNull("ISaveGameService should be registered in DI container");
+        service.Should().BeOfType<SaveGameService>("ISaveGameService should bind to SaveGameService implementation");
+    }
+
+    [Fact]
+    public void IInventoryService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<IInventoryService>();
+
+        // Assert
+        service.Should().NotBeNull("IInventoryService should be registered in DI container");
+        service.Should().BeOfType<InMemoryInventoryService>("IInventoryService should bind to InMemoryInventoryService implementation");
+    }
+
+    [Fact]
+    public void IPassiveBonusCalculator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<IPassiveBonusCalculator>();
+
+        // Assert
+        service.Should().NotBeNull("IPassiveBonusCalculator should be registered in DI container");
+        service.Should().BeOfType<PassiveBonusCalculator>("IPassiveBonusCalculator should bind to PassiveBonusCalculator implementation");
+    }
+
+    #endregion
+
+    #region Repository Interface Bindings
+
+    [Fact]
+    public void ISaveGameRepository_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ISaveGameRepository>();
+
+        // Assert
+        service.Should().NotBeNull("ISaveGameRepository should be registered in DI container");
+    }
+
+    [Fact]
+    public void INodeRepository_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<INodeRepository>();
+
+        // Assert
+        service.Should().NotBeNull("INodeRepository should be registered in DI container");
+    }
+
+    [Fact]
+    public void ICharacterClassRepository_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ICharacterClassRepository>();
+
+        // Assert
+        service.Should().NotBeNull("ICharacterClassRepository should be registered in DI container");
+    }
+
+    [Fact]
+    public void IHallOfFameRepository_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<IHallOfFameRepository>();
+
+        // Assert
+        service.Should().NotBeNull("IHallOfFameRepository should be registered in DI container");
+    }
+
+    [Fact]
+    public void IEquipmentSetRepository_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<IEquipmentSetRepository>();
+
+        // Assert
+        service.Should().NotBeNull("IEquipmentSetRepository should be registered in DI container");
+    }
+
+    #endregion
+
+    #region Critical Services Reported By User
+
+    [Fact]
+    public void CraftingService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<CraftingService>();
+
+        // Assert
+        service.Should().NotBeNull("CraftingService should be registered (required by GetKnownRecipesHandler)");
+    }
+
+    [Fact]
+    public void BudgetCalculator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<BudgetCalculator>();
+
+        // Assert
+        service.Should().NotBeNull("BudgetCalculator should be registered (required by BudgetHelperService → ShopEconomyService)");
+    }
+
+    [Fact]
+    public void BudgetConfigFactory_Should_Be_Registered()
+    {
+        // Act
+        var factory = _serviceProvider.GetService<BudgetConfigFactory>();
+
+        // Assert
+        factory.Should().NotBeNull("BudgetConfigFactory should be registered to load budget configuration");
+    }
+
+    [Fact]
+    public void BudgetConfig_Should_Be_Registered_And_Loaded()
+    {
+        // Act
+        var config = _serviceProvider.GetService<BudgetConfig>();
+
+        // Assert
+        config.Should().NotBeNull("BudgetConfig should be registered and loaded from JSON");
+        config!.Allocation.Should().NotBeNull("BudgetConfig should have allocation settings");
+        config.Formulas.Should().NotBeNull("BudgetConfig should have cost formulas");
+    }
+
+    [Fact]
+    public void AbilityCatalogService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<AbilityCatalogService>();
+
+        // Assert
+        service.Should().NotBeNull("AbilityCatalogService should be registered (required by GetAvailableAbilitiesHandler)");
+    }
+
+    [Fact]
+    public void RecipeCatalogLoader_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<RecipeCatalogLoader>();
+
+        // Assert
+        service.Should().NotBeNull("RecipeCatalogLoader should be registered");
+    }
+
+    [Fact]
+    public void ItemCatalogLoader_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ItemCatalogLoader>();
+
+        // Assert
+        service.Should().NotBeNull("ItemCatalogLoader should be registered");
+    }
+
+    #endregion
+
+    #region Generator Services
+
+    [Fact]
+    public void ItemGenerator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ItemGenerator>();
+
+        // Assert
+        service.Should().NotBeNull("ItemGenerator should be registered");
+    }
+
+    [Fact]
+    public void EnemyGenerator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<EnemyGenerator>();
+
+        // Assert
+        service.Should().NotBeNull("EnemyGenerator should be registered");
+    }
+
+    [Fact]
+    public void AbilityGenerator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<AbilityGenerator>();
+
+        // Assert
+        service.Should().NotBeNull("AbilityGenerator should be registered");
+    }
+
+    [Fact]
+    public void LocationGenerator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<LocationGenerator>();
+
+        // Assert
+        service.Should().NotBeNull("LocationGenerator should be registered");
+    }
+
+    [Fact]
+    public void NpcGenerator_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<NpcGenerator>();
+
+        // Assert
+        service.Should().NotBeNull("NpcGenerator should be registered");
+    }
+
+    #endregion
+
+    #region Core Services
+
+    [Fact]
+    public void CharacterGrowthService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<CharacterGrowthService>();
+
+        // Assert
+        service.Should().NotBeNull("CharacterGrowthService should be registered");
+    }
+
+    [Fact]
+    public void LootTableService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<LootTableService>();
+
+        // Assert
+        service.Should().NotBeNull("LootTableService should be registered");
+    }
+
+    [Fact]
+    public void ShopEconomyService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ShopEconomyService>();
+
+        // Assert
+        service.Should().NotBeNull("ShopEconomyService should be registered");
+    }
+
+    [Fact]
+    public void GameStateService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<GameStateService>();
+
+        // Assert
+        service.Should().NotBeNull("GameStateService should be registered");
+    }
+
+    #endregion
+
+    #region Data Services
+
+    [Fact]
+    public void GameDataCache_Should_Be_Registered_As_Singleton()
+    {
+        // Act
+        var service1 = _serviceProvider.GetService<GameDataCache>();
+        var service2 = _serviceProvider.GetService<GameDataCache>();
+
+        // Assert
+        service1.Should().NotBeNull("GameDataCache should be registered");
+        service1.Should().BeSameAs(service2, "GameDataCache should be a singleton");
+    }
+
+    [Fact]
+    public void ReferenceResolverService_Should_Be_Registered()
+    {
+        // Act
+        var service = _serviceProvider.GetService<ReferenceResolverService>();
+
+        // Assert
+        service.Should().NotBeNull("ReferenceResolverService should be registered");
+    }
+
+    [Fact]
+    public void CategoryDiscoveryService_Should_Be_Registered_As_Singleton()
+    {
+        // Act
+        var service1 = _serviceProvider.GetService<CategoryDiscoveryService>();
+        var service2 = _serviceProvider.GetService<CategoryDiscoveryService>();
+
+        // Assert
+        service1.Should().NotBeNull("CategoryDiscoveryService should be registered");
+        service1.Should().BeSameAs(service2, "CategoryDiscoveryService should be a singleton");
+    }
+
+    #endregion
+
+    #region Handler Resolution Tests
+
+    [Fact]
+    public void GetKnownRecipesHandler_Should_Resolve_With_Dependencies()
+    {
+        // Arrange - This handler requires CraftingService
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+        var character = new Character { Name = "TestCharacter", ClassName = "Fighter" };
+
+        // Act
+        var action = () => mediator.Send(new GetKnownRecipesQuery { Character = character });
+
+        // Assert
+        action.Should().NotThrowAsync<InvalidOperationException>("GetKnownRecipesHandler should resolve all dependencies (CraftingService)");
+    }
+
+    [Fact]
+    public void CreateCharacterHandler_Should_Resolve_With_Dependencies()
+    {
+        // Arrange
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+        var characterClass = new CharacterClass { Name = "Fighter" };
+
+        // Act
+        var action = () => mediator.Send(new CreateCharacterCommand 
+        { 
+            CharacterName = "TestHero",
+            CharacterClass = characterClass
+        });
+
+        // Assert
+        action.Should().NotThrowAsync<InvalidOperationException>("CreateCharacterHandler should resolve all dependencies");
+    }
+
+    [Fact]
+    public void SaveGameHandler_Should_Resolve_With_Dependencies()
+    {
+        // Arrange - This handler requires ISaveGameRepository and IApocalypseTimer
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+        var player = new Character { Name = "TestHero", ClassName = "Fighter" };
+
+        // Act
+        var action = () => mediator.Send(new SaveGameCommand 
+        { 
+            Player = player,
+            Inventory = new List<Item>()
+        });
+
+        // Assert
+        action.Should().NotThrowAsync<InvalidOperationException>("SaveGameHandler should resolve all dependencies (ISaveGameRepository, IApocalypseTimer)");
+    }
+
+    [Fact]
+    public void GetAvailableAbilitiesHandler_Should_Resolve_With_Dependencies()
+    {
+        // Arrange - This handler requires AbilityCatalogService
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+
+        // Act
+        var action = () => mediator.Send(new GetAvailableAbilitiesQuery 
+        { 
+            ClassName = "Fighter"
+        });
+
+        // Assert
+        action.Should().NotThrowAsync<InvalidOperationException>("GetAvailableAbilitiesHandler should resolve all dependencies (AbilityCatalogService)");
+    }
+
+    [Fact]
+    public void BrowseShopHandler_Should_Resolve_With_Dependencies()
+    {
+        // Arrange - This handler requires ShopEconomyService which requires BudgetCalculator
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+
+        // Act
+        var action = () => mediator.Send(new BrowseShopCommand("TestMerchant"));
+
+        // Assert
+        action.Should().NotThrowAsync<InvalidOperationException>("BrowseShopHandler should resolve all dependencies (ShopEconomyService → BudgetCalculator)");
+    }
+
+    [Fact]
+    public void GenerateItemHandler_Should_Resolve_With_Dependencies()
+    {
+        // Arrange - This handler requires ItemGenerator
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+
+        // Act
+        var action = () => mediator.Send(new GenerateItemCommand 
+        { 
+            Category = "items/weapons/swords"
+        });
+
+        // Assert
+        action.Should().NotThrowAsync<InvalidOperationException>("GenerateItemHandler should resolve all dependencies (ItemGenerator)");
+    }
+
+    #endregion
+
+    #region Specific Handler Type Tests
+
+    [Fact]
+    public void Shop_Handlers_Should_Be_Resolvable()
+    {
+        // Arrange
+        var shopHandlerTypes = new[]
+        {
+            "BrowseShopHandler",
+            "BuyFromShopHandler",
+            "SellToShopHandler",
+            "RefreshMerchantInventoryCommandHandler",
+            "CheckAffordabilityQueryHandler",
+            "GetMerchantInfoQueryHandler"
+        };
+
+        var assembly = typeof(CreateCharacterCommand).Assembly;
+        var failures = new List<string>();
+
+        // Act
+        foreach (var handlerName in shopHandlerTypes)
+        {
+            var handlerType = assembly.GetTypes().FirstOrDefault(t => t.Name == handlerName);
+            if (handlerType == null)
+            {
+                failures.Add($"{handlerName}: Type not found in assembly");
+                continue;
+            }
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var handler = scope.ServiceProvider.GetService(handlerType);
+                
+                if (handler == null)
+                {
+                    failures.Add($"{handlerName}: Handler not registered in DI container");
+                }
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{handlerName}: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
+
+        // Assert
+        failures.Should().BeEmpty($"All {shopHandlerTypes.Length} shop handlers should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    [Fact]
+    public void Crafting_Handlers_Should_Be_Resolvable()
+    {
+        // Arrange
+        var craftingHandlerTypes = new[]
+        {
+            "GetKnownRecipesHandler",
+            "CraftRecipeHandler",
+            "DiscoverRecipeHandler",
+            "LearnRecipeHandler"
+        };
+
+        var assembly = typeof(CreateCharacterCommand).Assembly;
+        var failures = new List<string>();
+
+        // Act
+        foreach (var handlerName in craftingHandlerTypes)
+        {
+            var handlerType = assembly.GetTypes().FirstOrDefault(t => t.Name == handlerName);
+            if (handlerType == null)
+            {
+                failures.Add($"{handlerName}: Type not found in assembly");
+                continue;
+            }
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var handler = scope.ServiceProvider.GetService(handlerType);
+                
+                if (handler == null)
+                {
+                    failures.Add($"{handlerName}: Handler not registered in DI container");
+                }
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{handlerName}: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
+
+        // Assert
+        failures.Should().BeEmpty($"All {craftingHandlerTypes.Length} crafting handlers should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    [Fact]
+    public void SaveLoad_Handlers_Should_Be_Resolvable()
+    {
+        // Arrange
+        var saveLoadHandlerTypes = new[]
+        {
+            "SaveGameHandler",
+            "LoadGameHandler",
+            "DeleteSaveHandler",
+            "GetAllSavesHandler",
+            "GetMostRecentSaveHandler"
+        };
+
+        var assembly = typeof(CreateCharacterCommand).Assembly;
+        var failures = new List<string>();
+
+        // Act
+        foreach (var handlerName in saveLoadHandlerTypes)
+        {
+            var handlerType = assembly.GetTypes().FirstOrDefault(t => t.Name == handlerName);
+            if (handlerType == null)
+            {
+                failures.Add($"{handlerName}: Type not found in assembly");
+                continue;
+            }
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var handler = scope.ServiceProvider.GetService(handlerType);
+                
+                if (handler == null)
+                {
+                    failures.Add($"{handlerName}: Handler not registered in DI container");
+                }
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{handlerName}: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
+
+        // Assert
+        failures.Should().BeEmpty($"All {saveLoadHandlerTypes.Length} save/load handlers should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    #endregion
+
+    #region Comprehensive Handler Validation
+
+    [Fact]
+    public void All_MediatR_Handlers_Should_Be_Resolvable()
+    {
+        // Arrange
+        var assembly = typeof(CreateCharacterCommand).Assembly;
+        var handlerTypes = assembly.GetTypes()
+            .Where(t => t.Name.EndsWith("Handler") && !t.IsAbstract && !t.IsInterface)
+            .ToList();
+
+        var failures = new List<string>();
+
+        // Act
+        foreach (var handlerType in handlerTypes)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var handler = scope.ServiceProvider.GetService(handlerType);
+                
+                if (handler == null)
+                {
+                    failures.Add($"{handlerType.Name}: Handler not registered in DI container");
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                failures.Add($"{handlerType.Name}: {ex.Message}");
+            }
+        }
+
+        // Assert
+        failures.Should().BeEmpty($"All {handlerTypes.Count} handlers should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    [Fact]
+    public void All_Generator_Services_Should_Be_Resolvable()
+    {
+        // Arrange - Only include generators that actually exist in the codebase
+        var generatorTypes = new[]
+        {
+            typeof(ItemGenerator),
+            typeof(EnemyGenerator),
+            typeof(NpcGenerator),
+            typeof(AbilityGenerator),
+            typeof(LocationGenerator),
+            typeof(QuestGenerator),
+            typeof(DialogueGenerator),
+            typeof(SocketGenerator)
+        };
+
+        var failures = new List<string>();
+
+        // Act
+        foreach (var generatorType in generatorTypes)
+        {
+            try
+            {
+                var generator = _serviceProvider.GetService(generatorType);
+                
+                if (generator == null)
+                {
+                    failures.Add($"{generatorType.Name}: Not registered in DI container");
+                }
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{generatorType.Name}: {ex.Message}");
+            }
+        }
+
+        // Assert
+        failures.Should().BeEmpty($"All {generatorTypes.Length} generators should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    [Fact]
+    public void All_Feature_Services_Should_Be_Resolvable()
+    {
+        // Arrange
+        var featureServices = new[]
+        {
+            typeof(SaveGameService),
+            typeof(LoadGameService),
+            typeof(CombatService),
+            typeof(CraftingService),
+            typeof(ExplorationService)
+        };
+
+        var failures = new List<string>();
+
+        // Act
+        foreach (var serviceType in featureServices)
+        {
+            try
+            {
+                var service = _serviceProvider.GetService(serviceType);
+                
+                if (service == null)
+                {
+                    failures.Add($"{serviceType.Name}: Not registered in DI container");
+                }
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{serviceType.Name}: {ex.Message}");
+            }
+        }
+
+        // Assert
+        failures.Should().BeEmpty($"All {featureServices.Length} feature services should be resolvable. Failures:\n{string.Join("\n", failures)}");
+    }
+
+    #endregion
+
+    #region Cross-Project Dependency Validation
+
+    [Fact]
+    public void Core_Should_Resolve_Data_Dependencies()
+    {
+        // Arrange - SaveGameService (Core) depends on ISaveGameRepository (Data)
+        var saveGameService = _serviceProvider.GetService<SaveGameService>();
+
+        // Act & Assert
+        saveGameService.Should().NotBeNull("SaveGameService should resolve with Data repository dependencies");
+    }
+
+    [Fact]
+    public void ShopEconomyService_Should_Resolve_All_Dependencies()
+    {
+        // Arrange - ShopEconomyService depends on BudgetCalculator, BudgetHelperService, etc.
+        var shopService = _serviceProvider.GetService<ShopEconomyService>();
+
+        // Act & Assert
+        shopService.Should().NotBeNull("ShopEconomyService should resolve all nested dependencies (BudgetCalculator → BudgetHelperService)");
+    }
+
+    #endregion
+}
