@@ -1,6 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using FluentValidation;
+using MediatR;
 using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Behaviors;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
@@ -136,6 +139,31 @@ public static class ServiceCollectionExtensions
         services.AddScoped<NewGamePlusService>();
         services.AddScoped<SpellCastingService>();
         services.AddScoped<SkillProgressionService>();
+        
+        return services;
+    }
+    
+    /// <summary>
+    /// Registers MediatR with all handlers, pipeline behaviors, and FluentValidation validators.
+    /// Call this after registering Data and Core services so all handler dependencies are available.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddRealmEngineMediatR(this IServiceCollection services)
+    {
+        // Register MediatR and scan for all handlers in the Core assembly
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
+            
+            // Register pipeline behaviors in order (validation -> logging -> performance)
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
+        });
+        
+        // Register all FluentValidation validators from the Core assembly
+        services.AddValidatorsFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
         
         return services;
     }
