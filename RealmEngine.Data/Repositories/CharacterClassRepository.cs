@@ -1,27 +1,52 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Data.Models;
+using RealmEngine.Data.Services;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace RealmEngine.Data.Repositories;
 
 /// <summary>
-/// Repository of predefined character classes.
+/// Repository that loads character classes from classes/catalog.json via GameDataCache.
 /// </summary>
 public class CharacterClassRepository : ICharacterClassRepository
 {
+    private readonly GameDataCache _dataCache;
+    private readonly ReferenceResolverService _referenceResolver;
+    private readonly ILogger<CharacterClassRepository> _logger;
+    private List<CharacterClass>? _cachedClasses;
+    private readonly object _cacheLock = new object();
+
     /// <summary>
-    /// Gets all available character classes.
+    /// Initializes a new instance of the <see cref="CharacterClassRepository"/> class.
+    /// </summary>
+    /// <param name="dataCache">The game data cache.</param>
+    /// <param name="referenceResolver">The reference resolver service.</param>
+    /// <param name="logger">The logger.</param>
+    public CharacterClassRepository(
+        GameDataCache dataCache, 
+        ReferenceResolverService referenceResolver,
+        ILogger<CharacterClassRepository> logger)
+    {
+        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
+        _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Gets all available character classes from catalog.
     /// </summary>
     public List<CharacterClass> GetAllClasses()
     {
-        return new List<CharacterClass>
+        lock (_cacheLock)
         {
-            CreateWarriorClass(),
-            CreateRogueClass(),
-            CreateMageClass(),
-            CreateClericClass(),
-            CreateRangerClass(),
-            CreatePaladinClass()
-        };
+            if (_cachedClasses != null)
+                return _cachedClasses;
+
+            _cachedClasses = LoadClassesFromCatalog();
+            return _cachedClasses;
+        }
     }
 
     /// <summary>
@@ -29,7 +54,9 @@ public class CharacterClassRepository : ICharacterClassRepository
     /// </summary>
     public CharacterClass? GetClassByName(string name)
     {
-        return GetAllClasses().FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        return GetAllClasses().FirstOrDefault(c => 
+            c.Name.Equals(name, StringComparison.OrdinalIgnoreCase) ||
+            c.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <inheritdoc />
@@ -51,163 +78,99 @@ public class CharacterClassRepository : ICharacterClassRepository
     public void Delete(string id) => throw new NotSupportedException("Character classes are predefined");
     
     /// <inheritdoc />
-    public void Dispose() { } // No resources to dispose
-
-    private CharacterClass CreateWarriorClass()
+    public void Dispose() 
     {
-        return new CharacterClass
-        {
-            Name = "Warrior",
-            Description = "Masters of melee combat, warriors excel in strength and endurance.",
-            PrimaryAttributes = new List<string> { "Strength", "Constitution" },
-            BonusStrength = 2,
-            BonusConstitution = 1,
-            StartingHealth = 10,
-            StartingEquipmentIds = new List<string>
-            {
-                "@items/weapons/swords:longsword",
-                "@items/armor/shields:wooden-shield",
-                "@items/armor/head:helmet",
-                "@items/armor/chest:chainmail",
-                "@items/armor/hands:leather-gloves",
-                "@items/armor/legs:chain-leggings",
-                "@items/armor/feet:leather-boots"
-            },
-            FlavorText = "\"Steel and valor are my weapons. I stand unbroken against any foe.\""
-        };
+        _cachedClasses = null;
     }
 
-    private CharacterClass CreateRogueClass()
+    private List<CharacterClass> LoadClassesFromCatalog()
     {
-        return new CharacterClass
+        try
         {
-            Name = "Rogue",
-            Description = "Swift and cunning, rogues rely on dexterity and deception.",
-            PrimaryAttributes = new List<string> { "Dexterity", "Charisma" },
-            BonusDexterity = 2,
-            BonusCharisma = 1,
-            StartingHealth = 0,
-            StartingMana = 5,
-            StartingEquipmentIds = new List<string>
+            var cachedFile = _dataCache.GetFile("classes/catalog.json");
+            if (cachedFile == null)
             {
-                "@items/weapons/daggers:dagger",
-                "@items/armor/head:hood",
-                "@items/armor/shoulders:leather-shoulders",
-                "@items/armor/chest:leather-armor",
-                "@items/armor/hands:leather-gloves",
-                "@items/armor/waist:leather-belt",
-                "@items/armor/legs:leather-leggings",
-                "@items/armor/feet:leather-boots"
-            },
-            FlavorText = "\"Shadows are my ally. They'll never see me coming.\""
-        };
+                _logger.LogError("Failed to load classes/catalog.json from cache");
+                return new List<CharacterClass>();
+            }
+
+            var catalogData = JsonSerializer.Deserialize<ClassCatalogData>(cachedFile.JsonData.ToString());
+            if (catalogData == null)
+            {
+                _logger.LogError("Failed to deserialize classes/catalog.json");
+                return new List<CharacterClass>();
+            }
+
+            var classes = new List<CharacterClass>();
+
+            foreach (var (categoryKey, category) in catalogData.ClassTypes)
+            {
+                foreach (var classData in category.Items)
+                {
+                    var characterClass = MapToCharacterClass(classData, categoryKey, category.Metadata);
+                    classes.Add(characterClass);
+                }
+            }
+
+            _logger.LogInformation("Loaded {Count} character classes from catalog", classes.Count);
+            return classes;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading classes from catalog");
+            return new List<CharacterClass>();
+        }
     }
 
-    private CharacterClass CreateMageClass()
+    private CharacterClass MapToCharacterClass(ClassItemData data, string categoryKey, ClassCategoryMetadata? categoryMetadata)
     {
-        return new CharacterClass
+        var characterClass = new CharacterClass
         {
-            Name = "Mage",
-            Description = "Wielders of arcane power, mages command devastating spells.",
-            PrimaryAttributes = new List<string> { "Intelligence", "Wisdom" },
-            BonusIntelligence = 2,
-            BonusWisdom = 1,
-            StartingHealth = -5,
-            StartingMana = 20,
-            StartingEquipmentIds = new List<string>
-            {
-                "@items/weapons/staves:quarterstaff",
-                "@items/accessories/jewelry:amulet",
-                "@items/armor/head:circlet",
-                "@items/armor/chest:robes",
-                "@items/armor/hands:silk-gloves",
-                "@items/armor/waist:cloth-belt",
-                "@items/armor/feet:cloth-boots"
-            },
-            FlavorText = "\"Knowledge is the ultimate power. Reality bends to my will.\""
+            Id = $"{categoryKey}:{data.Name}",
+            Slug = data.Slug,
+            Name = data.Name,
+            DisplayName = data.DisplayName,
+            Description = data.Description,
+            RarityWeight = data.RarityWeight,
+            IsSubclass = data.IsSubclass,
+            ParentClassId = ParseParentClassReference(data.ParentClass),
+            StartingAbilityIds = data.StartingAbilityIds ?? new List<string>(),
+            Traits = data.Traits ?? new Dictionary<string, object>()
         };
+
+        // Map starting stats
+        if (data.StartingStats != null)
+        {
+            characterClass.StartingHealth = data.StartingStats.Health;
+            characterClass.StartingMana = data.StartingStats.Mana;
+            characterClass.BonusStrength = data.StartingStats.Strength;
+            characterClass.BonusDexterity = data.StartingStats.Dexterity;
+            characterClass.BonusConstitution = data.StartingStats.Constitution;
+            characterClass.BonusIntelligence = data.StartingStats.Intelligence;
+            characterClass.BonusWisdom = data.StartingStats.Wisdom;
+            characterClass.BonusCharisma = data.StartingStats.Charisma;
+        }
+
+        // Copy primary attributes from category metadata
+        if (categoryMetadata != null)
+        {
+            characterClass.PrimaryAttributes = new List<string>(categoryMetadata.PrimaryStats);
+        }
+
+        return characterClass;
     }
 
-    private CharacterClass CreateClericClass()
+    private string? ParseParentClassReference(string? reference)
     {
-        return new CharacterClass
-        {
-            Name = "Cleric",
-            Description = "Holy warriors who heal allies and smite the wicked.",
-            PrimaryAttributes = new List<string> { "Wisdom", "Constitution" },
-            BonusWisdom = 2,
-            BonusConstitution = 1,
-            StartingHealth = 5,
-            StartingMana = 15,
-            StartingEquipmentIds = new List<string>
-            {
-                "@items/weapons/maces:mace",
-                "@items/armor/shields:wooden-shield",
-                "@items/armor/head:helmet",
-                "@items/armor/shoulders:chain-shoulders",
-                "@items/armor/chest:chainmail",
-                "@items/armor/arms:chain-bracers",
-                "@items/armor/hands:chain-gloves",
-                "@items/armor/waist:leather-belt",
-                "@items/armor/legs:chain-leggings",
-                "@items/armor/feet:chain-boots"
-            },
-            FlavorText = "\"By faith and steel, I will protect the innocent and vanquish evil.\""
-        };
-    }
+        if (string.IsNullOrWhiteSpace(reference))
+            return null;
 
-    private CharacterClass CreateRangerClass()
-    {
-        return new CharacterClass
+        // Parse reference like "@classes/cleric:Priest" to "cleric:Priest"
+        if (reference.StartsWith("@classes/"))
         {
-            Name = "Ranger",
-            Description = "Expert trackers and archers, rangers are one with nature.",
-            PrimaryAttributes = new List<string> { "Dexterity", "Wisdom" },
-            BonusDexterity = 2,
-            BonusWisdom = 1,
-            StartingHealth = 3,
-            StartingMana = 10,
-            StartingEquipmentIds = new List<string>
-            {
-                "@items/weapons/bows:longbow",
-                "@items/armor/head:hood",
-                "@items/armor/shoulders:leather-shoulders",
-                "@items/armor/chest:studded-leather",
-                "@items/armor/arms:leather-bracers",
-                "@items/armor/hands:leather-gloves",
-                "@items/armor/waist:leather-belt",
-                "@items/armor/legs:leather-leggings",
-                "@items/armor/feet:leather-boots"
-            },
-            FlavorText = "\"The wild is my home. My arrows never miss their mark.\""
-        };
-    }
+            return reference.Substring("@classes/".Length);
+        }
 
-    private CharacterClass CreatePaladinClass()
-    {
-        return new CharacterClass
-        {
-            Name = "Paladin",
-            Description = "Divine champions who blend martial prowess with holy magic.",
-            PrimaryAttributes = new List<string> { "Strength", "Charisma" },
-            BonusStrength = 1,
-            BonusCharisma = 2,
-            StartingHealth = 8,
-            StartingMana = 12,
-            StartingEquipmentIds = new List<string>
-            {
-                "@items/weapons/swords:longsword",
-                "@items/armor/shields:steel-shield",
-                "@items/armor/head:great-helm",
-                "@items/armor/shoulders:plate-shoulders",
-                "@items/armor/chest:plate-armor",
-                "@items/armor/arms:plate-bracers",
-                "@items/armor/hands:plate-gauntlets",
-                "@items/armor/waist:plate-belt",
-                "@items/armor/legs:plate-leggings",
-                "@items/armor/feet:plate-boots"
-            },
-            FlavorText = "\"I am the light in the darkness, a beacon of hope for all.\""
-        };
+        return reference;
     }
 }

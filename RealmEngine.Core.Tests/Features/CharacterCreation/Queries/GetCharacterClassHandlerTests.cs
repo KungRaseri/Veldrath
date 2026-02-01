@@ -1,22 +1,52 @@
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using RealmEngine.Core;
 using RealmEngine.Core.Features.CharacterCreation.Queries;
-using RealmEngine.Data.Repositories;
+using RealmEngine.Data;
+using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Queries;
 
 [Trait("Category", "Feature")]
 /// <summary>
-/// Tests for GetCharacterClassHandler.
+/// Tests for GetCharacterClassHandler using real JSON data.
 /// </summary>
-public class GetCharacterClassHandlerTests
+public class GetCharacterClassHandlerTests : IDisposable
 {
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceCollection _services;
+
+    public GetCharacterClassHandlerTests()
+    {
+        _services = new ServiceCollection();
+        
+        // Register logging
+        _services.AddLogging();
+        
+        // Register RealmEngine services
+        _services.AddRealmEngineData("c:\\code\\console-game\\RealmEngine.Data\\Data\\Json");
+        _services.AddRealmEngineCore();
+        _services.AddRealmEngineMediatR();
+        
+        _serviceProvider = _services.BuildServiceProvider();
+    }
+
+    public void Dispose()
+    {
+        if (_serviceProvider is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+    }
+
     [Fact]
     public async Task Handle_Should_Return_Found_True_For_Valid_Class()
     {
         // Arrange
-        var repository = new CharacterClassRepository();
+        using var scope = _serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
         var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = "Warrior" };
+        var query = new GetCharacterClassQuery { ClassName = "Fighter" }; // Using real catalog name
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -25,14 +55,16 @@ public class GetCharacterClassHandlerTests
         result.Should().NotBeNull();
         result.Found.Should().BeTrue();
         result.CharacterClass.Should().NotBeNull();
-        result.CharacterClass!.Name.Should().Be("Warrior");
+        result.CharacterClass!.Name.Should().Be("Fighter");
     }
 
     [Fact]
     public async Task Handle_Should_Return_Found_False_For_Invalid_Class()
     {
         // Arrange
-        var repository = new CharacterClassRepository(); var handler = new GetCharacterClassHandler(repository);
+        using var scope = _serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
+        var handler = new GetCharacterClassHandler(repository);
         var query = new GetCharacterClassQuery { ClassName = "InvalidClass" };
 
         // Act
@@ -45,13 +77,15 @@ public class GetCharacterClassHandlerTests
     }
 
     [Theory]
-    [InlineData("Warrior")]
-    [InlineData("Mage")]
-    [InlineData("Rogue")]
+    [InlineData("Fighter")]
+    [InlineData("Wizard")]
+    [InlineData("Priest")]
     public async Task Handle_Should_Return_Valid_Class_Data(string className)
     {
         // Arrange
-        var repository = new CharacterClassRepository(); var handler = new GetCharacterClassHandler(repository);
+        using var scope = _serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
+        var handler = new GetCharacterClassHandler(repository);
         var query = new GetCharacterClassQuery { ClassName = className };
 
         // Act
@@ -65,25 +99,30 @@ public class GetCharacterClassHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_Be_Case_Sensitive()
+    public async Task Handle_Should_Be_Case_Insensitive()
     {
         // Arrange
-        var repository = new CharacterClassRepository(); var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = "warrior" }; // lowercase
+        using var scope = _serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
+        var handler = new GetCharacterClassHandler(repository);
+        var query = new GetCharacterClassQuery { ClassName = "fighter" }; // lowercase
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
 
-        // Assert - depends on repository implementation
-        // If case-insensitive, Found should be true; if case-sensitive, false
+        // Assert - Repository is case-insensitive
         result.Should().NotBeNull();
+        result.Found.Should().BeTrue("Repository should handle case-insensitive lookups");
+        result.CharacterClass!.Name.Should().Be("Fighter");
     }
 
     [Fact]
     public async Task Handle_Should_Return_Null_CharacterClass_When_Not_Found()
     {
         // Arrange
-        var repository = new CharacterClassRepository(); var handler = new GetCharacterClassHandler(repository);
+        using var scope = _serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
+        var handler = new GetCharacterClassHandler(repository);
         var query = new GetCharacterClassQuery { ClassName = "NonExistentClass" };
 
         // Act
