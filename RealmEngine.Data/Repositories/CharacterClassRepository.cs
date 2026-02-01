@@ -50,6 +50,44 @@ public class CharacterClassRepository : ICharacterClassRepository
     }
 
     /// <summary>
+    /// Gets all classes of a specific type/category (e.g., "warrior", "mage", "cleric").
+    /// </summary>
+    public List<CharacterClass> GetClassesByType(string classType)
+    {
+        return GetAllClasses()
+            .Where(c => c.Id.StartsWith($"{classType}:", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets only base classes (excluding subclasses).
+    /// </summary>
+    public List<CharacterClass> GetBaseClasses()
+    {
+        return GetAllClasses().Where(c => !c.IsSubclass).ToList();
+    }
+
+    /// <summary>
+    /// Gets only subclasses.
+    /// </summary>
+    public List<CharacterClass> GetSubclasses()
+    {
+        return GetAllClasses().Where(c => c.IsSubclass).ToList();
+    }
+
+    /// <summary>
+    /// Gets subclasses for a specific parent class.
+    /// </summary>
+    public List<CharacterClass> GetSubclassesForParent(string parentClassId)
+    {
+        return GetAllClasses()
+            .Where(c => c.IsSubclass && 
+                       c.ParentClassId != null && 
+                       c.ParentClassId.Equals(parentClassId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    /// <summary>
     /// Gets a character class by name (case-insensitive).
     /// </summary>
     public CharacterClass? GetClassByName(string name)
@@ -108,11 +146,12 @@ public class CharacterClassRepository : ICharacterClassRepository
                 foreach (var classData in category.Items)
                 {
                     var characterClass = MapToCharacterClass(classData, categoryKey, category.Metadata);
+                    HydrateCharacterClass(characterClass); // Hydrate abilities and equipment
                     classes.Add(characterClass);
                 }
             }
 
-            _logger.LogInformation("Loaded {Count} character classes from catalog", classes.Count);
+            _logger.LogInformation("Loaded and hydrated {Count} character classes from catalog", classes.Count);
             return classes;
         }
         catch (Exception ex)
@@ -172,5 +211,84 @@ public class CharacterClassRepository : ICharacterClassRepository
         }
 
         return reference;
+    }
+
+    /// <summary>
+    /// Hydrates a character class by resolving ability and equipment references.
+    /// </summary>
+    private void HydrateCharacterClass(CharacterClass characterClass)
+    {
+        // Resolve starting abilities
+        if (characterClass.StartingAbilityIds != null && characterClass.StartingAbilityIds.Any())
+        {
+            var abilities = new List<Ability>();
+            foreach (var refId in characterClass.StartingAbilityIds)
+            {
+                try
+                {
+                    var abilityJson = _referenceResolver.ResolveToObjectAsync(refId).GetAwaiter().GetResult();
+                    if (abilityJson != null)
+                    {
+                        var ability = abilityJson.ToObject<Ability>();
+                        if (ability != null)
+                        {
+                            abilities.Add(ability);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Failed to deserialize ability from reference '{AbilityId}' for class '{ClassName}'", refId, characterClass.Name);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Could not resolve ability reference '{AbilityId}' for class '{ClassName}'", refId, characterClass.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Exception resolving starting ability '{AbilityId}' for class '{ClassName}'", refId, characterClass.Name);
+                }
+            }
+            characterClass.StartingAbilities = abilities;
+            
+            _logger.LogDebug("Hydrated {Count} abilities for class '{ClassName}'", abilities.Count, characterClass.Name);
+        }
+
+        // Resolve starting equipment (if StartingEquipmentIds exists)
+        // Note: Current catalog.json doesn't have StartingEquipmentIds, but we'll support it for future use
+        if (characterClass.StartingEquipmentIds != null && characterClass.StartingEquipmentIds.Any())
+        {
+            var equipment = new List<Item>();
+            foreach (var refId in characterClass.StartingEquipmentIds)
+            {
+                try
+                {
+                    var itemJson = _referenceResolver.ResolveToObjectAsync(refId).GetAwaiter().GetResult();
+                    if (itemJson != null)
+                    {
+                        var item = itemJson.ToObject<Item>();
+                        if (item != null)
+                        {
+                            equipment.Add(item);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Failed to deserialize item from reference '{ItemId}' for class '{ClassName}'", refId, characterClass.Name);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Could not resolve equipment reference '{ItemId}' for class '{ClassName}'", refId, characterClass.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Exception resolving starting equipment '{ItemId}' for class '{ClassName}'", refId, characterClass.Name);
+                }
+            }
+            characterClass.StartingEquipment = equipment;
+            
+            _logger.LogDebug("Hydrated {Count} equipment items for class '{ClassName}'", equipment.Count, characterClass.Name);
+        }
     }
 }
