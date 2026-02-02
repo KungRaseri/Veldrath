@@ -54,6 +54,24 @@ public class Character
     public int Gold { get; set; } = 0;
 
     /// <summary>
+    /// Gets or sets the current location ID where the character is located.
+    /// Example: "locations/settlements:starting-village"
+    /// </summary>
+    public string? CurrentLocationId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current zone name for display purposes.
+    /// Example: "Starting Village", "Dark Forest"
+    /// </summary>
+    public string? CurrentZone { get; set; }
+
+    /// <summary>
+    /// Gets or sets the background ID selected during character creation.
+    /// Example: "backgrounds/strength:soldier"
+    /// </summary>
+    public string? BackgroundId { get; set; }
+
+    /// <summary>
     /// Gets or sets the Strength attribute. Affects melee damage and carry weight.
     /// </summary>
     public int Strength { get; set; } = 10;

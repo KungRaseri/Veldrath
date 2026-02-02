@@ -2,6 +2,7 @@ using FluentAssertions;
 using MediatR;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
+using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
@@ -13,12 +14,14 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 public class CreateCharacterHandlerTests
 {
     private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<IBackgroundRepository> _backgroundRepositoryMock;
     private readonly CreateCharacterHandler _handler;
 
     public CreateCharacterHandlerTests()
     {
         _mediatorMock = new Mock<IMediator>();
-        _handler = new CreateCharacterHandler(_mediatorMock.Object);
+        _backgroundRepositoryMock = new Mock<IBackgroundRepository>();
+        _handler = new CreateCharacterHandler(_mediatorMock.Object, _backgroundRepositoryMock.Object);
     }
 
     [Fact]
