@@ -194,6 +194,12 @@ public class CharacterClassRepository : ICharacterClassRepository
         if (categoryMetadata != null)
         {
             characterClass.PrimaryAttributes = new List<string>(categoryMetadata.PrimaryStats);
+            characterClass.ArmorProficiency = categoryMetadata.ArmorProficiency != null 
+                ? new List<string>(categoryMetadata.ArmorProficiency) 
+                : new List<string>();
+            characterClass.WeaponProficiency = categoryMetadata.WeaponProficiency != null 
+                ? new List<string>(categoryMetadata.WeaponProficiency) 
+                : new List<string>();
         }
 
         return characterClass;

@@ -47,6 +47,18 @@ public class CharacterClass
     public List<string> PrimaryAttributes { get; set; } = new();
 
     /// <summary>
+    /// Armor types this class is proficient with (light, medium, heavy, shields).
+    /// Maps to armorProficiency in metadata.
+    /// </summary>
+    public List<string> ArmorProficiency { get; set; } = new();
+
+    /// <summary>
+    /// Weapon types this class is proficient with (swords, axes, bows, etc.).
+    /// Maps to weaponProficiency in metadata.
+    /// </summary>
+    public List<string> WeaponProficiency { get; set; } = new();
+
+    /// <summary>
     /// Starting attribute bonuses applied at character creation.
     /// Maps to startingStats in JSON.
     /// </summary>

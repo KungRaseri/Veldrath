@@ -26,6 +26,11 @@
           "medium",
           "light",
           "shields"
+        ],
+        "weaponProficiency": [
+          "maces",
+          "staves",
+          "simple"
         ]
       },
       "items": [
@@ -187,6 +192,12 @@
         ],
         "armorProficiency": [
           "light"
+        ],
+        "weaponProficiency": [
+          "daggers",
+          "shortswords",
+          "rapiers",
+          "crossbows"
         ]
       },
       "items": [
@@ -423,6 +434,12 @@
         "armorProficiency": [
           "medium",
           "light"
+        ],
+        "weaponProficiency": [
+          "bows",
+          "crossbows",
+          "swords",
+          "daggers"
         ]
       },
       "items": [
@@ -587,6 +604,15 @@
           "medium",
           "light",
           "shields"
+        ],
+        "weaponProficiency": [
+          "swords",
+          "axes",
+          "maces",
+          "polearms",
+          "greatswords",
+          "warhammers",
+          "all"
         ]
       },
       "items": [
@@ -905,6 +931,11 @@
         ],
         "armorProficiency": [
           "light"
+        ],
+        "weaponProficiency": [
+          "staves",
+          "wands",
+          "daggers"
         ]
       },
       "items": [

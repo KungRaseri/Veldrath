@@ -144,6 +144,20 @@ public class Item : ITraitable
     public string? ArmorClass { get; set; }
 
     /// <summary>
+    /// Gets or sets the weapon type for weapon items.
+    /// Examples: "swords", "axes", "maces", "bows", "daggers", "staves", etc.
+    /// Used for matching class proficiencies.
+    /// </summary>
+    public string? WeaponType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the armor type for armor items.
+    /// Examples: "light", "medium", "heavy", "shields"
+    /// Used for matching class proficiencies. Same as ArmorClass but more explicit for proficiency checks.
+    /// </summary>
+    public string? ArmorType { get; set; }
+
+    /// <summary>
     /// Gets or sets the effect type for consumable items.
     /// Examples: "heal", "buff", "heal_overtime", "cure_poison", "restore", "stat_boost"
     /// </summary>

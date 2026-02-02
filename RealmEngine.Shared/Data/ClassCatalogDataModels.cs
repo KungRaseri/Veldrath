@@ -46,6 +46,10 @@ public class ClassCategoryMetadata
     /// <summary>Gets or sets the armor proficiency.</summary>
     [JsonPropertyName("armorProficiency")]
     public List<string> ArmorProficiency { get; set; } = new();
+
+    /// <summary>Gets or sets the weapon proficiency.</summary>
+    [JsonPropertyName("weaponProficiency")]
+    public List<string> WeaponProficiency { get; set; } = new();
 }
 
 /// <summary>
