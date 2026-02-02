@@ -1,6 +1,6 @@
 {
   "icon": "AccountOutline",
   "sortOrder": 50,
-  "category": "Character",
+  "description": "Character backgrounds provide origin stories and attribute bonuses during character creation",
   "displayName": "Backgrounds"
 }
