@@ -104,37 +104,75 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
     {
         var weapons = new List<Item>();
 
-        // Load weapon catalogs (swords, axes, bows, daggers, maces, polearms, staves)
-        var weaponTypes = new[] { "swords", "axes", "bows", "daggers", "maces", "polearms", "staves", "wands", "crossbows" };
-
-        foreach (var weaponType in weaponTypes)
+        // Load main weapons catalog
+        var catalogPath = "items/weapons/catalog.json";
+        var catalogFile = _dataCache.GetFile(catalogPath);
+        
+        if (catalogFile == null)
         {
-            // Check if class has proficiency (support "all" wildcard)
-            if (!proficiencies.Contains("all", StringComparer.OrdinalIgnoreCase) &&
-                !proficiencies.Contains(weaponType, StringComparer.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+            _logger.LogWarning("Weapons catalog not found: {CatalogPath}", catalogPath);
+            return Task.FromResult(weapons);
+        }
 
-            var catalogPath = $"items/weapons/{weaponType}/catalog.json";
-            var catalogFile = _dataCache.GetFile(catalogPath);
+        try
+        {
+            var catalog = JObject.Parse(catalogFile.JsonData.ToString());
+            var weaponTypes = catalog["weapon_types"] as JObject;
             
-            if (catalogFile == null)
+            if (weaponTypes == null)
             {
-                _logger.LogWarning("Weapon catalog not found: {CatalogPath}", catalogPath);
-                continue;
+                _logger.LogWarning("No weapon_types found in catalog");
+                return Task.FromResult(weapons);
             }
 
-            try
+            // Map weapon type names to proficiency categories
+            var typeMapping = new Dictionary<string, string[]>
             {
-                var catalog = JObject.Parse(catalogFile.JsonData.ToString());
-                var items = ExtractItemsFromCatalog(catalog, weaponType, ItemType.Weapon);
-                weapons.AddRange(items);
-            }
-            catch (Exception ex)
+                ["heavy-blades"] = new[] { "swords", "greatswords", "all" },
+                ["light-blades"] = new[] { "swords", "daggers", "rapiers", "shortswords", "all" },
+                ["axes"] = new[] { "axes", "all" },
+                ["bludgeons"] = new[] { "maces", "warhammers", "simple", "all" },
+                ["polearms"] = new[] { "polearms", "all" },
+                ["bows"] = new[] { "bows", "all" },
+                ["crossbows"] = new[] { "crossbows", "all" },
+                ["staves"] = new[] { "staves", "simple", "all" },
+                ["wands"] = new[] { "wands", "all" }
+            };
+
+            foreach (var weaponType in weaponTypes.Properties())
             {
-                _logger.LogError(ex, "Error parsing weapon catalog: {CatalogPath}", catalogPath);
+                var typeName = weaponType.Name;
+                
+                // Check if class has proficiency
+                bool hasProficiency = typeMapping.ContainsKey(typeName) &&
+                    typeMapping[typeName].Any(prof => proficiencies.Contains(prof, StringComparer.OrdinalIgnoreCase));
+                
+                if (!hasProficiency)
+                {
+                    continue;
+                }
+
+                var typeData = weaponType.Value as JObject;
+                var items = typeData?["items"] as JArray;
+                
+                if (items == null)
+                {
+                    continue;
+                }
+
+                foreach (var itemToken in items)
+                {
+                    var item = ParseItemFromToken(itemToken, typeName, ItemType.Weapon);
+                    if (item != null)
+                    {
+                        weapons.Add(item);
+                    }
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading weapons catalog");
         }
 
         // Apply randomization and limit
@@ -158,37 +196,70 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
     {
         var armorItems = new List<Item>();
 
-        // Load armor catalogs (light, medium, heavy, shields)
-        var armorTypes = new[] { "light", "medium", "heavy", "shields" };
-
-        foreach (var armorType in armorTypes)
+        // Load main armor catalog
+        var catalogPath = "items/armor/catalog.json";
+        var catalogFile = _dataCache.GetFile(catalogPath);
+        
+        if (catalogFile == null)
         {
-            // Check if class has proficiency
-            if (!proficiencies.Contains(armorType, StringComparer.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+            _logger.LogWarning("Armor catalog not found: {CatalogPath}", catalogPath);
+            return Task.FromResult(armorItems);
+        }
 
-            var catalogPath = $"items/armor/{armorType}/catalog.json";
-            var catalogFile = _dataCache.GetFile(catalogPath);
+        try
+        {
+            var catalog = JObject.Parse(catalogFile.JsonData.ToString());
+            var armorTypes = catalog["armor_types"] as JObject;
             
-            if (catalogFile == null)
+            if (armorTypes == null)
             {
-                _logger.LogWarning("Armor catalog not found: {CatalogPath}", catalogPath);
-                continue;
+                _logger.LogWarning("No armor_types found in catalog");
+                return Task.FromResult(armorItems);
             }
 
-            try
+            // Map armor type names to proficiency categories
+            var typeMapping = new Dictionary<string, string[]>
             {
-                var catalog = JObject.Parse(catalogFile.JsonData.ToString());
-                // Use Chest as generic armor type
-                var items = ExtractItemsFromCatalog(catalog, armorType, ItemType.Chest);
-                armorItems.AddRange(items);
-            }
-            catch (Exception ex)
+                ["light-armor"] = new[] { "light", "all" },
+                ["medium-armor"] = new[] { "medium", "all" },
+                ["heavy-armor"] = new[] { "heavy", "all" },
+                ["shields"] = new[] { "shields", "all" }
+            };
+
+            foreach (var armorType in armorTypes.Properties())
             {
-                _logger.LogError(ex, "Error parsing armor catalog: {CatalogPath}", catalogPath);
+                var typeName = armorType.Name;
+                
+                // Check if class has proficiency
+                bool hasProficiency = typeMapping.ContainsKey(typeName) &&
+                    typeMapping[typeName].Any(prof => proficiencies.Contains(prof, StringComparer.OrdinalIgnoreCase));
+                
+                if (!hasProficiency)
+                {
+                    continue;
+                }
+
+                var typeData = armorType.Value as JObject;
+                var items = typeData?["items"] as JArray;
+                
+                if (items == null)
+                {
+                    continue;
+                }
+
+                foreach (var itemToken in items)
+                {
+                    var item = ParseItemFromToken(itemToken, typeName, ItemType.Chest);
+                    if (item != null)
+                    {
+                        armorItems.Add(item);
+                    }
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading armor catalog");
         }
 
         // Apply randomization and limit

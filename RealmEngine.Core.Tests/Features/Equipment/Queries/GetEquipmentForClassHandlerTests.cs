@@ -46,7 +46,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             MaxItemsPerCategory = 5
         };
 
@@ -55,6 +55,10 @@ public class GetEquipmentForClassHandlerTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
+        if (!result.Success)
+        {
+            throw new Exception($"Handler failed: {result.ErrorMessage}");
+        }
         result.Success.Should().BeTrue();
         result.ErrorMessage.Should().BeNullOrEmpty();
         result.ClassName.Should().Be("Fighter");
@@ -85,7 +89,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter"
+            ClassId = "warrior:Fighter"
         };
 
         // Act
@@ -103,7 +107,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "cleric:priest"
+            ClassId = "cleric:Priest"
         };
 
         // Act
@@ -121,7 +125,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "rogue:thief"
+            ClassId = "rogue:Thief"
         };
 
         // Act
@@ -139,7 +143,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "ranger:hunter"
+            ClassId = "ranger:Hunter"
         };
 
         // Act
@@ -157,7 +161,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "mage:wizard"
+            ClassId = "mage:Wizard"
         };
 
         // Act
@@ -175,7 +179,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             EquipmentType = "weapons",
             MaxItemsPerCategory = 10
         };
@@ -195,7 +199,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             EquipmentType = "armor",
             MaxItemsPerCategory = 10
         };
@@ -215,7 +219,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             MaxItemsPerCategory = 10
         };
 
@@ -234,7 +238,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             MaxItemsPerCategory = 3
         };
 
@@ -253,7 +257,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             EquipmentType = "weapons",
             MaxItemsPerCategory = 5
         };
@@ -276,7 +280,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             EquipmentType = "armor",
             MaxItemsPerCategory = 5
         };
@@ -299,7 +303,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "rogue:thief",
+            ClassId = "rogue:Thief",
             EquipmentType = "weapons",
             MaxItemsPerCategory = 20
         };
@@ -327,7 +331,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "rogue:thief",
+            ClassId = "rogue:Thief",
             EquipmentType = "armor",
             MaxItemsPerCategory = 20
         };
@@ -352,7 +356,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             EquipmentType = "weapons",
             MaxItemsPerCategory = 50
         };
@@ -375,7 +379,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             EquipmentType = "armor",
             MaxItemsPerCategory = 50
         };
@@ -398,14 +402,14 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query1 = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             MaxItemsPerCategory = 5,
             RandomizeSelection = true
         };
 
         var query2 = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             MaxItemsPerCategory = 5,
             RandomizeSelection = true
         };
@@ -430,7 +434,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange - Paladin is a subclass of Priest
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "cleric:paladin",
+            ClassId = "cleric:Paladin",
             MaxItemsPerCategory = 10
         };
 
@@ -450,7 +454,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         // Arrange
         var query = new GetEquipmentForClassQuery
         {
-            ClassId = "warrior:fighter",
+            ClassId = "warrior:Fighter",
             MaxItemsPerCategory = 0, // 0 means no limit
             EquipmentType = "weapons"
         };
