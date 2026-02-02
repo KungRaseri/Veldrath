@@ -285,6 +285,9 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 bool hasProficiency = typeMapping.ContainsKey(typeName) &&
                     typeMapping[typeName].Any(prof => proficiencies.Contains(prof, StringComparer.OrdinalIgnoreCase));
                 
+                _logger.LogInformation("Armor type {TypeName}: hasProficiency={HasProf}, proficiencies={Profs}", 
+                    typeName, hasProficiency, string.Join(",", proficiencies));
+                
                 if (!hasProficiency)
                 {
                     continue;
@@ -295,14 +298,20 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 
                 if (items == null)
                 {
+                    _logger.LogWarning("No items array found for armor type: {TypeName}", typeName);
                     continue;
                 }
+
+                _logger.LogInformation("Processing {Count} items for armor type: {TypeName}", items.Count, typeName);
 
                 // Get the proficiency name for this armor type
                 var profName = keyToProf.ContainsKey(typeName) ? keyToProf[typeName] : typeName;
 
+                int parsedCount = 0;
+                int addedCount = 0;
                 foreach (var itemToken in items)
                 {
+                    parsedCount++;
                     var item = ParseItemFromToken(itemToken, typeName, ItemType.Chest);
                     if (item != null)
                     {
@@ -313,8 +322,16 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                         item.ArmorClass = item.ArmorType;
                         
                         armorItems.Add(item);
+                        addedCount++;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to parse item #{Index} from token in {TypeName}", parsedCount, typeName);
                     }
                 }
+                
+                _logger.LogInformation("Processed {TypeName}: parsed={Parsed}, added={Added}, total now={Total}", 
+                    typeName, parsedCount, addedCount, armorItems.Count);
             }
         }
         catch (Exception ex)
@@ -395,7 +412,7 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
             var slug = token["slug"]?.ToString() ?? string.Empty;
             var name = token["name"]?.ToString() ?? string.Empty;
             var description = token["description"]?.ToString() ?? string.Empty;
-            var price = token["price"]?.Value<int>() ?? 0;
+            var price = token["price"]?.Value<int>() ?? token["value"]?.Value<int>() ?? 0;
             var weight = token["weight"]?.Value<double>() ?? 0.0;
             var rarityWeight = token["rarityWeight"]?.Value<int>() ?? 50;
 
@@ -438,11 +455,21 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 item.ArmorType = itemSubtype;
                 item.ArmorClass = itemSubtype;
 
-                // Parse armor class value if present
-                var armorValue = token["armorClass"]?.Value<int>() ?? 0;
-                if (armorValue > 0)
+                // Parse armor class value if present (some catalogs use int, some use string)
+                var armorClassToken = token["armorClass"];
+                if (armorClassToken != null)
                 {
-                    item.BaseTraits["armorClass"] = new TraitValue(armorValue, TraitType.Number);
+                    // Try parsing as int first (for numeric armorClass values)
+                    if (armorClassToken.Type == JTokenType.Integer)
+                    {
+                        var armorValue = armorClassToken.Value<int>();
+                        item.BaseTraits["armorClass"] = new TraitValue(armorValue, TraitType.Number);
+                    }
+                    // Otherwise treat as string (for "light", "medium", "heavy")
+                    else if (armorClassToken.Type == JTokenType.String)
+                    {
+                        item.ArmorClass = armorClassToken.ToString();
+                    }
                 }
             }
 

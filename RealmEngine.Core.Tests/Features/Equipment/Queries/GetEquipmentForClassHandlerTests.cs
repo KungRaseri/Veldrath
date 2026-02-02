@@ -373,7 +373,7 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         uniqueWeaponTypes.Should().HaveCountGreaterThan(1, "Warriors should have access to multiple weapon types");
     }
 
-    [Fact(Skip = "Test failing with limited armor loaded - needs investigation into GameDataCache behavior")]
+    [Fact]
     public async Task Handler_Should_Load_All_Armor_Types_For_Warrior()
     {
         // Arrange
@@ -393,7 +393,12 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         
         // Warriors should have diverse armor types (light, medium, heavy, shields)
         var uniqueArmorTypes = result.Armor.Select(a => a.ArmorType).Distinct().ToList();
-        uniqueArmorTypes.Should().HaveCountGreaterThan(1, "Warriors should have access to multiple armor types");
+        
+        uniqueArmorTypes.Should().HaveCountGreaterThan(1, 
+            "Warriors should have access to multiple armor types");
+        uniqueArmorTypes.Should().Contain("light");
+        uniqueArmorTypes.Should().Contain("medium");
+        uniqueArmorTypes.Should().Contain("heavy");
     }
 
     [Fact]
