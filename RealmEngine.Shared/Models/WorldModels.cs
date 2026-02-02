@@ -35,6 +35,18 @@ public class Location
     /// <summary>Gets or sets whether this location is a safe zone (no random combat).</summary>
     public bool IsSafeZone { get; set; }
     
+    /// <summary>Gets or sets whether this location can be selected as a starting zone for new characters.</summary>
+    public bool IsStartingZone { get; set; }
+    
+    /// <summary>Gets or sets the location type (settlement, wilderness, dungeon).</summary>
+    public string? LocationType { get; set; }
+    
+    /// <summary>Gets or sets the danger level (Low, Medium, High, Extreme).</summary>
+    public string? Danger { get; set; }
+    
+    /// <summary>Gets or sets the difficulty level (Easy, Medium, Hard, Deadly).</summary>
+    public string? Difficulty { get; set; }
+    
     /// <summary>Gets or sets the features.</summary>
     public List<string> Features { get; set; } = new();
     /// <summary>Gets or sets the NPC IDs present at this location.</summary>

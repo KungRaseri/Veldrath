@@ -17,6 +17,7 @@
           "type": "Camp",
           "difficulty": "Easy",
           "locationType": "dungeon",
+          "isStartingZone": true,
           "recommendedLevel": "1-5",
           "enemyTypes": [
             "@enemies/humanoids/bandits:Bandit"

@@ -17,6 +17,7 @@
           "size": "Outpost",
           "population": "Tiny",
           "locationType": "settlement",
+          "isStartingZone": true,
           "services": [
             "basic_trade",
             "rest"
@@ -41,6 +42,7 @@
           "size": "Village",
           "population": "Small",
           "locationType": "settlement",
+          "isStartingZone": true,
           "terrain": "Plains",
           "services": [
             "farming",
@@ -62,6 +64,7 @@
           "size": "Village",
           "population": "Small",
           "locationType": "settlement",
+          "isStartingZone": true,
           "terrain": "Forest",
           "services": [
             "hunting",

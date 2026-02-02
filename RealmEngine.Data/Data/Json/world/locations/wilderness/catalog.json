@@ -17,6 +17,7 @@
           "terrain": "Plains",
           "danger": "Low",
           "locationType": "wilderness",
+          "isStartingZone": true,
           "recommendedLevel": "1-5",
           "encounters": [
             "@enemies/beasts/wolves:Wolf",
@@ -54,6 +55,7 @@
           "terrain": "Lake",
           "danger": "Low",
           "locationType": "wilderness",
+          "isStartingZone": true,
           "recommendedLevel": "1-6",
           "encounters": [
             "@enemies/beasts/wolves:*"
