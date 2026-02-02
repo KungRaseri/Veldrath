@@ -125,7 +125,7 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 return Task.FromResult(weapons);
             }
 
-            // Map weapon type names to proficiency categories
+            // Map catalog keys to proficiency categories
             var typeMapping = new Dictionary<string, string[]>
             {
                 ["heavy-blades"] = new[] { "swords", "greatswords", "all" },
@@ -139,11 +139,42 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 ["wands"] = new[] { "wands", "all" }
             };
 
+            // Map weapon slugs to specific proficiency types (for more granular filtering)
+            var slugToType = new Dictionary<string, string>
+            {
+                ["dagger"] = "daggers",
+                ["shortsword"] = "shortswords",
+                ["rapier"] = "rapiers",
+                ["longsword"] = "swords",
+                ["broadsword"] = "swords",
+                ["scimitar"] = "swords",
+                ["greatsword"] = "greatswords",
+                ["claymore"] = "greatswords",
+                ["battleaxe"] = "axes",
+                ["handaxe"] = "axes",
+                ["greataxe"] = "axes",
+                ["mace"] = "maces",
+                ["warhammer"] = "warhammers",
+                ["maul"] = "warhammers",
+                ["club"] = "simple",
+                ["quarterstaff"] = "staves",
+                ["staff"] = "staves",
+                ["spear"] = "polearms",
+                ["halberd"] = "polearms",
+                ["pike"] = "polearms",
+                ["glaive"] = "polearms",
+                ["shortbow"] = "bows",
+                ["longbow"] = "bows",
+                ["crossbow"] = "crossbows",
+                ["light-crossbow"] = "crossbows",
+                ["heavy-crossbow"] = "crossbows"
+            };
+
             foreach (var weaponType in weaponTypes.Properties())
             {
                 var typeName = weaponType.Name;
                 
-                // Check if class has proficiency
+                // Check if class has proficiency for this category
                 bool hasProficiency = typeMapping.ContainsKey(typeName) &&
                     typeMapping[typeName].Any(prof => proficiencies.Contains(prof, StringComparer.OrdinalIgnoreCase));
                 
@@ -165,7 +196,16 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                     var item = ParseItemFromToken(itemToken, typeName, ItemType.Weapon);
                     if (item != null)
                     {
-                        weapons.Add(item);
+                        // Determine specific weapon type from slug for finer proficiency check
+                        var specificType = slugToType.ContainsKey(item.Slug) ? slugToType[item.Slug] : typeName;
+                        item.WeaponType = specificType;
+                        
+                        // Filter by specific proficiency if not "all"
+                        if (proficiencies.Contains("all", StringComparer.OrdinalIgnoreCase) ||
+                            proficiencies.Contains(specificType, StringComparer.OrdinalIgnoreCase))
+                        {
+                            weapons.Add(item);
+                        }
                     }
                 }
             }
@@ -217,13 +257,24 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 return Task.FromResult(armorItems);
             }
 
-            // Map armor type names to proficiency categories
+            _logger.LogInformation("Found {Count} armor type categories in catalog", armorTypes.Properties().Count());
+            
+            // Map armor catalog keys to proficiency categories
             var typeMapping = new Dictionary<string, string[]>
             {
                 ["light-armor"] = new[] { "light", "all" },
                 ["medium-armor"] = new[] { "medium", "all" },
                 ["heavy-armor"] = new[] { "heavy", "all" },
                 ["shields"] = new[] { "shields", "all" }
+            };
+
+            // Map catalog keys to proficiency names (remove "-armor" suffix)
+            var keyToProf = new Dictionary<string, string>
+            {
+                ["light-armor"] = "light",
+                ["medium-armor"] = "medium",
+                ["heavy-armor"] = "heavy",
+                ["shields"] = "shields"
             };
 
             foreach (var armorType in armorTypes.Properties())
@@ -247,11 +298,20 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                     continue;
                 }
 
+                // Get the proficiency name for this armor type
+                var profName = keyToProf.ContainsKey(typeName) ? keyToProf[typeName] : typeName;
+
                 foreach (var itemToken in items)
                 {
                     var item = ParseItemFromToken(itemToken, typeName, ItemType.Chest);
                     if (item != null)
                     {
+                        // Override ArmorType with proficiency name instead of catalog key
+                        // Also check if item has armorClass field
+                        var armorClass = itemToken["armorClass"]?.ToString();
+                        item.ArmorType = armorClass ?? profName;
+                        item.ArmorClass = item.ArmorType;
+                        
                         armorItems.Add(item);
                     }
                 }
