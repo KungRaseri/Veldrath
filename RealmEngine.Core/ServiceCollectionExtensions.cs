@@ -121,6 +121,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICharacterClassRepository, CharacterClassRepository>();
         services.AddScoped<IHallOfFameRepository, HallOfFameRepository>();
         services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
+        services.AddSingleton<IBackgroundRepository, BackgroundRepository>();
         
         // Register feature services (concrete implementations)
         services.AddScoped<SaveGameService>();
