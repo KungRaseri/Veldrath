@@ -97,7 +97,7 @@ public class PreviewLevelUpHandler : IRequestHandler<PreviewLevelUpQuery, Previe
             var skillPointsGain = 1;
 
             // Get unlocked abilities (query class progression data)
-            var unlockedAbilities = GetAbilitiesForLevel(character.CharacterClass, nextLevel);
+            var unlockedAbilities = GetAbilitiesForLevel(character.ClassName, nextLevel);
 
             _logger.LogDebug(
                 "Previewing level up for {CharacterName}: {CurrentLevel} -> {NextLevel}. HP: +{HP}, Mana: +{Mana}, Abilities: {Abilities}",

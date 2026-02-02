@@ -127,7 +127,7 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
             };
 
             // Get unlocked abilities (query class progression)
-            var unlockedAbilities = GetAbilitiesForLevel(character.CharacterClass, character.Level);
+            var unlockedAbilities = GetAbilitiesForLevel(character.ClassName, character.Level);
 
             _logger.LogInformation(
                 "Character {CharacterName} leveled up from {OldLevel} to {NewLevel}. HP: +{HP}, Mana: +{Mana}, Abilities: {Abilities}",

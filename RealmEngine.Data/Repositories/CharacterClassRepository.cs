@@ -98,7 +98,16 @@ public class CharacterClassRepository : ICharacterClassRepository
     }
 
     /// <inheritdoc />
-    public CharacterClass? GetById(string id) => GetByName(id); // ID is the name for character classes
+    public CharacterClass? GetById(string id)
+    {
+        // First try exact ID match (e.g., "warrior:Fighter")
+        var byId = GetAllClasses().FirstOrDefault(c => c.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (byId != null)
+            return byId;
+        
+        // Fallback to name search for backwards compatibility
+        return GetByName(id);
+    }
     
     /// <inheritdoc />
     public CharacterClass? GetByName(string name) => GetClassByName(name);
