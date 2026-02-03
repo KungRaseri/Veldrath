@@ -43,13 +43,7 @@
           "isSubclass": false,
           "startingStats": {
             "health": 90,
-            "mana": 120,
-            "strength": 10,
-            "dexterity": 10,
-            "constitution": 13,
-            "intelligence": 12,
-            "wisdom": 18,
-            "charisma": 14
+            "mana": 120
           },
           "startingAbilities": [
             "@abilities/active/support:heal",
@@ -117,13 +111,7 @@
           "parentClass": "@classes/cleric:Priest",
           "startingStats": {
             "health": 130,
-            "mana": 80,
-            "strength": 16,
-            "dexterity": 10,
-            "constitution": 15,
-            "intelligence": 10,
-            "wisdom": 16,
-            "charisma": 14
+            "mana": 80
           },
           "startingAbilities": [
             "@abilities/active/offensive:divine-strike",
@@ -210,13 +198,7 @@
           "isSubclass": false,
           "startingStats": {
             "health": 80,
-            "mana": 50,
-            "strength": 10,
-            "dexterity": 18,
-            "constitution": 10,
-            "intelligence": 14,
-            "wisdom": 12,
-            "charisma": 12
+            "mana": 50
           },
           "startingAbilities": [
             "@abilities/active/offensive:sneak-attack",
@@ -283,14 +265,8 @@
           "parentClass": "@classes/rogue:Thief",
           "startingStats": {
             "health": 70,
-            "mana": 60,
-            "strength": 12,
-            "dexterity": 20,
-            "constitution": 8,
-            "intelligence": 15,
-            "wisdom": 10,
-            "charisma": 10
-          },
+            "mana": 60
+            },
           "startingAbilities": [
             "@abilities/active/offensive:sneak-attack",
             "@abilities/active/offensive:assassinate",
@@ -357,14 +333,8 @@
           "parentClass": "@classes/rogue:Thief",
           "startingStats": {
             "health": 85,
-            "mana": 55,
-            "strength": 12,
-            "dexterity": 17,
-            "constitution": 11,
-            "intelligence": 12,
-            "wisdom": 10,
-            "charisma": 16
-          },
+            "mana": 55
+            },
           "startingAbilities": [
             "@abilities/active/offensive:sneak-attack",
             "@abilities/active/support:flourish",
@@ -452,14 +422,8 @@
           "isSubclass": false,
           "startingStats": {
             "health": 100,
-            "mana": 60,
-            "strength": 12,
-            "dexterity": 18,
-            "constitution": 12,
-            "intelligence": 10,
-            "wisdom": 16,
-            "charisma": 10
-          },
+            "mana": 60
+            },
           "startingAbilities": [
             "@abilities/active/offensive:bow-shot",
             "@abilities/active/utility:track",
@@ -526,14 +490,8 @@
           "parentClass": "@classes/ranger:Hunter",
           "startingStats": {
             "health": 95,
-            "mana": 70,
-            "strength": 12,
-            "dexterity": 16,
-            "constitution": 13,
-            "intelligence": 10,
-            "wisdom": 18,
-            "charisma": 12
-          },
+            "mana": 70
+            },
           "startingAbilities": [
             "@abilities/active/offensive:bow-shot",
             "@abilities/active/support:beast-command",
@@ -625,14 +583,8 @@
           "isSubclass": false,
           "startingStats": {
             "health": 120,
-            "mana": 30,
-            "strength": 16,
-            "dexterity": 12,
-            "constitution": 14,
-            "intelligence": 8,
-            "wisdom": 10,
-            "charisma": 10
-          },
+            "mana": 30
+            },
           "startingAbilities": [
             "@abilities/active/offensive:basic-attack",
             "@abilities/active/defensive:defend",
@@ -707,14 +659,8 @@
           "parentClass": "@classes/warrior:Fighter",
           "startingStats": {
             "health": 140,
-            "mana": 20,
-            "strength": 18,
-            "dexterity": 10,
-            "constitution": 16,
-            "intelligence": 6,
-            "wisdom": 8,
-            "charisma": 8
-          },
+            "mana": 20
+            },
           "startingAbilities": [
             "@abilities/active/offensive:basic-attack",
             "@abilities/active/support:berserker-rage",
@@ -780,14 +726,8 @@
           "parentClass": "@classes/warrior:Fighter",
           "startingStats": {
             "health": 150,
-            "mana": 25,
-            "strength": 15,
-            "dexterity": 8,
-            "constitution": 17,
-            "intelligence": 8,
-            "wisdom": 12,
-            "charisma": 11
-          },
+            "mana": 25
+            },
           "startingAbilities": [
             "@abilities/active/offensive:basic-attack",
             "@abilities/active/offensive:shield-bash",
@@ -855,14 +795,8 @@
           "parentClass": "@classes/warrior:Fighter",
           "startingStats": {
             "health": 110,
-            "mana": 35,
-            "strength": 14,
-            "dexterity": 17,
-            "constitution": 12,
-            "intelligence": 10,
-            "wisdom": 10,
-            "charisma": 13
-          },
+            "mana": 35
+            },
           "startingAbilities": [
             "@abilities/active/offensive:basic-attack",
             "@abilities/active/defensive:riposte",
@@ -948,14 +882,8 @@
           "isSubclass": false,
           "startingStats": {
             "health": 60,
-            "mana": 150,
-            "strength": 6,
-            "dexterity": 10,
-            "constitution": 8,
-            "intelligence": 20,
-            "wisdom": 14,
-            "charisma": 10
-          },
+            "mana": 150
+            },
           "startingAbilities": [
             "@abilities/active/offensive:magic-missile",
             "@abilities/active/offensive:fireball",
@@ -1022,14 +950,8 @@
           "parentClass": "@classes/mage:Wizard",
           "startingStats": {
             "health": 55,
-            "mana": 170,
-            "strength": 5,
-            "dexterity": 10,
-            "constitution": 7,
-            "intelligence": 22,
-            "wisdom": 13,
-            "charisma": 9
-          },
+            "mana": 170
+            },
           "startingAbilities": [
             "@abilities/active/offensive:elemental-bolt",
             "@abilities/passive:elemental-mastery",
@@ -1092,14 +1014,8 @@
           "parentClass": "@classes/mage:Wizard",
           "startingStats": {
             "health": 65,
-            "mana": 140,
-            "strength": 6,
-            "dexterity": 9,
-            "constitution": 9,
-            "intelligence": 19,
-            "wisdom": 15,
-            "charisma": 8
-          },
+            "mana": 140
+            },
           "startingAbilities": [
             "@abilities/active/offensive:drain-life",
             "@abilities/active/summon:summon-skeleton",
