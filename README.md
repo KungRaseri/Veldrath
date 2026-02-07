@@ -1,5 +1,9 @@
 # RealmEngine
 
+[![Build and Release](https://github.com/KungRaseri/console-game/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/KungRaseri/console-game/actions/workflows/build-and-release.yml)
+[![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 RPG backend engine designed as a game logic API for Godot UI integration. Implements CQRS pattern with MediatR for clean command/query separation.
 
 ## Architecture
@@ -40,7 +44,7 @@ if (result.Success) {
 # Build engine (no MAUI required)
 dotnet build RealmEngine.sln
 
-# Run test suite (8,286 tests, 100% pass rate)
+# Run test suite
 dotnet test RealmEngine.sln
 
 # VS Code debug
@@ -80,11 +84,11 @@ Press F5
 
 ## Testing
 
-**8,286 tests (100% pass rate)** across three test projects:
+Comprehensive test suite across three test projects:
 
-- **RealmEngine.Data.Tests** (6,378 tests) - JSON compliance, reference integrity, data validation
-- **RealmEngine.Core.Tests** (1,218 tests) - Combat, crafting, inventory, quests, character progression
-- **RealmEngine.Shared.Tests** (690 tests) - Models, utilities, services
+- **RealmEngine.Data.Tests** - JSON compliance, reference integrity, data validation
+- **RealmEngine.Core.Tests** - Combat, crafting, inventory, quests, character progression
+- **RealmEngine.Shared.Tests** - Models, utilities, services
 
 ```powershell
 # Run all tests
@@ -123,12 +127,12 @@ RealmEngine/
 │   ├── Generators/             # Procedural content generation
 │   └── Services/               # Core game services
 ├── RealmEngine.Data/           # Data access and JSON loading
-│   ├── Data/Json/              # 211 JSON game data files
+│   ├── Data/Json/              # Game data files
 │   └── Services/               # Data services and repositories
 ├── RealmEngine.Shared/         # Shared models and utilities
 │   ├── Models/                 # Domain models
 │   └── Abstractions/           # Interfaces and base classes
-└── [Project].Tests/            # Test projects (8,286 tests)
+└── [Project].Tests/            # Test projects
 ```
 
 ## Solution Files
