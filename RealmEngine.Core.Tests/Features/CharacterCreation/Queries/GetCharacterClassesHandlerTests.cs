@@ -25,11 +25,19 @@ public class GetCharacterClassesHandlerTests : IDisposable
         _services.AddLogging();
         
         // Register RealmEngine services
-        _services.AddRealmEngineData("c:\\code\\console-game\\RealmEngine.Data\\Data\\Json");
+        _services.AddRealmEngineData(GetDataPath());
         _services.AddRealmEngineCore();
         _services.AddRealmEngineMediatR();
         
         _serviceProvider = _services.BuildServiceProvider();
+    }
+
+    private static string GetDataPath()
+    {
+        // Start from test assembly location and navigate to Data/Json
+        var assemblyPath = Path.GetDirectoryName(typeof(GetCharacterClassesHandlerTests).Assembly.Location)!;
+        var solutionRoot = Path.GetFullPath(Path.Combine(assemblyPath, "..", "..", "..", ".."));
+        return Path.Combine(solutionRoot, "RealmEngine.Data", "Data", "Json");
     }
 
     public void Dispose()

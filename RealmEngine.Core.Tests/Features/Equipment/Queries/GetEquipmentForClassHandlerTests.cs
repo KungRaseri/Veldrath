@@ -24,12 +24,20 @@ public class GetEquipmentForClassHandlerTests : IDisposable
         services.AddLogging();
         
         // Register RealmEngine services
-        services.AddRealmEngineData("c:\\code\\console-game\\RealmEngine.Data\\Data\\Json");
+        services.AddRealmEngineData(GetDataPath());
         services.AddRealmEngineCore();
         services.AddRealmEngineMediatR();
 
         _serviceProvider = services.BuildServiceProvider();
         _mediator = _serviceProvider.GetRequiredService<IMediator>();
+    }
+
+    private static string GetDataPath()
+    {
+        // Start from test assembly location and navigate to Data/Json
+        var assemblyPath = Path.GetDirectoryName(typeof(GetEquipmentForClassHandlerTests).Assembly.Location)!;
+        var solutionRoot = Path.GetFullPath(Path.Combine(assemblyPath, "..", "..", "..", ".."));
+        return Path.Combine(solutionRoot, "RealmEngine.Data", "Data", "Json");
     }
 
     public void Dispose()
