@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Content Builder (Debug)",
+            "name": "RealmForge (Debug)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-contentbuilder",
-            "program": "${workspaceFolder}/RealmForge/bin/Debug/net9.0-windows/RealmForge.dll",
+            "preLaunchTask": "build-realmforge",
+            "program": "${workspaceFolder}/RealmForge/bin/Debug/net10.0-windows10.0.19041.0/RealmForge.dll",
             "args": [],
             "cwd": "${workspaceFolder}/RealmForge",
             "console": "internalConsole",
@@ -68,7 +68,7 @@
             "program": "dotnet",
             "args": [
                 "test",
-                "${workspaceFolder}/Game.sln",
+                "${workspaceFolder}/RealmEngine.slnx",
                 "--filter",
                 "Category!=UI",
                 "--no-build"
@@ -81,6 +81,56 @@
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach"
+        },
+
+        // ── RealmUnbound ─────────────────────────────────────────────────────────
+        {
+            "name": "RealmUnbound Server (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-realmunbound-server",
+            "program": "${workspaceFolder}/RealmUnbound.Server/bin/Debug/net10.0/RealmUnbound.Server.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/RealmUnbound.Server",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "RealmUnbound Client (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-realmunbound-client",
+            "program": "${workspaceFolder}/RealmUnbound.Client/bin/Debug/net10.0/RealmUnbound.Client.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/RealmUnbound.Client",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Test: RealmUnbound.Server.Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "test-realmunbound-server",
+            "program": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj",
+                "--no-build"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        }
+    ],
+
+    "compounds": [
+        {
+            "name": "RealmUnbound (Full Stack)",
+            "configurations": ["RealmUnbound Server (Debug)", "RealmUnbound Client (Debug)"],
+            "stopAll": true
         }
     ]
 }

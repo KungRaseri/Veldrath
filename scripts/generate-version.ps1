@@ -1,17 +1,37 @@
 # Generate Version Script
 # Generates semantic version: [Major].[Minor].[Patch]-[git hash]
 # Where Patch = commit count on current branch
+#
+# Component-specific versions are stored in versions/*.props:
+#   -PropsFile versions/engine.props   → RealmEngine libraries
+#   -PropsFile versions/tooling.props  → RealmForge tooling
+#   -PropsFile versions/server.props   → RealmUnbound.Server
+#   -PropsFile versions/client.props   → RealmUnbound.Client
+#
+# If -PropsFile is not specified, reads from Directory.Build.props (used by test projects
+# and local dev where a specific component is not targeted).
 
 param(
-    [string]$OutputFormat = "string"  # "string", "env", or "msbuild"
+    [string]$OutputFormat = "string",  # "string", "env", or "msbuild"
+    [string]$PropsFile = ""            # Path to a versions/*.props file; defaults to root Directory.Build.props
 )
 
 $ErrorActionPreference = "Stop"
 
-# Read Major.Minor from Directory.Build.props
-$PropsFile = Join-Path $PSScriptRoot "..\Directory.Build.props"
+# Resolve the props file to read VersionMajor/VersionMinor from
+if ([string]::IsNullOrWhiteSpace($PropsFile)) {
+    $PropsFile = Join-Path $PSScriptRoot "..\Directory.Build.props"
+}
+# Resolve relative paths against the repo root (parent of scripts/)
+elseif (-not [System.IO.Path]::IsPathRooted($PropsFile)) {
+    $RepoRoot = Join-Path $PSScriptRoot ".."
+    $PropsFile = Join-Path $RepoRoot $PropsFile
+}
+
+$PropsFile = [System.IO.Path]::GetFullPath($PropsFile)
+
 if (-not (Test-Path $PropsFile)) {
-    Write-Error "Directory.Build.props not found at: $PropsFile"
+    Write-Error "Props file not found at: $PropsFile"
     exit 1
 }
 
@@ -20,7 +40,7 @@ $VersionMajor = $Props.Project.PropertyGroup.VersionMajor
 $VersionMinor = $Props.Project.PropertyGroup.VersionMinor
 
 if (-not $VersionMajor -or -not $VersionMinor) {
-    Write-Error "VersionMajor and VersionMinor must be set in Directory.Build.props"
+    Write-Error "VersionMajor and VersionMinor must be set in: $PropsFile"
     exit 1
 }
 

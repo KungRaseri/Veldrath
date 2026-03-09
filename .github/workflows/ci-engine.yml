@@ -1,0 +1,185 @@
+name: CI - Engine Libraries
+
+concurrency:
+  group: ci-engine-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
+      - 'RealmEngine.Core.Tests/**'
+      - 'RealmEngine.Shared.Tests/**'
+      - 'RealmEngine.Data.Tests/**'
+      - 'versions/engine.props'
+      - 'Directory.Build.props'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
+      - 'RealmEngine.Core.Tests/**'
+      - 'RealmEngine.Shared.Tests/**'
+      - 'RealmEngine.Data.Tests/**'
+      - 'versions/engine.props'
+      - 'Directory.Build.props'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  CONFIGURATION: 'Release'
+  PROPS_FILE: 'versions/engine.props'
+
+jobs:
+  build-and-test:
+    name: Build and Test Engine Libraries
+    runs-on: windows-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Generate version
+      id: version
+      run: |
+        $version = .\scripts\generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
+        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "Generated engine version: $version"
+      shell: pwsh
+
+    - name: Restore dependencies
+      run: dotnet restore RealmEngine.slnx
+
+    - name: Build
+      run: dotnet build RealmEngine.slnx --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Test - RealmEngine.Shared.Tests
+      run: |
+        dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj `
+          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
+          --logger "trx;LogFileName=shared-tests.trx" `
+          --results-directory ./TestResults
+      shell: pwsh
+
+    - name: Test - RealmEngine.Core.Tests
+      run: |
+        dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj `
+          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
+          --logger "trx;LogFileName=core-tests.trx" `
+          --results-directory ./TestResults
+      shell: pwsh
+
+    - name: Test - RealmEngine.Data.Tests
+      run: |
+        dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj `
+          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
+          --logger "trx;LogFileName=data-tests.trx" `
+          --results-directory ./TestResults
+      shell: pwsh
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: always()
+      with:
+        files: TestResults/*.trx
+        check_name: Engine Test Results
+
+  package:
+    name: Package Engine Artifacts
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    permissions:
+      contents: write  # needed to create the release tag
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Generate version
+      id: version
+      run: |
+        $version = .\scripts\generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
+        $versionNoHash = $version -replace '-[^-]+$', ''
+        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "version-no-hash=$versionNoHash" >> $env:GITHUB_OUTPUT
+        Write-Output "Engine version: $version"
+      shell: pwsh
+
+    - name: Restore and build
+      run: |
+        dotnet restore RealmEngine.slnx
+        dotnet build RealmEngine.slnx --configuration ${{ env.CONFIGURATION }} --no-restore
+      shell: pwsh
+
+    - name: Package - Libraries
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        New-Item -ItemType Directory -Force -Path package/Libraries
+        New-Item -ItemType Directory -Force -Path package/Data
+        Copy-Item -Path "RealmEngine.Shared/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
+        Copy-Item -Path "RealmEngine.Core/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
+        Copy-Item -Path "RealmEngine.Data/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
+        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "package/Data/" -Recurse
+        Compress-Archive -Path "package/*" -DestinationPath "RealmEngine-Libraries-$version.zip" -Force
+        Write-Output "Created RealmEngine-Libraries-$version.zip"
+      shell: pwsh
+
+    - name: Package - JSON Data only
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        New-Item -ItemType Directory -Force -Path package-data/Json
+        Copy-Item -Path "RealmEngine.Data/Data/Json/*" -Destination "package-data/Json/" -Recurse
+        Compress-Archive -Path "package-data/*" -DestinationPath "RealmEngine-Data-$version.zip" -Force
+        Write-Output "Created RealmEngine-Data-$version.zip"
+      shell: pwsh
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: engine-release-artifacts
+        path: |
+          RealmEngine-Libraries-*.zip
+          RealmEngine-Data-*.zip
+        retention-days: 7
+
+    - name: Create release tag
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        $tag = "engine/v$version"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag $tag
+        git push origin $tag
+        Write-Output "Created tag: $tag"
+      shell: pwsh

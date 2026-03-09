@@ -15,7 +15,9 @@ public class GameDataCacheDomainHierarchyTests : IDisposable
         // Get the solution root and navigate to the data directory
         var currentDir = Directory.GetCurrentDirectory();
         var solutionRoot = currentDir;
-        while (solutionRoot != null && !File.Exists(Path.Combine(solutionRoot, "RealmEngine.sln")))
+        while (solutionRoot != null &&
+               !File.Exists(Path.Combine(solutionRoot, "RealmEngine.sln")) &&
+               !File.Exists(Path.Combine(solutionRoot, "RealmEngine.slnx")))
         {
             solutionRoot = Directory.GetParent(solutionRoot)?.FullName;
         }

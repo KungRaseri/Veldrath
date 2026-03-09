@@ -1,0 +1,6 @@
+<Project>
+  <!-- Chain to root Directory.Build.props for shared settings -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <!-- Server version (RealmUnbound.Server game server API) -->
+  <Import Project="$(MSBuildThisFileDirectory)../versions/server.props" />
+</Project>

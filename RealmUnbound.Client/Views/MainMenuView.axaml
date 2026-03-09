@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.MainMenuView"
+             x:DataType="vm:MainMenuViewModel">
+
+    <Grid RowDefinitions="*,Auto,*">
+
+        <!-- Title block -->
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    Spacing="12">
+
+            <TextBlock Text="{Binding Title}"
+                       FontSize="72"
+                       FontWeight="Bold"
+                       Foreground="#c8a96e"
+                       HorizontalAlignment="Center"
+                       LetterSpacing="6" />
+
+            <TextBlock Text="{Binding Subtitle}"
+                       FontSize="18"
+                       Foreground="#8a8a9a"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,48" />
+
+            <!-- Menu buttons -->
+            <Button Content="New Game"
+                    Command="{Binding NewGameCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="48"
+                    FontSize="16" />
+
+            <Button Content="Load Game"
+                    Command="{Binding LoadGameCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="48"
+                    FontSize="16" />
+
+            <Button Content="Settings"
+                    Command="{Binding SettingsCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="48"
+                    FontSize="16" />
+
+            <Button Content="Exit"
+                    Command="{Binding ExitCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="48"
+                    FontSize="16"
+                    Foreground="#c05050" />
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>
