@@ -16,6 +16,7 @@ on:
       - 'versions/tooling.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - '.github/workflows/ci-tooling.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -27,6 +28,7 @@ on:
       - 'versions/tooling.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - '.github/workflows/ci-tooling.yml'
   workflow_dispatch:
 
 env:

@@ -16,6 +16,7 @@ on:
       - 'RealmEngine.Data.Tests/**'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - '.github/workflows/ci-engine.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -27,6 +28,7 @@ on:
       - 'RealmEngine.Data.Tests/**'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - '.github/workflows/ci-engine.yml'
   workflow_dispatch:
 
 env:
