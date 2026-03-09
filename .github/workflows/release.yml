@@ -129,13 +129,19 @@ jobs:
 
         [ -z "$COMMITS" ] && COMMITS="- Initial release"
 
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        echo "$COMMITS"       >> $GITHUB_OUTPUT
-        echo "EOF"            >> $GITHUB_OUTPUT
+        # Use a unique delimiter to avoid collision with commit message content
+        DELIM="EOF_$(openssl rand -hex 8)"
+        echo "changelog<<$DELIM" >> $GITHUB_OUTPUT
+        echo "$COMMITS"          >> $GITHUB_OUTPUT
+        echo "$DELIM"            >> $GITHUB_OUTPUT
 
     # ── Component-specific release names and notes ────────────────────────────
     - name: Build release metadata
       id: release-meta
+      env:
+        # Pass changelog via env to avoid shell injection from commit messages
+        CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        REPO_OWNER: ${{ github.repository_owner }}
       run: |
         COMPONENT="${{ steps.meta.outputs.component }}"
         VERSION="${{ steps.meta.outputs.version }}"
@@ -143,64 +149,70 @@ jobs:
         case "$COMPONENT" in
           engine)
             NAME="RealmEngine Libraries $VERSION"
-            BODY="## RealmEngine Libraries $VERSION
-
-Core, Shared, and Data assemblies for use with .NET / Godot Engine.
-
-### Packages
-- \`RealmEngine-Libraries-$VERSION.zip\` — Core, Shared, and Data assemblies
-- \`RealmEngine-Data-$VERSION.zip\` — JSON game data only (for direct Godot import)
-
-### Changes
-${{ steps.changelog.outputs.changelog }}"
+            {
+              echo "## RealmEngine Libraries $VERSION"
+              echo ""
+              echo "Core, Shared, and Data assemblies for use with .NET / Godot Engine."
+              echo ""
+              echo "### Packages"
+              echo "- \`RealmEngine-Libraries-$VERSION.zip\` — Core, Shared, and Data assemblies"
+              echo "- \`RealmEngine-Data-$VERSION.zip\` — JSON game data only (for direct Godot import)"
+              echo ""
+              echo "### Changes"
+              printf '%s\n' "$CHANGELOG"
+            } > release-body.md
             ;;
           tooling)
             NAME="RealmForge $VERSION"
-            BODY="## RealmForge $VERSION
-
-Content editor and tooling suite for RealmEngine.
-
-### Packages
-- \`RealmForge-Windows-$VERSION.zip\` — Windows desktop application (includes JSON data)
-
-### Changes
-${{ steps.changelog.outputs.changelog }}"
+            {
+              echo "## RealmForge $VERSION"
+              echo ""
+              echo "Content editor and tooling suite for RealmEngine."
+              echo ""
+              echo "### Packages"
+              echo "- \`RealmForge-Windows-$VERSION.zip\` — Windows desktop application (includes JSON data)"
+              echo ""
+              echo "### Changes"
+              printf '%s\n' "$CHANGELOG"
+            } > release-body.md
             ;;
           server)
             NAME="RealmUnbound Server $VERSION"
-            BODY="## RealmUnbound Server $VERSION
-
-Game server API for RealmUnbound.
-
-### Docker Image
-\`\`\`
-docker pull ghcr.io/${{ github.repository_owner }}/realmunbound-server:$VERSION
-\`\`\`
-
-### Packages
-- \`RealmUnbound-Server-$VERSION.zip\` — Self-contained server binary with JSON data
-
-### Changes
-${{ steps.changelog.outputs.changelog }}"
+            {
+              echo "## RealmUnbound Server $VERSION"
+              echo ""
+              echo "Game server API for RealmUnbound."
+              echo ""
+              echo "### Docker Image"
+              echo '```'
+              echo "docker pull ghcr.io/$REPO_OWNER/realmunbound-server:$VERSION"
+              echo '```'
+              echo ""
+              echo "### Packages"
+              echo "- \`RealmUnbound-Server-$VERSION.zip\` — Self-contained server binary with JSON data"
+              echo ""
+              echo "### Changes"
+              printf '%s\n' "$CHANGELOG"
+            } > release-body.md
             ;;
           client)
             NAME="RealmUnbound Client $VERSION"
-            BODY="## RealmUnbound Client $VERSION
-
-Avalonia desktop client for RealmUnbound.
-
-### Packages
-- \`RealmUnbound-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)
-- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)
-
-### Changes
-${{ steps.changelog.outputs.changelog }}"
+            {
+              echo "## RealmUnbound Client $VERSION"
+              echo ""
+              echo "Avalonia desktop client for RealmUnbound."
+              echo ""
+              echo "### Packages"
+              echo "- \`RealmUnbound-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)"
+              echo "- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
+              echo ""
+              echo "### Changes"
+              printf '%s\n' "$CHANGELOG"
+            } > release-body.md
             ;;
         esac
 
         echo "name=$NAME" >> $GITHUB_OUTPUT
-        # Use a file for the body to avoid quoting issues
-        echo "$BODY" > release-body.md
 
     # ── Create the GitHub Release ─────────────────────────────────────────────
     - name: Create GitHub Release
