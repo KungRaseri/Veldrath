@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.AspNetCore.SignalR;
 
 namespace RealmUnbound.Server.Hubs;

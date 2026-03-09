@@ -1,0 +1,33 @@
+## Build artifacts
+**/bin/
+**/obj/
+
+## Logs
+logs/
+*.log
+
+## Secrets and local overrides
+appsettings.*.local.json
+.env
+.env.*
+!.env.example
+
+## Test results
+TestResults/
+coverage/
+
+## VS Code / IDE
+.vscode/
+.vs/
+*.user
+
+## Git
+.git/
+.gitignore
+
+## Other engine projects (not needed in the server image)
+RealmForge/
+RealmForge.Tests/
+RealmUnbound.Client/
+RealmUnbound.Server.Tests/
+RealmEngine.*.Tests/
