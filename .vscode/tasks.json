@@ -7,7 +7,7 @@
 			"command": "dotnet",
 			"args": [
 				"build",
-				"${workspaceFolder}/RealmEngine.sln",
+				"${workspaceFolder}/RealmEngine.slnx",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
@@ -81,7 +81,7 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmEngine.sln",
+				"${workspaceFolder}/RealmEngine.slnx",
 				"--filter",
 				"Category!=UI",
 				"--verbosity",
@@ -237,7 +237,7 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/Game.sln",
+				"${workspaceFolder}/RealmEngine.slnx",
 				"--filter",
 				"Category!=UI",
 				"--collect:XPlat Code Coverage",
@@ -282,7 +282,7 @@
 			"command": "dotnet",
 			"args": [
 				"clean",
-				"${workspaceFolder}/RealmEngine.sln"
+				"${workspaceFolder}/RealmEngine.slnx"
 			],
 			"problemMatcher": "$msCompile"
 		},
@@ -386,6 +386,156 @@
 				"focus": true,
 				"panel": "dedicated",
 				"clear": true
+			}
+		},
+
+		// ── RealmUnbound ─────────────────────────────────────────────────────────
+		{
+			"label": "build-realmunbound-server",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/RealmUnbound.Server/RealmUnbound.Server.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "build"
+		},
+		{
+			"label": "build-realmunbound-client",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "build"
+		},
+		{
+			"label": "run-realmunbound-server",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"${workspaceFolder}/RealmUnbound.Server/RealmUnbound.Server.csproj",
+				"--no-build"
+			],
+			"isBackground": true,
+			"dependsOn": "build-realmunbound-server",
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^.*$",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "RealmUnbound\\.Server starting",
+					"endsPattern": "Now listening on:"
+				}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "run-realmunbound-client",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj",
+				"--no-build"
+			],
+			"dependsOn": "build-realmunbound-client",
+			"problemMatcher": "$msCompile",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "test-realmunbound-server",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj",
+				"--verbosity",
+				"normal"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"clear": true
+			}
+		},
+
+		// ── Docker ───────────────────────────────────────────────────────────────
+		{
+			"label": "docker-compose-up",
+			"type": "shell",
+			"command": "docker",
+			"args": ["compose", "up", "--build", "-d"],
+			"options": { "cwd": "${workspaceFolder}" },
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "docker-compose-up-db",
+			"type": "shell",
+			"command": "docker",
+			"args": ["compose", "up", "postgres", "-d"],
+			"options": { "cwd": "${workspaceFolder}" },
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"clear": false
+			}
+		},
+		{
+			"label": "docker-compose-down",
+			"type": "shell",
+			"command": "docker",
+			"args": ["compose", "down"],
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"clear": false
 			}
 		}
 	],

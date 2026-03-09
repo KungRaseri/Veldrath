@@ -1,0 +1,7 @@
+<Project>
+  <!-- RealmUnbound.Client: Avalonia desktop client -->
+  <PropertyGroup>
+    <VersionMajor>0</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+  </PropertyGroup>
+</Project>

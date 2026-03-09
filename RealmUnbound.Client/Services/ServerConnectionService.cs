@@ -1,0 +1,102 @@
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
+
+namespace RealmUnbound.Client.Services;
+
+public enum ConnectionState { Disconnected, Connecting, Connected, Failed }
+
+public interface IServerConnectionService
+{
+    ConnectionState State { get; }
+    event Action<ConnectionState>? StateChanged;
+    Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default);
+    Task DisconnectAsync();
+    Task<TResult?> SendCommandAsync<TResult>(string method, object command);
+}
+
+public class ServerConnectionService : IServerConnectionService, IAsyncDisposable
+{
+    private readonly ILogger<ServerConnectionService> _logger;
+    private HubConnection? _connection;
+    private ConnectionState _state = ConnectionState.Disconnected;
+
+    public ConnectionState State
+    {
+        get => _state;
+        private set
+        {
+            _state = value;
+            StateChanged?.Invoke(value);
+        }
+    }
+
+    public event Action<ConnectionState>? StateChanged;
+
+    public ServerConnectionService(ILogger<ServerConnectionService> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
+    {
+        if (State == ConnectionState.Connected) return;
+
+        State = ConnectionState.Connecting;
+        _logger.LogInformation("Connecting to server: {Url}", serverUrl);
+
+        _connection = new HubConnectionBuilder()
+            .WithUrl($"{serverUrl}/hubs/game")
+            .WithAutomaticReconnect()
+            .Build();
+
+        _connection.Closed += async (error) =>
+        {
+            State = ConnectionState.Disconnected;
+            _logger.LogWarning(error, "Connection closed");
+            await Task.CompletedTask;
+        };
+
+        _connection.Reconnected += (connectionId) =>
+        {
+            State = ConnectionState.Connected;
+            _logger.LogInformation("Reconnected: {ConnectionId}", connectionId);
+            return Task.CompletedTask;
+        };
+
+        try
+        {
+            await _connection.StartAsync(cancellationToken);
+            State = ConnectionState.Connected;
+            _logger.LogInformation("Connected to server");
+        }
+        catch (Exception ex)
+        {
+            State = ConnectionState.Failed;
+            _logger.LogError(ex, "Failed to connect to server");
+            throw;
+        }
+    }
+
+    public async Task DisconnectAsync()
+    {
+        if (_connection is not null)
+        {
+            await _connection.StopAsync();
+            State = ConnectionState.Disconnected;
+        }
+    }
+
+    public async Task<TResult?> SendCommandAsync<TResult>(string method, object command)
+    {
+        if (_connection is null || State != ConnectionState.Connected)
+            throw new InvalidOperationException("Not connected to server.");
+
+        return await _connection.InvokeAsync<TResult>(method, command);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connection is not null)
+            await _connection.DisposeAsync();
+    }
+}

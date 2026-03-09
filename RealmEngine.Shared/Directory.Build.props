@@ -1,0 +1,6 @@
+<Project>
+  <!-- Chain to root Directory.Build.props for shared settings -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <!-- Engine library version (RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data) -->
+  <Import Project="$(MSBuildThisFileDirectory)../versions/engine.props" />
+</Project>

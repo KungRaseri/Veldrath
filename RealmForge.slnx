@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />
+  <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
+  <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
+  <Project Path="RealmForge/RealmForge.csproj" />
+  <Project Path="RealmForge.Tests/RealmForge.Tests.csproj" />
+</Solution>
