@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Serilog.Events;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
 
 Log.Logger = new LoggerConfiguration()
@@ -46,6 +48,12 @@ try
     // RealmEngine services (game catalog + logic)
     // builder.Services.AddRealmEngineCore(); // TODO: wire up when ready
 
+    // Health checks
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+    builder.Services.AddHealthChecks()
+        .AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"])
+        .AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);
+
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
@@ -62,8 +70,29 @@ try
     // Hubs
     app.MapHub<GameHub>("/hubs/game");
 
-    // Health probe
-    app.MapGet("/health", () => Results.Ok(new { status = "healthy", app = "RealmUnbound.Server" }));
+    // Health checks
+    // /health        — overall status (Healthy / Degraded / Unhealthy)
+    // /health/detail — full JSON breakdown of every check
+    app.MapHealthChecks("/health", new()
+    {
+        ResultStatusCodes =
+        {
+            [HealthStatus.Healthy]   = StatusCodes.Status200OK,
+            [HealthStatus.Degraded]  = StatusCodes.Status200OK,
+            [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+        }
+    });
+
+    app.MapHealthChecks("/health/detail", new()
+    {
+        ResponseWriter = HealthCheckResponseWriter.WriteResponse,
+        ResultStatusCodes =
+        {
+            [HealthStatus.Healthy]   = StatusCodes.Status200OK,
+            [HealthStatus.Degraded]  = StatusCodes.Status200OK,
+            [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+        }
+    });
 
     Log.Information("RealmUnbound.Server running at {Urls}", string.Join(", ", app.Urls));
     await app.RunAsync();

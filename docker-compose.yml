@@ -20,14 +20,25 @@ services:
       context: .
       dockerfile: RealmUnbound.Server/Dockerfile
     ports:
-      - "5000:5000"
+      - "8080:8080"
+      - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/realmunbound.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
     volumes:
       # Bind-mount JSON catalog so local edits are reflected immediately in dev
       - ./RealmEngine.Data/Data/Json:/app/Data/Json:ro
+      # ASP.NET dev cert (export once: dotnet dev-certs https -ep "$env:USERPROFILE\.aspnet\https\realmunbound.pfx" -p "<CERT_PASSWORD>")
+      - ${USERPROFILE}/.aspnet/https:/https:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       postgres:
         condition: service_healthy

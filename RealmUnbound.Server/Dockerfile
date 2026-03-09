@@ -29,7 +29,8 @@ COPY --from=build /app/publish .
 # Copy JSON game catalog data (RealmEngine.Data does not embed these in build output)
 COPY RealmEngine.Data/Data/Json ./Data/Json
 
-EXPOSE 5000
-ENV ASPNETCORE_URLS=http://+:5000
+EXPOSE 8080
+EXPOSE 8081
+ENV ASPNETCORE_URLS=http://+:8080
 
 ENTRYPOINT ["dotnet", "RealmUnbound.Server.dll"]
