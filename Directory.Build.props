@@ -1,14 +1,25 @@
 <Project>
   <PropertyGroup>
-    <!-- Central Version Configuration -->
-    <!-- Set Major.Minor here, Patch will be auto-generated from git commit count -->
-    <VersionMajor>0</VersionMajor>
-    <VersionMinor>1</VersionMinor>
+    <!--
+      Shared build configuration for all projects.
+      
+      Component versions are set in versions/*.props:
+        - versions/engine.props   → RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data
+        - versions/tooling.props  → RealmForge
+        - versions/server.props   → RealmUnbound.Server
+        - versions/client.props   → RealmUnbound.Client
+      
+      Each component folder has a Directory.Build.props that imports this file
+      plus its matching versions/*.props file.
+      
+      Test projects (no component Directory.Build.props) use the fallback below.
+    -->
+    
+    <!-- Fallback version for test projects and anything without a component-level override -->
+    <VersionMajor Condition="'$(VersionMajor)' == ''">0</VersionMajor>
+    <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
     
     <!-- Version will be set by build script to: $(VersionMajor).$(VersionMinor).$(VersionPatch)-$(GitHash) -->
-    <!-- Example: 0.1.42-a3f2c1d -->
-    
-    <!-- Default version properties (overridden by build script) -->
     <Version Condition="'$(Version)' == ''">$(VersionMajor).$(VersionMinor).0</Version>
     <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(VersionMajor).$(VersionMinor).0</AssemblyVersion>
     <FileVersion Condition="'$(FileVersion)' == ''">$(VersionMajor).$(VersionMinor).0.0</FileVersion>

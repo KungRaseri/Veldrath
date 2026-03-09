@@ -1,0 +1,7 @@
+<Project>
+  <!-- RealmForge: Content builder and tooling -->
+  <PropertyGroup>
+    <VersionMajor>0</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+  </PropertyGroup>
+</Project>

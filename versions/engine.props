@@ -1,0 +1,7 @@
+<Project>
+  <!-- RealmEngine Libraries: RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data -->
+  <PropertyGroup>
+    <VersionMajor>0</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+  </PropertyGroup>
+</Project>

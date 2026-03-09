@@ -1,0 +1,216 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'engine/v*'
+      - 'tooling/v*'
+      - 'server/v*'
+      - 'client/v*'
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # ── Detect which component this tag is for ────────────────────────────────
+    - name: Detect component and version
+      id: meta
+      run: |
+        TAG="${{ github.ref_name }}"
+        if [[ "$TAG" == engine/v* ]]; then
+          COMPONENT="engine"
+          WORKFLOW="ci-engine.yml"
+          ARTIFACT_NAME="engine-release-artifacts"
+          VERSION="${TAG#engine/v}"
+        elif [[ "$TAG" == tooling/v* ]]; then
+          COMPONENT="tooling"
+          WORKFLOW="ci-tooling.yml"
+          ARTIFACT_NAME="tooling-release-artifacts"
+          VERSION="${TAG#tooling/v}"
+        elif [[ "$TAG" == server/v* ]]; then
+          COMPONENT="server"
+          WORKFLOW="ci-server.yml"
+          ARTIFACT_NAME="server-release-artifacts"
+          VERSION="${TAG#server/v}"
+        elif [[ "$TAG" == client/v* ]]; then
+          COMPONENT="client"
+          WORKFLOW="ci-client.yml"
+          ARTIFACT_NAME="client-release-artifacts"
+          VERSION="${TAG#client/v}"
+        else
+          echo "Unknown tag prefix: $TAG"
+          exit 1
+        fi
+        echo "component=$COMPONENT" >> $GITHUB_OUTPUT
+        echo "workflow=$WORKFLOW"   >> $GITHUB_OUTPUT
+        echo "artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+        echo "version=$VERSION"    >> $GITHUB_OUTPUT
+        echo "tag=$TAG"            >> $GITHUB_OUTPUT
+        echo "Component: $COMPONENT  Version: $VERSION"
+
+    # ── Find the CI run that built artifacts for this tag's commit ────────────
+    - name: Find CI run for tagged commit
+      id: ci-run
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        COMMIT_SHA=$(git rev-list -n 1 ${{ github.ref_name }})
+        WORKFLOW="${{ steps.meta.outputs.workflow }}"
+        echo "Looking for $WORKFLOW run on commit $COMMIT_SHA ..."
+
+        # Poll up to 5 minutes for a completed successful run on this commit
+        for i in $(seq 1 30); do
+          RUN_ID=$(gh run list \
+            --workflow "$WORKFLOW" \
+            --json databaseId,headSha,conclusion,status \
+            --jq ".[] | select(.headSha == \"$COMMIT_SHA\" and .conclusion == \"success\") | .databaseId" \
+            | head -1)
+
+          if [ -n "$RUN_ID" ]; then
+            echo "Found run: $RUN_ID"
+            echo "run-id=$RUN_ID" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Attempt $i/30: no successful run yet, waiting 10s..."
+          sleep 10
+        done
+
+        echo "ERROR: No successful CI run found for commit $COMMIT_SHA within 5 minutes."
+        exit 1
+
+    # ── Download artifacts from the CI run ───────────────────────────────────
+    - name: Download release artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ steps.meta.outputs.artifact }}
+        run-id: ${{ steps.ci-run.outputs.run-id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path: ./artifacts
+
+    - name: List downloaded artifacts
+      run: |
+        echo "Artifacts for ${{ steps.meta.outputs.component }} ${{ steps.meta.outputs.version }}:"
+        find ./artifacts -type f | sort
+
+    # ── Changelog (scoped to this component's tags) ───────────────────────────
+    - name: Generate changelog
+      id: changelog
+      run: |
+        TAG="${{ steps.meta.outputs.tag }}"
+        PREFIX="${{ steps.meta.outputs.component }}/v"
+
+        PREV_TAG=$(git tag --sort=-version:refname \
+          | grep "^${PREFIX}" \
+          | grep -v "^${TAG}$" \
+          | head -1)
+
+        if [ -n "$PREV_TAG" ]; then
+          echo "Changelog from $PREV_TAG to $TAG"
+          COMMITS=$(git log "$PREV_TAG..$TAG" --pretty=format:"- %s (%h)" --no-merges)
+        else
+          echo "First release — using last 20 commits"
+          COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges --max-count=20)
+        fi
+
+        [ -z "$COMMITS" ] && COMMITS="- Initial release"
+
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS"       >> $GITHUB_OUTPUT
+        echo "EOF"            >> $GITHUB_OUTPUT
+
+    # ── Component-specific release names and notes ────────────────────────────
+    - name: Build release metadata
+      id: release-meta
+      run: |
+        COMPONENT="${{ steps.meta.outputs.component }}"
+        VERSION="${{ steps.meta.outputs.version }}"
+
+        case "$COMPONENT" in
+          engine)
+            NAME="RealmEngine Libraries $VERSION"
+            BODY="## RealmEngine Libraries $VERSION
+
+Core, Shared, and Data assemblies for use with .NET / Godot Engine.
+
+### Packages
+- \`RealmEngine-Libraries-$VERSION.zip\` — Core, Shared, and Data assemblies
+- \`RealmEngine-Data-$VERSION.zip\` — JSON game data only (for direct Godot import)
+
+### Changes
+${{ steps.changelog.outputs.changelog }}"
+            ;;
+          tooling)
+            NAME="RealmForge $VERSION"
+            BODY="## RealmForge $VERSION
+
+Content editor and tooling suite for RealmEngine.
+
+### Packages
+- \`RealmForge-Windows-$VERSION.zip\` — Windows desktop application (includes JSON data)
+
+### Changes
+${{ steps.changelog.outputs.changelog }}"
+            ;;
+          server)
+            NAME="RealmUnbound Server $VERSION"
+            BODY="## RealmUnbound Server $VERSION
+
+Game server API for RealmUnbound.
+
+### Docker Image
+\`\`\`
+docker pull ghcr.io/${{ github.repository_owner }}/realmunbound-server:$VERSION
+\`\`\`
+
+### Packages
+- \`RealmUnbound-Server-$VERSION.zip\` — Self-contained server binary with JSON data
+
+### Changes
+${{ steps.changelog.outputs.changelog }}"
+            ;;
+          client)
+            NAME="RealmUnbound Client $VERSION"
+            BODY="## RealmUnbound Client $VERSION
+
+Avalonia desktop client for RealmUnbound.
+
+### Packages
+- \`RealmUnbound-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)
+- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)
+
+### Changes
+${{ steps.changelog.outputs.changelog }}"
+            ;;
+        esac
+
+        echo "name=$NAME" >> $GITHUB_OUTPUT
+        # Use a file for the body to avoid quoting issues
+        echo "$BODY" > release-body.md
+
+    # ── Create the GitHub Release ─────────────────────────────────────────────
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.meta.outputs.tag }}
+        name: ${{ steps.release-meta.outputs.name }}
+        body_path: release-body.md
+        files: artifacts/**
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

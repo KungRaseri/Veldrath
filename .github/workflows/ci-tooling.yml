@@ -1,0 +1,193 @@
+name: CI - Tooling (RealmForge)
+
+concurrency:
+  group: ci-tooling-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - 'RealmForge/**'
+      - 'RealmForge.Tests/**'
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
+      - 'versions/tooling.props'
+      - 'versions/engine.props'
+      - 'Directory.Build.props'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'RealmForge/**'
+      - 'RealmForge.Tests/**'
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
+      - 'versions/tooling.props'
+      - 'versions/engine.props'
+      - 'Directory.Build.props'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  CONFIGURATION: 'Release'
+  PROPS_FILE: 'versions/tooling.props'
+  MAUI_FRAMEWORK: 'net10.0-windows10.0.19041.0'
+
+jobs:
+  build-and-test:
+    name: Build and Test RealmForge
+    runs-on: windows-latest
+
+    permissions:
+      checks: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache MAUI workloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\.dotnet\sdk-manifests
+          ~\.dotnet\packs
+          ~\.dotnet\metadata
+        key: ${{ runner.os }}-maui-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-maui-${{ env.DOTNET_VERSION }}-
+          ${{ runner.os }}-maui-
+
+    - name: Install MAUI workloads
+      run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
+      shell: pwsh
+
+    - name: Restore dependencies
+      run: dotnet restore RealmForge.slnx
+      shell: pwsh
+
+    - name: Build engine dependencies
+      run: |
+        dotnet build RealmEngine.Shared/RealmEngine.Shared.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Core/RealmEngine.Core.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Data/RealmEngine.Data.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+      shell: pwsh
+
+    - name: Build RealmForge (Windows)
+      run: |
+        dotnet build RealmForge/RealmForge.csproj --configuration ${{ env.CONFIGURATION }} --no-restore `
+          --framework ${{ env.MAUI_FRAMEWORK }}
+        dotnet build RealmForge.Tests/RealmForge.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+      shell: pwsh
+
+    - name: Test - RealmForge.Tests (ViewModel)
+      run: |
+        dotnet test RealmForge.Tests/RealmForge.Tests.csproj `
+          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
+          --filter "Category=ViewModel" `
+          --logger "trx;LogFileName=realmforge-tests.trx" `
+          --results-directory ./TestResults
+      shell: pwsh
+      continue-on-error: true
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: always()
+      with:
+        files: TestResults/*.trx
+        check_name: RealmForge Test Results
+
+  package:
+    name: Package Tooling Artifacts
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version-no-hash }}
+
+    permissions:
+      contents: write  # needed to create the release tag
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache MAUI workloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\.dotnet\sdk-manifests
+          ~\.dotnet\packs
+          ~\.dotnet\metadata
+        key: ${{ runner.os }}-maui-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-maui-${{ env.DOTNET_VERSION }}-
+          ${{ runner.os }}-maui-
+
+    - name: Install MAUI workloads
+      run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
+      shell: pwsh
+
+    - name: Generate version
+      id: version
+      run: |
+        $version = .\scripts\generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
+        $versionNoHash = $version -replace '-[^-]+$', ''
+        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "version-no-hash=$versionNoHash" >> $env:GITHUB_OUTPUT
+        Write-Output "Tooling version: $version"
+      shell: pwsh
+
+    - name: Restore and publish (Windows)
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        dotnet restore RealmForge.slnx
+        dotnet build RealmEngine.Shared/RealmEngine.Shared.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Core/RealmEngine.Core.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build RealmEngine.Data/RealmEngine.Data.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet publish RealmForge/RealmForge.csproj `
+          --configuration ${{ env.CONFIGURATION }} `
+          --framework ${{ env.MAUI_FRAMEWORK }} `
+          --output ./publish/RealmForge-Windows `
+          /p:Version=$version /p:AssemblyVersion=$version /p:FileVersion=$version.0
+
+        New-Item -ItemType Directory -Force -Path ./publish/RealmForge-Windows/Data
+        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "./publish/RealmForge-Windows/Data/" -Recurse
+        Compress-Archive -Path "./publish/RealmForge-Windows/*" -DestinationPath "RealmForge-Windows-$version.zip" -Force
+        Write-Output "Created RealmForge-Windows-$version.zip"
+      shell: pwsh
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tooling-release-artifacts
+        path: RealmForge-Windows-*.zip
+        retention-days: 7
+
+    - name: Create release tag
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        $tag = "tooling/v$version"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag $tag
+        git push origin $tag
+        Write-Output "Created tag: $tag"
+      shell: pwsh
