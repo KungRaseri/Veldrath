@@ -145,6 +145,8 @@ jobs:
       run: |
         COMPONENT="${{ steps.meta.outputs.component }}"
         VERSION="${{ steps.meta.outputs.version }}"
+        # Lowercase for container registry references
+        REPO_OWNER_LC=$(echo "$REPO_OWNER" | tr '[:upper:]' '[:lower:]')
 
         case "$COMPONENT" in
           engine)
@@ -185,7 +187,7 @@ jobs:
               echo ""
               echo "### Docker Image"
               echo '```'
-              echo "docker pull ghcr.io/$REPO_OWNER/realmunbound-server:$VERSION"
+              echo "docker pull ghcr.io/$REPO_OWNER_LC/realmunbound-server:$VERSION"
               echo '```'
               echo ""
               echo "### Packages"
