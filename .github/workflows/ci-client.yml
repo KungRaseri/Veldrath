@@ -15,6 +15,7 @@ on:
       - 'versions/client.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - '.github/workflows/ci-client.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -25,6 +26,7 @@ on:
       - 'versions/client.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - '.github/workflows/ci-client.yml'
   workflow_dispatch:
 
 env:
