@@ -137,6 +137,12 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set lowercase image registry path
+      id: image
+      run: |
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        echo "registry=ghcr.io/$OWNER/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
       with:
@@ -144,8 +150,8 @@ jobs:
         file: RealmUnbound.Server/Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-          ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version-no-hash }}
+          ${{ steps.image.outputs.registry }}:latest
+          ${{ steps.image.outputs.registry }}:${{ steps.version.outputs.version-no-hash }}
         labels: |
           org.opencontainers.image.version=${{ steps.version.outputs.version-no-hash }}
           org.opencontainers.image.revision=${{ github.sha }}
