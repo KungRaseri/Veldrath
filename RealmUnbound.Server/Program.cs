@@ -78,7 +78,7 @@ try
             options.Password.RequiredLength         = 8;
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequireUppercase       = false;
-            options.User.RequireUniqueEmail         = false; // email is optional
+            options.User.RequireUniqueEmail         = true;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan  = TimeSpan.FromMinutes(15);
         })

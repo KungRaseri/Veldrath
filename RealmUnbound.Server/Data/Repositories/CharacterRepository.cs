@@ -54,6 +54,7 @@ public class CharacterRepository : ICharacterRepository
         var character = await _db.Characters.FindAsync([id], ct);
         if (character is null) return;
         character.DeletedAt = DateTimeOffset.UtcNow;
+        character.SlotIndex = 0;   // Free the slot so it can be reassigned to a new character
         await _db.SaveChangesAsync(ct);
     }
 

@@ -10,13 +10,14 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
 {
     private readonly HttpClient _client = factory.CreateClient();
 
-    // Helper — register + login and return an authenticated client.
+    // Helper — register + login and return a bearer token.
     private async Task<string> GetTokenAsync(string username)
     {
+        var email = $"{username.ToLower()}@test.com";
         await _client.PostAsJsonAsync("/api/auth/register",
-            new { Username = username, Password = "Pass1234!" });
+            new { Email = email, Username = username, Password = "Pass1234!" });
         var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Username = username, Password = "Pass1234!" });
+            new { Email = email, Password = "Pass1234!" });
         var auth = await login.Content.ReadFromJsonAsync<AuthResult>();
         return auth!.AccessToken;
     }
@@ -180,5 +181,99 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new { Name = "SlotChar_6", ClassName = "@classes/warriors:fighter" });
 
         overflow.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_Should_Return_Default_Level_1()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_Level_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "LevelOneChar", ClassName = "@classes/warriors:fighter" });
+
+        var character = await response.Content.ReadFromJsonAsync<CharacterResult>();
+        character!.Level.Should().Be(1);
+        character.Experience.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_Should_Set_Default_Starting_Zone()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_Zone_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "StarterZoneChar", ClassName = "@classes/mages:wizard" });
+
+        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        body.GetProperty("currentZoneId").GetString().Should().Be("starting-zone");
+    }
+
+    [Fact]
+    public async Task DeleteCharacter_Should_Require_Authentication()
+    {
+        using var unauthClient = factory.CreateClient();
+        var del = await unauthClient.DeleteAsync($"/api/characters/{Guid.NewGuid()}");
+        del.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeletedCharacter_Should_Not_Appear_In_List()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SoftDel_User"));
+
+        var create = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SoftDeletedChar", ClassName = "@classes/warriors:fighter" });
+        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+
+        await _client.DeleteAsync($"/api/characters/{created!.Id}");
+
+        var list = await _client.GetFromJsonAsync<CharacterResult[]>("/api/characters");
+        list.Should().NotContain(c => c.Name == "SoftDeletedChar");
+    }
+
+    [Fact]
+    public async Task CreateCharacter_Should_Refill_Lowest_Available_Slot()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SlotGap_User"));
+
+        // Create two characters → slots 1 and 2
+        var r1 = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SlotGap_Char1", ClassName = "@classes/warriors:fighter" });
+        var c1 = await r1.Content.ReadFromJsonAsync<CharacterResult>();
+        await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SlotGap_Char2", ClassName = "@classes/warriors:fighter" });
+
+        // Delete the first character (slot 1)
+        await _client.DeleteAsync($"/api/characters/{c1!.Id}");
+
+        // Create a new character → should reclaim slot 1
+        var r3 = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SlotGap_Char3", ClassName = "@classes/rogues:rogue" });
+        var c3 = await r3.Content.ReadFromJsonAsync<CharacterResult>();
+
+        c3!.SlotIndex.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ListCharacters_Should_Only_Return_Calling_Accounts_Characters()
+    {
+        // Account A creates a character
+        using var clientA = factory.CreateClient();
+        clientA.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_IsolA_User"));
+        await clientA.PostAsJsonAsync("/api/characters",
+            new { Name = "IsolA_Char", ClassName = "@classes/warriors:fighter" });
+
+        // Account B should not see Account A's character
+        using var clientB = factory.CreateClient();
+        clientB.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_IsolB_User"));
+
+        var list = await clientB.GetFromJsonAsync<CharacterResult[]>("/api/characters");
+        list.Should().NotContain(c => c.Name == "IsolA_Char");
     }
 }
