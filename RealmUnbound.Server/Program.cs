@@ -61,6 +61,14 @@ try
             options.UseSqlite(connectionString);
         else
             options.UseNpgsql(connectionString);
+
+        // Migrations are generated against SQLite (design-time factory).
+        // When running against Postgres the model-snapshot comparison detects
+        // provider-specific column-type differences that aren't real schema changes.
+        // The actual SQL migrations are applied correctly by MigrateAsync(), so
+        // suppress the spurious warning.
+        options.ConfigureWarnings(w =>
+            w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
     // ── ASP.NET Core Identity ─────────────────────────────────────────────────

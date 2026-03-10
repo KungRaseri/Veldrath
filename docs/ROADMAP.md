@@ -541,3 +541,103 @@
 - [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) - Current detailed status
 - [GDD-Main.md](GDD-Main.md) - Game design documentation
 - [REALMFORGE.md](REALMFORGE.md) - Content editing tool documentation
+
+---
+
+## 🌐 RealmUnbound — Multiplayer Client/Server Milestones
+
+RealmUnbound is the live multiplayer frontend for RealmEngine, consisting of:
+- **RealmUnbound.Server** — ASP.NET Core + SignalR + EF Core (PostgreSQL/SQLite)
+- **RealmUnbound.Client** — Avalonia UI desktop client
+
+---
+
+### M1 — Auth + Connection ✅ Complete
+> Solid foundation: accounts, JWT, hub handshake, character selection
+
+**Server**
+- ASP.NET Core Identity (`PlayerAccount : IdentityUser`)
+- SQLite (dev) / PostgreSQL (prod) via EF Core
+- `POST /api/auth/register` and `POST /api/auth/login` — return JWT + refresh token
+- `GameHub.SelectCharacter` — validates JWT, loads character, dispatches MediatR
+- `GET /api/characters`, `POST /api/characters`, `DELETE /api/characters/{id}`
+
+**Client**
+- Login / Register screens (Avalonia)
+- JWT stored in `TokenStore` (in-memory)
+- `ServerConnectionService` — wraps `HubConnection`, bearer token, reconnect
+- Navigates to Character Select on login success
+- Character Select screen with create / delete / enter
+
+**Tests**: 28 server integration tests (all passing)
+
+---
+
+### M2 — World + Zones ✅ Complete
+> Players exist in a shared world; zone presence is tracked live
+
+**Server**
+- `Zone` entity (Id, Name, Description, ZoneType, MinLevel, IsStarter) — 5 seeded zones
+- `ZoneSession` entity — tracks live character ↔ connection ↔ zone
+- `GET /api/zones`, `GET /api/zones/{id}` (public endpoints)
+- `GameHub.EnterZone` / `LeaveZone` — SignalR group management (`zone:{id}`)
+- Broadcasts `PlayerEntered` / `PlayerLeft` / `ZoneEntered` to zone group
+- Auto-cleanup on disconnect via `OnDisconnectedAsync`
+- EF Core migration: `InitialSchema`
+
+**Client**
+- `IZoneService` / `HttpZoneService` — fetches zone list and details
+- `GameViewModel` — owns zone name, description, online players list, action log
+- `GameView` — header bar (character + zone), action log, online players panel, logout
+- `CharacterSelectViewModel` subscribes to `ZoneEntered` / `PlayerEntered` / `PlayerLeft` then navigates
+- `GameViewModel` registered as singleton; `IZoneService` registered via `AddHttpClient`
+
+**Tests**: 7 new zone integration tests → 35 total (all passing)
+
+---
+
+### M3 — Combat (multiplayer-aware) 🔲 Not Started
+> Turn-based combat driven through the hub; results broadcast to the zone group
+
+**Server**
+- `Hub`: `Attack`, `UseAbility`, `Flee` → MediatR → broadcast `CombatResult` to zone group
+- Enemy AI tick — server-side timer (simplified, deterministic)
+- `CombatSession` entity or in-memory state per zone instance
+- Integrate existing `RealmEngine.Core` combat handlers
+
+**Client**
+- Combat screen with combat log (scrolling), action bar, health/mana HUD, enemy panel
+- Transitions into combat when a hostile encounter triggers in the zone
+- Action buttons bound to hub commands (`Attack`, `UseAbility`, `Flee`)
+
+---
+
+### M4 — Inventory, Progression & Persistence 🔲 Not Started
+> Character state persists across sessions; loot and levelling work end-to-end
+
+**Server**
+- `Hub`: `PickUpItem`, `EquipItem`, `UnequipItem`, `DropItem`
+- `Hub`: `LevelUp` acknowledgement and stat recalc broadcast
+- Character inventory + equipment persisted via EF Core (survives reconnect)
+- Integrate `RealmEngine.Core` inventory / progression handlers
+
+**Client**
+- Inventory screen — grid or list, drag-to-equip (or button-based)
+- Character stats panel — attributes, derived stats, equipped gear
+- Level-up notification overlay
+
+---
+
+### M5 — Content: NPC, Quests & Shop 🔲 Not Started
+> The world has people, objectives, and economies
+
+**Server**
+- `Hub`: `TalkToNpc`, `AcceptQuest`, `CompleteQuest`, `BuyFromShop`, `SellToShop`
+- NPC catalogue loaded from RealmEngine JSON data
+- Quest progress persisted per character via EF Core
+- Integrate `RealmEngine.Core` quest / shop handlers
+
+**Client**
+- Dialogue screen — NPC portrait, dialogue tree, accept/decline quest
+- Quest journal — active quests, objectives, completion status
+- Shop screen — browse inventory, buy / sell with gold display
