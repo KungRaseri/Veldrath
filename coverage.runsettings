@@ -5,8 +5,8 @@
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Include>[Game]*</Include>
-          <Exclude>[Game.Tests]*</Exclude>
+          <Include>[RealmEngine.*]*;[RealmForge]*;[RealmUnbound.*]*</Include>
+          <Exclude>[*.Tests]*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
         </Configuration>
       </DataCollector>

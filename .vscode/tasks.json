@@ -244,7 +244,9 @@
 				"--collect",
 				"XPlat Code Coverage",
 				"--settings",
-				"coverage.runsettings"
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"presentation": {
