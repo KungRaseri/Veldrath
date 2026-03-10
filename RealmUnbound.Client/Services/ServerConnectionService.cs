@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 
 namespace RealmUnbound.Client.Services;
@@ -19,7 +18,8 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 {
     private readonly ILogger<ServerConnectionService> _logger;
     private readonly TokenStore _tokens;
-    private HubConnection? _connection;
+    private readonly IHubConnectionFactory _connectionFactory;
+    private IHubConnection? _connection;
     private ConnectionState _state = ConnectionState.Disconnected;
 
     public ConnectionState State
@@ -34,10 +34,11 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     public event Action<ConnectionState>? StateChanged;
 
-    public ServerConnectionService(ILogger<ServerConnectionService> logger, TokenStore tokens)
+    public ServerConnectionService(ILogger<ServerConnectionService> logger, TokenStore tokens, IHubConnectionFactory connectionFactory)
     {
         _logger = logger;
         _tokens = tokens;
+        _connectionFactory = connectionFactory;
     }
 
     public async Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
@@ -47,13 +48,9 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         State = ConnectionState.Connecting;
         _logger.LogInformation("Connecting to server: {Url}", serverUrl);
 
-        _connection = new HubConnectionBuilder()
-            .WithUrl($"{serverUrl}/hubs/game", options =>
-            {
-                options.AccessTokenProvider = () => Task.FromResult(_tokens.AccessToken);
-            })
-            .WithAutomaticReconnect()
-            .Build();
+        _connection = _connectionFactory.CreateConnection(
+            $"{serverUrl}/hubs/game",
+            () => Task.FromResult(_tokens.AccessToken));
 
         _connection.Closed += async (error) =>
         {
