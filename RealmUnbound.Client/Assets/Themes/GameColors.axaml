@@ -1,0 +1,205 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+    ================================================================
+      REALM UNBOUND — COLOR PALETTE
+      Edit this file to change every color in the game client.
+
+      Structure:
+        Raw Color values  →  Named Color resources  →  SolidColorBrush resources
+        (easy to tweak)       (semantic meaning)        (used by controls)
+
+      Sections:
+        1. Accent / Brand
+        2. Background Layers
+        3. Borders & Dividers
+        4. Text
+        5. Semantic (success / danger / warning / info)
+        6. Interactive States
+        7. FluentAvalonia / WinUI3 token overrides
+        8. Brushes (derived from colors above — usually no need to edit these)
+    ================================================================
+    -->
+
+
+    <!-- ============================================================
+         1. ACCENT / BRAND COLOR
+         Primary gold used for highlights, selections, active states,
+         XP bars, and interactive accents throughout the UI.
+    ============================================================ -->
+
+    <Color x:Key="GameAccentColor">#C9A84C</Color>
+    <Color x:Key="GameAccentLightColor">#E8C76A</Color>
+    <Color x:Key="GameAccentDarkColor">#9B7E32</Color>
+
+    <!-- FluentAvalonia reads these to tint its built-in controls -->
+    <Color x:Key="SystemAccentColor">#C9A84C</Color>
+    <Color x:Key="SystemAccentColorLight1">#D4B95C</Color>
+    <Color x:Key="SystemAccentColorLight2">#E8C76A</Color>
+    <Color x:Key="SystemAccentColorLight3">#F5D880</Color>
+    <Color x:Key="SystemAccentColorDark1">#9B7E32</Color>
+    <Color x:Key="SystemAccentColorDark2">#7A621E</Color>
+    <Color x:Key="SystemAccentColorDark3">#5C490F</Color>
+
+
+    <!-- ============================================================
+         2. BACKGROUND LAYERS
+         Layered depth model — lower numbers are deeper/darker.
+         Layer 0 is the raw window background behind everything.
+         Layer 4 is the most elevated surface (tooltips, popovers).
+    ============================================================ -->
+
+    <!-- Layer 0 — window / page background -->
+    <Color x:Key="GameBackground0Color">#0C0D13</Color>
+
+    <!-- Layer 1 — primary surfaces: sidebars, nav panels -->
+    <Color x:Key="GameBackground1Color">#14151F</Color>
+
+    <!-- Layer 2 — cards, dialogs, secondary panels -->
+    <Color x:Key="GameBackground2Color">#1C1D2B</Color>
+
+    <!-- Layer 3 — input fields, pressed/hover surface fills -->
+    <Color x:Key="GameBackground3Color">#262736</Color>
+
+    <!-- Layer 4 — tooltips, flyouts, top-level overlays -->
+    <Color x:Key="GameBackground4Color">#2E2F42</Color>
+
+
+    <!-- ============================================================
+         3. BORDERS & DIVIDERS
+         Three strengths: subtle (barely visible), default, strong.
+    ============================================================ -->
+
+    <Color x:Key="GameBorderSubtleColor">#1E1F2D</Color>
+    <Color x:Key="GameBorderColor">#2A2B3D</Color>
+    <Color x:Key="GameBorderStrongColor">#3D3F58</Color>
+
+
+    <!-- ============================================================
+         4. TEXT
+         Slightly warm white for primary — easier on eyes in dark UIs.
+    ============================================================ -->
+
+    <Color x:Key="GameTextPrimaryColor">#F0EDE8</Color>
+    <Color x:Key="GameTextSecondaryColor">#A8A09A</Color>
+    <Color x:Key="GameTextTertiaryColor">#6E6860</Color>
+    <Color x:Key="GameTextDisabledColor">#4A4540</Color>
+
+
+    <!-- ============================================================
+         5. SEMANTIC COLORS
+         Conveying meaning: buffs, debuffs, quests, errors, info.
+    ============================================================ -->
+
+    <!-- Success — health restored, buffs active, positive outcomes -->
+    <Color x:Key="GameSuccessColor">#5CAB7D</Color>
+    <Color x:Key="GameSuccessMutedColor">#1F3D2E</Color>
+
+    <!-- Danger — low health, death, errors, hostile UI -->
+    <Color x:Key="GameDangerColor">#E05252</Color>
+    <Color x:Key="GameDangerMutedColor">#4A1A1A</Color>
+
+    <!-- Warning — low resources, time limits, caution states -->
+    <Color x:Key="GameWarningColor">#D4964A</Color>
+    <Color x:Key="GameWarningMutedColor">#4A3018</Color>
+
+    <!-- Info — tooltips, lore text, neutral notifications -->
+    <Color x:Key="GameInfoColor">#5A9ED6</Color>
+    <Color x:Key="GameInfoMutedColor">#1A3250</Color>
+
+
+    <!-- ============================================================
+         6. INTERACTIVE STATES
+         Used for hover and selection overlays on interactive items.
+    ============================================================ -->
+
+    <Color x:Key="GameInteractiveHoverColor">#1E2030</Color>
+    <Color x:Key="GameInteractivePressedColor">#252639</Color>
+    <Color x:Key="GameInteractiveSelectedColor">#252639</Color>
+
+
+    <!-- ============================================================
+         7. FLUENTAVALONIA / WINUI3 TOKEN OVERRIDES
+         These map FA's internal theme tokens to our palette so that
+         FluentAvalonia's built-in controls (NavigationView, InfoBar,
+         BreadcrumbBar, etc.) also pick up the game look.
+    ============================================================ -->
+
+    <!-- Page / window background -->
+    <Color x:Key="ApplicationPageBackgroundThemeColor">#0C0D13</Color>
+
+    <!-- Solid background fills (deepest → most elevated) -->
+    <Color x:Key="SolidBackgroundFillColorBase">#0C0D13</Color>
+    <Color x:Key="SolidBackgroundFillColorSecondary">#14151F</Color>
+    <Color x:Key="SolidBackgroundFillColorTertiary">#1C1D2B</Color>
+    <Color x:Key="SolidBackgroundFillColorQuarternary">#262736</Color>
+
+    <!-- Layer fills (panels, cards) -->
+    <Color x:Key="LayerFillColorDefault">#1C1D2B</Color>
+    <Color x:Key="LayerFillColorAlt">#262736</Color>
+    <Color x:Key="LayerOnAcrylicFillColorDefault">#14151F</Color>
+
+    <!-- Control fills (buttons, inputs) -->
+    <Color x:Key="ControlFillColorDefault">#1C1D2B</Color>
+    <Color x:Key="ControlFillColorSecondary">#262736</Color>
+    <Color x:Key="ControlFillColorTertiary">#2E2F42</Color>
+    <Color x:Key="ControlFillColorDisabled">#14151F</Color>
+    <Color x:Key="ControlFillColorTransparent">Transparent</Color>
+
+    <!-- Stroke / border -->
+    <Color x:Key="ControlStrokeColorDefault">#2A2B3D</Color>
+    <Color x:Key="ControlStrokeColorSecondary">#3D3F58</Color>
+    <Color x:Key="ControlStrokeColorOnAccentDefault">#9B7E32</Color>
+
+    <!-- Text fills -->
+    <Color x:Key="TextFillColorPrimary">#F0EDE8</Color>
+    <Color x:Key="TextFillColorSecondary">#A8A09A</Color>
+    <Color x:Key="TextFillColorTertiary">#6E6860</Color>
+    <Color x:Key="TextFillColorDisabled">#4A4540</Color>
+    <Color x:Key="TextOnAccentFillColorPrimary">#0C0D13</Color>
+
+
+    <!-- ============================================================
+         8. BRUSHES
+         Derived from the colors above.
+         Only edit these if you need an opacity or need to decouple
+         a brush from its corresponding color token.
+    ============================================================ -->
+
+    <SolidColorBrush x:Key="GameAccentBrush"          Color="{StaticResource GameAccentColor}" />
+    <SolidColorBrush x:Key="GameAccentLightBrush"      Color="{StaticResource GameAccentLightColor}" />
+    <SolidColorBrush x:Key="GameAccentDarkBrush"       Color="{StaticResource GameAccentDarkColor}" />
+
+    <SolidColorBrush x:Key="GameBackground0Brush"      Color="{StaticResource GameBackground0Color}" />
+    <SolidColorBrush x:Key="GameBackground1Brush"      Color="{StaticResource GameBackground1Color}" />
+    <SolidColorBrush x:Key="GameBackground2Brush"      Color="{StaticResource GameBackground2Color}" />
+    <SolidColorBrush x:Key="GameBackground3Brush"      Color="{StaticResource GameBackground3Color}" />
+    <SolidColorBrush x:Key="GameBackground4Brush"      Color="{StaticResource GameBackground4Color}" />
+
+    <SolidColorBrush x:Key="GameBorderSubtleBrush"     Color="{StaticResource GameBorderSubtleColor}" />
+    <SolidColorBrush x:Key="GameBorderBrush"           Color="{StaticResource GameBorderColor}" />
+    <SolidColorBrush x:Key="GameBorderStrongBrush"     Color="{StaticResource GameBorderStrongColor}" />
+
+    <SolidColorBrush x:Key="GameTextPrimaryBrush"      Color="{StaticResource GameTextPrimaryColor}" />
+    <SolidColorBrush x:Key="GameTextSecondaryBrush"    Color="{StaticResource GameTextSecondaryColor}" />
+    <SolidColorBrush x:Key="GameTextTertiaryBrush"     Color="{StaticResource GameTextTertiaryColor}" />
+    <SolidColorBrush x:Key="GameTextDisabledBrush"     Color="{StaticResource GameTextDisabledColor}" />
+
+    <SolidColorBrush x:Key="GameSuccessBrush"          Color="{StaticResource GameSuccessColor}" />
+    <SolidColorBrush x:Key="GameSuccessMutedBrush"     Color="{StaticResource GameSuccessMutedColor}" />
+    <SolidColorBrush x:Key="GameDangerBrush"           Color="{StaticResource GameDangerColor}" />
+    <SolidColorBrush x:Key="GameDangerMutedBrush"      Color="{StaticResource GameDangerMutedColor}" />
+    <SolidColorBrush x:Key="GameWarningBrush"          Color="{StaticResource GameWarningColor}" />
+    <SolidColorBrush x:Key="GameWarningMutedBrush"     Color="{StaticResource GameWarningMutedColor}" />
+    <SolidColorBrush x:Key="GameInfoBrush"             Color="{StaticResource GameInfoColor}" />
+    <SolidColorBrush x:Key="GameInfoMutedBrush"        Color="{StaticResource GameInfoMutedColor}" />
+
+    <SolidColorBrush x:Key="GameInteractiveHoverBrush"    Color="{StaticResource GameInteractiveHoverColor}" />
+    <SolidColorBrush x:Key="GameInteractivePressedBrush"  Color="{StaticResource GameInteractivePressedColor}" />
+    <SolidColorBrush x:Key="GameInteractiveSelectedBrush" Color="{StaticResource GameInteractiveSelectedColor}" />
+
+    <!-- FA application page background brush -->
+    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{StaticResource GameBackground0Color}" />
+
+</ResourceDictionary>
