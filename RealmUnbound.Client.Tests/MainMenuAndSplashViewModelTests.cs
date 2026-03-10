@@ -6,8 +6,8 @@ namespace RealmUnbound.Client.Tests;
 
 public class MainMenuViewModelTests : TestBase
 {
-    private static MainMenuViewModel MakeVm(FakeNavigationService? nav = null)
-        => new MainMenuViewModel(nav ?? new FakeNavigationService());
+    private static MainMenuViewModel MakeVm(FakeNavigationService? nav = null, Action? exit = null)
+        => new MainMenuViewModel(nav ?? new FakeNavigationService(), exit);
 
     [Fact]
     public void Title_Should_Be_RealmUnbound()
@@ -52,6 +52,18 @@ public class MainMenuViewModelTests : TestBase
         var cmd = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.SettingsCommand;
         // SettingsCommand is a no-op placeholder; just verify it completes without error
         await cmd.Execute();
+    }
+
+    [Fact]
+    public async Task ExitCommand_Should_Invoke_Exit_Action()
+    {
+        var invoked = false;
+        var vm  = MakeVm(exit: () => invoked = true);
+        var cmd = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.ExitCommand;
+
+        await cmd.Execute();
+
+        invoked.Should().BeTrue();
     }
 }
 

@@ -14,11 +14,12 @@ public class MainMenuViewModel : ViewModelBase
     public ICommand SettingsCommand { get; }
     public ICommand ExitCommand { get; }
 
-    public MainMenuViewModel(INavigationService navigation)
+    public MainMenuViewModel(INavigationService navigation, Action? exit = null)
     {
+        var doExit      = exit ?? (() => System.Environment.Exit(0));
         RegisterCommand = ReactiveCommand.Create(() => navigation.NavigateTo<RegisterViewModel>());
         LoginCommand    = ReactiveCommand.Create(() => navigation.NavigateTo<LoginViewModel>());
         SettingsCommand = ReactiveCommand.Create(() => { /* TODO: settings screen */ });
-        ExitCommand     = ReactiveCommand.Create(() => System.Environment.Exit(0));
+        ExitCommand     = ReactiveCommand.Create(doExit);
     }
 }

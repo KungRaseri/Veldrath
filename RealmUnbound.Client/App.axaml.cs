@@ -63,6 +63,7 @@ public partial class App : Application
 
         // App services
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<IHubConnectionFactory, HubConnectionFactory>();
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
 
         // ViewModels
