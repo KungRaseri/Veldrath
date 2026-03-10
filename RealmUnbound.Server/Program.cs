@@ -10,6 +10,8 @@ using RealmEngine.Data.Services;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.Auth;
+using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
 using RealmEngine.Shared.Abstractions;
@@ -112,6 +114,9 @@ try
 
     builder.Services.AddAuthorization();
 
+    // ── Auth service ──────────────────────────────────────────────────────────
+    builder.Services.AddScoped<AuthService>();
+
     // ── Repositories ──────────────────────────────────────────────────────────
     builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
     builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
@@ -146,6 +151,10 @@ try
         await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
             .Database.EnsureCreatedAsync();
     }
+
+    // Auth & character endpoints
+    app.MapAuthEndpoints();
+    app.MapCharacterEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game");
@@ -185,3 +194,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Required for WebApplicationFactory<Program> in integration tests.
+public partial class Program { }
