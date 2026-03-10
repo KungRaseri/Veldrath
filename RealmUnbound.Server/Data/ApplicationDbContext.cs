@@ -19,7 +19,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-    public DbSet<Character> Characters => Set<Character>();
+    public DbSet<Entities.Character> Characters => Set<Entities.Character>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // Engine entities — stored in server DB so character saves survive reconnect.
@@ -30,7 +30,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     {
         base.OnModelCreating(builder); // required — scaffolds all Identity tables
 
-        builder.Entity<Character>(e =>
+        builder.Entity<Entities.Character>(e =>
         {
             e.HasKey(c => c.Id);
             // Character names are globally unique across the server.

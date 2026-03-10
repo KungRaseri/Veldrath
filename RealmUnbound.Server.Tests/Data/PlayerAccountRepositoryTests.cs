@@ -16,7 +16,7 @@ public class PlayerAccountRepositoryTests : IDisposable
         await using var db = _factory.CreateContext();
         var repo = new PlayerAccountRepository(db);
 
-        var account = new PlayerAccount { Username = "Aragorn" };
+        var account = new PlayerAccount { UserName = "Aragorn", NormalizedUserName = "ARAGORN" };
         await repo.CreateAsync(account);
 
         var found = await repo.FindByUsernameAsync("Aragorn");
@@ -40,7 +40,7 @@ public class PlayerAccountRepositoryTests : IDisposable
         await using var db = _factory.CreateContext();
         var repo = new PlayerAccountRepository(db);
 
-        await repo.CreateAsync(new PlayerAccount { Username = "Gandalf" });
+        await repo.CreateAsync(new PlayerAccount { UserName = "Gandalf", NormalizedUserName = "GANDALF" });
 
         var exists = await repo.ExistsAsync("Gandalf");
         exists.Should().BeTrue();
@@ -62,7 +62,7 @@ public class PlayerAccountRepositoryTests : IDisposable
         await using var db = _factory.CreateContext();
         var repo = new PlayerAccountRepository(db);
 
-        var account = await repo.CreateAsync(new PlayerAccount { Username = "Frodo" });
+        var account = await repo.CreateAsync(new PlayerAccount { UserName = "Frodo", NormalizedUserName = "FRODO" });
 
         account.LastSeenAt = DateTimeOffset.UtcNow;
         await repo.UpdateAsync(account);
@@ -77,9 +77,9 @@ public class PlayerAccountRepositoryTests : IDisposable
         await using var db = _factory.CreateContext();
         var repo = new PlayerAccountRepository(db);
 
-        await repo.CreateAsync(new PlayerAccount { Username = "Bilbo" });
+        await repo.CreateAsync(new PlayerAccount { UserName = "Bilbo", NormalizedUserName = "BILBO" });
 
-        var act = async () => await repo.CreateAsync(new PlayerAccount { Username = "Bilbo" });
+        var act = async () => await repo.CreateAsync(new PlayerAccount { UserName = "Bilbo", NormalizedUserName = "BILBO" });
         await act.Should().ThrowAsync<Exception>();
     }
 }
