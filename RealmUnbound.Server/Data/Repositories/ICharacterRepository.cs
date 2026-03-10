@@ -24,4 +24,7 @@ public interface ICharacterRepository
 
     /// <summary>Sets <see cref="Character.DeletedAt"/> to now (soft delete).</summary>
     Task SoftDeleteAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Updates <see cref="Character.CurrentZoneId"/> without loading the full entity.</summary>
+    Task UpdateCurrentZoneAsync(Guid id, string zoneId, CancellationToken ct = default);
 }

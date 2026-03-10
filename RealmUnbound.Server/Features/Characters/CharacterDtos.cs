@@ -11,4 +11,5 @@ public record CharacterDto(
     string ClassName,
     int Level,
     long Experience,
-    DateTimeOffset LastPlayedAt);
+    DateTimeOffset LastPlayedAt,
+    string CurrentZoneId);

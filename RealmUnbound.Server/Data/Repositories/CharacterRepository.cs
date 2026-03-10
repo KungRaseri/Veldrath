@@ -56,4 +56,13 @@ public class CharacterRepository : ICharacterRepository
         character.DeletedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task UpdateCurrentZoneAsync(Guid id, string zoneId, CancellationToken ct = default)
+    {
+        var character = await _db.Characters.FindAsync([id], ct);
+        if (character is null) return;
+        character.CurrentZoneId  = zoneId;
+        character.LastPlayedAt   = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync(ct);
+    }
 }

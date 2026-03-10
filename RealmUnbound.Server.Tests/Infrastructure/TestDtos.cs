@@ -18,3 +18,13 @@ internal record CharacterResult(
     int Level,
     long Experience,
     DateTimeOffset LastPlayedAt);
+
+internal record ZoneResult(
+    string Id,
+    string Name,
+    string Description,
+    string Type,
+    int MinLevel,
+    int MaxPlayers,
+    bool IsStarter,
+    int OnlinePlayers);

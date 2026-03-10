@@ -12,7 +12,8 @@ public record CharacterDto(
     string ClassName,
     int Level,
     long Experience,
-    DateTimeOffset? LastPlayedAt);
+    DateTimeOffset? LastPlayedAt,
+    string CurrentZoneId = "starting-zone");
 
 public record CreateCharacterRequest(string Name, string ClassName);
 
