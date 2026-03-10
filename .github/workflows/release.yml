@@ -7,6 +7,11 @@ on:
       - 'tooling/v*'
       - 'server/v*'
       - 'client/v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish (e.g. engine/v1.2.3)'
+        required: true
 
 env:
   DOTNET_VERSION: '10.0.x'
@@ -30,7 +35,8 @@ jobs:
     - name: Detect component and version
       id: meta
       run: |
-        TAG="${{ github.ref_name }}"
+        # Support both tag-push and workflow_dispatch triggers
+        TAG="${{ github.event.inputs.tag || github.ref_name }}"
         if [[ "$TAG" == engine/v* ]]; then
           COMPONENT="engine"
           WORKFLOW="ci-engine.yml"

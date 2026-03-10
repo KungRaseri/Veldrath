@@ -116,6 +116,7 @@ jobs:
 
     permissions:
       contents: write  # needed to create the release tag
+      actions: write   # needed to dispatch the release workflow
 
     steps:
     - name: Checkout code
@@ -184,4 +185,13 @@ jobs:
         git tag $tag
         git push origin $tag
         Write-Output "Created tag: $tag"
+      shell: pwsh
+
+    - name: Trigger release workflow
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $tag = "engine/v${{ steps.version.outputs.version-no-hash }}"
+        gh workflow run release.yml --ref main --field tag=$tag
+        Write-Output "Triggered release workflow for $tag"
       shell: pwsh
