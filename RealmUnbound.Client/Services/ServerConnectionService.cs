@@ -12,6 +12,7 @@ public interface IServerConnectionService
     Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default);
     Task DisconnectAsync();
     Task<TResult?> SendCommandAsync<TResult>(string method, object command);
+    IDisposable On<T>(string method, Action<T> handler);
 }
 
 public class ServerConnectionService : IServerConnectionService, IAsyncDisposable
@@ -97,6 +98,13 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
             throw new InvalidOperationException("Not connected to server.");
 
         return await _connection.InvokeAsync<TResult>(method, command);
+    }
+
+    public IDisposable On<T>(string method, Action<T> handler)
+    {
+        if (_connection is null)
+            throw new InvalidOperationException("Not connected to server.");
+        return _connection.On(method, handler);
     }
 
     public async ValueTask DisposeAsync()

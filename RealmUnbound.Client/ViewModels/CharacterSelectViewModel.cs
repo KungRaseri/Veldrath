@@ -10,6 +10,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly ICharacterService _characters;
     private readonly IServerConnectionService _connection;
     private readonly INavigationService _navigation;
+    private readonly GameViewModel _gameVm;
 
     private bool _isBusy;
     private string _errorMessage = string.Empty;
@@ -51,11 +52,13 @@ public class CharacterSelectViewModel : ViewModelBase
     public CharacterSelectViewModel(
         ICharacterService characters,
         IServerConnectionService connection,
-        INavigationService navigation)
+        INavigationService navigation,
+        GameViewModel gameVm)
     {
         _characters = characters;
         _connection = connection;
         _navigation = navigation;
+        _gameVm = gameVm;
 
         var canCreate = this.WhenAnyValue(
             x => x.NewCharacterName, x => x.IsBusy,
@@ -89,9 +92,24 @@ public class CharacterSelectViewModel : ViewModelBase
         ErrorMessage = string.Empty;
         try
         {
+            var zoneId = character.CurrentZoneId.Length > 0 ? character.CurrentZoneId : "starting-zone";
+
             await _connection.ConnectAsync(ServerUrl);
+
+            // Subscribe to zone hub events before sending commands so no events are missed
+            _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
+            {
+                _gameVm.SetOccupants(payload.Occupants);
+                _navigation.NavigateTo<GameViewModel>();
+            });
+            _connection.On<PlayerEventPayload>("PlayerEntered", payload =>
+                _gameVm.OnPlayerEntered(payload.CharacterName));
+            _connection.On<PlayerEventPayload>("PlayerLeft", payload =>
+                _gameVm.OnPlayerLeft(payload.CharacterName));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
-            // TODO: navigate to game view once it exists
+            await _gameVm.InitializeAsync(character.Name, zoneId);
+            await _connection.SendCommandAsync<object>("EnterZone", zoneId);
         }
         catch (Exception ex)
         {
@@ -99,6 +117,10 @@ public class CharacterSelectViewModel : ViewModelBase
         }
         finally { IsBusy = false; }
     }
+
+    // ── Payload shapes (matching server hub broadcasts) ────────────────────────
+    private record ZoneEnteredPayload(string ZoneId, IEnumerable<string> Occupants);
+    private record PlayerEventPayload(string CharacterName);
 
     private async Task DoCreateAsync()
     {

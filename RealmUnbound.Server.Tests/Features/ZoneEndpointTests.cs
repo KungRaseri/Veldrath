@@ -1,0 +1,78 @@
+using System.Net;
+using System.Net.Http.Json;
+using RealmUnbound.Server.Tests.Infrastructure;
+
+namespace RealmUnbound.Server.Tests.Features;
+
+[Trait("Category", "Integration")]
+public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+{
+    private readonly HttpClient _client = factory.CreateClient();
+
+    [Fact]
+    public async Task GetZones_Should_Return_All_Seeded_Zones()
+    {
+        var response = await _client.GetAsync("/api/zones");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var zones = await response.Content.ReadFromJsonAsync<ZoneResult[]>();
+        zones.Should().NotBeNull();
+        zones!.Length.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetZones_Should_Include_Starter_Zone()
+    {
+        var response = await _client.GetAsync("/api/zones");
+        var zones = await response.Content.ReadFromJsonAsync<ZoneResult[]>();
+
+        var starter = zones!.SingleOrDefault(z => z.IsStarter);
+        starter.Should().NotBeNull();
+        starter!.Id.Should().Be("starting-zone");
+    }
+
+    [Fact]
+    public async Task GetZones_Should_Return_Correct_Zone_Types()
+    {
+        var zones = await _client.GetFromJsonAsync<ZoneResult[]>("/api/zones");
+        zones.Should().Contain(z => z.Type == "Tutorial");
+        zones.Should().Contain(z => z.Type == "Town");
+        zones.Should().Contain(z => z.Type == "Dungeon");
+        zones.Should().Contain(z => z.Type == "Wilderness");
+    }
+
+    [Fact]
+    public async Task GetZones_Should_Return_Zero_Online_Players_Initially()
+    {
+        var zones = await _client.GetFromJsonAsync<ZoneResult[]>("/api/zones");
+        zones!.All(z => z.OnlinePlayers == 0).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetZoneById_Should_Return_Zone_Details()
+    {
+        var response = await _client.GetAsync("/api/zones/starting-zone");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var zone = await response.Content.ReadFromJsonAsync<ZoneResult>();
+        zone!.Id.Should().Be("starting-zone");
+        zone.IsStarter.Should().BeTrue();
+        zone.MinLevel.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetZoneById_Should_Return_404_For_Unknown_Zone()
+    {
+        var response = await _client.GetAsync("/api/zones/nonexistent-zone");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetZones_Does_Not_Require_Authentication()
+    {
+        // Zones list should be publicly accessible (let players see server world without signing in)
+        using var anonClient = factory.CreateClient();
+        var response = await anonClient.GetAsync("/api/zones");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+}

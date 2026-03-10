@@ -21,6 +21,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
 
     public DbSet<Entities.Character> Characters => Set<Entities.Character>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Zone> Zones => Set<Zone>();
+    public DbSet<ZoneSession> ZoneSessions => Set<ZoneSession>();
 
     // Engine entities — stored in server DB so character saves survive reconnect.
     public DbSet<SaveGameRecord> SaveGames => Set<SaveGameRecord>();
@@ -51,6 +53,38 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasOne(rt => rt.Account)
              .WithMany()
              .HasForeignKey(rt => rt.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Zone>(e =>
+        {
+            e.HasKey(z => z.Id);
+            e.Property(z => z.Id).HasMaxLength(64);
+            e.HasMany(z => z.Sessions)
+             .WithOne(s => s.Zone)
+             .HasForeignKey(s => s.ZoneId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            // Static zone seed data
+            e.HasData(
+                new Zone { Id = "starting-zone",    Name = "Ashenveil Crossroads", Description = "A small crossroads at the edge of the Ashenveil Forest, where new adventurers gather.", Type = ZoneType.Tutorial,   MinLevel = 0, MaxPlayers = 0, IsStarter = true  },
+                new Zone { Id = "town-millhaven",   Name = "Millhaven",            Description = "A prosperous market town built along the Silver River, hub of trade and gossip.",      Type = ZoneType.Town,       MinLevel = 0, MaxPlayers = 0, IsStarter = false },
+                new Zone { Id = "town-ironhold",    Name = "Ironhold",             Description = "A fortified dwarven outpost in the foothills, renowned for its smiths and ales.",      Type = ZoneType.Town,       MinLevel = 5, MaxPlayers = 0, IsStarter = false },
+                new Zone { Id = "dungeon-grotto",   Name = "Mossglow Grotto",      Description = "A shallow cave network overrun with kobolds and giant insects — ideal for beginners.", Type = ZoneType.Dungeon,    MinLevel = 1, MaxPlayers = 0, IsStarter = false },
+                new Zone { Id = "wild-ashenveil",   Name = "Ashenveil Forest",     Description = "Dense woodland alive with wolves, bandits, and rumours of something darker within.", Type = ZoneType.Wilderness, MinLevel = 3, MaxPlayers = 0, IsStarter = false }
+            );
+        });
+
+        builder.Entity<ZoneSession>(e =>
+        {
+            e.HasKey(s => s.Id);
+            // Each connection can only be in one zone at a time
+            e.HasIndex(s => s.ConnectionId).IsUnique();
+            // A character can only be in one zone session at any given time
+            e.HasIndex(s => s.CharacterId).IsUnique();
+            e.HasOne(s => s.Character)
+             .WithMany()
+             .HasForeignKey(s => s.CharacterId)
              .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -106,5 +106,5 @@ public static class CharacterEndpoints
     }
 
     private static CharacterDto ToDto(Character c) =>
-        new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt);
+        new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt, c.CurrentZoneId);
 }

@@ -35,6 +35,9 @@ public class Character
     /// <summary>Zone the character starts in (fixed on creation; tutorial zone later).</summary>
     public string StartingZoneId { get; set; } = "starting-zone";
 
+    /// <summary>Zone the character is currently in (updated on EnterZone).</summary>
+    public string CurrentZoneId { get; set; } = "starting-zone";
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset LastPlayedAt { get; set; } = DateTimeOffset.UtcNow;

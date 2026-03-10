@@ -58,6 +58,8 @@ public partial class App : Application
             client.BaseAddress = new Uri(ServerBaseUrl));
         services.AddHttpClient<ICharacterService, HttpCharacterService>(client =>
             client.BaseAddress = new Uri(ServerBaseUrl));
+        services.AddHttpClient<IZoneService, HttpZoneService>(client =>
+            client.BaseAddress = new Uri(ServerBaseUrl));
 
         // App services
         services.AddSingleton<INavigationService, NavigationService>();
@@ -67,6 +69,7 @@ public partial class App : Application
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<MainMenuViewModel>();
         services.AddTransient<LoginViewModel>();
+        services.AddSingleton<GameViewModel>();
         services.AddTransient<CharacterSelectViewModel>();
     }
 }

@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.GameView"
+             x:DataType="vm:GameViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Top bar -->
+        <Border Grid.Row="0"
+                Background="#1e1e2e"
+                BorderBrush="#3a3a5a"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="{Binding CharacterName}"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="#c8a96e"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="→" Foreground="#555" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ZoneName}"
+                               FontSize="14"
+                               Foreground="#8a8a9a"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusMessage}"
+                           Foreground="#8a8a9a"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0" />
+
+                <Button Grid.Column="2"
+                        Content="Logout"
+                        Command="{Binding LogoutCommand}"
+                        Height="32"
+                        FontSize="13"
+                        Foreground="#c05050" />
+            </Grid>
+        </Border>
+
+        <!-- Main content -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,220">
+
+            <!-- Action log -->
+            <Border Grid.Column="0"
+                    Background="#12121c"
+                    Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="{Binding ZoneDescription}"
+                               Foreground="#8a8a9a"
+                               FontStyle="Italic"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12" />
+
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding ActionLog}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="#c0c0d0"
+                                               FontSize="13"
+                                               Margin="0,1" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Online players panel -->
+            <Border Grid.Column="1"
+                    Background="#1a1a28"
+                    BorderBrush="#3a3a5a"
+                    BorderThickness="1,0,0,0"
+                    Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Online in Zone"
+                               Foreground="#8a8a9a"
+                               FontSize="12"
+                               Margin="0,0,0,8" />
+                    <ItemsControl ItemsSource="{Binding OnlinePlayers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                                    <Ellipse Width="8" Height="8" Fill="#4caf50" />
+                                    <TextBlock Text="{Binding}"
+                                               FontSize="13"
+                                               Foreground="#e0e0f0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

@@ -12,6 +12,7 @@ using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Characters;
+using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
 using RealmEngine.Shared.Abstractions;
@@ -124,6 +125,8 @@ try
     // Engine interfaces backed by the server's own ApplicationDbContext:
     builder.Services.AddScoped<ISaveGameRepository, ServerSaveGameRepository>();
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
+    builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
+    builder.Services.AddScoped<IZoneSessionRepository, ZoneSessionRepository>();
 
     // ── RealmEngine services ─────────────────────────────────────────────────
     var jsonDataPath = builder.Configuration["RealmEngine:DataPath"] ?? "Data/Json";
@@ -144,17 +147,17 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // Apply schema in development (replace with proper migrations for production)
-    if (app.Environment.IsDevelopment())
+    // Run any pending EF migrations on startup (creates DB on first run, updates schema on upgrade)
+    using (var scope = app.Services.CreateScope())
     {
-        using var scope = app.Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
-            .Database.EnsureCreatedAsync();
+            .Database.MigrateAsync();
     }
 
     // Auth & character endpoints
     app.MapAuthEndpoints();
     app.MapCharacterEndpoints();
+    app.MapZoneEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game");
