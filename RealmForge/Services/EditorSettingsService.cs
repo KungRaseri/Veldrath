@@ -1,28 +1,30 @@
-using Blazored.LocalStorage;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using RealmForge.Models;
 
 namespace RealmForge.Services;
 
 /// <summary>
-/// Service for managing RealmForge editor settings and user preferences
+/// Manages RealmForge editor settings, persisted to %APPDATA%\RealmForge\settings.json
 /// </summary>
 public class EditorSettingsService
 {
-    private readonly ILocalStorageService _localStorage;
     private readonly ILogger<EditorSettingsService> _logger;
-    private const string SettingsKey = "realmforge_settings";
+    private readonly string _settingsPath;
+
+    private static string DefaultSettingsPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "RealmForge", "settings.json");
+
     private EditorSettings? _cachedSettings;
 
-    public EditorSettingsService(ILocalStorageService localStorage, ILogger<EditorSettingsService> logger)
+    public EditorSettingsService(ILogger<EditorSettingsService> logger, string? settingsPath = null)
     {
-        _localStorage = localStorage;
         _logger = logger;
+        _settingsPath = settingsPath ?? DefaultSettingsPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
     }
 
-    /// <summary>
-    /// Load settings from local storage
-    /// </summary>
     public async Task<EditorSettings> LoadSettingsAsync()
     {
         if (_cachedSettings != null)
@@ -30,58 +32,46 @@ public class EditorSettingsService
 
         try
         {
-            _cachedSettings = await _localStorage.GetItemAsync<EditorSettings>(SettingsKey);
-            
-            if (_cachedSettings == null)
+            if (File.Exists(_settingsPath))
             {
-                _logger.LogInformation("No saved settings found, creating defaults");
-                _cachedSettings = new EditorSettings();
-                await SaveSettingsAsync(_cachedSettings);
-            }
-            else
-            {
-                _logger.LogDebug("Loaded settings: Theme={Theme}, AutoSaveInterval={Interval}s", 
-                    _cachedSettings.Theme, _cachedSettings.AutoSaveIntervalSeconds);
+                var json = await File.ReadAllTextAsync(_settingsPath);
+                _cachedSettings = JsonConvert.DeserializeObject<EditorSettings>(json);
+                if (_cachedSettings != null)
+                {
+                    _logger.LogDebug("Loaded settings: Theme={Theme}", _cachedSettings.Theme);
+                    return _cachedSettings;
+                }
             }
 
-            return _cachedSettings;
+            _logger.LogInformation("No saved settings found, creating defaults");
+            _cachedSettings = new EditorSettings();
+            await SaveSettingsAsync(_cachedSettings);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load settings, using defaults");
             _cachedSettings = new EditorSettings();
-            return _cachedSettings;
         }
+
+        return _cachedSettings;
     }
 
-    /// <summary>
-    /// Save settings to local storage
-    /// </summary>
     public async Task SaveSettingsAsync(EditorSettings settings)
     {
         try
         {
-            await _localStorage.SetItemAsync(SettingsKey, settings);
+            var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
+            await File.WriteAllTextAsync(_settingsPath, json);
             _cachedSettings = settings;
-            _logger.LogInformation("Settings saved successfully");
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("WebView context"))
-        {
-            // WebView not ready yet, just cache the settings
-            _logger.LogDebug("WebView not ready, caching settings only");
-            _cachedSettings = settings;
+            _logger.LogDebug("Settings saved");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save settings");
-            // Don't throw - just keep cached version
             _cachedSettings = settings;
         }
     }
 
-    /// <summary>
-    /// Update a specific setting and save
-    /// </summary>
     public async Task UpdateSettingAsync(Action<EditorSettings> updateAction)
     {
         var settings = await LoadSettingsAsync();
@@ -89,9 +79,6 @@ public class EditorSettingsService
         await SaveSettingsAsync(settings);
     }
 
-    /// <summary>
-    /// Reset settings to defaults
-    /// </summary>
     public async Task ResetToDefaultsAsync()
     {
         _logger.LogInformation("Resetting settings to defaults");

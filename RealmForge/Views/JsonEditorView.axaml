@@ -1,0 +1,226 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             xmlns:avEdit="using:AvaloniaEdit"
+             x:Class="RealmForge.Views.JsonEditorView"
+             Background="#1e1e1e">
+
+    <Design.DataContext>
+        <vm:JsonEditorViewModel />
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="260,Auto,*">
+
+        <!-- File Tree Panel -->
+        <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto" Background="#252526">
+
+            <Border Grid.Row="0" Background="#2d2d2d" Padding="8,6"
+                    BorderThickness="0,0,0,1" BorderBrush="#333">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="JSON Files"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="#ccc" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content=""
+                            Command="{Binding RefreshTreeCommand}"
+                            Background="Transparent" Foreground="#888"
+                            ToolTip.Tip="Refresh file tree" Padding="4,2" />
+                </Grid>
+            </Border>
+
+            <TreeView Grid.Row="1" x:Name="FileTreeView"
+                      ItemsSource="{Binding FileTree}"
+                      Background="#252526"
+                      SelectionChanged="FileTreeView_OnSelectionChanged">
+                <TreeView.DataTemplates>
+                    <TreeDataTemplate DataType="vm:FileTreeNodeViewModel"
+                                      ItemsSource="{Binding Children}">
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="2">
+                            <TextBlock Text="{Binding Icon}" FontSize="12" />
+                            <TextBlock Text="{Binding Name}" FontSize="12"
+                                       Foreground="#ccc" />
+                        </StackPanel>
+                    </TreeDataTemplate>
+                </TreeView.DataTemplates>
+            </TreeView>
+
+            <Border Grid.Row="2" Background="#252526" Padding="6,4"
+                    BorderThickness="0,1,0,0" BorderBrush="#333">
+                <TextBlock Text="{Binding DataFolderPath}"
+                           FontSize="10" Foreground="#555"
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip.Tip="{Binding DataFolderPath}" />
+            </Border>
+        </Grid>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1" Width="4" Background="#333" />
+
+        <!-- Editor Area -->
+        <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto">
+
+            <!-- Toolbar -->
+            <Border Grid.Row="0" Background="#2d2d2d" Padding="8,6"
+                    BorderThickness="0,0,0,1" BorderBrush="#333">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                        <Button x:Name="JsonModeBtn" Content="{}{ } JSON"
+                                Click="JsonModeBtn_Click"
+                                Padding="8,4" CornerRadius="4"
+                                ToolTip.Tip="JSON text editor" />
+                        <Button x:Name="FormModeBtn" Content=" Form"
+                                Click="FormModeBtn_Click"
+                                Padding="8,4" CornerRadius="4"
+                                ToolTip.Tip="Form editor" />
+                        <Separator Width="1" Background="#444" Margin="4,0" />
+                        <TextBlock Text="{Binding CurrentFileName, FallbackValue='No file open'}"
+                                   Foreground="#9cdcfe" FontFamily="Consolas,monospace"
+                                   FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="" Foreground="#e5a00d"
+                                   IsVisible="{Binding IsDirty}"
+                                   VerticalAlignment="Center" Margin="2,0,0,0"
+                                   ToolTip.Tip="Unsaved changes" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                        <Button Content=" Validate"
+                                Command="{Binding ValidateCommand}"
+                                Background="#0063b1" Foreground="White"
+                                Padding="10,4" CornerRadius="4" />
+                        <Button Content=" Save"
+                                Command="{Binding SaveCommand}"
+                                Background="#107c41" Foreground="White"
+                                Padding="10,4" CornerRadius="4" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Editor body -->
+            <Grid Grid.Row="1">
+
+                <!-- AvaloniaEdit JSON text editor -->
+                <avEdit:TextEditor
+                    x:Name="JsonEditor"
+                    IsVisible="{Binding IsJsonMode}"
+                    ShowLineNumbers="True"
+                    FontFamily="Cascadia Code,Cascadia Mono,Consolas,Courier New,monospace"
+                    FontSize="13"
+                    Background="#1e1e1e"
+                    Foreground="#d4d4d4" />
+
+                <!-- Form editor -->
+                <ScrollViewer IsVisible="{Binding IsFormMode}">
+                    <ItemsControl ItemsSource="{Binding FormProperties}" Margin="12">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:JsonPropertyViewModel">
+                                <Border Margin="0,2" Padding="4,6"
+                                        BorderBrush="#333" BorderThickness="0,0,0,1">
+                                    <Grid ColumnDefinitions="200,*">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding DisplayName}"
+                                                   Foreground="#9cdcfe"
+                                                   VerticalAlignment="Center"
+                                                   FontFamily="Consolas,monospace"
+                                                   FontSize="12" />
+
+                                        <!-- String / Number -->
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding EditableValue}"
+                                                 IsVisible="{Binding IsEditable}"
+                                                 Background="#3c3c3c" Foreground="#ce9178"
+                                                 BorderBrush="#555" Padding="6,3"
+                                                 CornerRadius="3"
+                                                 FontFamily="Consolas,monospace" FontSize="12" />
+
+                                        <!-- Reference -->
+                                        <Grid Grid.Column="1" IsVisible="{Binding IsReference}"
+                                              ColumnDefinitions="*,Auto">
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding EditableValue}"
+                                                     Background="#3c3c3c" Foreground="#4fc1ff"
+                                                     BorderBrush="#555" Padding="6,3"
+                                                     CornerRadius="3,0,0,3"
+                                                     FontFamily="Consolas,monospace" FontSize="12" />
+                                            <Button Grid.Column="1" Content=""
+                                                    Background="#3c3c3c" Foreground="#888"
+                                                    Padding="8,3" CornerRadius="0,3,3,0"
+                                                    ToolTip.Tip="Browse references"
+                                                    Command="{Binding $parent[UserControl].DataContext.OpenReferencePickerCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+
+                                        <!-- Boolean -->
+                                        <ToggleSwitch Grid.Column="1"
+                                                      IsChecked="{Binding BoolValue}"
+                                                      IsVisible="{Binding IsBool}"
+                                                      OnContent="true" OffContent="false" />
+
+                                        <!-- Complex (object / array) -->
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding ComplexSummary}"
+                                                   IsVisible="{Binding IsComplex}"
+                                                   Foreground="#666" FontStyle="Italic"
+                                                   VerticalAlignment="Center"
+                                                   FontFamily="Consolas,monospace" FontSize="12" />
+
+                                        <!-- Null -->
+                                        <TextBlock Grid.Column="1" Text="null"
+                                                   IsVisible="{Binding IsNull}"
+                                                   Foreground="#569cd6"
+                                                   VerticalAlignment="Center"
+                                                   FontFamily="Consolas,monospace" FontSize="12" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- No file open placeholder -->
+                <StackPanel IsVisible="{Binding CurrentFilePath, Converter={x:Static ObjectConverters.IsNull}}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                    <TextBlock Text="No file open" FontSize="20" Foreground="#444"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Select a JSON file from the tree on the left"
+                               FontSize="14" Foreground="#333"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Busy overlay -->
+                <Border IsVisible="{Binding IsBusy}"
+                        Background="#80000000">
+                    <TextBlock Text="Working" FontSize="16" Foreground="#ccc"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <!-- Status / Validation panel -->
+            <Grid Grid.Row="2" RowDefinitions="Auto,Auto">
+                <Border Grid.Row="0" Background="#007acc" Padding="8,3"
+                        IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="12" Foreground="White" />
+                </Border>
+
+                <Expander Grid.Row="1"
+                          IsVisible="{Binding HasValidationResult}"
+                          Header="{Binding ValidationErrors.Count, StringFormat='Validation  {0} issue(s)'}"
+                          Background="#1e1e1e">
+                    <Border MaxHeight="180" Background="#252526">
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding ValidationErrors}" Margin="8">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   Foreground="#f48771"
+                                                   FontFamily="Consolas,monospace"
+                                                   FontSize="12" Margin="0,2"
+                                                   TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Expander>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

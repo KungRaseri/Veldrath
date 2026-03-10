@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RealmForge.ViewModels"
+        xmlns:views="using:RealmForge.Views"
+        x:Class="RealmForge.Views.MainWindow"
+        Title="RealmForge — JSON Editor"
+        Width="1400" Height="900"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="#1e1e1e">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Title Bar ─────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#252526" Padding="8,6" BorderThickness="0,0,0,1" BorderBrush="#333">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                    <Button Content="☰"
+                            Command="{Binding TogglePaneCommand}"
+                            Background="Transparent"
+                            Foreground="#ccc"
+                            Padding="8,4"
+                            CornerRadius="4" />
+                    <TextBlock Text="RealmForge"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="#e0e0e0"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="v4.0"
+                               FontSize="11" Foreground="#666"
+                               VerticalAlignment="Center" Margin="4,0,0,0" />
+                </StackPanel>
+
+                <!-- Navigation buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                            HorizontalAlignment="Center">
+                    <Button Content="🏠  Home"
+                            Command="{Binding NavigateHomeCommand}"
+                            Background="Transparent" Foreground="#ccc"
+                            Padding="12,4" CornerRadius="4" />
+                    <Button Content="📝  JSON Editor"
+                            Command="{Binding NavigateEditorCommand}"
+                            Background="Transparent" Foreground="#ccc"
+                            Padding="12,4" CornerRadius="4" />
+                </StackPanel>
+
+                <!-- Theme toggle -->
+                <ToggleButton Grid.Column="2"
+                              Content="🌙"
+                              IsChecked="{Binding IsDarkMode}"
+                              Background="Transparent"
+                              Padding="8,4" />
+            </Grid>
+        </Border>
+
+        <!-- ── Content ───────────────────────────────────────────────────── -->
+        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}">
+            <ContentControl.DataTemplates>
+                <DataTemplate DataType="vm:HomeViewModel">
+                    <views:HomeView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:JsonEditorViewModel">
+                    <views:JsonEditorView />
+                </DataTemplate>
+            </ContentControl.DataTemplates>
+        </ContentControl>
+
+    </Grid>
+</Window>
