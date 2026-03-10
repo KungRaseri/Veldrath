@@ -59,20 +59,43 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj
+      shell: pwsh
 
-    - name: Build client
-      run: dotnet build RealmUnbound.Client/RealmUnbound.Client.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
-
-    - name: Build client tests
+    - name: Build
       run: dotnet build RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+      shell: pwsh
 
     - name: Test - RealmUnbound.Client.Tests
       run: |
         dotnet test RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj `
           --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
+          --collect "XPlat Code Coverage" --settings coverage.runsettings `
           --logger "trx;LogFileName=client-tests.trx" `
           --results-directory ./TestResults
       shell: pwsh
+
+    - name: Install ReportGenerator
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      shell: pwsh
+
+    - name: Generate coverage report
+      run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+      shell: pwsh
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-client
+        path: CoverageReport/
+        retention-days: 14
+
+    - name: Add coverage summary to PR
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: CoverageReport/SummaryGithub.md
 
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
