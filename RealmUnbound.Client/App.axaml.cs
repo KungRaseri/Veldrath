@@ -53,6 +53,9 @@ public partial class App : Application
         // Token store (singleton — shared between auth service and connection service)
         services.AddSingleton<TokenStore>();
 
+        // Persists lightweight session preferences (email only — never tokens/passwords)
+        services.AddSingleton<SessionStore>();
+
         // HTTP client for auth + character APIs
         services.AddHttpClient<IAuthService, HttpAuthService>(client =>
             client.BaseAddress = new Uri(ServerBaseUrl));

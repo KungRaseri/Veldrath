@@ -9,24 +9,40 @@
              x:Class="RealmUnbound.Client.Views.CharacterSelectView"
              x:DataType="vm:CharacterSelectViewModel">
 
-    <Grid>
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Top bar: always visible regardless of IsCreating state -->
+        <Border Grid.Row="0"
+                Background="#1e1e2e"
+                BorderBrush="#3a3a5a"
+                BorderThickness="0,0,0,1"
+                Padding="24,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding PanelTitle}"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="#c8a96e"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        Content="Logout"
+                        Command="{Binding LogoutCommand}"
+                        Height="32"
+                        FontSize="13"
+                        Foreground="#c05050" />
+            </Grid>
+        </Border>
+
+        <!-- Content area -->
+        <Grid Grid.Row="1">
 
         <!-- ===== LIST PANEL (IsCreating = false) ===== -->
-        <Grid RowDefinitions="Auto,*,Auto"
+        <Grid RowDefinitions="*,Auto"
               IsVisible="{Binding !IsCreating}">
 
-            <!-- Header -->
-            <TextBlock Grid.Row="0"
-                       Text="Select Your Character"
-                       FontSize="32"
-                       FontWeight="Bold"
-                       Foreground="#c8a96e"
-                       HorizontalAlignment="Center"
-                       Margin="0,32,0,24" />
-
             <!-- Character list -->
-            <ScrollViewer Grid.Row="1">
-                <StackPanel HorizontalAlignment="Center" Spacing="0">
+            <ScrollViewer Grid.Row="0">
+                <StackPanel HorizontalAlignment="Center" Spacing="0" Margin="0,24,0,0">
 
                     <!-- Error message -->
                     <TextBlock Text="{Binding ErrorMessage}"
@@ -85,35 +101,27 @@
             </ScrollViewer>
 
             <!-- New Character button -->
-            <Button Grid.Row="2"
+            <Button Grid.Row="1"
                     Content="+ New Character"
                     Command="{Binding ShowCreateCommand}"
                     HorizontalAlignment="Center"
                     Width="480"
                     Height="44"
                     FontSize="15"
-                    Margin="0,0,0,32" />
+                    Margin="0,12,0,32" />
 
         </Grid>
 
         <!-- ===== CREATE PANEL (IsCreating = true) ===== -->
-        <Grid RowDefinitions="Auto,*,Auto"
+        <Grid RowDefinitions="Auto,*"
               IsVisible="{Binding IsCreating}">
 
-            <!-- Header -->
-            <TextBlock Grid.Row="0"
-                       Text="New Character"
-                       FontSize="32"
-                       FontWeight="Bold"
-                       Foreground="#c8a96e"
-                       HorizontalAlignment="Center"
-                       Margin="0,32,0,48" />
-
             <!-- Create form -->
-            <StackPanel Grid.Row="1"
+            <StackPanel Grid.Row="0"
                         Width="480"
                         HorizontalAlignment="Center"
-                        Spacing="8">
+                        Spacing="8"
+                        Margin="0,32,0,0">
 
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="#c05050"
@@ -151,6 +159,8 @@
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
                          Width="200" />
+        </Grid>
+
         </Grid>
 
     </Grid>

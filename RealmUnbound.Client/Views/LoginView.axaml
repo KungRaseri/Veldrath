@@ -35,6 +35,12 @@
                      PasswordChar="•"
                      Height="40" />
 
+            <!-- Remember my email -->
+            <CheckBox Content="Remember my email"
+                      IsChecked="{Binding RememberEmail}"
+                      Foreground="#8a8a9a"
+                      Margin="0,4,0,0" />
+
             <!-- Error message -->
             <TextBlock Text="{Binding ErrorMessage}"
                        Foreground="#c05050"
