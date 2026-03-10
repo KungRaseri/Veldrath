@@ -67,8 +67,10 @@ public partial class App : Application
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();
+        services.AddSingleton<SplashViewModel>();
         services.AddTransient<MainMenuViewModel>();
         services.AddTransient<LoginViewModel>();
+        services.AddTransient<RegisterViewModel>();
         services.AddSingleton<GameViewModel>();
         services.AddTransient<CharacterSelectViewModel>();
     }

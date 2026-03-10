@@ -15,7 +15,7 @@
                     Width="320"
                     Spacing="12">
 
-            <TextBlock Text="Sign In"
+            <TextBlock Text="Login"
                        FontSize="36"
                        FontWeight="Bold"
                        Foreground="#c8a96e"
@@ -41,7 +41,7 @@
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <!-- Buttons -->
+            <!-- Login -->
             <Button Content="Login"
                     Command="{Binding LoginCommand}"
                     HorizontalAlignment="Stretch"
@@ -50,13 +50,14 @@
                     FontSize="16"
                     Margin="0,16,0,0" />
 
-            <Button Content="Create Account"
-                    Command="{Binding RegisterCommand}"
+            <!-- Back -->
+            <Button Content="Back"
+                    Command="{Binding BackCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
-                    Height="44"
+                    Height="40"
                     FontSize="14"
-                    Foreground="#8a8a9a" />
+                    Foreground="#5a5a7a" />
 
             <!-- Busy indicator -->
             <ProgressBar IsIndeterminate="True"

@@ -39,7 +39,7 @@ public class LoginViewModel : ViewModelBase
     }
 
     public ReactiveCommand<Unit, Unit> LoginCommand { get; }
-    public ReactiveCommand<Unit, Unit> RegisterCommand { get; }
+    public ReactiveCommand<Unit, Unit> BackCommand { get; }
 
     public LoginViewModel(IAuthService auth, INavigationService navigation)
     {
@@ -51,7 +51,7 @@ public class LoginViewModel : ViewModelBase
             (u, p, busy) => !string.IsNullOrWhiteSpace(u) && !string.IsNullOrWhiteSpace(p) && !busy);
 
         LoginCommand = ReactiveCommand.CreateFromTask(DoLoginAsync, canSubmit);
-        RegisterCommand = ReactiveCommand.CreateFromTask(DoRegisterAsync, canSubmit);
+        BackCommand  = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
     }
 
     private async Task DoLoginAsync()
@@ -69,18 +69,5 @@ public class LoginViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
-    private async Task DoRegisterAsync()
-    {
-        IsBusy = true;
-        ErrorMessage = string.Empty;
-        try
-        {
-            var (response, error) = await _auth.RegisterAsync(Username, Password);
-            if (response is not null)
-                _navigation.NavigateTo<CharacterSelectViewModel>();
-            else
-                ErrorMessage = error ?? "Registration failed.";
-        }
-        finally { IsBusy = false; }
-    }
+
 }
