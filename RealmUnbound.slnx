@@ -2,6 +2,7 @@
   <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
   <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
   <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />
+  <Project Path="RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj" />
   <Project Path="RealmUnbound.Client/RealmUnbound.Client.csproj" />
   <Project Path="RealmUnbound.Server/RealmUnbound.Server.csproj" />
   <Project Path="RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj" />
