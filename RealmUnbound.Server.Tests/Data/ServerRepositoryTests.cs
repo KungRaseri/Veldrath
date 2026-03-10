@@ -114,6 +114,32 @@ public class ServerHallOfFameRepositoryTests : IDisposable
         var top = repo.GetTopHeroes(count: 1);
         top.Should().ContainSingle(e => e.CharacterName == "Elite");
     }
+
+    // ── Error handling ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void AddEntry_Should_Swallow_Exception_When_Db_Fails()
+    {
+        var db   = _factory.CreateContext();
+        var repo = new ServerHallOfFameRepository(db);
+        // Dispose the EF context so subsequent DB calls raise ObjectDisposedException
+        db.Dispose();
+
+        // Should not throw — catch block swallows the exception
+        var act = () => repo.AddEntry(MakeEntry());
+        act.Should().NotThrow();
+    }
+
+    // ── Dispose ───────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Dispose_Should_Not_Throw()
+    {
+        using var db = _factory.CreateContext();
+        var repo     = new ServerHallOfFameRepository(db);
+        var act      = () => repo.Dispose();
+        act.Should().NotThrow();
+    }
 }
 
 public class ServerSaveGameRepositoryTests : IDisposable
@@ -389,5 +415,16 @@ public class ServerSaveGameRepositoryTests : IDisposable
         using var db = _factory.CreateContext();
         var repo     = new ServerSaveGameRepository(db);
         repo.SaveExists(99).Should().BeFalse();
+    }
+
+    // ── Dispose ───────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Dispose_Should_Not_Throw()
+    {
+        using var db = _factory.CreateContext();
+        var repo     = new ServerSaveGameRepository(db);
+        var act      = () => repo.Dispose();
+        act.Should().NotThrow();
     }
 }
