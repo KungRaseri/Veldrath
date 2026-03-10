@@ -9,16 +9,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- EF Core + PostgreSQL -->
+    <!-- EF Core + PostgreSQL + SQLite (SQLite used for local dev; Postgres for Docker/prod) -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
 
-    <!-- MediatR (for GameHub command dispatch) -->
-    <PackageReference Include="MediatR" Version="12.4.1" />
+    <!-- ASP.NET Core Identity (username/password auth, extensible to MFA + external providers) -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+
+    <!-- JWT authentication -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+
+    <!-- MediatR (for GameHub command dispatch — aligned with engine version) -->
+    <PackageReference Include="MediatR" Version="14.1.0" />
 
     <!-- Health checks -->
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />

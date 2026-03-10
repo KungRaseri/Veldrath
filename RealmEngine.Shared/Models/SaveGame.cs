@@ -1,5 +1,3 @@
-using LiteDB;
-
 namespace RealmEngine.Shared.Models;
 
 /// <summary>
@@ -8,7 +6,6 @@ namespace RealmEngine.Shared.Models;
 public class SaveGame
 {
     /// <summary>Gets or sets the unique identifier.</summary>
-    [BsonId]
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
     /// <summary>Gets or sets the player name.</summary>

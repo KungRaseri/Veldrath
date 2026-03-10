@@ -1,11 +1,19 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
+using RealmEngine.Core;
+using RealmEngine.Data.Services;
 using RealmUnbound.Server.Data;
+using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
+using RealmEngine.Shared.Abstractions;
+using System.Text;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -40,24 +48,96 @@ try
                   .AllowCredentials());
     });
 
-    // Player data (PostgreSQL via EF Core)
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-    builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
-
-    // RealmEngine services (game catalog + logic)
-    // builder.Services.AddRealmEngineCore(); // TODO: wire up when ready
-
-    // Health checks
+    // ── Database provider (sqlite = local dev, postgres = Docker/prod) ────────
+    var dbProvider       = builder.Configuration["Database:Provider"] ?? "postgres";
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
-    builder.Services.AddHealthChecks()
-        .AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"])
-        .AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);
+
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        if (dbProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
+            options.UseSqlite(connectionString);
+        else
+            options.UseNpgsql(connectionString);
+    });
+
+    // ── ASP.NET Core Identity ─────────────────────────────────────────────────
+    builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
+        {
+            options.Password.RequireDigit           = true;
+            options.Password.RequiredLength         = 8;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase       = false;
+            options.User.RequireUniqueEmail         = false; // email is optional
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan  = TimeSpan.FromMinutes(15);
+        })
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
+
+    // ── JWT authentication ────────────────────────────────────────────────────
+    var jwtKey = builder.Configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+    builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey        = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                ValidateIssuer          = true,
+                ValidIssuer             = builder.Configuration["Jwt:Issuer"],
+                ValidateAudience        = true,
+                ValidAudience           = builder.Configuration["Jwt:Audience"],
+                ClockSkew               = TimeSpan.FromSeconds(30),
+            };
+
+            // Allow SignalR to read the JWT from the query string (hub connections).
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = ctx =>
+                {
+                    var token = ctx.Request.Query["access_token"];
+                    if (!string.IsNullOrEmpty(token) &&
+                        ctx.Request.Path.StartsWithSegments("/hubs"))
+                        ctx.Token = token;
+                    return Task.CompletedTask;
+                }
+            };
+        });
+
+    builder.Services.AddAuthorization();
+
+    // ── Repositories ──────────────────────────────────────────────────────────
+    builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
+    builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
+    builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+    // Engine interfaces backed by the server's own ApplicationDbContext:
+    builder.Services.AddScoped<ISaveGameRepository, ServerSaveGameRepository>();
+    builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
+
+    // ── RealmEngine services ─────────────────────────────────────────────────
+    var jsonDataPath = builder.Configuration["RealmEngine:DataPath"] ?? "Data/Json";
+    builder.Services.AddRealmEngineData(jsonDataPath);
+    builder.Services.AddRealmEngineMediatR();
+    builder.Services.AddRealmEngineCore(p => p.UseExternal());
+
+    // ── Health checks ─────────────────────────────────────────────────────────
+    var healthChecks = builder.Services.AddHealthChecks();
+    if (dbProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase))
+        healthChecks.AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"]);
+    healthChecks.AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);
 
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
     app.UseCors("AllowLocalClient");
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     // Apply schema in development (replace with proper migrations for production)
     if (app.Environment.IsDevelopment())

@@ -8,38 +8,22 @@ namespace RealmEngine.Core.Tests.Features.Death.Services;
 
 [Trait("Category", "Feature")]
 /// <summary>
-/// Comprehensive tests for HallOfFameRepository.
-/// Targets 0% baseline coverage to achieve 80%+ line coverage.
+/// Comprehensive tests for HallOfFame persistence via <see cref="InMemoryHallOfFameRepository"/>.
 /// </summary>
 public class HallOfFameRepositoryTests : IDisposable
 {
-    private readonly string _testDbPath;
     private readonly Mock<IGameUI> _mockConsoleUI;
-    private readonly HallOfFameRepository _HallOfFameRepository;
+    private readonly InMemoryHallOfFameRepository _HallOfFameRepository;
 
     public HallOfFameRepositoryTests()
     {
-        _testDbPath = $"test-halloffame-{Guid.NewGuid()}.db";
         _mockConsoleUI = new Mock<IGameUI>();
-        _HallOfFameRepository = new HallOfFameRepository(_testDbPath);
+        _HallOfFameRepository = new InMemoryHallOfFameRepository();
     }
 
     public void Dispose()
     {
         _HallOfFameRepository?.Dispose();
-
-        try
-        {
-            if (File.Exists(_testDbPath))
-                File.Delete(_testDbPath);
-            var logFile = _testDbPath.Replace(".db", "-log.db");
-            if (File.Exists(logFile))
-                File.Delete(logFile);
-        }
-        catch (IOException)
-        {
-            // Ignore cleanup errors - files might still be locked
-        }
     }
 
     #region AddEntry Tests
