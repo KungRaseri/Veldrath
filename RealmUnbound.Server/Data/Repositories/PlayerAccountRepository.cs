@@ -11,24 +11,24 @@ public class PlayerAccountRepository : IPlayerAccountRepository
     public PlayerAccountRepository(ApplicationDbContext db) => _db = db;
 
     public Task<PlayerAccount?> FindByIdAsync(Guid id, CancellationToken ct = default) =>
-        _db.Players.FirstOrDefaultAsync(p => p.Id == id, ct);
+        _db.Users.FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public Task<PlayerAccount?> FindByUsernameAsync(string username, CancellationToken ct = default) =>
-        _db.Players.FirstOrDefaultAsync(p => p.Username == username, ct);
+        _db.Users.FirstOrDefaultAsync(p => p.UserName == username, ct);
 
     public Task<bool> ExistsAsync(string username, CancellationToken ct = default) =>
-        _db.Players.AnyAsync(p => p.Username == username, ct);
+        _db.Users.AnyAsync(p => p.UserName == username, ct);
 
     public async Task<PlayerAccount> CreateAsync(PlayerAccount account, CancellationToken ct = default)
     {
-        _db.Players.Add(account);
+        _db.Users.Add(account);
         await _db.SaveChangesAsync(ct);
         return account;
     }
 
     public async Task UpdateAsync(PlayerAccount account, CancellationToken ct = default)
     {
-        _db.Players.Update(account);
+        _db.Users.Update(account);
         await _db.SaveChangesAsync(ct);
     }
 }

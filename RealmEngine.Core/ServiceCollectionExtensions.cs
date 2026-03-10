@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using MediatR;
 using RealmEngine.Core.Abstractions;
@@ -25,8 +26,9 @@ using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Features.Socketing;
 using RealmEngine.Core.Features.Achievements.Services;
-using RealmEngine.Data.Services;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
+using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core;
@@ -41,9 +43,20 @@ public static class ServiceCollectionExtensions
     /// Call this after registering Data services and MediatR.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="configurePersistence">
+    /// Optional persistence configuration. Defaults to in-memory when null.
+    /// Use <c>p =&gt; p.UseSqlite()</c> for local file persistence or
+    /// <c>p =&gt; p.UseExternal()</c> when the host (e.g. RealmUnbound.Server) registers its own
+    /// repository implementations.
+    /// </param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddRealmEngineCore(this IServiceCollection services)
+    public static IServiceCollection AddRealmEngineCore(this IServiceCollection services,
+        Action<PersistenceOptions>? configurePersistence = null)
     {
+        // Apply persistence options before registering any services.
+        var persistenceOptions = new PersistenceOptions();
+        configurePersistence?.Invoke(persistenceOptions);
+
         // Register category discovery service (singleton for caching)
         services.AddSingleton<CategoryDiscoveryService>();
         
@@ -116,10 +129,23 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPassiveBonusCalculator, PassiveBonusCalculator>();
         
         // Register repositories (interfaces defined in Shared, implementations in Data)
-        services.AddScoped<ISaveGameRepository, SaveGameRepository>();
+        // Mode is controlled by the persistence options passed to AddRealmEngineCore().
+        if (persistenceOptions.IsSqlite)
+        {
+            services.AddDbContext<GameDbContext>(o =>
+                o.UseSqlite(persistenceOptions.ConnectionString));
+            services.AddScoped<ISaveGameRepository, EfCoreSaveGameRepository>();
+            services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
+        }
+        else if (!persistenceOptions.IsExternal)
+        {
+            // Default: in-memory (no file I/O, ideal for tests)
+            services.AddScoped<ISaveGameRepository, InMemorySaveGameRepository>();
+            services.AddScoped<IHallOfFameRepository, InMemoryHallOfFameRepository>();
+        }
+        // External: host is responsible for registering both repo interfaces.
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();
         services.AddScoped<ICharacterClassRepository, CharacterClassRepository>();
-        services.AddScoped<IHallOfFameRepository, HallOfFameRepository>();
         services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
         services.AddSingleton<IBackgroundRepository, BackgroundRepository>();
         
