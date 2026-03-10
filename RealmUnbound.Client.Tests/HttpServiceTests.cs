@@ -351,3 +351,97 @@ public class HttpCharacterServiceTests : TestBase
         error.Should().Be("Network error.");
     }
 }
+
+// ── HttpZoneService tests ─────────────────────────────────────────────────────
+
+public class HttpZoneServiceTests : TestBase
+{
+    private static readonly ZoneDto SampleZone = new(
+        "starting-zone", "The Starting Vale", "A peaceful valley.",
+        "outdoor", 1, 50, true, 0);
+
+    private static HttpZoneService MakeSut(FakeHttpHandler handler, TokenStore? tokens = null)
+    {
+        if (tokens is null)
+        {
+            tokens = new TokenStore();
+            tokens.Set("test-access", "test-refresh", "User", Guid.NewGuid());
+        }
+        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
+        return new HttpZoneService(http, tokens, NullLogger<HttpZoneService>.Instance);
+    }
+
+    // ── GetZonesAsync ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetZonesAsync_Should_Return_List_On_Success()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Json(new List<ZoneDto> { SampleZone }));
+        var result = await sut.GetZonesAsync();
+        result.Should().ContainSingle(z => z.Id == "starting-zone");
+    }
+
+    [Fact]
+    public async Task GetZonesAsync_Should_Return_Empty_On_Error()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Text("Forbidden", HttpStatusCode.Forbidden));
+        var result = await sut.GetZonesAsync();
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetZonesAsync_Should_Return_Empty_On_Network_Exception()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("offline")));
+        var result = await sut.GetZonesAsync();
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetZonesAsync_Should_Send_Bearer_Token()
+    {
+        string? capturedAuth = null;
+        var handler = new FakeHttpHandler(req =>
+        {
+            capturedAuth = req.Headers.Authorization?.Parameter;
+            return new System.Net.Http.HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = System.Net.Http.Json.JsonContent.Create(new List<ZoneDto>())
+            };
+        });
+        var tokens = new TokenStore();
+        tokens.Set("my-token", "refresh", "User", Guid.NewGuid());
+        var sut = MakeSut(handler, tokens);
+
+        await sut.GetZonesAsync();
+
+        capturedAuth.Should().Be("my-token");
+    }
+
+    // ── GetZoneAsync ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetZoneAsync_Should_Return_Zone_On_Success()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Json(SampleZone));
+        var result = await sut.GetZoneAsync("starting-zone");
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("The Starting Vale");
+    }
+
+    [Fact]
+    public async Task GetZoneAsync_Should_Return_Null_When_Not_Found()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+        var result = await sut.GetZoneAsync("missing-zone");
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetZoneAsync_Should_Return_Null_On_Network_Exception()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("offline")));
+        var result = await sut.GetZoneAsync("zone-1");
+        result.Should().BeNull();
+    }
+}

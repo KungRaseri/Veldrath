@@ -116,6 +116,7 @@ public class FakeNavigationService : INavigationService
 public class FakeServerConnectionService : IServerConnectionService
 {
     private ConnectionState _state = ConnectionState.Disconnected;
+    private readonly Dictionary<string, object> _handlers = new();
 
     public ConnectionState State => _state;
     public bool ConnectShouldThrow { get; set; }
@@ -131,7 +132,18 @@ public class FakeServerConnectionService : IServerConnectionService
         return Task.CompletedTask;
     }
 
-    public IDisposable On<T>(string method, Action<T> handler) => DummyDisposable.Instance;
+    public IDisposable On<T>(string method, Action<T> handler)
+    {
+        _handlers[method] = handler;
+        return DummyDisposable.Instance;
+    }
+
+    /// <summary>Invokes a previously registered handler as if the server sent the event.</summary>
+    public void FireEvent<T>(string method, T payload)
+    {
+        if (_handlers.TryGetValue(method, out var h))
+            ((Action<T>)h)(payload);
+    }
 
     public Task<TResult?> SendCommandAsync<TResult>(string method, object command)
         => Task.FromResult(default(TResult));

@@ -44,6 +44,15 @@ public class MainMenuViewModelTests : TestBase
 
         nav.NavigationLog.Should().Contain(typeof(LoginViewModel));
     }
+
+    [Fact]
+    public async Task SettingsCommand_Should_Execute_Without_Throwing()
+    {
+        var vm  = MakeVm();
+        var cmd = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.SettingsCommand;
+        // SettingsCommand is a no-op placeholder; just verify it completes without error
+        await cmd.Execute();
+    }
 }
 
 public class SplashViewModelTests : TestBase
@@ -75,5 +84,33 @@ public class SplashViewModelTests : TestBase
         await Task.Delay(2500);
 
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+    }
+
+    [Fact]
+    public void Progress_Should_RaisePropertyChanged_When_Set()
+    {
+        var nav     = new FakeNavigationService();
+        var vm      = new SplashViewModel(nav);
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        vm.Progress = 42.0;
+
+        vm.Progress.Should().Be(42.0);
+        changes.Should().Contain(nameof(SplashViewModel.Progress));
+    }
+
+    [Fact]
+    public void StatusText_Should_RaisePropertyChanged_When_Set()
+    {
+        var nav     = new FakeNavigationService();
+        var vm      = new SplashViewModel(nav);
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        vm.StatusText = "Loading...";
+
+        vm.StatusText.Should().Be("Loading...");
+        changes.Should().Contain(nameof(SplashViewModel.StatusText));
     }
 }

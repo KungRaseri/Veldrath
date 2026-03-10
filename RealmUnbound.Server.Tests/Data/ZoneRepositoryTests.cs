@@ -1,0 +1,277 @@
+using Microsoft.EntityFrameworkCore;
+using RealmUnbound.Server.Data;
+using RealmUnbound.Server.Data.Entities;
+using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Tests.Infrastructure;
+
+namespace RealmUnbound.Server.Tests.Data;
+
+public class ZoneRepositoryTests : IDisposable
+{
+    private readonly TestDbContextFactory _factory = new();
+
+    public void Dispose() => _factory.Dispose();
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static Zone MakeZone(string id, string name, bool isStarter = false) =>
+        new()
+        {
+            Id        = id,
+            Name      = name,
+            IsStarter = isStarter,
+            Type      = ZoneType.Tutorial,
+        };
+
+    private static async Task<Guid> SeedAccountAsync(ApplicationDbContext db)
+    {
+        var name    = $"Acct_{Guid.NewGuid():N}";
+        var account = new PlayerAccount { UserName = name, NormalizedUserName = name.ToUpperInvariant() };
+        db.Users.Add(account);
+        await db.SaveChangesAsync();
+        return account.Id;
+    }
+
+    private static async Task<Character> SeedCharacterAsync(ApplicationDbContext db, Guid accountId, int slotIndex = 1)
+    {
+        var character = new Character
+        {
+            AccountId = accountId,
+            Name      = $"Char_{Guid.NewGuid():N}",
+            ClassName = "@classes/warriors:fighter",
+            SlotIndex = slotIndex,
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+        return character;
+    }
+
+    // ── ZoneRepository ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_Should_Return_All_Zones()
+    {
+        await using var db = _factory.CreateContext();
+        // DB is pre-seeded with 5 zones via HasData(); verify all are returned
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetAllAsync();
+
+        result.Should().HaveCount(5);
+        result.Should().Contain(z => z.Id == "starting-zone");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_Should_Return_Starter_Zones_First()
+    {
+        await using var db = _factory.CreateContext();
+        // Seeded data has "starting-zone" as the only starter zone
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetAllAsync();
+
+        result.Should().NotBeEmpty();
+        result[0].IsStarter.Should().BeTrue();
+        result.Skip(1).Should().OnlyContain(z => !z.IsStarter);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_Should_Return_Empty_When_No_Zones()
+    {
+        await using var db = _factory.CreateContext();
+        // Remove all seeded zones before testing the empty-list path
+        db.Zones.RemoveRange(db.Zones);
+        await db.SaveChangesAsync();
+
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetAllAsync();
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_Should_Return_Zone_When_Found()
+    {
+        await using var db = _factory.CreateContext();
+        // "starting-zone" is pre-seeded via HasData()
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetByIdAsync("starting-zone");
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Ashenveil Crossroads");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_Should_Return_Null_When_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetByIdAsync("nonexistent");
+        result.Should().BeNull();
+    }
+
+    // ── ZoneSessionRepository ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddAsync_Should_Persist_Session()
+    {
+        await using var db = _factory.CreateContext();
+        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var session = new ZoneSession
+        {
+            CharacterId    = character.Id,
+            CharacterName  = character.Name,
+            ConnectionId   = "conn-1",
+            ZoneId         = "zone-1",
+        };
+
+        var repo = new ZoneSessionRepository(db);
+        await repo.AddAsync(session);
+
+        var all = await db.ZoneSessions.ToListAsync();
+        all.Should().ContainSingle(s => s.ConnectionId == "conn-1");
+    }
+
+    [Fact]
+    public async Task GetByZoneIdAsync_Should_Return_Sessions_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        // Reuse pre-seeded zones (starting-zone and town-millhaven)
+        var accountId = await SeedAccountAsync(db);
+        var char1     = await SeedCharacterAsync(db, accountId, slotIndex: 1);
+        var char2     = await SeedCharacterAsync(db, accountId, slotIndex: 2);
+
+        db.ZoneSessions.AddRange(
+            new ZoneSession { CharacterId = char1.Id, CharacterName = char1.Name, ConnectionId = "c1", ZoneId = "starting-zone" },
+            new ZoneSession { CharacterId = char2.Id, CharacterName = char2.Name, ConnectionId = "c2", ZoneId = "town-millhaven" });
+        await db.SaveChangesAsync();
+
+        var repo   = new ZoneSessionRepository(db);
+        var result = await repo.GetByZoneIdAsync("starting-zone");
+
+        result.Should().ContainSingle(s => s.ConnectionId == "c1");
+    }
+
+    [Fact]
+    public async Task GetByConnectionIdAsync_Should_Return_Session_When_Found()
+    {
+        await using var db = _factory.CreateContext();
+        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        db.ZoneSessions.Add(new ZoneSession
+        {
+            CharacterId   = character.Id,
+            CharacterName = character.Name,
+            ConnectionId  = "conn-abc",
+            ZoneId        = "zone-1",
+        });
+        await db.SaveChangesAsync();
+
+        var repo   = new ZoneSessionRepository(db);
+        var result = await repo.GetByConnectionIdAsync("conn-abc");
+
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetByConnectionIdAsync_Should_Return_Null_When_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var repo   = new ZoneSessionRepository(db);
+        var result = await repo.GetByConnectionIdAsync("nonexistent");
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByCharacterIdAsync_Should_Return_Session_When_Found()
+    {
+        await using var db = _factory.CreateContext();
+        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        db.ZoneSessions.Add(new ZoneSession
+        {
+            CharacterId   = character.Id,
+            CharacterName = character.Name,
+            ConnectionId  = "conn-xyz",
+            ZoneId        = "zone-1",
+        });
+        await db.SaveChangesAsync();
+
+        var repo   = new ZoneSessionRepository(db);
+        var result = await repo.GetByCharacterIdAsync(character.Id);
+
+        result.Should().NotBeNull();
+        result!.ConnectionId.Should().Be("conn-xyz");
+    }
+
+    [Fact]
+    public async Task GetByCharacterIdAsync_Should_Return_Null_When_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var repo   = new ZoneSessionRepository(db);
+        var result = await repo.GetByCharacterIdAsync(Guid.NewGuid());
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RemoveAsync_Should_Delete_Session()
+    {
+        await using var db = _factory.CreateContext();
+        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var session = new ZoneSession
+        {
+            CharacterId   = character.Id,
+            CharacterName = character.Name,
+            ConnectionId  = "conn-del",
+            ZoneId        = "zone-1",
+        };
+        db.ZoneSessions.Add(session);
+        await db.SaveChangesAsync();
+
+        var repo = new ZoneSessionRepository(db);
+        await repo.RemoveAsync(session);
+
+        var remaining = await db.ZoneSessions.ToListAsync();
+        remaining.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RemoveByConnectionIdAsync_Should_Delete_Session()
+    {
+        await using var db = _factory.CreateContext();
+        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        db.ZoneSessions.Add(new ZoneSession
+        {
+            CharacterId   = character.Id,
+            CharacterName = character.Name,
+            ConnectionId  = "conn-rem",
+            ZoneId        = "zone-1",
+        });
+        await db.SaveChangesAsync();
+
+        var repo = new ZoneSessionRepository(db);
+        await repo.RemoveByConnectionIdAsync("conn-rem");
+
+        var remaining = await db.ZoneSessions.ToListAsync();
+        remaining.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RemoveByConnectionIdAsync_Should_Be_Noop_When_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var repo = new ZoneSessionRepository(db);
+        var act  = () => repo.RemoveByConnectionIdAsync("nonexistent");
+        await act.Should().NotThrowAsync();
+    }
+}
