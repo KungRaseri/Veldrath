@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.LoginView"
+             x:DataType="vm:LoginViewModel">
+
+    <Grid RowDefinitions="*,Auto,*">
+
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    Width="320"
+                    Spacing="12">
+
+            <TextBlock Text="Sign In"
+                       FontSize="36"
+                       FontWeight="Bold"
+                       Foreground="#c8a96e"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,24" />
+
+            <!-- Username -->
+            <TextBlock Text="Username" Foreground="#8a8a9a" />
+            <TextBox Text="{Binding Username}"
+                     Watermark="Enter username"
+                     Height="40" />
+
+            <!-- Password -->
+            <TextBlock Text="Password" Foreground="#8a8a9a" Margin="0,8,0,0" />
+            <TextBox Text="{Binding Password}"
+                     Watermark="Enter password"
+                     PasswordChar="•"
+                     Height="40" />
+
+            <!-- Error message -->
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="#c05050"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <!-- Buttons -->
+            <Button Content="Login"
+                    Command="{Binding LoginCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="16"
+                    Margin="0,16,0,0" />
+
+            <Button Content="Create Account"
+                    Command="{Binding RegisterCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="14"
+                    Foreground="#8a8a9a" />
+
+            <!-- Busy indicator -->
+            <ProgressBar IsIndeterminate="True"
+                         IsVisible="{Binding IsBusy}"
+                         Height="4" />
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

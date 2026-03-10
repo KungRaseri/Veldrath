@@ -14,10 +14,10 @@ public class MainWindowViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _currentPage, value);
     }
 
-    public MainWindowViewModel(INavigationService navigation)
+    public MainWindowViewModel(INavigationService navigation, MainMenuViewModel mainMenu)
     {
         _navigation = navigation;
-        _currentPage = new MainMenuViewModel();
+        _currentPage = mainMenu;
 
         _navigation.CurrentPageChanged += page => CurrentPage = page;
     }

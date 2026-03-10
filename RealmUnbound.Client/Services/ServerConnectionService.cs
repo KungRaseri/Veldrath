@@ -17,6 +17,7 @@ public interface IServerConnectionService
 public class ServerConnectionService : IServerConnectionService, IAsyncDisposable
 {
     private readonly ILogger<ServerConnectionService> _logger;
+    private readonly TokenStore _tokens;
     private HubConnection? _connection;
     private ConnectionState _state = ConnectionState.Disconnected;
 
@@ -32,9 +33,10 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     public event Action<ConnectionState>? StateChanged;
 
-    public ServerConnectionService(ILogger<ServerConnectionService> logger)
+    public ServerConnectionService(ILogger<ServerConnectionService> logger, TokenStore tokens)
     {
         _logger = logger;
+        _tokens = tokens;
     }
 
     public async Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
@@ -45,7 +47,10 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         _logger.LogInformation("Connecting to server: {Url}", serverUrl);
 
         _connection = new HubConnectionBuilder()
-            .WithUrl($"{serverUrl}/hubs/game")
+            .WithUrl($"{serverUrl}/hubs/game", options =>
+            {
+                options.AccessTokenProvider = () => Task.FromResult(_tokens.AccessToken);
+            })
             .WithAutomaticReconnect()
             .Build();
 
