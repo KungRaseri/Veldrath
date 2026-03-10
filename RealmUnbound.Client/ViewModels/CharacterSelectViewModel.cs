@@ -123,8 +123,8 @@ public class CharacterSelectViewModel : ViewModelBase
     }
 
     // ── Payload shapes (matching server hub broadcasts) ────────────────────────
-    private record ZoneEnteredPayload(string ZoneId, IEnumerable<string> Occupants);
-    private record PlayerEventPayload(string CharacterName);
+    internal record ZoneEnteredPayload(string ZoneId, IEnumerable<string> Occupants);
+    internal record PlayerEventPayload(string CharacterName);
 
     private async Task DoCreateAsync()
     {

@@ -219,4 +219,26 @@ public class GameViewModelTests : TestBase
 
         conn.State.Should().Be(ConnectionState.Disconnected);
     }
+
+    // ── StatusMessage property ────────────────────────────────────────────────
+
+    [Fact]
+    public void StatusMessage_Should_DefaultToEmpty()
+    {
+        var vm = MakeVm();
+        vm.StatusMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void StatusMessage_Should_RaisePropertyChanged_When_Set()
+    {
+        var vm      = MakeVm();
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        vm.StatusMessage = "Reconnecting...";
+
+        vm.StatusMessage.Should().Be("Reconnecting...");
+        changes.Should().Contain(nameof(GameViewModel.StatusMessage));
+    }
 }

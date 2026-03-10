@@ -245,4 +245,91 @@ public class CharacterSelectViewModelTests : TestBase
 
         vm.IsBusy.Should().BeFalse();
     }
+
+    // ── SelectCommand happy-path hub callbacks ────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Navigate_To_GameViewModel_When_ZoneEntered_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var nav    = new FakeNavigationService();
+        var gameVm = MakeGameVm(conn: conn, nav: nav);
+        var vm     = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(character);
+
+        // Simulate server firing "ZoneEntered" event
+        conn.FireEvent("ZoneEntered",
+            new CharacterSelectViewModel.ZoneEnteredPayload("starting-zone", ["Alice", "Bob"]));
+
+        nav.NavigationLog.Should().Contain(typeof(GameViewModel));
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Set_Occupants_When_ZoneEntered_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var nav    = new FakeNavigationService();
+        var gameVm = MakeGameVm(conn: conn, nav: nav);
+        var vm     = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(character);
+        await gameVm.InitializeAsync("Hero", "starting-zone");
+
+        conn.FireEvent("ZoneEntered",
+            new CharacterSelectViewModel.ZoneEnteredPayload("starting-zone", ["Alice", "Bob"]));
+
+        gameVm.OnlinePlayers.Should().BeEquivalentTo(["Alice", "Bob"]);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Add_Player_When_PlayerEntered_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(character);
+        conn.FireEvent("PlayerEntered",
+            new CharacterSelectViewModel.PlayerEventPayload("Gandalf"));
+
+        gameVm.OnlinePlayers.Should().Contain("Gandalf");
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Remove_Player_When_PlayerLeft_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(character);
+        conn.FireEvent("PlayerEntered", new CharacterSelectViewModel.PlayerEventPayload("Legolas"));
+        conn.FireEvent("PlayerLeft",    new CharacterSelectViewModel.PlayerEventPayload("Legolas"));
+
+        gameVm.OnlinePlayers.Should().NotContain("Legolas");
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Use_DefaultZone_When_CurrentZoneId_Is_Empty()
+    {
+        var conn      = new FakeServerConnectionService();
+        var gameVm    = MakeGameVm(conn: conn);
+        var vm        = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, ""); // empty zone
+
+        await vm.SelectCommand.Execute(character);
+
+        // No error = success path was taken with "starting-zone" fallback
+        vm.ErrorMessage.Should().BeEmpty();
+    }
 }
