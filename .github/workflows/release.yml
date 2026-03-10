@@ -213,6 +213,8 @@ jobs:
               echo "### Packages"
               echo "- \`RealmUnbound-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)"
               echo "- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
+              echo "- \`RealmUnbound-Client-macOS-x64-$VERSION.zip\` — macOS desktop app (osx-x64, Intel, self-contained)"
+              echo "- \`RealmUnbound-Client-macOS-arm64-$VERSION.zip\` — macOS desktop app (osx-arm64, Apple Silicon, self-contained)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"

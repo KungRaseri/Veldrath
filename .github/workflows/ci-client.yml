@@ -120,6 +120,32 @@ jobs:
         Write-Output "Created RealmUnbound-Client-Linux-$version.zip"
       shell: pwsh
 
+    - name: Publish (macOS x64)
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        dotnet publish RealmUnbound.Client/RealmUnbound.Client.csproj `
+          --configuration ${{ env.CONFIGURATION }} `
+          --runtime osx-x64 --self-contained true `
+          --output ./publish/RealmUnbound-Client-macOS-x64 `
+          /p:Version=$version /p:AssemblyVersion=$version /p:FileVersion=$version.0
+        Compress-Archive -Path "./publish/RealmUnbound-Client-macOS-x64/*" `
+          -DestinationPath "RealmUnbound-Client-macOS-x64-$version.zip" -Force
+        Write-Output "Created RealmUnbound-Client-macOS-x64-$version.zip"
+      shell: pwsh
+
+    - name: Publish (macOS ARM64)
+      run: |
+        $version = "${{ steps.version.outputs.version-no-hash }}"
+        dotnet publish RealmUnbound.Client/RealmUnbound.Client.csproj `
+          --configuration ${{ env.CONFIGURATION }} `
+          --runtime osx-arm64 --self-contained true `
+          --output ./publish/RealmUnbound-Client-macOS-arm64 `
+          /p:Version=$version /p:AssemblyVersion=$version /p:FileVersion=$version.0
+        Compress-Archive -Path "./publish/RealmUnbound-Client-macOS-arm64/*" `
+          -DestinationPath "RealmUnbound-Client-macOS-arm64-$version.zip" -Force
+        Write-Output "Created RealmUnbound-Client-macOS-arm64-$version.zip"
+      shell: pwsh
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
