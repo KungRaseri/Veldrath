@@ -15,6 +15,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private bool _isBusy;
     private bool _isCreating;
     private string _errorMessage = string.Empty;
+    private string _errorDetails = string.Empty;
     private string _newCharacterName = string.Empty;
 
     public ObservableCollection<CharacterDto> Characters { get; } = [];
@@ -39,6 +40,13 @@ public class CharacterSelectViewModel : ViewModelBase
     {
         get => _errorMessage;
         set => this.RaiseAndSetIfChanged(ref _errorMessage, value);
+    }
+
+    /// <summary>Optional technical detail surfaced when the server returns extra context.</summary>
+    public string ErrorDetails
+    {
+        get => _errorDetails;
+        set => this.RaiseAndSetIfChanged(ref _errorDetails, value);
     }
 
     public string NewCharacterName
@@ -76,8 +84,8 @@ public class CharacterSelectViewModel : ViewModelBase
             (name, busy) => !string.IsNullOrWhiteSpace(name) && !busy);
 
         SelectCommand       = ReactiveCommand.CreateFromTask<CharacterDto>(DoSelectAsync);
-        ShowCreateCommand   = ReactiveCommand.Create(() => { IsCreating = true; ErrorMessage = string.Empty; });
-        CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; ErrorMessage = string.Empty; });
+        ShowCreateCommand   = ReactiveCommand.Create(() => { IsCreating = true; ErrorMessage = string.Empty; ErrorDetails = string.Empty; });
+        CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; ErrorMessage = string.Empty; ErrorDetails = string.Empty; });
         CreateCommand       = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
         DeleteCommand       = ReactiveCommand.CreateFromTask<CharacterDto>(DoDeleteAsync);
         LogoutCommand       = ReactiveCommand.CreateFromTask(async () =>
@@ -94,6 +102,7 @@ public class CharacterSelectViewModel : ViewModelBase
     {
         IsBusy = true;
         ErrorMessage = string.Empty;
+        ErrorDetails = string.Empty;
         try
         {
             var list = await _characters.GetCharactersAsync();
@@ -108,6 +117,7 @@ public class CharacterSelectViewModel : ViewModelBase
     {
         IsBusy = true;
         ErrorMessage = string.Empty;
+        ErrorDetails = string.Empty;
         try
         {
             var zoneId = character.CurrentZoneId.Length > 0 ? character.CurrentZoneId : "starting-zone";
@@ -144,6 +154,7 @@ public class CharacterSelectViewModel : ViewModelBase
     {
         IsBusy = true;
         ErrorMessage = string.Empty;
+        ErrorDetails = string.Empty;
         try
         {
             var (character, error) = await _characters.CreateCharacterAsync(NewCharacterName, "Fighter");
@@ -155,7 +166,8 @@ public class CharacterSelectViewModel : ViewModelBase
             }
             else
             {
-                ErrorMessage = error ?? "Failed to create character.";
+                ErrorMessage = error?.Message ?? "Failed to create character.";
+                ErrorDetails = error?.Details ?? string.Empty;
             }
         }
         finally { IsBusy = false; }
@@ -167,6 +179,9 @@ public class CharacterSelectViewModel : ViewModelBase
         if (error is null)
             Characters.Remove(character);
         else
-            ErrorMessage = error;
+        {
+            ErrorMessage = error.Message;
+            ErrorDetails = error.Details ?? string.Empty;
+        }
     }
 }

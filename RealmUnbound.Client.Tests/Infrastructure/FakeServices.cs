@@ -11,10 +11,10 @@ namespace RealmUnbound.Client.Tests.Infrastructure;
 /// </summary>
 public class FakeAuthService : IAuthService
 {
-    public (AuthResponse? Response, string? Error) RegisterResult { get; set; } =
+    public (AuthResponse? Response, AppError? Error) RegisterResult { get; set; } =
         (new AuthResponse("access", "refresh", DateTimeOffset.UtcNow.AddMinutes(15), Guid.NewGuid(), "TestUser"), null);
 
-    public (AuthResponse? Response, string? Error) LoginResult { get; set; } =
+    public (AuthResponse? Response, AppError? Error) LoginResult { get; set; } =
         (new AuthResponse("access", "refresh", DateTimeOffset.UtcNow.AddMinutes(15), Guid.NewGuid(), "TestUser"), null);
 
     public bool RefreshResult { get; set; } = true;
@@ -24,13 +24,13 @@ public class FakeAuthService : IAuthService
     public int RefreshCallCount  { get; private set; }
     public int LogoutCallCount   { get; private set; }
 
-    public Task<(AuthResponse? Response, string? Error)> RegisterAsync(string email, string username, string password)
+    public Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password)
     {
         RegisterCallCount++;
         return Task.FromResult(RegisterResult);
     }
 
-    public Task<(AuthResponse? Response, string? Error)> LoginAsync(string email, string password)
+    public Task<(AuthResponse? Response, AppError? Error)> LoginAsync(string email, string password)
     {
         LoginCallCount++;
         return Task.FromResult(LoginResult);
@@ -55,10 +55,10 @@ public class FakeCharacterService : ICharacterService
 {
     public List<CharacterDto> Characters { get; set; } = [];
 
-    public (CharacterDto? Character, string? Error) CreateResult { get; set; } =
+    public (CharacterDto? Character, AppError? Error) CreateResult { get; set; } =
         (new CharacterDto(Guid.NewGuid(), 1, "TestChar", "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone"), null);
 
-    public string? DeleteError { get; set; } = null;
+    public AppError? DeleteError { get; set; } = null;
 
     public int GetCallCount    { get; private set; }
     public int CreateCallCount { get; private set; }
@@ -70,18 +70,18 @@ public class FakeCharacterService : ICharacterService
         return Task.FromResult(new List<CharacterDto>(Characters));
     }
 
-    public Task<(CharacterDto? Character, string? Error)> CreateCharacterAsync(string name, string className)
+    public Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(string name, string className)
     {
         CreateCallCount++;
         if (CreateResult.Character is not null)
         {
             var c = CreateResult.Character with { Name = name };
-            return Task.FromResult<(CharacterDto?, string?)>((c, null));
+            return Task.FromResult<(CharacterDto?, AppError?)>((c, null));
         }
-        return Task.FromResult<(CharacterDto?, string?)>((null, CreateResult.Error));
+        return Task.FromResult<(CharacterDto?, AppError?)>((null, CreateResult.Error));
     }
 
-    public Task<string?> DeleteCharacterAsync(Guid id)
+    public Task<AppError?> DeleteCharacterAsync(Guid id)
     {
         DeleteCallCount++;
         return Task.FromResult(DeleteError);

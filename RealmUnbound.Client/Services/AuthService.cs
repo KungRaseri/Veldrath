@@ -19,8 +19,8 @@ public record AuthResponse(
 // ── Interface ──────────────────────────────────────────────────────────────────
 public interface IAuthService
 {
-    Task<(AuthResponse? Response, string? Error)> RegisterAsync(string email, string username, string password);
-    Task<(AuthResponse? Response, string? Error)> LoginAsync(string email, string password);
+    Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password);
+    Task<(AuthResponse? Response, AppError? Error)> LoginAsync(string email, string password);
     Task<bool> RefreshAsync();
     Task LogoutAsync();
 }
@@ -31,21 +31,42 @@ public class HttpAuthService(
     TokenStore tokens,
     ILogger<HttpAuthService> logger) : IAuthService
 {
-    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+    private static async Task<AppError> ReadErrorAsync(HttpResponseMessage response, string context = "")
     {
+        string? serverMessage = null;
         try
         {
             var body = await response.Content.ReadFromJsonAsync<JsonElement>();
             if (body.TryGetProperty("error", out var e))
-                return e.GetString() ?? $"Request failed ({(int)response.StatusCode})";
+                serverMessage = e.GetString();
         }
         catch { }
-        var raw = await response.Content.ReadAsStringAsync();
-        return string.IsNullOrWhiteSpace(raw)
-            ? $"Request failed ({(int)response.StatusCode})"
-            : raw;
+
+        if (serverMessage is null)
+        {
+            try { serverMessage = await response.Content.ReadAsStringAsync(); }
+            catch { }
+            if (string.IsNullOrWhiteSpace(serverMessage))
+                serverMessage = null;
+        }
+
+        var statusCode = (int)response.StatusCode;
+        var friendly = (context, statusCode) switch
+        {
+            ("login",    401) or ("login",    403) => "Incorrect email or password. Please try again.",
+            ("login",    429)                       => "Too many login attempts. Please wait a moment and try again.",
+            ("register", 409)                       => "An account with that email or username already exists.",
+            ("register", 400) when serverMessage is not null => serverMessage,
+            ("register", 429)                       => "Too many attempts. Please wait a moment and try again.",
+            (_,          500) or (_, 503)           => "The server encountered an error. Please try again later.",
+            _                                       => serverMessage ?? "An error occurred. Please try again."
+        };
+
+        // Only surface technical details when they add information beyond the friendly message
+        var details = serverMessage != null && serverMessage != friendly ? serverMessage : null;
+        return new AppError(friendly, details);
     }
-    public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(string email, string username, string password)
+    public async Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password)
     {
         try
         {
@@ -57,17 +78,16 @@ public class HttpAuthService(
                 return (auth, null);
             }
 
-            var error = await ReadErrorAsync(response);
-            return (null, error);
+            return (null, await ReadErrorAsync(response, "register"));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Register request failed");
-            return (null, "Network error. Please check your connection.");
+            return (null, new AppError("Network error. Please check your connection."));
         }
     }
 
-    public async Task<(AuthResponse? Response, string? Error)> LoginAsync(string email, string password)
+    public async Task<(AuthResponse? Response, AppError? Error)> LoginAsync(string email, string password)
     {
         try
         {
@@ -79,13 +99,12 @@ public class HttpAuthService(
                 return (auth, null);
             }
 
-            var error = await ReadErrorAsync(response);
-            return (null, error);
+            return (null, await ReadErrorAsync(response, "login"));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Login request failed");
-            return (null, "Network error. Please check your connection.");
+            return (null, new AppError("Network error. Please check your connection."));
         }
     }
 

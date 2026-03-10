@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -86,7 +87,7 @@ public class LoginViewModelTests : TestBase
     {
         var auth = new FakeAuthService
         {
-            LoginResult = (null, "Invalid credentials")
+            LoginResult = (null, new AppError("Invalid credentials"))
         };
         var vm = MakeVm(auth: auth);
         vm.Email    = "wrong@test.com";
@@ -113,7 +114,7 @@ public class LoginViewModelTests : TestBase
     [Fact]
     public async Task LoginCommand_Should_Clear_ErrorMessage_Before_Attempt()
     {
-        var auth = new FakeAuthService { LoginResult = (null, "First error") };
+        var auth = new FakeAuthService { LoginResult = (null, new AppError("First error")) };
         var vm   = MakeVm(auth: auth);
         vm.Email        = "user@test.com";
         vm.Password     = "Password1!";
