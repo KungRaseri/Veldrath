@@ -81,7 +81,7 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmEngine.slnx",
+				"${workspaceFolder}/Realm.Full.slnx",
 				"--filter",
 				"Category!=UI",
 				"--verbosity",
@@ -96,7 +96,8 @@
 				"echo": true,
 				"reveal": "always",
 				"focus": false,
-				"panel": "shared"
+				"panel": "shared",
+				"clear": true
 			}
 		},
 		{
@@ -237,10 +238,11 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmEngine.slnx",
+				"${workspaceFolder}/Realm.Full.slnx",
 				"--filter",
 				"Category!=UI",
-				"--collect:XPlat Code Coverage",
+				"--collect",
+				"XPlat Code Coverage",
 				"--settings",
 				"coverage.runsettings"
 			],
@@ -249,7 +251,8 @@
 				"echo": true,
 				"reveal": "always",
 				"focus": false,
-				"panel": "shared"
+				"panel": "shared",
+				"clear": true
 			}
 		},
 		{
@@ -476,6 +479,46 @@
 			"args": [
 				"test",
 				"${workspaceFolder}/RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj",
+				"--verbosity",
+				"normal"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "test-realmunbound-client",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj",
+				"--verbosity",
+				"normal"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "test-realmunbound-all",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/RealmUnbound.slnx",
 				"--verbosity",
 				"normal"
 			],
