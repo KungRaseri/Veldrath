@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 

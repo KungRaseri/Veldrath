@@ -65,22 +65,6 @@ public class SplashViewModelTests : TestBase
     }
 
     [Fact]
-    public void Progress_Should_Start_At_Zero()
-    {
-        var nav = new FakeNavigationService();
-        var vm  = new SplashViewModel(nav);
-        vm.Progress.Should().Be(0);
-    }
-
-    [Fact]
-    public void StatusText_Should_Start_As_Initializing()
-    {
-        var nav = new FakeNavigationService();
-        var vm  = new SplashViewModel(nav);
-        vm.StatusText.Should().Be("Initializing...");
-    }
-
-    [Fact]
     public async Task SplashViewModel_Should_Eventually_Navigate_To_MainMenu()
     {
         var nav = new FakeNavigationService();

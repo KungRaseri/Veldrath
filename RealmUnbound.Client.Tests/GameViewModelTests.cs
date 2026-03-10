@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -32,7 +33,7 @@ public class GameViewModelTests : TestBase
     public void CharacterName_Should_Use_Token_Username_When_Present()
     {
         var tokens = new TokenStore();
-        tokens.Set("access", "refresh", DateTimeOffset.UtcNow.AddHours(1), Guid.NewGuid(), "Hero");
+        tokens.Set("access", "refresh", "Hero", Guid.NewGuid());
 
         var vm = MakeVm(tokens: tokens);
 
