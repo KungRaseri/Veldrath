@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             x:Class="RealmForge.Views.HomeView">
+
+    <Design.DataContext>
+        <vm:HomeViewModel />
+    </Design.DataContext>
+
+    <ScrollViewer>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MaxWidth="800" Spacing="24" Margin="40">
+
+            <TextBlock Text="🛠️ RealmForge"
+                       FontSize="48" FontWeight="Bold"
+                       Foreground="#e0e0e0"
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="JSON Data Editor for RealmEngine"
+                       FontSize="20" Foreground="#888"
+                       HorizontalAlignment="Center" />
+
+            <!-- Feature cards -->
+            <ItemsControl>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel HorizontalAlignment="Center" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <!-- Edit JSON Files -->
+                <Border Background="#2d2d2d" CornerRadius="8" Padding="24"
+                        Width="220" Margin="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="📝  Edit JSON Files" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#e0e0e0" />
+                        <TextBlock Text="Browse and edit game data files with syntax highlighting."
+                                   Foreground="#aaa" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Validate Data -->
+                <Border Background="#2d2d2d" CornerRadius="8" Padding="24"
+                        Width="220" Margin="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="✅  Validate Data" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#e0e0e0" />
+                        <TextBlock Text="Real-time validation against JSON v4.0+ schemas."
+                                   Foreground="#aaa" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Browse Catalog -->
+                <Border Background="#2d2d2d" CornerRadius="8" Padding="24"
+                        Width="220" Margin="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="🔍  Browse Catalog" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#e0e0e0" />
+                        <TextBlock Text="Navigate items, enemies, spells, and more."
+                                   Foreground="#aaa" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Reference Picker -->
+                <Border Background="#2d2d2d" CornerRadius="8" Padding="24"
+                        Width="220" Margin="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="🔗  Reference Picker" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#e0e0e0" />
+                        <TextBlock Text="Browse and insert @domain/path:item references."
+                                   Foreground="#aaa" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </ItemsControl>
+
+            <TextBlock Text="Select  📝 JSON Editor  from the top bar to get started."
+                       FontSize="14" Foreground="#666"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

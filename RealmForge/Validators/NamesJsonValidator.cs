@@ -44,28 +44,24 @@ public class NamesJsonValidator : AbstractValidator<JObject>
         RuleFor(x => x["patterns"])
             .NotNull()
             .WithMessage("'patterns' array is required");
-        
-        RuleForEach(x => x["patterns"] as JArray)
-            .ChildRules(pattern =>
-            {
-                pattern.RuleFor(p => p["rarityWeight"])
-                    .NotNull()
-                    .WithMessage("Each pattern must have 'rarityWeight' (not 'weight')")
-                    .Must(w => w?.Type == JTokenType.Integer || w?.Type == JTokenType.Float)
-                    .WithMessage("'rarityWeight' must be a number");
-                
-                // Ensure no 'weight' property
-                pattern.RuleFor(p => p["weight"])
-                    .Null()
-                    .WithMessage("Use 'rarityWeight' instead of 'weight'");
-                
-                // No example fields allowed
-                pattern.RuleFor(p => p["example"])
-                    .Null()
-                    .WithMessage("'example' fields are not allowed in JSON v4.0+");
-            })
-            .When(x => x["patterns"] != null && x["patterns"].Type == JTokenType.Array);
-        
+
+        RuleFor(x => x)
+            .Must(obj => (obj["patterns"] as JArray)?.All(p =>
+                p["rarityWeight"] != null &&
+                (p["rarityWeight"]!.Type == JTokenType.Integer || p["rarityWeight"]!.Type == JTokenType.Float)) != false)
+            .WithMessage("Each pattern must have a numeric 'rarityWeight' property (not 'weight')")
+            .When(x => x["patterns"]?.Type == JTokenType.Array);
+
+        RuleFor(x => x)
+            .Must(obj => (obj["patterns"] as JArray)?.All(p => p["weight"] == null) != false)
+            .WithMessage("Use 'rarityWeight' instead of 'weight' in patterns")
+            .When(x => x["patterns"]?.Type == JTokenType.Array);
+
+        RuleFor(x => x)
+            .Must(obj => (obj["patterns"] as JArray)?.All(p => p["example"] == null) != false)
+            .WithMessage("'example' fields are not allowed in patterns (JSON v4.0+)")
+            .When(x => x["patterns"]?.Type == JTokenType.Array);
+
         // Components validation
         RuleFor(x => x["components"])
             .NotNull()

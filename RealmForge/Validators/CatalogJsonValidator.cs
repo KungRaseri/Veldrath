@@ -38,27 +38,24 @@ public class CatalogJsonValidator : AbstractValidator<JObject>
         RuleFor(x => x["items"])
             .NotNull()
             .WithMessage("'items' array is required in catalog files");
-        
-        RuleForEach(x => x["items"] as JArray)
-            .ChildRules(item =>
-            {
-                item.RuleFor(i => i["name"])
-                    .NotNull()
-                    .WithMessage("Each item must have a 'name' property");
-                
-                item.RuleFor(i => i["rarityWeight"])
-                    .NotNull()
-                    .WithMessage("Each item must have a 'rarityWeight' property (not 'weight')")
-                    .Must(w => w?.Type == JTokenType.Integer || w?.Type == JTokenType.Float)
-                    .WithMessage("'rarityWeight' must be a number");
-                
-                // Ensure no 'weight' property (should be rarityWeight)
-                item.RuleFor(i => i["weight"])
-                    .Null()
-                    .WithMessage("Use 'rarityWeight' instead of 'weight' (JSON v4.0 standard)");
-            })
-            .When(x => x["items"] != null && x["items"].Type == JTokenType.Array);
-        
+
+        RuleFor(x => x)
+            .Must(obj => (obj["items"] as JArray)?.All(i => i["name"] != null) != false)
+            .WithMessage("Each item in 'items' must have a 'name' property")
+            .When(x => x["items"]?.Type == JTokenType.Array);
+
+        RuleFor(x => x)
+            .Must(obj => (obj["items"] as JArray)?.All(i =>
+                i["rarityWeight"] != null &&
+                (i["rarityWeight"]!.Type == JTokenType.Integer || i["rarityWeight"]!.Type == JTokenType.Float)) != false)
+            .WithMessage("Each item must have a numeric 'rarityWeight' property (not 'weight')")
+            .When(x => x["items"]?.Type == JTokenType.Array);
+
+        RuleFor(x => x)
+            .Must(obj => (obj["items"] as JArray)?.All(i => i["weight"] == null) != false)
+            .WithMessage("Use 'rarityWeight' instead of 'weight' in items (JSON v4.0 standard)")
+            .When(x => x["items"]?.Type == JTokenType.Array);
+
         // Warn about 'example' fields (not allowed in v4.0)
         RuleFor(x => x)
             .Must(obj => !ContainsExampleFields(obj))

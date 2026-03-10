@@ -43,6 +43,15 @@ public class ModelValidationService
                 _logger.LogDebug("Auto-detected model type: {Type}", modelType);
             }
             
+            // Normalize: if modelType is a filename, extract the validator key from it
+            if (!_validators.ContainsKey(modelType))
+            {
+                var baseName = Path.GetFileNameWithoutExtension(modelType);
+                modelType = _validators.Keys
+                    .FirstOrDefault(k => baseName.Contains(k, StringComparison.OrdinalIgnoreCase))
+                    ?? modelType;
+            }
+            
             // Get appropriate validator
             if (!_validators.TryGetValue(modelType, out var validator))
             {
