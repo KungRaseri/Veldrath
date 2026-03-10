@@ -3,12 +3,12 @@
 # Usage: .\scripts\generate-coverage-report.ps1
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$reportDir = "TestResults\CoverageReport\$timestamp"
+$reportDir = "coverage-results\report\$timestamp"
 
 Write-Host "Generating coverage report in: $reportDir" -ForegroundColor Cyan
 
 # Find the most recent coverage file
-$coverageFile = Get-ChildItem -Path "TestResults" -Filter "coverage.cobertura.xml" -Recurse | 
+$coverageFile = Get-ChildItem -Path "coverage-results" -Filter "coverage.cobertura.xml" -Recurse | 
 Sort-Object LastWriteTime -Descending | 
 Select-Object -First 1
 
@@ -30,7 +30,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Report location: $reportDir\index.html" -ForegroundColor Cyan
     
     # Also create a 'latest' symlink/copy for convenience
-    $latestDir = "TestResults\CoverageReport\latest"
+    $latestDir = "coverage-results\report\latest"
     if (Test-Path $latestDir) {
         Remove-Item $latestDir -Recurse -Force
     }
