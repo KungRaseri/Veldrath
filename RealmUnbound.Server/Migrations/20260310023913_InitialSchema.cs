@@ -39,15 +39,15 @@ namespace RealmUnbound.Server.Migrations
                     NormalizedUserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    EmailConfirmed = table.Column<bool>(nullable: false),
                     PasswordHash = table.Column<string>(type: "TEXT", nullable: true),
                     SecurityStamp = table.Column<string>(type: "TEXT", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "TEXT", nullable: true),
                     PhoneNumber = table.Column<string>(type: "TEXT", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    PhoneNumberConfirmed = table.Column<bool>(nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(nullable: false),
                     LockoutEnd = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    LockoutEnabled = table.Column<bool>(nullable: false),
                     AccessFailedCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -71,7 +71,7 @@ namespace RealmUnbound.Server.Migrations
                     DeathLocation = table.Column<string>(type: "TEXT", nullable: false),
                     DeathDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     AchievementsUnlocked = table.Column<int>(type: "INTEGER", nullable: false),
-                    IsPermadeath = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsPermadeath = table.Column<bool>(nullable: false),
                     DifficultyLevel = table.Column<string>(type: "TEXT", nullable: false),
                     FameScore = table.Column<int>(type: "INTEGER", nullable: false)
                 },
@@ -105,7 +105,7 @@ namespace RealmUnbound.Server.Migrations
                     Type = table.Column<int>(type: "INTEGER", nullable: false),
                     MinLevel = table.Column<int>(type: "INTEGER", nullable: false),
                     MaxPlayers = table.Column<int>(type: "INTEGER", nullable: false),
-                    IsStarter = table.Column<bool>(type: "INTEGER", nullable: false)
+                    IsStarter = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {

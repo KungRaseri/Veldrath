@@ -1,3 +1,7 @@
+# Development docker-compose — HTTP only, no certs required.
+# appsettings.Development.json supplies the JWT key and log levels.
+# Only the database connection is overridden here to point at the Postgres container.
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -6,7 +10,7 @@ services:
       POSTGRES_USER: realmunbound
       POSTGRES_PASSWORD: realmunbound_dev
     ports:
-      - "5432:5432"
+      - "5433:5432"   # host:container — use 5433 to avoid conflicts with other local Postgres instances
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,22 +25,15 @@ services:
       dockerfile: RealmUnbound.Server/Dockerfile
     ports:
       - "8080:8080"
-      - "8081:8081"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080;https://+:8081
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/realmunbound.pfx
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # Override DB to the Postgres container; everything else comes from appsettings.Development.json
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
       - Database__Provider=postgres
-      - Jwt__Key=${JWT_SECRET_KEY:?JWT_SECRET_KEY env var must be set}
-      - Jwt__Issuer=RealmUnbound.Server
-      - Jwt__Audience=RealmUnbound.Client
     volumes:
-      # Bind-mount JSON catalog so local edits are reflected immediately in dev
+      # Bind-mount JSON catalog so local edits are reflected without rebuilding
       - ./RealmEngine.Data/Data/Json:/app/Data/Json:ro
-      # ASP.NET dev cert (export once: dotnet dev-certs https -ep "$env:USERPROFILE\.aspnet\https\realmunbound.pfx" -p "<CERT_PASSWORD>")
-      - ${USERPROFILE}/.aspnet/https:/https:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s

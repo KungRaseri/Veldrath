@@ -9,6 +9,8 @@ using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Core.Services.Budget;
+// Alias to disambiguate from RealmEngine.Core.Services.HarvestingConfig (in HarvestingConfigService.cs)
+using HarvestingConfigData = RealmEngine.Core.Services.Harvesting.HarvestingConfig;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Core.Features.Exploration;
@@ -87,11 +89,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<GameStateService>();
         
         // Register harvesting services
+        // HarvestingConfigData alias = RealmEngine.Core.Services.Harvesting.HarvestingConfig (all defaults)
+        services.AddSingleton(new HarvestingConfigData());
+        services.AddScoped<HarvestingConfigService>();
         services.AddScoped<HarvestCalculatorService>();
         services.AddScoped<CriticalHarvestService>();
         services.AddScoped<ToolValidationService>();
-        services.AddScoped<HarvestingConfigService>();
-        
+
         // Register budget configuration factory and services
         services.AddSingleton<BudgetConfigFactory>();
         services.AddSingleton<BudgetConfig>(sp => 
@@ -99,6 +103,12 @@ public static class ServiceCollectionExtensions
             var factory = sp.GetRequiredService<BudgetConfigFactory>();
             return factory.GetBudgetConfig();
         });
+        services.AddSingleton<MaterialPools>(sp =>
+            sp.GetRequiredService<BudgetConfigFactory>().GetMaterialPools());
+        services.AddSingleton<EnemyTypes>(sp =>
+            sp.GetRequiredService<BudgetConfigFactory>().GetEnemyTypes());
+        services.AddSingleton<MaterialFilterConfig>(sp =>
+            sp.GetRequiredService<BudgetConfigFactory>().GetMaterialFilters());
         services.AddSingleton<BudgetCalculator>();
         services.AddScoped<BudgetItemGenerationService>();
         services.AddScoped<MaterialPoolService>();
