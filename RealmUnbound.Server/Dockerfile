@@ -2,12 +2,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy project files first for layer-cached restore
-COPY RealmUnbound.Server/RealmUnbound.Server.csproj        RealmUnbound.Server/
-COPY RealmEngine.Core/RealmEngine.Core.csproj              RealmEngine.Core/
-COPY RealmEngine.Data/RealmEngine.Data.csproj              RealmEngine.Data/
-COPY RealmEngine.Shared/RealmEngine.Shared.csproj          RealmEngine.Shared/
+# Copy project files and MSBuild props first for layer-cached restore
 COPY Directory.Build.props                                 ./
+COPY versions/                                             versions/
+COPY RealmUnbound.Server/RealmUnbound.Server.csproj        RealmUnbound.Server/
+COPY RealmUnbound.Server/Directory.Build.props             RealmUnbound.Server/
+COPY RealmEngine.Core/RealmEngine.Core.csproj              RealmEngine.Core/
+COPY RealmEngine.Core/Directory.Build.props                RealmEngine.Core/
+COPY RealmEngine.Data/RealmEngine.Data.csproj              RealmEngine.Data/
+COPY RealmEngine.Data/Directory.Build.props                RealmEngine.Data/
+COPY RealmEngine.Shared/RealmEngine.Shared.csproj          RealmEngine.Shared/
+COPY RealmEngine.Shared/Directory.Build.props              RealmEngine.Shared/
 
 RUN dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
 
