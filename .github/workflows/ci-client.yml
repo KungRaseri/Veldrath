@@ -9,6 +9,7 @@ on:
     branches: [ main, development ]
     paths:
       - 'RealmUnbound.Client/**'
+      - 'RealmUnbound.Client.Tests/**'
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
@@ -20,6 +21,7 @@ on:
     branches: [ main ]
     paths:
       - 'RealmUnbound.Client/**'
+      - 'RealmUnbound.Client.Tests/**'
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
@@ -35,12 +37,14 @@ env:
   PROPS_FILE: 'versions/client.props'
 
 jobs:
-  build:
-    name: Build Client
+  build-and-test:
+    name: Build and Test Client
     runs-on: windows-latest
 
     permissions:
+      checks: write
       contents: read
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -54,14 +58,32 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore RealmUnbound.Client/RealmUnbound.Client.csproj
+      run: dotnet restore RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj
 
-    - name: Build
+    - name: Build client
       run: dotnet build RealmUnbound.Client/RealmUnbound.Client.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Build client tests
+      run: dotnet build RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Test - RealmUnbound.Client.Tests
+      run: |
+        dotnet test RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj `
+          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
+          --logger "trx;LogFileName=client-tests.trx" `
+          --results-directory ./TestResults
+      shell: pwsh
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: always()
+      with:
+        files: TestResults/*.trx
+        check_name: Client Test Results
 
   package:
     name: Package Client Artifacts
-    needs: build
+    needs: build-and-test
     if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
