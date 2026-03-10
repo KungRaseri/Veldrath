@@ -1,3 +1,4 @@
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -24,7 +25,7 @@ public class MainWindowViewModelTests : TestBase
 
         // Navigate using the typed overload — FakeNavigationService raises CurrentPageChanged
         // only when given a concrete ViewModelBase instance.
-        var mainMenu = new MainMenuViewModel(nav);
+        var mainMenu = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
         nav.NavigateTo(mainMenu);
 
         vm.CurrentPage.Should().BeSameAs(mainMenu);
@@ -37,8 +38,8 @@ public class MainWindowViewModelTests : TestBase
         var splash = new SplashViewModel(nav);
         var vm     = new MainWindowViewModel(nav, splash);
 
-        var first  = new MainMenuViewModel(nav);
-        var second = new MainMenuViewModel(nav);
+        var first  = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
+        var second = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
 
         nav.NavigateTo(first);
         nav.NavigateTo(second);
@@ -55,7 +56,7 @@ public class MainWindowViewModelTests : TestBase
         var changes  = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 
-        nav.NavigateTo(new MainMenuViewModel(nav));
+        nav.NavigateTo(new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService()));
 
         changes.Should().Contain(nameof(MainWindowViewModel.CurrentPage));
     }

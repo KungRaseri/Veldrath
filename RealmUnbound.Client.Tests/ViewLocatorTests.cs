@@ -61,7 +61,7 @@ public class ViewLocatorTests
     [AvaloniaFact]
     public void Build_Should_Return_LoginView_For_LoginViewModel()
     {
-        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService());
+        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService(), SessionStoreFactory.Create());
 
         var result = _sut.Build(vm);
 

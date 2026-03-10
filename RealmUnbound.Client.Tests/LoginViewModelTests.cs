@@ -12,7 +12,8 @@ public class LoginViewModelTests : TestBase
     {
         return new LoginViewModel(
             auth ?? new FakeAuthService(),
-            nav  ?? new FakeNavigationService());
+            nav  ?? new FakeNavigationService(),
+            SessionStoreFactory.Create());
     }
 
     // ── CanExecute behaviour ──────────────────────────────────────────────────

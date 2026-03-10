@@ -32,7 +32,8 @@ public class CharacterSelectViewModelTests : TestBase
             chars ?? new FakeCharacterService(),
             conn,
             nav,
-            gameVm);
+            gameVm,
+            new FakeAuthService());
     }
 
     // ── Initial load ──────────────────────────────────────────────────────────

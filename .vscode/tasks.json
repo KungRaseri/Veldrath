@@ -7,7 +7,7 @@
 			"command": "dotnet",
 			"args": [
 				"build",
-				"${workspaceFolder}/RealmEngine.slnx",
+				"${workspaceFolder}/Realm.Full.slnx",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
@@ -85,7 +85,13 @@
 				"--filter",
 				"Category!=UI",
 				"--verbosity",
-				"normal"
+				"normal",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": {
@@ -106,7 +112,13 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj"
+				"${workspaceFolder}/RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -124,7 +136,13 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj"
+				"${workspaceFolder}/RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -142,7 +160,13 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj"
+				"${workspaceFolder}/RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -162,7 +186,13 @@
 				"test",
 				"${workspaceFolder}/RealmForge.Tests/RealmForge.Tests.csproj",
 				"--filter",
-				"Category=ViewModel"
+				"Category=ViewModel",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -182,7 +212,13 @@
 				"test",
 				"${workspaceFolder}/RealmForge.Tests/RealmForge.Tests.csproj",
 				"--filter",
-				"Category=UI"
+				"Category=UI",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -202,7 +238,13 @@
 				"test",
 				"${workspaceFolder}/RealmForge.Tests/RealmForge.Tests.csproj",
 				"--filter",
-				"Category=Integration"
+				"Category=Integration",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -220,7 +262,13 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmForge.Tests/RealmForge.Tests.csproj"
+				"${workspaceFolder}/RealmForge.Tests/RealmForge.Tests.csproj",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -287,7 +335,7 @@
 			"command": "dotnet",
 			"args": [
 				"clean",
-				"${workspaceFolder}/RealmEngine.slnx"
+				"${workspaceFolder}/Realm.Full.slnx"
 			],
 			"problemMatcher": "$msCompile"
 		},
@@ -482,7 +530,13 @@
 				"test",
 				"${workspaceFolder}/RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj",
 				"--verbosity",
-				"normal"
+				"normal",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -501,8 +555,16 @@
 			"args": [
 				"test",
 				"${workspaceFolder}/RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj",
+				"--filter",
+				"Category!=UI",
 				"--verbosity",
-				"normal"
+				"normal",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
@@ -521,8 +583,16 @@
 			"args": [
 				"test",
 				"${workspaceFolder}/RealmUnbound.slnx",
+				"--filter",
+				"Category!=UI",
 				"--verbosity",
-				"normal"
+				"normal",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
 			],
 			"problemMatcher": "$msCompile",
 			"group": "test",
