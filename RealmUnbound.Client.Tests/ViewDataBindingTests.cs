@@ -25,7 +25,8 @@ public class ViewDataBindingTests
         new(charSvc ?? new FakeCharacterService(),
             new FakeServerConnectionService(),
             new FakeNavigationService(),
-            MakeGameVm());
+            MakeGameVm(),
+            new FakeAuthService());
 
     private static Window Show(object content)
     {

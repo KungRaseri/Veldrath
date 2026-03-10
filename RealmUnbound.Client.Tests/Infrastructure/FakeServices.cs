@@ -162,6 +162,15 @@ public class FakeServerConnectionService : IServerConnectionService
     }
 }
 
+// ── Session store helper ────────────────────────────────────────────────────────
+
+public static class SessionStoreFactory
+{
+    /// <summary>Creates a <see cref="SessionStore"/> backed by a NullLogger for use in unit tests.</summary>
+    public static SessionStore Create() =>
+        new SessionStore(Microsoft.Extensions.Logging.Abstractions.NullLogger<SessionStore>.Instance);
+}
+
 // ── Zone service stub ─────────────────────────────────────────────────────────
 
 public class FakeZoneService : IZoneService

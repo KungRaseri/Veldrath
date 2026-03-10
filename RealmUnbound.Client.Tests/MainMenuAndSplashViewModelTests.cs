@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -7,7 +8,7 @@ namespace RealmUnbound.Client.Tests;
 public class MainMenuViewModelTests : TestBase
 {
     private static MainMenuViewModel MakeVm(FakeNavigationService? nav = null, Action? exit = null)
-        => new MainMenuViewModel(nav ?? new FakeNavigationService(), exit);
+        => new MainMenuViewModel(nav ?? new FakeNavigationService(), new TokenStore(), new FakeAuthService(), exit);
 
     [Fact]
     public void Title_Should_Be_RealmUnbound()
