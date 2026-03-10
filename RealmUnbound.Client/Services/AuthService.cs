@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace RealmUnbound.Client.Services;
@@ -30,6 +31,20 @@ public class HttpAuthService(
     TokenStore tokens,
     ILogger<HttpAuthService> logger) : IAuthService
 {
+    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            if (body.TryGetProperty("error", out var e))
+                return e.GetString() ?? $"Request failed ({(int)response.StatusCode})";
+        }
+        catch { }
+        var raw = await response.Content.ReadAsStringAsync();
+        return string.IsNullOrWhiteSpace(raw)
+            ? $"Request failed ({(int)response.StatusCode})"
+            : raw;
+    }
     public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(string email, string username, string password)
     {
         try
@@ -42,7 +57,7 @@ public class HttpAuthService(
                 return (auth, null);
             }
 
-            var error = await response.Content.ReadAsStringAsync();
+            var error = await ReadErrorAsync(response);
             return (null, error);
         }
         catch (Exception ex)
@@ -64,7 +79,7 @@ public class HttpAuthService(
                 return (auth, null);
             }
 
-            var error = await response.Content.ReadAsStringAsync();
+            var error = await ReadErrorAsync(response);
             return (null, error);
         }
         catch (Exception ex)

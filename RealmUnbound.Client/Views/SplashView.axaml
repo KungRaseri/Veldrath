@@ -18,17 +18,16 @@
                     Spacing="16">
 
             <TextBlock Text="{Binding Title}"
+                       Classes="title-large"
                        FontSize="96"
-                       FontWeight="Bold"
-                       Foreground="#c8a96e"
-                       HorizontalAlignment="Center"
-                       LetterSpacing="8" />
+                       LetterSpacing="8"
+                       HorizontalAlignment="Center" />
 
             <TextBlock Text="{Binding Subtitle}"
+                       Classes="subtitle"
                        FontSize="20"
-                       Foreground="#5a5a7a"
-                       HorizontalAlignment="Center"
-                       LetterSpacing="3" />
+                       LetterSpacing="3"
+                       HorizontalAlignment="Center" />
 
         </StackPanel>
 
@@ -36,7 +35,7 @@
         <StackPanel Grid.Row="1" Margin="80,0,80,48" Spacing="10">
 
             <TextBlock Text="{Binding StatusText}"
-                       Foreground="#5a5a7a"
+                       Classes="muted"
                        FontSize="13"
                        HorizontalAlignment="Left" />
 
@@ -44,8 +43,8 @@
                          Minimum="0"
                          Maximum="100"
                          Height="3"
-                         Foreground="#c8a96e"
-                         Background="#1e1e2e" />
+                         Foreground="{DynamicResource GameAccentBrush}"
+                         Background="{DynamicResource GameBackground2Brush}" />
 
         </StackPanel>
 
