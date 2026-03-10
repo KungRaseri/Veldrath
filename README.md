@@ -1,7 +1,10 @@
 # RealmEngine
 
-[![Build and Release](https://github.com/KungRaseri/console-game/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/KungRaseri/console-game/actions/workflows/build-and-release.yml)
-[![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
+[![Build and Release](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml/badge.svg)](https://github.com/KungRaseri/console-game/actions/workflows/ci-engine.yml)
+[![Build and Release](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-tooling.yml/badge.svg)](https://github.com/KungRaseri/console-game/actions/workflows/ci-tooling.yml)
+[![Build and Release](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml/badge.svg)](https://github.com/KungRaseri/console-game/actions/workflows/ci-client.yml)
+[![Build and Release](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml/badge.svg)](https://github.com/KungRaseri/console-game/actions/workflows/ci-server.yml)
+[![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 RPG backend engine designed as a game logic API for Godot UI integration. Implements CQRS pattern with MediatR for clean command/query separation.

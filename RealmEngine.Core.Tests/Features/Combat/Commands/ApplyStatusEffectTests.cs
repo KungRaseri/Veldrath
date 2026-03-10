@@ -22,8 +22,8 @@ public class ApplyStatusEffectTests
     [Fact]
     public async Task Should_Apply_Status_Effect_To_Character()
     {
-        // Arrange
-        var character = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
+        // Arrange — Wisdom = 0 ensures no random resistance roll (Wisdom/10 = 0%)
+        var character = new Character { Name = "Hero", Health = 100, MaxHealth = 100, Wisdom = 0 };
         var effect = new StatusEffect
         {
             Id = "poison1",
