@@ -28,7 +28,11 @@ public class CharacterSelectViewModel : ViewModelBase
     public bool IsCreating
     {
         get => _isCreating;
-        set => this.RaiseAndSetIfChanged(ref _isCreating, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isCreating, value);
+            this.RaisePropertyChanged(nameof(PanelTitle));
+        }
     }
 
     public string ErrorMessage
@@ -43,6 +47,9 @@ public class CharacterSelectViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _newCharacterName, value);
     }
 
+    /// <summary>Drives the top bar title — changes when switching between list and create panels.</summary>
+    public string PanelTitle => IsCreating ? "New Character" : "Select Your Character";
+
     public string ServerUrl { get; set; } = "http://localhost:8080";
 
     public ReactiveCommand<CharacterDto, Unit> SelectCommand { get; }
@@ -50,12 +57,14 @@ public class CharacterSelectViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> CancelCreateCommand { get; }
     public ReactiveCommand<Unit, Unit> CreateCommand { get; }
     public ReactiveCommand<CharacterDto, Unit> DeleteCommand { get; }
+    public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
 
     public CharacterSelectViewModel(
         ICharacterService characters,
         IServerConnectionService connection,
         INavigationService navigation,
-        GameViewModel gameVm)
+        GameViewModel gameVm,
+        IAuthService auth)
     {
         _characters = characters;
         _connection = connection;
@@ -66,11 +75,16 @@ public class CharacterSelectViewModel : ViewModelBase
             x => x.NewCharacterName, x => x.IsBusy,
             (name, busy) => !string.IsNullOrWhiteSpace(name) && !busy);
 
-        SelectCommand      = ReactiveCommand.CreateFromTask<CharacterDto>(DoSelectAsync);
-        ShowCreateCommand  = ReactiveCommand.Create(() => { IsCreating = true; ErrorMessage = string.Empty; });
+        SelectCommand       = ReactiveCommand.CreateFromTask<CharacterDto>(DoSelectAsync);
+        ShowCreateCommand   = ReactiveCommand.Create(() => { IsCreating = true; ErrorMessage = string.Empty; });
         CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; ErrorMessage = string.Empty; });
-        CreateCommand      = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
-        DeleteCommand      = ReactiveCommand.CreateFromTask<CharacterDto>(DoDeleteAsync);
+        CreateCommand       = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
+        DeleteCommand       = ReactiveCommand.CreateFromTask<CharacterDto>(DoDeleteAsync);
+        LogoutCommand       = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await auth.LogoutAsync();
+            navigation.NavigateTo<MainMenuViewModel>();
+        });
 
         // Load on construction
         _ = LoadAsync();

@@ -29,8 +29,11 @@
                        Margin="0,0,0,48" />
 
             <!-- Menu buttons -->
+
+            <!-- Guest buttons: shown when NOT logged in -->
             <Button Content="Register"
                     Command="{Binding RegisterCommand}"
+                    IsVisible="{Binding !IsLoggedIn}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="48"
@@ -38,11 +41,31 @@
 
             <Button Content="Login"
                     Command="{Binding LoginCommand}"
+                    IsVisible="{Binding !IsLoggedIn}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="48"
                     FontSize="16" />
 
+            <!-- Authenticated buttons: shown when logged in -->
+            <Button Content="Select Character"
+                    Command="{Binding SelectCharacterCommand}"
+                    IsVisible="{Binding IsLoggedIn}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="48"
+                    FontSize="16" />
+
+            <Button Content="Logout"
+                    Command="{Binding LogoutCommand}"
+                    IsVisible="{Binding IsLoggedIn}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="48"
+                    FontSize="16"
+                    Foreground="#c05050" />
+
+            <!-- Always visible -->
             <Button Content="Settings"
                     Command="{Binding SettingsCommand}"
                     HorizontalAlignment="Stretch"
