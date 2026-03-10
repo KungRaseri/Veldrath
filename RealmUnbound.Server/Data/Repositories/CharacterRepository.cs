@@ -53,8 +53,22 @@ public class CharacterRepository : ICharacterRepository
     {
         var character = await _db.Characters.FindAsync([id], ct);
         if (character is null) return;
+
+        // Rename the deleted character so the unique IX_Characters_Name index no longer
+        // blocks a new character from taking the same name.
+        // Only rename on first deletion to keep idempotency clean.
+        if (character.DeletedAt is null)
+        {
+            var shortId = id.ToString("N")[..8];
+            character.Name = $"{character.Name}_deleted_{shortId}";
+
+            // Use a large negative slot to satisfy IX_Characters_AccountId_SlotIndex while
+            // still freeing the real slot for a new character.
+            // Using hash-derived value ensures uniqueness across multiple deletions on one account.
+            character.SlotIndex = -(Math.Abs(id.GetHashCode()) % 1_000_000 + 1);
+        }
+
         character.DeletedAt = DateTimeOffset.UtcNow;
-        character.SlotIndex = 0;   // Free the slot so it can be reassigned to a new character
         await _db.SaveChangesAsync(ct);
     }
 

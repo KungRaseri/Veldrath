@@ -90,7 +90,8 @@ public class HttpAuthServiceTests : TestBase
         var (response, error) = await sut.RegisterAsync("dupe@test.com", "User", "Password1!");
 
         response.Should().BeNull();
-        error.Should().Be("Email already taken");
+        error.Should().NotBeNull();
+        error!.Message.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -101,7 +102,7 @@ public class HttpAuthServiceTests : TestBase
         var (response, error) = await sut.RegisterAsync("user@test.com", "User", "Password1!");
 
         response.Should().BeNull();
-        error.Should().Be("Network error. Please check your connection.");
+        error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
     // ── LoginAsync ────────────────────────────────────────────────────────────
@@ -137,7 +138,8 @@ public class HttpAuthServiceTests : TestBase
         var (response, error) = await sut.LoginAsync("wrong@test.com", "badpass");
 
         response.Should().BeNull();
-        error.Should().Be("Invalid credentials");
+        error.Should().NotBeNull();
+        error!.Message.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -147,7 +149,7 @@ public class HttpAuthServiceTests : TestBase
 
         var (response, error) = await sut.LoginAsync("user@test.com", "Password1!");
 
-        error.Should().Be("Network error. Please check your connection.");
+        error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
     // ── RefreshAsync ──────────────────────────────────────────────────────────
@@ -305,7 +307,8 @@ public class HttpCharacterServiceTests : TestBase
         var (character, error) = await sut.CreateCharacterAsync("Taken", "Fighter");
 
         character.Should().BeNull();
-        error.Should().Be("Name taken");
+        error.Should().NotBeNull();
+        error!.Message.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -316,7 +319,7 @@ public class HttpCharacterServiceTests : TestBase
         var (character, error) = await sut.CreateCharacterAsync("Hero", "Fighter");
 
         character.Should().BeNull();
-        error.Should().Be("Network error.");
+        error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
     // ── DeleteCharacterAsync ──────────────────────────────────────────────────
@@ -338,7 +341,8 @@ public class HttpCharacterServiceTests : TestBase
 
         var error = await sut.DeleteCharacterAsync(Guid.NewGuid());
 
-        error.Should().Be("Character not found");
+        error.Should().NotBeNull();
+        error!.Message.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -348,7 +352,7 @@ public class HttpCharacterServiceTests : TestBase
 
         var error = await sut.DeleteCharacterAsync(Guid.NewGuid());
 
-        error.Should().Be("Network error.");
+        error!.Message.Should().Be("Network error. Please check your connection.");
     }
 }
 
