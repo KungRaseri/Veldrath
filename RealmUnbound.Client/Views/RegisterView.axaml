@@ -56,6 +56,16 @@
                         IsClosable="False"
                         Margin="0,4,0,0" />
 
+            <Expander Header="Details"
+                      IsVisible="{Binding ErrorDetails, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                      IsExpanded="False"
+                      Margin="0,-4,0,0">
+                <TextBlock Text="{Binding ErrorDetails}"
+                           Classes="muted"
+                           FontSize="11"
+                           TextWrapping="Wrap" />
+            </Expander>
+
             <!-- Register -->
             <Button Content="Register"
                     Classes="accent"

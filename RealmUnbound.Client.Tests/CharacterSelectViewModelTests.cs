@@ -152,7 +152,7 @@ public class CharacterSelectViewModelTests : TestBase
     {
         var fake = new FakeCharacterService
         {
-            CreateResult = (null, "Name already taken")
+            CreateResult = (null, new AppError("Name already taken"))
         };
         var vm = MakeVm(chars: fake);
         vm.NewCharacterName = "Hero";
@@ -209,7 +209,7 @@ public class CharacterSelectViewModelTests : TestBase
         var fake = new FakeCharacterService
         {
             Characters  = [character],
-            DeleteError = "Character not found"
+            DeleteError = new AppError("Character not found")
         };
         var vm = MakeVm(chars: fake);
         await Task.Yield();

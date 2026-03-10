@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -105,7 +106,7 @@ public class RegisterViewModelTests : TestBase
     [Fact]
     public async Task RegisterCommand_Should_Show_Error_On_Failure()
     {
-        var auth = new FakeAuthService { RegisterResult = (null, "Email already taken") };
+        var auth = new FakeAuthService { RegisterResult = (null, new AppError("Email already taken")) };
         var vm   = MakeVm(auth: auth);
         vm.Email           = "dupe@test.com";
         vm.Username        = "Alice";

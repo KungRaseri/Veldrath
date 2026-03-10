@@ -51,7 +51,18 @@
                                 IsOpen="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                 IsClosable="False"
                                 Width="480"
-                                Margin="0,0,0,8" />
+                                Margin="0,0,0,4" />
+
+                    <Expander Header="Details"
+                              IsVisible="{Binding ErrorDetails, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                              IsExpanded="False"
+                              Width="480"
+                              Margin="0,0,0,4">
+                        <TextBlock Text="{Binding ErrorDetails}"
+                                   Classes="muted"
+                                   FontSize="11"
+                                   TextWrapping="Wrap" />
+                    </Expander>
 
                     <ItemsControl ItemsSource="{Binding Characters}">
                         <ItemsControl.ItemTemplate>
@@ -128,7 +139,17 @@
                             Severity="Error"
                             IsOpen="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                             IsClosable="False"
-                            Margin="0,0,0,8" />
+                            Margin="0,0,0,4" />
+
+                <Expander Header="Details"
+                          IsVisible="{Binding ErrorDetails, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                          IsExpanded="False"
+                          Margin="0,0,0,4">
+                    <TextBlock Text="{Binding ErrorDetails}"
+                               Classes="muted"
+                               FontSize="11"
+                               TextWrapping="Wrap" />
+                </Expander>
 
                 <TextBlock Text="Character Name" Classes="muted" />
                 <TextBox Text="{Binding NewCharacterName}"

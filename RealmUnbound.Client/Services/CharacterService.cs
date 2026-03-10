@@ -21,8 +21,8 @@ public record CreateCharacterRequest(string Name, string ClassName);
 public interface ICharacterService
 {
     Task<List<CharacterDto>> GetCharactersAsync();
-    Task<(CharacterDto? Character, string? Error)> CreateCharacterAsync(string name, string className);
-    Task<string?> DeleteCharacterAsync(Guid id);
+    Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(string name, string className);
+    Task<AppError?> DeleteCharacterAsync(Guid id);
 }
 
 // ── Implementation ─────────────────────────────────────────────────────────────
@@ -33,7 +33,40 @@ public class HttpCharacterService(
 {
     private AuthenticationHeaderValue? BearerHeader =>
         tokens.AccessToken is { } t ? new AuthenticationHeaderValue("Bearer", t) : null;
+    private static async Task<AppError> ReadErrorAsync(HttpResponseMessage response, string context = "")
+    {
+        string? serverMessage = null;
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            if (body.TryGetProperty("error", out var e))
+                serverMessage = e.GetString();
+        }
+        catch { }
 
+        if (serverMessage is null)
+        {
+            try { serverMessage = await response.Content.ReadAsStringAsync(); }
+            catch { }
+            if (string.IsNullOrWhiteSpace(serverMessage))
+                serverMessage = null;
+        }
+
+        var statusCode = (int)response.StatusCode;
+        var friendly = (context, statusCode) switch
+        {
+            ("create", 409)                         => "That character name is already taken. Please choose a different name.",
+            ("create", 400) when serverMessage is not null => serverMessage,
+            ("create", 401) or ("create", 403)     => "Your session has expired. Please log in again.",
+            ("delete", 403)                         => "You do not have permission to delete this character.",
+            ("delete", 404)                         => "Character not found.",
+            (_,        500) or (_, 503)             => "The server encountered an error. Please try again later.",
+            _                                       => serverMessage ?? "An error occurred. Please try again."
+        };
+
+        var details = serverMessage != null && serverMessage != friendly ? serverMessage : null;
+        return new AppError(friendly, details);
+    }
     public async Task<List<CharacterDto>> GetCharactersAsync()
     {
         try
@@ -51,7 +84,7 @@ public class HttpCharacterService(
         }
     }
 
-    public async Task<(CharacterDto? Character, string? Error)> CreateCharacterAsync(string name, string className)
+    public async Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(string name, string className)
     {
         try
         {
@@ -63,16 +96,16 @@ public class HttpCharacterService(
             if (response.IsSuccessStatusCode)
                 return (await response.Content.ReadFromJsonAsync<CharacterDto>(), null);
 
-            return (null, await response.Content.ReadAsStringAsync());
+            return (null, await ReadErrorAsync(response, "create"));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to create character");
-            return (null, "Network error.");
+            return (null, new AppError("Network error. Please check your connection."));
         }
     }
 
-    public async Task<string?> DeleteCharacterAsync(Guid id)
+    public async Task<AppError?> DeleteCharacterAsync(Guid id)
     {
         try
         {
@@ -80,12 +113,12 @@ public class HttpCharacterService(
             request.Headers.Authorization = BearerHeader;
             var response = await http.SendAsync(request);
 
-            return response.IsSuccessStatusCode ? null : await response.Content.ReadAsStringAsync();
+            return response.IsSuccessStatusCode ? null : await ReadErrorAsync(response, "delete");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to delete character {Id}", id);
-            return "Network error.";
+            return new AppError("Network error. Please check your connection.");
         }
     }
 }
