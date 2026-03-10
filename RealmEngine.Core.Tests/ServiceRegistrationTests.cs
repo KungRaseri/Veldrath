@@ -58,15 +58,14 @@ public class ServiceRegistrationTests
         _services.AddRealmEngineData(GetDataPath());
         _services.AddRealmEngineCore();
         
-        // Override SaveGameRepository to use in-memory database for test isolation
+        // Override SaveGameRepository to use in-memory implementation for test isolation
         // This must be done AFTER AddRealmEngineCore() which registers the default implementation
         var descriptor = _services.FirstOrDefault(d => d.ServiceType == typeof(ISaveGameRepository));
         if (descriptor != null)
         {
             _services.Remove(descriptor);
         }
-        _services.AddScoped<ISaveGameRepository>(sp => 
-            new SaveGameRepository(":memory:"));
+        _services.AddScoped<ISaveGameRepository, InMemorySaveGameRepository>();
         
         // Register MediatR with behaviors and validators LAST
         // This ensures all dependencies (services, validators) are registered before handlers

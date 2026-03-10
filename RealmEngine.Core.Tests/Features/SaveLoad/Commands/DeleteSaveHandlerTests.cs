@@ -15,17 +15,15 @@ namespace RealmEngine.Core.Tests.Features.SaveLoad.Commands;
 /// </summary>
 public class DeleteSaveHandlerTests : IDisposable
 {
-    private readonly string _testDbPath;
     private readonly Mock<IGameUI> _mockConsoleUI;
     private readonly Mock<IApocalypseTimer> _mockApocalypseTimer;
     private readonly SaveGameService _saveGameService;
 
     public DeleteSaveHandlerTests()
     {
-        _testDbPath = $"test-deletesave-{Guid.NewGuid()}.db";
         _mockConsoleUI = new Mock<IGameUI>();
         _mockApocalypseTimer = new Mock<IApocalypseTimer>();
-        var repository = new SaveGameRepository(_testDbPath);
+        var repository = new InMemorySaveGameRepository();
         _saveGameService = new SaveGameService(repository, _mockApocalypseTimer.Object);
     }
 
@@ -161,25 +159,6 @@ public class DeleteSaveHandlerTests : IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _saveGameService?.Dispose();
-            if (File.Exists(_testDbPath))
-            {
-                File.Delete(_testDbPath);
-            }
-
-            var logDbPath = _testDbPath.Replace(".db", "-log.db");
-            if (File.Exists(logDbPath))
-            {
-                File.Delete(logDbPath);
-            }
-        }
+        _saveGameService?.Dispose();
     }
 }
