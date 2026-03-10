@@ -14,10 +14,10 @@ public class MainMenuViewModel : ViewModelBase
     public ICommand SettingsCommand { get; }
     public ICommand ExitCommand { get; }
 
-    public MainMenuViewModel()
+    public MainMenuViewModel(INavigationService navigation)
     {
-        NewGameCommand = ReactiveCommand.Create(() => { /* Navigate to character creation */ });
-        LoadGameCommand = ReactiveCommand.Create(() => { /* Navigate to load game */ });
+        NewGameCommand = ReactiveCommand.Create(() => navigation.NavigateTo<LoginViewModel>());
+        LoadGameCommand = ReactiveCommand.Create(() => navigation.NavigateTo<LoginViewModel>());
         SettingsCommand = ReactiveCommand.Create(() => { /* Navigate to settings */ });
         ExitCommand = ReactiveCommand.Create(() => System.Environment.Exit(0));
     }

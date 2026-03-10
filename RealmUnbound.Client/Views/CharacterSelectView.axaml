@@ -1,0 +1,126 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:svc="using:RealmUnbound.Client.Services"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.CharacterSelectView"
+             x:DataType="vm:CharacterSelectViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Select Your Character"
+                   FontSize="32"
+                   FontWeight="Bold"
+                   Foreground="#c8a96e"
+                   HorizontalAlignment="Center"
+                   Margin="0,32,0,24" />
+
+        <!-- Error message -->
+        <TextBlock Text="{Binding ErrorMessage}"
+                   Foreground="#c05050"
+                   HorizontalAlignment="Center"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Margin="0,0,0,8" />
+
+        <!-- Character slots list -->
+        <ItemsControl Grid.Row="1"
+                      ItemsSource="{Binding Characters}"
+                      HorizontalAlignment="Center"
+                      Margin="0,0,0,24">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="svc:CharacterDto">
+                    <Border Background="#1e1e2e"
+                            BorderBrush="#3a3a5a"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="16"
+                            Margin="0,0,0,8"
+                            Width="480">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding Name}"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="#e0e0f0" />
+                                <TextBlock Foreground="#8a8a9a" FontSize="13">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}Slot {0}  ·  {1}  ·  Level {2}">
+                                            <Binding Path="SlotIndex" />
+                                            <Binding Path="ClassName" />
+                                            <Binding Path="Level" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Content="Play"
+                                    Command="{Binding $parent[UserControl].DataContext.SelectCommand}"
+                                    CommandParameter="{Binding}"
+                                    Height="36"
+                                    Margin="8,0" />
+
+                            <Button Grid.Column="2"
+                                    Content="Delete"
+                                    Command="{Binding $parent[UserControl].DataContext.DeleteCommand}"
+                                    CommandParameter="{Binding}"
+                                    Height="36"
+                                    Foreground="#c05050" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Create character panel -->
+        <Border Grid.Row="2"
+                Background="#1e1e2e"
+                BorderBrush="#3a3a5a"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="16"
+                HorizontalAlignment="Center"
+                Width="480"
+                Margin="0,0,0,32">
+            <StackPanel Spacing="8">
+                <TextBlock Text="New Character"
+                           FontSize="14"
+                           Foreground="#8a8a9a" />
+                <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto" HorizontalAlignment="Stretch">
+                    <TextBox Grid.Column="0"
+                             Text="{Binding NewCharacterName}"
+                             Watermark="Name"
+                             Height="36"
+                             Margin="0,0,8,0" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding NewCharacterClass}"
+                             Watermark="Class"
+                             Height="36"
+                             Width="100"
+                             Margin="0,0,8,0" />
+                    <Button Grid.Column="2"
+                            Content="Create"
+                            Command="{Binding CreateCommand}"
+                            Height="36" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Busy overlay -->
+        <Grid Grid.RowSpan="3"
+              IsVisible="{Binding IsBusy}"
+              Background="#80000000">
+            <ProgressBar IsIndeterminate="True"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Width="200" />
+        </Grid>
+
+    </Grid>
+
+</UserControl>

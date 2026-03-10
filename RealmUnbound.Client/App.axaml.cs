@@ -2,18 +2,29 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Client.Views;
+using Serilog;
 
 namespace RealmUnbound.Client;
 
 public partial class App : Application
 {
+    // Server base URL — override via config or env in production
+    private const string ServerBaseUrl = "http://localhost:8080/";
+
     public static IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
     {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Debug()
+            .WriteTo.File("logs/client-.txt", rollingInterval: Serilog.RollingInterval.Day)
+            .CreateLogger();
+
         AvaloniaXamlLoader.Load(this);
     }
 
@@ -36,11 +47,26 @@ public partial class App : Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // ViewModels
-        services.AddTransient<MainWindowViewModel>();
+        // Logging
+        services.AddLogging(b => b.AddSerilog(dispose: true));
 
-        // App Services
+        // Token store (singleton — shared between auth service and connection service)
+        services.AddSingleton<TokenStore>();
+
+        // HTTP client for auth + character APIs
+        services.AddHttpClient<IAuthService, HttpAuthService>(client =>
+            client.BaseAddress = new Uri(ServerBaseUrl));
+        services.AddHttpClient<ICharacterService, HttpCharacterService>(client =>
+            client.BaseAddress = new Uri(ServerBaseUrl));
+
+        // App services
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
+
+        // ViewModels
+        services.AddTransient<MainWindowViewModel>();
+        services.AddTransient<MainMenuViewModel>();
+        services.AddTransient<LoginViewModel>();
+        services.AddTransient<CharacterSelectViewModel>();
     }
 }

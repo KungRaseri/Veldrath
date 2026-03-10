@@ -160,4 +160,25 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         var del = await _client.DeleteAsync($"/api/characters/{Guid.NewGuid()}");
         del.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task CreateCharacter_Should_Return_400_When_Slot_Limit_Reached()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SlotLimit_User"));
+
+        // Fill all 5 slots
+        for (int i = 1; i <= 5; i++)
+        {
+            var r = await _client.PostAsJsonAsync("/api/characters",
+                new { Name = $"SlotChar_{i}", ClassName = "@classes/warriors:fighter" });
+            r.StatusCode.Should().Be(HttpStatusCode.Created, $"slot {i} creation should succeed");
+        }
+
+        // Sixth character must be rejected
+        var overflow = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SlotChar_6", ClassName = "@classes/warriors:fighter" });
+
+        overflow.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }
