@@ -13,9 +13,9 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly GameViewModel _gameVm;
 
     private bool _isBusy;
+    private bool _isCreating;
     private string _errorMessage = string.Empty;
     private string _newCharacterName = string.Empty;
-    private string _newCharacterClass = "Fighter";
 
     public ObservableCollection<CharacterDto> Characters { get; } = [];
 
@@ -23,6 +23,12 @@ public class CharacterSelectViewModel : ViewModelBase
     {
         get => _isBusy;
         set => this.RaiseAndSetIfChanged(ref _isBusy, value);
+    }
+
+    public bool IsCreating
+    {
+        get => _isCreating;
+        set => this.RaiseAndSetIfChanged(ref _isCreating, value);
     }
 
     public string ErrorMessage
@@ -37,15 +43,11 @@ public class CharacterSelectViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _newCharacterName, value);
     }
 
-    public string NewCharacterClass
-    {
-        get => _newCharacterClass;
-        set => this.RaiseAndSetIfChanged(ref _newCharacterClass, value);
-    }
-
     public string ServerUrl { get; set; } = "http://localhost:8080";
 
     public ReactiveCommand<CharacterDto, Unit> SelectCommand { get; }
+    public ReactiveCommand<Unit, Unit> ShowCreateCommand { get; }
+    public ReactiveCommand<Unit, Unit> CancelCreateCommand { get; }
     public ReactiveCommand<Unit, Unit> CreateCommand { get; }
     public ReactiveCommand<CharacterDto, Unit> DeleteCommand { get; }
 
@@ -64,9 +66,11 @@ public class CharacterSelectViewModel : ViewModelBase
             x => x.NewCharacterName, x => x.IsBusy,
             (name, busy) => !string.IsNullOrWhiteSpace(name) && !busy);
 
-        SelectCommand = ReactiveCommand.CreateFromTask<CharacterDto>(DoSelectAsync);
-        CreateCommand = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
-        DeleteCommand = ReactiveCommand.CreateFromTask<CharacterDto>(DoDeleteAsync);
+        SelectCommand      = ReactiveCommand.CreateFromTask<CharacterDto>(DoSelectAsync);
+        ShowCreateCommand  = ReactiveCommand.Create(() => { IsCreating = true; ErrorMessage = string.Empty; });
+        CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; ErrorMessage = string.Empty; });
+        CreateCommand      = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
+        DeleteCommand      = ReactiveCommand.CreateFromTask<CharacterDto>(DoDeleteAsync);
 
         // Load on construction
         _ = LoadAsync();
@@ -128,11 +132,12 @@ public class CharacterSelectViewModel : ViewModelBase
         ErrorMessage = string.Empty;
         try
         {
-            var (character, error) = await _characters.CreateCharacterAsync(NewCharacterName, NewCharacterClass);
+            var (character, error) = await _characters.CreateCharacterAsync(NewCharacterName, "Fighter");
             if (character is not null)
             {
                 Characters.Add(character);
                 NewCharacterName = string.Empty;
+                IsCreating = false;
             }
             else
             {

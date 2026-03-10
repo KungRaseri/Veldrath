@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 namespace RealmUnbound.Client.Services;
 
 // ── DTOs (mirror server AuthDtos) ──────────────────────────────────────────────
-public record RegisterRequest(string Username, string Password);
-public record LoginRequest(string Username, string Password);
+public record RegisterRequest(string Email, string Username, string Password);
+public record LoginRequest(string Email, string Password);
 public record RefreshRequest(string RefreshToken);
 public record LogoutRequest(string RefreshToken);
 public record AuthResponse(
@@ -18,8 +18,8 @@ public record AuthResponse(
 // ── Interface ──────────────────────────────────────────────────────────────────
 public interface IAuthService
 {
-    Task<(AuthResponse? Response, string? Error)> RegisterAsync(string username, string password);
-    Task<(AuthResponse? Response, string? Error)> LoginAsync(string username, string password);
+    Task<(AuthResponse? Response, string? Error)> RegisterAsync(string email, string username, string password);
+    Task<(AuthResponse? Response, string? Error)> LoginAsync(string email, string password);
     Task<bool> RefreshAsync();
     Task LogoutAsync();
 }
@@ -30,11 +30,11 @@ public class HttpAuthService(
     TokenStore tokens,
     ILogger<HttpAuthService> logger) : IAuthService
 {
-    public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(string username, string password)
+    public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(string email, string username, string password)
     {
         try
         {
-            var response = await http.PostAsJsonAsync("api/auth/register", new RegisterRequest(username, password));
+            var response = await http.PostAsJsonAsync("api/auth/register", new RegisterRequest(email, username, password));
             if (response.IsSuccessStatusCode)
             {
                 var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
@@ -52,11 +52,11 @@ public class HttpAuthService(
         }
     }
 
-    public async Task<(AuthResponse? Response, string? Error)> LoginAsync(string username, string password)
+    public async Task<(AuthResponse? Response, string? Error)> LoginAsync(string email, string password)
     {
         try
         {
-            var response = await http.PostAsJsonAsync("api/auth/login", new LoginRequest(username, password));
+            var response = await http.PostAsJsonAsync("api/auth/login", new LoginRequest(email, password));
             if (response.IsSuccessStatusCode)
             {
                 var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
