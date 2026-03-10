@@ -10,20 +10,25 @@ public class CharacterRepository : ICharacterRepository
 
     public CharacterRepository(ApplicationDbContext db) => _db = db;
 
-    public async Task<IReadOnlyList<Character>> GetByAccountIdAsync(Guid accountId, CancellationToken ct = default) =>
-        await _db.Characters
+    public async Task<IReadOnlyList<Character>> GetByAccountIdAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var list = await _db.Characters
             .Where(c => c.AccountId == accountId && c.DeletedAt == null)
-            .OrderByDescending(c => c.LastPlayedAt)
             .ToListAsync(ct);
+        // Sort client-side: DateTimeOffset ORDER BY is not supported by the SQLite provider.
+        return list.OrderByDescending(c => c.LastPlayedAt).ToList();
+    }
 
     public Task<Character?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         _db.Characters.FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null, ct);
 
-    public Task<Character?> GetLastPlayedAsync(Guid accountId, CancellationToken ct = default) =>
-        _db.Characters
+    public async Task<Character?> GetLastPlayedAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var list = await _db.Characters
             .Where(c => c.AccountId == accountId && c.DeletedAt == null)
-            .OrderByDescending(c => c.LastPlayedAt)
-            .FirstOrDefaultAsync(ct);
+            .ToListAsync(ct);
+        return list.OrderByDescending(c => c.LastPlayedAt).FirstOrDefault();
+    }
 
     public Task<bool> NameExistsAsync(string name, CancellationToken ct = default) =>
         _db.Characters.AnyAsync(c => c.Name == name && c.DeletedAt == null, ct);
