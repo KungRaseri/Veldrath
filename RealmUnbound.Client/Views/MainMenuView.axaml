@@ -16,22 +16,20 @@
                     Spacing="12">
 
             <TextBlock Text="{Binding Title}"
+                       Classes="title-large"
                        FontSize="72"
-                       FontWeight="Bold"
-                       Foreground="#c8a96e"
-                       HorizontalAlignment="Center"
-                       LetterSpacing="6" />
+                       LetterSpacing="6"
+                       HorizontalAlignment="Center" />
 
             <TextBlock Text="{Binding Subtitle}"
+                       Classes="subtitle"
                        FontSize="18"
-                       Foreground="#8a8a9a"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,48" />
 
-            <!-- Menu buttons -->
-
             <!-- Guest buttons: shown when NOT logged in -->
             <Button Content="Register"
+                    Classes="accent"
                     Command="{Binding RegisterCommand}"
                     IsVisible="{Binding !IsLoggedIn}"
                     HorizontalAlignment="Stretch"
@@ -49,6 +47,7 @@
 
             <!-- Authenticated buttons: shown when logged in -->
             <Button Content="Select Character"
+                    Classes="accent"
                     Command="{Binding SelectCharacterCommand}"
                     IsVisible="{Binding IsLoggedIn}"
                     HorizontalAlignment="Stretch"
@@ -57,16 +56,17 @@
                     FontSize="16" />
 
             <Button Content="Logout"
+                    Classes="danger"
                     Command="{Binding LogoutCommand}"
                     IsVisible="{Binding IsLoggedIn}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="48"
-                    FontSize="16"
-                    Foreground="#c05050" />
+                    FontSize="16" />
 
             <!-- Always visible -->
             <Button Content="Settings"
+                    Classes="ghost"
                     Command="{Binding SettingsCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
@@ -74,12 +74,12 @@
                     FontSize="16" />
 
             <Button Content="Exit"
+                    Classes="danger"
                     Command="{Binding ExitCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="48"
-                    FontSize="16"
-                    Foreground="#c05050" />
+                    FontSize="16" />
         </StackPanel>
 
     </Grid>

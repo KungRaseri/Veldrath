@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -12,65 +13,67 @@
 
         <StackPanel Grid.Row="1"
                     HorizontalAlignment="Center"
-                    Width="320"
+                    Width="360"
                     Spacing="12">
 
             <TextBlock Text="Create Account"
+                       Classes="title-large"
                        FontSize="36"
-                       FontWeight="Bold"
-                       Foreground="#c8a96e"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24" />
 
             <!-- Email -->
-            <TextBlock Text="Email" Foreground="#8a8a9a" />
+            <TextBlock Text="Email" Classes="muted" />
             <TextBox Text="{Binding Email}"
                      Watermark="Enter your email"
                      Height="40" />
 
             <!-- Username -->
-            <TextBlock Text="Username" Foreground="#8a8a9a" Margin="0,8,0,0" />
+            <TextBlock Text="Username" Classes="muted" Margin="0,8,0,0" />
             <TextBox Text="{Binding Username}"
                      Watermark="Choose a username"
                      Height="40" />
 
             <!-- Password -->
-            <TextBlock Text="Password" Foreground="#8a8a9a" Margin="0,8,0,0" />
+            <TextBlock Text="Password" Classes="muted" Margin="0,8,0,0" />
             <TextBox Text="{Binding Password}"
                      Watermark="Choose a password"
                      PasswordChar="•"
                      Height="40" />
 
             <!-- Confirm Password -->
-            <TextBlock Text="Confirm Password" Foreground="#8a8a9a" Margin="0,8,0,0" />
+            <TextBlock Text="Confirm Password" Classes="muted" Margin="0,8,0,0" />
             <TextBox Text="{Binding ConfirmPassword}"
                      Watermark="Confirm your password"
                      PasswordChar="•"
                      Height="40" />
 
-            <!-- Error message -->
-            <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#c05050"
-                       TextWrapping="Wrap"
-                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <!-- Error feedback -->
+            <ui:InfoBar Title="Registration Failed"
+                        Message="{Binding ErrorMessage}"
+                        Severity="Error"
+                        IsOpen="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                        IsClosable="False"
+                        Margin="0,4,0,0" />
 
             <!-- Register -->
             <Button Content="Register"
+                    Classes="accent"
                     Command="{Binding RegisterCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="44"
                     FontSize="16"
-                    Margin="0,16,0,0" />
+                    Margin="0,8,0,0" />
 
             <!-- Back -->
             <Button Content="Back"
+                    Classes="ghost"
                     Command="{Binding BackCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="40"
-                    FontSize="14"
-                    Foreground="#5a5a7a" />
+                    FontSize="14" />
 
             <!-- Busy indicator -->
             <ProgressBar IsIndeterminate="True"

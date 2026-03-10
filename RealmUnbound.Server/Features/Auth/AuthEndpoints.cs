@@ -46,7 +46,7 @@ public static class AuthEndpoints
         var (response, error) = await authService.LoginAsync(request, ip, ct);
         return response is not null
             ? Results.Ok(response)
-            : Results.Unauthorized();
+            : Results.Json(new { error }, statusCode: 401);
     }
 
     private static async Task<IResult> RefreshAsync(
@@ -59,7 +59,7 @@ public static class AuthEndpoints
         var (response, error) = await authService.RefreshAsync(request.RefreshToken, ip, ct);
         return response is not null
             ? Results.Ok(response)
-            : Results.Unauthorized();
+            : Results.Json(new { error }, statusCode: 401);
     }
 
     private static async Task<IResult> LogoutAsync(
