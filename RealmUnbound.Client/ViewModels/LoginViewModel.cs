@@ -9,15 +9,15 @@ public class LoginViewModel : ViewModelBase
     private readonly IAuthService _auth;
     private readonly INavigationService _navigation;
 
-    private string _username = string.Empty;
+    private string _email = string.Empty;
     private string _password = string.Empty;
     private string _errorMessage = string.Empty;
     private bool _isBusy;
 
-    public string Username
+    public string Email
     {
-        get => _username;
-        set => this.RaiseAndSetIfChanged(ref _username, value);
+        get => _email;
+        set => this.RaiseAndSetIfChanged(ref _email, value);
     }
 
     public string Password
@@ -47,8 +47,8 @@ public class LoginViewModel : ViewModelBase
         _navigation = navigation;
 
         var canSubmit = this.WhenAnyValue(
-            x => x.Username, x => x.Password, x => x.IsBusy,
-            (u, p, busy) => !string.IsNullOrWhiteSpace(u) && !string.IsNullOrWhiteSpace(p) && !busy);
+            x => x.Email, x => x.Password, x => x.IsBusy,
+            (e, p, busy) => !string.IsNullOrWhiteSpace(e) && !string.IsNullOrWhiteSpace(p) && !busy);
 
         LoginCommand = ReactiveCommand.CreateFromTask(DoLoginAsync, canSubmit);
         BackCommand  = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
@@ -60,7 +60,7 @@ public class LoginViewModel : ViewModelBase
         ErrorMessage = string.Empty;
         try
         {
-            var (response, error) = await _auth.LoginAsync(Username, Password);
+            var (response, error) = await _auth.LoginAsync(Email, Password);
             if (response is not null)
                 _navigation.NavigateTo<CharacterSelectViewModel>();
             else

@@ -29,6 +29,8 @@ public class AuthService(
         {
             UserName = request.Username,
             NormalizedUserName = request.Username.ToUpperInvariant(),
+            Email = request.Email,
+            NormalizedEmail = request.Email.ToUpperInvariant(),
         };
 
         var result = await userManager.CreateAsync(user, request.Password);
@@ -41,7 +43,7 @@ public class AuthService(
     public async Task<(AuthResponse? Response, string? Error)> LoginAsync(
         LoginRequest request, string clientIp, CancellationToken ct = default)
     {
-        var user = await userManager.FindByNameAsync(request.Username);
+        var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
             return (null, "Invalid credentials");
 

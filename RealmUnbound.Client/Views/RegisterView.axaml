@@ -22,8 +22,14 @@
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24" />
 
+            <!-- Email -->
+            <TextBlock Text="Email" Foreground="#8a8a9a" />
+            <TextBox Text="{Binding Email}"
+                     Watermark="Enter your email"
+                     Height="40" />
+
             <!-- Username -->
-            <TextBlock Text="Username" Foreground="#8a8a9a" />
+            <TextBlock Text="Username" Foreground="#8a8a9a" Margin="0,8,0,0" />
             <TextBox Text="{Binding Username}"
                      Watermark="Choose a username"
                      Height="40" />
@@ -32,6 +38,13 @@
             <TextBlock Text="Password" Foreground="#8a8a9a" Margin="0,8,0,0" />
             <TextBox Text="{Binding Password}"
                      Watermark="Choose a password"
+                     PasswordChar="•"
+                     Height="40" />
+
+            <!-- Confirm Password -->
+            <TextBlock Text="Confirm Password" Foreground="#8a8a9a" Margin="0,8,0,0" />
+            <TextBox Text="{Binding ConfirmPassword}"
+                     Watermark="Confirm your password"
                      PasswordChar="•"
                      Height="40" />
 

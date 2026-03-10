@@ -22,10 +22,10 @@
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24" />
 
-            <!-- Username -->
-            <TextBlock Text="Username" Foreground="#8a8a9a" />
-            <TextBox Text="{Binding Username}"
-                     Watermark="Enter username"
+            <!-- Email -->
+            <TextBlock Text="Email" Foreground="#8a8a9a" />
+            <TextBox Text="{Binding Email}"
+                     Watermark="Enter your email"
                      Height="40" />
 
             <!-- Password -->

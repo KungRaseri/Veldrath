@@ -1,10 +1,10 @@
 namespace RealmUnbound.Server.Features.Auth;
 
 /// <summary>Request body for account registration.</summary>
-public record RegisterRequest(string Username, string Password);
+public record RegisterRequest(string Email, string Username, string Password);
 
 /// <summary>Request body for login.</summary>
-public record LoginRequest(string Username, string Password);
+public record LoginRequest(string Email, string Password);
 
 /// <summary>Request body for refreshing an access token.</summary>
 public record RefreshRequest(string RefreshToken);
