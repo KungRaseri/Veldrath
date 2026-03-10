@@ -5,8 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="RealmUnbound.Client.Views.LoginView"
-             x:DataType="vm:LoginViewModel">
+             x:Class="RealmUnbound.Client.Views.RegisterView"
+             x:DataType="vm:RegisterViewModel">
 
     <Grid RowDefinitions="*,Auto,*">
 
@@ -15,7 +15,7 @@
                     Width="320"
                     Spacing="12">
 
-            <TextBlock Text="Login"
+            <TextBlock Text="Create Account"
                        FontSize="36"
                        FontWeight="Bold"
                        Foreground="#c8a96e"
@@ -25,13 +25,13 @@
             <!-- Username -->
             <TextBlock Text="Username" Foreground="#8a8a9a" />
             <TextBox Text="{Binding Username}"
-                     Watermark="Enter username"
+                     Watermark="Choose a username"
                      Height="40" />
 
             <!-- Password -->
             <TextBlock Text="Password" Foreground="#8a8a9a" Margin="0,8,0,0" />
             <TextBox Text="{Binding Password}"
-                     Watermark="Enter password"
+                     Watermark="Choose a password"
                      PasswordChar="•"
                      Height="40" />
 
@@ -41,9 +41,9 @@
                        TextWrapping="Wrap"
                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-            <!-- Login -->
-            <Button Content="Login"
-                    Command="{Binding LoginCommand}"
+            <!-- Register -->
+            <Button Content="Register"
+                    Command="{Binding RegisterCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="44"

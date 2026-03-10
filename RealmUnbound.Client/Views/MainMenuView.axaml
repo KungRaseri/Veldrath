@@ -29,15 +29,15 @@
                        Margin="0,0,0,48" />
 
             <!-- Menu buttons -->
-            <Button Content="New Game"
-                    Command="{Binding NewGameCommand}"
+            <Button Content="Register"
+                    Command="{Binding RegisterCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="48"
                     FontSize="16" />
 
-            <Button Content="Load Game"
-                    Command="{Binding LoadGameCommand}"
+            <Button Content="Login"
+                    Command="{Binding LoginCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Height="48"

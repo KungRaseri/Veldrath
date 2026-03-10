@@ -4,7 +4,7 @@ using RealmUnbound.Client.Services;
 
 namespace RealmUnbound.Client.ViewModels;
 
-public class LoginViewModel : ViewModelBase
+public class RegisterViewModel : ViewModelBase
 {
     private readonly IAuthService _auth;
     private readonly INavigationService _navigation;
@@ -38,10 +38,10 @@ public class LoginViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isBusy, value);
     }
 
-    public ReactiveCommand<Unit, Unit> LoginCommand { get; }
+    public ReactiveCommand<Unit, Unit> RegisterCommand { get; }
     public ReactiveCommand<Unit, Unit> BackCommand { get; }
 
-    public LoginViewModel(IAuthService auth, INavigationService navigation)
+    public RegisterViewModel(IAuthService auth, INavigationService navigation)
     {
         _auth = auth;
         _navigation = navigation;
@@ -50,24 +50,22 @@ public class LoginViewModel : ViewModelBase
             x => x.Username, x => x.Password, x => x.IsBusy,
             (u, p, busy) => !string.IsNullOrWhiteSpace(u) && !string.IsNullOrWhiteSpace(p) && !busy);
 
-        LoginCommand = ReactiveCommand.CreateFromTask(DoLoginAsync, canSubmit);
-        BackCommand  = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
+        RegisterCommand = ReactiveCommand.CreateFromTask(DoRegisterAsync, canSubmit);
+        BackCommand = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
     }
 
-    private async Task DoLoginAsync()
+    private async Task DoRegisterAsync()
     {
         IsBusy = true;
         ErrorMessage = string.Empty;
         try
         {
-            var (response, error) = await _auth.LoginAsync(Username, Password);
+            var (response, error) = await _auth.RegisterAsync(Username, Password);
             if (response is not null)
                 _navigation.NavigateTo<CharacterSelectViewModel>();
             else
-                ErrorMessage = error ?? "Login failed.";
+                ErrorMessage = error ?? "Registration failed.";
         }
         finally { IsBusy = false; }
     }
-
-
 }

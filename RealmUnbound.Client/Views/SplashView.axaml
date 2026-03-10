@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.SplashView"
+             x:DataType="vm:SplashViewModel"
+             Background="#0a0a0f">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- Centred title block -->
+        <StackPanel Grid.Row="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="16">
+
+            <TextBlock Text="{Binding Title}"
+                       FontSize="96"
+                       FontWeight="Bold"
+                       Foreground="#c8a96e"
+                       HorizontalAlignment="Center"
+                       LetterSpacing="8" />
+
+            <TextBlock Text="{Binding Subtitle}"
+                       FontSize="20"
+                       Foreground="#5a5a7a"
+                       HorizontalAlignment="Center"
+                       LetterSpacing="3" />
+
+        </StackPanel>
+
+        <!-- Bottom loading bar -->
+        <StackPanel Grid.Row="1" Margin="80,0,80,48" Spacing="10">
+
+            <TextBlock Text="{Binding StatusText}"
+                       Foreground="#5a5a7a"
+                       FontSize="13"
+                       HorizontalAlignment="Left" />
+
+            <ProgressBar Value="{Binding Progress}"
+                         Minimum="0"
+                         Maximum="100"
+                         Height="3"
+                         Foreground="#c8a96e"
+                         Background="#1e1e2e" />
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>
