@@ -1,4 +1,6 @@
 using System.Reactive.Linq;
+using Microsoft.Extensions.Logging.Abstractions;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -12,7 +14,9 @@ public class LoginViewModelTests : TestBase
     {
         return new LoginViewModel(
             auth ?? new FakeAuthService(),
-            nav  ?? new FakeNavigationService());
+            nav  ?? new FakeNavigationService(),
+            new SessionStore(NullLogger<SessionStore>.Instance,
+                Path.Combine(Path.GetTempPath(), $"realm-login-test-{Guid.NewGuid()}.json")));
     }
 
     // ── CanExecute behaviour ──────────────────────────────────────────────────
@@ -172,5 +176,76 @@ public class LoginViewModelTests : TestBase
         vm.Password = "secret";
 
         changes.Should().Contain(nameof(vm.Password));
+    }
+
+    // ── SessionStore integration (pre-fill & remember-me) ─────────────────────
+
+    [Fact]
+    public void Email_Should_Be_Prefilled_When_SessionStore_HasSavedEmail()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"realm-login-prefill-{Guid.NewGuid()}.json");
+        var session = new SessionStore(NullLogger<SessionStore>.Instance, tempFile);
+        session.SaveEmail("saved@test.com");
+
+        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService(), session);
+
+        vm.Email.Should().Be("saved@test.com");
+        vm.RememberEmail.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Email_Should_Not_Be_Prefilled_When_SessionStore_Empty()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"realm-login-empty-{Guid.NewGuid()}.json");
+        var session = new SessionStore(NullLogger<SessionStore>.Instance, tempFile);
+
+        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService(), session);
+
+        vm.Email.Should().BeEmpty();
+        vm.RememberEmail.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoginCommand_Should_Save_Email_When_RememberEmail_Is_True()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"realm-login-save-{Guid.NewGuid()}.json");
+        var session = new SessionStore(NullLogger<SessionStore>.Instance, tempFile);
+        var vm      = new LoginViewModel(new FakeAuthService(), new FakeNavigationService(), session);
+        vm.Email        = "user@test.com";
+        vm.Password     = "Password1!";
+        vm.RememberEmail = true;
+
+        await vm.LoginCommand.Execute();
+
+        session.SavedEmail.Should().Be("user@test.com");
+    }
+
+    [Fact]
+    public async Task LoginCommand_Should_Clear_Email_When_RememberEmail_Is_False()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"realm-login-clear-{Guid.NewGuid()}.json");
+        var session = new SessionStore(NullLogger<SessionStore>.Instance, tempFile);
+        session.SaveEmail("old@test.com"); // pre-populate
+
+        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService(), session);
+        vm.Email         = "user@test.com";
+        vm.Password      = "Password1!";
+        vm.RememberEmail = false;
+
+        await vm.LoginCommand.Execute();
+
+        session.HasSavedEmail.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RememberEmail_Should_Raise_PropertyChanged()
+    {
+        var vm      = MakeVm();
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        vm.RememberEmail = true;
+
+        changes.Should().Contain(nameof(vm.RememberEmail));
     }
 }

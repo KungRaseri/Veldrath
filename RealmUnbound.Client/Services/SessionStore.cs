@@ -12,10 +12,11 @@ namespace RealmUnbound.Client.Services;
 /// </summary>
 public class SessionStore
 {
-    private static readonly string FilePath = Path.Combine(
+    private static readonly string DefaultFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "RealmUnbound", "session.json");
 
+    private readonly string _filePath;
     private readonly ILogger<SessionStore> _logger;
 
     /// <summary>The email address saved from the last successful login, or null if none.</summary>
@@ -23,9 +24,10 @@ public class SessionStore
 
     public bool HasSavedEmail => SavedEmail is not null;
 
-    public SessionStore(ILogger<SessionStore> logger)
+    public SessionStore(ILogger<SessionStore> logger, string? filePath = null)
     {
-        _logger = logger;
+        _logger   = logger;
+        _filePath = filePath ?? DefaultFilePath;
         Load();
     }
 
@@ -47,9 +49,9 @@ public class SessionStore
     {
         try
         {
-            if (!File.Exists(FilePath)) return;
+            if (!File.Exists(_filePath)) return;
 
-            var json = File.ReadAllText(FilePath);
+            var json = File.ReadAllText(_filePath);
             var data = JsonSerializer.Deserialize<SessionData>(json);
             SavedEmail = data?.Email;
         }
@@ -63,9 +65,9 @@ public class SessionStore
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
             var json = JsonSerializer.Serialize(new SessionData(SavedEmail));
-            File.WriteAllText(FilePath, json);
+            File.WriteAllText(_filePath, json);
         }
         catch (Exception ex)
         {

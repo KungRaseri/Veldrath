@@ -73,7 +73,7 @@ public class RegisterViewModel : ViewModelBase
         BackCommand     = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
     }
 
-    private async Task DoRegisterAsync()
+    internal async Task DoRegisterAsync()
     {
         if (Password != ConfirmPassword)
         {
