@@ -166,9 +166,11 @@ public class FakeServerConnectionService : IServerConnectionService
 
 public static class SessionStoreFactory
 {
-    /// <summary>Creates a <see cref="SessionStore"/> backed by a NullLogger for use in unit tests.</summary>
+    /// <summary>Creates a <see cref="SessionStore"/> backed by a NullLogger and an isolated temp file for use in unit tests.</summary>
     public static SessionStore Create() =>
-        new SessionStore(Microsoft.Extensions.Logging.Abstractions.NullLogger<SessionStore>.Instance);
+        new SessionStore(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<SessionStore>.Instance,
+            Path.Combine(Path.GetTempPath(), $"realm-test-{Guid.NewGuid()}.json"));
 }
 
 // ── Zone service stub ─────────────────────────────────────────────────────────
