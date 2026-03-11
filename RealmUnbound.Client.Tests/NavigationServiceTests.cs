@@ -12,7 +12,7 @@ public class NavigationServiceTests : TestBase
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var nav      = new NavigationService(services);
-        var vm       = new MainMenuViewModel(nav);
+        var vm       = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
 
         ViewModelBase? received = null;
         nav.CurrentPageChanged += vw => received = vw;
@@ -27,8 +27,8 @@ public class NavigationServiceTests : TestBase
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var nav      = new NavigationService(services);
-        var vm1      = new MainMenuViewModel(nav);
-        var vm2      = new MainMenuViewModel(nav);
+        var vm1      = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
+        var vm2      = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
 
         var navigations = new List<ViewModelBase>();
         nav.CurrentPageChanged += vw => navigations.Add(vw);
@@ -62,6 +62,7 @@ public class NavigationServiceTests : TestBase
 
         services.AddSingleton<INavigationService>(fakeNav);
         services.AddSingleton<IAuthService>(fakeAuth);
+        services.AddSingleton(new SessionStore(Microsoft.Extensions.Logging.Abstractions.NullLogger<SessionStore>.Instance));
         services.AddSingleton<LoginViewModel>();
         var provider = services.BuildServiceProvider();
 

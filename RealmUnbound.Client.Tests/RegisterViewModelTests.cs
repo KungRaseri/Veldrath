@@ -186,4 +186,20 @@ public class RegisterViewModelTests : TestBase
         vm.RegisterCommand.CanExecute.Subscribe(v => canExecute = v);
         canExecute.Should().BeFalse();
     }
+
+    // ── DoRegisterAsync defensive guard (bypasses CanExecute) ─────────────────
+
+    [Fact]
+    public async Task DoRegisterAsync_Should_Set_ErrorMessage_When_Passwords_Do_Not_Match()
+    {
+        // CanExecute prevents RegisterCommand from firing with mismatched passwords,
+        // but the internal method still has its own guard for defensive safety.
+        var vm = MakeVm();
+        vm.Password        = "Password1!";
+        vm.ConfirmPassword = "DifferentPassword!";
+
+        await vm.DoRegisterAsync();
+
+        vm.ErrorMessage.Should().Be("Passwords do not match.");
+    }
 }

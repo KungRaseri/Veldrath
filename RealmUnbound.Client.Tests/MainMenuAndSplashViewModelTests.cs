@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -7,7 +8,7 @@ namespace RealmUnbound.Client.Tests;
 public class MainMenuViewModelTests : TestBase
 {
     private static MainMenuViewModel MakeVm(FakeNavigationService? nav = null, Action? exit = null)
-        => new MainMenuViewModel(nav ?? new FakeNavigationService(), exit);
+        => new MainMenuViewModel(nav ?? new FakeNavigationService(), new TokenStore(), new FakeAuthService(), exit);
 
     [Fact]
     public void Title_Should_Be_RealmUnbound()
@@ -64,6 +65,62 @@ public class MainMenuViewModelTests : TestBase
         await cmd.Execute();
 
         invoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SelectCharacterCommand_Should_Navigate_To_CharacterSelectViewModel()
+    {
+        var nav = new FakeNavigationService();
+        var vm  = MakeVm(nav);
+
+        await ((ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.SelectCharacterCommand).Execute();
+
+        nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
+    }
+
+    [Fact]
+    public async Task LogoutCommand_Should_Call_AuthService_LogoutAsync()
+    {
+        var auth = new FakeAuthService();
+        var nav  = new FakeNavigationService();
+        var vm   = new MainMenuViewModel(nav, new TokenStore(), auth);
+
+        await ((ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.LogoutCommand).Execute();
+
+        auth.LogoutCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void IsLoggedIn_Should_Be_False_When_TokenStore_Has_No_Token()
+    {
+        var tokens = new TokenStore();
+        var vm     = new MainMenuViewModel(new FakeNavigationService(), tokens, new FakeAuthService());
+
+        vm.IsLoggedIn.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsLoggedIn_Should_Be_True_When_TokenStore_Has_Token()
+    {
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid());
+        var vm = new MainMenuViewModel(new FakeNavigationService(), tokens, new FakeAuthService());
+
+        vm.IsLoggedIn.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsLoggedIn_Should_React_To_TokenStore_Changes()
+    {
+        var tokens = new TokenStore();
+        var vm     = new MainMenuViewModel(new FakeNavigationService(), tokens, new FakeAuthService());
+
+        vm.IsLoggedIn.Should().BeFalse();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid());
+        vm.IsLoggedIn.Should().BeTrue();
+
+        tokens.Clear();
+        vm.IsLoggedIn.Should().BeFalse();
     }
 }
 

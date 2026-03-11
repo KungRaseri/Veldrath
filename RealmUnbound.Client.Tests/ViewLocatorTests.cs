@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -61,7 +62,7 @@ public class ViewLocatorTests
     [AvaloniaFact]
     public void Build_Should_Return_LoginView_For_LoginViewModel()
     {
-        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService());
+        var vm = new LoginViewModel(new FakeAuthService(), new FakeNavigationService(), new SessionStore(Microsoft.Extensions.Logging.Abstractions.NullLogger<SessionStore>.Instance, Path.Combine(Path.GetTempPath(), $"realm-vl-test-{Guid.NewGuid()}.json")));
 
         var result = _sut.Build(vm);
 

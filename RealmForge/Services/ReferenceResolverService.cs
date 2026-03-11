@@ -146,7 +146,7 @@ public class ReferenceResolverService
                 : "";
 
             // Check if this is a catalog with items
-            if (json["items"] is JArray itemsArray)
+            if (json is not null && json["items"] is JArray itemsArray)
             {
                 _logger.LogDebug("Processing {Count} items from {Path}", itemsArray.Count, catalogFile);
 
