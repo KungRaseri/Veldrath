@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace RealmUnbound.Client.Services;
@@ -20,6 +21,7 @@ public interface IHubConnection : IAsyncDisposable
 /// <summary>
 /// Wraps a real <see cref="HubConnection"/> as <see cref="IHubConnection"/>.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class HubConnectionWrapper : IHubConnection
 {
     private readonly HubConnection _inner;

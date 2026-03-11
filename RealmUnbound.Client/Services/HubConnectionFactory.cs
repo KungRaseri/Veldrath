@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace RealmUnbound.Client.Services;
@@ -14,6 +15,7 @@ public interface IHubConnectionFactory
 /// <summary>
 /// Production implementation — builds a real SignalR <see cref="HubConnection"/>.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class HubConnectionFactory : IHubConnectionFactory
 {
     public IHubConnection CreateConnection(string hubUrl, Func<Task<string?>> accessTokenProvider)

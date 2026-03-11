@@ -116,6 +116,7 @@ public class RegisterViewModelTests : TestBase
         await vm.RegisterCommand.Execute();
 
         vm.ErrorMessage.Should().Be("Email already taken");
+        vm.ErrorDetails.Should().BeEmpty();
     }
 
     [Fact]
