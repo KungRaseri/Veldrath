@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.ReactiveUI;
 using RealmUnbound.Client;
 
+[ExcludeFromCodeCoverage]
 class Program
 {
     [STAThread]

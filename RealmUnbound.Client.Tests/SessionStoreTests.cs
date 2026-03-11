@@ -154,4 +154,14 @@ public class SessionStoreTests : TestBase
         // In-memory state is still updated even though persist failed
         store.SavedEmail.Should().Be("test@example.com");
     }
+
+    // ── Default file path ────────────────────────────────────────────────────
+
+    [Fact]
+    public void Constructor_Should_Use_DefaultFilePath_When_No_Path_Provided()
+    {
+        // Exercises the DefaultFilePath static field initializer and the ?? branch
+        var act = () => new SessionStore(NullLogger<SessionStore>.Instance);
+        act.Should().NotThrow();
+    }
 }

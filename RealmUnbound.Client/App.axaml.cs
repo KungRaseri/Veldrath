@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -10,6 +11,7 @@ using Serilog;
 
 namespace RealmUnbound.Client;
 
+[ExcludeFromCodeCoverage]
 public partial class App : Application
 {
     // Server base URL — override via config or env in production

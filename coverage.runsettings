@@ -6,8 +6,10 @@
         <Configuration>
           <Format>cobertura</Format>
           <Include>[RealmEngine.*]*,[RealmForge]*,[RealmUnbound.*]*</Include>
-          <Exclude>[*.Tests]*</Exclude>
+          <Exclude>[*.Tests]*;[RealmUnbound.Client]RealmUnbound.Client.Services.HubConnectionFactory;[RealmUnbound.Client]RealmUnbound.Client.Services.HubConnectionWrapper</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
+          <!-- Compiled XAML resources, XAML closures in views, app bootstrap, entry point, SignalR infrastructure -->
+          <ExcludeByFile>**/Program.cs,**/App.axaml,**/App.axaml.cs,**/Assets/Themes/*.axaml,**/Views/CharacterSelectView.axaml,**/Views/GameView.axaml,**/Services/HubConnectionFactory.cs,**/Services/IHubConnection.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

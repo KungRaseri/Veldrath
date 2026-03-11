@@ -97,6 +97,7 @@ public class LoginViewModelTests : TestBase
         await vm.LoginCommand.Execute();
 
         vm.ErrorMessage.Should().Be("Invalid credentials");
+        vm.ErrorDetails.Should().BeEmpty();
     }
 
     [Fact]
