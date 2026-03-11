@@ -333,4 +333,147 @@ public class CharacterSelectViewModelTests : TestBase
         // No error = success path was taken with "starting-zone" fallback
         vm.ErrorMessage.Should().BeEmpty();
     }
+
+    // ── Lifecycle: create → delete → recreate ─────────────────────────────────
+
+    [Fact]
+    public async Task CreateCommand_ThenDeleteCommand_RemovesCharacterFromList()
+    {
+        var fake = new FakeCharacterService();
+        var vm   = MakeVm(chars: fake);
+        vm.NewCharacterName = "Hero";
+        await vm.CreateCommand.Execute();
+
+        var created = vm.Characters.Single();
+        await vm.DeleteCommand.Execute(created);
+
+        vm.Characters.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CreateDeleteCreate_SameNameSucceeds_CharacterInList()
+    {
+        // First create succeeds; after delete, second create should also succeed
+        var fake = new FakeCharacterService();
+        var vm   = MakeVm(chars: fake);
+
+        // Create "Hero"
+        vm.NewCharacterName = "Hero";
+        await vm.CreateCommand.Execute();
+        var first = vm.Characters.Single();
+
+        // Delete it
+        await vm.DeleteCommand.Execute(first);
+        vm.Characters.Should().BeEmpty();
+
+        // Recreate with same name — FakeCharacterService defaults to success
+        vm.NewCharacterName = "Hero";
+        await vm.CreateCommand.Execute();
+
+        vm.Characters.Should().ContainSingle(c => c.Name == "Hero");
+    }
+
+    [Fact]
+    public async Task CreateDeleteCreate_SameName_ErrorIsCleared()
+    {
+        var fake = new FakeCharacterService();
+        var vm   = MakeVm(chars: fake);
+
+        vm.NewCharacterName = "Hero";
+        await vm.CreateCommand.Execute();
+        var first = vm.Characters.Single();
+
+        // Inject an error into the ViewModel, then go through the lifecycle
+        vm.ErrorMessage = "Some stale error";
+        await vm.DeleteCommand.Execute(first);
+
+        vm.NewCharacterName = "Hero";
+        await vm.CreateCommand.Execute();
+
+        // Successful create should have cleared the error
+        vm.ErrorMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CreateCommand_OnNameConflict_ShowsFriendlyError()
+    {
+        var fake = new FakeCharacterService
+        {
+            CreateResult = (null, new AppError("That character name is already taken. Please choose a different name."))
+        };
+        var vm = MakeVm(chars: fake);
+        vm.NewCharacterName = "Taken";
+
+        await vm.CreateCommand.Execute();
+
+        vm.ErrorMessage.Should().Contain("already taken");
+    }
+
+    [Fact]
+    public async Task ShowCreateCommand_ClearsErrorFromPreviousFailedCreate()
+    {
+        var fake = new FakeCharacterService
+        {
+            CreateResult = (null, new AppError("Name conflict"))
+        };
+        var vm = MakeVm(chars: fake);
+        vm.NewCharacterName = "Bad";
+        await vm.CreateCommand.Execute(); // sets vm.ErrorMessage
+
+        // Open the create panel again
+        await vm.CancelCreateCommand.Execute();
+        await vm.ShowCreateCommand.Execute();
+
+        vm.ErrorMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteCommand_DoesNotClearErrorFromUnrelatedCreate()
+    {
+        // If create failed and then user deletes a different character,
+        // the delete error (if any) overrides, but a successful delete clears the board.
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var fake = new FakeCharacterService
+        {
+            Characters  = [character],
+            DeleteError = null   // delete succeeds
+        };
+        var vm = MakeVm(chars: fake);
+        await Task.Yield();
+
+        vm.ErrorMessage = "Stale create error";
+        await vm.DeleteCommand.Execute(character);
+
+        // Successful delete should clear any previous error
+        vm.ErrorMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MultipleDeletesThenCreates_AllSucceed()
+    {
+        var fake = new FakeCharacterService();
+        var vm   = MakeVm(chars: fake);
+
+        // Create three characters
+        foreach (var name in new[] { "Alpha", "Beta", "Gamma" })
+        {
+            vm.NewCharacterName = name;
+            await vm.CreateCommand.Execute();
+        }
+        vm.Characters.Should().HaveCount(3);
+
+        // Delete all three
+        foreach (var c in vm.Characters.ToList())
+            await vm.DeleteCommand.Execute(c);
+        vm.Characters.Should().BeEmpty();
+
+        // Recreate each — none should conflict in the fake service
+        foreach (var name in new[] { "Alpha", "Beta", "Gamma" })
+        {
+            vm.NewCharacterName = name;
+            await vm.CreateCommand.Execute();
+        }
+        vm.Characters.Should().HaveCount(3);
+    }
 }

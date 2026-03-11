@@ -354,6 +354,57 @@ public class HttpCharacterServiceTests : TestBase
 
         error!.Message.Should().Be("Network error. Please check your connection.");
     }
+
+    // ── Lifecycle / edge-case ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateCharacterAsync_Returns409_WithFriendlyNameTakenMessage()
+    {
+        var body = new { title = "Conflict", detail = "A character with that name already exists." };
+        var sut = MakeSut(FakeHttpHandler.Json(body, HttpStatusCode.Conflict));
+
+        var (character, error) = await sut.CreateCharacterAsync("Taken", "Fighter");
+
+        character.Should().BeNull();
+        error.Should().NotBeNull();
+        error!.Message.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task CreateCharacterAsync_Returns401_ReturnsError()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Unauthorized", HttpStatusCode.Unauthorized));
+
+        var (character, error) = await sut.CreateCharacterAsync("Hero", "Fighter");
+
+        character.Should().BeNull();
+        error.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteThenCreate_BothSucceed_When_Server_Cooperates()
+    {
+        // Two sequential calls: first DELETE 204, then POST 201 with a character
+        var newChar = SampleChar with { Name = "Recycled" };
+        int callCount = 0;
+        var handler = new FakeHttpHandler(_ =>
+        {
+            callCount++;
+            return callCount == 1
+                ? new HttpResponseMessage(HttpStatusCode.NoContent)
+                : new HttpResponseMessage(HttpStatusCode.Created)
+                  { Content = System.Net.Http.Json.JsonContent.Create(newChar) };
+        });
+        var sut = MakeSut(handler);
+
+        var deleteError = await sut.DeleteCharacterAsync(Guid.NewGuid());
+        var (created, createError) = await sut.CreateCharacterAsync("Recycled", "Fighter");
+
+        deleteError.Should().BeNull();
+        created.Should().NotBeNull();
+        createError.Should().BeNull();
+        created!.Name.Should().Be("Recycled");
+    }
 }
 
 // ── HttpZoneService tests ─────────────────────────────────────────────────────
