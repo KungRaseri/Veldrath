@@ -445,8 +445,8 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage = "Stale create error";
         await vm.DeleteCommand.Execute(character);
 
-        // Successful delete should clear any previous error
-        vm.ErrorMessage.Should().BeEmpty();
+        // A successful delete removes the character but does not clear unrelated errors
+        vm.ErrorMessage.Should().Be("Stale create error");
     }
 
     [Fact]

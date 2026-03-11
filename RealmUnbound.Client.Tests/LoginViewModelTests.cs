@@ -23,8 +23,8 @@ public class LoginViewModelTests : TestBase
     public void LoginCommand_Should_Be_Disabled_When_Email_Is_Empty()
     {
         var vm = MakeVm();
+        vm.Email    = string.Empty; // override any email saved to disk by SessionStore
         vm.Password = "Password1!";
-        // Email is empty by default
         bool canExecute = false;
         vm.LoginCommand.CanExecute.Subscribe(v => canExecute = v);
         canExecute.Should().BeFalse();
