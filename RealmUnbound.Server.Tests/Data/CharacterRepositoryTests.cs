@@ -310,4 +310,157 @@ public class CharacterRepositoryTests : IDisposable
         found!.Level.Should().Be(5);
         found.Experience.Should().Be(1234);
     }
+
+    // ── Lifecycle: create → delete → recreate ─────────────────────────────────
+
+    [Fact]
+    public async Task CreateAsync_AfterSoftDelete_SameNameSucceeds()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var original = await repo.CreateAsync(MakeCharacter(accountId, "Hero", 1));
+        await repo.SoftDeleteAsync(original.Id);
+
+        // The name should now be available — this must not throw a unique-constraint error
+        Func<Task> act = () => repo.CreateAsync(MakeCharacter(accountId, "Hero", 1));
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task CreateAsync_AfterSoftDelete_NewCharacterIsActive()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var first = await repo.CreateAsync(MakeCharacter(accountId, "Hero", 1));
+        await repo.SoftDeleteAsync(first.Id);
+
+        var second = await repo.CreateAsync(MakeCharacter(accountId, "Hero", 1));
+
+        var found = await repo.GetByIdAsync(second.Id);
+        found.Should().NotBeNull();
+        found!.Name.Should().Be("Hero");
+    }
+
+    [Fact]
+    public async Task CreateAsync_AfterSoftDelete_DifferentAccountClaimsName()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountA  = await SeedAccountAsync(db, "Owner_A");
+        var accountB  = await SeedAccountAsync(db, "Owner_B");
+
+        var original = await repo.CreateAsync(MakeCharacter(accountA, "SharedName", 1));
+        await repo.SoftDeleteAsync(original.Id);
+
+        // After Account A deletes, Account B should be able to claim the name
+        Func<Task> act = () => repo.CreateAsync(MakeCharacter(accountB, "SharedName", 1));
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task SoftDeleteAsync_RenamesCharacter_In_Database()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var c = await repo.CreateAsync(MakeCharacter(accountId, "OriginalName", 1));
+        await repo.SoftDeleteAsync(c.Id);
+
+        // Query raw storage (bypassing soft-delete filter) to verify rename
+        var raw = await db.Characters.IgnoreQueryFilters().SingleAsync(x => x.Id == c.Id);
+        raw.Name.Should().StartWith("OriginalName_deleted_");
+    }
+
+    [Fact]
+    public async Task SoftDeleteAsync_AssignsNegativeSlot_FreesSlotForNewCharacter()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var c = await repo.CreateAsync(MakeCharacter(accountId, "SlotHolder", 1));
+        await repo.SoftDeleteAsync(c.Id);
+
+        // Raw record must have a negative slot so the original slot 1 is free
+        var raw = await db.Characters.IgnoreQueryFilters().SingleAsync(x => x.Id == c.Id);
+        raw.SlotIndex.Should().BeNegative();
+    }
+
+    [Fact]
+    public async Task MultipleDeletes_OnSameAccount_DoNotViolateSlotConstraint()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Multi_A", 1));
+        var c2 = await repo.CreateAsync(MakeCharacter(accountId, "Multi_B", 2));
+        var c3 = await repo.CreateAsync(MakeCharacter(accountId, "Multi_C", 3));
+
+        // Deleting all three must not throw a unique-index violation for SlotIndex
+        Func<Task> act = async () =>
+        {
+            await repo.SoftDeleteAsync(c1.Id);
+            await repo.SoftDeleteAsync(c2.Id);
+            await repo.SoftDeleteAsync(c3.Id);
+        };
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task GetLastPlayedAsync_Should_Exclude_Soft_Deleted_Characters()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var alive   = await repo.CreateAsync(MakeCharacter(accountId, "Alive",   1));
+        var deleted = await repo.CreateAsync(MakeCharacter(accountId, "Deleted", 2));
+
+        // Make "Deleted" the most recently played, then delete it
+        deleted.LastPlayedAt = DateTimeOffset.UtcNow.AddHours(1);
+        await repo.UpdateAsync(deleted);
+        await repo.SoftDeleteAsync(deleted.Id);
+
+        var last = await repo.GetLastPlayedAsync(accountId);
+        last?.Name.Should().Be("Alive");
+    }
+
+    [Fact]
+    public async Task GetActiveCountAsync_Remains_Accurate_After_Multiple_Deletions()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Keep_A",  1));
+        var c2 = await repo.CreateAsync(MakeCharacter(accountId, "Keep_B",  2));
+        var c3 = await repo.CreateAsync(MakeCharacter(accountId, "Del_C",   3));
+        var c4 = await repo.CreateAsync(MakeCharacter(accountId, "Del_D",   4));
+        _ = c1; _ = c2;
+
+        await repo.SoftDeleteAsync(c3.Id);
+        await repo.SoftDeleteAsync(c4.Id);
+
+        (await repo.GetActiveCountAsync(accountId)).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task NameExistsAsync_Should_Return_True_After_Recreate()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var first = await repo.CreateAsync(MakeCharacter(accountId, "Recurring", 1));
+        await repo.SoftDeleteAsync(first.Id);
+        await repo.CreateAsync(MakeCharacter(accountId, "Recurring", 1));
+
+        (await repo.NameExistsAsync("Recurring")).Should().BeTrue();
+    }
 }

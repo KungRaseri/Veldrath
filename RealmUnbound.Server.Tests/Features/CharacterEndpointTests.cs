@@ -276,4 +276,147 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         var list = await clientB.GetFromJsonAsync<CharacterResult[]>("/api/characters");
         list.Should().NotContain(c => c.Name == "IsolA_Char");
     }
+
+    // ── Lifecycle: create → delete → recreate ─────────────────────────────────
+
+    [Fact]
+    public async Task CreateCharacter_AfterDeletingSameNamedChar_Succeeds()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_Reclaim_User"));
+
+        // Create, then delete
+        var create = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "Recyclable", ClassName = "@classes/warriors:fighter" });
+        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        await _client.DeleteAsync($"/api/characters/{created!.Id}");
+
+        // Recreate with the exact same name — must return 201, not 409
+        var recreate = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "Recyclable", ClassName = "@classes/warriors:fighter" });
+
+        recreate.StatusCode.Should().Be(HttpStatusCode.Created);
+        var reborn = await recreate.Content.ReadFromJsonAsync<CharacterResult>();
+        reborn!.Name.Should().Be("Recyclable");
+    }
+
+    [Fact]
+    public async Task CreateCharacter_AfterDeletingSameNamedChar_AppearsInList()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_ReclaimList_User"));
+
+        var create = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "ListReclaim", ClassName = "@classes/warriors:fighter" });
+        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        await _client.DeleteAsync($"/api/characters/{created!.Id}");
+
+        await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "ListReclaim", ClassName = "@classes/warriors:fighter" });
+
+        var list = await _client.GetFromJsonAsync<CharacterResult[]>("/api/characters");
+        list.Should().ContainSingle(c => c.Name == "ListReclaim");
+    }
+
+    [Fact]
+    public async Task CreateCharacter_AfterDeletedByDifferentAccount_ClaimsName()
+    {
+        // Account A creates and deletes "FreeAgent"
+        using var clientA = factory.CreateClient();
+        clientA.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_FreeA_User"));
+        var create = await clientA.PostAsJsonAsync("/api/characters",
+            new { Name = "FreeAgent", ClassName = "@classes/warriors:fighter" });
+        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        await clientA.DeleteAsync($"/api/characters/{created!.Id}");
+
+        // Account B should now be able to claim "FreeAgent"
+        using var clientB = factory.CreateClient();
+        clientB.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_FreeB_User"));
+        var claim = await clientB.PostAsJsonAsync("/api/characters",
+            new { Name = "FreeAgent", ClassName = "@classes/warriors:fighter" });
+
+        claim.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task DeleteMultipleCharacters_ThenRecreate_AllNamesAvailable()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_MultiDel_User"));
+
+        // Create three characters
+        var names = new[] { "MultiDel_A", "MultiDel_B", "MultiDel_C" };
+        var ids   = new List<Guid>();
+        foreach (var n in names)
+        {
+            var r = await _client.PostAsJsonAsync("/api/characters",
+                new { Name = n, ClassName = "@classes/warriors:fighter" });
+            var c = await r.Content.ReadFromJsonAsync<CharacterResult>();
+            ids.Add(c!.Id);
+        }
+
+        // Delete all three
+        foreach (var id in ids)
+            await _client.DeleteAsync($"/api/characters/{id}");
+
+        // Recreate each — none should conflict
+        foreach (var n in names)
+        {
+            var r = await _client.PostAsJsonAsync("/api/characters",
+                new { Name = n, ClassName = "@classes/warriors:fighter" });
+            r.StatusCode.Should().Be(HttpStatusCode.Created, $"recreating {n} should succeed");
+        }
+    }
+
+    [Fact]
+    public async Task SlotLimit_DoesNotCountDeletedCharacters()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SlotDel_User"));
+
+        // Fill all 5 slots
+        var toDelete = new List<Guid>();
+        for (int i = 1; i <= 5; i++)
+        {
+            var r = await _client.PostAsJsonAsync("/api/characters",
+                new { Name = $"SlotDel_{i}", ClassName = "@classes/warriors:fighter" });
+            var c = await r.Content.ReadFromJsonAsync<CharacterResult>();
+            toDelete.Add(c!.Id);
+        }
+
+        // Delete one to free a slot
+        await _client.DeleteAsync($"/api/characters/{toDelete[0]}");
+
+        // Sixth character should succeed now that a slot is free
+        var sixth = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SlotDel_New", ClassName = "@classes/warriors:fighter" });
+
+        sixth.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_WithEmptyName_Returns400()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_EmptyName_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "", ClassName = "@classes/warriors:fighter" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_WithWhitespaceName_Returns400()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_WsName_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "   ", ClassName = "@classes/warriors:fighter" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }
