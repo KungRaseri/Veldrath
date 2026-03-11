@@ -82,6 +82,15 @@ jobs:
       run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
       shell: pwsh
 
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./CoverageReport/Cobertura.xml
+        flags: client
+        name: client-coverage
+        fail_ci_if_error: false
+
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       if: always()
