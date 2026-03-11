@@ -476,4 +476,55 @@ public class CharacterSelectViewModelTests : TestBase
         }
         vm.Characters.Should().HaveCount(3);
     }
+
+    // ── LogoutCommand ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task LogoutCommand_Should_Call_AuthService_LogoutAsync()
+    {
+        var auth = new FakeAuthService();
+        var conn = new FakeServerConnectionService();
+        var nav  = new FakeNavigationService();
+        var gameVm = MakeGameVm(conn: conn, nav: nav);
+        var vm     = new CharacterSelectViewModel(
+            new FakeCharacterService(), conn, nav, gameVm, auth);
+
+        await vm.LogoutCommand.Execute();
+
+        auth.LogoutCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task LogoutCommand_Should_Navigate_To_MainMenuViewModel()
+    {
+        var auth = new FakeAuthService();
+        var nav  = new FakeNavigationService();
+        var vm   = new CharacterSelectViewModel(
+            new FakeCharacterService(),
+            new FakeServerConnectionService(),
+            nav,
+            MakeGameVm(nav: nav),
+            auth);
+
+        await vm.LogoutCommand.Execute();
+
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+    }
+
+    // ── PanelTitle ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task PanelTitle_Should_Be_SelectYourCharacter_By_Default()
+    {
+        var vm = MakeVm();
+        vm.PanelTitle.Should().Be("Select Your Character");
+    }
+
+    [Fact]
+    public async Task PanelTitle_Should_Be_NewCharacter_When_IsCreating_Is_True()
+    {
+        var vm = MakeVm();
+        await vm.ShowCreateCommand.Execute();
+        vm.PanelTitle.Should().Be("New Character");
+    }
 }

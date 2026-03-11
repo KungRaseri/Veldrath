@@ -12,7 +12,6 @@ namespace RealmForge.Views;
 public partial class JsonEditorView : UserControl
 {
     private JsonEditorViewModel? _vm;
-    private bool _isLoadingContent;
     private IDisposable? _contentSubscription;
 
     public JsonEditorView()
