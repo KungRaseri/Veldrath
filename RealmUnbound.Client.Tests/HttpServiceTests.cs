@@ -202,6 +202,36 @@ public class HttpAuthServiceTests : TestBase
         tokens.IsAuthenticated.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task RefreshAsync_Should_Return_False_When_Body_Deserializes_To_Null()
+    {
+        // Server returns 200 OK but body is "null" — ReadFromJsonAsync<AuthResponse> returns null
+        var tokens = new TokenStore();
+        tokens.Set("old-access", "old-refresh", "User", Guid.NewGuid());
+        var fakeHandler = new FakeHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new System.Net.Http.StringContent("null", System.Text.Encoding.UTF8, "application/json")
+        });
+        var sut = MakeSut(fakeHandler, tokens);
+
+        var result = await sut.RefreshAsync();
+
+        result.Should().BeFalse();
+        tokens.IsAuthenticated.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_Should_Return_False_And_Not_Throw_On_Network_Exception()
+    {
+        var tokens = new TokenStore();
+        tokens.Set("old-access", "old-refresh", "User", Guid.NewGuid());
+        var sut = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("timeout")), tokens);
+
+        var result = await sut.RefreshAsync();
+
+        result.Should().BeFalse();
+    }
+
     // ── LogoutAsync ───────────────────────────────────────────────────────────
 
     [Fact]
