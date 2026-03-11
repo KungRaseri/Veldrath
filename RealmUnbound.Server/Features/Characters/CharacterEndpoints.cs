@@ -48,6 +48,9 @@ public static class CharacterEndpoints
     {
         var accountId = GetAccountId(user);
 
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Results.BadRequest(new { error = "Character name is required" });
+
         var account = await accountRepo.FindByIdAsync(accountId, ct);
         if (account is null) return Results.Unauthorized();
 
