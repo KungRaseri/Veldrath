@@ -1,11 +1,15 @@
 - name: Home
   href: README.md
+
 - name: Game Design
   items:
   - name: Game Design Document
     href: GDD-Main.md
   - name: Roadmap
     href: ROADMAP.md
+  - name: Implementation Status
+    href: IMPLEMENTATION_STATUS.md
+
 - name: Architecture
   items:
   - name: API Specification
@@ -14,26 +18,30 @@
     href: COMMANDS_AND_QUERIES_INDEX.md
   - name: CQRS Implementation
     href: CQRS_IMPLEMENTATION_STATUS.md
-  - name: Implementation Status
-    href: IMPLEMENTATION_STATUS.md
-  - name: Service Registration
-    href: SERVICE_REGISTRATION_REPORT.md
   - name: Exception Logging
     href: EXCEPTION_LOGGING_GUIDE.md
+  - name: Service Registration
+    href: SERVICE_REGISTRATION_REPORT.md
+
 - name: Game Systems
+  href: systems/CURRENT_SYSTEMS_REVIEW.md
   items:
-  - name: Overview
-    href: systems/CURRENT_SYSTEMS_REVIEW.md
   - name: Abilities
     href: features/abilities-system.md
+  - name: Achievements
+    href: features/achievement-system.md
   - name: Character
     href: features/character-system.md
   - name: Combat
     href: features/combat-system.md
   - name: Crafting
     href: features/crafting-system.md
+  - name: Death
+    href: features/death-system.md
   - name: Exploration
     href: features/exploration-system.md
+  - name: Harvesting
+    href: features/harvesting-system.md
   - name: Inventory
     href: features/inventory-system.md
   - name: Magic & Spells
@@ -42,41 +50,79 @@
     href: features/progression-system.md
   - name: Quests
     href: features/quest-system.md
+  - name: Save & Load
+    href: features/save-load-system.md
   - name: Shop
     href: features/shop-system-integration.md
   - name: Skills
     href: features/skills-system.md
   - name: Status Effects
     href: features/status-effects-system.md
-  - name: Save & Load
-    href: features/save-load-system.md
+
 - name: Data Standards
+  href: standards/README.md
   items:
-  - name: Overview
-    href: standards/README.md
-  - name: JSON Standards
+  - name: JSON
     href: standards/json/README.md
-  - name: Catalog Standard
-    href: standards/json/CATALOG_JSON_STANDARD.md
-  - name: Names Standard
-    href: standards/json/NAMES_JSON_STANDARD.md
-  - name: Reference System
-    href: standards/json/JSON_REFERENCE_STANDARDS.md
-  - name: Enemy Standard v5
-    href: standards/json/ENEMY_JSON_STANDARD_v5.md
-  - name: Migration Guide v5
-    href: standards/json/MIGRATION_GUIDE_v5.md
-  - name: Trait Standards
-    href: standards/json/TRAIT_STANDARDS.md
-  - name: CBConfig Standard
-    href: standards/json/CBCONFIG_STANDARD.md
+    items:
+    - name: Reference System
+      href: standards/json/JSON_REFERENCE_STANDARDS.md
+    - name: Catalog Standard
+      href: standards/json/CATALOG_JSON_STANDARD.md
+    - name: Names Standard
+      href: standards/json/NAMES_JSON_STANDARD.md
+    - name: Enemy Standard
+      href: standards/json/ENEMY_JSON_STANDARD_v5.md
+    - name: Trait Standards
+      href: standards/json/TRAIT_STANDARDS.md
+    - name: CBConfig Standard
+      href: standards/json/CBCONFIG_STANDARD.md
+    - name: Migration Guide
+      href: standards/json/MIGRATION_GUIDE_v5.md
+  - name: Structure
+    items:
+    - name: JSON Structure
+      href: standards/JSON_STRUCTURE_STANDARDS.md
+    - name: Types Structure
+      href: standards/TYPES_JSON_STRUCTURE.md
+    - name: Pattern Components
+      href: standards/patterns/PATTERN_COMPONENT_STANDARDS.md
+  - name: Systems
+    items:
+    - name: Item Enhancement
+      href: standards/systems/ITEM_ENHANCEMENT_SYSTEM.md
+    - name: Weight-Based Rarity
+      href: standards/systems/WEIGHT_BASED_RARITY_SYSTEM.md
+
 - name: RealmForge
+  href: realm-forge/README.md
   items:
-  - name: Overview
-    href: realm-forge/README.md
   - name: Implementation Order
     href: realm-forge/IMPLEMENTATION_ORDER.md
+  - name: Features
+    items:
+    - name: Architecture
+      href: realm-forge/features/architecture.md
+    - name: Form System
+      href: realm-forge/features/form-system.md
+    - name: JSON Editing
+      href: realm-forge/features/json-editing.md
+    - name: Modding Framework
+      href: realm-forge/features/modding-framework.md
+    - name: Roadmap
+      href: realm-forge/features/roadmap.md
+
 - name: Workflows
   items:
   - name: Material Workflow
     href: MATERIAL_WORKFLOW.md
+
+- name: Proposals
+  items:
+  - name: Budget System Field Standardization
+    href: proposals/BUDGET_SYSTEM_FIELD_STANDARDIZATION.md
+  - name: Item Component Separation
+    href: proposals/ITEM_COMPONENT_SEPARATION.md
+  - name: Weight Terminology Consolidation
+    href: proposals/WEIGHT_TERMINOLOGY_CONSOLIDATION.md
+

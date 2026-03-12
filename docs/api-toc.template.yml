@@ -1,0 +1,309 @@
+# Custom API reference navigation — organized by project → namespace.
+# This file is copied over the auto-generated api/toc.yml by the docs workflow
+# after `docfx metadata` runs, before `docfx build`.
+
+- name: RealmEngine.Core
+  items:
+  - name: Infrastructure
+    items:
+    - name: RealmEngine.Core
+      href: RealmEngine.Core.yml
+    - name: Abstractions
+      href: RealmEngine.Core.Abstractions.yml
+    - name: Behaviors
+      href: RealmEngine.Core.Behaviors.yml
+    - name: Generators
+      items:
+      - name: RealmEngine.Core.Generators
+        href: RealmEngine.Core.Generators.yml
+      - name: Modern
+        href: RealmEngine.Core.Generators.Modern.yml
+    - name: Services
+      items:
+      - name: RealmEngine.Core.Services
+        href: RealmEngine.Core.Services.yml
+      - name: Budget
+        href: RealmEngine.Core.Services.Budget.yml
+      - name: Harvesting
+        href: RealmEngine.Core.Services.Harvesting.yml
+    - name: Settings
+      href: RealmEngine.Core.Settings.yml
+    - name: Validators
+      href: RealmEngine.Core.Validators.yml
+  - name: Features
+    items:
+    - name: Achievements
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Achievements.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Achievements.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Achievements.Services.yml
+    - name: Character Creation
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.CharacterCreation.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.CharacterCreation.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.CharacterCreation.Services.yml
+    - name: Characters
+      items:
+      - name: Queries
+        href: RealmEngine.Core.Features.Characters.Queries.yml
+    - name: Combat
+      items:
+      - name: RealmEngine.Core.Features.Combat
+        href: RealmEngine.Core.Features.Combat.yml
+      - name: Commands
+        items:
+        - name: RealmEngine.Core.Features.Combat.Commands
+          href: RealmEngine.Core.Features.Combat.Commands.yml
+        - name: Attack Enemy
+          href: RealmEngine.Core.Features.Combat.Commands.AttackEnemy.yml
+        - name: Defend Action
+          href: RealmEngine.Core.Features.Combat.Commands.DefendAction.yml
+        - name: Encounter Boss
+          href: RealmEngine.Core.Features.Combat.Commands.EncounterBoss.yml
+        - name: Flee From Combat
+          href: RealmEngine.Core.Features.Combat.Commands.FleeFromCombat.yml
+        - name: Use Combat Item
+          href: RealmEngine.Core.Features.Combat.Commands.UseCombatItem.yml
+      - name: Queries
+        items:
+        - name: Get Combat State
+          href: RealmEngine.Core.Features.Combat.Queries.GetCombatState.yml
+        - name: Get Enemy Info
+          href: RealmEngine.Core.Features.Combat.Queries.GetEnemyInfo.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Combat.Services.yml
+    - name: Crafting
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Crafting.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Crafting.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Crafting.Services.yml
+    - name: Death
+      items:
+      - name: RealmEngine.Core.Features.Death
+        href: RealmEngine.Core.Features.Death.yml
+      - name: Commands
+        href: RealmEngine.Core.Features.Death.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Death.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Death.Services.yml
+    - name: Difficulty
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Difficulty.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Difficulty.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Difficulty.Services.yml
+    - name: Enchanting
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Enchanting.Commands.yml
+    - name: Equipment
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Equipment.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Equipment.Queries.yml
+    - name: Exploration
+      items:
+      - name: RealmEngine.Core.Features.Exploration
+        href: RealmEngine.Core.Features.Exploration.yml
+      - name: Commands
+        href: RealmEngine.Core.Features.Exploration.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Exploration.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Exploration.Services.yml
+    - name: Harvesting
+      href: RealmEngine.Core.Features.Harvesting.yml
+    - name: Inventory
+      items:
+      - name: RealmEngine.Core.Features.Inventory
+        href: RealmEngine.Core.Features.Inventory.yml
+      - name: Commands
+        href: RealmEngine.Core.Features.Inventory.Commands.yml
+      - name: Queries
+        items:
+        - name: RealmEngine.Core.Features.Inventory.Queries
+          href: RealmEngine.Core.Features.Inventory.Queries.yml
+        - name: Check Item Equipped
+          href: RealmEngine.Core.Features.Inventory.Queries.CheckItemEquipped.yml
+        - name: Get Equipped Items
+          href: RealmEngine.Core.Features.Inventory.Queries.GetEquippedItems.yml
+        - name: Get Inventory Value
+          href: RealmEngine.Core.Features.Inventory.Queries.GetInventoryValue.yml
+        - name: Get Player Inventory
+          href: RealmEngine.Core.Features.Inventory.Queries.GetPlayerInventory.yml
+    - name: Item Generation
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.ItemGeneration.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.ItemGeneration.Queries.yml
+    - name: Level Up
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.LevelUp.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.LevelUp.Queries.yml
+    - name: Party
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Party.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Party.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Party.Services.yml
+    - name: Progression
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Progression.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Progression.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Progression.Services.yml
+    - name: Quests
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Quests.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Quests.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Quests.Services.yml
+    - name: Reputation
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Reputation.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Reputation.Queries.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Reputation.Services.yml
+    - name: Salvaging
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Salvaging.Commands.yml
+    - name: Save & Load
+      items:
+      - name: RealmEngine.Core.Features.SaveLoad
+        href: RealmEngine.Core.Features.SaveLoad.yml
+      - name: Commands
+        href: RealmEngine.Core.Features.SaveLoad.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.SaveLoad.Queries.yml
+    - name: Shop
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Shop.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Shop.Queries.yml
+    - name: Socketing
+      items:
+      - name: RealmEngine.Core.Features.Socketing
+        href: RealmEngine.Core.Features.Socketing.yml
+      - name: Commands
+        href: RealmEngine.Core.Features.Socketing.Commands.yml
+      - name: Queries
+        href: RealmEngine.Core.Features.Socketing.Queries.yml
+    - name: Upgrading
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Upgrading.Commands.yml
+    - name: Victory
+      items:
+      - name: Commands
+        href: RealmEngine.Core.Features.Victory.Commands.yml
+      - name: Services
+        href: RealmEngine.Core.Features.Victory.Services.yml
+
+- name: RealmEngine.Shared
+  items:
+  - name: Abstractions
+    href: RealmEngine.Shared.Abstractions.yml
+  - name: Data
+    items:
+    - name: RealmEngine.Shared.Data
+      href: RealmEngine.Shared.Data.yml
+    - name: Models
+      href: RealmEngine.Shared.Data.Models.yml
+  - name: Models
+    items:
+    - name: RealmEngine.Shared.Models
+      href: RealmEngine.Shared.Models.yml
+    - name: Harvesting
+      href: RealmEngine.Shared.Models.Harvesting.yml
+  - name: Services
+    href: RealmEngine.Shared.Services.yml
+  - name: Utilities
+    href: RealmEngine.Shared.Utilities.yml
+
+- name: RealmEngine.Data
+  items:
+  - name: Persistence
+    href: RealmEngine.Data.Persistence.yml
+  - name: Repositories
+    href: RealmEngine.Data.Repositories.yml
+  - name: Services
+    href: RealmEngine.Data.Services.yml
+
+- name: RealmForge
+  items:
+  - name: RealmForge
+    href: RealmForge.yml
+  - name: Models
+    href: RealmForge.Models.yml
+  - name: Services
+    href: RealmForge.Services.yml
+  - name: Validators
+    href: RealmForge.Validators.yml
+  - name: ViewModels
+    href: RealmForge.ViewModels.yml
+  - name: Views
+    items:
+    - name: RealmForge.Views
+      href: RealmForge.Views.yml
+    - name: Dialogs
+      href: RealmForge.Views.Dialogs.yml
+
+- name: RealmUnbound.Client
+  items:
+  - name: RealmUnbound.Client
+    href: RealmUnbound.Client.yml
+  - name: Services
+    href: RealmUnbound.Client.Services.yml
+  - name: ViewModels
+    href: RealmUnbound.Client.ViewModels.yml
+  - name: Views
+    href: RealmUnbound.Client.Views.yml
+
+- name: RealmUnbound.Server
+  items:
+  - name: Data
+    items:
+    - name: RealmUnbound.Server.Data
+      href: RealmUnbound.Server.Data.yml
+    - name: Entities
+      href: RealmUnbound.Server.Data.Entities.yml
+    - name: Repositories
+      href: RealmUnbound.Server.Data.Repositories.yml
+  - name: Features
+    items:
+    - name: Auth
+      href: RealmUnbound.Server.Features.Auth.yml
+    - name: Characters
+      href: RealmUnbound.Server.Features.Characters.yml
+    - name: Zones
+      href: RealmUnbound.Server.Features.Zones.yml
+  - name: Health
+    href: RealmUnbound.Server.Health.yml
+  - name: Hubs
+    href: RealmUnbound.Server.Hubs.yml
