@@ -1,6 +1,182 @@
-- name: Documentation
-  href: docs/toc.yml
-  topicHref: index.md
+# This is an automatically generated file
+- name: RealmEngine
+  href: index.md
+- name: RealmEngine
+  href: README.md
 - name: API Reference
-  href: api/toc.yml
-  topicHref: api/index.md
+  href: api/index.md
+- name: Contributing
+  href: wiki/Contributing.md
+  items:
+  - name: FAQ
+    href: wiki/FAQ.md
+  - name: Getting Started
+    href: wiki/Getting-Started.md
+  - name: Roadmap Summary
+    href: wiki/Roadmap-Summary.md
+  - name: Welcome to RealmEngine
+    href: wiki/Home.md
+- name: Contributing to RealmEngine
+  href: CONTRIBUTING.md
+- name: Contributor Covenant Code of Conduct
+  href: CODE_OF_CONDUCT.md
+- name: RealmEngine
+  items:
+  - name: Features
+    items:
+    - name: Item Generation API
+      href: RealmEngine.Core/Features/ItemGeneration/README.md
+    - name: Level Up & Progression Feature
+      href: RealmEngine.Core/Features/LevelUp/README.md
+- name: RealmEngine Documentation
+  href: docs/README.md
+  items:
+  - name: Abilities System
+    href: docs/features/abilities-system.md
+    items:
+    - name: Achievement System
+      href: docs/features/achievement-system.md
+    - name: Character Creation Expansion Implementation Plan
+      href: docs/features/CHARACTER_CREATION_EXPANSION.md
+    - name: Character System
+      href: docs/features/character-system.md
+    - name: Combat System
+      href: docs/features/combat-system.md
+    - name: Crafting System
+      href: docs/features/crafting-system.md
+    - name: Death System
+      href: docs/features/death-system.md
+    - name: Difficulty System
+      href: docs/features/difficulty-system.md
+    - name: Exploration System
+      href: docs/features/exploration-system.md
+    - name: Harvesting System
+      href: docs/features/harvesting-system.md
+    - name: Inventory System
+      href: docs/features/inventory-system.md
+    - name: Magic & Spell System
+      href: docs/features/magic-spell-system.md
+    - name: Modding Support System
+      href: docs/features/modding-support.md
+    - name: New Game System
+      href: docs/features/new-game-plus-system.md
+    - name: Online & Community Features
+      href: docs/features/online-community-features.md
+    - name: Party System
+      href: docs/features/party-system.md
+    - name: Progression System
+      href: docs/features/progression-system.md
+    - name: Quality of Life Enhancements
+      href: docs/features/quality-of-life-system.md
+    - name: Quest System
+      href: docs/features/quest-system.md
+    - name: Reputation & Faction System
+      href: docs/features/reputation-faction-system.md
+    - name: SaveLoad System
+      href: docs/features/save-load-system.md
+    - name: Shop System Integration Guide
+      href: docs/features/shop-system-integration.md
+    - name: Skills System
+      href: docs/features/skills-system.md
+    - name: Spells System
+      href: docs/features/spells-system.md
+    - name: Status Effects System
+      href: docs/features/status-effects-system.md
+  - name: Budget System Field Standardization
+    href: docs/proposals/BUDGET_SYSTEM_FIELD_STANDARDIZATION.md
+    items:
+    - name: Item Component Separation Architecture JSON v4.3
+      href: docs/proposals/ITEM_COMPONENT_SEPARATION.md
+    - name: Weight Terminology Consolidation Proposal
+      href: docs/proposals/WEIGHT_TERMINOLOGY_CONSOLIDATION.md
+  - name: Completed Work RealmEngine Backend
+    href: docs/COMPLETED_WORK.md
+  - name: CQRS Implementation Status Report
+    href: docs/CQRS_IMPLEMENTATION_STATUS.md
+  - name: Current Systems Review RealmEngine Backend
+    href: docs/systems/CURRENT_SYSTEMS_REVIEW.md
+  - name: Development Roadmap
+    href: docs/ROADMAP.md
+  - name: Exception Logging Quick Reference
+    href: docs/EXCEPTION_LOGGING_GUIDE.md
+  - name: Exception Logging Summary
+    href: docs/EXCEPTION_LOGGING_SUMMARY.md
+  - name: Game Design Document RealmEngine
+    href: docs/GDD-Main.md
+  - name: Godot Generator Usage Guide
+    href: docs/GODOT_GENERATOR_USAGE.md
+  - name: Implementation Status Remaining Work
+    href: docs/IMPLEMENTATION_STATUS.md
+  - name: Material System Workflow
+    href: docs/MATERIAL_WORKFLOW.md
+  - name: Phase 3 Equipment Selection System Summary
+    href: docs/Phase3_Equipment_Selection_Summary.md
+  - name: RealmEngine Backend API Specification v0.1
+    href: docs/API_SPECIFICATION.md
+  - name: RealmEngine Commands & Queries Reference
+    href: docs/COMMANDS_AND_QUERIES_INDEX.md
+  - name: RealmEngine Standards Documentation
+    href: docs/standards/README.md
+    items:
+    - name: Item Enhancement System v1.0
+      href: docs/standards/systems/ITEM_ENHANCEMENT_SYSTEM.md
+      items:
+      - name: Weight Based Rarity System Implementation
+        href: docs/standards/systems/WEIGHT_BASED_RARITY_SYSTEM.md
+    - name: JSON Data Standards
+      href: docs/standards/json/README.md
+      items:
+      - name: .cbconfig.json Standard
+        href: docs/standards/json/CBCONFIG_STANDARD.md
+      - name: Catalog.json Standard ItemEnemy Catalog
+        href: docs/standards/json/CATALOG_JSON_STANDARD.md
+      - name: JSON Data Standard v5.1
+        href: docs/standards/json/ENEMY_JSON_STANDARD_v5.md
+      - name: JSON Reference Standards v4.1
+        href: docs/standards/json/JSON_REFERENCE_STANDARDS.md
+      - name: JSON Structure Types v4.0
+        href: docs/standards/json/JSON_STRUCTURE_TYPES.md
+      - name: JSON v5.0 Migration Guide
+        href: docs/standards/json/MIGRATION_GUIDE_v5.md
+      - name: JSON v5.0 Standards Implementation Summary
+        href: docs/standards/json/JSON_v5_IMPLEMENTATION_SUMMARY.md
+      - name: Names.json Standard Pattern Generation
+        href: docs/standards/json/NAMES_JSON_STANDARD.md
+      - name: Trait Standards v1.2
+        href: docs/standards/json/TRAIT_STANDARDS.md
+    - name: JSON Structure Standards
+      href: docs/standards/JSON_STRUCTURE_STANDARDS.md
+    - name: Pattern System Component Standards
+      href: docs/standards/patterns/PATTERN_COMPONENT_STANDARDS.md
+      items:
+    - name: Trait Standardization v1.0 COMPLETE ✅
+      href: docs/standards/proposals/TRAIT_STANDARDIZATION_PROPOSAL.md
+      items:
+    - name: Types.json Structure Standard
+      href: docs/standards/TYPES_JSON_STRUCTURE.md
+  - name: RealmEngine TODO & API Coverage Report
+    href: docs/TODO_AND_API_COVERAGE_REPORT.md
+  - name: RealmForge Game Data Editor & Modding Tool
+    href: docs/realm-forge/README.md
+    items:
+    - name: Architecture
+      href: docs/realm-forge/features/architecture.md
+      items:
+      - name: Form System
+        href: docs/realm-forge/features/form-system.md
+      - name: JSON Editing Features
+        href: docs/realm-forge/features/json-editing.md
+      - name: Modding Framework
+        href: docs/realm-forge/features/modding-framework.md
+      - name: RealmForge Roadmap
+        href: docs/realm-forge/features/roadmap.md
+    - name: RealmForge Implementation Order
+      href: docs/realm-forge/IMPLEMENTATION_ORDER.md
+  - name: Service Registration Report
+    href: docs/SERVICE_REGISTRATION_REPORT.md
+- name: RealmForge Blazor Hybrid JSON Editor
+  href: RealmForge/README.md
+- name: Scripts
+  href: scripts/README.md
+- name: Security Policy
+  href: SECURITY.md
