@@ -97,3 +97,8 @@ nav:
     - Implementation Order: realm-forge/IMPLEMENTATION_ORDER.md
   - Workflows:
     - Material Workflow: MATERIAL_WORKFLOW.md
+  - API Reference:
+    - Overview: api/index.md
+    - RealmEngine.Core: api/RealmEngine.Core.md
+    - RealmEngine.Shared: api/RealmEngine.Shared.md
+    - RealmEngine.Data: api/RealmEngine.Data.md

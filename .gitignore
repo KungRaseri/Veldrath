@@ -44,3 +44,7 @@ __pycache__/
 *.db
 
 coverage-results/
+
+# Generated API documentation (produced by docs.yml workflow via xmldocmd)
+# docs/api/index.md is committed; all other files in this directory are generated
+docs/api/RealmEngine.*.md

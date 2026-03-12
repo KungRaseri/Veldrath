@@ -11,6 +11,9 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
   workflow_dispatch:
 
 permissions:
@@ -39,6 +42,33 @@ jobs:
           pip install \
             mkdocs-material \
             mkdocs-awesome-pages-plugin
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore engine dependencies
+        run: dotnet restore RealmEngine.slnx
+
+      - name: Build engine libraries
+        run: dotnet build RealmEngine.slnx --configuration Release --no-restore
+
+      - name: Install xmldocmd
+        run: dotnet tool install --global xmldocmd
+
+      - name: Generate API reference docs
+        run: |
+          mkdir -p docs/api
+          xmldocmd RealmEngine.Core/bin/Release/net10.0/RealmEngine.Core.xml docs/api \
+            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
+            --namespace-pages
+          xmldocmd RealmEngine.Shared/bin/Release/net10.0/RealmEngine.Shared.xml docs/api \
+            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
+            --namespace-pages
+          xmldocmd RealmEngine.Data/bin/Release/net10.0/RealmEngine.Data.xml docs/api \
+            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
+            --namespace-pages
 
       - name: Build and deploy to GitHub Pages
         run: mkdocs gh-deploy --force --clean --verbose
