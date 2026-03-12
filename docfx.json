@@ -14,7 +14,7 @@
   ],
   "build": {
     "content": [
-      { "files": ["api/**.yml"] },
+      { "files": ["api/**.yml", "api/index.md"] },
       { "files": ["toc.yml", "index.md"] }
     ],
     "output": "_site",
