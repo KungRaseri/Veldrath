@@ -39,8 +39,7 @@ public class GameHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var username = Context.User?.FindFirstValue(JwtRegisteredClaimNames.UniqueName) ?? "unknown";
-        _logger.LogInformation("Client connected: {ConnectionId} (user: {Username})", Context.ConnectionId, username);
+        _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
         await Clients.Caller.SendAsync("Connected", Context.ConnectionId);
         await base.OnConnectedAsync();
     }
@@ -81,8 +80,8 @@ public class GameHub : Hub
         Context.Items["CurrentZoneId"] = character.CurrentZoneId;
 
         _logger.LogInformation(
-            "Account {AccountId} selected character {CharacterName} ({CharacterId})",
-            accountId, character.Name, character.Id);
+            "Character {CharacterName} ({CharacterId}) selected",
+            character.Name, character.Id);
 
         await Clients.Caller.SendAsync("CharacterSelected", new
         {
