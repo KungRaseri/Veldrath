@@ -1,309 +1,310 @@
+### YamlMime:TableOfContent
 # Custom API reference navigation — organized by project → namespace.
 # This file is copied over the auto-generated api/toc.yml by the docs workflow
 # after `docfx metadata` runs, before `docfx build`.
-
+items:
 - name: RealmEngine.Core
   items:
   - name: Infrastructure
     items:
-    - name: RealmEngine.Core
-      href: RealmEngine.Core.yml
-    - name: Abstractions
-      href: RealmEngine.Core.Abstractions.yml
-    - name: Behaviors
-      href: RealmEngine.Core.Behaviors.yml
+    - uid: RealmEngine.Core
+      name: RealmEngine.Core
+    - uid: RealmEngine.Core.Abstractions
+      name: Abstractions
+    - uid: RealmEngine.Core.Behaviors
+      name: Behaviors
     - name: Generators
       items:
-      - name: RealmEngine.Core.Generators
-        href: RealmEngine.Core.Generators.yml
-      - name: Modern
-        href: RealmEngine.Core.Generators.Modern.yml
+      - uid: RealmEngine.Core.Generators
+        name: RealmEngine.Core.Generators
+      - uid: RealmEngine.Core.Generators.Modern
+        name: Modern
     - name: Services
       items:
-      - name: RealmEngine.Core.Services
-        href: RealmEngine.Core.Services.yml
-      - name: Budget
-        href: RealmEngine.Core.Services.Budget.yml
-      - name: Harvesting
-        href: RealmEngine.Core.Services.Harvesting.yml
-    - name: Settings
-      href: RealmEngine.Core.Settings.yml
-    - name: Validators
-      href: RealmEngine.Core.Validators.yml
+      - uid: RealmEngine.Core.Services
+        name: RealmEngine.Core.Services
+      - uid: RealmEngine.Core.Services.Budget
+        name: Budget
+      - uid: RealmEngine.Core.Services.Harvesting
+        name: Harvesting
+    - uid: RealmEngine.Core.Settings
+      name: Settings
+    - uid: RealmEngine.Core.Validators
+      name: Validators
   - name: Features
     items:
     - name: Achievements
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Achievements.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Achievements.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Achievements.Services.yml
+      - uid: RealmEngine.Core.Features.Achievements.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Achievements.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Achievements.Services
+        name: Services
     - name: Character Creation
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.CharacterCreation.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.CharacterCreation.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.CharacterCreation.Services.yml
+      - uid: RealmEngine.Core.Features.CharacterCreation.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.CharacterCreation.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.CharacterCreation.Services
+        name: Services
     - name: Characters
       items:
-      - name: Queries
-        href: RealmEngine.Core.Features.Characters.Queries.yml
+      - uid: RealmEngine.Core.Features.Characters.Queries
+        name: Queries
     - name: Combat
       items:
-      - name: RealmEngine.Core.Features.Combat
-        href: RealmEngine.Core.Features.Combat.yml
+      - uid: RealmEngine.Core.Features.Combat
+        name: RealmEngine.Core.Features.Combat
       - name: Commands
         items:
-        - name: RealmEngine.Core.Features.Combat.Commands
-          href: RealmEngine.Core.Features.Combat.Commands.yml
-        - name: Attack Enemy
-          href: RealmEngine.Core.Features.Combat.Commands.AttackEnemy.yml
-        - name: Defend Action
-          href: RealmEngine.Core.Features.Combat.Commands.DefendAction.yml
-        - name: Encounter Boss
-          href: RealmEngine.Core.Features.Combat.Commands.EncounterBoss.yml
-        - name: Flee From Combat
-          href: RealmEngine.Core.Features.Combat.Commands.FleeFromCombat.yml
-        - name: Use Combat Item
-          href: RealmEngine.Core.Features.Combat.Commands.UseCombatItem.yml
+        - uid: RealmEngine.Core.Features.Combat.Commands
+          name: RealmEngine.Core.Features.Combat.Commands
+        - uid: RealmEngine.Core.Features.Combat.Commands.AttackEnemy
+          name: Attack Enemy
+        - uid: RealmEngine.Core.Features.Combat.Commands.DefendAction
+          name: Defend Action
+        - uid: RealmEngine.Core.Features.Combat.Commands.EncounterBoss
+          name: Encounter Boss
+        - uid: RealmEngine.Core.Features.Combat.Commands.FleeFromCombat
+          name: Flee From Combat
+        - uid: RealmEngine.Core.Features.Combat.Commands.UseCombatItem
+          name: Use Combat Item
       - name: Queries
         items:
-        - name: Get Combat State
-          href: RealmEngine.Core.Features.Combat.Queries.GetCombatState.yml
-        - name: Get Enemy Info
-          href: RealmEngine.Core.Features.Combat.Queries.GetEnemyInfo.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Combat.Services.yml
+        - uid: RealmEngine.Core.Features.Combat.Queries.GetCombatState
+          name: Get Combat State
+        - uid: RealmEngine.Core.Features.Combat.Queries.GetEnemyInfo
+          name: Get Enemy Info
+      - uid: RealmEngine.Core.Features.Combat.Services
+        name: Services
     - name: Crafting
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Crafting.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Crafting.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Crafting.Services.yml
+      - uid: RealmEngine.Core.Features.Crafting.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Crafting.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Crafting.Services
+        name: Services
     - name: Death
       items:
-      - name: RealmEngine.Core.Features.Death
-        href: RealmEngine.Core.Features.Death.yml
-      - name: Commands
-        href: RealmEngine.Core.Features.Death.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Death.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Death.Services.yml
+      - uid: RealmEngine.Core.Features.Death
+        name: RealmEngine.Core.Features.Death
+      - uid: RealmEngine.Core.Features.Death.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Death.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Death.Services
+        name: Services
     - name: Difficulty
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Difficulty.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Difficulty.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Difficulty.Services.yml
+      - uid: RealmEngine.Core.Features.Difficulty.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Difficulty.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Difficulty.Services
+        name: Services
     - name: Enchanting
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Enchanting.Commands.yml
+      - uid: RealmEngine.Core.Features.Enchanting.Commands
+        name: Commands
     - name: Equipment
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Equipment.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Equipment.Queries.yml
+      - uid: RealmEngine.Core.Features.Equipment.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Equipment.Queries
+        name: Queries
     - name: Exploration
       items:
-      - name: RealmEngine.Core.Features.Exploration
-        href: RealmEngine.Core.Features.Exploration.yml
-      - name: Commands
-        href: RealmEngine.Core.Features.Exploration.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Exploration.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Exploration.Services.yml
-    - name: Harvesting
-      href: RealmEngine.Core.Features.Harvesting.yml
+      - uid: RealmEngine.Core.Features.Exploration
+        name: RealmEngine.Core.Features.Exploration
+      - uid: RealmEngine.Core.Features.Exploration.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Exploration.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Exploration.Services
+        name: Services
+    - uid: RealmEngine.Core.Features.Harvesting
+      name: Harvesting
     - name: Inventory
       items:
-      - name: RealmEngine.Core.Features.Inventory
-        href: RealmEngine.Core.Features.Inventory.yml
-      - name: Commands
-        href: RealmEngine.Core.Features.Inventory.Commands.yml
+      - uid: RealmEngine.Core.Features.Inventory
+        name: RealmEngine.Core.Features.Inventory
+      - uid: RealmEngine.Core.Features.Inventory.Commands
+        name: Commands
       - name: Queries
         items:
-        - name: RealmEngine.Core.Features.Inventory.Queries
-          href: RealmEngine.Core.Features.Inventory.Queries.yml
-        - name: Check Item Equipped
-          href: RealmEngine.Core.Features.Inventory.Queries.CheckItemEquipped.yml
-        - name: Get Equipped Items
-          href: RealmEngine.Core.Features.Inventory.Queries.GetEquippedItems.yml
-        - name: Get Inventory Value
-          href: RealmEngine.Core.Features.Inventory.Queries.GetInventoryValue.yml
-        - name: Get Player Inventory
-          href: RealmEngine.Core.Features.Inventory.Queries.GetPlayerInventory.yml
+        - uid: RealmEngine.Core.Features.Inventory.Queries
+          name: RealmEngine.Core.Features.Inventory.Queries
+        - uid: RealmEngine.Core.Features.Inventory.Queries.CheckItemEquipped
+          name: Check Item Equipped
+        - uid: RealmEngine.Core.Features.Inventory.Queries.GetEquippedItems
+          name: Get Equipped Items
+        - uid: RealmEngine.Core.Features.Inventory.Queries.GetInventoryValue
+          name: Get Inventory Value
+        - uid: RealmEngine.Core.Features.Inventory.Queries.GetPlayerInventory
+          name: Get Player Inventory
     - name: Item Generation
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.ItemGeneration.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.ItemGeneration.Queries.yml
+      - uid: RealmEngine.Core.Features.ItemGeneration.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.ItemGeneration.Queries
+        name: Queries
     - name: Level Up
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.LevelUp.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.LevelUp.Queries.yml
+      - uid: RealmEngine.Core.Features.LevelUp.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.LevelUp.Queries
+        name: Queries
     - name: Party
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Party.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Party.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Party.Services.yml
+      - uid: RealmEngine.Core.Features.Party.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Party.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Party.Services
+        name: Services
     - name: Progression
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Progression.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Progression.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Progression.Services.yml
+      - uid: RealmEngine.Core.Features.Progression.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Progression.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Progression.Services
+        name: Services
     - name: Quests
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Quests.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Quests.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Quests.Services.yml
+      - uid: RealmEngine.Core.Features.Quests.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Quests.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Quests.Services
+        name: Services
     - name: Reputation
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Reputation.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Reputation.Queries.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Reputation.Services.yml
+      - uid: RealmEngine.Core.Features.Reputation.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Reputation.Queries
+        name: Queries
+      - uid: RealmEngine.Core.Features.Reputation.Services
+        name: Services
     - name: Salvaging
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Salvaging.Commands.yml
+      - uid: RealmEngine.Core.Features.Salvaging.Commands
+        name: Commands
     - name: Save & Load
       items:
-      - name: RealmEngine.Core.Features.SaveLoad
-        href: RealmEngine.Core.Features.SaveLoad.yml
-      - name: Commands
-        href: RealmEngine.Core.Features.SaveLoad.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.SaveLoad.Queries.yml
+      - uid: RealmEngine.Core.Features.SaveLoad
+        name: RealmEngine.Core.Features.SaveLoad
+      - uid: RealmEngine.Core.Features.SaveLoad.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.SaveLoad.Queries
+        name: Queries
     - name: Shop
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Shop.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Shop.Queries.yml
+      - uid: RealmEngine.Core.Features.Shop.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Shop.Queries
+        name: Queries
     - name: Socketing
       items:
-      - name: RealmEngine.Core.Features.Socketing
-        href: RealmEngine.Core.Features.Socketing.yml
-      - name: Commands
-        href: RealmEngine.Core.Features.Socketing.Commands.yml
-      - name: Queries
-        href: RealmEngine.Core.Features.Socketing.Queries.yml
+      - uid: RealmEngine.Core.Features.Socketing
+        name: RealmEngine.Core.Features.Socketing
+      - uid: RealmEngine.Core.Features.Socketing.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Socketing.Queries
+        name: Queries
     - name: Upgrading
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Upgrading.Commands.yml
+      - uid: RealmEngine.Core.Features.Upgrading.Commands
+        name: Commands
     - name: Victory
       items:
-      - name: Commands
-        href: RealmEngine.Core.Features.Victory.Commands.yml
-      - name: Services
-        href: RealmEngine.Core.Features.Victory.Services.yml
+      - uid: RealmEngine.Core.Features.Victory.Commands
+        name: Commands
+      - uid: RealmEngine.Core.Features.Victory.Services
+        name: Services
 
 - name: RealmEngine.Shared
   items:
-  - name: Abstractions
-    href: RealmEngine.Shared.Abstractions.yml
+  - uid: RealmEngine.Shared.Abstractions
+    name: Abstractions
   - name: Data
     items:
-    - name: RealmEngine.Shared.Data
-      href: RealmEngine.Shared.Data.yml
-    - name: Models
-      href: RealmEngine.Shared.Data.Models.yml
+    - uid: RealmEngine.Shared.Data
+      name: RealmEngine.Shared.Data
+    - uid: RealmEngine.Shared.Data.Models
+      name: Models
   - name: Models
     items:
-    - name: RealmEngine.Shared.Models
-      href: RealmEngine.Shared.Models.yml
-    - name: Harvesting
-      href: RealmEngine.Shared.Models.Harvesting.yml
-  - name: Services
-    href: RealmEngine.Shared.Services.yml
-  - name: Utilities
-    href: RealmEngine.Shared.Utilities.yml
+    - uid: RealmEngine.Shared.Models
+      name: RealmEngine.Shared.Models
+    - uid: RealmEngine.Shared.Models.Harvesting
+      name: Harvesting
+  - uid: RealmEngine.Shared.Services
+    name: Services
+  - uid: RealmEngine.Shared.Utilities
+    name: Utilities
 
 - name: RealmEngine.Data
   items:
-  - name: Persistence
-    href: RealmEngine.Data.Persistence.yml
-  - name: Repositories
-    href: RealmEngine.Data.Repositories.yml
-  - name: Services
-    href: RealmEngine.Data.Services.yml
+  - uid: RealmEngine.Data.Persistence
+    name: Persistence
+  - uid: RealmEngine.Data.Repositories
+    name: Repositories
+  - uid: RealmEngine.Data.Services
+    name: Services
 
 - name: RealmForge
   items:
-  - name: RealmForge
-    href: RealmForge.yml
-  - name: Models
-    href: RealmForge.Models.yml
-  - name: Services
-    href: RealmForge.Services.yml
-  - name: Validators
-    href: RealmForge.Validators.yml
-  - name: ViewModels
-    href: RealmForge.ViewModels.yml
+  - uid: RealmForge
+    name: RealmForge
+  - uid: RealmForge.Models
+    name: Models
+  - uid: RealmForge.Services
+    name: Services
+  - uid: RealmForge.Validators
+    name: Validators
+  - uid: RealmForge.ViewModels
+    name: ViewModels
   - name: Views
     items:
-    - name: RealmForge.Views
-      href: RealmForge.Views.yml
-    - name: Dialogs
-      href: RealmForge.Views.Dialogs.yml
+    - uid: RealmForge.Views
+      name: RealmForge.Views
+    - uid: RealmForge.Views.Dialogs
+      name: Dialogs
 
 - name: RealmUnbound.Client
   items:
-  - name: RealmUnbound.Client
-    href: RealmUnbound.Client.yml
-  - name: Services
-    href: RealmUnbound.Client.Services.yml
-  - name: ViewModels
-    href: RealmUnbound.Client.ViewModels.yml
-  - name: Views
-    href: RealmUnbound.Client.Views.yml
+  - uid: RealmUnbound.Client
+    name: RealmUnbound.Client
+  - uid: RealmUnbound.Client.Services
+    name: Services
+  - uid: RealmUnbound.Client.ViewModels
+    name: ViewModels
+  - uid: RealmUnbound.Client.Views
+    name: Views
 
 - name: RealmUnbound.Server
   items:
   - name: Data
     items:
-    - name: RealmUnbound.Server.Data
-      href: RealmUnbound.Server.Data.yml
-    - name: Entities
-      href: RealmUnbound.Server.Data.Entities.yml
-    - name: Repositories
-      href: RealmUnbound.Server.Data.Repositories.yml
+    - uid: RealmUnbound.Server.Data
+      name: RealmUnbound.Server.Data
+    - uid: RealmUnbound.Server.Data.Entities
+      name: Entities
+    - uid: RealmUnbound.Server.Data.Repositories
+      name: Repositories
   - name: Features
     items:
-    - name: Auth
-      href: RealmUnbound.Server.Features.Auth.yml
-    - name: Characters
-      href: RealmUnbound.Server.Features.Characters.yml
-    - name: Zones
-      href: RealmUnbound.Server.Features.Zones.yml
-  - name: Health
-    href: RealmUnbound.Server.Health.yml
-  - name: Hubs
-    href: RealmUnbound.Server.Hubs.yml
+    - uid: RealmUnbound.Server.Features.Auth
+      name: Auth
+    - uid: RealmUnbound.Server.Features.Characters
+      name: Characters
+    - uid: RealmUnbound.Server.Features.Zones
+      name: Zones
+  - uid: RealmUnbound.Server.Health
+    name: Health
+  - uid: RealmUnbound.Server.Hubs
+    name: Hubs
