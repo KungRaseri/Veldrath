@@ -47,8 +47,14 @@ jobs:
       - name: Install DocFX
         run: dotnet tool install --global docfx
 
+      - name: Generate API metadata
+        run: docfx metadata docfx.json
+
+      - name: Apply custom API TOC
+        run: cp docs/api-toc.template.yml api/toc.yml
+
       - name: Build documentation
-        run: docfx docfx.json
+        run: docfx build docfx.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
