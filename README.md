@@ -1,5 +1,9 @@
 # RealmEngine
 
+[![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kungraseri.github.io/RealmEngine/)
+
 ## CI Status
 
 | Component | Build | Coverage |
@@ -9,9 +13,14 @@
 | RealmUnbound Client | [![CI - Client](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml) | [![codecov (client)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=client)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=client) |
 | RealmUnbound Server | [![CI - Server](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml) | [![codecov (server)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=server)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=server) |
 
-[![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kungraseri.github.io/RealmEngine/)
+## Latest Releases
+
+| Component | Latest |
+|-----------|--------|
+| Engine Libraries | [![Engine release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=engine%2Fv*&label=engine&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=engine&expanded=true) |
+| RealmForge Tooling | [![Forge release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=tooling%2Fv*&label=forge&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=tooling&expanded=true) |
+| RealmUnbound Client | [![Client release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=client%2Fv*&label=client&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=client&expanded=true) |
+| RealmUnbound Server | [![Server release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=server%2Fv*&label=server&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=server&expanded=true) |
 
 RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (RealmUnbound) and a JSON data editor (RealmForge).
 
@@ -87,7 +96,7 @@ dotnet test RealmEngine.slnx
 - Procedural enemy generation with difficulty scaling
 
 **Data & Persistence**
-- 211 JSON data files (enemies, items, abilities, spells, materials)
+- Extensible JSON data files (enemies, items, abilities, spells, materials) with customizable content
 - JSON v5.1 standards with cross-reference system (`@domain/path:item`)
 - LiteDB save/load with auto-save support
 - Budget-based item costing using `rarityWeight` inverse formula
@@ -120,22 +129,22 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 ## Key Dependencies
 
 **Core Libraries**
-- MediatR 14.0.0 — CQRS command/query pattern
-- LiteDB 5.0.21 — NoSQL persistence
-- Newtonsoft.Json 13.0.4 — JSON data loading
-- FluentValidation 12.1.1 — Input validation
-- Serilog 4.3.0 — Structured logging
-- Polly 8.6.5 — Resilience patterns
+- MediatR 14.x+ — CQRS command/query pattern
+- LiteDB 5.0.x+ — NoSQL persistence
+- Newtonsoft.Json 13.0.x+ — JSON data loading
+- FluentValidation 12.1.x+ — Input validation
+- Serilog 4.3.x+ — Structured logging
+- Polly 8.6.x+ — Resilience patterns
 
 **Client / Server**
-- Avalonia 11.2.3 — Cross-platform UI (Client, RealmForge)
-- ReactiveUI 20.1.1 — MVVM framework
+- Avalonia 11.2.x+ — Cross-platform UI (Client, RealmForge)
+- ReactiveUI 20.1.x+ — MVVM framework
 - ASP.NET Core — Server framework
 - SignalR — Real-time client/server communication
 
 **Testing**
-- xUnit 2.9.3 — Test framework
-- FluentAssertions 8.8.0 — Test assertions
+- xUnit 2.9.x+ — Test framework
+- FluentAssertions 8.8.x+ — Test assertions
 - Avalonia.Headless.XUnit — Headless UI testing
 
 ## Project Structure
@@ -145,7 +154,7 @@ RealmEngine/
 ├── RealmEngine.Core/           # Game logic and MediatR handlers
 │   └── Features/               # Vertical slices (Combat, Crafting, Inventory, etc.)
 ├── RealmEngine.Data/           # Data access and JSON loading
-│   └── Data/Json/              # 211 game data files
+│   └── Data/Json/              # JSON game data files
 ├── RealmEngine.Shared/         # Shared models and utilities
 ├── RealmUnbound.Server/        # ASP.NET Core game server
 ├── RealmUnbound.Client/        # Avalonia desktop client
