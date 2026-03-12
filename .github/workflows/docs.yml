@@ -74,22 +74,22 @@ jobs:
       - name: Generate API reference docs
         run: |
           mkdir -p docs/api
-          xmldocmd RealmEngine.Core/bin/Release/net10.0/RealmEngine.Core.xml docs/api \
+          xmldocmd RealmEngine.Core/bin/Release/net10.0/RealmEngine.Core.dll docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
-          xmldocmd RealmEngine.Shared/bin/Release/net10.0/RealmEngine.Shared.xml docs/api \
+          xmldocmd RealmEngine.Shared/bin/Release/net10.0/RealmEngine.Shared.dll docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
-          xmldocmd RealmEngine.Data/bin/Release/net10.0/RealmEngine.Data.xml docs/api \
+          xmldocmd RealmEngine.Data/bin/Release/net10.0/RealmEngine.Data.dll docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
-          xmldocmd RealmForge/bin/Release/net10.0/RealmForge.xml docs/api \
+          xmldocmd RealmForge/bin/Release/net10.0/RealmForge.dll docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
-          xmldocmd RealmUnbound.Client/bin/Release/net10.0/RealmUnbound.Client.xml docs/api \
+          xmldocmd RealmUnbound.Client/bin/Release/net10.0/RealmUnbound.Client.dll docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
-          xmldocmd RealmUnbound.Server/bin/Release/net10.0/RealmUnbound.Server.xml docs/api \
+          xmldocmd RealmUnbound.Server/bin/Release/net10.0/RealmUnbound.Server.dll docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
 
