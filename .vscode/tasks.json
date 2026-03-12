@@ -349,44 +349,6 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "build-package",
-			"type": "shell",
-			"command": "powershell",
-			"args": [
-				"-File",
-				"${workspaceFolder}/scripts/build-game-package.ps1",
-				"-Configuration",
-				"Debug"
-			],
-			"problemMatcher": "$msCompile",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": true,
-				"panel": "dedicated",
-				"clear": true
-			}
-		},
-		{
-			"label": "build-package-release",
-			"type": "shell",
-			"command": "powershell",
-			"args": [
-				"-File",
-				"${workspaceFolder}/scripts/build-game-package.ps1",
-				"-Configuration",
-				"Release"
-			],
-			"problemMatcher": "$msCompile",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": true,
-				"panel": "dedicated",
-				"clear": true
-			}
-		},
-		{
 			"label": "generate-version",
 			"type": "shell",
 			"command": "powershell",
@@ -404,44 +366,6 @@
 				"clear": true
 			}
 		},
-		{
-			"label": "deploy-to-godot",
-			"type": "shell",
-			"command": "powershell",
-			"args": [
-				"-File",
-				"${workspaceFolder}/scripts/deploy-to-godot.ps1",
-				"-GodotProjectPath",
-				"${input:godotProjectPath}",
-				"-PackagePath",
-				"package"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": true,
-				"panel": "dedicated",
-				"clear": true
-			}
-		},
-		{
-			"label": "package-and-deploy",
-			"dependsOn": [
-				"build-package",
-				"deploy-to-godot"
-			],
-			"dependsOrder": "sequence",
-			"problemMatcher": [],
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": true,
-				"panel": "dedicated",
-				"clear": true
-			}
-		},
-
 		// ── RealmUnbound ─────────────────────────────────────────────────────────
 		{
 			"label": "build-realmunbound-server",
@@ -652,14 +576,6 @@
 				"panel": "dedicated",
 				"clear": false
 			}
-		}
-	],
-	"inputs": [
-		{
-			"id": "godotProjectPath",
-			"type": "promptString",
-			"description": "Enter the path to your Godot project directory",
-			"default": "C:\\path\\to\\your\\godot\\project"
 		}
 	]
 }
