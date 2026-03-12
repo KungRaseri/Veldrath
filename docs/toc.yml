@@ -1,0 +1,82 @@
+- name: Home
+  href: README.md
+- name: Game Design
+  items:
+  - name: Game Design Document
+    href: GDD-Main.md
+  - name: Roadmap
+    href: ROADMAP.md
+- name: Architecture
+  items:
+  - name: API Specification
+    href: API_SPECIFICATION.md
+  - name: Commands & Queries
+    href: COMMANDS_AND_QUERIES_INDEX.md
+  - name: CQRS Implementation
+    href: CQRS_IMPLEMENTATION_STATUS.md
+  - name: Implementation Status
+    href: IMPLEMENTATION_STATUS.md
+  - name: Service Registration
+    href: SERVICE_REGISTRATION_REPORT.md
+  - name: Exception Logging
+    href: EXCEPTION_LOGGING_GUIDE.md
+- name: Game Systems
+  items:
+  - name: Overview
+    href: systems/CURRENT_SYSTEMS_REVIEW.md
+  - name: Abilities
+    href: features/abilities-system.md
+  - name: Character
+    href: features/character-system.md
+  - name: Combat
+    href: features/combat-system.md
+  - name: Crafting
+    href: features/crafting-system.md
+  - name: Exploration
+    href: features/exploration-system.md
+  - name: Inventory
+    href: features/inventory-system.md
+  - name: Magic & Spells
+    href: features/magic-spell-system.md
+  - name: Progression
+    href: features/progression-system.md
+  - name: Quests
+    href: features/quest-system.md
+  - name: Shop
+    href: features/shop-system-integration.md
+  - name: Skills
+    href: features/skills-system.md
+  - name: Status Effects
+    href: features/status-effects-system.md
+  - name: Save & Load
+    href: features/save-load-system.md
+- name: Data Standards
+  items:
+  - name: Overview
+    href: standards/README.md
+  - name: JSON Standards
+    href: standards/json/README.md
+  - name: Catalog Standard
+    href: standards/json/CATALOG_JSON_STANDARD.md
+  - name: Names Standard
+    href: standards/json/NAMES_JSON_STANDARD.md
+  - name: Reference System
+    href: standards/json/JSON_REFERENCE_STANDARDS.md
+  - name: Enemy Standard v5
+    href: standards/json/ENEMY_JSON_STANDARD_v5.md
+  - name: Migration Guide v5
+    href: standards/json/MIGRATION_GUIDE_v5.md
+  - name: Trait Standards
+    href: standards/json/TRAIT_STANDARDS.md
+  - name: CBConfig Standard
+    href: standards/json/CBCONFIG_STANDARD.md
+- name: RealmForge
+  items:
+  - name: Overview
+    href: realm-forge/README.md
+  - name: Implementation Order
+    href: realm-forge/IMPLEMENTATION_ORDER.md
+- name: Workflows
+  items:
+  - name: Material Workflow
+    href: MATERIAL_WORKFLOW.md

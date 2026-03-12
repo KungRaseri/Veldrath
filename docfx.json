@@ -1,0 +1,39 @@
+{
+  "metadata": [
+    {
+      "src": [
+        { "files": ["RealmEngine.Core/RealmEngine.Core.csproj"] },
+        { "files": ["RealmEngine.Shared/RealmEngine.Shared.csproj"] },
+        { "files": ["RealmEngine.Data/RealmEngine.Data.csproj"] },
+        { "files": ["RealmForge/RealmForge.csproj"] },
+        { "files": ["RealmUnbound.Client/RealmUnbound.Client.csproj"] },
+        { "files": ["RealmUnbound.Server/RealmUnbound.Server.csproj"] }
+      ],
+      "dest": "api",
+      "allowCompilationErrors": true,
+      "noRestore": false
+    }
+  ],
+  "build": {
+    "content": [
+      { "files": ["api/**.yml", "api/index.md"] },
+      { "files": ["docs/**.md", "docs/**/toc.yml"] },
+      { "files": ["toc.yml", "README.md"] }
+    ],
+    "resource": [],
+    "output": "_site",
+    "template": ["default", "modern"],
+    "globalMetadata": {
+      "_appName": "RealmEngine",
+      "_appTitle": "RealmEngine",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/KungRaseri/RealmEngine",
+        "branch": "main"
+      }
+    },
+    "sitemap": {
+      "baseUrl": "https://kungraseri.github.io/RealmEngine"
+    }
+  }
+}

@@ -45,8 +45,8 @@ __pycache__/
 
 coverage-results/
 
-# Generated API documentation (produced by docs.yml workflow via xmldocmd)
-# docs/api/index.md is committed; all other files in this directory are generated
-docs/api/RealmEngine.*.md
-docs/api/RealmForge.md
-docs/api/RealmUnbound.*.md
+# DocFX static site output
+/_site/
+
+# DocFX generated API YAML metadata (produced during docs build — do not commit)
+/api/

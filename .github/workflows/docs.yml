@@ -9,7 +9,8 @@ on:
     branches: [ main ]
     paths:
       - 'docs/**'
-      - 'mkdocs.yml'
+      - 'docfx.json'
+      - 'toc.yml'
       - '.github/workflows/docs.yml'
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
@@ -35,71 +36,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-          cache: pip
-          cache-dependency-path: .github/workflows/docs.yml
-
-      - name: Install MkDocs and plugins
-        run: |
-          pip install \
-            mkdocs-material \
-            mkdocs-awesome-pages-plugin
-
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore engine dependencies
-        run: dotnet restore RealmEngine.slnx
+      - name: Restore NuGet packages
+        run: dotnet restore Realm.Full.slnx
 
-      - name: Build engine libraries
-        run: dotnet build RealmEngine.slnx --configuration Release --no-restore
+      - name: Install DocFX
+        run: dotnet tool install --global docfx
 
-      - name: Restore and build applications
-        run: |
-          dotnet restore RealmForge/RealmForge.csproj
-          dotnet restore RealmUnbound.Client/RealmUnbound.Client.csproj
-          dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
-          dotnet build RealmForge/RealmForge.csproj --configuration Release --no-restore
-          dotnet build RealmUnbound.Client/RealmUnbound.Client.csproj --configuration Release --no-restore
-          dotnet build RealmUnbound.Server/RealmUnbound.Server.csproj --configuration Release --no-restore
-
-      - name: Install xmldocmd
-        run: dotnet tool install --global xmldocmd
-
-      - name: Generate API reference docs
-        run: |
-          mkdir -p docs/api
-          xmldocmd RealmEngine.Core/bin/Release/net10.0/RealmEngine.Core.dll docs/api \
-            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
-            --namespace-pages
-          xmldocmd RealmEngine.Shared/bin/Release/net10.0/RealmEngine.Shared.dll docs/api \
-            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
-            --namespace-pages
-          xmldocmd RealmEngine.Data/bin/Release/net10.0/RealmEngine.Data.dll docs/api \
-            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
-            --namespace-pages
-          xmldocmd RealmForge/bin/Release/net10.0/RealmForge.dll docs/api \
-            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
-            --namespace-pages
-          xmldocmd RealmUnbound.Client/bin/Release/net10.0/RealmUnbound.Client.dll docs/api \
-            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
-            --namespace-pages
-          xmldocmd RealmUnbound.Server/bin/Release/net10.0/RealmUnbound.Server.dll docs/api \
-            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
-            --namespace-pages
-
-      - name: Build MkDocs site
-        run: mkdocs build --verbose
+      - name: Build documentation
+        run: docfx docfx.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site/
+          path: _site/
 
   deploy:
     name: Deploy to GitHub Pages
