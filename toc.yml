@@ -3,3 +3,4 @@
   topicHref: index.md
 - name: API Reference
   href: api/toc.yml
+  topicHref: api/index.md
