@@ -20,18 +20,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # needed to push to gh-pages branch
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  deploy:
-    name: Build and Deploy Docs
+  build:
+    name: Build Docs
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # needed for git-revision-date plugin if added later
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -91,8 +93,23 @@ jobs:
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
 
-      - name: Build and deploy to GitHub Pages
-        run: mkdocs gh-deploy --force --clean --verbose
-        env:
-          # GITHUB_TOKEN gives write access to push the gh-pages branch
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build MkDocs site
+        run: mkdocs build --verbose
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
