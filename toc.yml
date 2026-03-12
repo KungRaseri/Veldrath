@@ -1,5 +1,5 @@
 - name: Documentation
   href: docs/toc.yml
-  topicHref: docs/README.md
+  topicHref: index.md
 - name: API Reference
   href: api/toc.yml
