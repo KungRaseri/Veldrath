@@ -14,6 +14,9 @@ on:
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
+      - 'RealmForge/**'
+      - 'RealmUnbound.Client/**'
+      - 'RealmUnbound.Server/**'
   workflow_dispatch:
 
 permissions:
@@ -54,6 +57,15 @@ jobs:
       - name: Build engine libraries
         run: dotnet build RealmEngine.slnx --configuration Release --no-restore
 
+      - name: Restore and build applications
+        run: |
+          dotnet restore RealmForge/RealmForge.csproj
+          dotnet restore RealmUnbound.Client/RealmUnbound.Client.csproj
+          dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
+          dotnet build RealmForge/RealmForge.csproj --configuration Release --no-restore
+          dotnet build RealmUnbound.Client/RealmUnbound.Client.csproj --configuration Release --no-restore
+          dotnet build RealmUnbound.Server/RealmUnbound.Server.csproj --configuration Release --no-restore
+
       - name: Install xmldocmd
         run: dotnet tool install --global xmldocmd
 
@@ -67,6 +79,15 @@ jobs:
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
           xmldocmd RealmEngine.Data/bin/Release/net10.0/RealmEngine.Data.xml docs/api \
+            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
+            --namespace-pages
+          xmldocmd RealmForge/bin/Release/net10.0/RealmForge.xml docs/api \
+            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
+            --namespace-pages
+          xmldocmd RealmUnbound.Client/bin/Release/net10.0/RealmUnbound.Client.xml docs/api \
+            --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
+            --namespace-pages
+          xmldocmd RealmUnbound.Server/bin/Release/net10.0/RealmUnbound.Server.xml docs/api \
             --source https://github.com/KungRaseri/RealmEngine/blob/main/ \
             --namespace-pages
 

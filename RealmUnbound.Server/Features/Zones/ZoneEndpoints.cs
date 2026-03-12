@@ -21,7 +21,7 @@ public static class ZoneEndpoints
     {
         var group = app.MapGroup("/api/zones").WithTags("zones");
 
-        /// <summary>Returns all available zones with current online player counts.</summary>
+        // Returns all available zones with current online player counts.
         group.MapGet("/", async (IZoneRepository zones, IZoneSessionRepository sessions) =>
         {
             var all = await zones.GetAllAsync();
@@ -35,7 +35,7 @@ public static class ZoneEndpoints
                 z.IsStarter, counts.GetValueOrDefault(z.Id))));
         });
 
-        /// <summary>Returns details of a single zone.</summary>
+        // Returns details of a single zone.
         group.MapGet("/{id}", async (string id, IZoneRepository zones, IZoneSessionRepository sessions) =>
         {
             var zone = await zones.GetByIdAsync(id);

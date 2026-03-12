@@ -102,3 +102,6 @@ nav:
     - RealmEngine.Core: api/RealmEngine.Core.md
     - RealmEngine.Shared: api/RealmEngine.Shared.md
     - RealmEngine.Data: api/RealmEngine.Data.md
+    - RealmForge: api/RealmForge.md
+    - RealmUnbound.Client: api/RealmUnbound.Client.md
+    - RealmUnbound.Server: api/RealmUnbound.Server.md
