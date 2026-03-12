@@ -187,12 +187,12 @@ Latest releases are published automatically on each merge to `main` and are avai
 
 Full documentation is deployed to **[GitHub Pages](https://kungraseri.github.io/RealmEngine/)** via the `docs.yml` workflow on every push to `main`.
 
-- [Game Design Document](docs/GDD-Main.md) — Complete game specification
-- [Commands and Queries Index](docs/COMMANDS_AND_QUERIES_INDEX.md) — All MediatR commands/queries
-- [API Specification](docs/API_SPECIFICATION.md) — Server and engine API reference
-- [JSON Standards](docs/standards/json/README.md) — JSON v5.1 data file standards
-- [Implementation Status](docs/IMPLEMENTATION_STATUS.md) — Feature completion tracking
-- [Roadmap](docs/ROADMAP.md) — Planned features and milestones
+- [Game Design Document](https://kungraseri.github.io/RealmEngine/GDD-Main/) — Complete game specification
+- [Commands and Queries Index](https://kungraseri.github.io/RealmEngine/COMMANDS_AND_QUERIES_INDEX/) — All MediatR commands/queries
+- [API Specification](https://kungraseri.github.io/RealmEngine/API_SPECIFICATION/) — Server and engine API reference
+- [JSON Standards](https://kungraseri.github.io/RealmEngine/standards/json/) — JSON data file standards
+- [Implementation Status](https://kungraseri.github.io/RealmEngine/IMPLEMENTATION_STATUS/) — Feature completion tracking
+- [Roadmap](https://kungraseri.github.io/RealmEngine/ROADMAP/) — Planned features and milestones
 
 ---
 
