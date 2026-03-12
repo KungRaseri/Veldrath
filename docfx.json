@@ -22,9 +22,13 @@
         "docs/DI_VALIDATION_TEST_RESULTS.md",
         "docs/MATERIAL_FILTER_CONFIG.md"
       ] },
-      { "files": ["toc.yml", "index.md"] }
+      { "files": ["toc.yml", "index.md"] },
+      { "files": ["README.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md"] },
+      { "files": ["wiki/**.md"], "exclude": ["wiki/.git/**"] },
+      { "files": ["RealmEngine.Core/Features/**/README.md"] },
+      { "files": ["RealmForge/README.md", "scripts/README.md"] }
     ],
-    "resource": [],
+    "resource": [{ "files": ["LICENSE"] }],
     "output": "_site",
     "template": ["default", "modern"],
     "globalMetadata": {
