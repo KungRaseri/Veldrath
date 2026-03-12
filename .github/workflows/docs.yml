@@ -8,9 +8,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'docs/**'
       - 'docfx.json'
-      - 'toc.yml'
       - '.github/workflows/docs.yml'
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
@@ -47,18 +45,8 @@ jobs:
       - name: Install DocFX
         run: dotnet tool install --global docfx
 
-      - name: Generate API metadata
-        run: docfx metadata docfx.json
-
-      - name: Create API landing page
-        run: |
-          printf '# API Reference\n\nBrowse the API documentation using the navigation on the left.\n\n| Project | Description |\n|---------|-------------|\n| **RealmEngine.Core** | Game logic - combat, crafting, inventory, quests, spells |\n| **RealmEngine.Shared** | Shared models, domain entities, interfaces |\n| **RealmEngine.Data** | JSON data loading, EF Core persistence, repositories |\n| **RealmForge** | Avalonia UI JSON game data editor |\n| **RealmUnbound.Client** | Avalonia desktop client with ReactiveUI |\n| **RealmUnbound.Server** | ASP.NET Core game server with SignalR |\n' > api/index.md
-
-      - name: Apply custom API TOC
-        run: cp docs/api-toc.template.yml api/toc.yml
-
       - name: Build documentation
-        run: docfx build docfx.json
+        run: docfx docfx.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
