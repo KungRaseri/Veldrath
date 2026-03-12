@@ -30,7 +30,7 @@ RPG backend engine implementing CQRS with MediatR for clean command/query separa
 
 ### Core Libraries (`RealmEngine.slnx`)
 - **RealmEngine.Core** — Game logic (combat, inventory, crafting, quests)
-- **RealmEngine.Data** — JSON data loading, persistence (LiteDB)
+- **RealmEngine.Data** — JSON data loading, persistence (SQLite / PostgreSQL)
 - **RealmEngine.Shared** — Models, utilities, abstractions
 
 ### Applications
@@ -83,13 +83,13 @@ dotnet test RealmEngine.slnx
 - 6 character classes with unique bonuses and progression paths
 - Turn-based combat with dodge/crit/block mechanics
 - Interactive level-up with attribute allocation
-- Skill system (8 skills enhancing combat/abilities)
+- Skill system enhancing combat and abilities
 - Status effects (poison, stun, burning, shield, regeneration)
 
 **Content Systems**
-- Item generation with budget-fitting algorithm (5 rarity tiers)
+- Item generation with budget-fitting algorithm across multiple rarity tiers
 - Tiered crafting system with quality bonuses and failure mechanics
-- Material reference system (JSON v5.1) for data reuse
+- Material reference system for data reuse
 - Quest system with objectives and rewards
 - Spell system with mana management
 - Shop/economy with dynamic pricing
@@ -97,8 +97,8 @@ dotnet test RealmEngine.slnx
 
 **Data & Persistence**
 - Extensible JSON data files (enemies, items, abilities, spells, materials) with customizable content
-- JSON v5.1 standards with cross-reference system (`@domain/path:item`)
-- LiteDB save/load with auto-save support
+- Cross-reference system for linking data across files (`@domain/path:item`)
+- SQLite for testing, PostgreSQL for local development and production
 - Budget-based item costing using `rarityWeight` inverse formula
 
 **Integration**
@@ -130,7 +130,8 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 
 **Core Libraries**
 - MediatR 14.x+ — CQRS command/query pattern
-- LiteDB 5.0.x+ — NoSQL persistence
+- SQLite — Embedded database for testing
+- PostgreSQL — Database for local development and production
 - Newtonsoft.Json 13.0.x+ — JSON data loading
 - FluentValidation 12.1.x+ — Input validation
 - Serilog 4.3.x+ — Structured logging
@@ -195,4 +196,4 @@ Full documentation is deployed to **[GitHub Pages](https://kungraseri.github.io/
 
 ---
 
-**Platform**: .NET 10.0 | **Pattern**: CQRS with MediatR | **UI**: Avalonia | **Data**: LiteDB + JSON
+**Platform**: .NET 10.0 | **Pattern**: CQRS with MediatR | **UI**: Avalonia | **Data**: PostgreSQL + JSON
