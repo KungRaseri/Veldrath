@@ -2,44 +2,35 @@
   "metadata": [
     {
       "src": [
-        { "files": ["RealmEngine.Core/RealmEngine.Core.csproj"] },
-        { "files": ["RealmEngine.Shared/RealmEngine.Shared.csproj"] },
-        { "files": ["RealmEngine.Data/RealmEngine.Data.csproj"] },
-        { "files": ["RealmForge/RealmForge.csproj"] },
-        { "files": ["RealmUnbound.Client/RealmUnbound.Client.csproj"] },
-        { "files": ["RealmUnbound.Server/RealmUnbound.Server.csproj"] }
+        { "files": ["Realm.Full.slnx"] }
       ],
       "dest": "api",
       "allowCompilationErrors": true,
-      "noRestore": false
+      "noRestore": true,
+      "properties": {
+        "TargetFramework": "net10.0"
+      }
     }
   ],
   "build": {
     "content": [
-      { "files": ["api/**.yml", "api/index.md"] },
-      { "files": ["docs/**.md", "docs/**/toc.yml"], "exclude": [
-        "docs/CHARACTER_CREATION_ENHANCEMENTS.md",
-        "docs/DI_VALIDATION_TEST_RESULTS.md",
-        "docs/MATERIAL_FILTER_CONFIG.md"
-      ] },
-      { "files": ["toc.yml", "index.md"] },
-      { "files": ["README.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md"] },
-      { "files": ["wiki/**.md"], "exclude": ["wiki/.git/**"] },
-      { "files": ["RealmEngine.Core/Features/**/README.md"] },
-      { "files": ["RealmForge/README.md", "scripts/README.md"] }
+      { "files": ["api/**.yml"] }
     ],
-    "resource": [{ "files": ["LICENSE"] }],
     "output": "_site",
     "template": ["default", "modern"],
     "globalMetadata": {
       "_appName": "RealmEngine",
       "_appTitle": "RealmEngine",
       "_enableSearch": true,
+      "_memberLayout": "separatePages",
       "_gitContribute": {
         "repo": "https://github.com/KungRaseri/RealmEngine",
         "branch": "main"
       }
     },
+    "xref": [
+      "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json"
+    ],
     "sitemap": {
       "baseUrl": "https://kungraseri.github.io/RealmEngine"
     }
