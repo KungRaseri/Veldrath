@@ -13,7 +13,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kungraseri.github.io/RealmEngine/)
 
-RPG backend engine designed as a game logic API for Godot UI integration. Implements CQRS pattern with MediatR for clean command/query separation. Includes a multiplayer client/server (RealmUnbound) and a JSON data editor (RealmForge).
+RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (RealmUnbound) and a JSON data editor (RealmForge).
 
 ## Architecture
 
@@ -31,24 +31,23 @@ RPG backend engine designed as a game logic API for Godot UI integration. Implem
 
 Code is organized by business feature (Features/Combat, Features/Inventory, etc.) with automatic validation and logging via MediatR pipeline behaviors.
 
-## Integration Pattern
+## Usage
 
-**Backend API for Godot UI** — This repository contains zero production UI code.
+Dispatch commands and queries via MediatR to interact with the engine from any .NET application:
 
 ```csharp
-// Godot calls backend via MediatR
 var result = await mediator.Send(new AttackEnemyCommand
 {
     CharacterName = "Player1",
     Action = CombatActionType.Attack
 });
 
-// Godot receives DTO and updates UI
 if (result.Success) {
-    UpdateHealthBar(result.PlayerHealth);
-    ShowDamageNumber(result.Damage);
+    Console.WriteLine($"Hit for {result.Damage} damage! Enemy HP: {result.EnemyHealth}");
 }
 ```
+
+All operations return structured DTOs and pass through FluentValidation and Serilog pipeline behaviors automatically.
 
 ## Quick Start
 
@@ -163,168 +162,28 @@ RealmEngine/
 | `RealmForge.slnx` | RealmForge + tests | Tooling development |
 | `Realm.Full.slnx` | Everything | Local full-stack development |
 
+## Downloads
+
+Latest releases are published automatically on each merge to `main` and are available on the [GitHub Releases page](https://github.com/KungRaseri/RealmEngine/releases).
+
+| Component | Tag Prefix | Artifacts |
+|-----------|------------|-----------|
+| **Engine Libraries** | `engine/v*` | `RealmEngine-Libraries-{version}.zip` · `RealmEngine-Data-{version}.zip` |
+| **RealmForge** | `tooling/v*` | `RealmForge-Windows-{version}.zip` |
+| **RealmUnbound Server** | `server/v*` | `RealmUnbound-Server-{version}.zip` |
+| **RealmUnbound Client** | `client/v*` | `RealmUnbound-Client-Windows-{version}.zip` · `RealmUnbound-Client-Linux-{version}.zip` · `RealmUnbound-Client-macOS-x64-{version}.zip` · `RealmUnbound-Client-macOS-arm64-{version}.zip` |
+
 ## Documentation
 
-Full documentation is deployed to **[GitHub Pages](https://kungraseri.github.io/RealmEngine/)**.
+Full documentation is deployed to **[GitHub Pages](https://kungraseri.github.io/RealmEngine/)** via the `docs.yml` workflow on every push to `main`.
 
 - [Game Design Document](docs/GDD-Main.md) — Complete game specification
 - [Commands and Queries Index](docs/COMMANDS_AND_QUERIES_INDEX.md) — All MediatR commands/queries
-- [API Specification](docs/API_SPECIFICATION.md) — Backend API for Godot integration
+- [API Specification](docs/API_SPECIFICATION.md) — Server and engine API reference
 - [JSON Standards](docs/standards/json/README.md) — JSON v5.1 data file standards
 - [Implementation Status](docs/IMPLEMENTATION_STATUS.md) — Feature completion tracking
 - [Roadmap](docs/ROADMAP.md) — Planned features and milestones
 
 ---
 
-**Platform**: .NET 10.0 | **Pattern**: CQRS with MediatR | **UI**: Godot (separate) + Avalonia | **Data**: LiteDB + JSON
-
-
-RPG backend engine designed as a game logic API for Godot UI integration. Implements CQRS pattern with MediatR for clean command/query separation.
-
-## Architecture
-
-**Vertical Slice + CQRS with MediatR**
-
-Three core libraries:
-- **RealmEngine.Core** - Game logic (combat, inventory, crafting, quests)
-- **RealmEngine.Data** - JSON data loading, persistence (LiteDB)
-- **RealmEngine.Shared** - Models, utilities, abstractions
-
-**RealmForge** - Separate MAUI tool for editing JSON game data (on hold).
-
-Code organized by business feature (Features/Combat, Features/Inventory, etc.) with automatic validation and logging via MediatR pipeline behaviors.
-
-## Integration Pattern
-
-**Backend API for Godot UI** - This repository contains zero production UI code.
-
-```csharp
-// Godot calls backend via MediatR
-var result = await mediator.Send(new AttackEnemyCommand 
-{ 
-    CharacterName = "Player1",
-    Action = CombatActionType.Attack 
-});
-
-// Godot receives DTO and updates UI
-if (result.Success) {
-    UpdateHealthBar(result.PlayerHealth);
-    ShowDamageNumber(result.Damage);
-}
-```
-
-## Quick Start
-
-```powershell
-# Build engine (no MAUI required)
-dotnet build RealmEngine.sln
-
-# Run test suite
-dotnet test RealmEngine.sln
-
-# VS Code debug
-Press F5
-```
-
-## Core Systems
-
-**Game Mechanics**
-- D20 system with 6 attributes (STR/DEX/CON/INT/WIS/CHA) and derived stats
-- 6 character classes with unique bonuses and progression paths
-- Turn-based combat with dodge/crit/block mechanics
-- Interactive level-up with attribute allocation
-- Skill system (8 skills enhancing combat/abilities)
-- Status effects (poison, stun, burning, shield, regeneration)
-
-**Content Systems**
-- Item generation with budget-fitting algorithm (5 rarity tiers)
-- Tiered crafting system with quality bonuses and failure mechanics
-- Material reference system (JSON v4.1) for data reuse
-- Quest system with objectives and rewards
-- Spell system with mana management
-- Shop/economy with dynamic pricing
-- Procedural enemy generation with difficulty scaling
-
-**Data & Persistence**
-- 211 JSON data files (enemies, items, abilities, spells, materials)
-- JSON v5.1 standards with cross-reference system (`@domain/path:item`)
-- LiteDB save/load with auto-save support
-- Budget-based item costing using `rarityWeight` inverse formula
-
-**Integration**
-- MediatR commands/queries for all game operations
-- Event-driven architecture for game state changes
-- Structured logging (Serilog) with exception tracking
-- Validation pipeline (FluentValidation) for all inputs
-
-## Testing
-
-Comprehensive test suite across three test projects:
-
-- **RealmEngine.Data.Tests** - JSON compliance, reference integrity, data validation
-- **RealmEngine.Core.Tests** - Combat, crafting, inventory, quests, character progression
-- **RealmEngine.Shared.Tests** - Models, utilities, services
-
-```powershell
-# Run all tests
-dotnet test RealmEngine.sln
-
-# Run specific test projects
-dotnet test RealmEngine.Data.Tests
-dotnet test RealmEngine.Core.Tests
-dotnet test RealmEngine.Shared.Tests
-```
-
-## Key Dependencies
-
-**Core Libraries**
-- MediatR 14.0.0 - CQRS command/query pattern
-- LiteDB 5.0.21 - NoSQL persistence
-- Newtonsoft.Json 13.0.4 - JSON data loading
-- FluentValidation 12.1.1 - Input validation
-- Serilog 4.3.0 - Structured logging
-- Polly 8.6.5 - Resilience patterns
-
-**Utilities**
-- Bogus 35.6.5 - Procedural content generation
-- Humanizer 3.0.1 - Natural language formatting
-
-**Testing**
-- xUnit 2.9.3 - Test framework
-- FluentAssertions 8.8.0 - Test assertions
-
-## Project Structure
-
-```
-RealmEngine/
-├── RealmEngine.Core/           # Game logic and MediatR handlers
-│   ├── Features/               # Vertical slices (Combat, Crafting, Inventory, etc.)
-│   ├── Generators/             # Procedural content generation
-│   └── Services/               # Core game services
-├── RealmEngine.Data/           # Data access and JSON loading
-│   ├── Data/Json/              # Game data files
-│   └── Services/               # Data services and repositories
-├── RealmEngine.Shared/         # Shared models and utilities
-│   ├── Models/                 # Domain models
-│   └── Abstractions/           # Interfaces and base classes
-└── [Project].Tests/            # Test projects
-```
-
-## Solution Files
-
-- **RealmEngine.sln** - Core engine only (no MAUI dependencies, CI/CD builds)
-- **RealmForge.sln** - MAUI data editor tool (requires MAUI workloads)
-- **RealmEngine.Full.sln** - All projects for local development
-
-## Documentation
-
-- [Game Design Document](docs/GDD-Main.md) - Complete game specification
-- [Commands and Queries Index](docs/COMMANDS_AND_QUERIES_INDEX.md) - All MediatR commands/queries
-- [API Specification](docs/API_SPECIFICATION.md) - Backend API for Godot integration
-- [JSON Standards](docs/standards/json/README.md) - JSON v5.1 data file standards
-- [Implementation Status](docs/IMPLEMENTATION_STATUS.md) - Feature completion tracking
-- [Documentation Index](docs/README.md) - Complete documentation list
-
----
-
-**Platform**: .NET 9.0 | **Pattern**: CQRS with MediatR | **UI**: Godot (separate) | **Data**: LiteDB + JSON
+**Platform**: .NET 10.0 | **Pattern**: CQRS with MediatR | **UI**: Avalonia | **Data**: LiteDB + JSON

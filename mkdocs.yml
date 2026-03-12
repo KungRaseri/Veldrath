@@ -97,4 +97,3 @@ nav:
     - Implementation Order: realm-forge/IMPLEMENTATION_ORDER.md
   - Workflows:
     - Material Workflow: MATERIAL_WORKFLOW.md
-    - Godot Generator Usage: GODOT_GENERATOR_USAGE.md
