@@ -1,7 +1,7 @@
 # Party System
 
-**Status**: ✅ 100% Complete  
-**Implementation**: [RealmEngine.Core\Features\Party](../../RealmEngine.Core/Features/Party)  
+**Status**: ✅ 100% Complete
+**Implementation**: `RealmEngine.Core/Features/Party`
 **Tests**: 16/16 passing
 
 ## Overview

@@ -225,7 +225,7 @@ All errors are returned in the result's `ErrorMessage` property with `Success=fa
 
 ## Testing
 
-See [ShopIntegrationTests.cs](../../RealmEngine.Core.Tests/Features/Shop/Integration/ShopIntegrationTests.cs) for comprehensive examples covering:
+See `ShopIntegrationTests.cs` for comprehensive examples covering:
 
 - ✅ Browsing shop inventory
 - ✅ Buying items with sufficient gold
@@ -293,7 +293,4 @@ Planned features for the shop system:
 
 ## Related Documentation
 
-- [Shop Economy Service](../../RealmEngine.Core/Services/ShopEconomyService.cs)
-- [Shop Commands](../../RealmEngine.Core/Features/Shop/Commands/)
-- [NPC System](./npc-system.md)
 - [Inventory System](./inventory-system.md)

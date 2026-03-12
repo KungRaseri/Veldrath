@@ -337,7 +337,7 @@ Temporary conditions affecting combat and exploration with damage-over-time, cro
 - Accessories: amulets, rings, cloaks, belts
 - Consumables: potions, food, scrolls
 
-**See:** [ItemGeneration/README.md](../RealmEngine.Core/Features/ItemGeneration/README.md) for detailed usage
+**See:** `RealmEngine.Core/Features/ItemGeneration/` for detailed usage
 
 ---
 

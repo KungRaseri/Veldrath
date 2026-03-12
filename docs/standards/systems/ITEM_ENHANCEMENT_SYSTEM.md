@@ -756,9 +756,9 @@ Traits: { damage: 30, fireDamage: 30, bonusStrength: 10, bonusConstitution: 8,
 
 ## Related Standards
 
-- [NAMES_JSON_STANDARD.md](./NAMES_JSON_STANDARD.md) - Pattern generation with enhancement fields
-- [CATALOG_JSON_STANDARD.md](./CATALOG_JSON_STANDARD.md) - Material and item catalog structures
-- [JSON_REFERENCE_STANDARDS.md](./JSON_REFERENCE_STANDARDS.md) - Material and enchantment references
+- [NAMES_JSON_STANDARD.md](../json/NAMES_JSON_STANDARD.md) - Pattern generation with enhancement fields
+- [CATALOG_JSON_STANDARD.md](../json/CATALOG_JSON_STANDARD.md) - Material and item catalog structures
+- [JSON_REFERENCE_STANDARDS.md](../json/JSON_REFERENCE_STANDARDS.md) - Material and enchantment references
 
 ---
 

@@ -20,7 +20,7 @@ Clean, organized documentation for the RealmEngine game system.
 
 ## 📏 Standards
 
-### [Standards Documentation](./standards/)
+### [Standards Documentation](standards/README.md)
 **All technical standards and specifications.**
 
 Quick links:
