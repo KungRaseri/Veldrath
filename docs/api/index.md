@@ -9,6 +9,9 @@ The three engine libraries are documented separately:
 | [RealmEngine.Core](RealmEngine.Core.md) | Game logic, MediatR commands/queries, combat, crafting, inventory, quest, spell, and save/load handlers |
 | [RealmEngine.Shared](RealmEngine.Shared.md) | Shared models, domain entities, interfaces, and utilities consumed by both Core and Data |
 | [RealmEngine.Data](RealmEngine.Data.md) | JSON data loading, LiteDB persistence, repositories, and data seeding services |
+| [RealmForge](RealmForge.md) | Avalonia UI JSON data editor — ViewModels, services, and tree/editor components |
+| [RealmUnbound.Client](RealmUnbound.Client.md) | Avalonia desktop client — ViewModels, navigation, SignalR connection, and authentication services |
+| [RealmUnbound.Server](RealmUnbound.Server.md) | ASP.NET Core game server — endpoints, SignalR hub, EF Core identity, and game session services |
 
 ## Navigation
 
