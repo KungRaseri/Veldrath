@@ -1,6 +1,65 @@
-# Build & Deployment Scripts
+# Scripts
 
-This directory contains essential scripts for building and deploying the game.
+Utility scripts for development, versioning, releases, and data tooling.
+
+---
+
+## `generate-version.ps1`
+
+Reads the version from `versions/<component>.props` and the current git commit count to produce a deterministic version string.
+
+```powershell
+.\scripts\generate-version.ps1 -OutputFormat string         # e.g. 0.1.42-abc1234
+.\scripts\generate-version.ps1 -OutputFormat msbuild        # MSBuild property args
+.\scripts\generate-version.ps1 -PropsFile versions\engine.props -OutputFormat string
+```
+
+---
+
+## `create-release-tag.ps1`
+
+Creates and pushes a release tag for a specific component. Use this to manually trigger a release without waiting for CI.
+
+```powershell
+.\scripts\create-release-tag.ps1 -Component engine
+.\scripts\create-release-tag.ps1 -Component tooling
+.\scripts\create-release-tag.ps1 -Component server
+.\scripts\create-release-tag.ps1 -Component client
+.\scripts\create-release-tag.ps1 -Component engine -DryRun   # preview only
+```
+
+---
+
+## `generate-release-notes.ps1`
+
+Generates release notes from git log since the last tag for a given component.
+
+```powershell
+.\scripts\generate-release-notes.ps1 -Component engine
+```
+
+---
+
+## `generate-coverage-report.ps1`
+
+Merges coverage XML outputs from `coverage-results/` and generates an HTML report under `coverage-report/`. Requires `reportgenerator` to be installed (`dotnet tool install -g dotnet-reportgenerator-globaltool`).
+
+```powershell
+.\scripts\generate-coverage-report.ps1
+```
+
+Also wired to the **test-coverage** VS Code task (`Ctrl+Shift+B` → test-coverage).
+
+---
+
+## `format-json-files.py`
+
+Re-formats all JSON files under `RealmEngine.Data/Data/Json/` to consistent 2-space indentation and UTF-8 without BOM. Run from the repo root.
+
+```powershell
+python scripts/format-json-files.py
+```
+
 
 ## Available Scripts
 
