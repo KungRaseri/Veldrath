@@ -18,7 +18,7 @@
     "content": [
       { "files": ["api/**.yml", "api/index.md"] },
       { "files": ["docs/**.md", "docs/**/toc.yml"] },
-      { "files": ["toc.yml", "README.md"] }
+      { "files": ["toc.yml", "index.md"] }
     ],
     "resource": [],
     "output": "_site",
@@ -27,6 +27,7 @@
       "_appName": "RealmEngine",
       "_appTitle": "RealmEngine",
       "_enableSearch": true,
+      "_appHomePage": "index.html",
       "_gitContribute": {
         "repo": "https://github.com/KungRaseri/RealmEngine",
         "branch": "main"
