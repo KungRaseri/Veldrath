@@ -19,9 +19,9 @@ RPG backend engine implementing CQRS with MediatR for clean command/query separa
 
 ## Quick Links
 
-- [Game Design Document](docs/GDD-Main.md)
-- [Architecture & CQRS](docs/CQRS_IMPLEMENTATION_STATUS.md)
-- [Commands & Queries Index](docs/COMMANDS_AND_QUERIES_INDEX.md)
-- [Implementation Status](docs/IMPLEMENTATION_STATUS.md)
-- [Roadmap](docs/ROADMAP.md)
-- [API Reference](api/RealmEngine.Core.html)
+- [Game Design Document](~/docs/GDD-Main.md)
+- [Architecture & CQRS](~/docs/CQRS_IMPLEMENTATION_STATUS.md)
+- [Commands & Queries Index](~/docs/COMMANDS_AND_QUERIES_INDEX.md)
+- [Implementation Status](~/docs/IMPLEMENTATION_STATUS.md)
+- [Roadmap](~/docs/ROADMAP.md)
+- [API Reference](~/api/index.md)
