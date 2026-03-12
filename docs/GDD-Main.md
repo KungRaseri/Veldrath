@@ -1356,7 +1356,7 @@ This section describes the **intended feature set** for the complete game. For t
 
 A companion WPF application (**RealmForge**) provides visual editing of game data files with pattern composition, reference browsing, and real-time validation.
 
-For details on RealmForge, see [REALMFORGE.md](REALMFORGE.md).  
+For details on RealmForge, see [RealmForge](realm-forge/README.md).  
 For development roadmap and future features, see [ROADMAP.md](ROADMAP.md).
 
 ---
@@ -1535,7 +1535,7 @@ Celebration sequence displaying:
 
 **Security:** All user input is validated and sanitized to prevent injection attacks.
 
-For documentation on the RealmForge data editor tool, see [REALMFORGE.md](REALMFORGE.md).
+For documentation on the RealmForge data editor tool, see [RealmForge](realm-forge/README.md).
 
 For development roadmap and future features, see [ROADMAP.md](ROADMAP.md).
 

@@ -540,7 +540,7 @@
 **See Also**:
 - [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) - Current detailed status
 - [GDD-Main.md](GDD-Main.md) - Game design documentation
-- [REALMFORGE.md](REALMFORGE.md) - Content editing tool documentation
+- [RealmForge](realm-forge/README.md) - Content editing tool documentation
 
 ---
 

@@ -340,4 +340,4 @@ Once v3.1 is stable, we'll tackle:
 - Batch operations
 - Native folder picker
 
-See [Roadmap](roadmap.md) for full v3.2 features.
+See [Roadmap](features/roadmap.md) for full v3.2 features.

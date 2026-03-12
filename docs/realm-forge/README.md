@@ -83,13 +83,13 @@ dotnet build RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
 - [JSON Editing](features/json-editing.md) - Form/JSON editor features
 - [Form System](features/form-system.md) - Dynamic form generation
 - [Modding Framework](features/modding-framework.md) - Mod creation and management
-- [Validation System](features/validation-system.md) - Data validation
+- Validation System - Data validation
 - [Roadmap](features/roadmap.md) - Development timeline
 
 ### Technical
 - [Architecture](features/architecture.md) - Technical design
-- [Models](features/models.md) - RealmEngine.Shared model integration
-- [File Formats](features/file-formats.md) - JSON v5.1 standards
+- Models - RealmEngine.Shared model integration
+- File Formats - JSON v5.1 standards
 
 ---
 

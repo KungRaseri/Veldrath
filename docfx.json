@@ -17,7 +17,11 @@
   "build": {
     "content": [
       { "files": ["api/**.yml", "api/index.md"] },
-      { "files": ["docs/**.md", "docs/**/toc.yml"] },
+      { "files": ["docs/**.md", "docs/**/toc.yml"], "exclude": [
+        "docs/CHARACTER_CREATION_ENHANCEMENTS.md",
+        "docs/DI_VALIDATION_TEST_RESULTS.md",
+        "docs/MATERIAL_FILTER_CONFIG.md"
+      ] },
       { "files": ["toc.yml", "index.md"] }
     ],
     "resource": [],

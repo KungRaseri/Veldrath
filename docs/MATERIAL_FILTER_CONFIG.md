@@ -309,4 +309,4 @@ dotnet test RealmEngine.Core.Tests --filter "GenerateItemAsync"
 
 - [BUDGET_SYSTEM_FIELD_STANDARDIZATION.md](../docs/proposals/BUDGET_SYSTEM_FIELD_STANDARDIZATION.md) - Budget formulas
 - [material-pools.json](../RealmEngine.Data/Data/Json/general/material-pools.json) - Material rarity pools
-- [ITEM_ENHANCEMENT_SYSTEM.md](../docs/ITEM_ENHANCEMENT_SYSTEM.md) - Overall item system
+- [ITEM_ENHANCEMENT_SYSTEM.md](standards/systems/ITEM_ENHANCEMENT_SYSTEM.md) - Overall item system

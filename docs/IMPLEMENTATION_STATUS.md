@@ -7,7 +7,7 @@
 
 **Quick Links:**
 - [✅ Completed Work](COMPLETED_WORK.md) - All finished systems (19/20 complete)
-- [Remaining Work](#-remaining-work) - What still needs implementation (1 system)
+- Remaining Work - What still needs implementation (1 system)
 
 ---
 
@@ -62,7 +62,7 @@
 **For completed work**: See [COMPLETED_WORK.md](COMPLETED_WORK.md)  
 **For game design**: See [GDD-Main.md](GDD-Main.md)  
 **For development timeline**: See [ROADMAP.md](ROADMAP.md)  
-**For feature details**: See individual pages in [features/](features/)
+**For feature details**: See individual feature pages
 
 ---
 
@@ -70,7 +70,7 @@
 - **Completed Work**: [COMPLETED_WORK.md](COMPLETED_WORK.md) - All finished systems (19/20)
 - **Game Design**: [GDD-Main.md](GDD-Main.md) - Overall game design document
 - **Roadmap**: [ROADMAP.md](ROADMAP.md) - Development timeline
-- **Feature Details**: [features/](features/) - Individual feature specifications
+- **Feature Details**: Individual feature pages
 
 ---
 

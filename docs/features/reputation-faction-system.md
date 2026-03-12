@@ -1,8 +1,8 @@
 # Reputation & Faction System
 
-**Status**: ✅ 100% Complete  
-**Implementation**: [RealmEngine.Core\Features\Reputation](../../RealmEngine.Core/Features/Reputation)  
-**Faction Data**: [organizations\factions\catalog.json](../../RealmEngine.Data/Data/Json/organizations/factions/catalog.json)  
+**Status**: ✅ 100% Complete
+**Implementation**: `RealmEngine.Core/Features/Reputation`
+**Faction Data**: `RealmEngine.Data/Data/Json/organizations/factions/catalog.json`
 **Tests**: Integrated with all systems
 
 ## Overview

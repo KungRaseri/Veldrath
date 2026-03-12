@@ -15,7 +15,7 @@
 | **Structure Types** | [JSON_STRUCTURE_TYPES.md](JSON_STRUCTURE_TYPES.md) | All 5 structure types (CATALOG, PATTERN_GENERATION, etc.) |
 | **References** | [JSON_REFERENCE_STANDARDS.md](JSON_REFERENCE_STANDARDS.md) | Unified reference system for linking JSON files (v4.2) |
 | **Traits** | [TRAIT_STANDARDS.md](TRAIT_STANDARDS.md) | Standardized trait formats and value enums |
-| **Enhancement System** | [ITEM_ENHANCEMENT_SYSTEM.md](ITEM_ENHANCEMENT_SYSTEM.md) | **NEW** Hybrid item generation with materials/enchantments/gems |
+| **Enhancement System** | [ITEM_ENHANCEMENT_SYSTEM.md](../systems/ITEM_ENHANCEMENT_SYSTEM.md) | **NEW** Hybrid item generation with materials/enchantments/gems |
 
 ### Structure Types
 | Structure Type | Standard Document | Purpose |
@@ -31,7 +31,7 @@
 |----------|----------|---------|
 | TRAITS | [TRAIT_STANDARDS.md](TRAIT_STANDARDS.md) | Trait formats and value enums for all entities |
 | REFERENCES | [JSON_REFERENCE_STANDARDS.md](JSON_REFERENCE_STANDARDS.md) | Linking game data across domains (v4.2: materials, enchantments, quests) |
-| ENHANCEMENT SYSTEM | [ITEM_ENHANCEMENT_SYSTEM.md](ITEM_ENHANCEMENT_SYSTEM.md) | **NEW** Hybrid 3-layer enhancement architecture |
+| ENHANCEMENT SYSTEM | [ITEM_ENHANCEMENT_SYSTEM.md](../systems/ITEM_ENHANCEMENT_SYSTEM.md) | **NEW** Hybrid 3-layer enhancement architecture |
 
 ### Special Files
 | File Type | Standard Document | Purpose |
@@ -370,7 +370,7 @@ For questions about JSON standards:
 - [names.json Standard](NAMES_JSON_STANDARD.md) - Pattern generation (v4.2)
 - [catalog.json Standard](CATALOG_JSON_STANDARD.md) - Item/enemy catalog (v4.2)
 - [JSON Reference Standards](JSON_REFERENCE_STANDARDS.md) - Reference system (v4.2)
-- [Item Enhancement System](ITEM_ENHANCEMENT_SYSTEM.md) - **NEW** Hybrid enhancement architecture
+- [Item Enhancement System](../systems/ITEM_ENHANCEMENT_SYSTEM.md) - **NEW** Hybrid enhancement architecture
 - [Trait Standards](TRAIT_STANDARDS.md) - Trait formats
 - [JSON Structure Types](JSON_STRUCTURE_TYPES.md) - All structure types
 
