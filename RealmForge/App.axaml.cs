@@ -1,8 +1,11 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Data.Persistence;
 using RealmForge.Services;
 using RealmForge.ViewModels;
 using RealmForge.Views;
@@ -79,6 +82,19 @@ public partial class App : Application
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddLogging(builder => builder.AddSerilog(dispose: false));
+
+        // Load configuration from realmforge.json (connection strings, etc.)
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .Build();
+
+        var contentConnStr = config.GetConnectionString("ContentDb");
+        if (!string.IsNullOrWhiteSpace(contentConnStr))
+        {
+            services.AddDbContext<ContentDbContext>(options =>
+                options.UseNpgsql(contentConnStr));
+        }
 
         services.AddSingleton<EditorSettingsService>();
         services.AddSingleton<FileManagementService>();

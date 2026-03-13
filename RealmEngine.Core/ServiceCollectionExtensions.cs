@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configurePersistence">
     /// Optional persistence configuration. Defaults to in-memory when null.
-    /// Use <c>p =&gt; p.UseSqlite()</c> for local file persistence or
+    /// Use <c>p =&gt; p.UseNpgsql(connStr)</c> for PostgreSQL persistence or
     /// <c>p =&gt; p.UseExternal()</c> when the host (e.g. RealmUnbound.Server) registers its own
     /// repository implementations.
     /// </param>
@@ -140,10 +140,10 @@ public static class ServiceCollectionExtensions
         
         // Register repositories (interfaces defined in Shared, implementations in Data)
         // Mode is controlled by the persistence options passed to AddRealmEngineCore().
-        if (persistenceOptions.IsSqlite)
+        if (persistenceOptions.IsNpgsql)
         {
             services.AddDbContext<GameDbContext>(o =>
-                o.UseSqlite(persistenceOptions.ConnectionString));
+                o.UseNpgsql(persistenceOptions.ConnectionString));
             services.AddScoped<ISaveGameRepository, EfCoreSaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
         }
