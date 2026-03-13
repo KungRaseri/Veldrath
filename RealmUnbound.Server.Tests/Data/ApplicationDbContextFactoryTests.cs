@@ -15,12 +15,12 @@ public class ApplicationDbContextFactoryTests
     }
 
     [Fact]
-    public void CreateDbContext_Should_Use_Sqlite_Provider()
+    public void CreateDbContext_Should_Use_Npgsql_Provider()
     {
         var factory = new ApplicationDbContextFactory();
 
         using var ctx = factory.CreateDbContext([]);
 
-        ctx.Database.ProviderName.Should().Be("Microsoft.EntityFrameworkCore.Sqlite");
+        ctx.Database.ProviderName.Should().Be("Npgsql.EntityFrameworkCore.PostgreSQL");
     }
 }

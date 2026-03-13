@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RealmEngine.Data.Persistence;
@@ -46,23 +48,20 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         builder.UseSetting("RealmEngine:DataPath",                  "");
 
         // Replace the production Postgres contexts with in-memory SQLite instances.
+        // EF Core 8+ registers IDbContextOptionsConfiguration<T> (not DbContextOptions<T>),
+        // so we must remove those to avoid a dual-provider conflict when re-adding with SQLite.
         builder.ConfigureServices(services =>
         {
-            var appCtxDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (appCtxDescriptor is not null)
-                services.Remove(appCtxDescriptor);
-
-            var contentCtxDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ContentDbContext>));
-            if (contentCtxDescriptor is not null)
-                services.Remove(contentCtxDescriptor);
+            RemoveDbContextRegistrations<ApplicationDbContext>(services);
+            RemoveDbContextRegistrations<ContentDbContext>(services);
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(ConnStr));
+                options.UseSqlite(ConnStr)
+                       .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
             services.AddDbContext<ContentDbContext>(options =>
-                options.UseSqlite(ConnStr));
+                options.UseSqlite(ConnStr)
+                       .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
         });
     }
 
@@ -84,6 +83,23 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         if (disposing)
             _keepAlive.Dispose();
         base.Dispose(disposing);
+    }
+
+    // Removes both DbContextOptions<T> and IDbContextOptionsConfiguration<T> descriptors
+    // so that re-adding the context with a different provider never causes a dual-provider conflict.
+    private static void RemoveDbContextRegistrations<TContext>(IServiceCollection services)
+        where TContext : DbContext
+    {
+        var toRemove = services
+            .Where(d =>
+                d.ServiceType == typeof(DbContextOptions<TContext>) ||
+                (d.ServiceType.IsGenericType &&
+                 d.ServiceType.GetGenericTypeDefinition() == typeof(IDbContextOptionsConfiguration<>) &&
+                 d.ServiceType.GenericTypeArguments[0] == typeof(TContext)))
+            .ToList();
+
+        foreach (var d in toRemove)
+            services.Remove(d);
     }
 }
 
