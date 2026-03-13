@@ -15,7 +15,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         var response = await _client.GetAsync("/api/zones");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var zones = await response.Content.ReadFromJsonAsync<ZoneResult[]>();
+        var zones = await response.Content.ReadFromJsonAsync<ZoneDto[]>();
         zones.Should().NotBeNull();
         zones!.Length.Should().Be(5);
     }
@@ -24,7 +24,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     public async Task GetZones_Should_Include_Starter_Zone()
     {
         var response = await _client.GetAsync("/api/zones");
-        var zones = await response.Content.ReadFromJsonAsync<ZoneResult[]>();
+        var zones = await response.Content.ReadFromJsonAsync<ZoneDto[]>();
 
         var starter = zones!.SingleOrDefault(z => z.IsStarter);
         starter.Should().NotBeNull();
@@ -34,7 +34,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     [Fact]
     public async Task GetZones_Should_Return_Correct_Zone_Types()
     {
-        var zones = await _client.GetFromJsonAsync<ZoneResult[]>("/api/zones");
+        var zones = await _client.GetFromJsonAsync<ZoneDto[]>("/api/zones");
         zones.Should().Contain(z => z.Type == "Tutorial");
         zones.Should().Contain(z => z.Type == "Town");
         zones.Should().Contain(z => z.Type == "Dungeon");
@@ -44,7 +44,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     [Fact]
     public async Task GetZones_Should_Return_Zero_Online_Players_Initially()
     {
-        var zones = await _client.GetFromJsonAsync<ZoneResult[]>("/api/zones");
+        var zones = await _client.GetFromJsonAsync<ZoneDto[]>("/api/zones");
         zones!.All(z => z.OnlinePlayers == 0).Should().BeTrue();
     }
 
@@ -54,7 +54,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         var response = await _client.GetAsync("/api/zones/starting-zone");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var zone = await response.Content.ReadFromJsonAsync<ZoneResult>();
+        var zone = await response.Content.ReadFromJsonAsync<ZoneDto>();
         zone!.Id.Should().Be("starting-zone");
         zone.IsStarter.Should().BeTrue();
         zone.MinLevel.Should().Be(0);

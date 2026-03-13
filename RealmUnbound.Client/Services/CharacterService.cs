@@ -19,26 +19,10 @@ public class HttpCharacterService(
     TokenStore tokens,
     ILogger<HttpCharacterService> logger) : ICharacterService
 {
-    private AuthenticationHeaderValue? BearerHeader =>
-        tokens.AccessToken is { } t ? new AuthenticationHeaderValue("Bearer", t) : null;
+    private AuthenticationHeaderValue? BearerHeader => tokens.BearerHeader();
     private static async Task<AppError> ReadErrorAsync(HttpResponseMessage response, string context = "")
     {
-        string? serverMessage = null;
-        try
-        {
-            var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-            if (body.TryGetProperty("error", out var e))
-                serverMessage = e.GetString();
-        }
-        catch { }
-
-        if (serverMessage is null)
-        {
-            try { serverMessage = await response.Content.ReadAsStringAsync(); }
-            catch { }
-            if (string.IsNullOrWhiteSpace(serverMessage))
-                serverMessage = null;
-        }
+        var serverMessage = await HttpResponseHelper.ExtractServerMessageAsync(response);
 
         var statusCode = (int)response.StatusCode;
         var friendly = (context, statusCode) switch

@@ -1,5 +1,5 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using RealmUnbound.Contracts.Auth;
 
@@ -22,22 +22,7 @@ public class HttpAuthService(
 {
     private static async Task<AppError> ReadErrorAsync(HttpResponseMessage response, string context = "")
     {
-        string? serverMessage = null;
-        try
-        {
-            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-            if (body.TryGetProperty("error", out var e))
-                serverMessage = e.GetString();
-        }
-        catch { }
-
-        if (serverMessage is null)
-        {
-            try { serverMessage = await response.Content.ReadAsStringAsync(); }
-            catch { }
-            if (string.IsNullOrWhiteSpace(serverMessage))
-                serverMessage = null;
-        }
+        var serverMessage = await HttpResponseHelper.ExtractServerMessageAsync(response);
 
         var statusCode = (int)response.StatusCode;
         var friendly = (context, statusCode) switch
@@ -132,7 +117,7 @@ public class HttpAuthService(
             using var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/logout");
             request.Content = JsonContent.Create(new LogoutRequest(tokens.RefreshToken));
             if (tokens.AccessToken is not null)
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+                request.Headers.Authorization = tokens.BearerHeader();
             await http.SendAsync(request);
         }
         catch (Exception ex)
