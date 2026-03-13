@@ -1,6 +1,0 @@
-{
-  "icon": "MapMarker",
-  "displayName": "Locations",
-  "description": "Quest locations consolidated into root catalog.json (reserved for future locations domain)",
-  "sortOrder": 1
-}
