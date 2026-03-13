@@ -1,19 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Services;
-
-// ── DTOs (mirror server ZoneDto) ──────────────────────────────────────────────
-public record ZoneDto(
-    string Id,
-    string Name,
-    string Description,
-    string Type,
-    int MinLevel,
-    int MaxPlayers,
-    bool IsStarter,
-    int OnlinePlayers);
 
 // ── Interface ──────────────────────────────────────────────────────────────────
 public interface IZoneService

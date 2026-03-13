@@ -1,20 +1,9 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using RealmUnbound.Contracts.Auth;
 
 namespace RealmUnbound.Client.Services;
-
-// ── DTOs (mirror server AuthDtos) ──────────────────────────────────────────────
-public record RegisterRequest(string Email, string Username, string Password);
-public record LoginRequest(string Email, string Password);
-public record RefreshRequest(string RefreshToken);
-public record LogoutRequest(string RefreshToken);
-public record AuthResponse(
-    string AccessToken,
-    string RefreshToken,
-    DateTimeOffset AccessTokenExpiry,
-    Guid AccountId,
-    string Username);
 
 // ── Interface ──────────────────────────────────────────────────────────────────
 public interface IAuthService

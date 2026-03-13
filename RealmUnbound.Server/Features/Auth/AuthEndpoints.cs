@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RealmUnbound.Contracts.Auth;
 
 namespace RealmUnbound.Server.Features.Auth;
 

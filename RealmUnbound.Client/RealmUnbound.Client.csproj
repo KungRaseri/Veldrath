@@ -44,6 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
   </ItemGroup>
