@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Services;
 
 namespace RealmUnbound.Server.Hubs;
 
@@ -12,10 +13,11 @@ namespace RealmUnbound.Server.Hubs;
 /// <c>access_token</c> parameter, which the JWT middleware picks up from the request).
 /// 
 /// Flow:
-///   1. Client connects (JWT validated automatically).
-///   2. Client calls <see cref="SelectCharacter"/> to attach a character.
+///   1. Client connects (JWT validated automatically). Joins the account-level broadcast group.
+///   2. Client calls <see cref="SelectCharacter"/> to attach a character (enforces single active instance).
 ///   3. Client calls <see cref="EnterZone"/> to join a zone SignalR group.
 ///   4. All players in the zone receive <c>PlayerEntered</c> / <c>PlayerLeft</c> broadcasts.
+///   5. All connections for the same account receive <c>CharacterStatusChanged</c> broadcasts.
 /// </summary>
 [Authorize]
 public class GameHub : Hub
@@ -24,21 +26,30 @@ public class GameHub : Hub
     private readonly ICharacterRepository _characterRepo;
     private readonly IZoneRepository _zoneRepo;
     private readonly IZoneSessionRepository _zoneSessionRepo;
+    private readonly IActiveCharacterTracker _activeCharacters;
 
     public GameHub(
         ILogger<GameHub> logger,
         ICharacterRepository characterRepo,
         IZoneRepository zoneRepo,
-        IZoneSessionRepository zoneSessionRepo)
+        IZoneSessionRepository zoneSessionRepo,
+        IActiveCharacterTracker activeCharacters)
     {
         _logger = logger;
         _characterRepo = characterRepo;
         _zoneRepo = zoneRepo;
         _zoneSessionRepo = zoneSessionRepo;
+        _activeCharacters = activeCharacters;
     }
 
     public override async Task OnConnectedAsync()
     {
+        var accountId = GetAccountId();
+        Context.Items["AccountId"] = accountId;
+
+        // Join the per-account group so this connection receives CharacterStatusChanged broadcasts
+        await Groups.AddToGroupAsync(Context.ConnectionId, AccountGroup(accountId));
+
         _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
         await Clients.Caller.SendAsync("Connected", Context.ConnectionId);
         await base.OnConnectedAsync();
@@ -46,6 +57,19 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        // Release any active character claim and notify account peers
+        var characterId = _activeCharacters.GetCharacterForConnection(Context.ConnectionId);
+        _activeCharacters.Release(Context.ConnectionId);
+
+        if (characterId.HasValue && Context.Items.TryGetValue("AccountId", out var aid) && aid is Guid accountId)
+        {
+            await Clients.Group(AccountGroup(accountId)).SendAsync("CharacterStatusChanged", new
+            {
+                CharacterId = characterId.Value,
+                IsOnline = false,
+            });
+        }
+
         // Clean up zone session — broadcast departure to zone peers
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
 
@@ -57,6 +81,8 @@ public class GameHub : Hub
 
     /// <summary>
     /// Attach a character to this connection. Must be called before <see cref="EnterZone"/>.
+    /// Only one active connection may hold a given character at a time; attempting to claim
+    /// an already-active character sends a <c>CharacterAlreadyActive</c> message and returns.
     /// </summary>
     public async Task SelectCharacter(Guid characterId)
     {
@@ -75,13 +101,30 @@ public class GameHub : Hub
             return;
         }
 
+        // Enforce single active instance per character across all connections
+        if (!_activeCharacters.TryClaim(characterId, Context.ConnectionId))
+        {
+            await Clients.Caller.SendAsync("CharacterAlreadyActive", characterId);
+            _logger.LogWarning(
+                "Character {CharacterName} ({CharacterId}) is already active; rejected duplicate claim from {ConnectionId}",
+                character.Name, characterId, Context.ConnectionId);
+            return;
+        }
+
         Context.Items["CharacterId"]   = character.Id;
         Context.Items["CharacterName"] = character.Name;
         Context.Items["CurrentZoneId"] = character.CurrentZoneId;
 
         _logger.LogInformation(
-            "Character {CharacterName} ({CharacterId}) selected",
-            character.Name, character.Id);
+            "Character {CharacterName} ({CharacterId}) selected by {ConnectionId}",
+            character.Name, character.Id, Context.ConnectionId);
+
+        // Broadcast to all connections in this account's group (including other open clients)
+        await Clients.Group(AccountGroup(accountId)).SendAsync("CharacterStatusChanged", new
+        {
+            CharacterId = characterId,
+            IsOnline = true,
+        });
 
         await Clients.Caller.SendAsync("CharacterSelected", new
         {
@@ -93,6 +136,13 @@ public class GameHub : Hub
             SelectedAt = DateTimeOffset.UtcNow,
         });
     }
+
+    /// <summary>
+    /// Returns the set of character IDs that are currently active (i.e. claimed by any connection).
+    /// Used by the character select screen to show which characters are already in use.
+    /// </summary>
+    public Task<IEnumerable<Guid>> GetActiveCharacters() =>
+        Task.FromResult(_activeCharacters.GetActiveCharacterIds().AsEnumerable());
 
     // ── Zone management ───────────────────────────────────────────────────────
 
@@ -118,9 +168,12 @@ public class GameHub : Hub
         // Leave current zone first (if in one)
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
 
-        // Remove any stale session for this character (e.g. unexpected disconnect didn't clean up)
+        // Remove only genuinely stale sessions for this character (from a previous disconnect that
+        // didn't clean up). If the session belongs to a different live connection, SelectCharacter
+        // would have already rejected this attempt via IActiveCharacterTracker.
         var stale = await _zoneSessionRepo.GetByCharacterIdAsync(characterId);
-        if (stale is not null) await _zoneSessionRepo.RemoveAsync(stale);
+        if (stale is not null && stale.ConnectionId != Context.ConnectionId)
+            await _zoneSessionRepo.RemoveAsync(stale);
 
         // Create new session
         var session = new ZoneSession
@@ -199,6 +252,7 @@ public class GameHub : Hub
     }
 
     private static string ZoneGroup(string zoneId) => $"zone:{zoneId}";
+    private static string AccountGroup(Guid accountId) => $"account:{accountId}";
 
     private Guid GetAccountId()
     {

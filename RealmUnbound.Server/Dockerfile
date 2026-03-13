@@ -7,6 +7,7 @@ COPY Directory.Build.props                                 ./
 COPY versions/                                             versions/
 COPY RealmUnbound.Server/RealmUnbound.Server.csproj        RealmUnbound.Server/
 COPY RealmUnbound.Server/Directory.Build.props             RealmUnbound.Server/
+COPY RealmUnbound.Contracts/RealmUnbound.Contracts.csproj  RealmUnbound.Contracts/
 COPY RealmEngine.Core/RealmEngine.Core.csproj              RealmEngine.Core/
 COPY RealmEngine.Core/Directory.Build.props                RealmEngine.Core/
 COPY RealmEngine.Data/RealmEngine.Data.csproj              RealmEngine.Data/
@@ -17,8 +18,9 @@ COPY RealmEngine.Shared/Directory.Build.props              RealmEngine.Shared/
 RUN dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
 
 # Copy all source
-COPY RealmUnbound.Server/   RealmUnbound.Server/
-COPY RealmEngine.Core/      RealmEngine.Core/
+COPY RealmUnbound.Server/     RealmUnbound.Server/
+COPY RealmUnbound.Contracts/  RealmUnbound.Contracts/
+COPY RealmEngine.Core/        RealmEngine.Core/
 COPY RealmEngine.Data/      RealmEngine.Data/
 COPY RealmEngine.Shared/    RealmEngine.Shared/
 
@@ -28,6 +30,10 @@ RUN dotnet publish RealmUnbound.Server.csproj -c Release -o /app/publish --no-re
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
 

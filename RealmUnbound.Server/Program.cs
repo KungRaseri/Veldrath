@@ -13,6 +13,7 @@ using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Zones;
+using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
 using RealmEngine.Shared.Abstractions;
@@ -135,6 +136,7 @@ try
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
     builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
     builder.Services.AddScoped<IZoneSessionRepository, ZoneSessionRepository>();
+    builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
 
     // ── RealmEngine services ─────────────────────────────────────────────────
     var jsonDataPath = builder.Configuration["RealmEngine:DataPath"] ?? "Data/Json";

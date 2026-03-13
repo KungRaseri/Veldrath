@@ -22,8 +22,10 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _playerEnteredSub;
     private IDisposable? _playerLeftSub;
     private IDisposable? _hubErrorSub;
+    private IDisposable? _characterStatusSub;
+    private IDisposable? _characterAlreadyActiveSub;
 
-    public ObservableCollection<CharacterDto> Characters { get; } = [];
+    public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
     public bool IsCreating
     {
@@ -55,11 +57,11 @@ public class CharacterSelectViewModel : ViewModelBase
 
     public string ServerUrl { get; set; } = "http://localhost:8080";
 
-    public ReactiveCommand<CharacterDto, Unit> SelectCommand { get; }
+    public ReactiveCommand<CharacterEntryViewModel, Unit> SelectCommand { get; }
     public ReactiveCommand<Unit, Unit> ShowCreateCommand { get; }
     public ReactiveCommand<Unit, Unit> CancelCreateCommand { get; }
     public ReactiveCommand<Unit, Unit> CreateCommand { get; }
-    public ReactiveCommand<CharacterDto, Unit> DeleteCommand { get; }
+    public ReactiveCommand<CharacterEntryViewModel, Unit> DeleteCommand { get; }
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
 
     public CharacterSelectViewModel(
@@ -78,11 +80,11 @@ public class CharacterSelectViewModel : ViewModelBase
             x => x.NewCharacterName, x => x.IsBusy, x => x.SelectedClass,
             (name, busy, cls) => !string.IsNullOrWhiteSpace(name) && !busy && !string.IsNullOrWhiteSpace(cls));
 
-        SelectCommand       = ReactiveCommand.CreateFromTask<CharacterDto>(DoSelectAsync);
+        SelectCommand       = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoSelectAsync);
         ShowCreateCommand   = ReactiveCommand.Create(() => { IsCreating = true; ClearError(); });
         CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; SelectedClass = string.Empty; ClearError(); });
         CreateCommand       = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
-        DeleteCommand       = ReactiveCommand.CreateFromTask<CharacterDto>(DoDeleteAsync);
+        DeleteCommand       = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoDeleteAsync);
         LogoutCommand       = ReactiveCommand.CreateFromTask(async () =>
         {
             await auth.LogoutAsync();
@@ -99,29 +101,52 @@ public class CharacterSelectViewModel : ViewModelBase
         ClearError();
         try
         {
+            // Establish hub connection early so we can subscribe to real-time status change events.
+            // ConnectAsync is idempotent — safe to call if already connected.
+            await _connection.ConnectAsync(ServerUrl);
+
+            // Subscribe to live character status updates (e.g. another client logs in/out)
+            _characterStatusSub?.Dispose();
+            _characterStatusSub = _connection.On<CharacterStatusPayload>("CharacterStatusChanged", payload =>
+            {
+                var entry = Characters.FirstOrDefault(c => c.Character.Id == payload.CharacterId);
+                if (entry is not null)
+                    entry.IsOnline = payload.IsOnline;
+            });
+
             var list = await _characters.GetCharactersAsync();
             Characters.Clear();
             foreach (var c in list.OrderBy(x => x.SlotIndex))
-                Characters.Add(c);
+                Characters.Add(new CharacterEntryViewModel(c));
+        }
+        catch
+        {
+            // Hub unavailable during load is non-fatal — characters still load via HTTP
+            var list = await _characters.GetCharactersAsync();
+            Characters.Clear();
+            foreach (var c in list.OrderBy(x => x.SlotIndex))
+                Characters.Add(new CharacterEntryViewModel(c));
         }
         finally { IsBusy = false; }
     }
 
-    private async Task DoSelectAsync(CharacterDto character)
+    private async Task DoSelectAsync(CharacterEntryViewModel entry)
     {
         IsBusy = true;
         ClearError();
         try
         {
+            var character = entry.Character;
             var zoneId = character.CurrentZoneId.Length > 0 ? character.CurrentZoneId : "starting-zone";
 
             await _connection.ConnectAsync(ServerUrl);
 
-            // Dispose previous subscriptions to prevent duplicate handlers on retry
+            // Dispose previous zone subscriptions to prevent duplicate handlers on retry
             _zoneEnteredSub?.Dispose();
             _playerEnteredSub?.Dispose();
             _playerLeftSub?.Dispose();
             _hubErrorSub?.Dispose();
+            _characterAlreadyActiveSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -136,6 +161,14 @@ public class CharacterSelectViewModel : ViewModelBase
             _hubErrorSub = _connection.On<string>("Error", message =>
             {
                 ErrorMessage = message;
+                IsBusy = false;
+            });
+
+            // If the server rejects the selection because another connection already holds this
+            // character, show the user a clear message and stay on the character select screen.
+            _characterAlreadyActiveSub = _connection.On<Guid>("CharacterAlreadyActive", _ =>
+            {
+                ErrorMessage = $"{character.Name} is already logged in on another client. Disconnect that client first.";
                 IsBusy = false;
             });
 
@@ -154,6 +187,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt);
     internal record ZoneEnteredPayload(string Id, string Name, string Description, string ZoneType, IEnumerable<OccupantInfo> Occupants);
     internal record PlayerEventPayload(string CharacterName);
+    internal record CharacterStatusPayload(Guid CharacterId, bool IsOnline);
 
     private async Task DoCreateAsync()
     {
@@ -164,7 +198,7 @@ public class CharacterSelectViewModel : ViewModelBase
             var (character, error) = await _characters.CreateCharacterAsync(new CreateCharacterRequest(NewCharacterName!, SelectedClass!));
             if (character is not null)
             {
-                Characters.Add(character);
+                Characters.Add(new CharacterEntryViewModel(character));
                 NewCharacterName = string.Empty;
                 SelectedClass = string.Empty;
                 IsCreating = false;
@@ -178,11 +212,11 @@ public class CharacterSelectViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
-    private async Task DoDeleteAsync(CharacterDto character)
+    private async Task DoDeleteAsync(CharacterEntryViewModel entry)
     {
-        var error = await _characters.DeleteCharacterAsync(character.Id);
+        var error = await _characters.DeleteCharacterAsync(entry.Character.Id);
         if (error is null)
-            Characters.Remove(character);
+            Characters.Remove(entry);
         else
         {
             ErrorMessage = error.Message;
@@ -190,3 +224,4 @@ public class CharacterSelectViewModel : ViewModelBase
         }
     }
 }
+

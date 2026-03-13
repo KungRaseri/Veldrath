@@ -144,7 +144,7 @@ public class CharacterSelectViewModelTests : TestBase
 
         await vm.CreateCommand.Execute();
 
-        vm.Characters.Should().ContainSingle(c => c.Name == "Hero");
+        vm.Characters.Should().ContainSingle(c => c.Character.Name == "Hero");
     }
 
     [Fact]
@@ -213,9 +213,10 @@ public class CharacterSelectViewModelTests : TestBase
         var vm   = MakeVm(chars: fake);
         await Task.Yield();
 
-        await vm.DeleteCommand.Execute(character);
+        var entry = vm.Characters.Single(e => e.Character.Id == character.Id);
+        await vm.DeleteCommand.Execute(entry);
 
-        vm.Characters.Should().NotContain(character);
+        vm.Characters.Should().NotContain(entry);
     }
 
     [Fact]
@@ -231,7 +232,8 @@ public class CharacterSelectViewModelTests : TestBase
         var vm = MakeVm(chars: fake);
         await Task.Yield();
 
-        await vm.DeleteCommand.Execute(character);
+        var entry = vm.Characters.Single(e => e.Character.Id == character.Id);
+        await vm.DeleteCommand.Execute(entry);
 
         vm.ErrorMessage.Should().Be("Character not found");
     }
@@ -244,9 +246,10 @@ public class CharacterSelectViewModelTests : TestBase
         var conn      = new FakeServerConnectionService { ConnectShouldThrow = true };
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
         var vm = MakeVm(conn: conn);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
 
         vm.ErrorMessage.Should().StartWith("Failed to connect:");
     }
@@ -257,9 +260,10 @@ public class CharacterSelectViewModelTests : TestBase
         var conn      = new FakeServerConnectionService { ConnectShouldThrow = true };
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
         var vm = MakeVm(conn: conn);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
 
         vm.IsBusy.Should().BeFalse();
     }
@@ -275,8 +279,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm     = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
 
         // Simulate server firing "ZoneEntered" event
         conn.FireEvent("ZoneEntered",
@@ -299,8 +304,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm     = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
         await gameVm.InitializeAsync("Hero", "starting-zone");
 
         conn.FireEvent("ZoneEntered",
@@ -322,8 +328,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
         conn.FireEvent("PlayerEntered",
             new CharacterSelectViewModel.PlayerEventPayload("Gandalf"));
 
@@ -338,8 +345,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
         conn.FireEvent("PlayerEntered", new CharacterSelectViewModel.PlayerEventPayload("Legolas"));
         conn.FireEvent("PlayerLeft",    new CharacterSelectViewModel.PlayerEventPayload("Legolas"));
 
@@ -354,8 +362,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm        = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, ""); // empty zone
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
 
         // No error = success path was taken with "starting-zone" fallback
         vm.ErrorMessage.Should().BeEmpty();
@@ -397,7 +406,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.NewCharacterName = "Hero";
         await vm.CreateCommand.Execute();
 
-        vm.Characters.Should().ContainSingle(c => c.Name == "Hero");
+        vm.Characters.Should().ContainSingle(c => c.Character.Name == "Hero");
     }
 
     [Fact]
@@ -469,8 +478,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm = MakeVm(chars: fake);
         await Task.Yield();
 
+        var entryToDelete = vm.Characters.Single(e => e.Character.Id == character.Id);
         vm.ErrorMessage = "Stale create error";
-        await vm.DeleteCommand.Execute(character);
+        await vm.DeleteCommand.Execute(entryToDelete);
 
         // A successful delete removes the character but does not clear unrelated errors
         vm.ErrorMessage.Should().Be("Stale create error");
@@ -586,8 +596,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm        = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
         conn.FireEvent("Error", "Character does not belong to this account");
 
         vm.ErrorMessage.Should().Be("Character does not belong to this account");
@@ -602,8 +613,9 @@ public class CharacterSelectViewModelTests : TestBase
         var vm        = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
             "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
 
-        await vm.SelectCommand.Execute(character);
+        await vm.SelectCommand.Execute(entry);
         conn.FireEvent("Error", "Zone not found");
 
         nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
