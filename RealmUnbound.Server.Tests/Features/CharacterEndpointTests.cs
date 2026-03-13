@@ -18,7 +18,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new { Email = email, Username = username, Password = "Pass1234!" });
         var login = await _client.PostAsJsonAsync("/api/auth/login",
             new { Email = email, Password = "Pass1234!" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResult>();
+        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
         return auth!.AccessToken;
     }
 
@@ -31,7 +31,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         var response = await _client.GetAsync("/api/characters");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var characters = await response.Content.ReadFromJsonAsync<CharacterResult[]>();
+        var characters = await response.Content.ReadFromJsonAsync<CharacterDto[]>();
         characters.Should().BeEmpty();
     }
 
@@ -53,7 +53,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new { Name = "Aragorn_Create", ClassName = "@classes/warriors:fighter" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var character = await response.Content.ReadFromJsonAsync<CharacterResult>();
+        var character = await response.Content.ReadFromJsonAsync<CharacterDto>();
         character!.Name.Should().Be("Aragorn_Create");
         character.SlotIndex.Should().Be(1);
         character.Level.Should().Be(1);
@@ -70,7 +70,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         var r2 = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "Char_Slot2", ClassName = "@classes/mages:wizard" });
 
-        var c2 = await r2.Content.ReadFromJsonAsync<CharacterResult>();
+        var c2 = await r2.Content.ReadFromJsonAsync<CharacterDto>();
         c2!.SlotIndex.Should().Be(2);
     }
 
@@ -110,13 +110,13 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
 
         var create = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "ToBeDeleted", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
 
         var del = await _client.DeleteAsync($"/api/characters/{created!.Id}");
         del.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var list = await _client.GetAsync("/api/characters");
-        var characters = await list.Content.ReadFromJsonAsync<CharacterResult[]>();
+        var characters = await list.Content.ReadFromJsonAsync<CharacterDto[]>();
         characters!.Should().NotContain(c => c.Id == created.Id);
     }
 
@@ -128,7 +128,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
 
         var create = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "DeleteTwice", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
 
         await _client.DeleteAsync($"/api/characters/{created!.Id}");
         var second = await _client.DeleteAsync($"/api/characters/{created.Id}");
@@ -142,7 +142,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_Owner_User"));
         var create = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "ProtectedChar", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
 
         using var client2 = factory.CreateClient();
         client2.DefaultRequestHeaders.Authorization =
@@ -192,7 +192,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         var response = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "LevelOneChar", ClassName = "@classes/warriors:fighter" });
 
-        var character = await response.Content.ReadFromJsonAsync<CharacterResult>();
+        var character = await response.Content.ReadFromJsonAsync<CharacterDto>();
         character!.Level.Should().Be(1);
         character.Experience.Should().Be(0);
     }
@@ -226,11 +226,11 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
 
         var create = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "SoftDeletedChar", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
 
         await _client.DeleteAsync($"/api/characters/{created!.Id}");
 
-        var list = await _client.GetFromJsonAsync<CharacterResult[]>("/api/characters");
+        var list = await _client.GetFromJsonAsync<CharacterDto[]>("/api/characters");
         list.Should().NotContain(c => c.Name == "SoftDeletedChar");
     }
 
@@ -243,7 +243,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         // Create two characters → slots 1 and 2
         var r1 = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "SlotGap_Char1", ClassName = "@classes/warriors:fighter" });
-        var c1 = await r1.Content.ReadFromJsonAsync<CharacterResult>();
+        var c1 = await r1.Content.ReadFromJsonAsync<CharacterDto>();
         await _client.PostAsJsonAsync("/api/characters",
             new { Name = "SlotGap_Char2", ClassName = "@classes/warriors:fighter" });
 
@@ -253,7 +253,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         // Create a new character → should reclaim slot 1
         var r3 = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "SlotGap_Char3", ClassName = "@classes/rogues:rogue" });
-        var c3 = await r3.Content.ReadFromJsonAsync<CharacterResult>();
+        var c3 = await r3.Content.ReadFromJsonAsync<CharacterDto>();
 
         c3!.SlotIndex.Should().Be(1);
     }
@@ -273,7 +273,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         clientB.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_IsolB_User"));
 
-        var list = await clientB.GetFromJsonAsync<CharacterResult[]>("/api/characters");
+        var list = await clientB.GetFromJsonAsync<CharacterDto[]>("/api/characters");
         list.Should().NotContain(c => c.Name == "IsolA_Char");
     }
 
@@ -288,7 +288,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         // Create, then delete
         var create = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "Recyclable", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
         await _client.DeleteAsync($"/api/characters/{created!.Id}");
 
         // Recreate with the exact same name — must return 201, not 409
@@ -296,7 +296,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new { Name = "Recyclable", ClassName = "@classes/warriors:fighter" });
 
         recreate.StatusCode.Should().Be(HttpStatusCode.Created);
-        var reborn = await recreate.Content.ReadFromJsonAsync<CharacterResult>();
+        var reborn = await recreate.Content.ReadFromJsonAsync<CharacterDto>();
         reborn!.Name.Should().Be("Recyclable");
     }
 
@@ -308,13 +308,13 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
 
         var create = await _client.PostAsJsonAsync("/api/characters",
             new { Name = "ListReclaim", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
         await _client.DeleteAsync($"/api/characters/{created!.Id}");
 
         await _client.PostAsJsonAsync("/api/characters",
             new { Name = "ListReclaim", ClassName = "@classes/warriors:fighter" });
 
-        var list = await _client.GetFromJsonAsync<CharacterResult[]>("/api/characters");
+        var list = await _client.GetFromJsonAsync<CharacterDto[]>("/api/characters");
         list.Should().ContainSingle(c => c.Name == "ListReclaim");
     }
 
@@ -327,7 +327,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_FreeA_User"));
         var create = await clientA.PostAsJsonAsync("/api/characters",
             new { Name = "FreeAgent", ClassName = "@classes/warriors:fighter" });
-        var created = await create.Content.ReadFromJsonAsync<CharacterResult>();
+        var created = await create.Content.ReadFromJsonAsync<CharacterDto>();
         await clientA.DeleteAsync($"/api/characters/{created!.Id}");
 
         // Account B should now be able to claim "FreeAgent"
@@ -353,7 +353,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         {
             var r = await _client.PostAsJsonAsync("/api/characters",
                 new { Name = n, ClassName = "@classes/warriors:fighter" });
-            var c = await r.Content.ReadFromJsonAsync<CharacterResult>();
+            var c = await r.Content.ReadFromJsonAsync<CharacterDto>();
             ids.Add(c!.Id);
         }
 
@@ -382,7 +382,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         {
             var r = await _client.PostAsJsonAsync("/api/characters",
                 new { Name = $"SlotDel_{i}", ClassName = "@classes/warriors:fighter" });
-            var c = await r.Content.ReadFromJsonAsync<CharacterResult>();
+            var c = await r.Content.ReadFromJsonAsync<CharacterDto>();
             toDelete.Add(c!.Id);
         }
 

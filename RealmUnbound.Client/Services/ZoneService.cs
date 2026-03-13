@@ -18,8 +18,7 @@ public class HttpZoneService(
     TokenStore tokens,
     ILogger<HttpZoneService> logger) : IZoneService
 {
-    private AuthenticationHeaderValue? BearerHeader =>
-        tokens.AccessToken is { } t ? new AuthenticationHeaderValue("Bearer", t) : null;
+    private AuthenticationHeaderValue? BearerHeader => tokens.BearerHeader();
 
     public async Task<List<ZoneDto>> GetZonesAsync()
     {

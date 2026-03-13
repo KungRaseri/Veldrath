@@ -17,7 +17,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
             new { Email = "auth_register_user@test.com", Username = "Auth_Register_User", Password = "Pass1234!" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<AuthResult>();
+        var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
         body!.AccessToken.Should().NotBeEmpty();
         body.RefreshToken.Should().NotBeEmpty();
         body.AccountId.Should().NotBe(Guid.Empty);
@@ -55,7 +55,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
             new { Email = "auth_login_user@test.com", Password = "Pass1234!" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<AuthResult>();
+        var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
         body!.AccessToken.Should().NotBeEmpty();
     }
 
@@ -85,13 +85,13 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     {
         var reg = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_refresh_user@test.com", Username = "Auth_Refresh_User", Password = "Pass1234!" });
-        var auth = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var auth = await reg.Content.ReadFromJsonAsync<AuthResponse>();
 
         var response = await _client.PostAsJsonAsync("/api/auth/refresh",
             new { RefreshToken = auth!.RefreshToken });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var newAuth = await response.Content.ReadFromJsonAsync<AuthResult>();
+        var newAuth = await response.Content.ReadFromJsonAsync<AuthResponse>();
         newAuth!.RefreshToken.Should().NotBe(auth.RefreshToken);
         newAuth.AccessToken.Should().NotBeEmpty();
     }
@@ -110,7 +110,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     {
         var reg = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_theft_user@test.com", Username = "Auth_Theft_User", Password = "Pass1234!" });
-        var auth = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var auth = await reg.Content.ReadFromJsonAsync<AuthResponse>();
 
         // Use the refresh token once (rotates it out).
         await _client.PostAsJsonAsync("/api/auth/refresh",
@@ -128,7 +128,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     {
         var reg = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_logout_user@test.com", Username = "Auth_Logout_User", Password = "Pass1234!" });
-        var auth = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var auth = await reg.Content.ReadFromJsonAsync<AuthResponse>();
 
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", auth!.AccessToken);
@@ -174,7 +174,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         var response = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_username_return@test.com", Username = username, Password = "Pass1234!" });
 
-        var body = await response.Content.ReadFromJsonAsync<AuthResult>();
+        var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
         body!.Username.Should().Be(username);
         body.AccountId.Should().NotBe(Guid.Empty);
     }
@@ -184,11 +184,11 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     {
         var reg = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_preserve_account@test.com", Username = "Auth_PreserveAcct_User", Password = "Pass1234!" });
-        var original = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var original = await reg.Content.ReadFromJsonAsync<AuthResponse>();
 
         var refreshed = await (await _client.PostAsJsonAsync("/api/auth/refresh",
             new { RefreshToken = original!.RefreshToken }))
-            .Content.ReadFromJsonAsync<AuthResult>();
+            .Content.ReadFromJsonAsync<AuthResponse>();
 
         refreshed!.AccountId.Should().Be(original.AccountId);
         refreshed.Username.Should().Be(original.Username);
@@ -199,11 +199,11 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     {
         var reg = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_same_accountid@test.com", Username = "Auth_SameAcctId_User", Password = "Pass1234!" });
-        var registered = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var registered = await reg.Content.ReadFromJsonAsync<AuthResponse>();
 
         var login = await _client.PostAsJsonAsync("/api/auth/login",
             new { Email = "auth_same_accountid@test.com", Password = "Pass1234!" });
-        var loggedIn = await login.Content.ReadFromJsonAsync<AuthResult>();
+        var loggedIn = await login.Content.ReadFromJsonAsync<AuthResponse>();
 
         loggedIn!.AccountId.Should().Be(registered!.AccountId);
     }
@@ -213,7 +213,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     {
         var reg = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_rotate_check@test.com", Username = "Auth_RotateCheck_User", Password = "Pass1234!" });
-        var original = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var original = await reg.Content.ReadFromJsonAsync<AuthResponse>();
 
         // Use the refresh token once → gets a new token
         await _client.PostAsJsonAsync("/api/auth/refresh",
@@ -232,7 +232,7 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         var response = await _client.PostAsJsonAsync("/api/auth/register",
             new { Email = "auth_expiry@test.com", Username = "Auth_Expiry_User", Password = "Pass1234!" });
 
-        var body = await response.Content.ReadFromJsonAsync<AuthResult>();
+        var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
         body!.AccessTokenExpiry.Should().BeAfter(DateTimeOffset.UtcNow);
     }
 }
