@@ -1,46 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Stone material properties for crafting system - primitive weapons and tools",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Stone materials for primitive weapons like clubs, hammers, axes. Lower durability but common availability.",
-                     "notes":  [
-                                   "Stone materials focus on strength/constitution bonuses with lower durability",
-                                   "Best suited for blunt weapons and primitive tools",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "stone_types":  {
-                        "stone":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "granite",
-                                                        "name":  "Granite",
-                                                        "attributes":  {
-                                                                           "dexterity":  0,
-                                                                           "intelligence":  0,
-                                                                           "charisma":  0,
-                                                                           "strength":  8,
-                                                                           "constitution":  8,
-                                                                           "wisdom":  0
-                                                                       },
-                                                        "traits":  {
-                                                                       "durability":  30,
-                                                                       "weight":  1.5,
-                                                                       "strength":  50
-                                                                   },
-                                                        "displayName":  "Granite",
-                                                        "itemTypeTraits":  {
-                                                                               "weapon":  {
-                                                                                              "damage":  1,
-                                                                                              "value":  1
-                                                                                          }
-                                                                           },
-                                                        "rarityWeight":  80
-                                                    }
-                                                ]
-                                  }
-                    }
+{
+  "metadata": {
+    "description": "Stone material properties for crafting system - primitive weapons and tools",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Stone materials for primitive weapons like clubs, hammers, axes. Lower durability but common availability.",
+    "notes": [
+      "Stone materials focus on strength/constitution bonuses with lower durability",
+      "Best suited for blunt weapons and primitive tools",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "stone_types": {
+    "stone": {
+      "items": []
+    }
+  }
 }

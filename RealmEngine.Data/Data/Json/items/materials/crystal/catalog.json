@@ -1,36 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Magical crystal materials for enchantment and arcane crafting",
-                     "version":  "1.0",
-                     "lastUpdated":  "2026-01-21",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "crystal":  {
-                                           "items":  [
-                                                         {
-                                                             "slug":  "quartz-crystal",
-                                                             "name":  "Quartz Crystal",
-                                                             "description":  "Clear crystal that resonates with minor magical energies.",
-                                                             "propertyRef":  "@properties/materials/crystals:quartz",
-                                                             "rarityWeight":  65,
-                                                             "value":  12,
-                                                             "weight":  0.3,
-                                                             "stackSize":  50,
-                                                             "itemType":  "material",
-                                                             "subType":  "crystal",
-                                                             "tier":  "raw",
-                                                             "traits":  {
-
-                                                                        },
-                                                             "tags":  [
-                                                                          "crystal",
-                                                                          "crafting",
-                                                                          "magical"
-                                                                      ]
-                                                         }
-                                                     ]
-                                       }
-                       }
+{
+  "metadata": {
+    "description": "Magical crystal materials for enchantment and arcane crafting",
+    "version": "1.0",
+    "lastUpdated": "2026-01-21",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "crystal": {
+      "items": []
+    }
+  }
 }

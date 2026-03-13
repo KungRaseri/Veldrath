@@ -1,32 +1,22 @@
-﻿{
-    "metadata":  {
-                     "description":  "Naming patterns for magic orbs",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "supportsTraits":  true,
-                     "componentKeys":  [
-                                           "suffix"
-                                       ],
-                     "patternTokens":  [
-                                           "{base}",
-                                           "{suffix}"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based"
-                 },
-    "patterns":  [
-                     {
-                         "pattern":  "{base} {suffix}",
-                         "rarityWeight":  40
-                     }
-                 ],
-    "components":  {
-                       "suffix":  [
-                                      {
-                                          "rarityWeight":  30,
-                                          "name":  "of the Archmage"
-                                      }
-                                  ]
-                   }
+{
+  "metadata": {
+    "description": "Naming patterns for magic orbs",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "supportsTraits": true,
+    "componentKeys": [
+      "suffix"
+    ],
+    "patternTokens": [
+      "{base}",
+      "{suffix}"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based"
+  },
+  "patterns": [],
+  "components": {
+    "suffix": []
+  }
 }

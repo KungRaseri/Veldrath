@@ -1,34 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Scrap materials obtained from salvaging equipment",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-10",
-                     "type":  "items_materials_catalog"
-                 },
-    "material_types":  {
-                           "scrap":  {
-                                         "items":  [
-                                                       {
-                                                           "slug":  "scrap-metal",
-                                                           "name":  "Scrap Metal",
-                                                           "description":  "Salvaged metal pieces from broken weapons and armor. Can be refined into ingots.",
-                                                           "rarityWeight":  50,
-                                                           "value":  2,
-                                                           "weight":  0.5,
-                                                           "stackSize":  99,
-                                                           "itemType":  "material",
-                                                           "subType":  "scrap",
-                                                           "traits":  {
-
-                                                                      },
-                                                           "tags":  [
-                                                                        "scrap",
-                                                                        "metal",
-                                                                        "salvage",
-                                                                        "refinement"
-                                                                    ]
-                                                       }
-                                                   ]
-                                     }
-                       }
+{
+  "metadata": {
+    "description": "Scrap materials obtained from salvaging equipment",
+    "version": "4.0",
+    "lastUpdated": "2026-01-10",
+    "type": "items_materials_catalog"
+  },
+  "material_types": {
+    "scrap": {
+      "items": []
+    }
+  }
 }

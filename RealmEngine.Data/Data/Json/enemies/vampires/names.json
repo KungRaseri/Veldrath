@@ -1,62 +1,37 @@
-﻿{
-    "metadata":  {
-                     "description":  "Vampire name generation patterns with weight-based rarity components",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "componentKeys":  [
-                                           "age",
-                                           "title",
-                                           "bloodline"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "age",
-                                           "title",
-                                           "bloodline"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "base_token: Resolves to item name from vampires/catalog.json",
-                                   "vampire_culture: Aristocratic undead with bloodlines and nobility titles",
-                                   "weight_ranges: Spawn (10) → Progenitor (100), Cursed (15) → Eternis (60)",
-                                   "traits: All vampires are undead, vulnerable to radiant, have regeneration",
-                                   "Upgraded to v4.0 with supportsTraits metadata"
-                               ],
-                     "usage":  "Pattern-based name generation for vampires. Pick components by rarityWeight and apply patterns to generate procedural names.",
-                     "supportsTraits":  true
-                 },
-    "components":  {
-                       "age":  [
-                                   {
-                                       "rarityWeight":  15,
-                                       "name":  "Fledgling"
-                                   }
-                               ],
-                       "title":  [
-                                     {
-                                         "rarityWeight":  10,
-                                         "name":  "Spawn"
-                                     }
-                                 ],
-                       "bloodline":  [
-                                         {
-                                             "rarityWeight":  15,
-                                             "name":  "Cursed"
-                                         }
-                                     ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  15,
-                                          "name":  "Dark"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "rarityWeight":  50,
-                         "pattern":  "base"
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Vampire name generation patterns with weight-based rarity components",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "componentKeys": [
+      "age",
+      "title",
+      "bloodline"
+    ],
+    "patternTokens": [
+      "base",
+      "age",
+      "title",
+      "bloodline"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "base_token: Resolves to item name from vampires/catalog.json",
+      "vampire_culture: Aristocratic undead with bloodlines and nobility titles",
+      "weight_ranges: Spawn (10) → Progenitor (100), Cursed (15) → Eternis (60)",
+      "traits: All vampires are undead, vulnerable to radiant, have regeneration",
+      "Upgraded to v4.0 with supportsTraits metadata"
+    ],
+    "usage": "Pattern-based name generation for vampires. Pick components by rarityWeight and apply patterns to generate procedural names.",
+    "supportsTraits": true
+  },
+  "components": {
+    "age": [],
+    "title": [],
+    "bloodline": [],
+    "prefix": []
+  },
+  "patterns": []
 }

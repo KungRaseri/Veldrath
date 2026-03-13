@@ -1,85 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Shop templates with dynamic inventory systems and pricing",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "organizations_shops_catalog"
-                 },
-    "weapons_types":  {
-                          "weapons":  {
-                                          "items":  [
-                                                        {
-                                                            "slug":  "blacksmith",
-                                                            "name":  "blacksmith",
-                                                            "displayName":  "Blacksmith",
-                                                            "rarityWeight":  5,
-                                                            "description":  "Forge and armory selling weapons and armor",
-                                                            "inventory":  {
-                                                                              "categories":  [
-                                                                                                 {
-                                                                                                     "category":  "@items/weapons:*",
-                                                                                                     "count":  "5-10",
-                                                                                                     "rarityRange":  {
-                                                                                                                         "min":  1,
-                                                                                                                         "max":  3
-                                                                                                                     }
-                                                                                                 },
-                                                                                                 {
-                                                                                                     "category":  "@items/weapons:*",
-                                                                                                     "count":  "3-8",
-                                                                                                     "rarityRange":  {
-                                                                                                                         "min":  1,
-                                                                                                                         "max":  3
-                                                                                                                     }
-                                                                                                 },
-                                                                                                 {
-                                                                                                     "category":  "@items/weapons:*",
-                                                                                                     "count":  "2-5",
-                                                                                                     "rarityRange":  {
-                                                                                                                         "min":  1,
-                                                                                                                         "max":  2
-                                                                                                                     }
-                                                                                                 },
-                                                                                                 {
-                                                                                                     "category":  "@items/armor:*",
-                                                                                                     "count":  "4-8",
-                                                                                                     "rarityRange":  {
-                                                                                                                         "min":  1,
-                                                                                                                         "max":  3
-                                                                                                                     }
-                                                                                                 }
-                                                                                             ],
-                                                                              "specialty":  "Custom weapon forging",
-                                                                              "services":  [
-                                                                                               "repair",
-                                                                                               "sharpen",
-                                                                                               "custom_orders"
-                                                                                           ]
-                                                                          },
-                                                            "pricing":  {
-                                                                            "markup":  1.5,
-                                                                            "buyback":  0.4,
-                                                                            "repair_cost":  0.2
-                                                                        },
-                                                            "owner":  {
-                                                                          "type":  "random",
-                                                                          "social_class":  "@npcs/craftsmen:*",
-                                                                          "personality":  [
-                                                                                              "gruff",
-                                                                                              "professional"
-                                                                                          ],
-                                                                          "skills":  [
-                                                                                         "smithing",
-                                                                                         "metalwork"
-                                                                                     ]
-                                                                      },
-                                                            "location_types":  [
-                                                                                   "towns",
-                                                                                   "cities"
-                                                                               ],
-                                                            "required_population":  500
-                                                        }
-                                                    ]
-                                      }
-                      }
+{
+  "metadata": {
+    "description": "Shop templates with dynamic inventory systems and pricing",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "organizations_shops_catalog"
+  },
+  "weapons_types": {
+    "weapons": {
+      "items": []
+    }
+  }
 }

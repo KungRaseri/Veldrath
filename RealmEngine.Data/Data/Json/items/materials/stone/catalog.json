@@ -1,30 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Stone materials for primitive weapons and tools",
-                     "version":  "5.0",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "items_materials_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "stone":  {
-                                         "items":  [
-                                                       {
-                                                           "slug":  "granite-chunk",
-                                                           "name":  "Granite Chunk",
-                                                           "description":  "Rough granite suitable for primitive weapons.",
-                                                           "propertyRef":  "@properties/materials/stones:granite",
-                                                           "rarityWeight":  80,
-                                                           "value":  2,
-                                                           "weight":  1.5,
-                                                           "stackable":  true,
-                                                           "maxStack":  50,
-                                                           "traits":  {
-                                                                          "material":  "granite",
-                                                                          "category":  "stone"
-                                                                      }
-                                                       }
-                                                   ]
-                                     }
-                       }
+{
+  "metadata": {
+    "description": "Stone materials for primitive weapons and tools",
+    "version": "5.0",
+    "lastUpdated": "2026-01-22",
+    "type": "items_materials_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "stone": {
+      "items": []
+    }
+  }
 }

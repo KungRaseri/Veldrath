@@ -1,40 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Crafting recipes catalog - all craftable items with progression tiers and interdependencies",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-11",
-                     "type":  "recipe_catalog"
-                 },
-    "recipe_types":  {
-                         "blacksmithing_refining":  {
-                                                        "description":  "Tier 1 Blacksmithing - Refining raw materials into usable ingots",
-                                                        "items":  [
-                                                                      {
-                                                                          "name":  "Iron Ingot",
-                                                                          "slug":  "recipe-iron-ingot",
-                                                                          "description":  "Smelt iron ore into a usable ingot",
-                                                                          "rarityWeight":  100,
-                                                                          "requiredSkill":  "Blacksmithing",
-                                                                          "requiredSkillLevel":  1,
-                                                                          "requiredStation":  "Anvil",
-                                                                          "requiredStationTier":  1,
-                                                                          "craftingTime":  10,
-                                                                          "experienceGained":  2,
-                                                                          "unlockMethod":  "SkillLevel",
-                                                                          "producedItem":  {
-                                                                                               "itemReference":  "@items/materials/ingot:iron-ingot",
-                                                                                               "quantity":  1,
-                                                                                               "minQuality":  "Common",
-                                                                                               "maxQuality":  "Common"
-                                                                                           },
-                                                                          "components":  [
-                                                                                             {
-                                                                                                 "itemReference":  "@items/materials/ore:iron-ore",
-                                                                                                 "quantity":  2
-                                                                                             }
-                                                                                         ]
-                                                                      }
-                                                                  ]
-                                                    }
-                     }
+{
+  "metadata": {
+    "description": "Crafting recipes catalog - all craftable items with progression tiers and interdependencies",
+    "version": "5.1",
+    "lastUpdated": "2026-01-11",
+    "type": "recipe_catalog"
+  },
+  "recipe_types": {
+    "blacksmithing_refining": {
+      "description": "Tier 1 Blacksmithing - Refining raw materials into usable ingots",
+      "items": []
+    }
+  }
 }

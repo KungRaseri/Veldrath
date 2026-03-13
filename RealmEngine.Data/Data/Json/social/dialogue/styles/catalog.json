@@ -1,34 +1,21 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.0",
-                     "type":  "hierarchical_catalog",
-                     "description":  "Dialogue speaking styles that define NPC personality and tone",
-                     "lastUpdated":  "2026-01-08",
-                     "notes":  [
-                                   "Styles affect word choice, sentence structure, and formality",
-                                   "Referenced by NPCs via dialogueStyle field",
-                                   "Used to generate contextually appropriate dialogue"
-                               ]
-                 },
-    "style_types":  {
-                        "formal":  {
-                                       "items":  [
-                                                     {
-                                                         "slug":  "scholarly",
-                                                         "name":  "scholarly",
-                                                         "displayName":  "Scholarly",
-                                                         "rarityWeight":  10,
-                                                         "description":  "Intellectual, formal, uses complex vocabulary",
-                                                         "tone":  "formal",
-                                                         "vocabulary":  "complex",
-                                                         "sentence_structure":  "elaborate",
-                                                         "examples":  [
-                                                                          "Greetings, dear scholar. How may I illuminate your path today?",
-                                                                          "Indeed, the ancient texts corroborate your hypothesis.",
-                                                                          "A most intriguing query. Let us examine this matter thoroughly."
-                                                                      ]
-                                                     }
-                                                 ]
-                                   }
-                    }
+{
+  "metadata": {
+    "version": "4.0",
+    "type": "hierarchical_catalog",
+    "description": "Dialogue speaking styles that define NPC personality and tone",
+    "lastUpdated": "2026-01-08",
+    "notes": [
+      "Styles affect word choice, sentence structure, and formality",
+      "Referenced by NPCs via dialogueStyle field",
+      "Used to generate contextually appropriate dialogue"
+    ]
+  },
+  "style_types": {
+    "formal": {
+      "items": []
+    },
+    "casual": {
+      "items": []
+    }
+  }
 }

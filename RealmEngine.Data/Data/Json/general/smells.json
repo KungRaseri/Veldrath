@@ -1,52 +1,52 @@
-﻿{
-    "components":  {
-                       "pleasant":  [
-                                        "fragrant"
-                                    ],
-                       "unpleasant":  [
-                                          "musty"
-                                      ],
-                       "natural":  [
-                                       "earthy"
-                                   ],
-                       "intensity":  [
-                                         "faint"
-                                     ]
-                   },
-    "patterns":  [
-                     "pleasant",
-                     "unpleasant",
-                     "natural",
-                     "{intensity} {pleasant}",
-                     "{intensity} {unpleasant}",
-                     "{intensity} {natural}"
-                 ],
-    "metadata":  {
-                     "description":  "Smell descriptions for environmental atmosphere, items, and narrative immersion",
-                     "version":  "4.0",
-                     "type":  "pattern_generation",
-                     "lastUpdated":  "2026-01-08",
-                     "componentKeys":  [
-                                           "pleasant",
-                                           "unpleasant",
-                                           "natural",
-                                           "intensity"
-                                       ],
-                     "pattern_count":  6,
-                     "patternTokens":  [
-                                           "pleasant",
-                                           "unpleasant",
-                                           "natural",
-                                           "intensity"
-                                       ],
-                     "component_counts":  {
-                                              "pleasant":  1,
-                                              "unpleasant":  1,
-                                              "natural":  1,
-                                              "intensity":  1
-                                          },
-                     "notes":  [
-                                   "Reference data for general smells. Used as component source in name generation and stat calculations."
-                               ]
-                 }
+{
+  "components": {
+    "pleasant": [
+      "fragrant"
+    ],
+    "unpleasant": [
+      "musty"
+    ],
+    "natural": [
+      "earthy"
+    ],
+    "intensity": [
+      "faint"
+    ]
+  },
+  "patterns": [
+    "pleasant",
+    "unpleasant",
+    "natural",
+    "{intensity} {pleasant}",
+    "{intensity} {unpleasant}",
+    "{intensity} {natural}"
+  ],
+  "metadata": {
+    "description": "Smell descriptions for environmental atmosphere, items, and narrative immersion",
+    "version": "4.0",
+    "type": "pattern_generation",
+    "lastUpdated": "2026-01-08",
+    "componentKeys": [
+      "pleasant",
+      "unpleasant",
+      "natural",
+      "intensity"
+    ],
+    "pattern_count": 6,
+    "patternTokens": [
+      "pleasant",
+      "unpleasant",
+      "natural",
+      "intensity"
+    ],
+    "component_counts": {
+      "pleasant": 1,
+      "unpleasant": 1,
+      "natural": 1,
+      "intensity": 1
+    },
+    "notes": [
+      "Reference data for general smells. Used as component source in name generation and stat calculations."
+    ]
+  }
 }

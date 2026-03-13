@@ -1,32 +1,22 @@
-﻿{
-    "metadata":  {
-                     "description":  "Naming patterns for fire essences",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "supportsTraits":  true,
-                     "componentKeys":  [
-                                           "intensity"
-                                       ],
-                     "patternTokens":  [
-                                           "{intensity}",
-                                           "{base}"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based"
-                 },
-    "patterns":  [
-                     {
-                         "pattern":  "{intensity} {base}",
-                         "rarityWeight":  50
-                     }
-                 ],
-    "components":  {
-                       "intensity":  [
-                                         {
-                                             "rarityWeight":  30,
-                                             "name":  "Blazing"
-                                         }
-                                     ]
-                   }
+{
+  "metadata": {
+    "description": "Naming patterns for fire essences",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "supportsTraits": true,
+    "componentKeys": [
+      "intensity"
+    ],
+    "patternTokens": [
+      "{intensity}",
+      "{base}"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based"
+  },
+  "patterns": [],
+  "components": {
+    "intensity": []
+  }
 }

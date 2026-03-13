@@ -1,53 +1,17 @@
-﻿{
-    "metadata":  {
-                     "description":  "Special legendary gems providing unique powerful bonuses",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-11",
-                     "type":  "gem_catalog"
-                 },
-    "gem_types":  {
-                      "special":  {
-                                      "properties":  {
-                                                         "category":  "legendary-gem",
-                                                         "stackable":  false
-                                                     },
-                                      "items":  [
-                                                    {
-                                                        "slug":  "philosophers-stone",
-                                                        "name":  "Philosopher\u0027s Stone",
-                                                        "description":  "Legendary alchemical artifact said to grant immortality and transmute base metals to gold.",
-                                                        "rarityWeight":  1,
-                                                        "value":  10000,
-                                                        "weight":  0.5,
-                                                        "stackSize":  1,
-                                                        "itemType":  "gem",
-                                                        "subType":  "legendary",
-                                                        "requirements":  {
-                                                                             "level":  50,
-                                                                             "intelligence":  20
-                                                                         },
-                                                        "traits":  {
-                                                                       "alchemyBonus":  {
-                                                                                            "value":  50,
-                                                                                            "type":  "number"
-                                                                                        },
-                                                                       "goldFind":  {
-                                                                                        "value":  25,
-                                                                                        "type":  "percentage"
-                                                                                    },
-                                                                       "healthRegen":  {
-                                                                                           "value":  10,
-                                                                                           "type":  "number"
-                                                                                       }
-                                                                   },
-                                                        "tags":  [
-                                                                     "gem",
-                                                                     "legendary",
-                                                                     "alchemy",
-                                                                     "mythical"
-                                                                 ]
-                                                    }
-                                                ]
-                                  }
-                  }
+{
+  "metadata": {
+    "description": "Special legendary gems providing unique powerful bonuses",
+    "version": "5.1",
+    "lastUpdated": "2026-01-11",
+    "type": "gem_catalog"
+  },
+  "gem_types": {
+    "special": {
+      "properties": {
+        "category": "legendary-gem",
+        "stackable": false
+      },
+      "items": []
+    }
+  }
 }

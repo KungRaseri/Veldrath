@@ -1,69 +1,39 @@
-﻿{
-    "metadata":  {
-                     "description":  "Humanoid enemy name generation with pattern-based system and weight-based rarity",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "componentKeys":  [
-                                           "profession",
-                                           "rank",
-                                           "specialization",
-                                           "title"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "profession",
-                                           "rank",
-                                           "specialization",
-                                           "title"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "Base token resolves from enemies/humanoids/catalog.json",
-                                   "All components have rarityWeight for emergent rarity calculation",
-                                   "Component weights combine via multipliers from general/rarity_config.json",
-                                   "Profession component can also serve as base type",
-                                   "Upgraded to v4.0 with supportsTraits metadata"
-                               ],
-                     "supportsTraits":  true
-                 },
-    "components":  {
-                       "profession":  [
-                                          {
-                                              "rarityWeight":  5,
-                                              "name":  "Bandit"
-                                          }
-                                      ],
-                       "rank":  [
-                                    {
-                                        "rarityWeight":  5,
-                                        "name":  "Novice"
-                                    }
-                                ],
-                       "specialization":  [
-                                              {
-                                                  "rarityWeight":  10,
-                                                  "name":  "Scout"
-                                              }
-                                          ],
-                       "title":  [
-                                     {
-                                         "rarityWeight":  40,
-                                         "name":  "the Bloodthirsty"
-                                     }
-                                 ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  12,
-                                          "name":  "Rogue"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "rarityWeight":  50,
-                         "pattern":  "base"
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Humanoid enemy name generation with pattern-based system and weight-based rarity",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "componentKeys": [
+      "profession",
+      "rank",
+      "specialization",
+      "title"
+    ],
+    "patternTokens": [
+      "base",
+      "profession",
+      "rank",
+      "specialization",
+      "title"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "Base token resolves from enemies/humanoids/catalog.json",
+      "All components have rarityWeight for emergent rarity calculation",
+      "Component weights combine via multipliers from general/rarity_config.json",
+      "Profession component can also serve as base type",
+      "Upgraded to v4.0 with supportsTraits metadata"
+    ],
+    "supportsTraits": true
+  },
+  "components": {
+    "profession": [],
+    "rank": [],
+    "specialization": [],
+    "title": [],
+    "prefix": []
+  },
+  "patterns": []
 }

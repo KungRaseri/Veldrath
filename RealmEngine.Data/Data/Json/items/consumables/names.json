@@ -1,81 +1,35 @@
-﻿{
-    "metadata":  {
-                     "description":  "Unified consumable naming system with enhanced effects and trait support (v4.2 - Hybrid Enhancement System)",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "supportsTraits":  true,
-                     "componentKeys":  [
-                                           "effect",
-                                           "suffix"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "effect",
-                                           "suffix"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "Base token resolves from items/consumables/catalog.json",
-                                   "All components have rarityWeight for emergent rarity calculation",
-                                   "Traits define actual gameplay effects (healing power, duration, buffs, etc.)",
-                                   "Trait merging: numbers take highest, strings take last, booleans use OR",
-                                   "Patterns should use component tokens for name generation",
-                                   "Enchantments can be added to patterns using component tokens or references"
-                               ],
-                     "usage":  "Pattern-based name generation for consumables. Pick components by rarityWeight and apply patterns to generate procedural names with trait stacking."
-                 },
-    "components":  {
-                       "effect":  [
-                                      {
-                                          "rarityWeight":  10,
-                                          "traits":  {
-                                                         "healingPower":  {
-                                                                              "value":  25,
-                                                                              "type":  "number"
-                                                                          },
-                                                         "effectType":  {
-                                                                            "value":  "restoration",
-                                                                            "type":  "string"
-                                                                        }
-                                                     },
-                                          "name":  "Healing"
-                                      }
-                                  ],
-                       "suffix":  [
-                                      {
-                                          "rarityWeight":  15,
-                                          "traits":  {
-                                                         "healingPower":  {
-                                                                              "value":  15,
-                                                                              "type":  "number"
-                                                                          }
-                                                     },
-                                          "name":  "of Healing"
-                                      }
-                                  ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  40,
-                                          "traits":  {
-                                                         "powerMultiplier":  {
-                                                                                 "value":  1.5,
-                                                                                 "type":  "number"
-                                                                             },
-                                                         "durationMultiplier":  {
-                                                                                    "value":  1.3,
-                                                                                    "type":  "number"
-                                                                                }
-                                                     },
-                                          "name":  "Ancient"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "pattern":  "{base}",
-                         "rarityWeight":  100
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Unified consumable naming system with enhanced effects and trait support (v4.2 - Hybrid Enhancement System)",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "supportsTraits": true,
+    "componentKeys": [
+      "effect",
+      "suffix"
+    ],
+    "patternTokens": [
+      "base",
+      "effect",
+      "suffix"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "Base token resolves from items/consumables/catalog.json",
+      "All components have rarityWeight for emergent rarity calculation",
+      "Traits define actual gameplay effects (healing power, duration, buffs, etc.)",
+      "Trait merging: numbers take highest, strings take last, booleans use OR",
+      "Patterns should use component tokens for name generation",
+      "Enchantments can be added to patterns using component tokens or references"
+    ],
+    "usage": "Pattern-based name generation for consumables. Pick components by rarityWeight and apply patterns to generate procedural names with trait stacking."
+  },
+  "components": {
+    "effect": [],
+    "suffix": [],
+    "prefix": []
+  },
+  "patterns": []
 }

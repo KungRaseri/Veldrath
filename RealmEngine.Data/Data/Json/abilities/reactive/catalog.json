@@ -1,50 +1,15 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.2",
-                     "type":  "abilities_catalog",
-                     "description":  "Reactive abilities triggered by conditions",
-                     "totalAbilities":  1,
-                     "lastUpdated":  "2026-01-08"
-                 },
-    "ability_types":  {
-                          "offensive":  {
-                                            "description":  "Offensive reactive abilities",
-                                            "items":  [
-                                                          {
-                                                              "slug":  "vengeance-strike",
-                                                              "name":  "Vengeance Strike",
-                                                              "displayName":  "Vengeance Strike",
-                                                              "description":  "Counterattacks when hit with increased damage",
-                                                              "tier":  1,
-                                                              "traits":  {
-                                                                             "damageMultiplier":  {
-                                                                                                      "value":  1.5,
-                                                                                                      "type":  "number"
-                                                                                                  },
-                                                                             "counterChance":  {
-                                                                                                   "value":  50,
-                                                                                                   "type":  "number"
-                                                                                               },
-                                                                             "abilityClass":  {
-                                                                                                  "value":  "reactive",
-                                                                                                  "type":  "string"
-                                                                                              },
-                                                                             "category":  {
-                                                                                              "value":  "offensive",
-                                                                                              "type":  "string"
-                                                                                          },
-                                                                             "baseDamage":  {
-                                                                                                "value":  "1d8",
-                                                                                                "type":  "string"
-                                                                                            },
-                                                                             "triggerCondition":  {
-                                                                                                      "value":  "onHit",
-                                                                                                      "type":  "string"
-                                                                                                  }
-                                                                         },
-                                                              "rarityWeight":  35
-                                                          }
-                                                      ]
-                                        }
-                      }
+{
+  "metadata": {
+    "version": "4.2",
+    "type": "abilities_catalog",
+    "description": "Reactive abilities triggered by conditions",
+    "totalAbilities": 1,
+    "lastUpdated": "2026-01-08"
+  },
+  "ability_types": {
+    "offensive": {
+      "description": "Offensive reactive abilities",
+      "items": []
+    }
+  }
 }

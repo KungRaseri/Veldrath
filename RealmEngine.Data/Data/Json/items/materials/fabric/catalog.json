@@ -1,29 +1,19 @@
-﻿{
-    "metadata":  {
-                     "description":  "Fabric material items - lootable cloth materials that reference property definitions",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-23",
-                     "type":  "item_catalog",
-                     "totalItems":  1,
-                     "notes":  [
-                                   "These are actual inventory items that drop from enemies/chests",
-                                   "Each references a property definition in properties/materials/fabrics",
-                                   "Used in crafting system to apply fabric bonuses to armor"
-                               ]
-                 },
-    "material_types":  {
-                           "fabric":  {
-                                          "items":  [
-                                                        {
-                                                            "name":  "Burlap Cloth",
-                                                            "slug":  "burlap-cloth",
-                                                            "description":  "Rough, coarse fabric. Common and inexpensive.",
-                                                            "propertyRef":  "@properties/materials/fabrics:burlap",
-                                                            "stackSize":  100,
-                                                            "rarityWeight":  100,
-                                                            "baseValue":  1
-                                                        }
-                                                    ]
-                                      }
-                       }
+{
+  "metadata": {
+    "description": "Fabric material items - lootable cloth materials that reference property definitions",
+    "version": "4.0",
+    "lastUpdated": "2026-01-23",
+    "type": "item_catalog",
+    "totalItems": 1,
+    "notes": [
+      "These are actual inventory items that drop from enemies/chests",
+      "Each references a property definition in properties/materials/fabrics",
+      "Used in crafting system to apply fabric bonuses to armor"
+    ]
+  },
+  "material_types": {
+    "fabric": {
+      "items": []
+    }
+  }
 }

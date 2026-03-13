@@ -1,102 +1,29 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Service NPCs - hospitality workers providing lodging, food, drink, and maintenance",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "service",
-                     "notes":  [
-                                   "Focus on services rather than goods trading",
-                                   "Provide lodging, meals, stabling, and rumors",
-                                   "Limited item selection, no player item trading (except StableMaster)",
-                                   "High availability and social interaction"
-                               ]
-                 },
-    "occupation_types":  {
-                             "hospitality":  {
-                                                 "metadata":  {
-                                                                  "description":  "Innkeepers and tavern operators",
-                                                                  "hasShop":  true,
-                                                                  "notes":  [
-                                                                                "Provide food, drink, and lodging",
-                                                                                "Hub for rumors and social interaction",
-                                                                                "24/7 availability"
-                                                                            ]
-                                                              },
-                                                 "items":  [
-                                                               {
-                                                                   "slug":  "innkeeper",
-                                                                   "name":  "Innkeeper",
-                                                                   "displayName":  "Innkeeper",
-                                                                   "strength":  12,
-                                                                   "dexterity":  11,
-                                                                   "constitution":  13,
-                                                                   "intelligence":  11,
-                                                                   "wisdom":  13,
-                                                                   "charisma":  15,
-                                                                   "rarityWeight":  15,
-                                                                   "socialClass":  "service",
-                                                                   "skillBonuses":  [
-                                                                                        "hospitality",
-                                                                                        "cooking",
-                                                                                        "rumors"
-                                                                                    ],
-                                                                   "baseGold":  "3d10",
-                                                                   "shopType":  "inn",
-                                                                   "shopChance":  1.0,
-                                                                   "shopInventory":  {
-                                                                                         "coreItems":  [
-                                                                                                           {
-                                                                                                               "item":  "@items/materials:*",
-                                                                                                               "baseQuantity":  30,
-                                                                                                               "restockDaily":  true
-                                                                                                           },
-                                                                                                           {
-                                                                                                               "item":  "@items/materials:*",
-                                                                                                               "baseQuantity":  20,
-                                                                                                               "restockDaily":  true
-                                                                                                           },
-                                                                                                           {
-                                                                                                               "item":  "@items/materials:*",
-                                                                                                               "baseQuantity":  10,
-                                                                                                               "restockDaily":  true
-                                                                                                           }
-                                                                                                       ],
-                                                                                         "dynamicCategories":  [
-                                                                                                                   "consumables.food",
-                                                                                                                   "consumables.drink"
-                                                                                                               ],
-                                                                                         "dynamicItemCount":  "{2d6} {3}",
-                                                                                         "dynamicRefreshDaily":  true,
-                                                                                         "economy":  {
-                                                                                                         "acceptsPlayerItems":  false,
-                                                                                                         "acceptedCategories":  [
-
-                                                                                                                                ],
-                                                                                                         "buyPriceMultiplier":  0.0,
-                                                                                                         "sellPriceMultiplier":  1.0,
-                                                                                                         "resellPriceMultiplier":  0.0,
-                                                                                                         "bankGoldFormula":  "baseGold * 12",
-                                                                                                         "bankGoldRestockDaily":  true
-                                                                                                     }
-                                                                                     },
-                                                                   "services":  [
-                                                                                    "lodging",
-                                                                                    "food",
-                                                                                    "drink",
-                                                                                    "rumors"
-                                                                                ],
-                                                                   "dialogueStyle":  "@social/dialogue/styles/casual:cheerful",
-                                                                   "greetings":  [
-                                                                                     "@social/dialogue/greetings/service:innkeeper-welcoming"
-                                                                                 ],
-                                                                   "farewells":  [
-                                                                                     "@social/dialogue/farewells/simple:simple"
-                                                                                 ],
-                                                                   "faction":  "independent",
-                                                                   "schedule":  "@social/schedules/*:innkeeper"
-                                                               }
-                                                           ]
-                                             }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Service NPCs - hospitality workers providing lodging, food, drink, and maintenance",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "service",
+    "notes": [
+      "Focus on services rather than goods trading",
+      "Provide lodging, meals, stabling, and rumors",
+      "Limited item selection, no player item trading (except StableMaster)",
+      "High availability and social interaction"
+    ]
+  },
+  "occupation_types": {
+    "hospitality": {
+      "metadata": {
+        "description": "Innkeepers and tavern operators",
+        "hasShop": true,
+        "notes": [
+          "Provide food, drink, and lodging",
+          "Hub for rumors and social interaction",
+          "24/7 availability"
+        ]
+      },
+      "items": []
+    }
+  }
 }

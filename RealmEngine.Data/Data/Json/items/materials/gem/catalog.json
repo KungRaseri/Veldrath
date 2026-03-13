@@ -1,36 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Gemstones for jewelry and enchanting - from common quartz to legendary dragon tears",
-                     "version":  "5.2",
-                     "lastUpdated":  "2026-01-23",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "gem":  {
-                                       "items":  [
-                                                     {
-                                                         "slug":  "rough-gemstone",
-                                                         "name":  "Rough Gemstone",
-                                                         "description":  "Uncut gemstone with potential.",
-                                                         "rarityWeight":  85,
-                                                         "value":  5,
-                                                         "weight":  0.1,
-                                                         "stackSize":  50,
-                                                         "itemType":  "material",
-                                                         "subType":  "gem",
-                                                         "tier":  "raw",
-                                                         "traits":  {
-
-                                                                    },
-                                                         "tags":  [
-                                                                      "gem",
-                                                                      "crafting",
-                                                                      "raw",
-                                                                      "uncut"
-                                                                  ]
-                                                     }
-                                                 ]
-                                   }
-                       }
+{
+  "metadata": {
+    "description": "Gemstones for jewelry and enchanting - from common quartz to legendary dragon tears",
+    "version": "5.2",
+    "lastUpdated": "2026-01-23",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "gem": {
+      "items": []
+    }
+  }
 }

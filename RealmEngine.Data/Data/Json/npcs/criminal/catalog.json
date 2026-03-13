@@ -1,75 +1,29 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Criminal NPCs - those who lived outside the law with underworld connections",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "criminal",
-                     "notes":  [
-                                   "High dexterity and stealth skills",
-                                   "Underworld connections and street smarts",
-                                   "May have bounties or enemies",
-                                   "Specialize in deception and covert activities"
-                               ]
-                 },
-    "background_types":  {
-                             "reformed_criminals":  {
-                                                        "metadata":  {
-                                                                         "description":  "Former lawbreakers seeking redemption or new opportunities",
-                                                                         "socialClass":  "criminal",
-                                                                         "notes":  [
-                                                                                       "Skilled in stealth and deception",
-                                                                                       "May have unique items from past life",
-                                                                                       "Often carry emotional baggage"
-                                                                                   ]
-                                                                     },
-                                                        "items":  [
-                                                                      {
-                                                                          "slug":  "formercriminal",
-                                                                          "name":  "FormerCriminal",
-                                                                          "displayName":  "Former Criminal",
-                                                                          "description":  "Has a history of illegal activities",
-                                                                          "attributes":  {
-                                                                                             "strength":  11,
-                                                                                             "dexterity":  15,
-                                                                                             "constitution":  11,
-                                                                                             "intelligence":  12,
-                                                                                             "wisdom":  10,
-                                                                                             "charisma":  12
-                                                                                         },
-                                                                          "rarityWeight":  32,
-                                                                          "socialClass":  "criminal",
-                                                                          "startingGold":  "2d8",
-                                                                          "skillBonuses":  [
-                                                                                               "stealth",
-                                                                                               "deception",
-                                                                                               "lockpicking"
-                                                                                           ],
-                                                                          "shopModifiers":  {
-                                                                                                "qualityBonus":  0,
-                                                                                                "priceMultiplier":  1.1,
-                                                                                                "shopAppearance":  "shady"
-                                                                                            },
-                                                                          "specializationHints":  [
-                                                                                                      "stolen_goods",
-                                                                                                      "lockpicks",
-                                                                                                      "poisons"
-                                                                                                  ],
-                                                                          "uniqueItems":  [
-                                                                                              "Lockpick Set",
-                                                                                              "Concealed Dagger"
-                                                                                          ],
-                                                                          "dialogueStyle":  "@social/dialogue/styles/casual:friendly",
-                                                                          "greetings":  [
-                                                                                            "@social/dialogue/greetings/criminal:criminal-wary"
-                                                                                        ],
-                                                                          "farewells":  [
-                                                                                            "@social/dialogue/farewells/simple:simple"
-                                                                                        ],
-                                                                          "faction":  "thieves_guild",
-                                                                          "schedule":  "@social/schedules/*:criminal"
-                                                                      }
-                                                                  ]
-                                                    }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Criminal NPCs - those who lived outside the law with underworld connections",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "criminal",
+    "notes": [
+      "High dexterity and stealth skills",
+      "Underworld connections and street smarts",
+      "May have bounties or enemies",
+      "Specialize in deception and covert activities"
+    ]
+  },
+  "background_types": {
+    "reformed_criminals": {
+      "metadata": {
+        "description": "Former lawbreakers seeking redemption or new opportunities",
+        "socialClass": "criminal",
+        "notes": [
+          "Skilled in stealth and deception",
+          "May have unique items from past life",
+          "Often carry emotional baggage"
+        ]
+      },
+      "items": []
+    }
+  }
 }

@@ -1,81 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Service businesses including inns, taverns, and specialty establishments",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "organizations_businesses_catalog"
-                 },
-    "lodging_types":  {
-                          "lodging":  {
-                                          "items":  [
-                                                        {
-                                                            "slug":  "inn-basic",
-                                                            "name":  "inn_basic",
-                                                            "displayName":  "Basic Inn",
-                                                            "rarityWeight":  5,
-                                                            "description":  "Simple lodging for travelers",
-                                                            "services":  {
-                                                                             "rooms":  [
-                                                                                           {
-                                                                                               "type":  "common_room",
-                                                                                               "price":  5,
-                                                                                               "comfort":  1,
-                                                                                               "description":  "Sleep on floor with other travelers"
-                                                                                           },
-                                                                                           {
-                                                                                               "type":  "shared_room",
-                                                                                               "price":  15,
-                                                                                               "comfort":  3,
-                                                                                               "description":  "Bunk bed in shared quarters"
-                                                                                           },
-                                                                                           {
-                                                                                               "type":  "private_room",
-                                                                                               "price":  30,
-                                                                                               "comfort":  5,
-                                                                                               "description":  "Small private room with bed"
-                                                                                           }
-                                                                                       ],
-                                                                             "meals":  [
-                                                                                           {
-                                                                                               "type":  "breakfast",
-                                                                                               "price":  3,
-                                                                                               "quality":  2
-                                                                                           },
-                                                                                           {
-                                                                                               "type":  "dinner",
-                                                                                               "price":  5,
-                                                                                               "quality":  2
-                                                                                           }
-                                                                                       ],
-                                                                             "amenities":  [
-                                                                                               "stable",
-                                                                                               "common_room",
-                                                                                               "fireplace"
-                                                                                           ],
-                                                                             "special_services":  [
-
-                                                                                                  ]
-                                                                         },
-                                                            "owner":  {
-                                                                          "type":  "random",
-                                                                          "social_class":  "@npcs/common:*",
-                                                                          "personality":  [
-                                                                                              "welcoming",
-                                                                                              "hardworking"
-                                                                                          ],
-                                                                          "skills":  [
-                                                                                         "hospitality",
-                                                                                         "cooking"
-                                                                                     ]
-                                                                      },
-                                                            "location_types":  [
-                                                                                   "villages",
-                                                                                   "towns"
-                                                                               ],
-                                                            "required_population":  200,
-                                                            "npc_count":  "2-4"
-                                                        }
-                                                    ]
-                                      }
-                      }
+{
+  "metadata": {
+    "description": "Service businesses including inns, taverns, and specialty establishments",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "organizations_businesses_catalog"
+  },
+  "lodging_types": {
+    "lodging": {
+      "items": []
+    }
+  }
 }

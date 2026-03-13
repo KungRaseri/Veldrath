@@ -1,83 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Joinable guilds with progression systems, ranks, and exclusive benefits",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "organizations_guilds_catalog"
-                 },
-    "combat_types":  {
-                         "combat":  {
-                                        "items":  [
-                                                      {
-                                                          "slug":  "fighters-guild",
-                                                          "name":  "fighters_guild",
-                                                          "displayName":  "Fighters Guild",
-                                                          "rarityWeight":  10,
-                                                          "description":  "Brotherhood of warriors dedicated to martial excellence",
-                                                          "headquarters":  "@world/locations/towns:Stormhaven",
-                                                          "joinRequirements":  {
-                                                                                   "level":  3,
-                                                                                   "strength":  12,
-                                                                                   "skills":  [
-                                                                                                  "combat"
-                                                                                              ],
-                                                                                   "questRequired":  "Prove your worth in the arena"
-                                                                               },
-                                                          "ranks":  [
-                                                                        {
-                                                                            "level":  1,
-                                                                            "title":  "Recruit",
-                                                                            "benefits":  {
-                                                                                             "combat_bonus":  1
-                                                                                         }
-                                                                        },
-                                                                        {
-                                                                            "level":  2,
-                                                                            "title":  "Warrior",
-                                                                            "benefits":  {
-                                                                                             "combat_bonus":  2,
-                                                                                             "training_access":  "advanced"
-                                                                                         }
-                                                                        },
-                                                                        {
-                                                                            "level":  3,
-                                                                            "title":  "Veteran",
-                                                                            "benefits":  {
-                                                                                             "combat_bonus":  3,
-                                                                                             "free_repairs":  true
-                                                                                         }
-                                                                        },
-                                                                        {
-                                                                            "level":  4,
-                                                                            "title":  "Champion",
-                                                                            "benefits":  {
-                                                                                             "combat_bonus":  5,
-                                                                                             "guild_quests":  "legendary"
-                                                                                         }
-                                                                        },
-                                                                        {
-                                                                            "level":  5,
-                                                                            "title":  "Guildmaster",
-                                                                            "benefits":  {
-                                                                                             "combat_bonus":  7,
-                                                                                             "command_troops":  true
-                                                                                         }
-                                                                        }
-                                                                    ],
-                                                          "benefits":  {
-                                                                           "training":  "Advanced weapon techniques",
-                                                                           "equipment":  "Discounted weapons and armor",
-                                                                           "quests":  "Combat-focused guild missions",
-                                                                           "faction_bonus":  "@organizations/factions/military:military"
-                                                                       },
-                                                          "rivals":  [
-                                                                         "thieves_guild"
-                                                                     ],
-                                                          "allies":  [
-                                                                         "merchants_guild"
-                                                                     ]
-                                                      }
-                                                  ]
-                                    }
-                     }
+{
+  "metadata": {
+    "description": "Joinable guilds with progression systems, ranks, and exclusive benefits",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "organizations_guilds_catalog"
+  },
+  "combat_types": {
+    "combat": {
+      "items": []
+    }
+  }
 }

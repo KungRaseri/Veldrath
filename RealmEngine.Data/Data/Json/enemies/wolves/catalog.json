@@ -1,87 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Wolf enemies demonstrating v5.1 structure with attributes/stats/properties/traits",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "enemy_catalog",
-                     "total_types":  1,
-                     "total_items":  5
-                 },
-    "enemy_types":  {
-                        "wolves":  {
-                                       "properties":  {
-                                                          "size":  "medium",
-                                                          "behavior":  "pack",
-                                                          "habitat":  "forest"
-                                                      },
-                                       "items":  [
-                                                     {
-                                                         "slug":  "wolf",
-                                                         "name":  "Wolf",
-                                                         "rarityWeight":  105,
-                                                         "level":  3,
-                                                         "xp":  50,
-                                                         "attributes":  {
-                                                                            "strength":  14,
-                                                                            "dexterity":  15,
-                                                                            "constitution":  14,
-                                                                            "intelligence":  4,
-                                                                            "wisdom":  12,
-                                                                            "charisma":  6
-                                                                        },
-                                                         "stats":  {
-                                                                       "health":  "constitution_mod * 2 + level * 5 + 10",
-                                                                       "attack":  "strength_mod + level",
-                                                                       "defense":  "10 + dexterity_mod + constitution_mod",
-                                                                       "speed":  "30 + dexterity_mod * 5"
-                                                                   },
-                                                         "combat":  {
-                                                                        "abilities":  [
-                                                                                          "@abilities/active/offensive:bite"
-                                                                                      ],
-                                                                        "abilityUnlocks":  {
-                                                                                               "5":  [
-                                                                                                         "@abilities/active/support:pack-tactics"
-                                                                                                     ]
-                                                                                           }
-                                                                    },
-                                                         "traits":  {
-
-                                                                    }
-                                                     },
-                                                     {
-                                                         "slug":  "fenrir-the-ancient",
-                                                         "name":  "Fenrir the Ancient",
-                                                         "rarityWeight":  10,
-                                                         "level":  12,
-                                                         "description":  "A legendary alpha wolf of ancient lineage, feared across the land",
-                                                         "xp":  800,
-                                                         "gold":  6,
-                                                         "attributes":  {
-                                                                            "strength":  18,
-                                                                            "dexterity":  16,
-                                                                            "constitution":  18,
-                                                                            "intelligence":  8,
-                                                                            "wisdom":  14,
-                                                                            "charisma":  10
-                                                                        },
-                                                         "stats":  {
-                                                                       "health":  "constitution_mod * 2 + level * 8 + 30",
-                                                                       "attack":  "strength_mod + level + 12",
-                                                                       "defense":  "10 + dexterity_mod + constitution_mod + 4",
-                                                                       "speed":  "35 + dexterity_mod * 5"
-                                                                   },
-                                                         "combat":  {
-                                                                        "abilities":  [
-                                                                                          "@abilities/active/offensive:*",
-                                                                                          "@abilities/active/offensive:*"
-                                                                                      ]
-                                                                    },
-                                                         "traits":  {
-
-                                                                    }
-                                                     }
-                                                 ]
-                                   }
-                    }
+{
+  "metadata": {
+    "description": "Wolf enemies demonstrating v5.1 structure with attributes/stats/properties/traits",
+    "version": "5.1",
+    "lastUpdated": "2026-01-08",
+    "type": "enemy_catalog",
+    "total_types": 1,
+    "total_items": 5
+  },
+  "enemy_types": {
+    "wolves": {
+      "properties": {
+        "size": "medium",
+        "behavior": "pack",
+        "habitat": "forest"
+      },
+      "items": []
+    }
+  }
 }

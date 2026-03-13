@@ -1,51 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Bone material properties for crafting system - primitive and undead-themed items",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Bone materials for weapons, armor, and necromantic items. Light weight with unique properties.",
-                     "notes":  [
-                                   "Bone materials focus on wisdom/intelligence with necromancy themes",
-                                   "Lower durability but very lightweight",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "bone_types":  {
-                       "bone":  {
-                                    "items":  [
-                                                  {
-                                                      "slug":  "bone",
-                                                      "name":  "Bone",
-                                                      "attributes":  {
-                                                                         "dexterity":  3,
-                                                                         "intelligence":  5,
-                                                                         "charisma":  -2,
-                                                                         "strength":  5,
-                                                                         "constitution":  3,
-                                                                         "wisdom":  5
-                                                                     },
-                                                      "traits":  {
-                                                                     "durability":  35,
-                                                                     "weight":  0.5,
-                                                                     "enchantability":  15
-                                                                 },
-                                                      "displayName":  "Bone",
-                                                      "itemTypeTraits":  {
-                                                                             "weapon":  {
-                                                                                            "damage":  1,
-                                                                                            "value":  2
-                                                                                        },
-                                                                             "armor":  {
-                                                                                           "armorRating":  3,
-                                                                                           "defenseBonus":  1,
-                                                                                           "value":  2
-                                                                                       }
-                                                                         },
-                                                      "rarityWeight":  75
-                                                  }
-                                              ]
-                                }
-                   }
+{
+  "metadata": {
+    "description": "Bone material properties for crafting system - primitive and undead-themed items",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Bone materials for weapons, armor, and necromantic items. Light weight with unique properties.",
+    "notes": [
+      "Bone materials focus on wisdom/intelligence with necromancy themes",
+      "Lower durability but very lightweight",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "bone_types": {
+    "bone": {
+      "items": []
+    }
+  }
 }

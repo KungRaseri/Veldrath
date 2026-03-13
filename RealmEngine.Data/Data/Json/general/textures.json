@@ -1,57 +1,57 @@
-﻿{
-    "components":  {
-                       "surface_quality":  [
-                                               "rough"
-                                           ],
-                       "temperature":  [
-                                           "cold"
-                                       ],
-                       "moisture":  [
-                                        "dry"
-                                    ],
-                       "hardness":  [
-                                        "soft"
-                                    ],
-                       "organic":  [
-                                       "leathery"
-                                   ]
-                   },
-    "patterns":  [
-                     "surface_quality",
-                     "{surface_quality} {moisture}",
-                     "{temperature} {surface_quality}",
-                     "{hardness} {surface_quality}",
-                     "organic"
-                 ],
-    "metadata":  {
-                     "description":  "Texture descriptions for tactile immersion, item details, and environmental richness",
-                     "version":  "4.0",
-                     "type":  "pattern_generation",
-                     "lastUpdated":  "2026-01-08",
-                     "componentKeys":  [
-                                           "surface_quality",
-                                           "temperature",
-                                           "moisture",
-                                           "hardness",
-                                           "organic"
-                                       ],
-                     "pattern_count":  5,
-                     "patternTokens":  [
-                                           "surface_quality",
-                                           "temperature",
-                                           "moisture",
-                                           "hardness",
-                                           "organic"
-                                       ],
-                     "component_counts":  {
-                                              "surface_quality":  1,
-                                              "temperature":  1,
-                                              "moisture":  1,
-                                              "hardness":  1,
-                                              "organic":  1
-                                          },
-                     "notes":  [
-                                   "Reference data for general textures. Used as component source in name generation and stat calculations."
-                               ]
-                 }
+{
+  "components": {
+    "surface_quality": [
+      "rough"
+    ],
+    "temperature": [
+      "cold"
+    ],
+    "moisture": [
+      "dry"
+    ],
+    "hardness": [
+      "soft"
+    ],
+    "organic": [
+      "leathery"
+    ]
+  },
+  "patterns": [
+    "surface_quality",
+    "{surface_quality} {moisture}",
+    "{temperature} {surface_quality}",
+    "{hardness} {surface_quality}",
+    "organic"
+  ],
+  "metadata": {
+    "description": "Texture descriptions for tactile immersion, item details, and environmental richness",
+    "version": "4.0",
+    "type": "pattern_generation",
+    "lastUpdated": "2026-01-08",
+    "componentKeys": [
+      "surface_quality",
+      "temperature",
+      "moisture",
+      "hardness",
+      "organic"
+    ],
+    "pattern_count": 5,
+    "patternTokens": [
+      "surface_quality",
+      "temperature",
+      "moisture",
+      "hardness",
+      "organic"
+    ],
+    "component_counts": {
+      "surface_quality": 1,
+      "temperature": 1,
+      "moisture": 1,
+      "hardness": 1,
+      "organic": 1
+    },
+    "notes": [
+      "Reference data for general textures. Used as component source in name generation and stat calculations."
+    ]
+  }
 }

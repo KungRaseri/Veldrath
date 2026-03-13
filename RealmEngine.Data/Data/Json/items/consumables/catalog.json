@@ -1,49 +1,26 @@
-﻿{
-    "metadata":  {
-                     "description":  "Consumable item catalog with base stats and traits",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "item_catalog",
-                     "total_consumableTypes":  1,
-                     "total_consumables":  1,
-                     "usage":  "Base catalog of consumables with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
-                     "notes":  [
-                                   "Base items used in pattern generation with names.json",
-                                   "Each consumable has effect, power, duration, weight, value, and rarityWeight",
-                                   "Type-level traits (slot, category, stackable, oneUse) apply to all items in that consumable type",
-                                   "Effect types: heal, buff, heal_overtime, cure_poison, restore, stat_boost, etc."
-                               ]
-                 },
-    "consumable_types":  {
-                             "potions":  {
-                                             "properties":  {
-                                                                "category":  "potion",
-                                                                "slot":  "consumable"
-                                                            },
-                                             "items":  [
-                                                           {
-                                                               "name":  "Potion",
-                                                               "slug":  "potion",
-                                                               "rarityWeight":  50,
-                                                               "value":  10,
-                                                               "weight":  0.5,
-                                                               "attributes":  {
-                                                                                  "constitution":  10,
-                                                                                  "wisdom":  8,
-                                                                                  "strength":  10,
-                                                                                  "dexterity":  10,
-                                                                                  "charisma":  8,
-                                                                                  "intelligence":  8
-                                                                              },
-                                                               "traits":  {
-
-                                                                          },
-                                                               "effect":  "heal",
-                                                               "power":  25,
-                                                               "duration":  0,
-                                                               "stackSize":  99
-                                                           }
-                                                       ]
-                                         }
-                         }
+{
+  "metadata": {
+    "description": "Consumable item catalog with base stats and traits",
+    "version": "5.1",
+    "lastUpdated": "2026-01-08",
+    "type": "item_catalog",
+    "total_consumableTypes": 1,
+    "total_consumables": 1,
+    "usage": "Base catalog of consumables with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
+    "notes": [
+      "Base items used in pattern generation with names.json",
+      "Each consumable has effect, power, duration, weight, value, and rarityWeight",
+      "Type-level traits (slot, category, stackable, oneUse) apply to all items in that consumable type",
+      "Effect types: heal, buff, heal_overtime, cure_poison, restore, stat_boost, etc."
+    ]
+  },
+  "consumable_types": {
+    "potions": {
+      "properties": {
+        "category": "potion",
+        "slot": "consumable"
+      },
+      "items": []
+    }
+  }
 }

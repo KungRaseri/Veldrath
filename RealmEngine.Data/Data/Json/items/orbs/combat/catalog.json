@@ -1,37 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Combat orbs providing skill enhancements for combat abilities",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "orb_catalog"
-                 },
-    "orb_types":  {
-                      "combat":  {
-                                     "items":  [
-                                                   {
-                                                       "slug":  "strike-orb",
-                                                       "name":  "Strike Orb",
-                                                       "rarityWeight":  55,
-                                                       "attributes":  {
-                                                                          "intelligence":  8,
-                                                                          "constitution":  10,
-                                                                          "strength":  10,
-                                                                          "charisma":  8,
-                                                                          "wisdom":  8,
-                                                                          "dexterity":  10
-                                                                      },
-                                                       "traits":  {
-                                                                      "meleeSkillDamage":  {
-                                                                                               "value":  15,
-                                                                                               "type":  "number"
-                                                                                           },
-                                                                      "meleeSkillCooldown":  {
-                                                                                                 "value":  -10,
-                                                                                                 "type":  "number"
-                                                                                             }
-                                                                  }
-                                                   }
-                                               ]
-                                 }
-                  }
+{
+  "metadata": {
+    "description": "Combat orbs providing skill enhancements for combat abilities",
+    "version": "5.1",
+    "lastUpdated": "2026-01-08",
+    "type": "orb_catalog"
+  },
+  "orb_types": {
+    "combat": {
+      "items": []
+    }
+  }
 }

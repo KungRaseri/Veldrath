@@ -1,5 +1,5 @@
-﻿{
-    "icon":  "Recycle",
-    "description":  "Scrap and reclaimed crafting materials",
-    "sortOrder":  55
+{
+  "icon": "Recycle",
+  "description": "Scrap and reclaimed crafting materials",
+  "sortOrder": 55
 }

@@ -1,5 +1,5 @@
-﻿{
-    "icon":  "RocksSlide",
-    "description":  "Stone and mineral materials for crafting",
-    "sortOrder":  50
+{
+  "icon": "RocksSlide",
+  "description": "Stone and mineral materials for crafting",
+  "sortOrder": 50
 }

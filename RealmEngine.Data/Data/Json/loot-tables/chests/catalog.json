@@ -1,35 +1,18 @@
-﻿{
-    "metadata":  {
-                     "description":  "Loot tables for chests - defines drops by rarity, location, and item type",
-                     "version":  "5.0",
-                     "lastUpdated":  "2026-01-23",
-                     "type":  "loot_table_catalog",
-                     "notes":  [
-                                   "Chest entities can specify multiple lootLookups with a mergeStrategy",
-                                   "Merge strategies: addPools (combine all), prioritizeFirst, prioritizeLast",
-                                   "Example: chest with [@loot-tables/chests/location:dragon-peak, @loot-tables/chests/rarity:legendary]"
-                               ]
-                 },
-    "chest_types":  {
-                        "rarity":  {
-                                       "items":  [
-                                                     {
-                                                         "poolRefs":  [
-                                                                          "@material_pools/metals/common"
-                                                                      ],
-                                                         "itemCount":  [
-                                                                           1,
-                                                                           3
-                                                                       ],
-                                                         "goldRange":  [
-                                                                           10,
-                                                                           50
-                                                                       ],
-                                                         "slug":  "common",
-                                                         "name":  "Common",
-                                                         "rarityWeight":  60
-                                                     }
-                                                 ]
-                                   }
-                    }
+{
+  "metadata": {
+    "description": "Loot tables for chests - defines drops by rarity, location, and item type",
+    "version": "5.0",
+    "lastUpdated": "2026-01-23",
+    "type": "loot_table_catalog",
+    "notes": [
+      "Chest entities can specify multiple lootLookups with a mergeStrategy",
+      "Merge strategies: addPools (combine all), prioritizeFirst, prioritizeLast",
+      "Example: chest with [@loot-tables/chests/location:dragon-peak, @loot-tables/chests/rarity:legendary]"
+    ]
+  },
+  "chest_types": {
+    "rarity": {
+      "items": []
+    }
+  }
 }

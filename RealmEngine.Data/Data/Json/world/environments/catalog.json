@@ -1,34 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Environmental systems including biomes, weather patterns, and terrain hazards",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "world_environments_catalog"
-                 },
-    "biomes_types":  {
-                         "biomes":  {
-                                        "items":  [
-                                                      {
-                                                          "slug":  "temperate-forest",
-                                                          "name":  "temperate_forest",
-                                                          "displayName":  "Temperate Forest",
-                                                          "rarityWeight":  10,
-                                                          "description":  "Dense woodland with diverse flora and fauna",
-                                                          "temperature":  "Mild",
-                                                          "precipitation":  "Moderate",
-                                                          "terrain":  "Forest",
-                                                          "commonEncounters":  [
-                                                                                   "@enemies/beasts/wolves:Wolf",
-                                                                                   "@enemies/beasts/bears:Bear"
-                                                                               ],
-                                                          "resources":  [
-                                                                            "@items/materials:*",
-                                                                            "@items/materials:*"
-                                                                        ],
-                                                          "travelDifficulty":  "Easy",
-                                                          "visibility":  "Medium"
-                                                      }
-                                                  ]
-                                    }
-                     }
+{
+  "metadata": {
+    "description": "Environmental systems including biomes, weather patterns, and terrain hazards",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "world_environments_catalog"
+  },
+  "biomes_types": {
+    "biomes": {
+      "items": []
+    }
+  }
 }

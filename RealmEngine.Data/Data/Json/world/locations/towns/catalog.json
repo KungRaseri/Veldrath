@@ -1,33 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Town and settlement location definitions organized by size (outposts, villages, towns, cities, capitals)",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "world_locations_towns_catalog"
-                 },
-    "outposts_types":  {
-                           "outposts":  {
-                                            "items":  [
-                                                          {
-                                                              "slug":  "crossroads",
-                                                              "name":  "Crossroads",
-                                                              "displayName":  "Crossroads",
-                                                              "rarityWeight":  8,
-                                                              "description":  "Trading outpost at intersection of major roads",
-                                                              "size":  "Outpost",
-                                                              "population":  "Tiny",
-                                                              "locationType":  "settlement",
-                                                              "isStartingZone":  true,
-                                                              "services":  [
-                                                                               "basic_trade",
-                                                                               "rest"
-                                                                           ],
-                                                              "notableFeatures":  [
-                                                                                      "crossroads",
-                                                                                      "merchant_stalls"
-                                                                                  ]
-                                                          }
-                                                      ]
-                                        }
-                       }
+{
+  "metadata": {
+    "description": "Town and settlement location definitions organized by size (outposts, villages, towns, cities, capitals)",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "world_locations_towns_catalog"
+  },
+  "outposts_types": {
+    "outposts": {
+      "items": []
+    }
+  }
 }

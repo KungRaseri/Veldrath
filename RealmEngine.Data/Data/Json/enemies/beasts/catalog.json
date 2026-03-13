@@ -1,108 +1,38 @@
-﻿{
-    "metadata":  {
-                     "version":  "5.1",
-                     "notes":  [
-                                   "Base catalog of beasts with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
-                                   "Abilities use JSON Reference System v4.1 (@abilities/active/offensive:*)",
-                                   "Level-based ability unlocks provide enemy progression",
-                                   "Wolves have their own dedicated catalog at enemies/wolves/"
-                               ],
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "item_catalog",
-                     "description":  "Beast enemy type catalog with base stats and traits",
-                     "total_beasts":  1,
-                     "total_beast_types":  1,
-                     "usage":  "Provides base enemy types for pattern generation"
-                 },
-    "beast_types":  {
-                        "bears":  {
-                                      "items":  [
-                                                    {
-                                                        "rarityWeight":  60,
-                                                        "slug":  "cave-bear",
-                                                        "stats":  {
-                                                                      "attack":  "strength_mod + level + 10",
-                                                                      "health":  "constitution_mod * 2 + level * 5 + 50",
-                                                                      "speed":  "20 + dexterity_mod * 5",
-                                                                      "defense":  "10 + dexterity_mod + constitution_mod + 5"
-                                                                  },
-                                                        "combat":  {
-                                                                       "abilityUnlocks":  {
-                                                                                              "7":  [
-                                                                                                        "@abilities/active/offensive:*"
-                                                                                                    ]
-                                                                                          },
-                                                                       "abilities":  [
-                                                                                         "@abilities/active/offensive:*"
-                                                                                     ]
-                                                                   },
-                                                        "level":  5,
-                                                        "name":  "Cave Bear",
-                                                        "traits":  {
-                                                                       "naturalArmour":  {
-                                                                                             "value":  3,
-                                                                                             "type":  "number"
-                                                                                         }
-                                                                   },
-                                                        "xp":  120,
-                                                        "attributes":  {
-                                                                           "strength":  18,
-                                                                           "constitution":  16,
-                                                                           "charisma":  6,
-                                                                           "intelligence":  4,
-                                                                           "wisdom":  8,
-                                                                           "dexterity":  8
-                                                                       }
-                                                    }
-                                                ],
-                                      "properties":  {
-                                                         "behavior":  "territorial",
-                                                         "category":  "beast",
-                                                         "damageType":  "slashing",
-                                                         "size":  "large",
-                                                         "habitat":  "forest"
-                                                     }
-                                  },
-                        "wolves":  {
-                                       "properties":  {
-                                                          "size":  "medium",
-                                                          "category":  "beast",
-                                                          "behavior":  "pack",
-                                                          "habitat":  "forest"
-                                                      },
-                                       "items":  [
-                                                     {
-                                                         "slug":  "wolf",
-                                                         "name":  "Wolf",
-                                                         "rarityWeight":  105,
-                                                         "level":  3,
-                                                         "description":  "A forest predator that hunts in packs",
-                                                         "xp":  50,
-                                                         "gold":  3,
-                                                         "attributes":  {
-                                                                            "strength":  14,
-                                                                            "dexterity":  15,
-                                                                            "constitution":  14,
-                                                                            "intelligence":  4,
-                                                                            "wisdom":  12,
-                                                                            "charisma":  6
-                                                                        },
-                                                         "stats":  {
-                                                                       "health":  "constitution_mod * 2 + level * 5 + 10",
-                                                                       "attack":  "strength_mod + level",
-                                                                       "defense":  "10 + dexterity_mod + constitution_mod",
-                                                                       "speed":  "30 + dexterity_mod * 5"
-                                                                   },
-                                                         "combat":  {
-                                                                        "abilities":  [
-                                                                                          "@abilities/active/offensive:*"
-                                                                                      ]
-                                                                    },
-                                                         "traits":  {
-
-                                                                    }
-                                                     }
-                                                 ]
-                                   }
-                    }
+{
+  "metadata": {
+    "version": "5.1",
+    "notes": [
+      "Base catalog of beasts with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
+      "Abilities use JSON Reference System v4.1 (@abilities/active/offensive:*)",
+      "Level-based ability unlocks provide enemy progression",
+      "Wolves have their own dedicated catalog at enemies/wolves/"
+    ],
+    "lastUpdated": "2026-01-08",
+    "type": "item_catalog",
+    "description": "Beast enemy type catalog with base stats and traits",
+    "total_beasts": 1,
+    "total_beast_types": 1,
+    "usage": "Provides base enemy types for pattern generation"
+  },
+  "beast_types": {
+    "bears": {
+      "items": [],
+      "properties": {
+        "behavior": "territorial",
+        "category": "beast",
+        "damageType": "slashing",
+        "size": "large",
+        "habitat": "forest"
+      }
+    },
+    "wolves": {
+      "properties": {
+        "size": "medium",
+        "category": "beast",
+        "behavior": "pack",
+        "habitat": "forest"
+      },
+      "items": []
+    }
+  }
 }
