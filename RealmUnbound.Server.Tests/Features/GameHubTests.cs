@@ -7,6 +7,7 @@ using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Hubs;
+using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Tests.Infrastructure;
 
 namespace RealmUnbound.Server.Tests.Features;
@@ -137,7 +138,8 @@ public class GameHubTests : IDisposable
         var hub     = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
-                                  new ZoneSessionRepository(db));
+                                  new ZoneSessionRepository(db),
+                                  new ActiveCharacterTracker());
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();
         var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RealmUnbound.Contracts.Characters;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Services;
 
 namespace RealmUnbound.Server.Features.Characters;
 
@@ -33,11 +34,12 @@ public static class CharacterEndpoints
     private static async Task<IResult> ListAsync(
         ClaimsPrincipal user,
         ICharacterRepository repo,
+        IActiveCharacterTracker activeCharacters,
         CancellationToken ct)
     {
         var accountId = GetAccountId(user);
         var characters = await repo.GetByAccountIdAsync(accountId, ct);
-        return Results.Ok(characters.Select(ToDto));
+        return Results.Ok(characters.Select(c => ToDto(c, activeCharacters.IsActive(c.Id))));
     }
 
     private static async Task<IResult> CreateAsync(
@@ -84,6 +86,7 @@ public static class CharacterEndpoints
         Guid id,
         ClaimsPrincipal user,
         ICharacterRepository repo,
+        IActiveCharacterTracker activeCharacters,
         CancellationToken ct)
     {
         var accountId = GetAccountId(user);
@@ -94,6 +97,9 @@ public static class CharacterEndpoints
 
         if (character.AccountId != accountId)
             return Results.Forbid();
+
+        if (activeCharacters.IsActive(id))
+            return Results.Conflict(new { error = "Cannot delete a character that is currently in game." });
 
         await repo.SoftDeleteAsync(id, ct);
         return Results.NoContent();
@@ -109,6 +115,6 @@ public static class CharacterEndpoints
         return Guid.Parse(value);
     }
 
-    private static CharacterDto ToDto(Character c) =>
-        new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt, c.CurrentZoneId);
+    private static CharacterDto ToDto(Character c, bool isOnline = false) =>
+        new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt, c.CurrentZoneId, isOnline);
 }

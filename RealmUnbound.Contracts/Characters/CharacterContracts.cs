@@ -10,4 +10,5 @@ public record CharacterDto(
     int Level,
     long Experience,
     DateTimeOffset LastPlayedAt,
-    string CurrentZoneId);
+    string CurrentZoneId,
+    bool IsOnline = false);
