@@ -13,9 +13,6 @@ public class RegisterViewModel : ViewModelBase
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _confirmPassword = string.Empty;
-    private string _errorMessage = string.Empty;
-    private string _errorDetails = string.Empty;
-    private bool _isBusy;
 
     public string Email
     {
@@ -39,25 +36,6 @@ public class RegisterViewModel : ViewModelBase
     {
         get => _confirmPassword;
         set => this.RaiseAndSetIfChanged(ref _confirmPassword, value);
-    }
-
-    public string ErrorMessage
-    {
-        get => _errorMessage;
-        set => this.RaiseAndSetIfChanged(ref _errorMessage, value);
-    }
-
-    /// <summary>Optional technical detail surfaced when the server returns extra context.</summary>
-    public string ErrorDetails
-    {
-        get => _errorDetails;
-        set => this.RaiseAndSetIfChanged(ref _errorDetails, value);
-    }
-
-    public bool IsBusy
-    {
-        get => _isBusy;
-        set => this.RaiseAndSetIfChanged(ref _isBusy, value);
     }
 
     public ReactiveCommand<Unit, Unit> RegisterCommand { get; }
@@ -90,8 +68,7 @@ public class RegisterViewModel : ViewModelBase
         }
 
         IsBusy = true;
-        ErrorMessage = string.Empty;
-        ErrorDetails = string.Empty;
+        ClearError();
         try
         {
             var (response, error) = await _auth.RegisterAsync(Email, Username, Password);
