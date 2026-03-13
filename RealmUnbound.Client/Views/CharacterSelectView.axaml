@@ -157,6 +157,14 @@
                          Height="44"
                          FontSize="15" />
 
+                <TextBlock Text="Class" Classes="muted" />
+                <ComboBox ItemsSource="{Binding AvailableClasses}"
+                          SelectedItem="{Binding SelectedClass}"
+                          PlaceholderText="Select a class"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+
                 <Button Content="Create Character"
                         Classes="accent"
                         Command="{Binding CreateCommand}"

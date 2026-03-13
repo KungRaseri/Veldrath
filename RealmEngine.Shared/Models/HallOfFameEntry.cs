@@ -49,7 +49,7 @@ public class HallOfFameEntry
     public string DifficultyLevel { get; set; } = "Normal";
 
     /// <summary>
-    /// Pre-calculated fame score for ranking (stored for LiteDB indexing).
+    /// Pre-calculated fame score for ranking (persisted for efficient leaderboard queries).
     /// </summary>
     public int FameScore { get; set; }
 
