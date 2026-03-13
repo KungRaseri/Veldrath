@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using RealmEngine.Data.Persistence;
 using RealmUnbound.Server.Data;
 
 namespace RealmUnbound.Server.Tests.Infrastructure;
@@ -34,24 +35,33 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Test");
 
-        // Production DbContext (Postgres) is replaced below via ConfigureServices.
-        // Only non-DB settings are set here.
-        builder.UseSetting("Jwt:Key",                      "test-secret-key-for-integration-tests!!");
-        builder.UseSetting("Jwt:Issuer",                   "RealmUnbound.Test");
-        builder.UseSetting("Jwt:Audience",                 "RealmUnbound.Test");
-        builder.UseSetting("Jwt:AccessTokenExpiryMinutes", "15");
-        builder.UseSetting("Jwt:RefreshTokenExpiryDays",   "30");
-        builder.UseSetting("RealmEngine:DataPath",         GetDataPath());
+        // Provide a non-null connection string so Program.cs doesn't throw when
+        // registering health checks. The real Postgres contexts are replaced below.
+        builder.UseSetting("ConnectionStrings:DefaultConnection",   ConnStr);
+        builder.UseSetting("Jwt:Key",                               "test-secret-key-for-integration-tests!!");
+        builder.UseSetting("Jwt:Issuer",                            "RealmUnbound.Test");
+        builder.UseSetting("Jwt:Audience",                          "RealmUnbound.Test");
+        builder.UseSetting("Jwt:AccessTokenExpiryMinutes",          "15");
+        builder.UseSetting("Jwt:RefreshTokenExpiryDays",            "30");
+        builder.UseSetting("RealmEngine:DataPath",                  "");
 
-        // Replace the production Postgres DbContext with an in-memory SQLite instance.
+        // Replace the production Postgres contexts with in-memory SQLite instances.
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
+            var appCtxDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor is not null)
-                services.Remove(descriptor);
+            if (appCtxDescriptor is not null)
+                services.Remove(appCtxDescriptor);
+
+            var contentCtxDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<ContentDbContext>));
+            if (contentCtxDescriptor is not null)
+                services.Remove(contentCtxDescriptor);
 
             services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite(ConnStr));
+
+            services.AddDbContext<ContentDbContext>(options =>
                 options.UseSqlite(ConnStr));
         });
     }
@@ -62,9 +72,9 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
 
         // Ensure the Identity + game schema exists before any test sends a request.
         using var scope = host.Services.CreateScope();
-        scope.ServiceProvider
-            .GetRequiredService<ApplicationDbContext>()
-            .Database.EnsureCreated();
+        var sp = scope.ServiceProvider;
+        sp.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
+        sp.GetRequiredService<ContentDbContext>().Database.EnsureCreated();
 
         return host;
     }
@@ -74,14 +84,6 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         if (disposing)
             _keepAlive.Dispose();
         base.Dispose(disposing);
-    }
-
-    private static string GetDataPath()
-    {
-        var assemblyDir = Path.GetDirectoryName(typeof(WebAppFactory).Assembly.Location)!;
-        // bin/Debug/net10.0 → ../../.. → project root → ../RealmEngine.Data/Data/Json
-        var solutionRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", ".."));
-        return Path.GetFullPath(Path.Combine(solutionRoot, "..", "RealmEngine.Data", "Data", "Json"));
     }
 }
 
