@@ -97,7 +97,7 @@ public class SaveGameService : ISaveGameService, IDisposable
                 // ApocalypseStartTime is already set during game creation
             }
 
-            // Clone all collections to avoid modification during LiteDB serialization
+            // Clone all collections to avoid modification during serialization
             saveGame.Character.Inventory = saveGame.Character.Inventory.ToList();
             saveGame.Character.PendingLevelUps = saveGame.Character.PendingLevelUps.ToList();
             // Skills is a Dictionary, not a List - no need to clone

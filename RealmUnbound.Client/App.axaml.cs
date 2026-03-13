@@ -78,6 +78,11 @@ public partial class App : Application
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
         services.AddSingleton<GameViewModel>();
-        services.AddTransient<CharacterSelectViewModel>();
+        services.AddTransient(sp =>
+        {
+            var vm = ActivatorUtilities.CreateInstance<CharacterSelectViewModel>(sp);
+            vm.ServerUrl = ServerBaseUrl.TrimEnd('/');
+            return vm;
+        });
     }
 }

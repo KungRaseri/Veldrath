@@ -106,19 +106,31 @@ public class CharacterSelectViewModelTests : TestBase
     public void CreateCommand_Should_Be_Disabled_When_Name_Is_Empty()
     {
         var vm = MakeVm();
+        vm.SelectedClass = "Fighter";
         bool canExecute = false;
         vm.CreateCommand.CanExecute.Subscribe(v => canExecute = v);
         canExecute.Should().BeFalse();
     }
 
     [Fact]
-    public void CreateCommand_Should_Be_Enabled_When_Name_Is_Set()
+    public void CreateCommand_Should_Be_Enabled_When_Name_And_Class_Are_Set()
+    {
+        var vm = MakeVm();
+        vm.NewCharacterName = "Hero";
+        vm.SelectedClass = "Fighter";
+        bool canExecute = false;
+        vm.CreateCommand.CanExecute.Subscribe(v => canExecute = v);
+        canExecute.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CreateCommand_Should_Be_Disabled_When_Class_Is_Not_Set()
     {
         var vm = MakeVm();
         vm.NewCharacterName = "Hero";
         bool canExecute = false;
         vm.CreateCommand.CanExecute.Subscribe(v => canExecute = v);
-        canExecute.Should().BeTrue();
+        canExecute.Should().BeFalse();
     }
 
     // ── Character creation ────────────────────────────────────────────────────
@@ -128,6 +140,7 @@ public class CharacterSelectViewModelTests : TestBase
     {
         var vm = MakeVm();
         vm.NewCharacterName = "Hero";
+        vm.SelectedClass = "Fighter";
 
         await vm.CreateCommand.Execute();
 
@@ -140,6 +153,7 @@ public class CharacterSelectViewModelTests : TestBase
         var vm = MakeVm();
         vm.IsCreating       = true;
         vm.NewCharacterName = "Hero";
+        vm.SelectedClass    = "Fighter";
 
         await vm.CreateCommand.Execute();
 
@@ -156,6 +170,7 @@ public class CharacterSelectViewModelTests : TestBase
         };
         var vm = MakeVm(chars: fake);
         vm.NewCharacterName = "Hero";
+        vm.SelectedClass    = "Fighter";
 
         await vm.CreateCommand.Execute();
 
@@ -168,6 +183,7 @@ public class CharacterSelectViewModelTests : TestBase
         var fake = new FakeCharacterService { CreateResult = (null, null) };
         var vm   = MakeVm(chars: fake);
         vm.NewCharacterName = "Hero";
+        vm.SelectedClass    = "Fighter";
 
         await vm.CreateCommand.Execute();
 
@@ -179,6 +195,7 @@ public class CharacterSelectViewModelTests : TestBase
     {
         var vm = MakeVm();
         vm.NewCharacterName = "Hero";
+        vm.SelectedClass    = "Fighter";
 
         await vm.CreateCommand.Execute();
 
@@ -263,7 +280,12 @@ public class CharacterSelectViewModelTests : TestBase
 
         // Simulate server firing "ZoneEntered" event
         conn.FireEvent("ZoneEntered",
-            new CharacterSelectViewModel.ZoneEnteredPayload("starting-zone", ["Alice", "Bob"]));
+            new CharacterSelectViewModel.ZoneEnteredPayload(
+                "starting-zone", "Starter Zone", "A starter zone", "Town",
+                [
+                    new CharacterSelectViewModel.OccupantInfo(Guid.NewGuid(), "Alice", DateTimeOffset.UtcNow),
+                    new CharacterSelectViewModel.OccupantInfo(Guid.NewGuid(), "Bob", DateTimeOffset.UtcNow)
+                ]));
 
         nav.NavigationLog.Should().Contain(typeof(GameViewModel));
     }
@@ -282,7 +304,12 @@ public class CharacterSelectViewModelTests : TestBase
         await gameVm.InitializeAsync("Hero", "starting-zone");
 
         conn.FireEvent("ZoneEntered",
-            new CharacterSelectViewModel.ZoneEnteredPayload("starting-zone", ["Alice", "Bob"]));
+            new CharacterSelectViewModel.ZoneEnteredPayload(
+                "starting-zone", "Starter Zone", "A starter zone", "Town",
+                [
+                    new CharacterSelectViewModel.OccupantInfo(Guid.NewGuid(), "Alice", DateTimeOffset.UtcNow),
+                    new CharacterSelectViewModel.OccupantInfo(Guid.NewGuid(), "Bob", DateTimeOffset.UtcNow)
+                ]));
 
         gameVm.OnlinePlayers.Should().BeEquivalentTo(["Alice", "Bob"]);
     }
@@ -526,5 +553,59 @@ public class CharacterSelectViewModelTests : TestBase
         var vm = MakeVm();
         await vm.ShowCreateCommand.Execute();
         vm.PanelTitle.Should().Be("New Character");
+    }
+
+    // ── SelectedClass / AvailableClasses ──────────────────────────────────────
+
+    [Fact]
+    public async Task CancelCreateCommand_Should_Reset_SelectedClass()
+    {
+        var vm = MakeVm();
+        vm.SelectedClass = "Fighter";
+
+        await vm.CancelCreateCommand.Execute();
+
+        vm.SelectedClass.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AvailableClasses_Should_Contain_Expected_Classes()
+    {
+        var vm = MakeVm();
+        vm.AvailableClasses.Should().Contain(["Fighter", "Mage", "Rogue", "Cleric", "Ranger", "Paladin"]);
+    }
+
+    // ── Hub Error event ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Set_ErrorMessage_When_Hub_Sends_Error()
+    {
+        var conn      = new FakeServerConnectionService();
+        var nav       = new FakeNavigationService();
+        var gameVm    = MakeGameVm(conn: conn, nav: nav);
+        var vm        = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(character);
+        conn.FireEvent("Error", "Character does not belong to this account");
+
+        vm.ErrorMessage.Should().Be("Character does not belong to this account");
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Not_Navigate_To_Game_When_Hub_Sends_Error()
+    {
+        var conn      = new FakeServerConnectionService();
+        var nav       = new FakeNavigationService();
+        var gameVm    = MakeGameVm(conn: conn, nav: nav);
+        var vm        = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(character);
+        conn.FireEvent("Error", "Zone not found");
+
+        nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
     }
 }
