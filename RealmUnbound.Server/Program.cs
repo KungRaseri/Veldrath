@@ -52,25 +52,11 @@ try
                   .AllowCredentials());
     });
 
-    // ── Database provider (sqlite = local dev, postgres = Docker/prod) ────────
-    var dbProvider       = builder.Configuration["Database:Provider"] ?? "postgres";
+    // ── Database (PostgreSQL — design-time and runtime both target Postgres) ──
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    {
-        if (dbProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
-            options.UseSqlite(connectionString);
-        else
-            options.UseNpgsql(connectionString);
-
-        // Migrations are generated against SQLite (design-time factory).
-        // When running against Postgres the model-snapshot comparison detects
-        // provider-specific column-type differences that aren't real schema changes.
-        // The actual SQL migrations are applied correctly by MigrateAsync(), so
-        // suppress the spurious warning.
-        options.ConfigureWarnings(w =>
-            w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-    });
+        options.UseNpgsql(connectionString));
 
     // ── ASP.NET Core Identity ─────────────────────────────────────────────────
     builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
@@ -145,10 +131,9 @@ try
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
 
     // ── Health checks ─────────────────────────────────────────────────────────
-    var healthChecks = builder.Services.AddHealthChecks();
-    if (dbProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase))
-        healthChecks.AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"]);
-    healthChecks.AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);
+    builder.Services.AddHealthChecks()
+        .AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"])
+        .AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);
 
     var app = builder.Build();
 

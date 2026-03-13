@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RealmUnbound.Server.Data;
@@ -33,15 +34,26 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Test");
 
-        // UseSetting has highest priority — overrides all appsettings sources.
-        builder.UseSetting("Database:Provider",                  "sqlite");
-        builder.UseSetting("ConnectionStrings:DefaultConnection", ConnStr);
-        builder.UseSetting("Jwt:Key",                            "test-secret-key-for-integration-tests!!");
-        builder.UseSetting("Jwt:Issuer",                         "RealmUnbound.Test");
-        builder.UseSetting("Jwt:Audience",                       "RealmUnbound.Test");
-        builder.UseSetting("Jwt:AccessTokenExpiryMinutes",       "15");
-        builder.UseSetting("Jwt:RefreshTokenExpiryDays",         "30");
-        builder.UseSetting("RealmEngine:DataPath",               GetDataPath());
+        // Production DbContext (Postgres) is replaced below via ConfigureServices.
+        // Only non-DB settings are set here.
+        builder.UseSetting("Jwt:Key",                      "test-secret-key-for-integration-tests!!");
+        builder.UseSetting("Jwt:Issuer",                   "RealmUnbound.Test");
+        builder.UseSetting("Jwt:Audience",                 "RealmUnbound.Test");
+        builder.UseSetting("Jwt:AccessTokenExpiryMinutes", "15");
+        builder.UseSetting("Jwt:RefreshTokenExpiryDays",   "30");
+        builder.UseSetting("RealmEngine:DataPath",         GetDataPath());
+
+        // Replace the production Postgres DbContext with an in-memory SQLite instance.
+        builder.ConfigureServices(services =>
+        {
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+            if (descriptor is not null)
+                services.Remove(descriptor);
+
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite(ConnStr));
+        });
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
