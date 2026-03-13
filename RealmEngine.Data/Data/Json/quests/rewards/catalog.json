@@ -1,199 +1,24 @@
-{
-  "metadata": {
-    "description": "Quest rewards catalog organized by reward type",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
-    "type": "quest_rewards_catalog"
-  },
-  "reward_types": {
-    "gold": {
-      "items": [
-        {
-          "slug": "small-purse",
-          "name": "small-purse",
-          "rarityWeight": 50,
-          "amount": {
-            "min": 10,
-            "max": 50
-          },
-          "description": "Small monetary reward"
-        },
-        {
-          "slug": "modest-payment",
-          "name": "modest-payment",
-          "rarityWeight": 70,
-          "amount": {
-            "min": 50,
-            "max": 150
-          },
-          "description": "Modest gold payment"
-        },
-        {
-          "slug": "generous-reward",
-          "name": "generous-reward",
-          "rarityWeight": 100,
-          "amount": {
-            "min": 150,
-            "max": 500
-          },
-          "description": "Generous gold reward"
-        },
-        {
-          "slug": "fortune",
-          "name": "fortune",
-          "rarityWeight": 200,
-          "amount": {
-            "min": 500,
-            "max": 2000
-          },
-          "description": "A small fortune in gold"
-        }
-      ]
-    },
-    "item": {
-      "items": [
-        {
-          "slug": "common-weapon",
-          "name": "common-weapon",
-          "rarityWeight": 60,
-          "itemReference": "@items/weapons:*",
-          "quantity": 1,
-          "description": "Common weapon reward"
-        },
-        {
-          "slug": "uncommon-armor",
-          "name": "uncommon-armor",
-          "rarityWeight": 100,
-          "itemReference": "@items/armor:*",
-          "quantity": 1,
-          "description": "Uncommon armor piece"
-        },
-        {
-          "slug": "rare-item",
-          "name": "rare-item",
-          "rarityWeight": 180,
-          "itemReference": "@items/weapons:*",
-          "quantity": 1,
-          "description": "Rare item reward"
-        },
-        {
-          "slug": "epic-equipment",
-          "name": "epic-equipment",
-          "rarityWeight": 300,
-          "itemReference": "@items/armor:*",
-          "quantity": 1,
-          "description": "Epic equipment"
-        },
-        {
-          "slug": "legendary-artifact",
-          "name": "legendary-artifact",
-          "rarityWeight": 500,
-          "itemReference": "@items/weapons:*",
-          "quantity": 1,
-          "description": "Legendary artifact"
-        },
-        {
-          "slug": "potion-bundle",
-          "name": "potion-bundle",
-          "rarityWeight": 40,
-          "itemReference": "@items/materials:*",
-          "quantity": {
-            "min": 3,
-            "max": 10
-          },
-          "description": "Bundle of potions"
-        }
-      ],
-      "reputation_rewards": [
-        {
-          "name": "minor-favor",
-          "rarityWeight": 50,
-          "factionReference": "@organizations/factions/*:*",
-          "reputationGain": {
-            "min": 10,
-            "max": 50
-          },
-          "description": "Gain minor favor with faction"
-        },
-        {
-          "name": "significant-standing",
-          "rarityWeight": 100,
-          "factionReference": "@organizations/factions/*:*",
-          "reputationGain": {
-            "min": 50,
-            "max": 200
-          },
-          "description": "Significant reputation increase"
-        },
-        {
-          "name": "honored-ally",
-          "rarityWeight": 200,
-          "factionReference": "@organizations/factions/*:*",
-          "reputationGain": {
-            "min": 200,
-            "max": 500
-          },
-          "description": "Become honored ally of faction"
-        }
-      ],
-      "ability_rewards": [
-        {
-          "name": "basic-skill",
-          "rarityWeight": 80,
-          "abilityReference": "@abilities/passive/*:*",
-          "description": "Learn basic skill"
-        },
-        {
-          "name": "advanced-technique",
-          "rarityWeight": 150,
-          "abilityReference": "@abilities/active/*:*",
-          "description": "Master advanced technique"
-        },
-        {
-          "name": "legendary-power",
-          "rarityWeight": 400,
-          "abilityReference": "@abilities/active/*:*",
-          "description": "Unlock legendary power"
-        }
-      ],
-      "experience_rewards": [
-        {
-          "name": "small-xp-boost",
-          "rarityWeight": 40,
-          "experienceAmount": {
-            "min": 50,
-            "max": 200
-          },
-          "description": "Small experience gain"
-        },
-        {
-          "name": "moderate-xp",
-          "rarityWeight": 70,
-          "experienceAmount": {
-            "min": 200,
-            "max": 500
-          },
-          "description": "Moderate experience reward"
-        },
-        {
-          "name": "large-xp-gain",
-          "rarityWeight": 120,
-          "experienceAmount": {
-            "min": 500,
-            "max": 1500
-          },
-          "description": "Large experience gain"
-        },
-        {
-          "name": "massive-xp-bonus",
-          "rarityWeight": 200,
-          "experienceAmount": {
-            "min": 1500,
-            "max": 5000
-          },
-          "description": "Massive experience bonus"
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Quest rewards catalog organized by reward type",
+                     "version":  "4.0",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "quest_rewards_catalog"
+                 },
+    "reward_types":  {
+                         "gold":  {
+                                      "items":  [
+                                                    {
+                                                        "slug":  "small-purse",
+                                                        "name":  "small-purse",
+                                                        "rarityWeight":  50,
+                                                        "amount":  {
+                                                                       "min":  10,
+                                                                       "max":  50
+                                                                   },
+                                                        "description":  "Small monetary reward"
+                                                    }
+                                                ]
+                                  }
+                     }
 }

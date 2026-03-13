@@ -16,7 +16,7 @@
       "numerator": 60,
       "field": "rarityWeight",
       "scaleField": "costScale",
-      "description": "Material cost = (60 / rarityWeight) × costScale. Higher rarityWeight = more common = cheaper. costScale defaults to 1.0 if omitted."
+      "description": "Material cost = (6000 / rarityWeight) × costScale. Higher rarityWeight = more common = cheaper. costScale defaults to 1.0 if omitted."
     },
     "component": {
       "formula": "inverse",

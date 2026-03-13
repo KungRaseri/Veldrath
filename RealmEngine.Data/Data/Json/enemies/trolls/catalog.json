@@ -1,416 +1,65 @@
-{
-  "metadata": {
-    "description": "Troll enemy type catalog with base stats and rarityWeight values",
-    "version": "5.1",
-    "lastUpdated": "2026-01-08",
-    "type": "item_catalog",
-    "total_types": 10,
-    "categories": [
-      "common_trolls",
-      "elemental_trolls",
-      "special_trolls"
-    ],
-    "usage": "Provides base enemy types for pattern generation",
-    "notes": [
-      "Base catalog of trolls with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
-    ]
-  },
-  "troll_types": {
-    "common_trolls": {
-      "properties": {
-        "size": "large",
-        "category": "troll",
-        "damageType": "physical",
-        "behavior": "aggressive"
-      },
-      "items": [
-        {
-          "level": 8,
-          "slug": "troll",
-          "name": "Troll",
-          "rarityWeight": 98,
-          "xp": 140,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 30",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 120"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 9,
-          "slug": "cave-troll",
-          "name": "Cave Troll",
-          "rarityWeight": 92,
-          "xp": 160,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 34",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 12",
-            "health": "constitution_mod * 2 + level * 5 + 140"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "12": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 10,
-          "slug": "mountain-troll",
-          "name": "Mountain Troll",
-          "rarityWeight": 85,
-          "xp": 190,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 38",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 14",
-            "health": "constitution_mod * 2 + level * 5 + 160"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/active/offensive:*"
-              ],
-              "15": [
-                "@abilities/passive/defensive:Thick Hide"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 11,
-          "slug": "war-troll",
-          "name": "War Troll",
-          "rarityWeight": 78,
-          "xp": 220,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 42",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 16",
-            "health": "constitution_mod * 2 + level * 5 + 180"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "14": [
-                "@abilities/active/offensive:*"
-              ],
-              "16": [
-                "@abilities/passive:unstoppable"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "elemental_trolls": {
-      "properties": {
-        "size": "large",
-        "category": "troll",
-        "behavior": "elemental"
-      },
-      "items": [
-        {
-          "level": 10,
-          "slug": "ice-troll",
-          "name": "Ice Troll",
-          "rarityWeight": 82,
-          "xp": 180,
-          "attributes": {
-            "constitution": 20,
-            "wisdom": 9,
-            "strength": 18,
-            "dexterity": 8,
-            "intelligence": 5,
-            "charisma": 6
-          },
-          "stats": {
-            "attack": "strength_mod + level + 36",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 13",
-            "health": "constitution_mod * 2 + level * 5 + 150"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/active/offensive:*"
-              ],
-              "15": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {},
-          "vulnerability": "fire"
-        },
-        {
-          "level": 10,
-          "slug": "fire-troll",
-          "name": "Fire Troll",
-          "rarityWeight": 80,
-          "xp": 185,
-          "attributes": {
-            "constitution": 19,
-            "wisdom": 8,
-            "strength": 19,
-            "dexterity": 9,
-            "intelligence": 5,
-            "charisma": 6
-          },
-          "stats": {
-            "attack": "strength_mod + level + 40",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 11",
-            "health": "constitution_mod * 2 + level * 5 + 140"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/active/offensive:*"
-              ],
-              "15": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {},
-          "vulnerability": "cold",
-          "immunity": "fire"
-        },
-        {
-          "level": 10,
-          "slug": "venom-troll",
-          "name": "Venom Troll",
-          "rarityWeight": 75,
-          "xp": 190,
-          "attributes": {
-            "constitution": 19,
-            "wisdom": 9,
-            "strength": 18,
-            "dexterity": 8,
-            "intelligence": 6,
-            "charisma": 5
-          },
-          "stats": {
-            "attack": "strength_mod + level + 38",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 12",
-            "health": "constitution_mod * 2 + level * 5 + 135"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/active/offensive:*"
-              ],
-              "15": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {},
-          "vulnerability": "acid"
-        }
-      ]
-    },
-    "special_trolls": {
-      "properties": {
-        "size": "huge",
-        "category": "troll",
-        "behavior": "legendary"
-      },
-      "items": [
-        {
-          "level": 13,
-          "slug": "dire-troll",
-          "name": "Dire Troll",
-          "rarityWeight": 60,
-          "xp": 280,
-          "attributes": {
-            "constitution": 22,
-            "wisdom": 9,
-            "strength": 22,
-            "dexterity": 8,
-            "intelligence": 6,
-            "charisma": 6
-          },
-          "stats": {
-            "attack": "strength_mod + level + 48",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 18",
-            "health": "constitution_mod * 2 + level * 5 + 220"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "16": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration",
-              "@abilities/passive/defensive:Thick Hide"
-            ]
-          },
-          "traits": {},
-          "regeneration": true,
-          "vulnerability": "fire"
-        },
-        {
-          "level": 12,
-          "slug": "troll-chieftain",
-          "name": "Troll Chieftain",
-          "rarityWeight": 65,
-          "xp": 250,
-          "attributes": {
-            "constitution": 21,
-            "wisdom": 11,
-            "strength": 21,
-            "dexterity": 9,
-            "intelligence": 14,
-            "charisma": 14
-          },
-          "stats": {
-            "attack": "strength_mod + level + 45",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 17",
-            "health": "constitution_mod * 2 + level * 5 + 200"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "15": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {},
-          "regeneration": true
-        },
-        {
-          "level": 15,
-          "slug": "ancient-troll",
-          "name": "Ancient Troll",
-          "rarityWeight": 40,
-          "xp": 350,
-          "attributes": {
-            "constitution": 22,
-            "wisdom": 10,
-            "strength": 23,
-            "dexterity": 10,
-            "intelligence": 12,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 55",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 22",
-            "health": "constitution_mod * 2 + level * 5 + 280"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "18": [
-                "@abilities/ultimate:*"
-              ],
-              "21": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Regeneration",
-              "@abilities/passive:unstoppable"
-            ]
-          },
-          "traits": {},
-          "regeneration": true,
-          "magical": true
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Troll enemy type catalog with base stats and rarityWeight values",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "item_catalog",
+                     "total_types":  10,
+                     "categories":  [
+                                        "common_trolls",
+                                        "elemental_trolls",
+                                        "special_trolls"
+                                    ],
+                     "usage":  "Provides base enemy types for pattern generation",
+                     "notes":  [
+                                   "Base catalog of trolls with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
+                               ]
+                 },
+    "troll_types":  {
+                        "common_trolls":  {
+                                              "properties":  {
+                                                                 "size":  "large",
+                                                                 "category":  "troll",
+                                                                 "damageType":  "physical",
+                                                                 "behavior":  "aggressive"
+                                                             },
+                                              "items":  [
+                                                            {
+                                                                "level":  8,
+                                                                "slug":  "troll",
+                                                                "name":  "Troll",
+                                                                "rarityWeight":  98,
+                                                                "xp":  140,
+                                                                "attributes":  {
+                                                                                   "constitution":  10,
+                                                                                   "wisdom":  8,
+                                                                                   "strength":  10,
+                                                                                   "dexterity":  10,
+                                                                                   "intelligence":  8,
+                                                                                   "charisma":  8
+                                                                               },
+                                                                "stats":  {
+                                                                              "attack":  "strength_mod + level + 30",
+                                                                              "speed":  "30 + dexterity_mod * 5",
+                                                                              "defense":  "10 + dexterity_mod + constitution_mod + 10",
+                                                                              "health":  "constitution_mod * 2 + level * 5 + 120"
+                                                                          },
+                                                                "combat":  {
+                                                                               "abilityUnlocks":  {
+                                                                                                      "10":  [
+                                                                                                                 "@abilities/active/offensive:*"
+                                                                                                             ]
+                                                                                                  },
+                                                                               "abilities":  [
+                                                                                                 "@abilities/active/offensive:*",
+                                                                                                 "@abilities/passive/defensive:Regeneration"
+                                                                                             ]
+                                                                           },
+                                                                "traits":  {
+
+                                                                           }
+                                                            }
+                                                        ]
+                                          }
+                    }
 }

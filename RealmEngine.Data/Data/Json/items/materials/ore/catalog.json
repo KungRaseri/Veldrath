@@ -1,85 +1,29 @@
-{
-  "metadata": {
-    "description": "Raw ores used in refining and blacksmithing",
-    "version": "4.0",
-    "lastUpdated": "2026-01-23",
-    "type": "item_catalog",
-    "totalItems": 5
-  },
-  "material_types": {
-    "ore": {
-      "items": [
-        {
-          "name": "Iron Ore",
-          "slug": "iron-ore",
-          "description": "Raw iron ore ready for smelting",
-          "rarityWeight": 70,
-          "value": 2,
-          "weight": 2.0,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "iron",
-            "category": "ore"
-          }
-        },
-        {
-          "name": "Copper Ore",
-          "slug": "copper-ore",
-          "description": "Raw copper ore used in bronze alloys",
-          "rarityWeight": 75,
-          "value": 1,
-          "weight": 1.8,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "copper",
-            "category": "ore"
-          }
-        },
-        {
-          "name": "Tin Ore",
-          "slug": "tin-ore",
-          "description": "Raw tin ore used in bronze alloys",
-          "rarityWeight": 75,
-          "value": 1,
-          "weight": 1.5,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "tin",
-            "category": "ore"
-          }
-        },
-        {
-          "name": "Mithril Ore",
-          "slug": "mithril-ore",
-          "description": "Rare mithril ore found in deep caverns",
-          "rarityWeight": 15,
-          "value": 50,
-          "weight": 1.2,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "mithril",
-            "category": "ore"
-          }
-        },
-        {
-          "name": "Adamantite Ore",
-          "slug": "adamantite-ore",
-          "description": "Incredibly rare and durable ore, the hardest known material",
-          "rarityWeight": 5,
-          "value": 150,
-          "weight": 1.5,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "adamantite",
-            "category": "ore"
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Raw ores used in refining and blacksmithing",
+                     "version":  "4.0",
+                     "lastUpdated":  "2026-01-23",
+                     "type":  "item_catalog",
+                     "totalItems":  1
+                 },
+    "material_types":  {
+                           "ore":  {
+                                       "items":  [
+                                                     {
+                                                         "name":  "Iron Ore",
+                                                         "slug":  "iron-ore",
+                                                         "description":  "Raw iron ore ready for smelting",
+                                                         "rarityWeight":  70,
+                                                         "value":  2,
+                                                         "weight":  2.0,
+                                                         "stackable":  true,
+                                                         "maxStack":  99,
+                                                         "traits":  {
+                                                                        "material":  "iron",
+                                                                        "category":  "ore"
+                                                                    }
+                                                     }
+                                                 ]
+                                   }
+                       }
 }

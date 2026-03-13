@@ -1,217 +1,79 @@
-{
-  "metadata": {
-    "type": "hierarchical_catalog",
-    "version": "5.1",
-    "description": "Noble NPCs - wealthy aristocrats with high social standing and influence",
-    "lastUpdated": "2026-01-08",
-    "socialClass": "noble",
-    "notes": [
-      "High charisma and intelligence",
-      "Extensive resources and connections",
-      "Etiquette and leadership skills",
-      "Expected to maintain appearances"
-    ]
-  },
-  "background_types": {
-    "aristocracy": {
-      "metadata": {
-        "description": "Born into wealth and privilege",
-        "socialClass": "noble",
-        "notes": [
-          "Highest social standing",
-          "Large starting gold reserves",
-          "Access to finest goods and services"
-        ]
-      },
-      "items": [
-        {
-          "slug": "nobleborn",
-          "name": "NobleBorn",
-          "displayName": "Noble-born",
-          "description": "Born into wealth and privilege",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 12,
-            "constitution": 11,
-            "intelligence": 13,
-            "wisdom": 12,
-            "charisma": 16
-          },
-          "rarityWeight": 60,
-          "socialClass": "noble",
-          "startingGold": "5d10",
-          "skillBonuses": [
-            "persuasion",
-            "etiquette",
-            "leadership",
-            "literacy"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 10,
-            "priceMultiplier": 1.15,
-            "shopAppearance": "elegant",
-            "rarityBonus": 10
-          },
-          "specializationHints": [
-            "weapons.finesse",
-            "armor.light",
-            "ceremonial"
-          ],
-          "uniqueItems": [
-            "Dueling Rapier",
-            "Silk-lined Gloves",
-            "Family Crest Ring",
-            "Perfumed Handkerchief"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:scholarly",
-          "greetings": [
-            "@social/dialogue/greetings/noble:noble-formal"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/noble:noble"
-          ],
-          "faction": "nobility",
-          "schedule": "@social/schedules/*:noble"
-        },
-        {
-          "slug": "knighterrant",
-          "name": "KnightErrant",
-          "displayName": "Knight Errant",
-          "description": "Sworn warrior of noble rank, seeking honor",
-          "attributes": {
-            "strength": 16,
-            "dexterity": 12,
-            "constitution": 15,
-            "intelligence": 11,
-            "wisdom": 12,
-            "charisma": 14
-          },
-          "rarityWeight": 55,
-          "socialClass": "noble",
-          "startingGold": "4d10",
-          "skillBonuses": [
-            "melee_combat",
-            "honor",
-            "leadership",
-            "tactics"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 12,
-            "priceMultiplier": 1.1,
-            "shopAppearance": "chivalrous",
-            "combatItemBonus": 15
-          },
-          "specializationHints": [
-            "weapons.melee",
-            "armor.heavy",
-            "ceremonial"
-          ],
-          "uniqueItems": [
-            "Knight's Oath Scroll",
-            "Heraldic Banner"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/noble:knight-honorable"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/noble:noble"
-          ],
-          "faction": "nobility",
-          "schedule": "@social/schedules/*:noble"
-        },
-        {
-          "slug": "courtattendant",
-          "name": "CourtAttendant",
-          "displayName": "Court Attendant",
-          "description": "Served in royal court",
-          "attributes": {
-            "strength": 9,
-            "dexterity": 11,
-            "constitution": 10,
-            "intelligence": 13,
-            "wisdom": 12,
-            "charisma": 16
-          },
-          "rarityWeight": 50,
-          "socialClass": "noble",
-          "startingGold": "4d8",
-          "skillBonuses": [
-            "persuasion",
-            "etiquette",
-            "intrigue",
-            "appraisal"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 8,
-            "priceMultiplier": 1.2,
-            "shopAppearance": "refined"
-          },
-          "specializationHints": [
-            "luxury",
-            "fine_goods",
-            "jewelry"
-          ],
-          "uniqueItems": [
-            "Courtier's Favor",
-            "Sealed Letter of Introduction"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:scholarly",
-          "greetings": [
-            "@social/dialogue/greetings/noble:courtier-refined"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/noble:noble"
-          ],
-          "faction": "nobility",
-          "schedule": "@social/schedules/*:noble"
-        }
-      ]
-    }
-  },
-  "occupation_types": {
-    "nobility": {
-      "metadata": {
-        "description": "Active nobles and aristocrats",
-        "hasShop": false,
-        "notes": [
-          "No shop or inventory",
-          "Quest givers and patrons",
-          "Political influence"
-        ]
-      },
-      "items": [
-        {
-          "slug": "noble",
-          "name": "Noble",
-          "displayName": "Noble",
-          "strength": 10,
-          "dexterity": 12,
-          "constitution": 11,
-          "intelligence": 14,
-          "wisdom": 12,
-          "charisma": 17,
-          "rarityWeight": 60,
-          "socialClass": "nobility",
-          "skillBonuses": [
-            "persuasion",
-            "etiquette",
-            "leadership"
-          ],
-          "baseGold": "10d10",
-          "shopType": null,
-          "shopChance": 0.0,
-          "dialogueStyle": "@social/dialogue/styles/formal:scholarly",
-          "greetings": [
-            "@social/dialogue/greetings/noble:noble-formal"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/noble:noble"
-          ],
-          "faction": "nobility",
-          "schedule": "@social/schedules/*:noble"
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "type":  "hierarchical_catalog",
+                     "version":  "5.1",
+                     "description":  "Noble NPCs - wealthy aristocrats with high social standing and influence",
+                     "lastUpdated":  "2026-01-08",
+                     "socialClass":  "noble",
+                     "notes":  [
+                                   "High charisma and intelligence",
+                                   "Extensive resources and connections",
+                                   "Etiquette and leadership skills",
+                                   "Expected to maintain appearances"
+                               ]
+                 },
+    "background_types":  {
+                             "aristocracy":  {
+                                                 "metadata":  {
+                                                                  "description":  "Born into wealth and privilege",
+                                                                  "socialClass":  "noble",
+                                                                  "notes":  [
+                                                                                "Highest social standing",
+                                                                                "Large starting gold reserves",
+                                                                                "Access to finest goods and services"
+                                                                            ]
+                                                              },
+                                                 "items":  [
+                                                               {
+                                                                   "slug":  "nobleborn",
+                                                                   "name":  "NobleBorn",
+                                                                   "displayName":  "Noble-born",
+                                                                   "description":  "Born into wealth and privilege",
+                                                                   "attributes":  {
+                                                                                      "strength":  10,
+                                                                                      "dexterity":  12,
+                                                                                      "constitution":  11,
+                                                                                      "intelligence":  13,
+                                                                                      "wisdom":  12,
+                                                                                      "charisma":  16
+                                                                                  },
+                                                                   "rarityWeight":  60,
+                                                                   "socialClass":  "noble",
+                                                                   "startingGold":  "5d10",
+                                                                   "skillBonuses":  [
+                                                                                        "persuasion",
+                                                                                        "etiquette",
+                                                                                        "leadership",
+                                                                                        "literacy"
+                                                                                    ],
+                                                                   "shopModifiers":  {
+                                                                                         "qualityBonus":  10,
+                                                                                         "priceMultiplier":  1.15,
+                                                                                         "shopAppearance":  "elegant",
+                                                                                         "rarityBonus":  10
+                                                                                     },
+                                                                   "specializationHints":  [
+                                                                                               "weapons.finesse",
+                                                                                               "armor.light",
+                                                                                               "ceremonial"
+                                                                                           ],
+                                                                   "uniqueItems":  [
+                                                                                       "Dueling Rapier",
+                                                                                       "Silk-lined Gloves",
+                                                                                       "Family Crest Ring",
+                                                                                       "Perfumed Handkerchief"
+                                                                                   ],
+                                                                   "dialogueStyle":  "@social/dialogue/styles/formal:scholarly",
+                                                                   "greetings":  [
+                                                                                     "@social/dialogue/greetings/noble:noble-formal"
+                                                                                 ],
+                                                                   "farewells":  [
+                                                                                     "@social/dialogue/farewells/noble:noble"
+                                                                                 ],
+                                                                   "faction":  "nobility",
+                                                                   "schedule":  "@social/schedules/*:noble"
+                                                               }
+                                                           ]
+                                             }
+                         }
 }

@@ -1,218 +1,72 @@
-{
-  "metadata": {
-    "description": "Quest objectives catalog organized by objective type",
-    "version": "4.0",
-    "lastUpdated": "2025-12-31",
-    "type": "quest_objectives_catalog"
-  },
-  "objective_types": {
-    "kill": {
-      "items": [
-        {
-          "slug": "goblin-extermination",
-          "name": "goblin-extermination",
-          "rarityWeight": 30,
-          "targetType": "goblin",
-          "targetCount": {
-            "min": 5,
-            "max": 10
-          },
-          "description": "Slay goblins threatening the region",
-          "locationHint": "goblin-camps"
-        },
-        {
-          "slug": "wolf-hunt",
-          "name": "wolf-hunt",
-          "rarityWeight": 35,
-          "targetType": "wolf",
-          "targetCount": {
-            "min": 3,
-            "max": 8
-          },
-          "description": "Hunt wolves attacking travelers",
-          "locationHint": "forests"
-        },
-        {
-          "slug": "bandit-elimination",
-          "name": "bandit-elimination",
-          "rarityWeight": 40,
-          "targetType": "bandit",
-          "targetCount": {
-            "min": 4,
-            "max": 12
-          },
-          "description": "Clear out bandit groups",
-          "locationHint": "roads"
-        },
-        {
-          "slug": "undead-purge",
-          "name": "undead-purge",
-          "rarityWeight": 60,
-          "targetType": "undead",
-          "targetCount": {
-            "min": 8,
-            "max": 15
-          },
-          "description": "Cleanse undead from sacred grounds",
-          "locationHint": "graveyards"
-        },
-        {
-          "slug": "dragon-slaying",
-          "name": "dragon-slaying",
-          "rarityWeight": 300,
-          "targetType": "dragon",
-          "targetCount": {
-            "min": 1,
-            "max": 1
-          },
-          "description": "Slay the legendary dragon",
-          "locationHint": "dragon-lair"
-        }
-      ],
-      "fetch_objectives": [
-        {
-          "name": "herb-gathering",
-          "rarityWeight": 25,
-          "itemType": "herbs",
-          "itemCount": {
-            "min": 5,
-            "max": 20
-          },
-          "description": "Collect medicinal herbs",
-          "locationHint": "forests"
-        },
-        {
-          "name": "ore-collection",
-          "rarityWeight": 35,
-          "itemType": "ore",
-          "itemCount": {
-            "min": 3,
-            "max": 10
-          },
-          "description": "Mine valuable ore deposits",
-          "locationHint": "caves"
-        },
-        {
-          "name": "artifact-retrieval",
-          "rarityWeight": 150,
-          "itemType": "artifact",
-          "itemCount": {
-            "min": 1,
-            "max": 1
-          },
-          "description": "Recover ancient artifact",
-          "locationHint": "ruins"
-        },
-        {
-          "name": "lost-item-recovery",
-          "rarityWeight": 40,
-          "itemType": "personal-item",
-          "itemCount": {
-            "min": 1,
-            "max": 1
-          },
-          "description": "Find and return lost belongings",
-          "locationHint": "various"
-        }
-      ]
-    },
-    "fetch": {
-      "items": [
-        {
-          "slug": "merchant-escort",
-          "name": "merchant-escort",
-          "rarityWeight": 50,
-          "npcType": "merchant",
-          "destination": "town",
-          "distance": "medium",
-          "description": "Escort merchant safely to destination",
-          "dangerLevel": "moderate"
-        },
-        {
-          "slug": "noble-protection",
-          "name": "noble-protection",
-          "rarityWeight": 120,
-          "npcType": "noble",
-          "destination": "castle",
-          "distance": "long",
-          "description": "Protect noble during travel",
-          "dangerLevel": "high"
-        },
-        {
-          "slug": "refugee-guidance",
-          "name": "refugee-guidance",
-          "rarityWeight": 40,
-          "npcType": "refugees",
-          "destination": "safe-haven",
-          "distance": "short",
-          "description": "Guide refugees to safety",
-          "dangerLevel": "low"
-        }
-      ],
-      "investigate_objectives": [
-        {
-          "name": "disappearance-investigation",
-          "rarityWeight": 70,
-          "investigationType": "missing-persons",
-          "clueCount": {
-            "min": 3,
-            "max": 5
-          },
-          "description": "Investigate mysterious disappearances",
-          "locationHint": "village"
-        },
-        {
-          "name": "ruins-exploration",
-          "rarityWeight": 100,
-          "investigationType": "exploration",
-          "clueCount": {
-            "min": 4,
-            "max": 6
-          },
-          "description": "Explore and document ancient ruins",
-          "locationHint": "ruins"
-        },
-        {
-          "name": "corruption-source",
-          "rarityWeight": 180,
-          "investigationType": "supernatural",
-          "clueCount": {
-            "min": 5,
-            "max": 8
-          },
-          "description": "Discover source of dark corruption",
-          "locationHint": "cursed-lands"
-        }
-      ],
-      "delivery_objectives": [
-        {
-          "name": "message-delivery",
-          "rarityWeight": 20,
-          "deliveryType": "message",
-          "recipient": "npc",
-          "destination": "town",
-          "timeLimit": "flexible",
-          "description": "Deliver message to recipient"
-        },
-        {
-          "name": "package-transport",
-          "rarityWeight": 30,
-          "deliveryType": "package",
-          "recipient": "merchant",
-          "destination": "city",
-          "timeLimit": "moderate",
-          "description": "Transport package safely"
-        },
-        {
-          "name": "urgent-dispatch",
-          "rarityWeight": 80,
-          "deliveryType": "urgent-message",
-          "recipient": "commander",
-          "destination": "fortress",
-          "timeLimit": "strict",
-          "description": "Deliver urgent war dispatch"
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Quest objectives catalog organized by objective type",
+                     "version":  "4.0",
+                     "lastUpdated":  "2025-12-31",
+                     "type":  "quest_objectives_catalog"
+                 },
+    "objective_types":  {
+                            "kill":  {
+                                         "items":  [
+                                                       {
+                                                           "slug":  "goblin-extermination",
+                                                           "name":  "goblin-extermination",
+                                                           "rarityWeight":  30,
+                                                           "targetType":  "goblin",
+                                                           "targetCount":  {
+                                                                               "min":  5,
+                                                                               "max":  10
+                                                                           },
+                                                           "description":  "Slay goblins threatening the region",
+                                                           "locationHint":  "goblin-camps"
+                                                       }
+                                                   ],
+                                         "fetch_objectives":  [
+                                                                  {
+                                                                      "name":  "herb-gathering",
+                                                                      "rarityWeight":  25,
+                                                                      "itemType":  "herbs",
+                                                                      "itemCount":  {
+                                                                                        "min":  5,
+                                                                                        "max":  20
+                                                                                    },
+                                                                      "description":  "Collect medicinal herbs",
+                                                                      "locationHint":  "forests"
+                                                                  },
+                                                                  {
+                                                                      "name":  "ore-collection",
+                                                                      "rarityWeight":  35,
+                                                                      "itemType":  "ore",
+                                                                      "itemCount":  {
+                                                                                        "min":  3,
+                                                                                        "max":  10
+                                                                                    },
+                                                                      "description":  "Mine valuable ore deposits",
+                                                                      "locationHint":  "caves"
+                                                                  },
+                                                                  {
+                                                                      "name":  "artifact-retrieval",
+                                                                      "rarityWeight":  150,
+                                                                      "itemType":  "artifact",
+                                                                      "itemCount":  {
+                                                                                        "min":  1,
+                                                                                        "max":  1
+                                                                                    },
+                                                                      "description":  "Recover ancient artifact",
+                                                                      "locationHint":  "ruins"
+                                                                  },
+                                                                  {
+                                                                      "name":  "lost-item-recovery",
+                                                                      "rarityWeight":  40,
+                                                                      "itemType":  "personal-item",
+                                                                      "itemCount":  {
+                                                                                        "min":  1,
+                                                                                        "max":  1
+                                                                                    },
+                                                                      "description":  "Find and return lost belongings",
+                                                                      "locationHint":  "various"
+                                                                  }
+                                                              ]
+                                     }
+                        }
 }

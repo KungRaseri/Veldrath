@@ -1,188 +1,60 @@
-{
-  "metadata": {
-    "description": "Goblinoid name generation patterns with weight-based rarity components",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "rank",
-      "tribe",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "rank",
-      "tribe",
-      "title"
-    ],
-    "totalPatterns": 6,
-    "raritySystem": "weight-based",
-    "notes": [
-      "base_token: Resolves to item name from goblinoids/catalog.json",
-      "tribal_culture: Goblinoids organize in tribes/clans with hierarchies",
-      "weight_ranges: Young (3) → King (60), Cave (5) → Skullcrusher (35)",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "rank": [
-      {
-        "rarityWeight": 3,
-        "name": "Young"
-      },
-      {
-        "rarityWeight": 5,
-        "name": "Lesser"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Common"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Elite"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "War"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Chief"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "King"
-      }
-    ],
-    "tribe": [
-      {
-        "rarityWeight": 5,
-        "name": "Cave"
-      },
-      {
-        "rarityWeight": 5,
-        "name": "Forest"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Mountain"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Shadow"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Blood"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Iron"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Blackfang"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Skullcrusher"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 8,
-        "name": "Raider"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Warrior"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Slayer"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Hunter"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Shaman"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Warlord"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Chieftain"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Overlord"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 5,
-        "name": "Sneaky"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Cunning"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Brutal"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Vicious"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Ruthless"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Savage"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Merciless"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Bloodthirsty"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{rank} {base}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{base} {title}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{tribe} {base}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{rank} {tribe} {base}"
-    },
-    {
-      "rarityWeight": 10,
-      "pattern": "{rank} {tribe} {base} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Goblinoid name generation patterns with weight-based rarity components",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "rank",
+                                           "tribe",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "rank",
+                                           "tribe",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "base_token: Resolves to item name from goblinoids/catalog.json",
+                                   "tribal_culture: Goblinoids organize in tribes/clans with hierarchies",
+                                   "weight_ranges: Young (3) → King (60), Cave (5) → Skullcrusher (35)",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "rank":  [
+                                    {
+                                        "rarityWeight":  3,
+                                        "name":  "Young"
+                                    }
+                                ],
+                       "tribe":  [
+                                     {
+                                         "rarityWeight":  5,
+                                         "name":  "Cave"
+                                     }
+                                 ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  8,
+                                         "name":  "Raider"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  5,
+                                          "name":  "Sneaky"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

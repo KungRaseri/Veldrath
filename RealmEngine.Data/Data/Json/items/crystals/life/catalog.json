@@ -1,91 +1,37 @@
-{
-  "metadata": {
-    "description": "Life crystals providing health-related bonuses",
-    "version": "5.1",
-    "lastUpdated": "2026-01-11",
-    "type": "crystal_catalog"
-  },
-  "crystal_types": {
-    "life": {
-      "items": [
-        {
-          "slug": "life-crystal",
-          "rarityWeight": 60,
-          "name": "Life Crystal",
-          "attributes": {
-            "constitution": 10,
-            "dexterity": 10,
-            "strength": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "wisdom": 8
-          },
-          "traits": {
-            "maxHealth": {
-              "value": 40,
-              "type": "number"
-            },
-            "healthRegen": {
-              "value": 3,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "slug": "vitality-crystal",
-          "rarityWeight": 45,
-          "name": "Vitality Crystal",
-          "attributes": {
-            "constitution": 10,
-            "dexterity": 10,
-            "strength": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "wisdom": 8
-          },
-          "traits": {
-            "maxHealth": {
-              "value": 60,
-              "type": "number"
-            },
-            "healthRegen": {
-              "value": 5,
-              "type": "number"
-            },
-            "armor": {
-              "value": 10,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "slug": "rejuvenation-crystal",
-          "rarityWeight": 35,
-          "name": "Rejuvenation Crystal",
-          "attributes": {
-            "constitution": 10,
-            "dexterity": 10,
-            "strength": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "wisdom": 8
-          },
-          "traits": {
-            "healthRegen": {
-              "value": 10,
-              "type": "number"
-            },
-            "maxHealth": {
-              "value": 30,
-              "type": "number"
-            },
-            "lifesteal": {
-              "value": 5,
-              "type": "number"
-            }
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Life crystals providing health-related bonuses",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-11",
+                     "type":  "crystal_catalog"
+                 },
+    "crystal_types":  {
+                          "life":  {
+                                       "items":  [
+                                                     {
+                                                         "slug":  "life-crystal",
+                                                         "rarityWeight":  60,
+                                                         "name":  "Life Crystal",
+                                                         "attributes":  {
+                                                                            "constitution":  10,
+                                                                            "dexterity":  10,
+                                                                            "strength":  10,
+                                                                            "intelligence":  8,
+                                                                            "charisma":  8,
+                                                                            "wisdom":  8
+                                                                        },
+                                                         "traits":  {
+                                                                        "maxHealth":  {
+                                                                                          "value":  40,
+                                                                                          "type":  "number"
+                                                                                      },
+                                                                        "healthRegen":  {
+                                                                                            "value":  3,
+                                                                                            "type":  "number"
+                                                                                        }
+                                                                    }
+                                                     }
+                                                 ]
+                                   }
+                      }
 }

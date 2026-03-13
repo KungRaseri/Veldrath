@@ -1,668 +1,152 @@
-{
-  "metadata": {
-    "description": "Demon enemy type catalog with base stats and traits",
-    "version": "5.1",
-    "lastUpdated": "2026-01-09",
-    "type": "item_catalog",
-    "total_demon_types": 6,
-    "total_demons": 17,
-    "usage": "Provides base enemy types for pattern generation",
-    "notes": [
-      "Base catalog of demons with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
-      "Abyssal demons category added for main quest mid-game boss (Quest #5)",
-      "Demon lords category contains final boss (Dark Lord) for main quest (Quest #6)"
-    ]
-  },
-  "demon_types": {
-    "lesser_demons": {
-      "properties": {
-        "size": "small",
-        "category": "demon",
-        "behavior": "chaotic"
-      },
-      "items": [
-        {
-          "level": 2,
-          "slug": "imp",
-          "name": "Imp",
-          "rarityWeight": 105,
-          "xp": 40,
-          "attributes": {
-            "constitution": 11,
-            "wisdom": 10,
-            "strength": 9,
-            "dexterity": 15,
-            "intelligence": 12,
-            "charisma": 10
-          },
-          "stats": {
-            "attack": "strength_mod + level + 6",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 3",
-            "health": "constitution_mod * 2 + level * 5 + 20"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "3": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 4,
-          "slug": "shadow-demon",
-          "name": "Shadow Demon",
-          "rarityWeight": 98,
-          "xp": 70,
-          "attributes": {
-            "constitution": 12,
-            "wisdom": 12,
-            "strength": 10,
-            "dexterity": 16,
-            "intelligence": 13,
-            "charisma": 11
-          },
-          "stats": {
-            "attack": "strength_mod + level + 9",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 4",
-            "health": "constitution_mod * 2 + level * 5 + 35"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "5": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "demons": {
-      "properties": {
-        "size": "medium",
-        "category": "demon",
-        "behavior": "aggressive"
-      },
-      "items": [
-        {
-          "level": 8,
-          "slug": "demon",
-          "name": "Demon",
-          "rarityWeight": 90,
-          "xp": 200,
-          "attributes": {
-            "constitution": 16,
-            "wisdom": 12,
-            "strength": 14,
-            "dexterity": 13,
-            "intelligence": 16,
-            "charisma": 14
-          },
-          "stats": {
-            "attack": "strength_mod + level + 16",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 80"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/active/offensive:*"
-              ],
-              "13": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 10,
-          "slug": "vrock",
-          "name": "Vrock",
-          "rarityWeight": 82,
-          "xp": 300,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 12,
-            "strength": 18,
-            "dexterity": 15,
-            "intelligence": 8,
-            "charisma": 10
-          },
-          "stats": {
-            "attack": "strength_mod + level + 18",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 12",
-            "health": "constitution_mod * 2 + level * 5 + 100"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 7,
-          "slug": "hellhound",
-          "name": "Hellhound",
-          "rarityWeight": 92,
-          "xp": 180,
-          "attributes": {
-            "constitution": 15,
-            "wisdom": 12,
-            "strength": 15,
-            "dexterity": 16,
-            "intelligence": 4,
-            "charisma": 7
-          },
-          "stats": {
-            "attack": "strength_mod + level + 15",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 8",
-            "health": "constitution_mod * 2 + level * 5 + 70"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "9": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 9,
-          "slug": "nightmare",
-          "name": "Nightmare",
-          "rarityWeight": 85,
-          "xp": 250,
-          "attributes": {
-            "constitution": 16,
-            "wisdom": 13,
-            "strength": 16,
-            "dexterity": 15,
-            "intelligence": 6,
-            "charisma": 10
-          },
-          "stats": {
-            "attack": "strength_mod + level + 17",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 90"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "12": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "devils": {
-      "properties": {
-        "size": "medium",
-        "category": "demon",
-        "behavior": "tactical"
-      },
-      "items": [
-        {
-          "level": 9,
-          "slug": "devil",
-          "name": "Devil",
-          "rarityWeight": 88,
-          "xp": 230,
-          "attributes": {
-            "constitution": 16,
-            "wisdom": 14,
-            "strength": 14,
-            "dexterity": 13,
-            "intelligence": 17,
-            "charisma": 16
-          },
-          "stats": {
-            "attack": "strength_mod + level + 17",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 12",
-            "health": "constitution_mod * 2 + level * 5 + 85"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "12": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 8,
-          "slug": "incubus",
-          "name": "Incubus",
-          "rarityWeight": 90,
-          "xp": 200,
-          "attributes": {
-            "constitution": 14,
-            "wisdom": 13,
-            "strength": 12,
-            "dexterity": 14,
-            "intelligence": 14,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 14",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 9",
-            "health": "constitution_mod * 2 + level * 5 + 75"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 8,
-          "slug": "succubus",
-          "name": "Succubus",
-          "rarityWeight": 90,
-          "xp": 200,
-          "attributes": {
-            "constitution": 14,
-            "wisdom": 13,
-            "strength": 12,
-            "dexterity": 14,
-            "intelligence": 14,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 14",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 9",
-            "health": "constitution_mod * 2 + level * 5 + 75"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "abyssal_demons": {
-      "properties": {
-        "size": "large",
-        "category": "demon",
-        "behavior": "chaotic_evil"
-      },
-      "items": [
-        {
-          "level": 18,
-          "slug": "abyssal-lord",
-          "name": "Abyssal Lord",
-          "rarityWeight": 30,
-          "xp": 1800,
-          "attributes": {
-            "constitution": 20,
-            "wisdom": 16,
-            "strength": 22,
-            "dexterity": 16,
-            "intelligence": 18,
-            "charisma": 20
-          },
-          "stats": {
-            "attack": "strength_mod + level + 35",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 24",
-            "health": "constitution_mod * 2 + level * 5 + 300"
-          },
-          "combat": {
-            "behavior": "aggressive",
-            "abilityUnlocks": {
-              "20": [
-                "@abilities/active/offensive:*",
-                "@abilities/active/ultimate:*"
-              ],
-              "22": [
-                "@abilities/active/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*",
-              "@abilities/active/ultimate:*"
-            ]
-          },
-          "traits": {
-            "difficulty": "boss",
-            "title": "Lord of the Abyssal Depths",
-            "description": "A powerful demon lord commanding legions from the darkest pits of the abyss",
-            "immunities": [
-              "poison",
-              "necrotic"
-            ],
-            "vulnerabilities": [
-              "radiant"
-            ],
-            "resistances": [
-              "fire",
-              "physical"
-            ]
-          }
-        }
-      ]
-    },
-    "greater_fiends": {
-      "properties": {
-        "size": "large",
-        "category": "demon",
-        "behavior": "commanding"
-      },
-      "items": [
-        {
-          "level": 12,
-          "slug": "fiend",
-          "name": "Fiend",
-          "rarityWeight": 70,
-          "xp": 500,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 14,
-            "strength": 18,
-            "dexterity": 14,
-            "intelligence": 16,
-            "charisma": 16
-          },
-          "stats": {
-            "attack": "strength_mod + level + 22",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 16",
-            "health": "constitution_mod * 2 + level * 5 + 120"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "15": [
-                "@abilities/ultimate:*"
-              ],
-              "18": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 16,
-          "slug": "balor",
-          "name": "Balor",
-          "rarityWeight": 40,
-          "xp": 1200,
-          "attributes": {
-            "constitution": 22,
-            "wisdom": 14,
-            "strength": 24,
-            "dexterity": 14,
-            "intelligence": 16,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 30",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 20",
-            "health": "constitution_mod * 2 + level * 5 + 200"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "19": [
-                "@abilities/ultimate:*"
-              ],
-              "22": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 17,
-          "slug": "pit-fiend",
-          "name": "Pit Fiend",
-          "rarityWeight": 35,
-          "xp": 1400,
-          "attributes": {
-            "constitution": 23,
-            "wisdom": 16,
-            "strength": 24,
-            "dexterity": 13,
-            "intelligence": 18,
-            "charisma": 20
-          },
-          "stats": {
-            "attack": "strength_mod + level + 32",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 22",
-            "health": "constitution_mod * 2 + level * 5 + 220"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "20": [
-                "@abilities/ultimate:*",
-                "@abilities/ultimate:*"
-              ],
-              "23": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 15,
-          "slug": "marilith",
-          "name": "Marilith",
-          "rarityWeight": 45,
-          "xp": 1000,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 14,
-            "strength": 19,
-            "dexterity": 20,
-            "intelligence": 16,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 28",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 18",
-            "health": "constitution_mod * 2 + level * 5 + 180"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "18": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 14,
-          "slug": "beholder",
-          "name": "Beholder",
-          "rarityWeight": 50,
-          "xp": 900,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 25",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 15",
-            "health": "constitution_mod * 2 + level * 5 + 150"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "17": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "demon_lords": {
-      "properties": {
-        "size": "huge",
-        "category": "demon",
-        "behavior": "chaotic_evil",
-        "isBoss": true
-      },
-      "items": [
-        {
-          "level": 20,
-          "slug": "dark_lord",
-          "name": "Dark Lord",
-          "rarityWeight": 109,
-          "xp": 5000,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 14,
-            "strength": 20,
-            "dexterity": 16,
-            "intelligence": 16,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 45",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 30",
-            "health": "constitution_mod * 2 + level * 5 + 500"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "22": [
-                "@abilities/active/offensive:*",
-                "@abilities/active/offensive:*"
-              ],
-              "25": [
-                "@abilities/active/ultimate:*",
-                "@abilities/active/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*",
-              "@abilities/active/support:*",
-              "@abilities/active/ultimate:*"
-            ]
-          },
-          "traits": {
-            "difficulty": "boss",
-            "title": "The Dark Lord of All Evil",
-            "description": "The ultimate evil, master of demons and darkness. The final confrontation that will determine the fate of the realm.",
-            "immunities": [
-              "fire",
-              "poison",
-              "necrotic"
-            ],
-            "vulnerabilities": [
-              "radiant"
-            ],
-            "resistances": [
-              "physical"
-            ]
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Demon enemy type catalog with base stats and traits",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-09",
+                     "type":  "item_catalog",
+                     "total_demon_types":  6,
+                     "total_demons":  17,
+                     "usage":  "Provides base enemy types for pattern generation",
+                     "notes":  [
+                                   "Base catalog of demons with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
+                                   "Abyssal demons category added for main quest mid-game boss (Quest #5)",
+                                   "Demon lords category contains final boss (Dark Lord) for main quest (Quest #6)"
+                               ]
+                 },
+    "demon_types":  {
+                        "lesser_demons":  {
+                                              "properties":  {
+                                                                 "size":  "small",
+                                                                 "category":  "demon",
+                                                                 "behavior":  "chaotic"
+                                                             },
+                                              "items":  [
+                                                            {
+                                                                "level":  2,
+                                                                "slug":  "imp",
+                                                                "name":  "Imp",
+                                                                "rarityWeight":  105,
+                                                                "xp":  40,
+                                                                "attributes":  {
+                                                                                   "constitution":  11,
+                                                                                   "wisdom":  10,
+                                                                                   "strength":  9,
+                                                                                   "dexterity":  15,
+                                                                                   "intelligence":  12,
+                                                                                   "charisma":  10
+                                                                               },
+                                                                "stats":  {
+                                                                              "attack":  "strength_mod + level + 6",
+                                                                              "speed":  "30 + dexterity_mod * 5",
+                                                                              "defense":  "10 + dexterity_mod + constitution_mod + 3",
+                                                                              "health":  "constitution_mod * 2 + level * 5 + 20"
+                                                                          },
+                                                                "combat":  {
+                                                                               "abilityUnlocks":  {
+                                                                                                      "3":  [
+                                                                                                                "@abilities/active/offensive:*"
+                                                                                                            ]
+                                                                                                  },
+                                                                               "abilities":  [
+                                                                                                 "@abilities/active/offensive:*"
+                                                                                             ]
+                                                                           },
+                                                                "traits":  {
+
+                                                                           }
+                                                            }
+                                                        ]
+                                          },
+                        "abyssal_demons":  {
+                                               "properties":  {
+                                                                  "size":  "large",
+                                                                  "category":  "demon",
+                                                                  "behavior":  "destructive",
+                                                                  "isBoss":  true
+                                                              },
+                                               "items":  [
+                                                             {
+                                                                 "slug":  "abyssal-lord",
+                                                                 "name":  "Abyssal Lord",
+                                                                 "rarityWeight":  5,
+                                                                 "level":  18,
+                                                                 "description":  "A towering abyssal demon of immense power",
+                                                                 "xp":  3000,
+                                                                 "gold":  8,
+                                                                 "attributes":  {
+                                                                                    "strength":  20,
+                                                                                    "dexterity":  14,
+                                                                                    "constitution":  22,
+                                                                                    "intelligence":  18,
+                                                                                    "wisdom":  12,
+                                                                                    "charisma":  15
+                                                                                },
+                                                                 "stats":  {
+                                                                               "health":  "constitution_mod * 4 + level * 15 + 110",
+                                                                               "attack":  "strength_mod + level + 28",
+                                                                               "defense":  "10 + constitution_mod + 8",
+                                                                               "speed":  "25 + dexterity_mod * 5"
+                                                                           },
+                                                                 "combat":  {
+                                                                                "abilities":  [
+                                                                                                  "@abilities/active/offensive:*",
+                                                                                                  "@abilities/active/offensive:*",
+                                                                                                  "@abilities/active/offensive:*",
+                                                                                                  "@abilities/active/offensive:*",
+                                                                                                  "@abilities/active/offensive:*"
+                                                                                              ]
+                                                                            },
+                                                                 "traits":  {
+
+                                                                            }
+                                                             }
+                                                         ]
+                                           },
+                        "demon_lords":  {
+                                            "properties":  {
+                                                               "size":  "large",
+                                                               "category":  "demon",
+                                                               "behavior":  "domineering",
+                                                               "isBoss":  true
+                                                           },
+                                            "items":  [
+                                                          {
+                                                              "slug":  "dark-lord",
+                                                              "name":  "Dark Lord",
+                                                              "rarityWeight":  1,
+                                                              "level":  20,
+                                                              "description":  "The supreme demon lord and final boss of the main quest",
+                                                              "xp":  5000,
+                                                              "gold":  10,
+                                                              "attributes":  {
+                                                                                 "strength":  22,
+                                                                                 "dexterity":  16,
+                                                                                 "constitution":  24,
+                                                                                 "intelligence":  20,
+                                                                                 "wisdom":  14,
+                                                                                 "charisma":  18
+                                                                             },
+                                                              "stats":  {
+                                                                            "health":  "constitution_mod * 4 + level * 20 + 200",
+                                                                            "attack":  "strength_mod + level + 40",
+                                                                            "defense":  "10 + constitution_mod + 10",
+                                                                            "speed":  "25 + dexterity_mod * 5"
+                                                                        },
+                                                              "combat":  {
+                                                                             "abilities":  [
+                                                                                               "@abilities/active/offensive:*",
+                                                                                               "@abilities/active/offensive:*",
+                                                                                               "@abilities/active/offensive:*",
+                                                                                               "@abilities/active/offensive:*",
+                                                                                               "@abilities/active/offensive:*",
+                                                                                               "@abilities/active/offensive:*"
+                                                                                           ]
+                                                                         },
+                                                              "traits":  {
+
+                                                                         }
+                                                          }
+                                                      ]
+                                        }
+                    }
 }

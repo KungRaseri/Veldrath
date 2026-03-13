@@ -1,220 +1,60 @@
-{
-  "metadata": {
-    "description": "Dragon enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "age",
-      "color",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "age",
-      "color",
-      "title"
-    ],
-    "totalPatterns": 5,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Base token resolves from enemies/dragons/catalog.json",
-      "All components have rarityWeight for emergent rarity calculation",
-      "Component weights combine via multipliers from general/rarity_config.json",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "age": [
-      {
-        "rarityWeight": 10,
-        "name": "Young"
-      },
-      {
-        "rarityWeight": 5,
-        "name": "Wyrmling"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Adult"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "Ancient"
-      },
-      {
-        "rarityWeight": 80,
-        "name": "Elder"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Great"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Mighty"
-      },
-      {
-        "rarityWeight": 95,
-        "name": "Primordial"
-      },
-      {
-        "rarityWeight": 100,
-        "name": "Legendary"
-      }
-    ],
-    "color": [
-      {
-        "rarityWeight": 40,
-        "name": "Red"
-      },
-      {
-        "rarityWeight": 38,
-        "name": "Blue"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Green"
-      },
-      {
-        "rarityWeight": 37,
-        "name": "Black"
-      },
-      {
-        "rarityWeight": 33,
-        "name": "White"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Gold"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "Silver"
-      },
-      {
-        "rarityWeight": 42,
-        "name": "Bronze"
-      },
-      {
-        "rarityWeight": 38,
-        "name": "Copper"
-      },
-      {
-        "rarityWeight": 36,
-        "name": "Brass"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "Shadow"
-      },
-      {
-        "rarityWeight": 65,
-        "name": "Crystal"
-      },
-      {
-        "rarityWeight": 72,
-        "name": "Amethyst"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 50,
-        "name": "of the Mountain"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "of Destruction"
-      },
-      {
-        "rarityWeight": 100,
-        "name": "Worldeater"
-      },
-      {
-        "rarityWeight": 65,
-        "name": "the Wise"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "the Cruel"
-      },
-      {
-        "rarityWeight": 75,
-        "name": "the Mighty"
-      },
-      {
-        "rarityWeight": 90,
-        "name": "the Eternal"
-      },
-      {
-        "rarityWeight": 95,
-        "name": "of the Apocalypse"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 30,
-        "name": "Flame"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Storm"
-      },
-      {
-        "rarityWeight": 32,
-        "name": "Frost"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Volcanic"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Tempest"
-      },
-      {
-        "rarityWeight": 48,
-        "name": "Glacial"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "Inferno"
-      },
-      {
-        "rarityWeight": 42,
-        "name": "Thunder"
-      },
-      {
-        "rarityWeight": 38,
-        "name": "Poison"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Venomous"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{color} {base}"
-    },
-    {
-      "rarityWeight": 35,
-      "pattern": "{age} {base}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{age} {color} {base}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{age} {color} {base} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Dragon enemy name generation with pattern-based system and weight-based rarity",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "age",
+                                           "color",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "age",
+                                           "color",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Base token resolves from enemies/dragons/catalog.json",
+                                   "All components have rarityWeight for emergent rarity calculation",
+                                   "Component weights combine via multipliers from general/rarity_config.json",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "age":  [
+                                   {
+                                       "rarityWeight":  10,
+                                       "name":  "Young"
+                                   }
+                               ],
+                       "color":  [
+                                     {
+                                         "rarityWeight":  40,
+                                         "name":  "Red"
+                                     }
+                                 ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  50,
+                                         "name":  "of the Mountain"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  30,
+                                          "name":  "Flame"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

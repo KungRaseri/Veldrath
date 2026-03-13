@@ -1,497 +1,65 @@
-{
-  "metadata": {
-    "description": "Goblinoid enemy type catalog with base stats and rarityWeight values",
-    "version": "5.1",
-    "lastUpdated": "2026-01-08",
-    "type": "item_catalog",
-    "total_types": 12,
-    "categories": [
-      "goblins",
-      "hobgoblins",
-      "bugbears",
-      "special_goblinoids"
-    ],
-    "usage": "Provides base enemy types for pattern generation",
-    "notes": [
-      "Base catalog of goblinoids with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
-    ]
-  },
-  "goblinoid_types": {
-    "goblins": {
-      "properties": {
-        "size": "small",
-        "category": "goblinoid",
-        "damageType": "physical",
-        "behavior": "cowardly"
-      },
-      "items": [
-        {
-          "level": 1,
-          "slug": "goblin",
-          "name": "Goblin",
-          "rarityWeight": 107,
-          "xp": 10,
-          "attributes": {
-            "constitution": 11,
-            "wisdom": 10,
-            "strength": 8,
-            "dexterity": 16,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 5",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 2",
-            "health": "constitution_mod * 2 + level * 5 + 15"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "2": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 2,
-          "slug": "goblin-scout",
-          "name": "Goblin Scout",
-          "rarityWeight": 105,
-          "xp": 15,
-          "attributes": {
-            "constitution": 11,
-            "wisdom": 13,
-            "strength": 8,
-            "dexterity": 17,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 6",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 3",
-            "health": "constitution_mod * 2 + level * 5 + 18"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "3": [
-                "@abilities/active/defensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 3,
-          "slug": "goblin-warrior",
-          "name": "Goblin Warrior",
-          "rarityWeight": 100,
-          "xp": 20,
-          "attributes": {
-            "constitution": 12,
-            "wisdom": 10,
-            "strength": 12,
-            "dexterity": 15,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 6",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 3",
-            "health": "constitution_mod * 2 + level * 5 + 20"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "3": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 4,
-          "slug": "goblin-shaman",
-          "name": "Goblin Shaman",
-          "rarityWeight": 98,
-          "xp": 25,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 12,
-            "strength": 7,
-            "dexterity": 13,
-            "intelligence": 14,
-            "charisma": 10
-          },
-          "stats": {
-            "attack": "strength_mod + level + 8",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 2",
-            "health": "constitution_mod * 2 + level * 5 + 20"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "4": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 4,
-          "slug": "goblin-chief",
-          "name": "Goblin Chief",
-          "rarityWeight": 92,
-          "xp": 40,
-          "attributes": {
-            "constitution": 13,
-            "wisdom": 11,
-            "strength": 10,
-            "dexterity": 14,
-            "intelligence": 10,
-            "charisma": 15
-          },
-          "stats": {
-            "attack": "strength_mod + level + 10",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 5",
-            "health": "constitution_mod * 2 + level * 5 + 30"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "5": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "hobgoblins": {
-      "properties": {
-        "size": "medium",
-        "category": "goblinoid",
-        "damageType": "physical",
-        "behavior": "disciplined"
-      },
-      "items": [
-        {
-          "level": 3,
-          "slug": "hobgoblin",
-          "name": "Hobgoblin",
-          "rarityWeight": 102,
-          "xp": 35,
-          "attributes": {
-            "constitution": 13,
-            "wisdom": 11,
-            "strength": 13,
-            "dexterity": 12,
-            "intelligence": 10,
-            "charisma": 9
-          },
-          "stats": {
-            "attack": "strength_mod + level + 12",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 6",
-            "health": "constitution_mod * 2 + level * 5 + 40"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "4": [
-                "@abilities/active/defensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 4,
-          "slug": "hobgoblin-soldier",
-          "name": "Hobgoblin Soldier",
-          "rarityWeight": 98,
-          "xp": 50,
-          "attributes": {
-            "constitution": 14,
-            "wisdom": 11,
-            "strength": 13,
-            "dexterity": 13,
-            "intelligence": 10,
-            "charisma": 9
-          },
-          "stats": {
-            "attack": "strength_mod + level + 14",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 8",
-            "health": "constitution_mod * 2 + level * 5 + 50"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "5": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/defensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 6,
-          "slug": "hobgoblin-captain",
-          "name": "Hobgoblin Captain",
-          "rarityWeight": 88,
-          "xp": 80,
-          "attributes": {
-            "constitution": 15,
-            "wisdom": 12,
-            "strength": 14,
-            "dexterity": 13,
-            "intelligence": 12,
-            "charisma": 15
-          },
-          "stats": {
-            "attack": "strength_mod + level + 18",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 65"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "8": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 8,
-          "slug": "hobgoblin-warlord",
-          "name": "Hobgoblin Warlord",
-          "rarityWeight": 75,
-          "xp": 120,
-          "attributes": {
-            "constitution": 16,
-            "wisdom": 13,
-            "strength": 15,
-            "dexterity": 14,
-            "intelligence": 14,
-            "charisma": 17
-          },
-          "stats": {
-            "attack": "strength_mod + level + 22",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 12",
-            "health": "constitution_mod * 2 + level * 5 + 85"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "bugbears": {
-      "properties": {
-        "size": "large",
-        "category": "goblinoid",
-        "damageType": "physical",
-        "behavior": "brutal"
-      },
-      "items": [
-        {
-          "level": 4,
-          "slug": "bugbear",
-          "name": "Bugbear",
-          "rarityWeight": 100,
-          "xp": 55,
-          "attributes": {
-            "constitution": 15,
-            "wisdom": 10,
-            "strength": 17,
-            "dexterity": 13,
-            "intelligence": 8,
-            "charisma": 7
-          },
-          "stats": {
-            "attack": "strength_mod + level + 16",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 6",
-            "health": "constitution_mod * 2 + level * 5 + 55"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "5": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 6,
-          "slug": "bugbear-hunter",
-          "name": "Bugbear Hunter",
-          "rarityWeight": 92,
-          "xp": 85,
-          "attributes": {
-            "constitution": 15,
-            "wisdom": 12,
-            "strength": 18,
-            "dexterity": 15,
-            "intelligence": 9,
-            "charisma": 7
-          },
-          "stats": {
-            "attack": "strength_mod + level + 20",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 8",
-            "health": "constitution_mod * 2 + level * 5 + 70"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "8": [
-                "@abilities/active/offensive:*",
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 8,
-          "slug": "bugbear-chieftain",
-          "name": "Bugbear Chieftain",
-          "rarityWeight": 82,
-          "xp": 130,
-          "attributes": {
-            "constitution": 17,
-            "wisdom": 12,
-            "strength": 19,
-            "dexterity": 14,
-            "intelligence": 10,
-            "charisma": 14
-          },
-          "stats": {
-            "attack": "strength_mod + level + 25",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 90"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "special_goblinoids": {
-      "properties": {
-        "category": "goblinoid",
-        "behavior": "special"
-      },
-      "items": [
-        {
-          "level": 10,
-          "slug": "goblin-king",
-          "name": "Goblin King",
-          "rarityWeight": 50,
-          "xp": 200,
-          "attributes": {
-            "constitution": 15,
-            "wisdom": 13,
-            "strength": 12,
-            "dexterity": 16,
-            "intelligence": 14,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 28",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 15",
-            "health": "constitution_mod * 2 + level * 5 + 100"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/ultimate:*"
-              ],
-              "16": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Goblinoid enemy type catalog with base stats and rarityWeight values",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "item_catalog",
+                     "total_types":  12,
+                     "categories":  [
+                                        "goblins",
+                                        "hobgoblins",
+                                        "bugbears",
+                                        "special_goblinoids"
+                                    ],
+                     "usage":  "Provides base enemy types for pattern generation",
+                     "notes":  [
+                                   "Base catalog of goblinoids with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
+                               ]
+                 },
+    "goblinoid_types":  {
+                            "goblins":  {
+                                            "properties":  {
+                                                               "size":  "small",
+                                                               "category":  "goblinoid",
+                                                               "damageType":  "physical",
+                                                               "behavior":  "cowardly"
+                                                           },
+                                            "items":  [
+                                                          {
+                                                              "level":  1,
+                                                              "slug":  "goblin",
+                                                              "name":  "Goblin",
+                                                              "rarityWeight":  107,
+                                                              "xp":  10,
+                                                              "attributes":  {
+                                                                                 "constitution":  11,
+                                                                                 "wisdom":  10,
+                                                                                 "strength":  8,
+                                                                                 "dexterity":  16,
+                                                                                 "intelligence":  8,
+                                                                                 "charisma":  8
+                                                                             },
+                                                              "stats":  {
+                                                                            "attack":  "strength_mod + level + 5",
+                                                                            "speed":  "30 + dexterity_mod * 5",
+                                                                            "defense":  "10 + dexterity_mod + constitution_mod + 2",
+                                                                            "health":  "constitution_mod * 2 + level * 5 + 15"
+                                                                        },
+                                                              "combat":  {
+                                                                             "abilityUnlocks":  {
+                                                                                                    "2":  [
+                                                                                                              "@abilities/active/offensive:*"
+                                                                                                          ]
+                                                                                                },
+                                                                             "abilities":  [
+                                                                                               "@abilities/active/offensive:*"
+                                                                                           ]
+                                                                         },
+                                                              "traits":  {
+
+                                                                         }
+                                                          }
+                                                      ]
+                                        }
+                        }
 }

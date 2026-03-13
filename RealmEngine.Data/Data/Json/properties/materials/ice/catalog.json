@@ -1,221 +1,52 @@
-{
-  "metadata": {
-    "description": "Ice material properties for crafting system - temporary magical materials",
-    "version": "5.1",
-    "lastUpdated": "2026-01-22",
-    "type": "materials_properties_catalog",
-    "totalMaterials": 6,
-    "usage": "Ice materials for cold-themed weapons and armor with temporary durability.",
-    "notes": [
-      "Ice materials have cold damage and resistance bonuses",
-      "Lower durability represents temporary/melting nature",
-      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-    ]
-  },
-  "ice_types": {
-    "ice": {
-      "items": [
-        {
-          "slug": "common-ice",
-          "name": "Common Ice",
-          "attributes": {
-            "dexterity": 3,
-            "intelligence": 5,
-            "charisma": 3,
-            "strength": 3,
-            "constitution": 5,
-            "wisdom": 5
-          },
-          "traits": {
-            "durability": 15,
-            "weight": 0.9,
-            "coldResistance": 20,
-            "coldAffinity": 15
-          },
-          "displayName": "Common Ice",
-          "itemTypeTraits": {
-            "weapon": {
-              "coldDamage": 3,
-              "value": 1
-            },
-            "armor": {
-              "armorRating": 3,
-              "defenseBonus": 1,
-              "value": 1
-            }
-          },
-          "rarityWeight": 80
-        },
-        {
-          "slug": "glacial-ice",
-          "name": "Glacial Ice",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 8,
-            "charisma": 5,
-            "strength": 8,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 30,
-            "weight": 1.0,
-            "coldResistance": 35,
-            "coldAffinity": 25
-          },
-          "displayName": "Glacial Ice",
-          "itemTypeTraits": {
-            "weapon": {
-              "coldDamage": 6,
-              "value": 5
-            },
-            "armor": {
-              "armorRating": 6,
-              "defenseBonus": 2,
-              "value": 5
-            }
-          },
-          "rarityWeight": 50
-        },
-        {
-          "slug": "permafrost",
-          "name": "Permafrost",
-          "attributes": {
-            "dexterity": 3,
-            "intelligence": 10,
-            "charisma": 5,
-            "strength": 12,
-            "constitution": 15,
-            "wisdom": 10
-          },
-          "traits": {
-            "durability": 50,
-            "weight": 1.2,
-            "coldResistance": 50,
-            "coldAffinity": 35
-          },
-          "displayName": "Permafrost",
-          "itemTypeTraits": {
-            "weapon": {
-              "coldDamage": 10,
-              "slow": 15,
-              "value": 15
-            },
-            "armor": {
-              "armorRating": 10,
-              "defenseBonus": 4,
-              "value": 15
-            }
-          },
-          "rarityWeight": 25
-        },
-        {
-          "slug": "eternal-ice",
-          "name": "Eternal Ice",
-          "attributes": {
-            "dexterity": 8,
-            "intelligence": 15,
-            "charisma": 12,
-            "strength": 15,
-            "constitution": 20,
-            "wisdom": 15
-          },
-          "traits": {
-            "durability": 80,
-            "weight": 1.1,
-            "coldResistance": 70,
-            "coldAffinity": 50,
-            "enchantability": 35
-          },
-          "displayName": "Eternal Ice",
-          "itemTypeTraits": {
-            "weapon": {
-              "coldDamage": 15,
-              "slow": 25,
-              "freeze": 10,
-              "value": 40
-            },
-            "armor": {
-              "armorRating": 18,
-              "defenseBonus": 7,
-              "value": 40
-            }
-          },
-          "rarityWeight": 12
-        },
-        {
-          "slug": "black-ice",
-          "name": "Black Ice",
-          "attributes": {
-            "dexterity": 12,
-            "intelligence": 18,
-            "charisma": 10,
-            "strength": 12,
-            "constitution": 15,
-            "wisdom": 18
-          },
-          "traits": {
-            "durability": 60,
-            "weight": 0.8,
-            "coldResistance": 60,
-            "coldAffinity": 60,
-            "darkAffinity": 30,
-            "enchantability": 50
-          },
-          "displayName": "Black Ice",
-          "itemTypeTraits": {
-            "weapon": {
-              "coldDamage": 18,
-              "darkDamage": 8,
-              "slow": 30,
-              "value": 50
-            },
-            "armor": {
-              "armorRating": 15,
-              "defenseBonus": 6,
-              "manaBonus": 25,
-              "value": 50
-            }
-          },
-          "rarityWeight": 8
-        },
-        {
-          "slug": "prismatic-ice",
-          "name": "Prismatic Ice",
-          "attributes": {
-            "dexterity": 15,
-            "intelligence": 25,
-            "charisma": 20,
-            "strength": 15,
-            "constitution": 20,
-            "wisdom": 25
-          },
-          "traits": {
-            "durability": 100,
-            "weight": 0.9,
-            "coldResistance": 80,
-            "coldAffinity": 70,
-            "allElementalAffinity": 20,
-            "enchantability": 70
-          },
-          "displayName": "Prismatic Ice",
-          "itemTypeTraits": {
-            "weapon": {
-              "coldDamage": 25,
-              "allElementalDamage": 10,
-              "freeze": 20,
-              "value": 80
-            },
-            "armor": {
-              "armorRating": 22,
-              "defenseBonus": 10,
-              "manaBonus": 40,
-              "value": 80
-            }
-          },
-          "rarityWeight": 3
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Ice material properties for crafting system - temporary magical materials",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-22",
+                     "type":  "materials_properties_catalog",
+                     "totalMaterials":  1,
+                     "usage":  "Ice materials for cold-themed weapons and armor with temporary durability.",
+                     "notes":  [
+                                   "Ice materials have cold damage and resistance bonuses",
+                                   "Lower durability represents temporary/melting nature",
+                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+                               ]
+                 },
+    "ice_types":  {
+                      "ice":  {
+                                  "items":  [
+                                                {
+                                                    "slug":  "common-ice",
+                                                    "name":  "Common Ice",
+                                                    "attributes":  {
+                                                                       "dexterity":  3,
+                                                                       "intelligence":  5,
+                                                                       "charisma":  3,
+                                                                       "strength":  3,
+                                                                       "constitution":  5,
+                                                                       "wisdom":  5
+                                                                   },
+                                                    "traits":  {
+                                                                   "durability":  15,
+                                                                   "weight":  0.9,
+                                                                   "coldResistance":  20,
+                                                                   "coldAffinity":  15
+                                                               },
+                                                    "displayName":  "Common Ice",
+                                                    "itemTypeTraits":  {
+                                                                           "weapon":  {
+                                                                                          "coldDamage":  3,
+                                                                                          "value":  1
+                                                                                      },
+                                                                           "armor":  {
+                                                                                         "armorRating":  3,
+                                                                                         "defenseBonus":  1,
+                                                                                         "value":  1
+                                                                                     }
+                                                                       },
+                                                    "rarityWeight":  80
+                                                }
+                                            ]
+                              }
+                  }
 }

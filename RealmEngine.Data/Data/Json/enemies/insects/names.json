@@ -1,153 +1,61 @@
-{
-  "metadata": {
-    "description": "Giant insect name generation patterns with weight-based rarity components",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "size",
-      "type",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "size",
-      "type",
-      "title"
-    ],
-    "totalPatterns": 6,
-    "raritySystem": "weight-based",
-    "notes": [
-      "base_token: Resolves to item name from insects/catalog.json",
-      "insect_variety: Includes spiders, beetles, wasps, ants with hive/solitary behavior",
-      "weight_ranges: Small (5) → Colossal (40), Common (5) → Crystal (35)",
-      "traits: Many insects are venomous, armored, or have hive minds",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "size": [
-      {
-        "rarityWeight": 5,
-        "name": "Small"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Giant"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Huge"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Colossal"
-      }
-    ],
-    "type": [
-      {
-        "rarityWeight": 5,
-        "name": "Common"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Fire"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Acid"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Frost"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Phase"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Crystal"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 5,
-        "name": "Worker"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Soldier"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Hunter"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Guardian"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Matriarch"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Queen"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 8,
-        "name": "Aggressive"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Venomous"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Armored"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Swift"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Deadly"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Primordial"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{size} {base}"
-    },
-    {
-      "rarityWeight": 35,
-      "pattern": "{type} {base}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{base} {title}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{size} {type} {base}"
-    },
-    {
-      "rarityWeight": 10,
-      "pattern": "{size} {type} {base} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Giant insect name generation patterns with weight-based rarity components",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "size",
+                                           "type",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "size",
+                                           "type",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "base_token: Resolves to item name from insects/catalog.json",
+                                   "insect_variety: Includes spiders, beetles, wasps, ants with hive/solitary behavior",
+                                   "weight_ranges: Small (5) → Colossal (40), Common (5) → Crystal (35)",
+                                   "traits: Many insects are venomous, armored, or have hive minds",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "size":  [
+                                    {
+                                        "rarityWeight":  5,
+                                        "name":  "Small"
+                                    }
+                                ],
+                       "type":  [
+                                    {
+                                        "rarityWeight":  5,
+                                        "name":  "Common"
+                                    }
+                                ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  5,
+                                         "name":  "Worker"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  8,
+                                          "name":  "Aggressive"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

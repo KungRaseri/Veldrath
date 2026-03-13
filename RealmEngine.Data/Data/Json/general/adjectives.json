@@ -1,83 +1,42 @@
-{
-  "components": {
-    "positive": [
-      "Magnificent",
-      "Exquisite",
-      "Pristine",
-      "Flawless",
-      "Radiant",
-      "Brilliant",
-      "Majestic",
-      "Glorious",
-      "Splendid",
-      "Superb"
-    ],
-    "negative": [
-      "Broken",
-      "Damaged",
-      "Cracked",
-      "Worn",
-      "Tattered",
-      "Ruined",
-      "Decayed",
-      "Corrupted",
-      "Cursed",
-      "Blighted"
-    ],
-    "size": [
-      "Tiny",
-      "Small",
-      "Large",
-      "Huge",
-      "Massive",
-      "Gigantic",
-      "Colossal",
-      "Miniature"
-    ],
-    "appearance": [
-      "Shining",
-      "Glowing",
-      "Sparkling",
-      "Shadowy",
-      "Ethereal",
-      "Translucent",
-      "Ornate",
-      "Plain",
-      "Decorated",
-      "Engraved"
-    ],
-    "condition": [
-      "New",
-      "Old",
-      "Ancient",
-      "Modern",
-      "Vintage",
-      "Antique",
-      "Fresh",
-      "Stale"
-    ]
-  },
-  "metadata": {
-    "description": "Adjective components for descriptive text generation across items, enemies, and environments",
-    "version": "4.0",
-    "type": "component_library",
-    "lastUpdated": "2026-01-08",
-    "componentKeys": [
-      "positive",
-      "negative",
-      "size",
-      "appearance",
-      "condition"
-    ],
-    "component_counts": {
-      "positive": 10,
-      "negative": 10,
-      "size": 8,
-      "appearance": 10,
-      "condition": 8
-    },
-    "notes": [
-      "Reference data for general adjectives. Used as component source in name generation and stat calculations."
-    ]
-  }
+﻿{
+    "components":  {
+                       "positive":  [
+                                        "Magnificent"
+                                    ],
+                       "negative":  [
+                                        "Broken"
+                                    ],
+                       "size":  [
+                                    "Tiny"
+                                ],
+                       "appearance":  [
+                                          "Shining"
+                                      ],
+                       "condition":  [
+                                         "New"
+                                     ]
+                   },
+    "metadata":  {
+                     "description":  "Adjective components for descriptive text generation across items, enemies, and environments",
+                     "version":  "4.0",
+                     "type":  "component_library",
+                     "lastUpdated":  "2026-01-08",
+                     "componentKeys":  [
+                                           "positive",
+                                           "negative",
+                                           "size",
+                                           "appearance",
+                                           "condition"
+                                       ],
+                     "component_counts":  {
+                                              "positive":  1,
+                                              "negative":  1,
+                                              "size":  1,
+                                              "appearance":  1,
+                                              "condition":  1
+                                          },
+                     "notes":  [
+                                   "Reference data for general adjectives. Used as component source in name generation and stat calculations."
+                               ]
+                 }
 }

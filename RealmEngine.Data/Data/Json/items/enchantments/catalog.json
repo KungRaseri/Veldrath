@@ -1,57 +1,42 @@
-{
-  "metadata": {
-    "description": "Enchantment scrolls and items catalog",
-    "version": "5.1",
-    "lastUpdated": "2026-01-10",
-    "type": "enchantment_catalog",
-    "notes": [
-      "Enchantment scrolls can be used to add magical bonuses to items",
-      "Each scroll provides specific stat boosts or abilities"
-    ]
-  },
-  "enchantment_types": {
-    "scrolls": {
-      "properties": {
-        "category": "enchantment",
-        "slot": "consumable",
-        "oneUse": true
-      },
-      "items": [
-        {
-          "name": "Agility Scroll",
-          "slug": "agility-scroll",
-          "rarityWeight": 45,
-          "value": 40,
-          "weight": 0.1,
-          "attributes": {},
-          "traits": {
-            "dexterity": {
-              "value": 2,
-              "type": "number"
-            }
-          },
-          "effect": "stat_enchant",
-          "power": 2,
-          "duration": 0
-        },
-        {
-          "name": "Intellect Scroll",
-          "slug": "intellect-scroll",
-          "rarityWeight": 45,
-          "value": 40,
-          "weight": 0.1,
-          "attributes": {},
-          "traits": {
-            "intelligence": {
-              "value": 2,
-              "type": "number"
-            }
-          },
-          "effect": "stat_enchant",
-          "power": 2,
-          "duration": 0
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Enchantment scrolls and items catalog",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-10",
+                     "type":  "enchantment_catalog",
+                     "notes":  [
+                                   "Enchantment scrolls can be used to add magical bonuses to items",
+                                   "Each scroll provides specific stat boosts or abilities"
+                               ]
+                 },
+    "enchantment_types":  {
+                              "scrolls":  {
+                                              "properties":  {
+                                                                 "category":  "enchantment",
+                                                                 "slot":  "consumable",
+                                                                 "oneUse":  true
+                                                             },
+                                              "items":  [
+                                                            {
+                                                                "name":  "Agility Scroll",
+                                                                "slug":  "agility-scroll",
+                                                                "rarityWeight":  45,
+                                                                "value":  40,
+                                                                "weight":  0.1,
+                                                                "attributes":  {
+
+                                                                               },
+                                                                "traits":  {
+                                                                               "dexterity":  {
+                                                                                                 "value":  2,
+                                                                                                 "type":  "number"
+                                                                                             }
+                                                                           },
+                                                                "effect":  "stat_enchant",
+                                                                "power":  2,
+                                                                "duration":  0
+                                                            }
+                                                        ]
+                                          }
+                          }
 }

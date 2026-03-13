@@ -1,158 +1,64 @@
-{
-  "components": {
-    "base_sound": [
-      "echoing",
-      "whisper",
-      "roar",
-      "clang",
-      "hiss",
-      "creak",
-      "thud",
-      "crash",
-      "tinkle",
-      "rustle",
-      "howl",
-      "screech",
-      "murmur",
-      "rumble",
-      "chime",
-      "splash",
-      "drip",
-      "gurgle",
-      "whoosh",
-      "buzz",
-      "crackle",
-      "snap",
-      "pop",
-      "sizzle",
-      "hum",
-      "clatter",
-      "rattle",
-      "jingle",
-      "clank",
-      "scrape",
-      "shriek",
-      "wail",
-      "moan",
-      "groan",
-      "sigh",
-      "thump",
-      "boom",
-      "bang",
-      "crack",
-      "thunder",
-      "chirp",
-      "trill",
-      "song",
-      "cry",
-      "call",
-      "grinding",
-      "grating",
-      "squeaking",
-      "creaking",
-      "groaning"
-    ],
-    "volume": [
-      "silent",
-      "quiet",
-      "soft",
-      "muffled",
-      "faint",
-      "moderate",
-      "loud",
-      "thunderous",
-      "deafening",
-      "ear-splitting"
-    ],
-    "nature": [
-      "metallic",
-      "wooden",
-      "liquid",
-      "natural",
-      "magical",
-      "mechanical",
-      "organic",
-      "ethereal",
-      "haunting",
-      "melodic"
-    ],
-    "combat": [
-      "clang",
-      "crash",
-      "clash",
-      "thud",
-      "crack",
-      "whoosh",
-      "hiss",
-      "roar",
-      "screech",
-      "bang"
-    ],
-    "ambient": [
-      "rustle",
-      "whisper",
-      "murmur",
-      "drip",
-      "chirp",
-      "hum",
-      "buzz",
-      "gurgle",
-      "creak",
-      "sigh"
-    ],
-    "intensity": [
-      "gentle",
-      "harsh",
-      "sharp",
-      "dull",
-      "rhythmic",
-      "sporadic",
-      "constant",
-      "sudden",
-      "gradual",
-      "pulsing"
-    ]
-  },
-  "patterns": [
-    "base_sound",
-    "{volume} {base_sound}",
-    "{nature} {base_sound}",
-    "{intensity} {base_sound}",
-    "combat",
-    "ambient"
-  ],
-  "metadata": {
-    "description": "Sound descriptions for combat, environmental atmosphere, and immersive audio narratives",
-    "version": "4.0",
-    "type": "pattern_generation",
-    "lastUpdated": "2026-01-08",
-    "componentKeys": [
-      "base_sound",
-      "volume",
-      "nature",
-      "combat",
-      "ambient",
-      "intensity"
-    ],
-    "pattern_count": 6,
-    "patternTokens": [
-      "base_sound",
-      "volume",
-      "nature",
-      "combat",
-      "ambient",
-      "intensity"
-    ],
-    "component_counts": {
-      "base_sound": 50,
-      "volume": 10,
-      "nature": 10,
-      "combat": 10,
-      "ambient": 10,
-      "intensity": 10
-    },
-    "notes": [
-      "Reference data for general sounds. Used as component source in name generation and stat calculations."
-    ]
-  }
+﻿{
+    "components":  {
+                       "base_sound":  [
+                                          "echoing"
+                                      ],
+                       "volume":  [
+                                      "silent"
+                                  ],
+                       "nature":  [
+                                      "metallic"
+                                  ],
+                       "combat":  [
+                                      "clang"
+                                  ],
+                       "ambient":  [
+                                       "rustle"
+                                   ],
+                       "intensity":  [
+                                         "gentle"
+                                     ]
+                   },
+    "patterns":  [
+                     "base_sound",
+                     "{volume} {base_sound}",
+                     "{nature} {base_sound}",
+                     "{intensity} {base_sound}",
+                     "combat",
+                     "ambient"
+                 ],
+    "metadata":  {
+                     "description":  "Sound descriptions for combat, environmental atmosphere, and immersive audio narratives",
+                     "version":  "4.0",
+                     "type":  "pattern_generation",
+                     "lastUpdated":  "2026-01-08",
+                     "componentKeys":  [
+                                           "base_sound",
+                                           "volume",
+                                           "nature",
+                                           "combat",
+                                           "ambient",
+                                           "intensity"
+                                       ],
+                     "pattern_count":  6,
+                     "patternTokens":  [
+                                           "base_sound",
+                                           "volume",
+                                           "nature",
+                                           "combat",
+                                           "ambient",
+                                           "intensity"
+                                       ],
+                     "component_counts":  {
+                                              "base_sound":  1,
+                                              "volume":  1,
+                                              "nature":  1,
+                                              "combat":  1,
+                                              "ambient":  1,
+                                              "intensity":  1
+                                          },
+                     "notes":  [
+                                   "Reference data for general sounds. Used as component source in name generation and stat calculations."
+                               ]
+                 }
 }

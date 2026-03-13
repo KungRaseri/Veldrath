@@ -1,99 +1,37 @@
-{
-  "metadata": {
-    "description": "Offensive runes providing attack modifiers",
-    "version": "5.1",
-    "lastUpdated": "2026-01-08",
-    "type": "rune_catalog"
-  },
-  "rune_types": {
-    "offensive": {
-      "items": [
-        {
-          "slug": "fury-rune",
-          "name": "Fury Rune",
-          "rarityWeight": 50,
-          "attributes": {
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8,
-            "constitution": 10,
-            "strength": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "attackPower": {
-              "value": 15,
-              "type": "number"
-            },
-            "attackSpeed": {
-              "value": 10,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "slug": "piercing-rune",
-          "name": "Piercing Rune",
-          "rarityWeight": 45,
-          "attributes": {
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8,
-            "constitution": 10,
-            "strength": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "armorPenetration": {
-              "value": 20,
-              "type": "number"
-            },
-            "critChance": {
-              "value": 5,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "slug": "devastation-rune",
-          "name": "Devastation Rune",
-          "rarityWeight": 30,
-          "attributes": {
-            "dexterity": 10,
-            "charisma": 8,
-            "intelligence": 8,
-            "constitution": 10,
-            "strength": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "critDamage": {
-              "value": 25,
-              "type": "number"
-            },
-            "attackPower": {
-              "value": 20,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "slug": "rune-of-power",
-          "name": "Rune Of Power",
-          "rarityWeight": 45,
-          "attributes": {},
-          "traits": {
-            "attackPower": {
-              "value": 18,
-              "type": "number"
-            },
-            "magicDamage": {
-              "value": 12,
-              "type": "number"
-            }
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Offensive runes providing attack modifiers",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "rune_catalog"
+                 },
+    "rune_types":  {
+                       "offensive":  {
+                                         "items":  [
+                                                       {
+                                                           "slug":  "fury-rune",
+                                                           "name":  "Fury Rune",
+                                                           "rarityWeight":  50,
+                                                           "attributes":  {
+                                                                              "dexterity":  10,
+                                                                              "charisma":  8,
+                                                                              "intelligence":  8,
+                                                                              "constitution":  10,
+                                                                              "strength":  10,
+                                                                              "wisdom":  8
+                                                                          },
+                                                           "traits":  {
+                                                                          "attackPower":  {
+                                                                                              "value":  15,
+                                                                                              "type":  "number"
+                                                                                          },
+                                                                          "attackSpeed":  {
+                                                                                              "value":  10,
+                                                                                              "type":  "number"
+                                                                                          }
+                                                                      }
+                                                       }
+                                                   ]
+                                     }
+                   }
 }

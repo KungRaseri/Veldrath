@@ -1,87 +1,37 @@
-{
-  "metadata": {
-    "description": "Fire essences providing fire damage and burning effects",
-    "version": "5.1",
-    "lastUpdated": "2026-01-08",
-    "type": "essence_catalog"
-  },
-  "essence_types": {
-    "fire": {
-      "items": [
-        {
-          "rarityWeight": 60,
-          "slug": "flame-essence",
-          "name": "Flame Essence",
-          "attributes": {
-            "dexterity": 10,
-            "charisma": 8,
-            "strength": 10,
-            "intelligence": 8,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "fireDamage": {
-              "value": 10,
-              "type": "number"
-            },
-            "burnChance": {
-              "value": 15,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "rarityWeight": 40,
-          "slug": "inferno-essence",
-          "name": "Inferno Essence",
-          "attributes": {
-            "dexterity": 10,
-            "charisma": 8,
-            "strength": 10,
-            "intelligence": 8,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "fireDamage": {
-              "value": 15,
-              "type": "number"
-            },
-            "burnChance": {
-              "value": 20,
-              "type": "number"
-            },
-            "burnDuration": {
-              "value": 3,
-              "type": "number"
-            }
-          }
-        },
-        {
-          "rarityWeight": 70,
-          "slug": "ember-essence",
-          "name": "Ember Essence",
-          "attributes": {
-            "dexterity": 10,
-            "charisma": 8,
-            "strength": 10,
-            "intelligence": 8,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "fireDamage": {
-              "value": 8,
-              "type": "number"
-            },
-            "fireResistance": {
-              "value": 10,
-              "type": "number"
-            }
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Fire essences providing fire damage and burning effects",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "essence_catalog"
+                 },
+    "essence_types":  {
+                          "fire":  {
+                                       "items":  [
+                                                     {
+                                                         "rarityWeight":  60,
+                                                         "slug":  "flame-essence",
+                                                         "name":  "Flame Essence",
+                                                         "attributes":  {
+                                                                            "dexterity":  10,
+                                                                            "charisma":  8,
+                                                                            "strength":  10,
+                                                                            "intelligence":  8,
+                                                                            "constitution":  10,
+                                                                            "wisdom":  8
+                                                                        },
+                                                         "traits":  {
+                                                                        "fireDamage":  {
+                                                                                           "value":  10,
+                                                                                           "type":  "number"
+                                                                                       },
+                                                                        "burnChance":  {
+                                                                                           "value":  15,
+                                                                                           "type":  "number"
+                                                                                       }
+                                                                    }
+                                                     }
+                                                 ]
+                                   }
+                      }
 }

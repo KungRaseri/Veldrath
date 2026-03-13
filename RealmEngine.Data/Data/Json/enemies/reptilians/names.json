@@ -1,164 +1,60 @@
-{
-  "metadata": {
-    "description": "Reptilian name generation patterns with weight-based rarity components",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "size",
-      "scale",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "size",
-      "scale",
-      "title"
-    ],
-    "totalPatterns": 6,
-    "raritySystem": "weight-based",
-    "notes": [
-      "base_token: Resolves to item name from reptilians/catalog.json",
-      "reptilian_culture: Includes kobolds (cowardly), lizardfolk (tribal), yuan-ti (cunning)",
-      "weight_ranges: Young (3) → Elder (35), Green (5) → Prismatic (45)",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "size": [
-      {
-        "rarityWeight": 3,
-        "name": "Young"
-      },
-      {
-        "rarityWeight": 5,
-        "name": "Lesser"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Common"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Greater"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Elder"
-      }
-    ],
-    "scale": [
-      {
-        "rarityWeight": 5,
-        "name": "Green"
-      },
-      {
-        "rarityWeight": 5,
-        "name": "Brown"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Red"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Black"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Golden"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Obsidian"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Prismatic"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 5,
-        "name": "Scout"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Warrior"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Hunter"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Shaman"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Sorcerer"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "King"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "High Priest"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 8,
-        "name": "Swift"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Cunning"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Venomous"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Ancient"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Mystical"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Primordial"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{size} {base}"
-    },
-    {
-      "rarityWeight": 35,
-      "pattern": "{scale} {base}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{base} {title}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{size} {scale} {base}"
-    },
-    {
-      "rarityWeight": 10,
-      "pattern": "{size} {scale} {base} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Reptilian name generation patterns with weight-based rarity components",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "size",
+                                           "scale",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "size",
+                                           "scale",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "base_token: Resolves to item name from reptilians/catalog.json",
+                                   "reptilian_culture: Includes kobolds (cowardly), lizardfolk (tribal), yuan-ti (cunning)",
+                                   "weight_ranges: Young (3) → Elder (35), Green (5) → Prismatic (45)",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "size":  [
+                                    {
+                                        "rarityWeight":  3,
+                                        "name":  "Young"
+                                    }
+                                ],
+                       "scale":  [
+                                     {
+                                         "rarityWeight":  5,
+                                         "name":  "Green"
+                                     }
+                                 ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  5,
+                                         "name":  "Scout"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  8,
+                                          "name":  "Swift"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

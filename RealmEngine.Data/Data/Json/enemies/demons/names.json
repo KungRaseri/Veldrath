@@ -1,176 +1,60 @@
-{
-  "metadata": {
-    "description": "Demon enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "rank",
-      "aspect",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "rank",
-      "aspect",
-      "title"
-    ],
-    "totalPatterns": 4,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Base token resolves from enemies/demons/catalog.json",
-      "All components have rarityWeight for emergent rarity calculation",
-      "Component weights combine via multipliers from general/rarity_config.json",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "rank": [
-      {
-        "rarityWeight": 8,
-        "name": "Lesser"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Greater"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "Arch"
-      },
-      {
-        "rarityWeight": 85,
-        "name": "Prime"
-      },
-      {
-        "rarityWeight": 90,
-        "name": "Lord"
-      }
-    ],
-    "aspect": [
-      {
-        "rarityWeight": 20,
-        "name": "Fire"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Shadow"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Blood"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Chaos"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Corruption"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Void"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Plague"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 60,
-        "name": "of the Abyss"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "of Torment"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "of Destruction"
-      },
-      {
-        "rarityWeight": 80,
-        "name": "of the Nine Hells"
-      },
-      {
-        "rarityWeight": 75,
-        "name": "the Destroyer"
-      },
-      {
-        "rarityWeight": 65,
-        "name": "the Defiler"
-      },
-      {
-        "rarityWeight": 68,
-        "name": "the Corruptor"
-      },
-      {
-        "rarityWeight": 72,
-        "name": "Spawn of Chaos"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 35,
-        "name": "Infernal"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Abyssal"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Hellborn"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Cursed"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Dark"
-      },
-      {
-        "rarityWeight": 32,
-        "name": "Corrupted"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Vile"
-      },
-      {
-        "rarityWeight": 38,
-        "name": "Malevolent"
-      },
-      {
-        "rarityWeight": 36,
-        "name": "Sinister"
-      },
-      {
-        "rarityWeight": 34,
-        "name": "Wicked"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{rank} {base}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{aspect} {base}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{rank} {aspect} {base}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Demon enemy name generation with pattern-based system and weight-based rarity",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "rank",
+                                           "aspect",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "rank",
+                                           "aspect",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Base token resolves from enemies/demons/catalog.json",
+                                   "All components have rarityWeight for emergent rarity calculation",
+                                   "Component weights combine via multipliers from general/rarity_config.json",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "rank":  [
+                                    {
+                                        "rarityWeight":  8,
+                                        "name":  "Lesser"
+                                    }
+                                ],
+                       "aspect":  [
+                                      {
+                                          "rarityWeight":  20,
+                                          "name":  "Fire"
+                                      }
+                                  ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  60,
+                                         "name":  "of the Abyss"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  35,
+                                          "name":  "Infernal"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

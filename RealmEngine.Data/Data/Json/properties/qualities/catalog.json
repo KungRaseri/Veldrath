@@ -1,176 +1,42 @@
-{
-  "metadata": {
-    "description": "Universal quality tiers for all items",
-    "version": "5.1",
-    "lastUpdated": "2026-01-19",
-    "type": "quality_catalog",
-    "notes": [
-      "Qualities modify base items with bonus stats",
-      "itemTypeTraits allow quality effects to vary by item type (weapon vs armor)",
-      "Higher rarityWeight = more common quality"
-    ]
-  },
-  "quality_types": {
-    "Fine": {
-      "name": "Fine",
-      "rarityWeight": 15,
-      "description": "",
-      "itemTypeTraits": {
-        "weapon": {
-          "durability": {
-            "value": 120,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 1,
-            "type": "number"
-          }
-        },
-        "armor": {
-          "armorBonus": {
-            "value": 2,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.2,
-            "type": "number"
-          }
-        }
-      }
-    },
-    "Superior": {
-      "name": "Superior",
-      "rarityWeight": 25,
-      "description": "",
-      "itemTypeTraits": {
-        "weapon": {
-          "durability": {
-            "value": 150,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "armor": {
-          "armorBonus": {
-            "value": 4,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.5,
-            "type": "number"
-          }
-        }
-      }
-    },
-    "Exceptional": {
-      "name": "Exceptional",
-      "rarityWeight": 35,
-      "description": "",
-      "itemTypeTraits": {
-        "weapon": {
-          "durability": {
-            "value": 180,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 3,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 5,
-            "type": "number"
-          }
-        }
-      }
-    },
-    "Masterwork": {
-      "name": "Masterwork",
-      "rarityWeight": 50,
-      "description": "",
-      "itemTypeTraits": {
-        "weapon": {
-          "durability": {
-            "value": 220,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 5,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 10,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 1.5,
-            "type": "number"
-          }
-        },
-        "armor": {
-          "armorBonus": {
-            "value": 6,
-            "type": "number"
-          },
-          "durability": {
-            "value": 150,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          }
-        }
-      }
-    },
-    "Legendary": {
-      "name": "Legendary",
-      "rarityWeight": 80,
-      "description": "",
-      "itemTypeTraits": {
-        "weapon": {
-          "durability": {
-            "value": 300,
-            "type": "number"
-          },
-          "damageBonus": {
-            "value": 10,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 15,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 2.0,
-            "type": "number"
-          },
-          "allStatsBonus": {
-            "value": 1,
-            "type": "number"
-          }
-        },
-        "armor": {
-          "armorBonus": {
-            "value": 10,
-            "type": "number"
-          },
-          "durability": {
-            "value": 200,
-            "type": "number"
-          },
-          "valueMultiplier": {
-            "value": 3.0,
-            "type": "number"
-          },
-          "glowEffect": {
-            "value": true,
-            "type": "boolean"
-          }
-        }
-      }
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Universal quality tiers for all items",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "quality_catalog",
+                     "notes":  [
+                                   "Qualities modify base items with bonus stats",
+                                   "itemTypeTraits allow quality effects to vary by item type (weapon vs armor)",
+                                   "Higher rarityWeight = more common quality"
+                               ]
+                 },
+    "quality_types":  {
+                          "Fine":  {
+                                       "name":  "Fine",
+                                       "rarityWeight":  15,
+                                       "description":  "",
+                                       "itemTypeTraits":  {
+                                                              "weapon":  {
+                                                                             "durability":  {
+                                                                                                "value":  120,
+                                                                                                "type":  "number"
+                                                                                            },
+                                                                             "damageBonus":  {
+                                                                                                 "value":  1,
+                                                                                                 "type":  "number"
+                                                                                             }
+                                                                         },
+                                                              "armor":  {
+                                                                            "armorBonus":  {
+                                                                                               "value":  2,
+                                                                                               "type":  "number"
+                                                                                           },
+                                                                            "valueMultiplier":  {
+                                                                                                    "value":  1.2,
+                                                                                                    "type":  "number"
+                                                                                                }
+                                                                        }
+                                                          }
+                                   }
+                      }
 }

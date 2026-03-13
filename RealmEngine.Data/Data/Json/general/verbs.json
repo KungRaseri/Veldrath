@@ -1,125 +1,57 @@
-{
-  "components": {
-    "combat_offensive": [
-      "attacks",
-      "strikes",
-      "slashes",
-      "stabs",
-      "pierces",
-      "crushes",
-      "smashes",
-      "pounds",
-      "bludgeons",
-      "maims"
-    ],
-    "combat_defensive": [
-      "blocks",
-      "parries",
-      "dodges",
-      "evades",
-      "deflects",
-      "guards",
-      "protects",
-      "shields",
-      "counters",
-      "ripostes"
-    ],
-    "magic": [
-      "casts",
-      "conjures",
-      "summons",
-      "channels",
-      "invokes",
-      "enchants",
-      "curses",
-      "hexes",
-      "blesses",
-      "dispels"
-    ],
-    "healing": [
-      "heals",
-      "mends",
-      "restores",
-      "revives",
-      "cures",
-      "soothes",
-      "rejuvenates",
-      "regenerates",
-      "purifies"
-    ],
-    "movement": [
-      "moves",
-      "walks",
-      "runs",
-      "sprints",
-      "dashes",
-      "jumps",
-      "leaps",
-      "climbs",
-      "crawls",
-      "slides"
-    ],
-    "stealth": [
-      "sneaks",
-      "creeps",
-      "stalks",
-      "prowls",
-      "lurks",
-      "hides",
-      "conceals",
-      "shadows",
-      "slinks"
-    ],
-    "interaction": [
-      "opens",
-      "closes",
-      "examines",
-      "takes",
-      "gives",
-      "uses",
-      "activates",
-      "triggers",
-      "operates"
-    ],
-    "communication": [
-      "speaks",
-      "shouts",
-      "whispers",
-      "murmurs",
-      "declares",
-      "asks",
-      "answers",
-      "commands",
-      "requests"
-    ]
-  },
-  "metadata": {
-    "description": "Categorized action verbs for combat, magic, movement, and interactions",
-    "version": "4.0",
-    "type": "component_library",
-    "lastUpdated": "2026-01-08",
-    "componentKeys": [
-      "combat_offensive",
-      "combat_defensive",
-      "magic",
-      "healing",
-      "movement",
-      "stealth",
-      "interaction",
-      "communication"
-    ],
-    "component_counts": {
-      "combat_offensive": 10,
-      "combat_defensive": 10,
-      "magic": 10,
-      "healing": 9,
-      "movement": 10,
-      "stealth": 9,
-      "interaction": 9,
-      "communication": 9
-    },
-    "notes": [
-      "Reference data for general verbs. Used as component source in name generation and stat calculations."
-    ]
-  }
+﻿{
+    "components":  {
+                       "combat_offensive":  [
+                                                "attacks"
+                                            ],
+                       "combat_defensive":  [
+                                                "blocks"
+                                            ],
+                       "magic":  [
+                                     "casts"
+                                 ],
+                       "healing":  [
+                                       "heals"
+                                   ],
+                       "movement":  [
+                                        "moves"
+                                    ],
+                       "stealth":  [
+                                       "sneaks"
+                                   ],
+                       "interaction":  [
+                                           "opens"
+                                       ],
+                       "communication":  [
+                                             "speaks"
+                                         ]
+                   },
+    "metadata":  {
+                     "description":  "Categorized action verbs for combat, magic, movement, and interactions",
+                     "version":  "4.0",
+                     "type":  "component_library",
+                     "lastUpdated":  "2026-01-08",
+                     "componentKeys":  [
+                                           "combat_offensive",
+                                           "combat_defensive",
+                                           "magic",
+                                           "healing",
+                                           "movement",
+                                           "stealth",
+                                           "interaction",
+                                           "communication"
+                                       ],
+                     "component_counts":  {
+                                              "combat_offensive":  1,
+                                              "combat_defensive":  1,
+                                              "magic":  1,
+                                              "healing":  1,
+                                              "movement":  1,
+                                              "stealth":  1,
+                                              "interaction":  1,
+                                              "communication":  1
+                                          },
+                     "notes":  [
+                                   "Reference data for general verbs. Used as component source in name generation and stat calculations."
+                               ]
+                 }
 }

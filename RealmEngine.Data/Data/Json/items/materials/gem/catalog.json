@@ -1,303 +1,36 @@
-{
-  "metadata": {
-    "description": "Gemstones for jewelry and enchanting - from common quartz to legendary dragon tears",
-    "version": "5.2",
-    "lastUpdated": "2026-01-23",
-    "type": "item_catalog",
-    "totalItems": 14
-  },
-  "material_types": {
-    "gem": {
-      "items": [
-        {
-          "slug": "rough-gemstone",
-          "name": "Rough Gemstone",
-          "description": "Uncut gemstone with potential.",
-          "rarityWeight": 85,
-          "value": 5,
-          "weight": 0.1,
-          "stackSize": 50,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "crafting",
-            "raw",
-            "uncut"
-          ]
-        },
-        {
-          "slug": "quartz",
-          "name": "Quartz",
-          "description": "Clear common gemstone, useful for basic enchantments.",
-          "rarityWeight": 80,
-          "value": 5,
-          "weight": 0.1,
-          "stackSize": 50,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "common"
-          ]
-        },
-        {
-          "slug": "amber",
-          "name": "Amber",
-          "description": "Fossilized tree resin with preservative properties.",
-          "rarityWeight": 70,
-          "value": 8,
-          "weight": 0.1,
-          "stackSize": 30,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "organic"
-          ]
-        },
-        {
-          "slug": "topaz",
-          "name": "Topaz",
-          "description": "Golden gemstone that enhances magical focus.",
-          "rarityWeight": 50,
-          "value": 15,
-          "weight": 0.1,
-          "stackSize": 20,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "uncommon",
-            "yellow"
-          ]
-        },
-        {
-          "slug": "amethyst",
-          "name": "Amethyst",
-          "description": "Purple gemstone known for mental clarity.",
-          "rarityWeight": 45,
-          "value": 18,
-          "weight": 0.1,
-          "stackSize": 20,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "uncommon",
-            "purple"
-          ]
-        },
-        {
-          "slug": "ruby",
-          "name": "Ruby",
-          "description": "Brilliant red gemstone associated with fire magic.",
-          "rarityWeight": 30,
-          "value": 50,
-          "weight": 0.1,
-          "stackSize": 10,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "rare",
-            "red"
-          ]
-        },
-        {
-          "slug": "sapphire",
-          "name": "Sapphire",
-          "description": "Deep blue gemstone linked to water and ice.",
-          "rarityWeight": 30,
-          "value": 50,
-          "weight": 0.1,
-          "stackSize": 10,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "rare",
-            "blue"
-          ]
-        },
-        {
-          "slug": "emerald",
-          "name": "Emerald",
-          "description": "Vibrant green gemstone connected to nature magic.",
-          "rarityWeight": 28,
-          "value": 55,
-          "weight": 0.1,
-          "stackSize": 10,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "rare",
-            "green"
-          ]
-        },
-        {
-          "slug": "diamond",
-          "name": "Diamond",
-          "description": "The hardest known gemstone, perfect for powerful enchantments.",
-          "rarityWeight": 18,
-          "value": 100,
-          "weight": 0.1,
-          "stackSize": 5,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "epic",
-            "diamond"
-          ]
-        },
-        {
-          "slug": "black-pearl",
-          "name": "Black Pearl",
-          "description": "Rare pearl from deep-sea creatures, absorbs curses.",
-          "rarityWeight": 15,
-          "value": 120,
-          "weight": 0.05,
-          "stackSize": 5,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "epic",
-            "black",
-            "pearl"
-          ]
-        },
-        {
-          "slug": "star-sapphire",
-          "name": "Star Sapphire",
-          "description": "Mystical sapphire with a star-like pattern, channels celestial energy.",
-          "rarityWeight": 10,
-          "value": 200,
-          "weight": 0.1,
-          "stackSize": 3,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "legendary",
-            "blue",
-            "celestial"
-          ]
-        },
-        {
-          "slug": "dragon-tear",
-          "name": "Dragon Tear",
-          "description": "Crystallized tear of a dragon, impossibly rare and powerful.",
-          "rarityWeight": 5,
-          "value": 500,
-          "weight": 0.05,
-          "stackSize": 1,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "legendary",
-            "dragon",
-            "unique"
-          ]
-        },
-        {
-          "slug": "rough-quartz",
-          "name": "Rough Quartz",
-          "description": "Unpolished quartz crystal, common mining byproduct.",
-          "rarityWeight": 85,
-          "value": 3,
-          "weight": 0.1,
-          "stackSize": 100,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "gem",
-            "raw",
-            "common",
-            "quartz"
-          ]
-        },
-        {
-          "slug": "dragon-heart",
-          "name": "Dragon Heart",
-          "description": "Crystalline heart from a slain dragon, pulses with ancient power.",
-          "rarityWeight": 3,
-          "value": 1000,
-          "weight": 0.5,
-          "stackSize": 1,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "legendary",
-          "traits": {},
-          "tags": [
-            "gem",
-            "legendary",
-            "dragon",
-            "heart",
-            "unique"
-          ]
-        },
-        {
-          "slug": "demon-core",
-          "name": "Demon Core",
-          "description": "Corrupted essence of a demon lord, radiates malevolent energy.",
-          "rarityWeight": 2,
-          "value": 800,
-          "weight": 0.3,
-          "stackSize": 1,
-          "itemType": "material",
-          "subType": "gem",
-          "tier": "legendary",
-          "traits": {},
-          "tags": [
-            "gem",
-            "legendary",
-            "demon",
-            "core",
-            "cursed"
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Gemstones for jewelry and enchanting - from common quartz to legendary dragon tears",
+                     "version":  "5.2",
+                     "lastUpdated":  "2026-01-23",
+                     "type":  "item_catalog",
+                     "totalItems":  1
+                 },
+    "material_types":  {
+                           "gem":  {
+                                       "items":  [
+                                                     {
+                                                         "slug":  "rough-gemstone",
+                                                         "name":  "Rough Gemstone",
+                                                         "description":  "Uncut gemstone with potential.",
+                                                         "rarityWeight":  85,
+                                                         "value":  5,
+                                                         "weight":  0.1,
+                                                         "stackSize":  50,
+                                                         "itemType":  "material",
+                                                         "subType":  "gem",
+                                                         "tier":  "raw",
+                                                         "traits":  {
+
+                                                                    },
+                                                         "tags":  [
+                                                                      "gem",
+                                                                      "crafting",
+                                                                      "raw",
+                                                                      "uncut"
+                                                                  ]
+                                                     }
+                                                 ]
+                                   }
+                       }
 }

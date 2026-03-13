@@ -1,88 +1,52 @@
-{
-  "components": {
-    "pleasant": [
-      "fragrant",
-      "fresh",
-      "floral",
-      "herbal",
-      "spicy",
-      "perfumed",
-      "aromatic",
-      "sweet",
-      "vanilla",
-      "citrus"
-    ],
-    "unpleasant": [
-      "musty",
-      "acrid",
-      "pungent",
-      "stale",
-      "putrid",
-      "rotten",
-      "sulfurous",
-      "bloody",
-      "moldy",
-      "burnt"
-    ],
-    "natural": [
-      "earthy",
-      "woody",
-      "mossy",
-      "pine",
-      "oceanic",
-      "floral",
-      "herbal",
-      "briny",
-      "fungal",
-      "leathery"
-    ],
-    "intensity": [
-      "faint",
-      "mild",
-      "strong",
-      "overpowering",
-      "subtle",
-      "sharp",
-      "heavy",
-      "light",
-      "lingering",
-      "piercing"
-    ]
-  },
-  "patterns": [
-    "pleasant",
-    "unpleasant",
-    "natural",
-    "{intensity} {pleasant}",
-    "{intensity} {unpleasant}",
-    "{intensity} {natural}"
-  ],
-  "metadata": {
-    "description": "Smell descriptions for environmental atmosphere, items, and narrative immersion",
-    "version": "4.0",
-    "type": "pattern_generation",
-    "lastUpdated": "2026-01-08",
-    "componentKeys": [
-      "pleasant",
-      "unpleasant",
-      "natural",
-      "intensity"
-    ],
-    "pattern_count": 6,
-    "patternTokens": [
-      "pleasant",
-      "unpleasant",
-      "natural",
-      "intensity"
-    ],
-    "component_counts": {
-      "pleasant": 10,
-      "unpleasant": 10,
-      "natural": 10,
-      "intensity": 10
-    },
-    "notes": [
-      "Reference data for general smells. Used as component source in name generation and stat calculations."
-    ]
-  }
+﻿{
+    "components":  {
+                       "pleasant":  [
+                                        "fragrant"
+                                    ],
+                       "unpleasant":  [
+                                          "musty"
+                                      ],
+                       "natural":  [
+                                       "earthy"
+                                   ],
+                       "intensity":  [
+                                         "faint"
+                                     ]
+                   },
+    "patterns":  [
+                     "pleasant",
+                     "unpleasant",
+                     "natural",
+                     "{intensity} {pleasant}",
+                     "{intensity} {unpleasant}",
+                     "{intensity} {natural}"
+                 ],
+    "metadata":  {
+                     "description":  "Smell descriptions for environmental atmosphere, items, and narrative immersion",
+                     "version":  "4.0",
+                     "type":  "pattern_generation",
+                     "lastUpdated":  "2026-01-08",
+                     "componentKeys":  [
+                                           "pleasant",
+                                           "unpleasant",
+                                           "natural",
+                                           "intensity"
+                                       ],
+                     "pattern_count":  6,
+                     "patternTokens":  [
+                                           "pleasant",
+                                           "unpleasant",
+                                           "natural",
+                                           "intensity"
+                                       ],
+                     "component_counts":  {
+                                              "pleasant":  1,
+                                              "unpleasant":  1,
+                                              "natural":  1,
+                                              "intensity":  1
+                                          },
+                     "notes":  [
+                                   "Reference data for general smells. Used as component source in name generation and stat calculations."
+                               ]
+                 }
 }

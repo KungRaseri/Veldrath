@@ -1,431 +1,66 @@
-{
-  "metadata": {
-    "type": "hierarchical_catalog",
-    "version": "5.1",
-    "description": "Common folk NPCs - everyday people from humble origins including farmers, laborers, refugees, and former slaves",
-    "lastUpdated": "2026-01-08",
-    "socialClass": "common",
-    "notes": [
-      "Most populous social class representing everyday citizens",
-      "Practical skills and modest resources, no special privileges",
-      "Includes troubled past individuals (orphans, refugees, exiles, former slaves)",
-      "Backgrounds represent past/history, occupations represent current job",
-      "NPCs can have both background AND occupation"
-    ]
-  },
-  "background_types": {
-    "everyday_folk": {
-      "metadata": {
-        "description": "Everyday people from humble origins",
-        "socialClass": "common",
-        "notes": [
-          "Most common background type",
-          "Practical skills and modest resources",
-          "No special privileges but no social stigma"
-        ]
-      },
-      "items": [
-        {
-          "slug": "farmer",
-          "name": "Farmer",
-          "displayName": "Farmer",
-          "description": "Works the land for a living",
-          "attributes": {
-            "strength": 12,
-            "dexterity": 10,
-            "constitution": 13,
-            "intelligence": 10,
-            "wisdom": 11,
-            "charisma": 9
-          },
-          "rarityWeight": 5,
-          "socialClass": "common",
-          "startingGold": "1d6",
-          "skillBonuses": [
-            "endurance",
-            "farming",
-            "herbalism"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 0,
-            "priceMultiplier": 0.95,
-            "shopAppearance": "rustic"
-          },
-          "specializationHints": [
-            "consumables.food",
-            "tools.farming"
-          ],
-          "uniqueItems": [],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        },
-        {
-          "slug": "laborer",
-          "name": "Laborer",
-          "displayName": "Laborer",
-          "description": "Performs manual work",
-          "attributes": {
-            "strength": 14,
-            "dexterity": 10,
-            "constitution": 13,
-            "intelligence": 9,
-            "wisdom": 10,
-            "charisma": 9
-          },
-          "rarityWeight": 8,
-          "socialClass": "common",
-          "startingGold": "1d8",
-          "skillBonuses": [
-            "endurance",
-            "strength"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 0,
-            "priceMultiplier": 0.95,
-            "shopAppearance": "practical"
-          },
-          "specializationHints": [
-            "tools.common",
-            "consumables.food"
-          ],
-          "uniqueItems": [],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        }
-      ]
-    },
-    "troubled_past": {
-      "metadata": {
-        "description": "Those who have faced hardship and adversity",
-        "socialClass": "common",
-        "notes": [
-          "Difficult backgrounds that shaped character",
-          "Often possess unique survival skills",
-          "May carry emotional scars"
-        ]
-      },
-      "items": [
-        {
-          "slug": "orphan",
-          "name": "Orphan",
-          "displayName": "Orphan",
-          "description": "Grew up without parents on the streets",
-          "attributes": {
-            "strength": 9,
-            "dexterity": 14,
-            "constitution": 11,
-            "intelligence": 10,
-            "wisdom": 12,
-            "charisma": 10
-          },
-          "rarityWeight": 20,
-          "socialClass": "common",
-          "startingGold": "1d4",
-          "skillBonuses": [
-            "survival",
-            "stealth",
-            "street_smarts",
-            "lockpicking"
-          ],
-          "shopModifiers": {
-            "qualityBonus": -5,
-            "priceMultiplier": 0.85,
-            "shopAppearance": "humble"
-          },
-          "specializationHints": [
-            "scavenged",
-            "secondhand",
-            "budget"
-          ],
-          "uniqueItems": [
-            "Patched Cloak",
-            "Lucky Coin",
-            "Worn Doll"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        },
-        {
-          "slug": "refugee",
-          "name": "Refugee",
-          "displayName": "Refugee",
-          "description": "Fled from war or disaster",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 11,
-            "constitution": 13,
-            "intelligence": 10,
-            "wisdom": 12,
-            "charisma": 10
-          },
-          "rarityWeight": 25,
-          "socialClass": "common",
-          "startingGold": "1d6",
-          "skillBonuses": [
-            "survival",
-            "endurance",
-            "languages"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 0,
-            "priceMultiplier": 0.9,
-            "shopAppearance": "makeshift"
-          },
-          "specializationHints": [
-            "travel_gear",
-            "survival_tools"
-          ],
-          "uniqueItems": [
-            "Tattered Map",
-            "Foreign Keepsake"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        },
-        {
-          "slug": "exile",
-          "name": "Exile",
-          "displayName": "Exile",
-          "description": "Banished from their homeland",
-          "attributes": {
-            "strength": 11,
-            "dexterity": 12,
-            "constitution": 12,
-            "intelligence": 11,
-            "wisdom": 11,
-            "charisma": 13
-          },
-          "rarityWeight": 40,
-          "socialClass": "common",
-          "startingGold": "2d6",
-          "skillBonuses": [
-            "survival",
-            "persuasion",
-            "deception"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 5,
-            "priceMultiplier": 1.0,
-            "shopAppearance": "wanderer"
-          },
-          "specializationHints": [
-            "travel_gear",
-            "foreign_goods"
-          ],
-          "uniqueItems": [
-            "Exile's Brand",
-            "Homeland Memento"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/gruff:mysterious"
-        },
-        {
-          "slug": "formerslave",
-          "name": "FormerSlave",
-          "displayName": "Former Slave",
-          "description": "Escaped or freed from bondage",
-          "attributes": {
-            "strength": 12,
-            "dexterity": 11,
-            "constitution": 14,
-            "intelligence": 9,
-            "wisdom": 11,
-            "charisma": 9
-          },
-          "rarityWeight": 35,
-          "socialClass": "common",
-          "startingGold": "1d4",
-          "skillBonuses": [
-            "endurance",
-            "labor",
-            "stealth"
-          ],
-          "shopModifiers": {
-            "qualityBonus": -3,
-            "priceMultiplier": 0.9,
-            "shopAppearance": "basic"
-          },
-          "specializationHints": [
-            "tools.common",
-            "basic_goods"
-          ],
-          "uniqueItems": [
-            "Broken Shackles",
-            "Freedom Papers"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        },
-        {
-          "slug": "formergladiator",
-          "name": "FormerGladiator",
-          "displayName": "Former Gladiator",
-          "description": "Fought in arenas for entertainment, won freedom",
-          "attributes": {
-            "strength": 16,
-            "dexterity": 13,
-            "constitution": 15,
-            "intelligence": 9,
-            "wisdom": 10,
-            "charisma": 13
-          },
-          "rarityWeight": 48,
-          "socialClass": "common",
-          "startingGold": "2d10",
-          "skillBonuses": [
-            "melee_combat",
-            "endurance",
-            "showmanship"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 10,
-            "priceMultiplier": 1.0,
-            "shopAppearance": "arena-styled",
-            "combatItemBonus": 15
-          },
-          "specializationHints": [
-            "weapons.melee",
-            "armor.light",
-            "arena_gear"
-          ],
-          "uniqueItems": [
-            "Arena Champion's Crown",
-            "Freedom Token"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        }
-      ]
-    }
-  },
-  "occupation_types": {
-    "non_merchants": {
-      "metadata": {
-        "description": "Common folk without shops - laborers and simple workers",
-        "hasShop": false,
-        "notes": [
-          "Provide basic services or quest hooks",
-          "No trading or shop inventory",
-          "Focus on dialogue and character interaction"
-        ]
-      },
-      "items": [
-        {
-          "slug": "farmer",
-          "name": "Farmer",
-          "displayName": "Farmer",
-          "description": "Tends crops and livestock",
-          "attributes": {
-            "strength": 12,
-            "dexterity": 10,
-            "constitution": 13,
-            "intelligence": 10,
-            "wisdom": 11,
-            "charisma": 9
-          },
-          "rarityWeight": 85,
-          "socialClass": "common",
-          "skillBonuses": [
-            "farming",
-            "endurance",
-            "animal_handling"
-          ],
-          "baseGold": "1d10",
-          "shopType": null,
-          "shopChance": 0.0,
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/professional:warm-rural"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "peasant",
-          "name": "Peasant",
-          "displayName": "Peasant",
-          "description": "Simple laborer or commoner",
-          "attributes": {
-            "strength": 11,
-            "dexterity": 10,
-            "constitution": 12,
-            "intelligence": 9,
-            "wisdom": 10,
-            "charisma": 9
-          },
-          "rarityWeight": 90,
-          "socialClass": "common",
-          "skillBonuses": [
-            "endurance",
-            "labor"
-          ],
-          "baseGold": "1d6",
-          "shopType": null,
-          "shopChance": 0.0,
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "beggar",
-          "name": "Beggar",
-          "displayName": "Beggar",
-          "description": "Homeless person seeking charity",
-          "attributes": {
-            "strength": 9,
-            "dexterity": 11,
-            "constitution": 10,
-            "intelligence": 10,
-            "wisdom": 12,
-            "charisma": 10
-          },
-          "rarityWeight": 40,
-          "socialClass": "common",
-          "skillBonuses": [
-            "street_smarts",
-            "begging"
-          ],
-          "baseGold": "1d4",
-          "shopType": null,
-          "shopChance": 0.0,
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "streeturchin",
-          "name": "StreetUrchin",
-          "displayName": "Street Urchin",
-          "description": "Young person living on the streets",
-          "attributes": {
-            "strength": 9,
-            "dexterity": 14,
-            "constitution": 11,
-            "intelligence": 11,
-            "wisdom": 12,
-            "charisma": 11
-          },
-          "rarityWeight": 35,
-          "socialClass": "common",
-          "skillBonuses": [
-            "stealth",
-            "pickpocket",
-            "street_smarts"
-          ],
-          "baseGold": "1d4",
-          "shopType": null,
-          "shopChance": 0.0,
-          "dialogueStyle": "@social/dialogue/styles/casual:cheerful",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "type":  "hierarchical_catalog",
+                     "version":  "5.1",
+                     "description":  "Common folk NPCs - everyday people from humble origins including farmers, laborers, refugees, and former slaves",
+                     "lastUpdated":  "2026-01-08",
+                     "socialClass":  "common",
+                     "notes":  [
+                                   "Most populous social class representing everyday citizens",
+                                   "Practical skills and modest resources, no special privileges",
+                                   "Includes troubled past individuals (orphans, refugees, exiles, former slaves)",
+                                   "Backgrounds represent past/history, occupations represent current job",
+                                   "NPCs can have both background AND occupation"
+                               ]
+                 },
+    "background_types":  {
+                             "everyday_folk":  {
+                                                   "metadata":  {
+                                                                    "description":  "Everyday people from humble origins",
+                                                                    "socialClass":  "common",
+                                                                    "notes":  [
+                                                                                  "Most common background type",
+                                                                                  "Practical skills and modest resources",
+                                                                                  "No special privileges but no social stigma"
+                                                                              ]
+                                                                },
+                                                   "items":  [
+                                                                 {
+                                                                     "slug":  "farmer",
+                                                                     "name":  "Farmer",
+                                                                     "displayName":  "Farmer",
+                                                                     "description":  "Works the land for a living",
+                                                                     "attributes":  {
+                                                                                        "strength":  12,
+                                                                                        "dexterity":  10,
+                                                                                        "constitution":  13,
+                                                                                        "intelligence":  10,
+                                                                                        "wisdom":  11,
+                                                                                        "charisma":  9
+                                                                                    },
+                                                                     "rarityWeight":  5,
+                                                                     "socialClass":  "common",
+                                                                     "startingGold":  "1d6",
+                                                                     "skillBonuses":  [
+                                                                                          "endurance",
+                                                                                          "farming",
+                                                                                          "herbalism"
+                                                                                      ],
+                                                                     "shopModifiers":  {
+                                                                                           "qualityBonus":  0,
+                                                                                           "priceMultiplier":  0.95,
+                                                                                           "shopAppearance":  "rustic"
+                                                                                       },
+                                                                     "specializationHints":  [
+                                                                                                 "consumables.food",
+                                                                                                 "tools.farming"
+                                                                                             ],
+                                                                     "uniqueItems":  [
+
+                                                                                     ],
+                                                                     "dialogueStyle":  "@social/dialogue/styles/casual:friendly"
+                                                                 }
+                                                             ]
+                                               }
+                         }
 }

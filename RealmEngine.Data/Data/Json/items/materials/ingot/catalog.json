@@ -1,270 +1,30 @@
-{
-  "metadata": {
-    "description": "Metal ingots used in blacksmithing recipes",
-    "version": "5.0",
-    "lastUpdated": "2026-01-21",
-    "type": "item_catalog",
-    "totalItems": 16
-  },
-  "material_types": {
-    "ingot": {
-      "items": [
-        {
-          "name": "Copper Ingot",
-          "slug": "copper-ingot",
-          "description": "A basic copper ingot, soft but easy to work with",
-          "propertyRef": "@properties/materials/metals:copper",
-          "rarityWeight": 80,
-          "value": 2,
-          "weight": 0.9,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "copper",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Tin Ingot",
-          "slug": "tin-ingot",
-          "description": "A lightweight tin ingot used in alloys",
-          "propertyRef": "@properties/materials/metals:tin",
-          "rarityWeight": 75,
-          "value": 3,
-          "weight": 0.8,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "tin",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Iron Ingot",
-          "slug": "iron-ingot",
-          "description": "A refined iron ingot ready for smithing",
-          "propertyRef": "@properties/materials/metals:iron",
-          "rarityWeight": 60,
-          "value": 5,
-          "weight": 1.0,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "iron",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Steel Ingot",
-          "slug": "steel-ingot",
-          "description": "A high-quality steel ingot with superior strength",
-          "propertyRef": "@properties/materials/metals:steel",
-          "rarityWeight": 40,
-          "value": 15,
-          "weight": 1.2,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "steel",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Bronze Ingot",
-          "slug": "bronze-ingot",
-          "description": "A durable bronze ingot with good corrosion resistance",
-          "propertyRef": "@properties/materials/metals:bronze",
-          "rarityWeight": 50,
-          "value": 8,
-          "weight": 1.1,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "bronze",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Mithril Ingot",
-          "slug": "mithril-ingot",
-          "description": "A rare and lightweight mithril ingot",
-          "propertyRef": "@properties/materials/metals:mithril",
-          "rarityWeight": 10,
-          "value": 100,
-          "weight": 0.8,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "mithril",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Silver Ingot",
-          "slug": "silver-ingot",
-          "description": "A lustrous silver ingot, effective against undead",
-          "propertyRef": "@properties/materials/metals:silver",
-          "rarityWeight": 40,
-          "value": 25,
-          "weight": 1.0,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "silver",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Cold Iron Ingot",
-          "slug": "cold-iron-ingot",
-          "description": "Iron forged in moonlight, bane of fey creatures",
-          "propertyRef": "@properties/materials/metals:cold-iron",
-          "rarityWeight": 30,
-          "value": 35,
-          "weight": 1.1,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "cold-iron",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Adamantine Ingot",
-          "slug": "adamantine-ingot",
-          "description": "An incredibly hard and durable adamantine ingot",
-          "propertyRef": "@properties/materials/metals:adamantine",
-          "rarityWeight": 20,
-          "value": 150,
-          "weight": 1.3,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "adamantine",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Darksteel Ingot",
-          "slug": "darksteel-ingot",
-          "description": "A black metal ingot infused with dark energy",
-          "propertyRef": "@properties/materials/metals:darksteel",
-          "rarityWeight": 25,
-          "value": 120,
-          "weight": 1.2,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "darksteel",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Dragon Steel Ingot",
-          "slug": "dragon-steel-ingot",
-          "description": "Steel forged with dragonfire, incredibly resilient",
-          "propertyRef": "@properties/materials/metals:dragon-steel",
-          "rarityWeight": 15,
-          "value": 200,
-          "weight": 1.4,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "dragon-steel",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Dragonbone Ingot",
-          "slug": "dragonbone-ingot",
-          "description": "Processed dragon bone, light yet incredibly strong",
-          "propertyRef": "@properties/materials/metals:dragonbone",
-          "rarityWeight": 12,
-          "value": 250,
-          "weight": 0.9,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "dragonbone",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Obsidian Ingot",
-          "slug": "obsidian-ingot",
-          "description": "Volcanic glass formed into a durable ingot",
-          "propertyRef": "@properties/materials/metals:obsidian",
-          "rarityWeight": 18,
-          "value": 80,
-          "weight": 1.0,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "obsidian",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Celestial Ore Ingot",
-          "slug": "celestial-ore-ingot",
-          "description": "Metal from fallen stars, radiates divine light",
-          "propertyRef": "@properties/materials/metals:celestial-ore",
-          "rarityWeight": 8,
-          "value": 300,
-          "weight": 1.1,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "celestial-ore",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Godforged Ingot",
-          "slug": "godforged-ingot",
-          "description": "Legendary metal blessed by divine smiths",
-          "propertyRef": "@properties/materials/metals:godforged",
-          "rarityWeight": 5,
-          "value": 500,
-          "weight": 1.5,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "godforged",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Void Crystal Ingot",
-          "slug": "void-crystal-ingot",
-          "description": "Crystallized void energy, absorbs light",
-          "propertyRef": "@properties/materials/metals:void-crystal",
-          "rarityWeight": 6,
-          "value": 350,
-          "weight": 0.7,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "void-crystal",
-            "category": "metal-ingot"
-          }
-        },
-        {
-          "name": "Electrum Ingot",
-          "slug": "electrum-ingot",
-          "description": "A gold-silver alloy with magical properties",
-          "propertyRef": "@properties/materials/metals:electrum",
-          "rarityWeight": 35,
-          "value": 45,
-          "weight": 1.0,
-          "stackable": true,
-          "maxStack": 99,
-          "traits": {
-            "material": "electrum",
-            "category": "metal-ingot"
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Metal ingots used in blacksmithing recipes",
+                     "version":  "5.0",
+                     "lastUpdated":  "2026-01-21",
+                     "type":  "item_catalog",
+                     "totalItems":  1
+                 },
+    "material_types":  {
+                           "ingot":  {
+                                         "items":  [
+                                                       {
+                                                           "name":  "Copper Ingot",
+                                                           "slug":  "copper-ingot",
+                                                           "description":  "A basic copper ingot, soft but easy to work with",
+                                                           "propertyRef":  "@properties/materials/metals:copper",
+                                                           "rarityWeight":  80,
+                                                           "value":  2,
+                                                           "weight":  0.9,
+                                                           "stackable":  true,
+                                                           "maxStack":  99,
+                                                           "traits":  {
+                                                                          "material":  "copper",
+                                                                          "category":  "metal-ingot"
+                                                                      }
+                                                       }
+                                                   ]
+                                     }
+                       }
 }

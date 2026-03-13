@@ -1,318 +1,55 @@
-{
-  "metadata": {
-    "type": "relationship_catalog",
-    "version": "4.0",
-    "description": "NPC faction and relationship definitions (simplified v1.0)",
-    "lastUpdated": "2026-01-08",
-    "notes": [
-      "Defines faction memberships and basic relationships between NPC groups",
-      "Simplified version - expand later with detailed relationship mechanics",
-      "Affects dialogue options, shop prices, quest availability",
-      "Future enhancements: individual NPC relationships, dynamic reputation changes"
-    ]
-  },
-  "factions": {
-    "merchants_guild": {
-      "name": "Merchants Guild",
-      "displayName": "Merchants Guild",
-      "reputation": "neutral",
-      "description": "Trade association of shopkeepers and merchants",
-      "members": [
-        "GeneralMerchant",
-        "Jeweler"
-      ],
-      "allies": [
-        "craftsmen_guild",
-        "nobility"
-      ],
-      "enemies": [
-        "thieves_guild"
-      ],
-      "neutralTowards": [
-        "commoners",
-        "mages_circle",
-        "scholars_guild"
-      ],
-      "benefits": {
-        "priceModifier": 0.95,
-        "qualityBonus": 5,
-        "inventoryAccess": "expanded"
-      }
-    },
-    "craftsmen_guild": {
-      "name": "Craftsmen Guild",
-      "displayName": "Craftsmen Guild",
-      "reputation": "neutral",
-      "description": "Association of skilled artisans and tradespeople",
-      "members": [
-        "Blacksmith",
-        "Weaponsmith",
-        "Armorer",
-        "Fletcher",
-        "Leatherworker",
-        "Craftsman",
-        "SmithApprentice"
-      ],
-      "allies": [
-        "merchants_guild",
-        "commoners"
-      ],
-      "enemies": [],
-      "neutralTowards": [
-        "nobility",
-        "mages_circle",
-        "scholars_guild",
-        "city_guard",
-        "clergy"
-      ],
-      "benefits": {
-        "craftingBonus": 10,
-        "repairDiscount": 0.85,
-        "commissionAccess": true
-      }
-    },
-    "thieves_guild": {
-      "name": "Thieves Guild",
-      "displayName": "Thieves Guild",
-      "reputation": "criminal",
-      "description": "Underground network of criminals and outlaws",
-      "members": [
-        "FormerCriminal",
-        "FormerSpy",
-        "FormerSmuggler",
-        "ReformedThief",
-        "FormerPirate"
-      ],
-      "allies": [],
-      "enemies": [
-        "merchants_guild",
-        "city_guard",
-        "nobility",
-        "clergy"
-      ],
-      "neutralTowards": [
-        "commoners"
-      ],
-      "benefits": {
-        "blackMarketAccess": true,
-        "informationNetwork": "extensive",
-        "safeHouses": true
-      }
-    },
-    "city_guard": {
-      "name": "City Guard",
-      "displayName": "City Guard",
-      "reputation": "lawful",
-      "description": "Law enforcement and military protection",
-      "members": [
-        "Guard",
-        "Soldier",
-        "FormerMercenary"
-      ],
-      "allies": [
-        "nobility",
-        "clergy",
-        "merchants_guild"
-      ],
-      "enemies": [
-        "thieves_guild"
-      ],
-      "neutralTowards": [
-        "commoners",
-        "craftsmen_guild",
-        "scholars_guild"
-      ],
-      "benefits": {
-        "protection": "high",
-        "legalAssistance": true,
-        "bountyAccess": true
-      }
-    },
-    "mages_circle": {
-      "name": "Mages Circle",
-      "displayName": "Mages Circle",
-      "reputation": "neutral",
-      "description": "Organization of arcane practitioners",
-      "members": [
-        "ApprenticeMage",
-        "HedgeWizard",
-        "Artificer",
-        "Sage",
-        "Alchemist"
-      ],
-      "allies": [
-        "scholars_guild"
-      ],
-      "enemies": [],
-      "neutralTowards": [
-        "merchants_guild",
-        "craftsmen_guild",
-        "commoners",
-        "nobility",
-        "clergy"
-      ],
-      "benefits": {
-        "spellAccess": "expanded",
-        "enchantmentServices": true,
-        "arcaneKnowledge": "extensive"
-      }
-    },
-    "scholars_guild": {
-      "name": "Scholars Guild",
-      "displayName": "Scholars Guild",
-      "reputation": "neutral",
-      "description": "Academic institution of learning and research",
-      "members": [
-        "Scholar",
-        "ScholarlyScribe",
-        "LoreKeeper",
-        "Cartographer"
-      ],
-      "allies": [
-        "mages_circle",
-        "clergy"
-      ],
-      "enemies": [],
-      "neutralTowards": [
-        "merchants_guild",
-        "craftsmen_guild",
-        "commoners",
-        "nobility"
-      ],
-      "benefits": {
-        "knowledgeAccess": "extensive",
-        "researchSupport": true,
-        "libraryAccess": true
-      }
-    },
-    "clergy": {
-      "name": "Clergy",
-      "displayName": "The Clergy",
-      "reputation": "lawful_good",
-      "description": "Religious organization serving divine powers",
-      "members": [
-        "Priest",
-        "Acolyte",
-        "Healer"
-      ],
-      "allies": [
-        "city_guard",
-        "nobility",
-        "scholars_guild"
-      ],
-      "enemies": [],
-      "neutralTowards": [
-        "commoners",
-        "merchants_guild",
-        "craftsmen_guild"
-      ],
-      "benefits": {
-        "healingServices": "free",
-        "blessings": true,
-        "sanctuary": true
-      }
-    },
-    "commoners": {
-      "name": "Commoners",
-      "displayName": "Common Folk",
-      "reputation": "neutral",
-      "description": "Everyday citizens and laborers",
-      "members": [
-        "Farmer",
-        "Laborer",
-        "Peasant",
-        "Innkeeper",
-        "TavernKeeper",
-        "Cook",
-        "StableMaster",
-        "Beggar",
-        "StreetUrchin",
-        "Refugee",
-        "Exile"
-      ],
-      "allies": [
-        "craftsmen_guild"
-      ],
-      "enemies": [],
-      "neutralTowards": [
-        "merchants_guild",
-        "city_guard",
-        "clergy",
-        "nobility",
-        "scholars_guild",
-        "mages_circle"
-      ],
-      "benefits": {
-        "rumorAccess": "high",
-        "communitySupport": true,
-        "hospitalityServices": true
-      }
-    },
-    "nobility": {
-      "name": "Nobility",
-      "displayName": "The Nobility",
-      "reputation": "lawful_neutral",
-      "description": "Aristocratic ruling class",
-      "members": [
-        "Noble",
-        "NobleBorn",
-        "KnightErrant",
-        "CourtAttendant"
-      ],
-      "allies": [
-        "city_guard",
-        "clergy",
-        "merchants_guild"
-      ],
-      "enemies": [
-        "thieves_guild"
-      ],
-      "neutralTowards": [
-        "commoners",
-        "craftsmen_guild",
-        "scholars_guild",
-        "mages_circle"
-      ],
-      "benefits": {
-        "politicalInfluence": "high",
-        "luxuryAccess": true,
-        "questConnections": "extensive"
-      }
-    },
-    "independent": {
-      "name": "Independent",
-      "displayName": "Independents",
-      "reputation": "neutral",
-      "description": "NPCs not affiliated with any major faction",
-      "members": [
-        "Orphan",
-        "FormerSlave",
-        "Entertainer",
-        "FormerGladiator",
-        "RetiredAdventurer",
-        "BountyHunterRetired"
-      ],
-      "allies": [],
-      "enemies": [],
-      "neutralTowards": [
-        "all"
-      ],
-      "benefits": {
-        "freedom": "complete",
-        "loyaltyRequired": false
-      }
-    }
-  },
-  "usage": {
-    "assignToNPC": "Add \"faction\": \"merchants_guild\" field to NPC catalog entry",
-    "reputationChecks": "Check player reputation with faction before dialogue/shop/quest interactions",
-    "priceModifiers": "Apply faction.benefits.priceModifier if player has positive reputation",
-    "questAvailability": "Some quests require specific faction reputation levels",
-    "notes": [
-      "Future: Add reputation point system (-100 to +100)",
-      "Future: Dynamic faction relationships based on player actions",
-      "Future: Faction war events that change ally/enemy status",
-      "Future: Individual NPC relationships override faction defaults"
-    ]
-  }
+﻿{
+    "metadata":  {
+                     "type":  "relationship_catalog",
+                     "version":  "4.0",
+                     "description":  "NPC faction and relationship definitions (simplified v1.0)",
+                     "lastUpdated":  "2026-01-08",
+                     "notes":  [
+                                   "Defines faction memberships and basic relationships between NPC groups",
+                                   "Simplified version - expand later with detailed relationship mechanics",
+                                   "Affects dialogue options, shop prices, quest availability",
+                                   "Future enhancements: individual NPC relationships, dynamic reputation changes"
+                               ]
+                 },
+    "factions":  {
+                     "merchants_guild":  {
+                                             "name":  "Merchants Guild",
+                                             "displayName":  "Merchants Guild",
+                                             "reputation":  "neutral",
+                                             "description":  "Trade association of shopkeepers and merchants",
+                                             "members":  [
+                                                             "GeneralMerchant",
+                                                             "Jeweler"
+                                                         ],
+                                             "allies":  [
+                                                            "craftsmen_guild",
+                                                            "nobility"
+                                                        ],
+                                             "enemies":  [
+                                                             "thieves_guild"
+                                                         ],
+                                             "neutralTowards":  [
+                                                                    "commoners",
+                                                                    "mages_circle",
+                                                                    "scholars_guild"
+                                                                ],
+                                             "benefits":  {
+                                                              "priceModifier":  0.95,
+                                                              "qualityBonus":  5,
+                                                              "inventoryAccess":  "expanded"
+                                                          }
+                                         }
+                 },
+    "usage":  {
+                  "assignToNPC":  "Add \"faction\": \"merchants_guild\" field to NPC catalog entry",
+                  "reputationChecks":  "Check player reputation with faction before dialogue/shop/quest interactions",
+                  "priceModifiers":  "Apply faction.benefits.priceModifier if player has positive reputation",
+                  "questAvailability":  "Some quests require specific faction reputation levels",
+                  "notes":  [
+                                "Future: Add reputation point system (-100 to +100)",
+                                "Future: Dynamic faction relationships based on player actions",
+                                "Future: Faction war events that change ally/enemy status",
+                                "Future: Individual NPC relationships override faction defaults"
+                            ]
+              }
 }

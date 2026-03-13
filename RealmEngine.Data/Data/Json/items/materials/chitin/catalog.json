@@ -1,96 +1,37 @@
-{
-  "metadata": {
-    "description": "Insectoid chitin materials for lightweight armor crafting",
-    "version": "1.0",
-    "lastUpdated": "2026-01-21",
-    "type": "item_catalog",
-    "totalItems": 4
-  },
-  "material_types": {
-    "chitin": {
-      "items": [
-        {
-          "slug": "spider-chitin",
-          "name": "Spider Chitin",
-          "description": "Lightweight chitin from giant spiders.",
-          "propertyRef": "@properties/materials/chitins:spider-chitin",
-          "rarityWeight": 55,
-          "value": 10,
-          "weight": 0.2,
-          "stackSize": 50,
-          "itemType": "material",
-          "subType": "chitin",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "chitin",
-            "crafting",
-            "insect",
-            "lightweight"
-          ]
-        },
-        {
-          "slug": "beetle-carapace",
-          "name": "Beetle Carapace",
-          "description": "Hard shell segments from giant beetles.",
-          "propertyRef": "@properties/materials/chitins:beetle-carapace",
-          "rarityWeight": 45,
-          "value": 18,
-          "weight": 0.4,
-          "stackSize": 40,
-          "itemType": "material",
-          "subType": "chitin",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "chitin",
-            "crafting",
-            "insect",
-            "hard"
-          ]
-        },
-        {
-          "slug": "scorpion-shell",
-          "name": "Scorpion Shell",
-          "description": "Segmented armor plates from giant scorpions.",
-          "propertyRef": "@properties/materials/chitins:scorpion-shell",
-          "rarityWeight": 30,
-          "value": 28,
-          "weight": 0.5,
-          "stackSize": 25,
-          "itemType": "material",
-          "subType": "chitin",
-          "tier": "refined",
-          "traits": {},
-          "tags": [
-            "chitin",
-            "crafting",
-            "insect",
-            "scorpion"
-          ]
-        },
-        {
-          "slug": "mantis-plate",
-          "name": "Mantis Plate",
-          "description": "Razor-sharp chitin plates from giant mantises.",
-          "propertyRef": "@properties/materials/chitins:mantis-carapace",
-          "rarityWeight": 20,
-          "value": 45,
-          "weight": 0.3,
-          "stackSize": 20,
-          "itemType": "material",
-          "subType": "chitin",
-          "tier": "refined",
-          "traits": {},
-          "tags": [
-            "chitin",
-            "crafting",
-            "insect",
-            "sharp",
-            "mantis"
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Insectoid chitin materials for lightweight armor crafting",
+                     "version":  "1.0",
+                     "lastUpdated":  "2026-01-21",
+                     "type":  "item_catalog",
+                     "totalItems":  1
+                 },
+    "material_types":  {
+                           "chitin":  {
+                                          "items":  [
+                                                        {
+                                                            "slug":  "spider-chitin",
+                                                            "name":  "Spider Chitin",
+                                                            "description":  "Lightweight chitin from giant spiders.",
+                                                            "propertyRef":  "@properties/materials/chitins:spider-chitin",
+                                                            "rarityWeight":  55,
+                                                            "value":  10,
+                                                            "weight":  0.2,
+                                                            "stackSize":  50,
+                                                            "itemType":  "material",
+                                                            "subType":  "chitin",
+                                                            "tier":  "raw",
+                                                            "traits":  {
+
+                                                                       },
+                                                            "tags":  [
+                                                                         "chitin",
+                                                                         "crafting",
+                                                                         "insect",
+                                                                         "lightweight"
+                                                                     ]
+                                                        }
+                                                    ]
+                                      }
+                       }
 }

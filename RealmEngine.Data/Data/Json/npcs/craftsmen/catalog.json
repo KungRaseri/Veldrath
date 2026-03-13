@@ -1,531 +1,64 @@
-{
-  "metadata": {
-    "type": "hierarchical_catalog",
-    "version": "5.1",
-    "description": "Skilled craftsmen NPCs - artisans who create and repair goods including smiths, armorers, fletchers, and leatherworkers",
-    "lastUpdated": "2026-01-08",
-    "socialClass": "craftsman",
-    "notes": [
-      "Specialized trade skills with moderate social standing",
-      "Often run shops or workshops",
-      "Higher quality goods but focused selection",
-      "Can craft and repair items"
-    ]
-  },
-  "background_types": {
-    "skilled_tradespeople": {
-      "metadata": {
-        "description": "Trained craftspeople and artisans",
-        "socialClass": "craftsman",
-        "notes": [
-          "Possess specialized trade skills",
-          "Moderate resources and social standing",
-          "Often run shops or workshops"
-        ]
-      },
-      "items": [
-        {
-          "slug": "craftsman",
-          "name": "Craftsman",
-          "displayName": "Craftsman",
-          "description": "Skilled artisan or tradesperson",
-          "attributes": {
-            "strength": 12,
-            "dexterity": 13,
-            "constitution": 12,
-            "intelligence": 12,
-            "wisdom": 12,
-            "charisma": 11
-          },
-          "rarityWeight": 10,
-          "socialClass": "craftsman",
-          "startingGold": "2d8",
-          "skillBonuses": [
-            "crafting",
-            "perception",
-            "appraisal"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 5,
-            "priceMultiplier": 1.0,
-            "shopAppearance": "workshop"
-          },
-          "specializationHints": [
-            "tools.crafting"
-          ],
-          "uniqueItems": [
-            "Apprentice Badge"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:professional"
-        },
-        {
-          "slug": "smithapprentice",
-          "name": "SmithApprentice",
-          "displayName": "Smith's Apprentice",
-          "description": "Trained under a master blacksmith",
-          "attributes": {
-            "strength": 15,
-            "dexterity": 11,
-            "constitution": 14,
-            "intelligence": 11,
-            "wisdom": 11,
-            "charisma": 10
-          },
-          "rarityWeight": 20,
-          "socialClass": "craftsman",
-          "startingGold": "2d10",
-          "skillBonuses": [
-            "smithing",
-            "crafting",
-            "endurance"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 10,
-            "priceMultiplier": 1.0,
-            "shopAppearance": "forge",
-            "combatItemBonus": 15
-          },
-          "specializationHints": [
-            "weapons.melee",
-            "armor.heavy"
-          ],
-          "uniqueItems": [
-            "Master's Hammer",
-            "Forge-worn Apron"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly"
-        }
-      ]
-    }
-  },
-  "occupation_types": {
-    "craftsmen_traders": {
-      "metadata": {
-        "description": "Skilled artisans who create goods",
-        "hasShop": true,
-        "notes": [
-          "Specialize in specific item types",
-          "Can craft and repair items",
-          "Higher quality goods but smaller selection"
-        ]
-      },
-      "items": [
-        {
-          "slug": "blacksmith",
-          "name": "Blacksmith",
-          "displayName": "Blacksmith",
-          "description": "Master metalworker specializing in weapons and armor",
-          "attributes": {
-            "strength": 16,
-            "dexterity": 12,
-            "constitution": 15,
-            "intelligence": 12,
-            "wisdom": 11,
-            "charisma": 10
-          },
-          "rarityWeight": 20,
-          "socialClass": "craftsman",
-          "skillBonuses": [
-            "smithing",
-            "crafting",
-            "repair"
-          ],
-          "baseGold": "3d10",
-          "shopType": "smithy",
-          "shopChance": 0.8,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/weapons:*",
-                "baseQuantity": "infinite"
-              },
-              {
-                "item": "@items/armor:*",
-                "baseQuantity": 2,
-                "restockDaily": true
-              },
-              {
-                "item": "@items/weapons:*",
-                "baseQuantity": 3,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "weapons.melee",
-              "armor.heavy",
-              "armor.medium"
-            ],
-            "dynamicItemCount": "{1d6} {2}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "weapons.melee",
-                "armor.all"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.8,
-              "playerItemDecayDaily": 0.1,
-              "playerItemDecayDays": 7,
-              "maxPlayerItems": 10,
-              "bankGoldFormula": "baseGold * 10 + background.startingGold * 5",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "weapons",
-            "armor"
-          ],
-          "craftingQualityBonus": 30,
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "weaponsmith",
-          "name": "Weaponsmith",
-          "displayName": "Weaponsmith",
-          "description": "Specialist in crafting fine weapons",
-          "attributes": {
-            "strength": 17,
-            "dexterity": 13,
-            "constitution": 14,
-            "intelligence": 13,
-            "wisdom": 11,
-            "charisma": 10
-          },
-          "rarityWeight": 30,
-          "socialClass": "craftsman",
-          "skillBonuses": [
-            "weapon_smithing",
-            "crafting",
-            "appraisal"
-          ],
-          "baseGold": "3d12",
-          "shopType": "weapon_shop",
-          "shopChance": 0.75,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/weapons:*",
-                "baseQuantity": "infinite"
-              },
-              {
-                "item": "@items/weapons:*",
-                "baseQuantity": 1,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "weapons.melee"
-            ],
-            "dynamicItemCount": "{1d8} {3}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "weapons.melee",
-                "weapons.ranged"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.8,
-              "playerItemDecayDaily": 0.1,
-              "playerItemDecayDays": 7,
-              "maxPlayerItems": 12,
-              "bankGoldFormula": "baseGold * 12 + background.startingGold * 6",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "weapons"
-          ],
-          "craftingQualityBonus": 40,
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "armorer",
-          "name": "Armorer",
-          "displayName": "Armorer",
-          "description": "Expert in crafting and repairing armor",
-          "attributes": {
-            "strength": 16,
-            "dexterity": 11,
-            "constitution": 16,
-            "intelligence": 12,
-            "wisdom": 11,
-            "charisma": 10
-          },
-          "rarityWeight": 30,
-          "socialClass": "craftsman",
-          "skillBonuses": [
-            "armor_smithing",
-            "crafting",
-            "repair"
-          ],
-          "baseGold": "3d12",
-          "shopType": "armor_shop",
-          "shopChance": 0.75,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/armor:*",
-                "baseQuantity": "infinite"
-              },
-              {
-                "item": "@items/armor:*",
-                "baseQuantity": 1,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "armor.light",
-              "armor.medium",
-              "armor.heavy"
-            ],
-            "dynamicItemCount": "{1d6} {2}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "armor.all"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.8,
-              "playerItemDecayDaily": 0.1,
-              "playerItemDecayDays": 7,
-              "maxPlayerItems": 10,
-              "bankGoldFormula": "baseGold * 12 + background.startingGold * 6",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "armor"
-          ],
-          "craftingQualityBonus": 40,
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "fletcher",
-          "name": "Fletcher",
-          "displayName": "Fletcher",
-          "description": "Crafts bows and arrows",
-          "attributes": {
-            "strength": 12,
-            "dexterity": 16,
-            "constitution": 12,
-            "intelligence": 12,
-            "wisdom": 13,
-            "charisma": 11
-          },
-          "rarityWeight": 22,
-          "socialClass": "craftsman",
-          "skillBonuses": [
-            "bow_crafting",
-            "arrow_crafting"
-          ],
-          "baseGold": "2d10",
-          "shopType": "fletcher",
-          "shopChance": 0.7,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 50,
-                "restockDaily": true
-              },
-              {
-                "item": "@items/weapons:*",
-                "baseQuantity": 2,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "weapons.ranged",
-              "ammunition"
-            ],
-            "dynamicItemCount": "{1d6} {1}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "weapons.ranged",
-                "ammunition"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.75,
-              "playerItemDecayDaily": 0.1,
-              "playerItemDecayDays": 7,
-              "maxPlayerItems": 8,
-              "bankGoldFormula": "baseGold * 8 + background.startingGold * 4",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "bows",
-            "arrows"
-          ],
-          "craftingQualityBonus": 35,
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "leatherworker",
-          "name": "Leatherworker",
-          "displayName": "Leatherworker",
-          "description": "Crafts leather armor and accessories",
-          "attributes": {
-            "strength": 12,
-            "dexterity": 15,
-            "constitution": 12,
-            "intelligence": 12,
-            "wisdom": 12,
-            "charisma": 11
-          },
-          "rarityWeight": 20,
-          "socialClass": "craftsman",
-          "skillBonuses": [
-            "leatherworking",
-            "crafting"
-          ],
-          "baseGold": "2d8",
-          "shopType": "leather_shop",
-          "shopChance": 0.7,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/armor:*",
-                "baseQuantity": 3,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "armor.light",
-              "accessories"
-            ],
-            "dynamicItemCount": "{1d6} {2}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "armor.light",
-                "accessories"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.75,
-              "playerItemDecayDaily": 0.1,
-              "playerItemDecayDays": 7,
-              "maxPlayerItems": 10,
-              "bankGoldFormula": "baseGold * 8 + background.startingGold * 4",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "leather_armor",
-            "accessories"
-          ],
-          "craftingQualityBonus": 30,
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ]
-        },
-        {
-          "slug": "jeweler",
-          "name": "Jeweler",
-          "displayName": "Jeweler",
-          "description": "Crafts fine jewelry and gems",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 16,
-            "constitution": 11,
-            "intelligence": 14,
-            "wisdom": 13,
-            "charisma": 13
-          },
-          "rarityWeight": 45,
-          "socialClass": "specialist",
-          "skillBonuses": [
-            "jewelry_crafting",
-            "appraisal",
-            "gem_cutting"
-          ],
-          "baseGold": "5d10",
-          "shopType": "jewelry_shop",
-          "shopChance": 0.85,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 3,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "accessories.rings",
-              "accessories.amulets",
-              "accessories.jewelry"
-            ],
-            "dynamicItemCount": "{1d6} {2}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "accessories.all",
-                "gems"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.9,
-              "playerItemDecayDaily": 0.05,
-              "playerItemDecayDays": 10,
-              "maxPlayerItems": 15,
-              "bankGoldFormula": "baseGold * 20 + background.startingGold * 10",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "jewelry"
-          ],
-          "canEnchant": true,
-          "enchantmentPower": 15,
-          "dialogueStyle": "@social/dialogue/styles/casual:greedy",
-          "greetings": [
-            "@social/dialogue/greetings/merchant:merchant-eager"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/merchant:merchant"
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "type":  "hierarchical_catalog",
+                     "version":  "5.1",
+                     "description":  "Skilled craftsmen NPCs - artisans who create and repair goods including smiths, armorers, fletchers, and leatherworkers",
+                     "lastUpdated":  "2026-01-08",
+                     "socialClass":  "craftsman",
+                     "notes":  [
+                                   "Specialized trade skills with moderate social standing",
+                                   "Often run shops or workshops",
+                                   "Higher quality goods but focused selection",
+                                   "Can craft and repair items"
+                               ]
+                 },
+    "background_types":  {
+                             "skilled_tradespeople":  {
+                                                          "metadata":  {
+                                                                           "description":  "Trained craftspeople and artisans",
+                                                                           "socialClass":  "craftsman",
+                                                                           "notes":  [
+                                                                                         "Possess specialized trade skills",
+                                                                                         "Moderate resources and social standing",
+                                                                                         "Often run shops or workshops"
+                                                                                     ]
+                                                                       },
+                                                          "items":  [
+                                                                        {
+                                                                            "slug":  "craftsman",
+                                                                            "name":  "Craftsman",
+                                                                            "displayName":  "Craftsman",
+                                                                            "description":  "Skilled artisan or tradesperson",
+                                                                            "attributes":  {
+                                                                                               "strength":  12,
+                                                                                               "dexterity":  13,
+                                                                                               "constitution":  12,
+                                                                                               "intelligence":  12,
+                                                                                               "wisdom":  12,
+                                                                                               "charisma":  11
+                                                                                           },
+                                                                            "rarityWeight":  10,
+                                                                            "socialClass":  "craftsman",
+                                                                            "startingGold":  "2d8",
+                                                                            "skillBonuses":  [
+                                                                                                 "crafting",
+                                                                                                 "perception",
+                                                                                                 "appraisal"
+                                                                                             ],
+                                                                            "shopModifiers":  {
+                                                                                                  "qualityBonus":  5,
+                                                                                                  "priceMultiplier":  1.0,
+                                                                                                  "shopAppearance":  "workshop"
+                                                                                              },
+                                                                            "specializationHints":  [
+                                                                                                        "tools.crafting"
+                                                                                                    ],
+                                                                            "uniqueItems":  [
+                                                                                                "Apprentice Badge"
+                                                                                            ],
+                                                                            "dialogueStyle":  "@social/dialogue/styles/casual:professional"
+                                                                        }
+                                                                    ]
+                                                      }
+                         }
 }

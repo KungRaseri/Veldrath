@@ -1,253 +1,69 @@
-{
-  "metadata": {
-    "description": "Humanoid enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "profession",
-      "rank",
-      "specialization",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "profession",
-      "rank",
-      "specialization",
-      "title"
-    ],
-    "totalPatterns": 5,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Base token resolves from enemies/humanoids/catalog.json",
-      "All components have rarityWeight for emergent rarity calculation",
-      "Component weights combine via multipliers from general/rarity_config.json",
-      "Profession component can also serve as base type",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "profession": [
-      {
-        "rarityWeight": 5,
-        "name": "Bandit"
-      },
-      {
-        "rarityWeight": 6,
-        "name": "Thug"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Mercenary"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Cultist"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Raider"
-      },
-      {
-        "rarityWeight": 9,
-        "name": "Brigand"
-      },
-      {
-        "rarityWeight": 14,
-        "name": "Marauder"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Assassin"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Rogue"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Outlaw"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Highwayman"
-      },
-      {
-        "rarityWeight": 16,
-        "name": "Pirate"
-      },
-      {
-        "rarityWeight": 14,
-        "name": "Smuggler"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Zealot"
-      }
-    ],
-    "rank": [
-      {
-        "rarityWeight": 5,
-        "name": "Novice"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Veteran"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Elite"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Captain"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Lieutenant"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Champion"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Master"
-      },
-      {
-        "rarityWeight": 75,
-        "name": "Lord"
-      }
-    ],
-    "specialization": [
-      {
-        "rarityWeight": 10,
-        "name": "Scout"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Warrior"
-      },
-      {
-        "rarityWeight": 14,
-        "name": "Archer"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Mage"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Berserker"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Enforcer"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Brute"
-      },
-      {
-        "rarityWeight": 24,
-        "name": "Sharpshooter"
-      },
-      {
-        "rarityWeight": 32,
-        "name": "Spellblade"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 40,
-        "name": "the Bloodthirsty"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "the Wise"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "the Brave"
-      },
-      {
-        "rarityWeight": 38,
-        "name": "the Cruel"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "the Feared"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "the Merciless"
-      },
-      {
-        "rarityWeight": 42,
-        "name": "of the Shadows"
-      },
-      {
-        "rarityWeight": 48,
-        "name": "the Slayer"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 12,
-        "name": "Rogue"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Fallen"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Corrupt"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Zealous"
-      },
-      {
-        "rarityWeight": 16,
-        "name": "Savage"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Cunning"
-      },
-      {
-        "rarityWeight": 24,
-        "name": "Ruthless"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Bloodthirsty"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "profession"
-    },
-    {
-      "rarityWeight": 35,
-      "pattern": "{rank} {profession}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{profession} {specialization}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{rank} {profession} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Humanoid enemy name generation with pattern-based system and weight-based rarity",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "profession",
+                                           "rank",
+                                           "specialization",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "profession",
+                                           "rank",
+                                           "specialization",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Base token resolves from enemies/humanoids/catalog.json",
+                                   "All components have rarityWeight for emergent rarity calculation",
+                                   "Component weights combine via multipliers from general/rarity_config.json",
+                                   "Profession component can also serve as base type",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "profession":  [
+                                          {
+                                              "rarityWeight":  5,
+                                              "name":  "Bandit"
+                                          }
+                                      ],
+                       "rank":  [
+                                    {
+                                        "rarityWeight":  5,
+                                        "name":  "Novice"
+                                    }
+                                ],
+                       "specialization":  [
+                                              {
+                                                  "rarityWeight":  10,
+                                                  "name":  "Scout"
+                                              }
+                                          ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  40,
+                                         "name":  "the Bloodthirsty"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  12,
+                                          "name":  "Rogue"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

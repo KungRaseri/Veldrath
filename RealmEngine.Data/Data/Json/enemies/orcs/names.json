@@ -1,184 +1,60 @@
-{
-  "metadata": {
-    "description": "Orc name generation patterns with weight-based rarity components",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "rank",
-      "clan",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "rank",
-      "clan",
-      "title"
-    ],
-    "totalPatterns": 6,
-    "raritySystem": "weight-based",
-    "notes": [
-      "base_token: Resolves to item name from orcs/catalog.json",
-      "clan_culture: Orcs organize in powerful clans with warrior hierarchies",
-      "weight_ranges: Young (5) → King (65), Ironjaw (10) → Hellscream (45)",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "rank": [
-      {
-        "rarityWeight": 5,
-        "name": "Young"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Grunt"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Warrior"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Elite"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Champion"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Warlord"
-      },
-      {
-        "rarityWeight": 65,
-        "name": "King"
-      }
-    ],
-    "clan": [
-      {
-        "rarityWeight": 10,
-        "name": "Ironjaw"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Bloodaxe"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Skullsplitter"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Bonecrusher"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Blackhand"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Doomhammer"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Goretusk"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Hellscream"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 8,
-        "name": "Raider"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Marauder"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Berserker"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Warchief"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Conqueror"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Destroyer"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Overlord"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 8,
-        "name": "Savage"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Brutal"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Fierce"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Raging"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Mighty"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Fearsome"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Unstoppable"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Legendary"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{rank} {base}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{base} {title}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{clan} {base}"
-    },
-    {
-      "rarityWeight": 20,
-      "pattern": "{rank} {clan} {base}"
-    },
-    {
-      "rarityWeight": 10,
-      "pattern": "{rank} {clan} {base} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Orc name generation patterns with weight-based rarity components",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "rank",
+                                           "clan",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "rank",
+                                           "clan",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "base_token: Resolves to item name from orcs/catalog.json",
+                                   "clan_culture: Orcs organize in powerful clans with warrior hierarchies",
+                                   "weight_ranges: Young (5) → King (65), Ironjaw (10) → Hellscream (45)",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "rank":  [
+                                    {
+                                        "rarityWeight":  5,
+                                        "name":  "Young"
+                                    }
+                                ],
+                       "clan":  [
+                                    {
+                                        "rarityWeight":  10,
+                                        "name":  "Ironjaw"
+                                    }
+                                ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  8,
+                                         "name":  "Raider"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  8,
+                                          "name":  "Savage"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

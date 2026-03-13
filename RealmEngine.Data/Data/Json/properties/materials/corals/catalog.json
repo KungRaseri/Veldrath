@@ -1,171 +1,50 @@
-{
-  "metadata": {
-    "description": "Coral material properties for crafting system - underwater and coastal materials",
-    "version": "5.1",
-    "lastUpdated": "2026-01-22",
-    "type": "materials_properties_catalog",
-    "totalMaterials": 5,
-    "usage": "Coral materials for armor and decorative items with water affinity.",
-    "notes": [
-      "Coral materials provide water resistance and unique aesthetics",
-      "Focus on charisma and wisdom",
-      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-    ]
-  },
-  "coral_types": {
-    "coral": {
-      "items": [
-        {
-          "slug": "red-coral",
-          "name": "Red Coral",
-          "attributes": {
-            "dexterity": 3,
-            "intelligence": 5,
-            "charisma": 8,
-            "strength": 3,
-            "constitution": 5,
-            "wisdom": 5
-          },
-          "traits": {
-            "durability": 35,
-            "weight": 0.8,
-            "waterResistance": 20
-          },
-          "displayName": "Red Coral",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 4,
-              "defenseBonus": 1,
-              "value": 8
-            },
-            "weapon": {
-              "value": 6
-            }
-          },
-          "rarityWeight": 55
-        },
-        {
-          "slug": "black-coral",
-          "name": "Black Coral",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 8,
-            "charisma": 12,
-            "strength": 5,
-            "constitution": 8,
-            "wisdom": 10
-          },
-          "traits": {
-            "durability": 45,
-            "weight": 0.9,
-            "waterResistance": 30,
-            "enchantability": 25
-          },
-          "displayName": "Black Coral",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 6,
-              "defenseBonus": 2,
-              "value": 20
-            },
-            "weapon": {
-              "value": 18
-            }
-          },
-          "rarityWeight": 25
-        },
-        {
-          "slug": "brain-coral",
-          "name": "Brain Coral",
-          "attributes": {
-            "dexterity": 3,
-            "intelligence": 12,
-            "charisma": 8,
-            "strength": 3,
-            "constitution": 8,
-            "wisdom": 15
-          },
-          "traits": {
-            "durability": 40,
-            "weight": 1.0,
-            "waterResistance": 25,
-            "mentalResistance": 20
-          },
-          "displayName": "Brain Coral",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 5,
-              "defenseBonus": 2,
-              "manaBonus": 15,
-              "value": 15
-            }
-          },
-          "rarityWeight": 30
-        },
-        {
-          "slug": "fire-coral",
-          "name": "Fire Coral",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 8,
-            "charisma": 10,
-            "strength": 8,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 42,
-            "weight": 0.85,
-            "waterResistance": 20,
-            "fireResistance": 15
-          },
-          "displayName": "Fire Coral",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 7,
-              "defenseBonus": 2,
-              "value": 18
-            },
-            "weapon": {
-              "fireDamage": 3,
-              "value": 16
-            }
-          },
-          "rarityWeight": 35
-        },
-        {
-          "slug": "deep-sea-coral",
-          "name": "Deep Sea Coral",
-          "attributes": {
-            "dexterity": 8,
-            "intelligence": 15,
-            "charisma": 18,
-            "strength": 10,
-            "constitution": 15,
-            "wisdom": 18
-          },
-          "traits": {
-            "durability": 65,
-            "weight": 1.1,
-            "waterResistance": 50,
-            "pressureResistance": 40,
-            "enchantability": 35
-          },
-          "displayName": "Deep Sea Coral",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 12,
-              "defenseBonus": 5,
-              "value": 45
-            },
-            "weapon": {
-              "spellPower": 10,
-              "value": 40
-            }
-          },
-          "rarityWeight": 8
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Coral material properties for crafting system - underwater and coastal materials",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-22",
+                     "type":  "materials_properties_catalog",
+                     "totalMaterials":  1,
+                     "usage":  "Coral materials for armor and decorative items with water affinity.",
+                     "notes":  [
+                                   "Coral materials provide water resistance and unique aesthetics",
+                                   "Focus on charisma and wisdom",
+                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+                               ]
+                 },
+    "coral_types":  {
+                        "coral":  {
+                                      "items":  [
+                                                    {
+                                                        "slug":  "red-coral",
+                                                        "name":  "Red Coral",
+                                                        "attributes":  {
+                                                                           "dexterity":  3,
+                                                                           "intelligence":  5,
+                                                                           "charisma":  8,
+                                                                           "strength":  3,
+                                                                           "constitution":  5,
+                                                                           "wisdom":  5
+                                                                       },
+                                                        "traits":  {
+                                                                       "durability":  35,
+                                                                       "weight":  0.8,
+                                                                       "waterResistance":  20
+                                                                   },
+                                                        "displayName":  "Red Coral",
+                                                        "itemTypeTraits":  {
+                                                                               "armor":  {
+                                                                                             "armorRating":  4,
+                                                                                             "defenseBonus":  1,
+                                                                                             "value":  8
+                                                                                         },
+                                                                               "weapon":  {
+                                                                                              "value":  6
+                                                                                          }
+                                                                           },
+                                                        "rarityWeight":  55
+                                                    }
+                                                ]
+                                  }
+                    }
 }

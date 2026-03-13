@@ -1,210 +1,34 @@
-{
-  "metadata": {
-    "version": "4.0",
-    "type": "hierarchical_catalog",
-    "description": "Dialogue speaking styles that define NPC personality and tone",
-    "lastUpdated": "2026-01-08",
-    "notes": [
-      "Styles affect word choice, sentence structure, and formality",
-      "Referenced by NPCs via dialogueStyle field",
-      "Used to generate contextually appropriate dialogue"
-    ]
-  },
-  "style_types": {
-    "formal": {
-      "items": [
-        {
-          "slug": "scholarly",
-          "name": "scholarly",
-          "displayName": "Scholarly",
-          "rarityWeight": 10,
-          "description": "Intellectual, formal, uses complex vocabulary",
-          "tone": "formal",
-          "vocabulary": "complex",
-          "sentence_structure": "elaborate",
-          "examples": [
-            "Greetings, dear scholar. How may I illuminate your path today?",
-            "Indeed, the ancient texts corroborate your hypothesis.",
-            "A most intriguing query. Let us examine this matter thoroughly."
-          ]
-        },
-        {
-          "slug": "noble",
-          "name": "noble",
-          "displayName": "Noble",
-          "rarityWeight": 15,
-          "description": "Refined, courteous, maintains social distance",
-          "tone": "formal",
-          "vocabulary": "sophisticated",
-          "sentence_structure": "proper",
-          "examples": [
-            "Good day to you. How may our house be of service?",
-            "Your presence graces our halls.",
-            "One must maintain proper decorum in such matters."
-          ]
-        },
-        {
-          "slug": "wise",
-          "name": "wise",
-          "displayName": "Wise",
-          "rarityWeight": 12,
-          "description": "Thoughtful, measured, speaks in proverbs",
-          "tone": "contemplative",
-          "vocabulary": "philosophical",
-          "sentence_structure": "measured",
-          "examples": [
-            "Patience reveals what haste conceals, young one.",
-            "The path of wisdom is walked slowly.",
-            "Reflect upon this: all answers lie within the question."
-          ]
-        }
-      ]
-    },
-    "mystical": {
-      "items": []
-    },
-    "gruff": {
-      "items": [
-        {
-          "slug": "mysterious",
-          "name": "mysterious",
-          "displayName": "Mysterious",
-          "rarityWeight": 18,
-          "description": "Cryptic, vague, hints at hidden knowledge",
-          "tone": "enigmatic",
-          "vocabulary": "ambiguous",
-          "sentence_structure": "fragmented",
-          "examples": [
-            "All is not as it seems, traveler...",
-            "The shadows know what the light cannot see.",
-            "Perhaps. Perhaps not. Time will tell."
-          ]
-        },
-        {
-          "slug": "intimidating",
-          "name": "intimidating",
-          "displayName": "Intimidating",
-          "rarityWeight": 20,
-          "description": "Threatening, domineering, harsh",
-          "tone": "aggressive",
-          "vocabulary": "commanding",
-          "sentence_structure": "declarative",
-          "examples": [
-            "You dare address me?",
-            "Choose your next words carefully.",
-            "Leave. Now."
-          ]
-        },
-        {
-          "slug": "nervous",
-          "name": "nervous",
-          "displayName": "Nervous",
-          "rarityWeight": 15,
-          "description": "Anxious, hesitant, stammering",
-          "tone": "uncertain",
-          "vocabulary": "simple",
-          "sentence_structure": "fragmented",
-          "examples": [
-            "Oh! Um... I-I didn't expect...",
-            "Please don't... I mean, if you could...",
-            "S-sorry, I'm not sure I..."
-          ]
-        },
-        {
-          "slug": "sarcastic",
-          "name": "sarcastic",
-          "displayName": "Sarcastic",
-          "rarityWeight": 25,
-          "description": "Ironic, mocking, dry wit",
-          "tone": "sardonic",
-          "vocabulary": "pointed",
-          "sentence_structure": "cutting",
-          "examples": [
-            "Oh wonderful, another hero. Just what we needed.",
-            "Sure, that'll work. If we're lucky.",
-            "Right. Because that's never gone wrong before."
-          ]
-        }
-      ]
-    },
-    "casual": {
-      "items": [
-        {
-          "slug": "friendly",
-          "name": "friendly",
-          "displayName": "Friendly",
-          "rarityWeight": 8,
-          "description": "Warm, approachable, conversational",
-          "tone": "casual",
-          "vocabulary": "simple",
-          "sentence_structure": "natural",
-          "examples": [
-            "Hey there! Good to see you!",
-            "No worries, I'm happy to help.",
-            "Come on in, make yourself at home!"
-          ]
-        },
-        {
-          "slug": "cheerful",
-          "name": "cheerful",
-          "displayName": "Cheerful",
-          "rarityWeight": 10,
-          "description": "Upbeat, energetic, enthusiastic",
-          "tone": "positive",
-          "vocabulary": "simple",
-          "sentence_structure": "short",
-          "examples": [
-            "Oh wonderful! I love visitors!",
-            "What a beautiful day, isn't it?",
-            "Absolutely! That sounds fantastic!"
-          ]
-        },
-        {
-          "slug": "gruff",
-          "name": "gruff",
-          "displayName": "Gruff",
-          "rarityWeight": 12,
-          "description": "Blunt, straightforward, no-nonsense",
-          "tone": "curt",
-          "vocabulary": "simple",
-          "sentence_structure": "short",
-          "examples": [
-            "What do you want?",
-            "Make it quick.",
-            "Hmph. Fine."
-          ]
-        },
-        {
-          "slug": "professional",
-          "name": "professional",
-          "displayName": "Professional",
-          "rarityWeight": 8,
-          "description": "Business-like, efficient, matter-of-fact",
-          "tone": "neutral",
-          "vocabulary": "precise",
-          "sentence_structure": "clear",
-          "examples": [
-            "Good day. How may I assist you?",
-            "That will be 50 gold pieces.",
-            "I'll have that ready for you by tomorrow."
-          ]
-        },
-        {
-          "slug": "greedy",
-          "name": "greedy",
-          "displayName": "Greedy",
-          "rarityWeight": 15,
-          "description": "Focused on profit, always thinking about money",
-          "tone": "calculating",
-          "vocabulary": "mercantile",
-          "sentence_structure": "direct",
-          "examples": [
-            "Ah, a customer! Let's talk business.",
-            "That'll cost you extra.",
-            "Gold talks, everything else walks."
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "version":  "4.0",
+                     "type":  "hierarchical_catalog",
+                     "description":  "Dialogue speaking styles that define NPC personality and tone",
+                     "lastUpdated":  "2026-01-08",
+                     "notes":  [
+                                   "Styles affect word choice, sentence structure, and formality",
+                                   "Referenced by NPCs via dialogueStyle field",
+                                   "Used to generate contextually appropriate dialogue"
+                               ]
+                 },
+    "style_types":  {
+                        "formal":  {
+                                       "items":  [
+                                                     {
+                                                         "slug":  "scholarly",
+                                                         "name":  "scholarly",
+                                                         "displayName":  "Scholarly",
+                                                         "rarityWeight":  10,
+                                                         "description":  "Intellectual, formal, uses complex vocabulary",
+                                                         "tone":  "formal",
+                                                         "vocabulary":  "complex",
+                                                         "sentence_structure":  "elaborate",
+                                                         "examples":  [
+                                                                          "Greetings, dear scholar. How may I illuminate your path today?",
+                                                                          "Indeed, the ancient texts corroborate your hypothesis.",
+                                                                          "A most intriguing query. Let us examine this matter thoroughly."
+                                                                      ]
+                                                     }
+                                                 ]
+                                   }
+                    }
 }
