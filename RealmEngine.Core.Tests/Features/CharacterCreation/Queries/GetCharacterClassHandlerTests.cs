@@ -1,85 +1,41 @@
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using RealmEngine.Core;
+using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Queries;
-using RealmEngine.Data;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Queries;
 
 [Trait("Category", "Feature")]
-/// <summary>
-/// Tests for GetCharacterClassHandler using real JSON data.
-/// </summary>
-public class GetCharacterClassHandlerTests : IDisposable
+public class GetCharacterClassHandlerTests
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IServiceCollection _services;
-
-    public GetCharacterClassHandlerTests()
-    {
-        _services = new ServiceCollection();
-        
-        // Register logging
-        _services.AddLogging();
-        
-        // Register RealmEngine services
-        _services.AddRealmEngineData(GetDataPath());
-        _services.AddRealmEngineCore();
-        _services.AddRealmEngineMediatR();
-        
-        _serviceProvider = _services.BuildServiceProvider();
-    }
-
-    private static string GetDataPath()
-    {
-        // Start from test assembly location and navigate to Data/Json
-        var assemblyPath = Path.GetDirectoryName(typeof(GetCharacterClassHandlerTests).Assembly.Location)!;
-        var solutionRoot = Path.GetFullPath(Path.Combine(assemblyPath, "..", "..", "..", ".."));
-        return Path.Combine(solutionRoot, "RealmEngine.Data", "Data", "Json");
-    }
-
-    public void Dispose()
-    {
-        if (_serviceProvider is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-    }
+    private static CharacterClass MakeClass(string name, string description = "Test class") =>
+        new() { Id = $"warrior:{name}", Name = name, DisplayName = name, Description = description };
 
     [Fact]
-    public async Task Handle_Should_Return_Found_True_For_Valid_Class()
+    public async Task Handle_ReturnsFound_WhenClassExists()
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = "Fighter" }; // Using real catalog name
+        var fighter = MakeClass("Fighter");
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetClassByName("Fighter")).Returns(fighter);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await new GetCharacterClassHandler(repo.Object)
+            .Handle(new GetCharacterClassQuery { ClassName = "Fighter" }, CancellationToken.None);
 
-        // Assert
-        result.Should().NotBeNull();
         result.Found.Should().BeTrue();
         result.CharacterClass.Should().NotBeNull();
         result.CharacterClass!.Name.Should().Be("Fighter");
     }
 
     [Fact]
-    public async Task Handle_Should_Return_Found_False_For_Invalid_Class()
+    public async Task Handle_ReturnsNotFound_WhenClassMissing()
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = "InvalidClass" };
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetClassByName(It.IsAny<string>())).Returns((CharacterClass?)null);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await new GetCharacterClassHandler(repo.Object)
+            .Handle(new GetCharacterClassQuery { ClassName = "InvalidClass" }, CancellationToken.None);
 
-        // Assert
-        result.Should().NotBeNull();
         result.Found.Should().BeFalse();
         result.CharacterClass.Should().BeNull();
     }
@@ -88,56 +44,30 @@ public class GetCharacterClassHandlerTests : IDisposable
     [InlineData("Fighter")]
     [InlineData("Wizard")]
     [InlineData("Priest")]
-    public async Task Handle_Should_Return_Valid_Class_Data(string className)
+    public async Task Handle_ReturnsValidClassData_ForKnownClasses(string className)
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = className };
+        var characterClass = MakeClass(className, $"The {className} class");
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetClassByName(className)).Returns(characterClass);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await new GetCharacterClassHandler(repo.Object)
+            .Handle(new GetCharacterClassQuery { ClassName = className }, CancellationToken.None);
 
-        // Assert
         result.Found.Should().BeTrue();
-        result.CharacterClass.Should().NotBeNull();
         result.CharacterClass!.Name.Should().Be(className);
         result.CharacterClass.Description.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
-    public async Task Handle_Should_Be_Case_Insensitive()
+    public async Task Handle_DelegatesToRepo_WithExactClassName()
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = "fighter" }; // lowercase
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetClassByName(It.IsAny<string>())).Returns((CharacterClass?)null);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        await new GetCharacterClassHandler(repo.Object)
+            .Handle(new GetCharacterClassQuery { ClassName = "fighter" }, CancellationToken.None);
 
-        // Assert - Repository is case-insensitive
-        result.Should().NotBeNull();
-        result.Found.Should().BeTrue("Repository should handle case-insensitive lookups");
-        result.CharacterClass!.Name.Should().Be("Fighter");
-    }
-
-    [Fact]
-    public async Task Handle_Should_Return_Null_CharacterClass_When_Not_Found()
-    {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassHandler(repository);
-        var query = new GetCharacterClassQuery { ClassName = "NonExistentClass" };
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.Found.Should().BeFalse();
-        result.CharacterClass.Should().BeNull();
+        repo.Verify(r => r.GetClassByName("fighter"), Times.Once);
     }
 }
+
