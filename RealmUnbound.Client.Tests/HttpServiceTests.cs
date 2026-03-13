@@ -323,7 +323,7 @@ public class HttpCharacterServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Json(SampleChar, HttpStatusCode.Created));
 
-        var (character, error) = await sut.CreateCharacterAsync("Hero", "Fighter");
+        var (character, error) = await sut.CreateCharacterAsync(new CreateCharacterRequest("Hero", "Fighter"));
 
         character.Should().NotBeNull();
         error.Should().BeNull();
@@ -334,7 +334,7 @@ public class HttpCharacterServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Text("Name taken", HttpStatusCode.BadRequest));
 
-        var (character, error) = await sut.CreateCharacterAsync("Taken", "Fighter");
+        var (character, error) = await sut.CreateCharacterAsync(new CreateCharacterRequest("Taken", "Fighter"));
 
         character.Should().BeNull();
         error.Should().NotBeNull();
@@ -346,7 +346,7 @@ public class HttpCharacterServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("offline")));
 
-        var (character, error) = await sut.CreateCharacterAsync("Hero", "Fighter");
+        var (character, error) = await sut.CreateCharacterAsync(new CreateCharacterRequest("Hero", "Fighter"));
 
         character.Should().BeNull();
         error!.Message.Should().Be("Network error. Please check your connection.");
@@ -393,7 +393,7 @@ public class HttpCharacterServiceTests : TestBase
         var body = new { title = "Conflict", detail = "A character with that name already exists." };
         var sut = MakeSut(FakeHttpHandler.Json(body, HttpStatusCode.Conflict));
 
-        var (character, error) = await sut.CreateCharacterAsync("Taken", "Fighter");
+        var (character, error) = await sut.CreateCharacterAsync(new CreateCharacterRequest("Taken", "Fighter"));
 
         character.Should().BeNull();
         error.Should().NotBeNull();
@@ -405,7 +405,7 @@ public class HttpCharacterServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Text("Unauthorized", HttpStatusCode.Unauthorized));
 
-        var (character, error) = await sut.CreateCharacterAsync("Hero", "Fighter");
+        var (character, error) = await sut.CreateCharacterAsync(new CreateCharacterRequest("Hero", "Fighter"));
 
         character.Should().BeNull();
         error.Should().NotBeNull();
@@ -428,7 +428,7 @@ public class HttpCharacterServiceTests : TestBase
         var sut = MakeSut(handler);
 
         var deleteError = await sut.DeleteCharacterAsync(Guid.NewGuid());
-        var (created, createError) = await sut.CreateCharacterAsync("Recycled", "Fighter");
+        var (created, createError) = await sut.CreateCharacterAsync(new CreateCharacterRequest("Recycled", "Fighter"));
 
         deleteError.Should().BeNull();
         created.Should().NotBeNull();

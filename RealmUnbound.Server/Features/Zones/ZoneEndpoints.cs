@@ -1,18 +1,8 @@
+using RealmUnbound.Contracts.Zones;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 
 namespace RealmUnbound.Server.Features.Zones;
-
-// ── DTOs ──────────────────────────────────────────────────────────────────────
-public record ZoneDto(
-    string Id,
-    string Name,
-    string Description,
-    string Type,
-    int MinLevel,
-    int MaxPlayers,
-    bool IsStarter,
-    int OnlinePlayers);
 
 // ── Endpoint map ──────────────────────────────────────────────────────────────
 public static class ZoneEndpoints

@@ -1,5 +1,7 @@
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
+using RealmUnbound.Contracts.Auth;
+using RealmUnbound.Contracts.Characters;
 
 namespace RealmUnbound.Client.Tests.Infrastructure;
 
@@ -70,12 +72,12 @@ public class FakeCharacterService : ICharacterService
         return Task.FromResult(new List<CharacterDto>(Characters));
     }
 
-    public Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(string name, string className)
+    public Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(CreateCharacterRequest request)
     {
         CreateCallCount++;
         if (CreateResult.Character is not null)
         {
-            var c = CreateResult.Character with { Name = name };
+            var c = CreateResult.Character with { Name = request.Name };
             return Task.FromResult<(CharacterDto?, AppError?)>((c, null));
         }
         return Task.FromResult<(CharacterDto?, AppError?)>((null, CreateResult.Error));

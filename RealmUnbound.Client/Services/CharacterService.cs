@@ -1,27 +1,15 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using RealmUnbound.Contracts.Characters;
 
 namespace RealmUnbound.Client.Services;
-
-// ── DTOs (mirror server CharacterDtos) ─────────────────────────────────────────
-public record CharacterDto(
-    Guid Id,
-    int SlotIndex,
-    string Name,
-    string ClassName,
-    int Level,
-    long Experience,
-    DateTimeOffset? LastPlayedAt,
-    string CurrentZoneId = "starting-zone");
-
-public record CreateCharacterRequest(string Name, string ClassName);
 
 // ── Interface ──────────────────────────────────────────────────────────────────
 public interface ICharacterService
 {
     Task<List<CharacterDto>> GetCharactersAsync();
-    Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(string name, string className);
+    Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(CreateCharacterRequest request);
     Task<AppError?> DeleteCharacterAsync(Guid id);
 }
 
@@ -84,14 +72,14 @@ public class HttpCharacterService(
         }
     }
 
-    public async Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(string name, string className)
+    public async Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(CreateCharacterRequest request)
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "api/characters");
-            request.Headers.Authorization = BearerHeader;
-            request.Content = JsonContent.Create(new CreateCharacterRequest(name, className));
-            var response = await http.SendAsync(request);
+            using var request2 = new HttpRequestMessage(HttpMethod.Post, "api/characters");
+            request2.Headers.Authorization = BearerHeader;
+            request2.Content = JsonContent.Create(request);
+            var response = await http.SendAsync(request2);
 
             if (response.IsSuccessStatusCode)
                 return (await response.Content.ReadFromJsonAsync<CharacterDto>(), null);

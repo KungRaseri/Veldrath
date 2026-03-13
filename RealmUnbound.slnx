@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="RealmUnbound.Contracts/RealmUnbound.Contracts.csproj" />
   <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
   <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
   <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />

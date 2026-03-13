@@ -2,6 +2,7 @@ using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using RealmUnbound.Client.Services;
+using RealmUnbound.Contracts.Characters;
 
 namespace RealmUnbound.Client.ViewModels;
 
@@ -185,7 +186,7 @@ public class CharacterSelectViewModel : ViewModelBase
         ErrorDetails = string.Empty;
         try
         {
-            var (character, error) = await _characters.CreateCharacterAsync(NewCharacterName, SelectedClass);
+            var (character, error) = await _characters.CreateCharacterAsync(new CreateCharacterRequest(NewCharacterName!, SelectedClass!));
             if (character is not null)
             {
                 Characters.Add(character);
