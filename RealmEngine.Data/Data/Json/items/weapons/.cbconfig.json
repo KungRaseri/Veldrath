@@ -1,6 +1,0 @@
-{
-  "icon": "SwordCross",
-  "displayName": "Weapons",
-  "description": "Weapon definitions with names.json (v4.0 pattern generation) and catalog.json (base weapons)",
-  "sortOrder": 1
-}

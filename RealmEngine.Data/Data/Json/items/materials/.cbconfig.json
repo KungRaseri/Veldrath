@@ -1,6 +1,0 @@
-{
-  "icon": "HammerWrench",
-  "displayName": "Materials",
-  "description": "Material definitions for crafting - both names.json (components) and catalog.json (material stats)",
-  "sortOrder": 5
-}
