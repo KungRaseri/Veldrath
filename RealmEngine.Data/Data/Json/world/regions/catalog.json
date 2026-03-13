@@ -1,401 +1,58 @@
-{
-  "metadata": {
-    "description": "Kingdoms, territories, and political regions defining the game world's geography",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
-    "type": "world_regions_catalog"
-  },
-  "kingdoms_types": {
-    "kingdoms": {
-      "items": [
-        {
-          "slug": "goldenvale",
-          "name": "Goldenvale",
-          "displayName": "Kingdom of Goldenvale",
-          "rarityWeight": 15,
-          "description": "Prosperous central kingdom known for trade and agriculture",
-          "government": "Constitutional Monarchy",
-          "capital": "@world/locations/towns/capitals:GoldenSpire",
-          "population": "Large",
-          "economy": "Trade & Agriculture",
-          "military": "Professional Army",
-          "majorCities": [
-            "@world/locations/towns/cities:Silverport",
-            "@world/locations/towns:Ironforge"
-          ],
-          "terrain": [
-            "plains",
-            "hills",
-            "forests"
-          ],
-          "climate": "Temperate",
-          "resources": [
-            "grain",
-            "gold",
-            "livestock"
-          ],
-          "factions": [
-            "@organizations/factions/political:nobility",
-            "@organizations/factions/trade:merchants_guild",
-            "@organizations/factions/military:city_guard"
-          ],
-          "relations": {
-            "allies": [
-              "Frostheim",
-              "Sanctuary_Theocracy"
-            ],
-            "neutral": [
-              "Desert_Emirates"
-            ],
-            "enemies": [
-              "Shadow_Empire"
-            ]
-          }
-        },
-        {
-          "slug": "frostheim",
-          "name": "Frostheim",
-          "displayName": "Kingdom of Frostheim",
-          "rarityWeight": 20,
-          "description": "Northern mountain kingdom of hardy warriors and miners",
-          "government": "Clan Council",
-          "capital": "@world/locations/towns/villages:FrostPeak",
-          "population": "Medium",
-          "economy": "Mining & Smithing",
-          "military": "Clan Warriors",
-          "majorCities": [
-            "@world/locations/towns:Ironforge"
-          ],
-          "terrain": [
-            "mountains",
-            "tundra",
-            "glaciers"
-          ],
-          "climate": "Cold",
-          "resources": [
-            "iron",
-            "silver",
-            "gems"
-          ],
-          "factions": [
-            "@organizations/factions/labor:craftsmen_guild",
-            "@organizations/factions/social:commoners"
-          ],
-          "relations": {
-            "allies": [
-              "Goldenvale"
-            ],
-            "neutral": [
-              "Desert_Emirates",
-              "Elven_Reaches"
-            ],
-            "enemies": []
-          }
-        },
-        {
-          "slug": "shadow-empire",
-          "name": "Shadow_Empire",
-          "displayName": "Shadow Empire",
-          "rarityWeight": 40,
-          "description": "Dark empire ruled by necromancers and vampires",
-          "government": "Necrocracy",
-          "capital": "@world/locations/dungeons/very_hard:VampireCastle",
-          "population": "Medium (Undead Majority)",
-          "economy": "Plunder & Dark Magic",
-          "military": "Undead Legions",
-          "majorCities": [
-            "@world/locations/towns:Ravenhollow",
-            "@world/locations/towns/special:DeadwoodGrove"
-          ],
-          "terrain": [
-            "wasteland",
-            "swamps",
-            "dead_forests"
-          ],
-          "climate": "Dark & Gloomy",
-          "resources": [
-            "dark_magic",
-            "undead_labor"
-          ],
-          "factions": [],
-          "relations": {
-            "allies": [],
-            "neutral": [],
-            "enemies": [
-              "Goldenvale",
-              "Sanctuary_Theocracy",
-              "Elven_Reaches"
-            ]
-          }
-        }
-      ]
-    }
-  },
-  "territories_types": {
-    "territories": {
-      "items": [
-        {
-          "slug": "elven-reaches",
-          "name": "Elven_Reaches",
-          "displayName": "The Elven Reaches",
-          "rarityWeight": 25,
-          "description": "Ancient forest territories of the elven people",
-          "government": "Elder Council",
-          "capital": "@world/locations/towns/villages:Oakshire",
-          "population": "Small (Elven)",
-          "economy": "Herbalism & Crafts",
-          "military": "Archer Rangers",
-          "majorCities": [
-            "@world/locations/towns/villages:Oakshire"
-          ],
-          "terrain": [
-            "ancient_forests",
-            "glades"
-          ],
-          "climate": "Temperate",
-          "resources": [
-            "rare_herbs",
-            "enchanted_wood",
-            "mithril"
-          ],
-          "factions": [
-            "@organizations/factions/magical:mages_circle"
-          ],
-          "relations": {
-            "allies": [
-              "Goldenvale"
-            ],
-            "neutral": [
-              "Frostheim",
-              "Desert_Emirates"
-            ],
-            "enemies": [
-              "Shadow_Empire"
-            ]
-          }
-        },
-        {
-          "slug": "desert-emirates",
-          "name": "Desert_Emirates",
-          "displayName": "Desert Emirates",
-          "rarityWeight": 22,
-          "description": "Federation of desert city-states ruled by merchant princes",
-          "government": "Merchant Federation",
-          "capital": "@world/locations/towns:Sandstone",
-          "population": "Medium",
-          "economy": "Trade & Exotic Goods",
-          "military": "Mercenary Companies",
-          "majorCities": [
-            "@world/locations/towns:Sandstone"
-          ],
-          "terrain": [
-            "desert",
-            "oasis"
-          ],
-          "climate": "Hot & Arid",
-          "resources": [
-            "spices",
-            "silk",
-            "exotic_goods"
-          ],
-          "factions": [
-            "@organizations/factions/trade:merchants_guild"
-          ],
-          "relations": {
-            "allies": [],
-            "neutral": [
-              "Goldenvale",
-              "Frostheim",
-              "Elven_Reaches"
-            ],
-            "enemies": []
-          }
-        },
-        {
-          "slug": "sanctuary-theocracy",
-          "name": "Sanctuary_Theocracy",
-          "displayName": "Theocracy of Sanctuary",
-          "rarityWeight": 28,
-          "description": "Holy lands governed by religious leaders",
-          "government": "Theocracy",
-          "capital": "@world/locations/towns/cities:Sanctuary",
-          "population": "Medium",
-          "economy": "Pilgrimages & Donations",
-          "military": "Holy Knights",
-          "majorCities": [
-            "@world/locations/towns/cities:Sanctuary"
-          ],
-          "terrain": [
-            "hills",
-            "sacred_groves"
-          ],
-          "climate": "Temperate",
-          "resources": [
-            "holy_relics",
-            "blessed_water"
-          ],
-          "factions": [
-            "@organizations/factions/religious:clergy"
-          ],
-          "relations": {
-            "allies": [
-              "Goldenvale"
-            ],
-            "neutral": [],
-            "enemies": [
-              "Shadow_Empire"
-            ]
-          }
-        },
-        {
-          "slug": "mage-dominion",
-          "name": "Mage_Dominion",
-          "displayName": "Mage Dominion",
-          "rarityWeight": 35,
-          "description": "Floating archipelago ruled by archmages",
-          "government": "Magocracy",
-          "capital": "@world/locations/towns/cities:TheNexus",
-          "population": "Small (Mage Majority)",
-          "economy": "Magical Research & Artifacts",
-          "military": "Battle Mages",
-          "majorCities": [
-            "@world/locations/towns/cities:TheNexus"
-          ],
-          "terrain": [
-            "floating_islands",
-            "sky_realms"
-          ],
-          "climate": "Magically Stable",
-          "resources": [
-            "mana_crystals",
-            "spell_components",
-            "artifacts"
-          ],
-          "factions": [
-            "@organizations/factions/magical:mages_circle",
-            "@organizations/factions/academic:scholars_guild"
-          ],
-          "relations": {
-            "allies": [],
-            "neutral": [
-              "Goldenvale",
-              "Elven_Reaches"
-            ],
-            "enemies": []
-          }
-        }
-      ]
-    }
-  },
-  "frontiers_types": {
-    "frontiers": {
-      "items": [
-        {
-          "slug": "pirate-coast",
-          "name": "Pirate_Coast",
-          "displayName": "The Pirate Coast",
-          "rarityWeight": 30,
-          "description": "Lawless coastal region controlled by pirate lords",
-          "government": "Pirate Council",
-          "capital": "@world/locations/towns:CrimsonHarbor",
-          "population": "Small",
-          "economy": "Piracy & Black Market",
-          "military": "Pirate Fleets",
-          "majorCities": [
-            "@world/locations/towns:CrimsonHarbor"
-          ],
-          "terrain": [
-            "coast",
-            "islands",
-            "hidden_coves"
-          ],
-          "climate": "Tropical",
-          "resources": [
-            "smuggled_goods",
-            "plunder"
-          ],
-          "factions": [
-            "@organizations/factions/criminal:thieves_guild"
-          ],
-          "relations": {
-            "allies": [],
-            "neutral": [],
-            "enemies": [
-              "Goldenvale",
-              "Desert_Emirates"
-            ]
-          }
-        },
-        {
-          "slug": "frontier-outposts",
-          "name": "Frontier_Outposts",
-          "displayName": "Frontier Outposts",
-          "rarityWeight": 18,
-          "description": "Scattered settlements on the edge of civilization",
-          "government": "Autonomous",
-          "capital": "@world/locations/towns/outposts:Crossroads",
-          "population": "Tiny",
-          "economy": "Subsistence & Trade",
-          "military": "Militia",
-          "majorCities": [
-            "@world/locations/towns/outposts:Crossroads",
-            "@world/locations/towns/villages:Riverside"
-          ],
-          "terrain": [
-            "wilderness",
-            "borderlands"
-          ],
-          "climate": "Variable",
-          "resources": [
-            "furs",
-            "timber"
-          ],
-          "factions": [
-            "@organizations/factions/social:commoners"
-          ],
-          "relations": {
-            "allies": [],
-            "neutral": [
-              "Goldenvale",
-              "Frostheim"
-            ],
-            "enemies": []
-          }
-        },
-        {
-          "slug": "contested-lands",
-          "name": "Contested_Lands",
-          "displayName": "The Contested Lands",
-          "rarityWeight": 32,
-          "description": "War-torn region claimed by multiple powers",
-          "government": "None (Warzone)",
-          "capital": "@world/locations/towns/cities:Stormhaven",
-          "population": "Small (Refugees)",
-          "economy": "War Economy",
-          "military": "Warlords & Mercenaries",
-          "majorCities": [
-            "@world/locations/towns/cities:Stormhaven",
-            "@world/locations/towns:Ashborough"
-          ],
-          "terrain": [
-            "plains",
-            "battlefields"
-          ],
-          "climate": "Temperate",
-          "resources": [
-            "scrap_metal",
-            "war_salvage"
-          ],
-          "factions": [
-            "@organizations/factions/military:military"
-          ],
-          "relations": {
-            "allies": [],
-            "neutral": [],
-            "enemies": []
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Kingdoms, territories, and political regions defining the game world\u0027s geography",
+                     "version":  "4.0",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "world_regions_catalog"
+                 },
+    "kingdoms_types":  {
+                           "kingdoms":  {
+                                            "items":  [
+                                                          {
+                                                              "slug":  "goldenvale",
+                                                              "name":  "Goldenvale",
+                                                              "displayName":  "Kingdom of Goldenvale",
+                                                              "rarityWeight":  15,
+                                                              "description":  "Prosperous central kingdom known for trade and agriculture",
+                                                              "government":  "Constitutional Monarchy",
+                                                              "capital":  "@world/locations/towns:GoldenSpire",
+                                                              "population":  "Large",
+                                                              "economy":  "Trade \u0026 Agriculture",
+                                                              "military":  "Professional Army",
+                                                              "majorCities":  [
+                                                                                  "@world/locations/towns:Silverport",
+                                                                                  "@world/locations/towns:Ironforge"
+                                                                              ],
+                                                              "terrain":  [
+                                                                              "plains",
+                                                                              "hills",
+                                                                              "forests"
+                                                                          ],
+                                                              "climate":  "Temperate",
+                                                              "resources":  [
+                                                                                "grain",
+                                                                                "gold",
+                                                                                "livestock"
+                                                                            ],
+                                                              "factions":  [
+                                                                               "@organizations/factions/political:nobility",
+                                                                               "@organizations/factions/trade:merchants_guild",
+                                                                               "@organizations/factions/military:city_guard"
+                                                                           ],
+                                                              "relations":  {
+                                                                                "allies":  [
+                                                                                               "Frostheim",
+                                                                                               "Sanctuary_Theocracy"
+                                                                                           ],
+                                                                                "neutral":  [
+                                                                                                "Desert_Emirates"
+                                                                                            ],
+                                                                                "enemies":  [
+                                                                                                "Shadow_Empire"
+                                                                                            ]
+                                                                            }
+                                                          }
+                                                      ]
+                                        }
+                       }
 }

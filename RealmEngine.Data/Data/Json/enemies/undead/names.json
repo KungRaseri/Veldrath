@@ -1,188 +1,60 @@
-{
-  "metadata": {
-    "description": "Undead enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "condition",
-      "origin",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "condition",
-      "origin",
-      "title"
-    ],
-    "totalPatterns": 3,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Base token resolves from enemies/undead/catalog.json",
-      "All components have rarityWeight for emergent rarity calculation",
-      "Component weights combine via multipliers from general/rarity_config.json",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "condition": [
-      {
-        "rarityWeight": 8,
-        "name": "Rotting"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Decayed"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Skeletal"
-      },
-      {
-        "rarityWeight": 14,
-        "name": "Withered"
-      },
-      {
-        "rarityWeight": 16,
-        "name": "Decrepit"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Festering"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Lurching"
-      },
-      {
-        "rarityWeight": 8,
-        "name": "Shambling"
-      }
-    ],
-    "origin": [
-      {
-        "rarityWeight": 20,
-        "name": "Plague"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Drowned"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Frozen"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Bloated"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Shadow"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Frost"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "Void"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Crypt"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 30,
-        "name": "Knight"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Lord"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Warrior"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Archer"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Mage"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "Necromancer"
-      },
-      {
-        "rarityWeight": 90,
-        "name": "King"
-      },
-      {
-        "rarityWeight": 80,
-        "name": "the Undying"
-      },
-      {
-        "rarityWeight": 85,
-        "name": "the Eternal"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 35,
-        "name": "Ancient"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Cursed"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Risen"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Vengeful"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Restless"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Tormented"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Spectral"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Ethereal"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Dread"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{condition} {base}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{origin} {base}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Undead enemy name generation with pattern-based system and weight-based rarity",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "condition",
+                                           "origin",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "condition",
+                                           "origin",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Base token resolves from enemies/undead/catalog.json",
+                                   "All components have rarityWeight for emergent rarity calculation",
+                                   "Component weights combine via multipliers from general/rarity_config.json",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "condition":  [
+                                         {
+                                             "rarityWeight":  8,
+                                             "name":  "Rotting"
+                                         }
+                                     ],
+                       "origin":  [
+                                      {
+                                          "rarityWeight":  20,
+                                          "name":  "Plague"
+                                      }
+                                  ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  30,
+                                         "name":  "Knight"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  35,
+                                          "name":  "Ancient"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

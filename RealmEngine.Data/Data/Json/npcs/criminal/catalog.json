@@ -1,257 +1,75 @@
-{
-  "metadata": {
-    "type": "hierarchical_catalog",
-    "version": "5.1",
-    "description": "Criminal NPCs - those who lived outside the law with underworld connections",
-    "lastUpdated": "2026-01-08",
-    "socialClass": "criminal",
-    "notes": [
-      "High dexterity and stealth skills",
-      "Underworld connections and street smarts",
-      "May have bounties or enemies",
-      "Specialize in deception and covert activities"
-    ]
-  },
-  "background_types": {
-    "reformed_criminals": {
-      "metadata": {
-        "description": "Former lawbreakers seeking redemption or new opportunities",
-        "socialClass": "criminal",
-        "notes": [
-          "Skilled in stealth and deception",
-          "May have unique items from past life",
-          "Often carry emotional baggage"
-        ]
-      },
-      "items": [
-        {
-          "slug": "formercriminal",
-          "name": "FormerCriminal",
-          "displayName": "Former Criminal",
-          "description": "Has a history of illegal activities",
-          "attributes": {
-            "strength": 11,
-            "dexterity": 15,
-            "constitution": 11,
-            "intelligence": 12,
-            "wisdom": 10,
-            "charisma": 12
-          },
-          "rarityWeight": 32,
-          "socialClass": "criminal",
-          "startingGold": "2d8",
-          "skillBonuses": [
-            "stealth",
-            "deception",
-            "lockpicking"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 0,
-            "priceMultiplier": 1.1,
-            "shopAppearance": "shady"
-          },
-          "specializationHints": [
-            "stolen_goods",
-            "lockpicks",
-            "poisons"
-          ],
-          "uniqueItems": [
-            "Lockpick Set",
-            "Concealed Dagger"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/criminal:criminal-wary"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "thieves_guild",
-          "schedule": "@social/schedules/*:criminal"
-        },
-        {
-          "slug": "formerspy",
-          "name": "FormerSpy",
-          "displayName": "Former Spy",
-          "description": "Gathered intelligence for crown or guild",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 15,
-            "constitution": 11,
-            "intelligence": 14,
-            "wisdom": 13,
-            "charisma": 12
-          },
-          "rarityWeight": 50,
-          "socialClass": "criminal",
-          "startingGold": "3d8",
-          "skillBonuses": [
-            "stealth",
-            "disguise",
-            "investigation",
-            "deception"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 8,
-            "priceMultiplier": 1.15,
-            "shopAppearance": "inconspicuous"
-          },
-          "specializationHints": [
-            "disguises",
-            "tools.espionage",
-            "poisons"
-          ],
-          "uniqueItems": [
-            "Coded Letter",
-            "Disguise Kit"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/gruff:mysterious",
-          "greetings": [
-            "@social/dialogue/greetings/criminal:spy-enigmatic"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "independent",
-          "schedule": "@social/schedules/*:criminal"
-        },
-        {
-          "slug": "formersmuggler",
-          "name": "FormerSmuggler",
-          "displayName": "Former Smuggler",
-          "description": "Dealt in contraband goods",
-          "attributes": {
-            "strength": 11,
-            "dexterity": 14,
-            "constitution": 12,
-            "intelligence": 12,
-            "wisdom": 11,
-            "charisma": 13
-          },
-          "rarityWeight": 38,
-          "socialClass": "criminal",
-          "startingGold": "2d10",
-          "skillBonuses": [
-            "deception",
-            "appraisal",
-            "navigation"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 5,
-            "priceMultiplier": 0.95,
-            "shopAppearance": "secretive"
-          },
-          "specializationHints": [
-            "rare_goods",
-            "contraband",
-            "foreign_items"
-          ],
-          "uniqueItems": [
-            "Hidden Compartment Map",
-            "Smuggler's Flask"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:greedy",
-          "greetings": [
-            "@social/dialogue/greetings/criminal:smuggler-shifty"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "thieves_guild",
-          "schedule": "@social/schedules/*:criminal"
-        },
-        {
-          "slug": "reformedthief",
-          "name": "ReformedThief",
-          "displayName": "Reformed Thief",
-          "description": "Lived by stealth and cunning, now seeking honest work",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 16,
-            "constitution": 11,
-            "intelligence": 12,
-            "wisdom": 10,
-            "charisma": 11
-          },
-          "rarityWeight": 30,
-          "socialClass": "criminal",
-          "startingGold": "1d12",
-          "skillBonuses": [
-            "stealth",
-            "lockpicking",
-            "sleight_of_hand"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 0,
-            "priceMultiplier": 0.95,
-            "shopAppearance": "modest"
-          },
-          "specializationHints": [
-            "lockpicks",
-            "tools.thievery"
-          ],
-          "uniqueItems": [
-            "Master Lockpick",
-            "Thieves' Cant Codebook"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/criminal:thief-nervous"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "thieves_guild",
-          "schedule": "@social/schedules/*:criminal"
-        },
-        {
-          "slug": "formerpirate",
-          "name": "FormerPirate",
-          "displayName": "Former Pirate",
-          "description": "Sailed under black flag, now seeking redemption",
-          "attributes": {
-            "strength": 14,
-            "dexterity": 14,
-            "constitution": 13,
-            "intelligence": 10,
-            "wisdom": 10,
-            "charisma": 13
-          },
-          "rarityWeight": 48,
-          "socialClass": "criminal",
-          "startingGold": "2d12",
-          "skillBonuses": [
-            "sailing",
-            "intimidation",
-            "boarding_combat"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 8,
-            "priceMultiplier": 1.05,
-            "shopAppearance": "nautical"
-          },
-          "specializationHints": [
-            "weapons.melee",
-            "exotic_goods",
-            "nautical_gear"
-          ],
-          "uniqueItems": [
-            "Pirate's Cutlass",
-            "Treasure Map Fragment",
-            "Skull-and-Crossbones Earring"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/common:peasant-humble"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "independent",
-          "schedule": "@social/schedules/*:flexible"
-        }
-      ]
-    }
-  },
-  "occupation_types": {}
+﻿{
+    "metadata":  {
+                     "type":  "hierarchical_catalog",
+                     "version":  "5.1",
+                     "description":  "Criminal NPCs - those who lived outside the law with underworld connections",
+                     "lastUpdated":  "2026-01-08",
+                     "socialClass":  "criminal",
+                     "notes":  [
+                                   "High dexterity and stealth skills",
+                                   "Underworld connections and street smarts",
+                                   "May have bounties or enemies",
+                                   "Specialize in deception and covert activities"
+                               ]
+                 },
+    "background_types":  {
+                             "reformed_criminals":  {
+                                                        "metadata":  {
+                                                                         "description":  "Former lawbreakers seeking redemption or new opportunities",
+                                                                         "socialClass":  "criminal",
+                                                                         "notes":  [
+                                                                                       "Skilled in stealth and deception",
+                                                                                       "May have unique items from past life",
+                                                                                       "Often carry emotional baggage"
+                                                                                   ]
+                                                                     },
+                                                        "items":  [
+                                                                      {
+                                                                          "slug":  "formercriminal",
+                                                                          "name":  "FormerCriminal",
+                                                                          "displayName":  "Former Criminal",
+                                                                          "description":  "Has a history of illegal activities",
+                                                                          "attributes":  {
+                                                                                             "strength":  11,
+                                                                                             "dexterity":  15,
+                                                                                             "constitution":  11,
+                                                                                             "intelligence":  12,
+                                                                                             "wisdom":  10,
+                                                                                             "charisma":  12
+                                                                                         },
+                                                                          "rarityWeight":  32,
+                                                                          "socialClass":  "criminal",
+                                                                          "startingGold":  "2d8",
+                                                                          "skillBonuses":  [
+                                                                                               "stealth",
+                                                                                               "deception",
+                                                                                               "lockpicking"
+                                                                                           ],
+                                                                          "shopModifiers":  {
+                                                                                                "qualityBonus":  0,
+                                                                                                "priceMultiplier":  1.1,
+                                                                                                "shopAppearance":  "shady"
+                                                                                            },
+                                                                          "specializationHints":  [
+                                                                                                      "stolen_goods",
+                                                                                                      "lockpicks",
+                                                                                                      "poisons"
+                                                                                                  ],
+                                                                          "uniqueItems":  [
+                                                                                              "Lockpick Set",
+                                                                                              "Concealed Dagger"
+                                                                                          ],
+                                                                          "dialogueStyle":  "@social/dialogue/styles/casual:friendly",
+                                                                          "greetings":  [
+                                                                                            "@social/dialogue/greetings/criminal:criminal-wary"
+                                                                                        ],
+                                                                          "farewells":  [
+                                                                                            "@social/dialogue/farewells/simple:simple"
+                                                                                        ],
+                                                                          "faction":  "thieves_guild",
+                                                                          "schedule":  "@social/schedules/*:criminal"
+                                                                      }
+                                                                  ]
+                                                    }
+                         }
 }

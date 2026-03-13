@@ -1,110 +1,64 @@
-{
-  "components": {
-    "precipitation": [
-      "clear",
-      "rainy",
-      "drizzling",
-      "snowy",
-      "sleeting",
-      "hailing",
-      "misty",
-      "foggy"
-    ],
-    "wind": [
-      "calm",
-      "breezy",
-      "windy",
-      "gusty",
-      "howling",
-      "gale",
-      "hurricane",
-      "tempest"
-    ],
-    "sky_condition": [
-      "clear",
-      "cloudy",
-      "overcast",
-      "partly-cloudy",
-      "grey",
-      "threatening",
-      "ominous",
-      "bright"
-    ],
-    "temperature": [
-      "freezing",
-      "frigid",
-      "cold",
-      "chilly",
-      "cool",
-      "mild",
-      "warm",
-      "hot",
-      "scorching",
-      "sweltering"
-    ],
-    "severity": [
-      "mild",
-      "moderate",
-      "severe",
-      "extreme",
-      "dangerous",
-      "pleasant",
-      "uncomfortable",
-      "harsh",
-      "violent"
-    ],
-    "special": [
-      "stormy",
-      "thunderous",
-      "lightning",
-      "blizzard",
-      "tornado",
-      "magical",
-      "supernatural",
-      "cursed",
-      "blessed"
-    ]
-  },
-  "patterns": [
-    "precipitation",
-    "sky_condition",
-    "{temperature} {precipitation}",
-    "{severity} {precipitation}",
-    "{wind} {precipitation}",
-    "special"
-  ],
-  "metadata": {
-    "description": "Weather condition descriptions for dynamic environments and atmospheric gameplay",
-    "version": "4.0",
-    "type": "pattern_generation",
-    "lastUpdated": "2026-01-08",
-    "componentKeys": [
-      "precipitation",
-      "wind",
-      "sky_condition",
-      "temperature",
-      "severity",
-      "special"
-    ],
-    "pattern_count": 6,
-    "patternTokens": [
-      "precipitation",
-      "sky_condition",
-      "temperature",
-      "severity",
-      "wind",
-      "special"
-    ],
-    "component_counts": {
-      "precipitation": 8,
-      "wind": 8,
-      "sky_condition": 8,
-      "temperature": 10,
-      "severity": 9,
-      "special": 9
-    },
-    "notes": [
-      "Reference data for general weather. Used as component source in name generation and stat calculations."
-    ]
-  }
+﻿{
+    "components":  {
+                       "precipitation":  [
+                                             "clear"
+                                         ],
+                       "wind":  [
+                                    "calm"
+                                ],
+                       "sky_condition":  [
+                                             "clear"
+                                         ],
+                       "temperature":  [
+                                           "freezing"
+                                       ],
+                       "severity":  [
+                                        "mild"
+                                    ],
+                       "special":  [
+                                       "stormy"
+                                   ]
+                   },
+    "patterns":  [
+                     "precipitation",
+                     "sky_condition",
+                     "{temperature} {precipitation}",
+                     "{severity} {precipitation}",
+                     "{wind} {precipitation}",
+                     "special"
+                 ],
+    "metadata":  {
+                     "description":  "Weather condition descriptions for dynamic environments and atmospheric gameplay",
+                     "version":  "4.0",
+                     "type":  "pattern_generation",
+                     "lastUpdated":  "2026-01-08",
+                     "componentKeys":  [
+                                           "precipitation",
+                                           "wind",
+                                           "sky_condition",
+                                           "temperature",
+                                           "severity",
+                                           "special"
+                                       ],
+                     "pattern_count":  6,
+                     "patternTokens":  [
+                                           "precipitation",
+                                           "sky_condition",
+                                           "temperature",
+                                           "severity",
+                                           "wind",
+                                           "special"
+                                       ],
+                     "component_counts":  {
+                                              "precipitation":  1,
+                                              "wind":  1,
+                                              "sky_condition":  1,
+                                              "temperature":  1,
+                                              "severity":  1,
+                                              "special":  1
+                                          },
+                     "notes":  [
+                                   "Reference data for general weather. Used as component source in name generation and stat calculations."
+                               ]
+                 }
 }

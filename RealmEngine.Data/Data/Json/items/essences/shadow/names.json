@@ -1,48 +1,32 @@
-{
-  "metadata": {
-    "description": "Naming patterns for shadow essences",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "supportsTraits": true,
-    "componentKeys": [
-      "intensity"
-    ],
-    "patternTokens": [
-      "{intensity}",
-      "{base}"
-    ],
-    "totalPatterns": 2,
-    "raritySystem": "weight-based"
-  },
-  "patterns": [
-    {
-      "pattern": "{intensity} {base}",
-      "rarityWeight": 50
-    },
-    {
-      "pattern": "{base}",
-      "rarityWeight": 50
-    }
-  ],
-  "components": {
-    "intensity": [
-      {
-        "rarityWeight": 40,
-        "name": "Dark"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Abyssal"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Murky"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Faint"
-      }
-    ]
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Naming patterns for shadow essences",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "supportsTraits":  true,
+                     "componentKeys":  [
+                                           "intensity"
+                                       ],
+                     "patternTokens":  [
+                                           "{intensity}",
+                                           "{base}"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based"
+                 },
+    "patterns":  [
+                     {
+                         "pattern":  "{intensity} {base}",
+                         "rarityWeight":  50
+                     }
+                 ],
+    "components":  {
+                       "intensity":  [
+                                         {
+                                             "rarityWeight":  40,
+                                             "name":  "Dark"
+                                         }
+                                     ]
+                   }
 }

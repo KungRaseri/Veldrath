@@ -1,185 +1,61 @@
-{
-  "metadata": {
-    "description": "Beast enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "size",
-      "origin",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "size",
-      "origin",
-      "title"
-    ],
-    "totalPatterns": 3,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Base token resolves from enemies/beasts/catalog.json",
-      "All components have rarityWeight for emergent rarity calculation",
-      "Component weights combine via multipliers from general/rarity_config.json",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "usage": "Pattern-based name generation for beasts. Pick components by rarityWeight and apply patterns to generate procedural names.",
-    "supportsTraits": true
-  },
-  "components": {
-    "size": [
-      {
-        "rarityWeight": 25,
-        "name": "Dire"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Giant"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Alpha"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Elder"
-      },
-      {
-        "rarityWeight": 5,
-        "name": "Young"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Massive"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Colossal"
-      }
-    ],
-    "origin": [
-      {
-        "rarityWeight": 15,
-        "name": "Mountain"
-      },
-      {
-        "rarityWeight": 10,
-        "name": "Forest"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Desert"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Arctic"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Swamp"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Volcanic"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Shadow"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Abyssal"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 30,
-        "name": "of the Night"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "of the Wild"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "of the Hunt"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "of Blood"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "the Destroyer"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "the Terror"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "the Apex"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 8,
-        "name": "Wild"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Rabid"
-      },
-      {
-        "rarityWeight": 12,
-        "name": "Feral"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Savage"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Primal"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Ancient"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Monstrous"
-      },
-      {
-        "rarityWeight": 16,
-        "name": "Vicious"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Enraged"
-      },
-      {
-        "rarityWeight": 24,
-        "name": "Frenzied"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Bloodthirsty"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{size} {base}"
-    },
-    {
-      "rarityWeight": 30,
-      "pattern": "{origin} {base}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Beast enemy name generation with pattern-based system and weight-based rarity",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "size",
+                                           "origin",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "size",
+                                           "origin",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Base token resolves from enemies/beasts/catalog.json",
+                                   "All components have rarityWeight for emergent rarity calculation",
+                                   "Component weights combine via multipliers from general/rarity_config.json",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "usage":  "Pattern-based name generation for beasts. Pick components by rarityWeight and apply patterns to generate procedural names.",
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "size":  [
+                                    {
+                                        "rarityWeight":  25,
+                                        "name":  "Dire"
+                                    }
+                                ],
+                       "origin":  [
+                                      {
+                                          "rarityWeight":  15,
+                                          "name":  "Mountain"
+                                      }
+                                  ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  30,
+                                         "name":  "of the Night"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  8,
+                                          "name":  "Wild"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

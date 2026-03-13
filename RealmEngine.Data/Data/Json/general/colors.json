@@ -1,90 +1,43 @@
-{
-  "components": {
-    "base_color": [
-      "red",
-      "blue",
-      "green",
-      "yellow",
-      "orange",
-      "purple",
-      "brown",
-      "black",
-      "white",
-      "grey",
-      "pink",
-      "cyan",
-      "magenta",
-      "gold",
-      "silver"
-    ],
-    "modifier": [
-      "dark",
-      "light",
-      "bright",
-      "pale",
-      "deep",
-      "vivid",
-      "dull",
-      "faded",
-      "rich",
-      "muted",
-      "brilliant",
-      "dim",
-      "glowing",
-      "shadowy",
-      "radiant"
-    ],
-    "material": [
-      "crimson",
-      "scarlet",
-      "azure",
-      "emerald",
-      "golden",
-      "ebony",
-      "ivory",
-      "silver",
-      "bronze",
-      "copper",
-      "ruby",
-      "sapphire",
-      "jade",
-      "amethyst",
-      "obsidian",
-      "platinum",
-      "steel",
-      "brass",
-      "terracotta",
-      "alabaster"
-    ]
-  },
-  "patterns": [
-    "base_color",
-    "{modifier} {base_color}",
-    "material"
-  ],
-  "metadata": {
-    "description": "Color name generation with base colors, modifiers, and material-based colors for rich visual descriptions",
-    "version": "4.0",
-    "type": "pattern_generation",
-    "lastUpdated": "2026-01-08",
-    "componentKeys": [
-      "base_color",
-      "modifier",
-      "material"
-    ],
-    "pattern_count": 3,
-    "patternTokens": [
-      "base_color",
-      "modifier",
-      "material"
-    ],
-    "component_counts": {
-      "base_color": 15,
-      "modifier": 15,
-      "material": 20
-    },
-    "notes": [
-      "Reference data for general colors. Used as component source in name generation and stat calculations."
-    ]
-  }
+﻿{
+    "components":  {
+                       "base_color":  [
+                                          "red"
+                                      ],
+                       "modifier":  [
+                                        "dark"
+                                    ],
+                       "material":  [
+                                        "crimson"
+                                    ]
+                   },
+    "patterns":  [
+                     "base_color",
+                     "{modifier} {base_color}",
+                     "material"
+                 ],
+    "metadata":  {
+                     "description":  "Color name generation with base colors, modifiers, and material-based colors for rich visual descriptions",
+                     "version":  "4.0",
+                     "type":  "pattern_generation",
+                     "lastUpdated":  "2026-01-08",
+                     "componentKeys":  [
+                                           "base_color",
+                                           "modifier",
+                                           "material"
+                                       ],
+                     "pattern_count":  3,
+                     "patternTokens":  [
+                                           "base_color",
+                                           "modifier",
+                                           "material"
+                                       ],
+                     "component_counts":  {
+                                              "base_color":  1,
+                                              "modifier":  1,
+                                              "material":  1
+                                          },
+                     "notes":  [
+                                   "Reference data for general colors. Used as component source in name generation and stat calculations."
+                               ]
+                 }
 }

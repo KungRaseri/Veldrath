@@ -1,159 +1,47 @@
-{
-  "metadata": {
-    "description": "Glass material properties for crafting system - fragile but sharp",
-    "version": "5.1",
-    "lastUpdated": "2026-01-22",
-    "type": "materials_properties_catalog",
-    "totalMaterials": 5,
-    "usage": "Glass materials for fragile weapons with high damage potential.",
-    "notes": [
-      "Glass materials have high damage but very low durability",
-      "Focus on critical hits and piercing damage",
-      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-    ]
-  },
-  "glass_types": {
-    "glass": {
-      "items": [
-        {
-          "slug": "common-glass",
-          "name": "Common Glass",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 3,
-            "charisma": 5,
-            "strength": 0,
-            "constitution": 0,
-            "wisdom": 0
-          },
-          "traits": {
-            "durability": 10,
-            "weight": 0.6,
-            "sharpness": 40
-          },
-          "displayName": "Common Glass",
-          "itemTypeTraits": {
-            "weapon": {
-              "damage": 5,
-              "critChance": 3,
-              "value": 2
-            }
-          },
-          "rarityWeight": 75
-        },
-        {
-          "slug": "stained-glass",
-          "name": "Stained Glass",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 5,
-            "charisma": 10,
-            "strength": 0,
-            "constitution": 0,
-            "wisdom": 3
-          },
-          "traits": {
-            "durability": 12,
-            "weight": 0.65,
-            "sharpness": 42,
-            "enchantability": 20
-          },
-          "displayName": "Stained Glass",
-          "itemTypeTraits": {
-            "weapon": {
-              "damage": 6,
-              "critChance": 4,
-              "value": 8
-            }
-          },
-          "rarityWeight": 45
-        },
-        {
-          "slug": "volcanic-glass",
-          "name": "Volcanic Glass",
-          "attributes": {
-            "dexterity": 8,
-            "intelligence": 5,
-            "charisma": 5,
-            "strength": 5,
-            "constitution": 3,
-            "wisdom": 5
-          },
-          "traits": {
-            "durability": 15,
-            "weight": 0.7,
-            "sharpness": 55,
-            "fireAffinity": 20
-          },
-          "displayName": "Volcanic Glass",
-          "itemTypeTraits": {
-            "weapon": {
-              "damage": 8,
-              "critChance": 5,
-              "fireDamage": 3,
-              "value": 15
-            }
-          },
-          "rarityWeight": 30
-        },
-        {
-          "slug": "crystal-glass",
-          "name": "Crystal Glass",
-          "attributes": {
-            "dexterity": 8,
-            "intelligence": 10,
-            "charisma": 12,
-            "strength": 3,
-            "constitution": 3,
-            "wisdom": 10
-          },
-          "traits": {
-            "durability": 18,
-            "weight": 0.75,
-            "sharpness": 50,
-            "enchantability": 40
-          },
-          "displayName": "Crystal Glass",
-          "itemTypeTraits": {
-            "weapon": {
-              "damage": 10,
-              "critChance": 6,
-              "spellPower": 5,
-              "value": 25
-            }
-          },
-          "rarityWeight": 20
-        },
-        {
-          "slug": "ethereal-glass",
-          "name": "Ethereal Glass",
-          "attributes": {
-            "dexterity": 12,
-            "intelligence": 15,
-            "charisma": 15,
-            "strength": 5,
-            "constitution": 5,
-            "wisdom": 15
-          },
-          "traits": {
-            "durability": 25,
-            "weight": 0.5,
-            "sharpness": 70,
-            "enchantability": 60,
-            "phaseShift": 10
-          },
-          "displayName": "Ethereal Glass",
-          "itemTypeTraits": {
-            "weapon": {
-              "damage": 15,
-              "critChance": 10,
-              "spellPower": 10,
-              "value": 50
-            }
-          },
-          "rarityWeight": 5
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Glass material properties for crafting system - fragile but sharp",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-22",
+                     "type":  "materials_properties_catalog",
+                     "totalMaterials":  1,
+                     "usage":  "Glass materials for fragile weapons with high damage potential.",
+                     "notes":  [
+                                   "Glass materials have high damage but very low durability",
+                                   "Focus on critical hits and piercing damage",
+                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+                               ]
+                 },
+    "glass_types":  {
+                        "glass":  {
+                                      "items":  [
+                                                    {
+                                                        "slug":  "common-glass",
+                                                        "name":  "Common Glass",
+                                                        "attributes":  {
+                                                                           "dexterity":  5,
+                                                                           "intelligence":  3,
+                                                                           "charisma":  5,
+                                                                           "strength":  0,
+                                                                           "constitution":  0,
+                                                                           "wisdom":  0
+                                                                       },
+                                                        "traits":  {
+                                                                       "durability":  10,
+                                                                       "weight":  0.6,
+                                                                       "sharpness":  40
+                                                                   },
+                                                        "displayName":  "Common Glass",
+                                                        "itemTypeTraits":  {
+                                                                               "weapon":  {
+                                                                                              "damage":  5,
+                                                                                              "critChance":  3,
+                                                                                              "value":  2
+                                                                                          }
+                                                                           },
+                                                        "rarityWeight":  75
+                                                    }
+                                                ]
+                                  }
+                    }
 }

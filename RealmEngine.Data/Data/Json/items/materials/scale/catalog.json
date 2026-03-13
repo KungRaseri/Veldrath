@@ -1,115 +1,37 @@
-{
-  "metadata": {
-    "description": "Reptilian scale materials for exotic armor crafting",
-    "version": "1.0",
-    "lastUpdated": "2026-01-21",
-    "type": "item_catalog",
-    "totalItems": 5
-  },
-  "material_types": {
-    "scale": {
-      "items": [
-        {
-          "slug": "snake-scale",
-          "name": "Snake Scale",
-          "description": "Flexible scales from large serpents.",
-          "propertyRef": "@properties/materials/scales:serpent-scale",
-          "rarityWeight": 60,
-          "value": 8,
-          "weight": 0.1,
-          "stackSize": 100,
-          "itemType": "material",
-          "subType": "scale",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "scale",
-            "crafting",
-            "reptile",
-            "flexible"
-          ]
-        },
-        {
-          "slug": "lizard-scale",
-          "name": "Lizard Scale",
-          "description": "Hardy scales from giant lizards.",
-          "propertyRef": "@properties/materials/scales:lizard-scale",
-          "rarityWeight": 50,
-          "value": 12,
-          "weight": 0.15,
-          "stackSize": 75,
-          "itemType": "material",
-          "subType": "scale",
-          "tier": "raw",
-          "traits": {},
-          "tags": [
-            "scale",
-            "crafting",
-            "reptile"
-          ]
-        },
-        {
-          "slug": "drake-scale",
-          "name": "Drake Scale",
-          "description": "Tough scales from a lesser drake, resistant to fire.",
-          "propertyRef": "@properties/materials/scales:drake-scale",
-          "rarityWeight": 28,
-          "value": 35,
-          "weight": 0.2,
-          "stackSize": 30,
-          "itemType": "material",
-          "subType": "scale",
-          "tier": "refined",
-          "traits": {},
-          "tags": [
-            "scale",
-            "crafting",
-            "drake",
-            "fire-resistant"
-          ]
-        },
-        {
-          "slug": "dragon-scale",
-          "name": "Dragon Scale",
-          "description": "Nearly impervious scales from a true dragon.",
-          "propertyRef": "@properties/materials/scales:dragon-scale",
-          "rarityWeight": 8,
-          "value": 200,
-          "weight": 0.3,
-          "stackSize": 10,
-          "itemType": "material",
-          "subType": "scale",
-          "tier": "legendary",
-          "traits": {},
-          "tags": [
-            "scale",
-            "crafting",
-            "dragon",
-            "legendary"
-          ]
-        },
-        {
-          "slug": "basilisk-scale",
-          "name": "Basilisk Scale",
-          "description": "Petrifying scales from the legendary basilisk.",
-          "propertyRef": "@properties/materials/scales:basilisk-scale",
-          "rarityWeight": 5,
-          "value": 250,
-          "weight": 0.25,
-          "stackSize": 5,
-          "itemType": "material",
-          "subType": "scale",
-          "tier": "legendary",
-          "traits": {},
-          "tags": [
-            "scale",
-            "crafting",
-            "basilisk",
-            "petrifying",
-            "legendary"
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Reptilian scale materials for exotic armor crafting",
+                     "version":  "1.0",
+                     "lastUpdated":  "2026-01-21",
+                     "type":  "item_catalog",
+                     "totalItems":  1
+                 },
+    "material_types":  {
+                           "scale":  {
+                                         "items":  [
+                                                       {
+                                                           "slug":  "snake-scale",
+                                                           "name":  "Snake Scale",
+                                                           "description":  "Flexible scales from large serpents.",
+                                                           "propertyRef":  "@properties/materials/scales:serpent-scale",
+                                                           "rarityWeight":  60,
+                                                           "value":  8,
+                                                           "weight":  0.1,
+                                                           "stackSize":  100,
+                                                           "itemType":  "material",
+                                                           "subType":  "scale",
+                                                           "tier":  "raw",
+                                                           "traits":  {
+
+                                                                      },
+                                                           "tags":  [
+                                                                        "scale",
+                                                                        "crafting",
+                                                                        "reptile",
+                                                                        "flexible"
+                                                                    ]
+                                                       }
+                                                   ]
+                                     }
+                       }
 }

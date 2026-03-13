@@ -1,640 +1,74 @@
-{
-  "metadata": {
-    "type": "hierarchical_catalog",
-    "version": "5.1",
-    "description": "Professional NPCs - specialized service providers with expertise in healing, knowledge, or technical skills",
-    "lastUpdated": "2026-01-08",
-    "socialClass": "professional",
-    "notes": [
-      "High intelligence/wisdom attributes",
-      "Specialized skill bonuses",
-      "Often provide services beyond selling items",
-      "May have research, identification, or healing abilities"
-    ]
-  },
-  "background_types": {
-    "scholarly": {
-      "metadata": {
-        "description": "Characters dedicated to learning and knowledge",
-        "socialClass": "professional",
-        "notes": [
-          "High intelligence, moderate wisdom",
-          "Bonuses to knowledge and appraisal",
-          "Often have unique scholarly items"
-        ]
-      },
-      "items": [
-        {
-          "slug": "scholarlyscribe",
-          "name": "ScholarlyScribe",
-          "displayName": "Scholarly Scribe",
-          "description": "Dedicated to learning and record-keeping",
-          "attributes": {
-            "strength": 9,
-            "dexterity": 11,
-            "constitution": 11,
-            "intelligence": 15,
-            "wisdom": 13,
-            "charisma": 11
-          },
-          "rarityWeight": 22,
-          "socialClass": "professional",
-          "startingGold": "2d10",
-          "skillBonuses": [
-            "knowledge",
-            "literacy",
-            "appraisal"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 5,
-            "priceMultiplier": 1.1,
-            "shopAppearance": "scholarly"
-          },
-          "specializationHints": [
-            "consumables.scrolls",
-            "books"
-          ],
-          "uniqueItems": [
-            "Ink-stained Quill",
-            "Bound Journal"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:scholarly",
-          "greetings": [
-            "@social/dialogue/greetings/scholarly:scholarly-formal"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/scholarly:scholarly"
-          ],
-          "faction": "scholars_guild",
-          "schedule": "@social/schedules/*:scholar"
-        },
-        {
-          "slug": "lorekeeper",
-          "name": "LoreKeeper",
-          "displayName": "Lore Keeper",
-          "description": "Guardian of ancient knowledge and history",
-          "attributes": {
-            "strength": 9,
-            "dexterity": 10,
-            "constitution": 11,
-            "intelligence": 16,
-            "wisdom": 15,
-            "charisma": 11
-          },
-          "rarityWeight": 35,
-          "socialClass": "professional",
-          "startingGold": "3d8",
-          "skillBonuses": [
-            "history",
-            "arcane_lore",
-            "languages"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 10,
-            "priceMultiplier": 1.2,
-            "shopAppearance": "ancient"
-          },
-          "specializationHints": [
-            "books",
-            "consumables.scrolls",
-            "artifacts"
-          ],
-          "uniqueItems": [
-            "Ancient Codex",
-            "Rune-marked Bookmark"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:wise",
-          "greetings": [
-            "@social/dialogue/greetings/scholarly:scholarly-formal"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/scholarly:scholarly"
-          ],
-          "faction": "scholars_guild",
-          "schedule": "@social/schedules/*:scholar"
-        }
-      ]
-    },
-    "medical": {
-      "metadata": {
-        "description": "Characters trained in medicine and healing arts",
-        "socialClass": "professional",
-        "notes": [
-          "High wisdom, good intelligence",
-          "Healing and herbalism skills",
-          "Often have unique medical items"
-        ]
-      },
-      "items": [
-        {
-          "slug": "healerapprentice",
-          "name": "HealerApprentice",
-          "displayName": "Healer's Apprentice",
-          "description": "Studied medicine and herbalism",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 11,
-            "constitution": 12,
-            "intelligence": 13,
-            "wisdom": 15,
-            "charisma": 12
-          },
-          "rarityWeight": 25,
-          "socialClass": "professional",
-          "startingGold": "2d8",
-          "skillBonuses": [
-            "healing",
-            "herbalism",
-            "alchemy"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 8,
-            "priceMultiplier": 1.05,
-            "shopAppearance": "apothecary"
-          },
-          "specializationHints": [
-            "consumables.potions",
-            "consumables.herbs"
-          ],
-          "uniqueItems": [
-            "Herbalist's Satchel"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/professional:warm-professional"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "independent",
-          "schedule": "@social/schedules/*:healer"
-        },
-        {
-          "slug": "alchemist",
-          "name": "Alchemist",
-          "displayName": "Alchemist",
-          "description": "Expert in transmutation and potion-making",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 12,
-            "constitution": 12,
-            "intelligence": 17,
-            "wisdom": 14,
-            "charisma": 11
-          },
-          "rarityWeight": 40,
-          "socialClass": "professional",
-          "startingGold": "3d10",
-          "skillBonuses": [
-            "alchemy",
-            "chemistry",
-            "transmutation"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 15,
-            "priceMultiplier": 1.3,
-            "shopAppearance": "laboratory"
-          },
-          "specializationHints": [
-            "consumables.potions",
-            "reagents",
-            "magic_items"
-          ],
-          "uniqueItems": [
-            "Philosopher's Stone Fragment",
-            "Alembic Set"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:scholarly",
-          "greetings": [
-            "@social/dialogue/greetings/scholarly:distracted-scholar"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/scholarly:scholarly"
-          ],
-          "faction": "mages_circle",
-          "schedule": "@social/schedules/*:mage"
-        }
-      ]
-    }
-  },
-  "occupation_types": {
-    "healers": {
-      "metadata": {
-        "description": "Medical professionals and potion-makers",
-        "hasShop": true,
-        "notes": [
-          "Sell potions, herbs, and medical supplies",
-          "Often provide healing services",
-          "High wisdom and intelligence"
-        ]
-      },
-      "items": [
-        {
-          "slug": "apothecary",
-          "name": "Apothecary",
-          "displayName": "Apothecary",
-          "strength": 10,
-          "dexterity": 12,
-          "constitution": 12,
-          "intelligence": 16,
-          "wisdom": 15,
-          "charisma": 11,
-          "rarityWeight": 25,
-          "socialClass": "professional",
-          "skillBonuses": [
-            "alchemy",
-            "healing",
-            "herbalism"
-          ],
-          "baseGold": "2d10",
-          "shopType": "apothecary",
-          "shopChance": 0.85,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 5,
-                "restockDaily": true
-              },
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 3,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "consumables.potions",
-              "consumables.herbs",
-              "reagents"
-            ],
-            "dynamicItemCount": "{1d10} {3}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "consumables.potions",
-                "consumables.herbs",
-                "reagents"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.75,
-              "playerItemDecayDaily": 0.15,
-              "playerItemDecayDays": 5,
-              "maxPlayerItems": 15,
-              "bankGoldFormula": "baseGold * 8 + background.startingGold * 3",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/professional:apothecary-clinical"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "independent",
-          "schedule": "@social/schedules/*:healer"
-        },
-        {
-          "slug": "healer",
-          "name": "Healer",
-          "displayName": "Healer",
-          "strength": 10,
-          "dexterity": 11,
-          "constitution": 13,
-          "intelligence": 13,
-          "wisdom": 17,
-          "charisma": 13,
-          "rarityWeight": 35,
-          "socialClass": "professional",
-          "skillBonuses": [
-            "healing",
-            "medicine",
-            "divine_magic"
-          ],
-          "baseGold": "2d12",
-          "shopType": "healing_house",
-          "shopChance": 0.9,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 10,
-                "restockDaily": true
-              },
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 20,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "consumables.potions",
-              "medical_supplies"
-            ],
-            "dynamicItemCount": "{1d8} {2}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": false,
-              "acceptedCategories": [],
-              "buyPriceMultiplier": 0.0,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.0,
-              "bankGoldFormula": "baseGold * 10",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "services": [
-            "healing",
-            "cure_poison",
-            "cure_disease"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/professional:warm-professional"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "clergy",
-          "schedule": "@social/schedules/*:healer"
-        },
-        {
-          "slug": "herbalist",
-          "name": "Herbalist",
-          "displayName": "Herbalist",
-          "strength": 10,
-          "dexterity": 12,
-          "constitution": 12,
-          "intelligence": 14,
-          "wisdom": 16,
-          "charisma": 11,
-          "rarityWeight": 28,
-          "socialClass": "professional",
-          "skillBonuses": [
-            "herbalism",
-            "alchemy",
-            "nature_lore"
-          ],
-          "baseGold": "2d8",
-          "shopType": "herb_shop",
-          "shopChance": 0.75,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 15,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "consumables.herbs",
-              "reagents"
-            ],
-            "dynamicItemCount": "{2d6} {3}",
-            "dynamicRefreshDaily": true,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "consumables.herbs",
-                "reagents"
-              ],
-              "buyPriceMultiplier": 0.4,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.75,
-              "playerItemDecayDaily": 0.2,
-              "playerItemDecayDays": 5,
-              "maxPlayerItems": 20,
-              "bankGoldFormula": "baseGold * 6 + background.startingGold * 3",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "canCraft": [
-            "potions",
-            "remedies"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:friendly",
-          "greetings": [
-            "@social/dialogue/greetings/professional:warm-rural"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "independent",
-          "schedule": "@social/schedules/*:healer"
-        }
-      ]
-    },
-    "scholars": {
-      "metadata": {
-        "description": "Knowledge keepers and information specialists",
-        "hasShop": true,
-        "notes": [
-          "Sell books, scrolls, and maps",
-          "Provide identification and research services",
-          "Very high intelligence"
-        ]
-      },
-      "items": [
-        {
-          "slug": "scholar",
-          "name": "Scholar",
-          "displayName": "Scholar",
-          "strength": 9,
-          "dexterity": 10,
-          "constitution": 11,
-          "intelligence": 17,
-          "wisdom": 14,
-          "charisma": 11,
-          "rarityWeight": 30,
-          "socialClass": "professional",
-          "skillBonuses": [
-            "knowledge",
-            "history",
-            "languages"
-          ],
-          "baseGold": "3d8",
-          "shopType": "library",
-          "shopChance": 0.6,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 5,
-                "restockDaily": false
-              }
-            ],
-            "dynamicCategories": [
-              "books",
-              "maps",
-              "consumables.scrolls"
-            ],
-            "dynamicItemCount": "{1d6} {1}",
-            "dynamicRefreshDaily": false,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "books",
-                "maps",
-                "scrolls"
-              ],
-              "buyPriceMultiplier": 0.5,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.9,
-              "playerItemDecayDaily": 0.0,
-              "playerItemDecayDays": 30,
-              "maxPlayerItems": 10,
-              "bankGoldFormula": "baseGold * 12 + background.startingGold * 8",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "services": [
-            "identify",
-            "research",
-            "teaching"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:scholarly",
-          "greetings": [
-            "@social/dialogue/greetings/scholarly:scholarly-formal"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/scholarly:scholarly"
-          ],
-          "faction": "scholars_guild",
-          "schedule": "@social/schedules/*:scholar"
-        },
-        {
-          "slug": "sage",
-          "name": "Sage",
-          "displayName": "Sage",
-          "strength": 9,
-          "dexterity": 10,
-          "constitution": 12,
-          "intelligence": 18,
-          "wisdom": 17,
-          "charisma": 12,
-          "rarityWeight": 50,
-          "socialClass": "professional",
-          "skillBonuses": [
-            "arcane_lore",
-            "wisdom",
-            "divination"
-          ],
-          "baseGold": "4d10",
-          "shopType": "sage_tower",
-          "shopChance": 0.5,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 1,
-                "restockDaily": false
-              }
-            ],
-            "dynamicCategories": [
-              "books",
-              "magic_items",
-              "consumables.scrolls"
-            ],
-            "dynamicItemCount": "{1d4} {1}",
-            "dynamicRefreshDaily": false,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "books",
-                "magic_items",
-                "artifacts"
-              ],
-              "buyPriceMultiplier": 0.6,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 1.0,
-              "playerItemDecayDaily": 0.0,
-              "playerItemDecayDays": 60,
-              "maxPlayerItems": 5,
-              "bankGoldFormula": "baseGold * 30 + background.startingGold * 20",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "services": [
-            "prophecy",
-            "identify",
-            "enchant"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:wise",
-          "greetings": [
-            "@social/dialogue/greetings/scholarly:scholarly-formal"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/scholarly:scholarly"
-          ],
-          "faction": "scholars_guild",
-          "schedule": "@social/schedules/*:scholar"
-        },
-        {
-          "slug": "cartographer",
-          "name": "Cartographer",
-          "displayName": "Cartographer",
-          "strength": 9,
-          "dexterity": 13,
-          "constitution": 11,
-          "intelligence": 16,
-          "wisdom": 13,
-          "charisma": 11,
-          "rarityWeight": 40,
-          "socialClass": "professional",
-          "skillBonuses": [
-            "navigation",
-            "geography",
-            "drawing"
-          ],
-          "baseGold": "3d8",
-          "shopType": "map_shop",
-          "shopChance": 0.65,
-          "shopInventory": {
-            "coreItems": [
-              {
-                "item": "@items/materials:*",
-                "baseQuantity": 5,
-                "restockDaily": true
-              }
-            ],
-            "dynamicCategories": [
-              "maps",
-              "navigation_tools"
-            ],
-            "dynamicItemCount": "{1d6} {2}",
-            "dynamicRefreshDaily": false,
-            "economy": {
-              "acceptsPlayerItems": true,
-              "acceptedCategories": [
-                "maps"
-              ],
-              "buyPriceMultiplier": 0.5,
-              "sellPriceMultiplier": 1.0,
-              "resellPriceMultiplier": 0.9,
-              "playerItemDecayDaily": 0.0,
-              "playerItemDecayDays": 20,
-              "maxPlayerItems": 8,
-              "bankGoldFormula": "baseGold * 10 + background.startingGold * 6",
-              "bankGoldRestockDaily": true
-            }
-          },
-          "services": [
-            "map_making",
-            "directions"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/casual:professional",
-          "greetings": [
-            "@social/dialogue/greetings/professional:professional-busy"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "scholars_guild",
-          "schedule": "@social/schedules/*:scholar"
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "type":  "hierarchical_catalog",
+                     "version":  "5.1",
+                     "description":  "Professional NPCs - specialized service providers with expertise in healing, knowledge, or technical skills",
+                     "lastUpdated":  "2026-01-08",
+                     "socialClass":  "professional",
+                     "notes":  [
+                                   "High intelligence/wisdom attributes",
+                                   "Specialized skill bonuses",
+                                   "Often provide services beyond selling items",
+                                   "May have research, identification, or healing abilities"
+                               ]
+                 },
+    "background_types":  {
+                             "scholarly":  {
+                                               "metadata":  {
+                                                                "description":  "Characters dedicated to learning and knowledge",
+                                                                "socialClass":  "professional",
+                                                                "notes":  [
+                                                                              "High intelligence, moderate wisdom",
+                                                                              "Bonuses to knowledge and appraisal",
+                                                                              "Often have unique scholarly items"
+                                                                          ]
+                                                            },
+                                               "items":  [
+                                                             {
+                                                                 "slug":  "scholarlyscribe",
+                                                                 "name":  "ScholarlyScribe",
+                                                                 "displayName":  "Scholarly Scribe",
+                                                                 "description":  "Dedicated to learning and record-keeping",
+                                                                 "attributes":  {
+                                                                                    "strength":  9,
+                                                                                    "dexterity":  11,
+                                                                                    "constitution":  11,
+                                                                                    "intelligence":  15,
+                                                                                    "wisdom":  13,
+                                                                                    "charisma":  11
+                                                                                },
+                                                                 "rarityWeight":  22,
+                                                                 "socialClass":  "professional",
+                                                                 "startingGold":  "2d10",
+                                                                 "skillBonuses":  [
+                                                                                      "knowledge",
+                                                                                      "literacy",
+                                                                                      "appraisal"
+                                                                                  ],
+                                                                 "shopModifiers":  {
+                                                                                       "qualityBonus":  5,
+                                                                                       "priceMultiplier":  1.1,
+                                                                                       "shopAppearance":  "scholarly"
+                                                                                   },
+                                                                 "specializationHints":  [
+                                                                                             "consumables.scrolls",
+                                                                                             "books"
+                                                                                         ],
+                                                                 "uniqueItems":  [
+                                                                                     "Ink-stained Quill",
+                                                                                     "Bound Journal"
+                                                                                 ],
+                                                                 "dialogueStyle":  "@social/dialogue/styles/formal:scholarly",
+                                                                 "greetings":  [
+                                                                                   "@social/dialogue/greetings/scholarly:scholarly-formal"
+                                                                               ],
+                                                                 "farewells":  [
+                                                                                   "@social/dialogue/farewells/scholarly:scholarly"
+                                                                               ],
+                                                                 "faction":  "scholars_guild",
+                                                                 "schedule":  "@social/schedules/*:scholar"
+                                                             }
+                                                         ]
+                                           }
+                         }
 }

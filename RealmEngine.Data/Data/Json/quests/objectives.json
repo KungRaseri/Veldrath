@@ -1,670 +1,314 @@
-{
-  "metadata": {
-    "version": "4.0",
-    "lastUpdated": "2025-12-29",
-    "description": "Quest objectives catalog including primary, secondary, and hidden objectives",
-    "type": "hierarchical_catalog",
-    "notes": "Consolidated from primary.json, secondary.json, and hidden.json. Primary objectives are core quest goals. Secondary objectives provide bonus rewards (optional). Hidden objectives are discovered during gameplay and unlock alternate endings or secrets. All objectives support weighted random selection via rarityWeight.",
-    "total_primary": 20,
-    "total_secondary": 17,
-    "total_hidden": 14,
-    "usage": "Load via GameDataService.QuestObjectives. Use SelectByRarityWeight() for procedural generation. Primary objectives are required for quest completion. Secondary/hidden are optional for bonus rewards.",
-    "categories": {
-      "primary": [
-        "combat_objectives",
-        "retrieval_objectives",
-        "rescue_objectives",
-        "purification_objectives",
-        "defense_objectives",
-        "social_objectives",
-        "timed_objectives"
-      ],
-      "secondary": [
-        "stealth_challenges",
-        "survival_challenges",
-        "speed_challenges",
-        "collection_challenges",
-        "mercy_challenges",
-        "combat_challenges",
-        "precision_challenges",
-        "social_challenges"
-      ],
-      "hidden": [
-        "exploration_secrets",
-        "lore_secrets",
-        "combat_secrets",
-        "branching_secrets",
-        "collection_secrets",
-        "puzzle_secrets",
-        "rescue_secrets",
-        "diplomacy_secrets",
-        "timed_secrets",
-        "purification_secrets"
-      ]
-    }
-  },
-  "components": {
-    "primary": {
-      "combat_objectives": [
-        {
-          "name": "ClearDungeon",
-          "displayName": "Clear Dungeon",
-          "rarityWeight": 20,
-          "description": "Clear all enemies from {location}",
-          "category": "Combat",
-          "difficulty": "Medium",
-          "objectiveType": "primary"
-        },
-        {
-          "name": "DefeatBoss",
-          "displayName": "Defeat Boss",
-          "rarityWeight": 35,
-          "description": "Defeat {enemy_name} in {location}",
-          "category": "Combat",
-          "difficulty": "Hard",
-          "objectiveType": "primary",
-          "enemy_pool": [
-            "@enemies/humanoids/bandits:*",
-            "@enemies/beasts/wolves:*",
-            "@enemies/demons/lesser_demons:*",
-            "@enemies/undead/zombies:*"
-          ],
-          "rarityFilter": "rare",
-          "selectRandom": true
-        },
-        {
-          "name": "SlayDragon",
-          "displayName": "Slay Dragon",
-          "rarityWeight": 60,
-          "description": "Kill the dragon terrorizing {location}",
-          "category": "Combat",
-          "difficulty": "Very Hard",
-          "objectiveType": "primary",
-          "enemy_pool": [
-            "@enemies/dragons/chromatic:*"
-          ],
-          "rarityFilter": "epic",
-          "selectRandom": true
-        },
-        {
-          "name": "DestroyNecromancer",
-          "displayName": "Destroy Necromancer",
-          "rarityWeight": 65,
-          "description": "Defeat the necromancer and end the undead plague",
-          "category": "Combat",
-          "difficulty": "Very Hard",
-          "objectiveType": "primary",
-          "enemy_pool": [
-            "@enemies/undead/zombies:*"
-          ],
-          "rarityFilter": "epic",
-          "selectRandom": true
-        }
-      ],
-      "retrieval_objectives": [
-        {
-          "name": "RecoverAncientKnowledge",
-          "displayName": "Recover Ancient Knowledge",
-          "rarityWeight": 25,
-          "description": "Retrieve the lost knowledge from {location}",
-          "category": "Retrieval",
-          "difficulty": "Medium",
-          "objectiveType": "primary"
-        },
-        {
-          "name": "RetrieveArtifact",
-          "displayName": "Retrieve Artifact",
-          "rarityWeight": 30,
-          "description": "Recover the {item_name} from {location}",
-          "category": "Retrieval",
-          "difficulty": "Medium",
-          "objectiveType": "primary",
-          "item_pool": [
-            "@items/materials:*",
-            "@items/materials:*"
-          ],
-          "rarityFilter": "rare",
-          "selectRandom": true
-        },
-        {
-          "name": "RecoverRelic",
-          "displayName": "Recover Relic",
-          "rarityWeight": 50,
-          "description": "Find the legendary {item_name}",
-          "category": "Retrieval",
-          "difficulty": "Hard",
-          "objectiveType": "primary",
-          "item_pool": [
-            "@items/materials:*"
-          ],
-          "rarityFilter": "legendary",
-          "selectRandom": true
-        }
-      ],
-      "rescue_objectives": [
-        {
-          "name": "RescueHostage",
-          "displayName": "Rescue Hostage",
-          "rarityWeight": 28,
-          "description": "Rescue {npc_name} from {location}",
-          "category": "Rescue",
-          "difficulty": "Medium",
-          "objectiveType": "primary",
-          "npc_pool": [
-            "@npcs/noble:*",
-            "@npcs/merchants:*",
-            "@npcs/common:*"
-          ],
-          "selectRandom": true
-        }
-      ],
-      "purification_objectives": [
-        {
-          "name": "DestroyEvil",
-          "displayName": "Destroy Evil",
-          "rarityWeight": 40,
-          "description": "Destroy the source of evil in {location}",
-          "category": "Purification",
-          "difficulty": "Hard",
-          "objectiveType": "primary"
-        },
-        {
-          "name": "BreakCurse",
-          "displayName": "Break Curse",
-          "rarityWeight": 42,
-          "description": "Lift the curse afflicting {location} or {npc_name}",
-          "category": "Purification",
-          "difficulty": "Hard",
-          "objectiveType": "primary"
-        },
-        {
-          "name": "RestoreBalance",
-          "displayName": "Restore Balance",
-          "rarityWeight": 45,
-          "description": "Restore the natural order disturbed by {enemy_name}",
-          "category": "Purification",
-          "difficulty": "Hard",
-          "objectiveType": "primary",
-          "enemy_pool": [
-            "@enemies/demons/lesser_demons:*",
-            "@enemies/elementals/fire_elementals:*",
-            "@enemies/undead/zombies:*"
-          ],
-          "rarityFilter": "rare",
-          "selectRandom": true
-        },
-        {
-          "name": "SealPortal",
-          "displayName": "Seal Portal",
-          "rarityWeight": 70,
-          "description": "Close the dimensional rift in {location}",
-          "category": "Purification",
-          "difficulty": "Very Hard",
-          "objectiveType": "primary"
-        },
-        {
-          "name": "BanishDemon",
-          "displayName": "Banish Demon",
-          "rarityWeight": 100,
-          "description": "Send the demon lord back to the abyss",
-          "category": "Purification",
-          "difficulty": "Epic",
-          "objectiveType": "primary"
-        }
-      ],
-      "defense_objectives": [
-        {
-          "name": "DefendTown",
-          "displayName": "Defend Town",
-          "rarityWeight": 38,
-          "description": "Protect {location} from the {enemy_type} invasion",
-          "category": "Defense",
-          "difficulty": "Hard",
-          "objectiveType": "primary",
-          "enemy_pool": [
-            "@enemies/humanoids/bandits:*",
-            "@enemies/beasts/wolves:*",
-            "@enemies/undead/zombies:*",
-            "@enemies/demons/lesser_demons:*"
-          ],
-          "selectRandom": true
-        },
-        {
-          "name": "SaveKingdom",
-          "displayName": "Save Kingdom",
-          "rarityWeight": 110,
-          "description": "Stop the {enemy_type} army before they reach the capital",
-          "category": "Defense",
-          "difficulty": "Epic",
-          "objectiveType": "primary",
-          "enemy_pool": [
-            "@enemies/humanoids/bandits:*",
-            "@enemies/demons/lesser_demons:*",
-            "@enemies/undead/zombies:*",
-            "@enemies/dragons/chromatic:*"
-          ],
-          "selectRandom": true
-        },
-        {
-          "name": "SaveWorld",
-          "displayName": "Save World",
-          "rarityWeight": 200,
-          "description": "Prevent the apocalypse and save all life",
-          "category": "Defense",
-          "difficulty": "Legendary",
-          "objectiveType": "primary"
-        }
-      ],
-      "social_objectives": [
-        {
-          "name": "ExposeTraitor",
-          "displayName": "Expose Traitor",
-          "rarityWeight": 32,
-          "description": "Find evidence of {npc_name}'s betrayal",
-          "category": "Investigation",
-          "difficulty": "Medium",
-          "objectiveType": "primary",
-          "npc_pool": [
-            "@npcs/noble:*",
-            "@npcs/military:*",
-            "@npcs/merchants:*"
-          ],
-          "selectRandom": true
-        },
-        {
-          "name": "UniteTribes",
-          "displayName": "Unite Tribes",
-          "rarityWeight": 35,
-          "description": "Convince the warring factions to unite against a common threat",
-          "category": "Diplomacy",
-          "difficulty": "Medium",
-          "objectiveType": "primary"
-        },
-        {
-          "name": "PreventWar",
-          "displayName": "Prevent War",
-          "rarityWeight": 48,
-          "description": "Stop the war between {faction_1} and {faction_2}",
-          "category": "Diplomacy",
-          "difficulty": "Hard",
-          "objectiveType": "primary",
-          "faction_pool": [
-            "nobility",
-            "church",
-            "merchants_guild",
-            "city_guard",
-            "mages_guild"
-          ],
-          "selectRandomFactions": 2
-        }
-      ],
-      "timed_objectives": [
-        {
-          "name": "StopRitual",
-          "displayName": "Stop Ritual",
-          "rarityWeight": 75,
-          "description": "Prevent the cultists from completing their ritual in {location}",
-          "category": "Timed",
-          "difficulty": "Very Hard",
-          "objectiveType": "primary"
-        }
-      ]
-    },
-    "secondary": {
-      "stealth_challenges": [
-        {
-          "name": "AvoidDetection",
-          "displayName": "Avoid Detection",
-          "rarityWeight": 25,
-          "description": "Complete the quest without being detected",
-          "category": "Stealth",
-          "bonus": "50% bonus XP",
-          "objectiveType": "secondary"
-        },
-        {
-          "name": "PerfectStealth",
-          "displayName": "Perfect Stealth",
-          "rarityWeight": 45,
-          "description": "Reach the objective without alerting any guards",
-          "category": "Stealth",
-          "bonus": "Stealth gear reward",
-          "objectiveType": "secondary"
-        },
-        {
-          "name": "NoAlarms",
-          "displayName": "No Alarms",
-          "rarityWeight": 40,
-          "description": "Complete without triggering any alarms or traps",
-          "category": "Stealth",
-          "bonus": "Thief tools",
-          "objectiveType": "secondary"
-        }
-      ],
-      "survival_challenges": [
-        {
-          "name": "NoDeaths",
-          "displayName": "No Deaths",
-          "rarityWeight": 30,
-          "description": "Complete without any party members dying",
-          "category": "Survival",
-          "bonus": "Bonus item reward",
-          "objectiveType": "secondary"
-        },
-        {
-          "name": "MinimalDamage",
-          "displayName": "Minimal Damage",
-          "rarityWeight": 35,
-          "description": "Complete with party health above 80%",
-          "category": "Survival",
-          "bonus": "Healing items",
-          "objectiveType": "secondary"
-        }
-      ],
-      "speed_challenges": [
-        {
-          "name": "TimeLimit",
-          "displayName": "Time Limit",
-          "rarityWeight": 28,
-          "description": "Complete within {time_limit}",
-          "category": "Speed",
-          "bonus": "Double gold reward",
-          "objectiveType": "secondary"
-        }
-      ],
-      "collection_challenges": [
-        {
-          "name": "CollectAll",
-          "displayName": "Collect All",
-          "rarityWeight": 32,
-          "description": "Find all {count} hidden items in the area",
-          "category": "Collection",
-          "bonus": "Rare item reward",
-          "objectiveType": "secondary",
-          "item_pool": [
-            "@items/consumables",
-            "@items/materials",
-            "@items/materials:*"
-          ],
-          "rarityFilter": "uncommon",
-          "minCount": 3,
-          "maxCount": 8
-        },
-        {
-          "name": "FindSecrets",
-          "displayName": "Find Secrets",
-          "rarityWeight": 38,
-          "description": "Discover the hidden {secret_type} in {location}",
-          "category": "Exploration",
-          "bonus": "Secret knowledge or item",
-          "objectiveType": "secondary"
-        }
-      ],
-      "mercy_challenges": [
-        {
-          "name": "SpareEnemy",
-          "displayName": "Spare Enemy",
-          "rarityWeight": 40,
-          "description": "Complete without killing {npc_name}",
-          "category": "Mercy",
-          "bonus": "Reputation increase",
-          "objectiveType": "secondary",
-          "npc_pool": [
-            "@npcs/military:*",
-            "@npcs/criminal:*",
-            "@npcs/noble:*"
-          ],
-          "selectRandom": true
-        },
-        {
-          "name": "SaveAllHostages",
-          "displayName": "Save All Hostages",
-          "rarityWeight": 42,
-          "description": "Rescue all {count} hostages, not just the required ones",
-          "category": "Rescue",
-          "bonus": "Town gratitude rewards",
-          "objectiveType": "secondary"
-        }
-      ],
-      "combat_challenges": [
-        {
-          "name": "DefeatOptionalBoss",
-          "displayName": "Defeat Optional Boss",
-          "rarityWeight": 55,
-          "description": "Find and defeat the hidden {boss_name}",
-          "category": "Combat",
-          "bonus": "Legendary item",
-          "objectiveType": "secondary",
-          "enemy_pool": [
-            "@enemies/humanoids/bandits:*",
-            "@enemies/beasts/wolves:*",
-            "@enemies/demons/lesser_demons:*",
-            "@enemies/dragons/chromatic:*",
-            "@enemies/undead/zombies:*"
-          ],
-          "rarityFilter": "epic",
-          "selectRandom": true
-        },
-        {
-          "name": "UseNoMagic",
-          "displayName": "Use No Magic",
-          "rarityWeight": 48,
-          "description": "Complete using only physical attacks",
-          "category": "Challenge",
-          "bonus": "Warrior gear",
-          "objectiveType": "secondary"
-        },
-        {
-          "name": "UseOnlyMagic",
-          "displayName": "Use Only Magic",
-          "rarityWeight": 48,
-          "description": "Complete using only spells and magic",
-          "category": "Challenge",
-          "bonus": "Mage gear",
-          "objectiveType": "secondary"
-        },
-        {
-          "name": "SoloPerfection",
-          "displayName": "Solo Perfection",
-          "rarityWeight": 70,
-          "description": "Complete the quest alone without companions",
-          "category": "Challenge",
-          "bonus": "Legendary solo achievement",
-          "objectiveType": "secondary"
-        },
-        {
-          "name": "NoItems",
-          "displayName": "No Items",
-          "rarityWeight": 65,
-          "description": "Complete without using any consumable items",
-          "category": "Challenge",
-          "bonus": "Master achievement",
-          "objectiveType": "secondary"
-        }
-      ],
-      "precision_challenges": [
-        {
-          "name": "PreserveEnvironment",
-          "displayName": "Preserve Environment",
-          "rarityWeight": 50,
-          "description": "Complete without destroying any environmental objects",
-          "category": "Precision",
-          "bonus": "Nature's blessing",
-          "objectiveType": "secondary"
-        }
-      ],
-      "social_challenges": [
-        {
-          "name": "TalkToEveryone",
-          "displayName": "Talk to Everyone",
-          "rarityWeight": 35,
-          "description": "Speak with all NPCs in the area for additional lore",
-          "category": "Social",
-          "bonus": "Lore book or secret information",
-          "objectiveType": "secondary"
-        }
-      ]
-    },
-    "hidden": {
-      "exploration_secrets": [
-        {
-          "name": "DiscoverSecretRoom",
-          "displayName": "Discover Secret Room",
-          "rarityWeight": 60,
-          "description": "Find the hidden chamber in {location}",
-          "category": "Exploration",
-          "reveal": "Discovered upon entering secret area",
-          "objectiveType": "hidden"
-        },
-        {
-          "name": "FindHiddenTreasure",
-          "displayName": "Find Hidden Treasure",
-          "rarityWeight": 75,
-          "description": "Locate the legendary treasure of {npc_name}",
-          "category": "Exploration",
-          "reveal": "Hinted at in optional dialogue",
-          "objectiveType": "hidden",
-          "npc_pool": [
-            "@npcs/noble:*",
-            "@npcs/criminal:*",
-            "@npcs/merchants:*"
-          ],
-          "selectRandom": true
-        }
-      ],
-      "lore_secrets": [
-        {
-          "name": "ReadAllLore",
-          "displayName": "Read All Lore",
-          "rarityWeight": 50,
-          "description": "Read all {count} lore books scattered throughout the quest",
-          "category": "Lore",
-          "reveal": "Unlocked after reading first book",
-          "objectiveType": "hidden"
-        },
-        {
-          "name": "DiscoverTruth",
-          "displayName": "Discover Truth",
-          "rarityWeight": 80,
-          "description": "Uncover the real story behind the quest events",
-          "category": "Investigation",
-          "reveal": "Piece together clues found throughout",
-          "objectiveType": "hidden"
-        }
-      ],
-      "combat_secrets": [
-        {
-          "name": "DefeatTrueBoss",
-          "displayName": "Defeat True Boss",
-          "rarityWeight": 90,
-          "description": "Find and defeat the real mastermind behind the quest",
-          "category": "Combat",
-          "reveal": "Triggered by finding secret evidence",
-          "objectiveType": "hidden",
-          "enemy_pool": [
-            "@enemies/humanoids/bandits:*",
-            "@enemies/demons/lesser_demons:*",
-            "@enemies/dragons/chromatic:*",
-            "@enemies/undead/zombies:*"
-          ],
-          "rarityFilter": "legendary",
-          "selectRandom": true
-        }
-      ],
-      "branching_secrets": [
-        {
-          "name": "UnlockGoodEnding",
-          "displayName": "Unlock Good Ending",
-          "rarityWeight": 70,
-          "description": "Make choices that lead to the best outcome",
-          "category": "Branching",
-          "reveal": "Revealed at quest completion",
-          "objectiveType": "hidden"
-        },
-        {
-          "name": "UnlockSecretEnding",
-          "displayName": "Unlock Secret Ending",
-          "rarityWeight": 120,
-          "description": "Discover the alternate conclusion",
-          "category": "Branching",
-          "reveal": "Multiple hidden conditions must be met",
-          "objectiveType": "hidden"
-        }
-      ],
-      "collection_secrets": [
-        {
-          "name": "CollectAllRelics",
-          "displayName": "Collect All Relics",
-          "rarityWeight": 65,
-          "description": "Gather all {count} ancient relics hidden in the area",
-          "category": "Collection",
-          "reveal": "Appears after finding first relic",
-          "objectiveType": "hidden"
-        }
-      ],
-      "puzzle_secrets": [
-        {
-          "name": "SolveAncientPuzzle",
-          "displayName": "Solve Ancient Puzzle",
-          "rarityWeight": 85,
-          "description": "Decipher the cryptic symbols to unlock a hidden path",
-          "category": "Puzzle",
-          "reveal": "Found by examining inscriptions",
-          "objectiveType": "hidden"
-        }
-      ],
-      "rescue_secrets": [
-        {
-          "name": "SaveSecretNPC",
-          "displayName": "Save Secret NPC",
-          "rarityWeight": 70,
-          "description": "Rescue {npc_name} who is not mentioned in the main quest",
-          "category": "Rescue",
-          "reveal": "Discovered by exploring off the main path",
-          "objectiveType": "hidden"
-        }
-      ],
-      "diplomacy_secrets": [
-        {
-          "name": "ForgeSecretAlliance",
-          "displayName": "Forge Secret Alliance",
-          "rarityWeight": 95,
-          "description": "Ally with an unexpected faction",
-          "category": "Diplomacy",
-          "reveal": "Available through specific dialogue choices",
-          "objectiveType": "hidden"
-        },
-        {
-          "name": "RedeemVillain",
-          "displayName": "Redeem Villain",
-          "rarityWeight": 110,
-          "description": "Convince {npc_name} to abandon their evil ways",
-          "category": "Diplomacy",
-          "reveal": "Only available with high charisma/reputation",
-          "objectiveType": "hidden"
-        }
-      ],
-      "timed_secrets": [
-        {
-          "name": "PreventBadOutcome",
-          "displayName": "Prevent Bad Outcome",
-          "rarityWeight": 100,
-          "description": "Stop the tragic event from occurring",
-          "category": "Timed",
-          "reveal": "Must act within hidden time limit",
-          "objectiveType": "hidden"
-        }
-      ],
-      "purification_secrets": [
-        {
-          "name": "BreakSecretCurse",
-          "displayName": "Break Secret Curse",
-          "rarityWeight": 88,
-          "description": "Lift the hidden curse affecting the questgiver",
-          "category": "Purification",
-          "reveal": "Requires finding specific item",
-          "objectiveType": "hidden"
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "version":  "4.0",
+                     "lastUpdated":  "2025-12-29",
+                     "description":  "Quest objectives catalog including primary, secondary, and hidden objectives",
+                     "type":  "hierarchical_catalog",
+                     "notes":  "Consolidated from primary.json, secondary.json, and hidden.json. Primary objectives are core quest goals. Secondary objectives provide bonus rewards (optional). Hidden objectives are discovered during gameplay and unlock alternate endings or secrets. All objectives support weighted random selection via rarityWeight.",
+                     "total_primary":  20,
+                     "total_secondary":  17,
+                     "total_hidden":  14,
+                     "usage":  "Load via GameDataService.QuestObjectives. Use SelectByRarityWeight() for procedural generation. Primary objectives are required for quest completion. Secondary/hidden are optional for bonus rewards.",
+                     "categories":  {
+                                        "primary":  [
+                                                        "combat_objectives",
+                                                        "retrieval_objectives",
+                                                        "rescue_objectives",
+                                                        "purification_objectives",
+                                                        "defense_objectives",
+                                                        "social_objectives",
+                                                        "timed_objectives"
+                                                    ],
+                                        "secondary":  [
+                                                          "stealth_challenges",
+                                                          "survival_challenges",
+                                                          "speed_challenges",
+                                                          "collection_challenges",
+                                                          "mercy_challenges",
+                                                          "combat_challenges",
+                                                          "precision_challenges",
+                                                          "social_challenges"
+                                                      ],
+                                        "hidden":  [
+                                                       "exploration_secrets",
+                                                       "lore_secrets",
+                                                       "combat_secrets",
+                                                       "branching_secrets",
+                                                       "collection_secrets",
+                                                       "puzzle_secrets",
+                                                       "rescue_secrets",
+                                                       "diplomacy_secrets",
+                                                       "timed_secrets",
+                                                       "purification_secrets"
+                                                   ]
+                                    }
+                 },
+    "components":  {
+                       "primary":  {
+                                       "combat_objectives":  [
+                                                                 {
+                                                                     "name":  "ClearDungeon",
+                                                                     "displayName":  "Clear Dungeon",
+                                                                     "rarityWeight":  20,
+                                                                     "description":  "Clear all enemies from {location}",
+                                                                     "category":  "Combat",
+                                                                     "difficulty":  "Medium",
+                                                                     "objectiveType":  "primary"
+                                                                 },
+                                                                 {
+                                                                     "name":  "DefeatBoss",
+                                                                     "displayName":  "Defeat Boss",
+                                                                     "rarityWeight":  35,
+                                                                     "description":  "Defeat {enemy_name} in {location}",
+                                                                     "category":  "Combat",
+                                                                     "difficulty":  "Hard",
+                                                                     "objectiveType":  "primary",
+                                                                     "enemy_pool":  [
+                                                                                        "@enemies/humanoids/bandits:*",
+                                                                                        "@enemies/beasts/wolves:*",
+                                                                                        "@enemies/demons/lesser_demons:*",
+                                                                                        "@enemies/undead/zombies:*"
+                                                                                    ],
+                                                                     "rarityFilter":  "rare",
+                                                                     "selectRandom":  true
+                                                                 },
+                                                                 {
+                                                                     "name":  "SlayDragon",
+                                                                     "displayName":  "Slay Dragon",
+                                                                     "rarityWeight":  60,
+                                                                     "description":  "Kill the dragon terrorizing {location}",
+                                                                     "category":  "Combat",
+                                                                     "difficulty":  "Very Hard",
+                                                                     "objectiveType":  "primary",
+                                                                     "enemy_pool":  [
+                                                                                        "@enemies/dragons/chromatic:*"
+                                                                                    ],
+                                                                     "rarityFilter":  "epic",
+                                                                     "selectRandom":  true
+                                                                 },
+                                                                 {
+                                                                     "name":  "DestroyNecromancer",
+                                                                     "displayName":  "Destroy Necromancer",
+                                                                     "rarityWeight":  65,
+                                                                     "description":  "Defeat the necromancer and end the undead plague",
+                                                                     "category":  "Combat",
+                                                                     "difficulty":  "Very Hard",
+                                                                     "objectiveType":  "primary",
+                                                                     "enemy_pool":  [
+                                                                                        "@enemies/undead/zombies:*"
+                                                                                    ],
+                                                                     "rarityFilter":  "epic",
+                                                                     "selectRandom":  true
+                                                                 }
+                                                             ],
+                                       "retrieval_objectives":  [
+                                                                    {
+                                                                        "name":  "RecoverAncientKnowledge",
+                                                                        "displayName":  "Recover Ancient Knowledge",
+                                                                        "rarityWeight":  25,
+                                                                        "description":  "Retrieve the lost knowledge from {location}",
+                                                                        "category":  "Retrieval",
+                                                                        "difficulty":  "Medium",
+                                                                        "objectiveType":  "primary"
+                                                                    },
+                                                                    {
+                                                                        "name":  "RetrieveArtifact",
+                                                                        "displayName":  "Retrieve Artifact",
+                                                                        "rarityWeight":  30,
+                                                                        "description":  "Recover the {item_name} from {location}",
+                                                                        "category":  "Retrieval",
+                                                                        "difficulty":  "Medium",
+                                                                        "objectiveType":  "primary",
+                                                                        "item_pool":  [
+                                                                                          "@items/materials:*",
+                                                                                          "@items/materials:*"
+                                                                                      ],
+                                                                        "rarityFilter":  "rare",
+                                                                        "selectRandom":  true
+                                                                    },
+                                                                    {
+                                                                        "name":  "RecoverRelic",
+                                                                        "displayName":  "Recover Relic",
+                                                                        "rarityWeight":  50,
+                                                                        "description":  "Find the legendary {item_name}",
+                                                                        "category":  "Retrieval",
+                                                                        "difficulty":  "Hard",
+                                                                        "objectiveType":  "primary",
+                                                                        "item_pool":  [
+                                                                                          "@items/materials:*"
+                                                                                      ],
+                                                                        "rarityFilter":  "legendary",
+                                                                        "selectRandom":  true
+                                                                    }
+                                                                ],
+                                       "rescue_objectives":  [
+                                                                 {
+                                                                     "name":  "RescueHostage",
+                                                                     "displayName":  "Rescue Hostage",
+                                                                     "rarityWeight":  28,
+                                                                     "description":  "Rescue {npc_name} from {location}",
+                                                                     "category":  "Rescue",
+                                                                     "difficulty":  "Medium",
+                                                                     "objectiveType":  "primary",
+                                                                     "npc_pool":  [
+                                                                                      "@npcs/noble:*",
+                                                                                      "@npcs/merchants:*",
+                                                                                      "@npcs/common:*"
+                                                                                  ],
+                                                                     "selectRandom":  true
+                                                                 }
+                                                             ],
+                                       "purification_objectives":  [
+                                                                       {
+                                                                           "name":  "DestroyEvil",
+                                                                           "displayName":  "Destroy Evil",
+                                                                           "rarityWeight":  40,
+                                                                           "description":  "Destroy the source of evil in {location}",
+                                                                           "category":  "Purification",
+                                                                           "difficulty":  "Hard",
+                                                                           "objectiveType":  "primary"
+                                                                       },
+                                                                       {
+                                                                           "name":  "BreakCurse",
+                                                                           "displayName":  "Break Curse",
+                                                                           "rarityWeight":  42,
+                                                                           "description":  "Lift the curse afflicting {location} or {npc_name}",
+                                                                           "category":  "Purification",
+                                                                           "difficulty":  "Hard",
+                                                                           "objectiveType":  "primary"
+                                                                       },
+                                                                       {
+                                                                           "name":  "RestoreBalance",
+                                                                           "displayName":  "Restore Balance",
+                                                                           "rarityWeight":  45,
+                                                                           "description":  "Restore the natural order disturbed by {enemy_name}",
+                                                                           "category":  "Purification",
+                                                                           "difficulty":  "Hard",
+                                                                           "objectiveType":  "primary",
+                                                                           "enemy_pool":  [
+                                                                                              "@enemies/demons/lesser_demons:*",
+                                                                                              "@enemies/elementals/fire_elementals:*",
+                                                                                              "@enemies/undead/zombies:*"
+                                                                                          ],
+                                                                           "rarityFilter":  "rare",
+                                                                           "selectRandom":  true
+                                                                       },
+                                                                       {
+                                                                           "name":  "SealPortal",
+                                                                           "displayName":  "Seal Portal",
+                                                                           "rarityWeight":  70,
+                                                                           "description":  "Close the dimensional rift in {location}",
+                                                                           "category":  "Purification",
+                                                                           "difficulty":  "Very Hard",
+                                                                           "objectiveType":  "primary"
+                                                                       },
+                                                                       {
+                                                                           "name":  "BanishDemon",
+                                                                           "displayName":  "Banish Demon",
+                                                                           "rarityWeight":  100,
+                                                                           "description":  "Send the demon lord back to the abyss",
+                                                                           "category":  "Purification",
+                                                                           "difficulty":  "Epic",
+                                                                           "objectiveType":  "primary"
+                                                                       }
+                                                                   ],
+                                       "defense_objectives":  [
+                                                                  {
+                                                                      "name":  "DefendTown",
+                                                                      "displayName":  "Defend Town",
+                                                                      "rarityWeight":  38,
+                                                                      "description":  "Protect {location} from the {enemy_type} invasion",
+                                                                      "category":  "Defense",
+                                                                      "difficulty":  "Hard",
+                                                                      "objectiveType":  "primary",
+                                                                      "enemy_pool":  [
+                                                                                         "@enemies/humanoids/bandits:*",
+                                                                                         "@enemies/beasts/wolves:*",
+                                                                                         "@enemies/undead/zombies:*",
+                                                                                         "@enemies/demons/lesser_demons:*"
+                                                                                     ],
+                                                                      "selectRandom":  true
+                                                                  },
+                                                                  {
+                                                                      "name":  "SaveKingdom",
+                                                                      "displayName":  "Save Kingdom",
+                                                                      "rarityWeight":  110,
+                                                                      "description":  "Stop the {enemy_type} army before they reach the capital",
+                                                                      "category":  "Defense",
+                                                                      "difficulty":  "Epic",
+                                                                      "objectiveType":  "primary",
+                                                                      "enemy_pool":  [
+                                                                                         "@enemies/humanoids/bandits:*",
+                                                                                         "@enemies/demons/lesser_demons:*",
+                                                                                         "@enemies/undead/zombies:*",
+                                                                                         "@enemies/dragons/chromatic:*"
+                                                                                     ],
+                                                                      "selectRandom":  true
+                                                                  },
+                                                                  {
+                                                                      "name":  "SaveWorld",
+                                                                      "displayName":  "Save World",
+                                                                      "rarityWeight":  200,
+                                                                      "description":  "Prevent the apocalypse and save all life",
+                                                                      "category":  "Defense",
+                                                                      "difficulty":  "Legendary",
+                                                                      "objectiveType":  "primary"
+                                                                  }
+                                                              ],
+                                       "social_objectives":  [
+                                                                 {
+                                                                     "name":  "ExposeTraitor",
+                                                                     "displayName":  "Expose Traitor",
+                                                                     "rarityWeight":  32,
+                                                                     "description":  "Find evidence of {npc_name}\u0027s betrayal",
+                                                                     "category":  "Investigation",
+                                                                     "difficulty":  "Medium",
+                                                                     "objectiveType":  "primary",
+                                                                     "npc_pool":  [
+                                                                                      "@npcs/noble:*",
+                                                                                      "@npcs/military:*",
+                                                                                      "@npcs/merchants:*"
+                                                                                  ],
+                                                                     "selectRandom":  true
+                                                                 },
+                                                                 {
+                                                                     "name":  "UniteTribes",
+                                                                     "displayName":  "Unite Tribes",
+                                                                     "rarityWeight":  35,
+                                                                     "description":  "Convince the warring factions to unite against a common threat",
+                                                                     "category":  "Diplomacy",
+                                                                     "difficulty":  "Medium",
+                                                                     "objectiveType":  "primary"
+                                                                 },
+                                                                 {
+                                                                     "name":  "PreventWar",
+                                                                     "displayName":  "Prevent War",
+                                                                     "rarityWeight":  48,
+                                                                     "description":  "Stop the war between {faction_1} and {faction_2}",
+                                                                     "category":  "Diplomacy",
+                                                                     "difficulty":  "Hard",
+                                                                     "objectiveType":  "primary",
+                                                                     "faction_pool":  [
+                                                                                          "nobility",
+                                                                                          "church",
+                                                                                          "merchants_guild",
+                                                                                          "city_guard",
+                                                                                          "mages_guild"
+                                                                                      ],
+                                                                     "selectRandomFactions":  2
+                                                                 }
+                                                             ],
+                                       "timed_objectives":  [
+                                                                {
+                                                                    "name":  "StopRitual",
+                                                                    "displayName":  "Stop Ritual",
+                                                                    "rarityWeight":  75,
+                                                                    "description":  "Prevent the cultists from completing their ritual in {location}",
+                                                                    "category":  "Timed",
+                                                                    "difficulty":  "Very Hard",
+                                                                    "objectiveType":  "primary"
+                                                                }
+                                                            ]
+                                   }
+                   }
 }

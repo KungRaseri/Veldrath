@@ -1,192 +1,60 @@
-{
-  "metadata": {
-    "description": "Elemental enemy name generation with pattern-based system and weight-based rarity",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "componentKeys": [
-      "element",
-      "size",
-      "title"
-    ],
-    "patternTokens": [
-      "base",
-      "element",
-      "size",
-      "title"
-    ],
-    "totalPatterns": 4,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Base token resolves from enemies/elementals/catalog.json",
-      "All components have rarityWeight for emergent rarity calculation",
-      "Component weights combine via multipliers from general/rarity_config.json",
-      "Upgraded to v4.0 with supportsTraits metadata"
-    ],
-    "supportsTraits": true
-  },
-  "components": {
-    "element": [
-      {
-        "rarityWeight": 20,
-        "name": "Fire"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Ice"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Earth"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Air"
-      },
-      {
-        "rarityWeight": 25,
-        "name": "Lightning"
-      },
-      {
-        "rarityWeight": 18,
-        "name": "Water"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Storm"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Magma"
-      },
-      {
-        "rarityWeight": 24,
-        "name": "Frost"
-      },
-      {
-        "rarityWeight": 28,
-        "name": "Thunder"
-      },
-      {
-        "rarityWeight": 20,
-        "name": "Stone"
-      },
-      {
-        "rarityWeight": 22,
-        "name": "Wind"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Volcanic"
-      },
-      {
-        "rarityWeight": 38,
-        "name": "Glacial"
-      }
-    ],
-    "size": [
-      {
-        "rarityWeight": 8,
-        "name": "Lesser"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Greater"
-      },
-      {
-        "rarityWeight": 50,
-        "name": "Prime"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "Elder"
-      },
-      {
-        "rarityWeight": 85,
-        "name": "Primal"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 50,
-        "name": "of the Volcano"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "of the Storm"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "of the Deep"
-      },
-      {
-        "rarityWeight": 48,
-        "name": "of the Peaks"
-      },
-      {
-        "rarityWeight": 70,
-        "name": "of the Maelstrom"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "the Untamed"
-      },
-      {
-        "rarityWeight": 80,
-        "name": "the Eternal"
-      }
-    ],
-    "prefix": [
-      {
-        "rarityWeight": 25,
-        "name": "Raging"
-      },
-      {
-        "rarityWeight": 45,
-        "name": "Ancient"
-      },
-      {
-        "rarityWeight": 30,
-        "name": "Bound"
-      },
-      {
-        "rarityWeight": 35,
-        "name": "Enraged"
-      },
-      {
-        "rarityWeight": 15,
-        "name": "Calm"
-      },
-      {
-        "rarityWeight": 40,
-        "name": "Furious"
-      },
-      {
-        "rarityWeight": 60,
-        "name": "Eternal"
-      },
-      {
-        "rarityWeight": 55,
-        "name": "Colossal"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "rarityWeight": 50,
-      "pattern": "base"
-    },
-    {
-      "rarityWeight": 40,
-      "pattern": "{element} {base}"
-    },
-    {
-      "rarityWeight": 35,
-      "pattern": "{size} {element} {base}"
-    },
-    {
-      "rarityWeight": 25,
-      "pattern": "{element} {base} {title}"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Elemental enemy name generation with pattern-based system and weight-based rarity",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "componentKeys":  [
+                                           "element",
+                                           "size",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "element",
+                                           "size",
+                                           "title"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Base token resolves from enemies/elementals/catalog.json",
+                                   "All components have rarityWeight for emergent rarity calculation",
+                                   "Component weights combine via multipliers from general/rarity_config.json",
+                                   "Upgraded to v4.0 with supportsTraits metadata"
+                               ],
+                     "supportsTraits":  true
+                 },
+    "components":  {
+                       "element":  [
+                                       {
+                                           "rarityWeight":  20,
+                                           "name":  "Fire"
+                                       }
+                                   ],
+                       "size":  [
+                                    {
+                                        "rarityWeight":  8,
+                                        "name":  "Lesser"
+                                    }
+                                ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  50,
+                                         "name":  "of the Volcano"
+                                     }
+                                 ],
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  25,
+                                          "name":  "Raging"
+                                      }
+                                  ]
+                   },
+    "patterns":  [
+                     {
+                         "rarityWeight":  50,
+                         "pattern":  "base"
+                     }
+                 ]
 }

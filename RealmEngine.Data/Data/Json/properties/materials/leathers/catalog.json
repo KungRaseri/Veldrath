@@ -1,321 +1,285 @@
-{
-  "metadata": {
-    "description": "Leather material properties for crafting system - stat bonuses applied to armor",
-    "version": "5.1",
-    "lastUpdated": "2026-01-20",
-    "type": "materials_properties_catalog",
-    "totalMaterials": 11,
-    "usage": "Material properties define stat bonuses based on item type. itemTypeTraits apply bonuses primarily to armor.",
-    "notes": [
-      "Leather materials focus on armor bonuses with dexterity/stealth benefits",
-      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-    ]
-  },
-  "leather_types": {
-    "leather": {
-      "items": [
-        {
-          "slug": "rawhide",
-          "name": "Rawhide",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 5,
-            "charisma": 5,
-            "strength": 5,
-            "constitution": 5,
-            "wisdom": 5
-          },
-          "traits": {
-            "durability": 35,
-            "weight": 1.2,
-            "flexibility": 40
-          },
-          "displayName": "Rawhide",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 1,
-              "value": 2
-            }
-          },
-          "rarityWeight": 95
-        },
-        {
-          "slug": "scraps",
-          "name": "Scraps",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 5,
-            "charisma": 5,
-            "strength": 5,
-            "constitution": 5,
-            "wisdom": 5
-          },
-          "traits": {
-            "durability": 25,
-            "weight": 0.8,
-            "flexibility": 50
-          },
-          "displayName": "Scraps",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 1,
-              "value": 1
-            }
-          },
-          "rarityWeight": 100
-        },
-        {
-          "slug": "hide",
-          "name": "Hide",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 50,
-            "weight": 1.0,
-            "flexibility": 60
-          },
-          "displayName": "Hide",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 2,
-              "movementPenalty": 10,
-              "value": 5
-            }
-          },
-          "rarityWeight": 60
-        },
-        {
-          "slug": "leather",
-          "name": "Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 65,
-            "weight": 0.9,
-            "flexibility": 70
-          },
-          "displayName": "Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 3,
-              "dexterityBonus": 1,
-              "stealthBonus": 10,
-              "value": 10
-            }
-          },
-          "rarityWeight": 50
-        },
-        {
-          "slug": "studded-leather",
-          "name": "Studded Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 75,
-            "weight": 1.1,
-            "flexibility": 55
-          },
-          "displayName": "Studded Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 6,
-              "dexterityBonus": 1,
-              "dodgeChance": 3,
-              "resistPiercing": 15,
-              "value": 25
-            }
-          },
-          "rarityWeight": 35
-        },
-        {
-          "slug": "hardened-leather",
-          "name": "Hardened Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 85,
-            "weight": 1.2,
-            "flexibility": 45
-          },
-          "displayName": "Hardened Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 8,
-              "resistSlashing": 20,
-              "movementPenalty": 10,
-              "value": 40
-            }
-          },
-          "rarityWeight": 28
-        },
-        {
-          "slug": "drake-leather",
-          "name": "Drake Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 100,
-            "weight": 1.0,
-            "flexibility": 60,
-            "scalePattern": true
-          },
-          "displayName": "Drake Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 12,
-              "resistFire": 30,
-              "dexterityBonus": 1,
-              "value": 120
-            }
-          },
-          "rarityWeight": 12
-        },
-        {
-          "slug": "wyvern-leather",
-          "name": "Wyvern Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 105,
-            "weight": 0.9,
-            "flexibility": 65
-          },
-          "displayName": "Wyvern Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 13,
-              "resistPoison": 40,
-              "resistAcid": 25,
-              "dexterityBonus": 2,
-              "value": 150
-            }
-          },
-          "rarityWeight": 10
-        },
-        {
-          "slug": "shadow-leather",
-          "name": "Shadow Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 70,
-            "weight": 0.6,
-            "flexibility": 95
-          },
-          "displayName": "Shadow Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 9,
-              "stealthBonus": 35,
-              "invisibilityChance": 20,
-              "dexterityBonus": 3,
-              "value": 200
-            }
-          },
-          "rarityWeight": 8
-        },
-        {
-          "slug": "chimera-hide",
-          "name": "Chimera Hide",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 115,
-            "weight": 1.1,
-            "flexibility": 70
-          },
-          "displayName": "Chimera Hide",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 15,
-              "resistFire": 25,
-              "resistCold": 25,
-              "resistPoison": 25,
-              "constitutionBonus": 2,
-              "value": 250
-            }
-          },
-          "rarityWeight": 6
-        },
-        {
-          "slug": "dragon-leather",
-          "name": "Dragon Leather",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8,
-            "strength": 10,
-            "constitution": 10,
-            "wisdom": 8
-          },
-          "traits": {
-            "durability": 150,
-            "weight": 0.8,
-            "flexibility": 75,
-            "legendary": true
-          },
-          "displayName": "Dragon Leather",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 18,
-              "resistFire": 50,
-              "resistMagic": 30,
-              "strengthBonus": 2,
-              "constitutionBonus": 2,
-              "value": 400
-            }
-          },
-          "rarityWeight": 3
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Leather material properties for crafting system - stat bonuses applied to armor",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-20",
+                     "type":  "materials_properties_catalog",
+                     "totalMaterials":  1,
+                     "usage":  "Material properties define stat bonuses based on item type. itemTypeTraits apply bonuses primarily to armor.",
+                     "notes":  [
+                                   "Leather materials focus on armor bonuses with dexterity/stealth benefits",
+                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+                               ]
+                 },
+    "leather_types":  {
+                          "leather":  {
+                                          "items":  [
+                                                        {
+                                                            "slug":  "rawhide",
+                                                            "name":  "Rawhide",
+                                                            "attributes":  {
+                                                                               "dexterity":  5,
+                                                                               "intelligence":  5,
+                                                                               "charisma":  5,
+                                                                               "strength":  5,
+                                                                               "constitution":  5,
+                                                                               "wisdom":  5
+                                                                           },
+                                                            "traits":  {
+                                                                           "durability":  35,
+                                                                           "weight":  1.2,
+                                                                           "flexibility":  40
+                                                                       },
+                                                            "displayName":  "Rawhide",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "armorRating":  1,
+                                                                                                 "value":  2
+                                                                                             }
+                                                                               },
+                                                            "rarityWeight":  95
+                                                        },
+                                                        {
+                                                            "slug":  "leather",
+                                                            "rarityWeight":  80,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Leather",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Leather",
+                                                            "traits":  {
+                                                                           "weight":  1.2,
+                                                                           "enchantability":  15,
+                                                                           "durability":  35
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "hardened-leather",
+                                                            "rarityWeight":  50,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Hardened Leather",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Hardened Leather",
+                                                            "traits":  {
+                                                                           "weight":  1.5,
+                                                                           "enchantability":  15,
+                                                                           "durability":  50
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "studded-leather",
+                                                            "rarityWeight":  60,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Studded Leather",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Studded Leather",
+                                                            "traits":  {
+                                                                           "weight":  1.4,
+                                                                           "enchantability":  15,
+                                                                           "durability":  45
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "hide",
+                                                            "rarityWeight":  70,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Hide",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Hide",
+                                                            "traits":  {
+                                                                           "weight":  1,
+                                                                           "enchantability":  15,
+                                                                           "durability":  30
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "scraps",
+                                                            "rarityWeight":  90,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Scraps",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Scraps",
+                                                            "traits":  {
+                                                                           "weight":  0.5,
+                                                                           "enchantability":  15,
+                                                                           "durability":  20
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "shadow-leather",
+                                                            "rarityWeight":  15,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Shadow Leather",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Shadow Leather",
+                                                            "traits":  {
+                                                                           "weight":  0.9,
+                                                                           "enchantability":  15,
+                                                                           "durability":  65
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "chimera-hide",
+                                                            "rarityWeight":  8,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Chimera Hide",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Chimera Hide",
+                                                            "traits":  {
+                                                                           "weight":  1.6,
+                                                                           "enchantability":  15,
+                                                                           "durability":  80
+                                                                       }
+                                                        },
+                                                        {
+                                                            "slug":  "dragon-leather",
+                                                            "rarityWeight":  4,
+                                                            "attributes":  {
+                                                                               "strength":  5,
+                                                                               "dexterity":  5,
+                                                                               "charisma":  5,
+                                                                               "intelligence":  5,
+                                                                               "wisdom":  5,
+                                                                               "constitution":  5
+                                                                           },
+                                                            "name":  "Dragon Leather",
+                                                            "itemTypeTraits":  {
+                                                                                   "armor":  {
+                                                                                                 "defenseBonus":  0,
+                                                                                                 "armorRating":  3,
+                                                                                                 "value":  5
+                                                                                             },
+                                                                                   "weapon":  {
+                                                                                                  "value":  5,
+                                                                                                  "damage":  0
+                                                                                              }
+                                                                               },
+                                                            "displayName":  "Dragon Leather",
+                                                            "traits":  {
+                                                                           "weight":  1.8,
+                                                                           "enchantability":  15,
+                                                                           "durability":  95
+                                                                       }
+                                                        }
+                                                    ]
+                                      }
+                      }
 }

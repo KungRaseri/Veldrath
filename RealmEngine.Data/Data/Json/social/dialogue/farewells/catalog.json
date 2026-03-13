@@ -1,85 +1,30 @@
-{
-  "metadata": {
-    "version": "4.0",
-    "type": "hierarchical_catalog",
-    "description": "Farewell dialogue templates organized by NPC type and context",
-    "lastUpdated": "2026-01-08",
-    "notes": [
-      "Templates support variable substitution: {player_name}, {faction}",
-      "Used when conversation ends or player leaves",
-      "Referenced via @dialogue/farewells:{name}"
-    ]
-  },
-  "noble_types": {
-    "noble": {
-      "items": [
-        {
-          "slug": "noble",
-          "name": "noble",
-          "displayName": "Noble Farewell",
-          "rarityWeight": 15,
-          "templates": [
-            "Farewell, {player_name}. May fortune favor your endeavors.",
-            "Until we meet again. Safe travels.",
-            "Our doors remain open to you, always."
-          ]
-        }
-      ]
-    }
-  },
-  "scholarly_types": {
-    "scholarly": {
-      "items": [
-        {
-          "slug": "scholarly",
-          "name": "scholarly",
-          "displayName": "Scholar Farewell",
-          "rarityWeight": 18,
-          "templates": [
-            "May knowledge light your path, {player_name}.",
-            "Farewell, and may your studies prove fruitful.",
-            "Until next time. Keep questioning, always."
-          ]
-        }
-      ]
-    }
-  },
-  "religious_types": null,
-  "merchant_types": {
-    "merchant": {
-      "items": [
-        {
-          "slug": "merchant",
-          "name": "merchant",
-          "displayName": "Merchant Farewell",
-          "rarityWeight": 10,
-          "templates": [
-            "Come back anytime!",
-            "Thank you for your patronage!",
-            "Good doing business with you!"
-          ]
-        }
-      ]
-    }
-  },
-  "service_types": null,
-  "common_types": null,
-  "simple_types": {
-    "simple": {
-      "items": [
-        {
-          "slug": "simple",
-          "name": "simple",
-          "displayName": "Simple Farewell",
-          "rarityWeight": 6,
-          "templates": [
-            "Take care!",
-            "Goodbye!",
-            "See you around!",
-            "Safe travels!"
-          ]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "version":  "4.0",
+                     "type":  "hierarchical_catalog",
+                     "description":  "Farewell dialogue templates organized by NPC type and context",
+                     "lastUpdated":  "2026-01-08",
+                     "notes":  [
+                                   "Templates support variable substitution: {player_name}, {faction}",
+                                   "Used when conversation ends or player leaves",
+                                   "Referenced via @dialogue/farewells:{name}"
+                               ]
+                 },
+    "noble_types":  {
+                        "noble":  {
+                                      "items":  [
+                                                    {
+                                                        "slug":  "noble",
+                                                        "name":  "noble",
+                                                        "displayName":  "Noble Farewell",
+                                                        "rarityWeight":  15,
+                                                        "templates":  [
+                                                                          "Farewell, {player_name}. May fortune favor your endeavors.",
+                                                                          "Until we meet again. Safe travels.",
+                                                                          "Our doors remain open to you, always."
+                                                                      ]
+                                                    }
+                                                ]
+                                  }
+                    }
 }

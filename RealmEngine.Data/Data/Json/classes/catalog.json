@@ -1,1078 +1,212 @@
-{
-  "metadata": {
-    "description": "Player and NPC class definitions with archetypes, subclasses, specializations, and progression data",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
-    "type": "hierarchical_catalog",
-    "notes": [
-      "Classes define starting stats, abilities, and progression paths",
-      "Archetypes are main class categories",
-      "Subclasses are specialized variants within archetypes",
-      "rarityWeight determines NPC class distribution and player unlock difficulty",
-      "progression field contains stat growth and ability unlock data",
-      "Ability names are references to @abilities domain",
-      "parentClass uses references to @classes domain"
-    ]
-  },
-  "class_types": {
-    "cleric": {
-      "metadata": {
-        "description": "Divine spellcasters channeling holy power for healing and protection",
-        "primaryStats": [
-          "wisdom",
-          "constitution"
-        ],
-        "armorProficiency": [
-          "medium",
-          "light",
-          "shields"
-        ],
-        "weaponProficiency": [
-          "maces",
-          "staves",
-          "simple"
-        ]
-      },
-      "items": [
-        {
-          "slug": "priest",
-          "name": "Priest",
-          "displayName": "Priest",
-          "description": "Holy healer devoted to protecting and restoring allies",
-          "rarityWeight": 20,
-          "isSubclass": false,
-          "startingStats": {
-            "health": 90,
-            "mana": 120
-          },
-          "startingAbilities": [
-            "@abilities/active/support:heal",
-            "@abilities/active/support:bless",
-            "@abilities/active/offensive:smite",
-            "@abilities/active/defensive:divine-shield"
-          ],
-          "traits": {
-            "healingPower": {
-              "value": 30,
-              "type": "number"
-            },
-            "holyResist": {
-              "value": 25,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 8,
-              "manaPerLevel": 8,
-              "strengthPerLevel": 1,
-              "dexterityPerLevel": 1,
-              "constitutionPerLevel": 1.5,
-              "intelligencePerLevel": 1.5,
-              "wisdomPerLevel": 2.5,
-              "charismaPerLevel": 2
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/support:heal",
-                "@abilities/active/support:bless"
-              ],
-              "3": [
-                "@abilities/active/offensive:smite"
-              ],
-              "5": [
-                "@abilities/active/defensive:divine-shield"
-              ],
-              "10": [
-                "@abilities/active/utility:resurrection"
-              ],
-              "15": [
-                "@abilities/active/support:mass-heal"
-              ],
-              "20": [
-                "@abilities/active/offensive:holy-nova"
-              ],
-              "30": [
-                "@abilities/active/support:divine-intervention"
-              ],
-              "50": [
-                "@abilities/ultimate:avatar-of-light"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "paladin",
-          "name": "Paladin",
-          "displayName": "Paladin",
-          "description": "Holy warrior combining divine magic with martial prowess",
-          "rarityWeight": 75,
-          "isSubclass": true,
-          "parentClass": "@classes/cleric:Priest",
-          "startingStats": {
-            "health": 130,
-            "mana": 80
-          },
-          "startingAbilities": [
-            "@abilities/active/offensive:divine-strike",
-            "@abilities/active/support:lay-on-hands",
-            "@abilities/active/support:holy-aura",
-            "@abilities/active/support:consecrate"
-          ],
-          "traits": {
-            "holyDamage": {
-              "value": 25,
-              "type": "number"
-            },
-            "selfHeal": {
-              "value": 15,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 11,
-              "manaPerLevel": 5,
-              "strengthPerLevel": 2,
-              "dexterityPerLevel": 1,
-              "constitutionPerLevel": 2,
-              "intelligencePerLevel": 1,
-              "wisdomPerLevel": 2,
-              "charismaPerLevel": 1.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:divine-strike",
-                "@abilities/active/support:lay-on-hands"
-              ],
-              "3": [
-                "@abilities/active/support:holy-aura"
-              ],
-              "5": [
-                "@abilities/active/support:consecrate"
-              ],
-              "10": [
-                "@abilities/active/defensive:divine-shield"
-              ],
-              "15": [
-                "@abilities/active/offensive:hammer-of-justice"
-              ],
-              "20": [
-                "@abilities/active/support:avenging-wrath"
-              ],
-              "30": [
-                "@abilities/passive:crusader"
-              ],
-              "50": [
-                "@abilities/ultimate:holy-champion"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "rogue": {
-      "metadata": {
-        "description": "Stealthy specialists in deception, agility, and precision strikes",
-        "primaryStats": [
-          "dexterity",
-          "intelligence"
-        ],
-        "armorProficiency": [
-          "light"
-        ],
-        "weaponProficiency": [
-          "daggers",
-          "shortswords",
-          "rapiers",
-          "crossbows"
-        ]
-      },
-      "items": [
-        {
-          "slug": "thief",
-          "name": "Thief",
-          "displayName": "Thief",
-          "description": "Master of stealth, lockpicking, and cunning strikes",
-          "rarityWeight": 10,
-          "isSubclass": false,
-          "startingStats": {
-            "health": 80,
-            "mana": 50
-          },
-          "startingAbilities": [
-            "@abilities/active/offensive:sneak-attack",
-            "@abilities/active/utility:lockpicking",
-            "@abilities/active/utility:steal"
-          ],
-          "traits": {
-            "stealthBonus": {
-              "value": 25,
-              "type": "number"
-            },
-            "critMultiplier": {
-              "value": 2.0,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 7,
-              "manaPerLevel": 3,
-              "strengthPerLevel": 1,
-              "dexterityPerLevel": 2.5,
-              "constitutionPerLevel": 1,
-              "intelligencePerLevel": 1.5,
-              "wisdomPerLevel": 1,
-              "charismaPerLevel": 1
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:sneak-attack",
-                "@abilities/active/utility:lockpicking"
-              ],
-              "3": [
-                "@abilities/active/utility:steal"
-              ],
-              "5": [
-                "@abilities/active/offensive:backstab"
-              ],
-              "10": [
-                "@abilities/active/defensive:evasion"
-              ],
-              "15": [
-                "@abilities/active/mobility:shadow-step"
-              ],
-              "20": [
-                "@abilities/passive:master-thief"
-              ],
-              "30": [
-                "@abilities/active/utility:vanish"
-              ],
-              "50": [
-                "@abilities/ultimate:perfect-crime"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "assassin",
-          "name": "Assassin",
-          "displayName": "Assassin",
-          "description": "Deadly killer specializing in instant-kill techniques",
-          "rarityWeight": 150,
-          "isSubclass": true,
-          "parentClass": "@classes/rogue:Thief",
-          "startingStats": {
-            "health": 70,
-            "mana": 60
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:sneak-attack",
-            "@abilities/active/offensive:assassinate",
-            "@abilities/active/offensive:poison-blade",
-            "@abilities/active/mobility:shadow-step"
-          ],
-          "traits": {
-            "backstabBonus": {
-              "value": 100,
-              "type": "number"
-            },
-            "executionThreshold": {
-              "value": 20,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 6,
-              "manaPerLevel": 3.5,
-              "strengthPerLevel": 1.5,
-              "dexterityPerLevel": 3,
-              "constitutionPerLevel": 0.5,
-              "intelligencePerLevel": 2,
-              "wisdomPerLevel": 1,
-              "charismaPerLevel": 0.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:sneak-attack",
-                "@abilities/active/offensive:assassinate"
-              ],
-              "3": [
-                "@abilities/active/offensive:poison-blade"
-              ],
-              "5": [
-                "@abilities/active/mobility:shadow-step"
-              ],
-              "10": [
-                "@abilities/active/support:death-mark"
-              ],
-              "15": [
-                "@abilities/active/offensive:silent-kill"
-              ],
-              "20": [
-                "@abilities/active/offensive:execute"
-              ],
-              "30": [
-                "@abilities/passive:shadow-master"
-              ],
-              "50": [
-                "@abilities/ultimate:death-incarnate"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "swashbuckler",
-          "name": "Swashbuckler",
-          "displayName": "Swashbuckler",
-          "description": "Charismatic rogue combining agility with showmanship",
-          "rarityWeight": 100,
-          "isSubclass": true,
-          "parentClass": "@classes/rogue:Thief",
-          "startingStats": {
-            "health": 85,
-            "mana": 55
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:sneak-attack",
-            "@abilities/active/support:flourish",
-            "@abilities/active/support:panache",
-            "@abilities/active/defensive:riposte"
-          ],
-          "traits": {
-            "dodgeBonus": {
-              "value": 25,
-              "type": "number"
-            },
-            "charmChance": {
-              "value": 15,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 8,
-              "manaPerLevel": 3,
-              "strengthPerLevel": 1.5,
-              "dexterityPerLevel": 2.5,
-              "constitutionPerLevel": 1,
-              "intelligencePerLevel": 1.5,
-              "wisdomPerLevel": 1,
-              "charismaPerLevel": 2
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:sneak-attack",
-                "@abilities/active/support:flourish",
-                "@abilities/active/support:panache"
-              ],
-              "3": [
-                "@abilities/active/defensive:riposte"
-              ],
-              "5": [
-                "@abilities/active/defensive:en-garde"
-              ],
-              "10": [
-                "@abilities/active/support:daring-gambit"
-              ],
-              "15": [
-                "@abilities/active/support:showstopper"
-              ],
-              "20": [
-                "@abilities/passive:master-of-blades"
-              ],
-              "30": [
-                "@abilities/passive:legendary-swagger"
-              ],
-              "50": [
-                "@abilities/ultimate:dread-pirate"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "ranger": {
-      "metadata": {
-        "description": "Wilderness survivalists skilled in archery, tracking, and nature magic",
-        "primaryStats": [
-          "dexterity",
-          "wisdom"
-        ],
-        "armorProficiency": [
-          "medium",
-          "light"
-        ],
-        "weaponProficiency": [
-          "bows",
-          "crossbows",
-          "swords",
-          "daggers"
-        ]
-      },
-      "items": [
-        {
-          "slug": "hunter",
-          "name": "Hunter",
-          "displayName": "Hunter",
-          "description": "Expert tracker and archer specializing in ranged combat",
-          "rarityWeight": 15,
-          "isSubclass": false,
-          "startingStats": {
-            "health": 100,
-            "mana": 60
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:bow-shot",
-            "@abilities/active/utility:track",
-            "@abilities/active/utility:trap",
-            "@abilities/active/summon:animal-companion"
-          ],
-          "traits": {
-            "rangedBonus": {
-              "value": 20,
-              "type": "number"
-            },
-            "petDamage": {
-              "value": 15,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 9,
-              "manaPerLevel": 4,
-              "strengthPerLevel": 1.5,
-              "dexterityPerLevel": 2.5,
-              "constitutionPerLevel": 1.5,
-              "intelligencePerLevel": 1,
-              "wisdomPerLevel": 2,
-              "charismaPerLevel": 1
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:bow-shot",
-                "@abilities/active/utility:track"
-              ],
-              "3": [
-                "@abilities/active/utility:trap"
-              ],
-              "5": [
-                "@abilities/active/summon:animal-companion"
-              ],
-              "10": [
-                "@abilities/active/offensive:multi-shot"
-              ],
-              "15": [
-                "@abilities/active/support:hunters-mark"
-              ],
-              "20": [
-                "@abilities/active/offensive:volley"
-              ],
-              "30": [
-                "@abilities/passive:master-tracker"
-              ],
-              "50": [
-                "@abilities/ultimate:apex-predator"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "beastmaster",
-          "name": "Beastmaster",
-          "displayName": "Beastmaster",
-          "description": "Ranger who commands powerful animal companions in battle",
-          "rarityWeight": 100,
-          "isSubclass": true,
-          "parentClass": "@classes/ranger:Hunter",
-          "startingStats": {
-            "health": 95,
-            "mana": 70
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:bow-shot",
-            "@abilities/active/support:beast-command",
-            "@abilities/active/support:pack-tactics",
-            "@abilities/active/support:wild-growth"
-          ],
-          "traits": {
-            "petCount": {
-              "value": 2,
-              "type": "number"
-            },
-            "petHealth": {
-              "value": 50,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 9,
-              "manaPerLevel": 5,
-              "strengthPerLevel": 1.5,
-              "dexterityPerLevel": 2,
-              "constitutionPerLevel": 1.5,
-              "intelligencePerLevel": 1,
-              "wisdomPerLevel": 2.5,
-              "charismaPerLevel": 1.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:bow-shot",
-                "@abilities/active/support:beast-command"
-              ],
-              "3": [
-                "@abilities/active/support:pack-tactics"
-              ],
-              "5": [
-                "@abilities/active/support:wild-growth"
-              ],
-              "10": [
-                "@abilities/active/support:beast-fury"
-              ],
-              "15": [
-                "@abilities/active/offensive:alpha-strike"
-              ],
-              "20": [
-                "@abilities/passive:primal-bond"
-              ],
-              "30": [
-                "@abilities/passive:king-of-beasts"
-              ],
-              "50": [
-                "@abilities/ultimate:natures-wrath"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "warrior": {
-      "metadata": {
-        "description": "Melee combatants focused on strength and durability",
-        "primaryStats": [
-          "strength",
-          "constitution"
-        ],
-        "armorProficiency": [
-          "heavy",
-          "medium",
-          "light",
-          "shields"
-        ],
-        "weaponProficiency": [
-          "swords",
-          "axes",
-          "maces",
-          "polearms",
-          "greatswords",
-          "warhammers",
-          "all"
-        ]
-      },
-      "items": [
-        {
-          "slug": "fighter",
-          "name": "Fighter",
-          "displayName": "Fighter",
-          "description": "Versatile warrior skilled in all forms of combat",
-          "rarityWeight": 5,
-          "isSubclass": false,
-          "startingStats": {
-            "health": 120,
-            "mana": 30
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:basic-attack",
-            "@abilities/active/defensive:defend",
-            "@abilities/active/support:second-wind"
-          ],
-          "traits": {
-            "weaponProficiency": {
-              "value": "all",
-              "type": "string"
-            },
-            "combatBonus": {
-              "value": 10,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 10,
-              "manaPerLevel": 2,
-              "strengthPerLevel": 2,
-              "dexterityPerLevel": 1,
-              "constitutionPerLevel": 1.5,
-              "intelligencePerLevel": 0.5,
-              "wisdomPerLevel": 0.5,
-              "charismaPerLevel": 0.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:basic-attack",
-                "@abilities/active/defensive:defend"
-              ],
-              "3": [
-                "@abilities/active/support:second-wind"
-              ],
-              "5": [
-                "@abilities/active/offensive:power-strike"
-              ],
-              "8": [
-                "@abilities/active/offensive:cleave"
-              ],
-              "10": [
-                "@abilities/active/offensive:whirlwind"
-              ],
-              "15": [
-                "@abilities/active/support:battle-cry"
-              ],
-              "20": [
-                "@abilities/active/defensive:indomitable"
-              ],
-              "25": [
-                "@abilities/passive:weapon-mastery"
-              ],
-              "30": [
-                "@abilities/active/offensive:devastating-blow"
-              ],
-              "40": [
-                "@abilities/passive:combat-supremacy"
-              ],
-              "50": [
-                "@abilities/passive:titans-strength"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "berserker",
-          "name": "Berserker",
-          "displayName": "Berserker",
-          "description": "Rage-fueled warrior who sacrifices defense for devastating offense",
-          "rarityWeight": 50,
-          "isSubclass": true,
-          "parentClass": "@classes/warrior:Fighter",
-          "startingStats": {
-            "health": 140,
-            "mana": 20
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:basic-attack",
-            "@abilities/active/support:berserker-rage",
-            "@abilities/active/offensive:reckless-attack"
-          ],
-          "traits": {
-            "rageBonus": {
-              "value": 25,
-              "type": "number"
-            },
-            "damageReduction": {
-              "value": -10,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 12,
-              "manaPerLevel": 1,
-              "strengthPerLevel": 2.5,
-              "dexterityPerLevel": 0.5,
-              "constitutionPerLevel": 2,
-              "intelligencePerLevel": 0,
-              "wisdomPerLevel": 0,
-              "charismaPerLevel": 0
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:basic-attack",
-                "@abilities/active/support:berserker-rage"
-              ],
-              "3": [
-                "@abilities/active/offensive:reckless-attack"
-              ],
-              "5": [
-                "@abilities/active/support:bloodlust"
-              ],
-              "10": [
-                "@abilities/active/support:primal-roar"
-              ],
-              "15": [
-                "@abilities/active/offensive:frenzy"
-              ],
-              "20": [
-                "@abilities/passive:unstoppable"
-              ],
-              "30": [
-                "@abilities/passive:deaths-door"
-              ],
-              "50": [
-                "@abilities/ultimate:ragnarok"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "knight",
-          "name": "Knight",
-          "displayName": "Knight",
-          "description": "Heavily armored defender who protects allies",
-          "rarityWeight": 35,
-          "isSubclass": true,
-          "parentClass": "@classes/warrior:Fighter",
-          "startingStats": {
-            "health": 150,
-            "mana": 25
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:basic-attack",
-            "@abilities/active/offensive:shield-bash",
-            "@abilities/active/support:taunt",
-            "@abilities/active/defensive:guardian"
-          ],
-          "traits": {
-            "armorBonus": {
-              "value": 15,
-              "type": "number"
-            },
-            "blockChance": {
-              "value": 30,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 13,
-              "manaPerLevel": 1.5,
-              "strengthPerLevel": 1.5,
-              "dexterityPerLevel": 0.5,
-              "constitutionPerLevel": 2.5,
-              "intelligencePerLevel": 0.5,
-              "wisdomPerLevel": 1,
-              "charismaPerLevel": 1
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:basic-attack",
-                "@abilities/active/offensive:shield-bash",
-                "@abilities/active/support:taunt"
-              ],
-              "3": [
-                "@abilities/active/defensive:guardian"
-              ],
-              "5": [
-                "@abilities/active/defensive:shield-wall"
-              ],
-              "10": [
-                "@abilities/passive:sentinel"
-              ],
-              "15": [
-                "@abilities/active/defensive:bulwark"
-              ],
-              "20": [
-                "@abilities/active/defensive:aegis"
-              ],
-              "30": [
-                "@abilities/active/defensive:last-stand"
-              ],
-              "50": [
-                "@abilities/ultimate:fortress"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "duelist",
-          "name": "Duelist",
-          "displayName": "Duelist",
-          "description": "Agile warrior specializing in single-weapon finesse combat",
-          "rarityWeight": 75,
-          "isSubclass": true,
-          "parentClass": "@classes/warrior:Fighter",
-          "startingStats": {
-            "health": 110,
-            "mana": 35
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:basic-attack",
-            "@abilities/active/defensive:riposte",
-            "@abilities/active/defensive:parry",
-            "@abilities/active/offensive:precision-strike"
-          ],
-          "traits": {
-            "dodgeBonus": {
-              "value": 20,
-              "type": "number"
-            },
-            "critChance": {
-              "value": 15,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 9,
-              "manaPerLevel": 2.5,
-              "strengthPerLevel": 1.5,
-              "dexterityPerLevel": 2.5,
-              "constitutionPerLevel": 1,
-              "intelligencePerLevel": 1,
-              "wisdomPerLevel": 1,
-              "charismaPerLevel": 1.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:basic-attack",
-                "@abilities/active/defensive:riposte",
-                "@abilities/active/defensive:parry"
-              ],
-              "3": [
-                "@abilities/active/offensive:precision-strike"
-              ],
-              "5": [
-                "@abilities/active/support:feint"
-              ],
-              "10": [
-                "@abilities/active/offensive:flurry"
-              ],
-              "15": [
-                "@abilities/passive:bladework"
-              ],
-              "20": [
-                "@abilities/active/defensive:perfect-parry"
-              ],
-              "30": [
-                "@abilities/active/offensive:dance-of-blades"
-              ],
-              "50": [
-                "@abilities/ultimate:grandmaster-duelist"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "mage": {
-      "metadata": {
-        "description": "Arcane spellcasters who manipulate reality through study and intellect",
-        "primaryStats": [
-          "intelligence",
-          "wisdom"
-        ],
-        "armorProficiency": [
-          "light"
-        ],
-        "weaponProficiency": [
-          "staves",
-          "wands",
-          "daggers"
-        ]
-      },
-      "items": [
-        {
-          "slug": "wizard",
-          "name": "Wizard",
-          "displayName": "Wizard",
-          "description": "Scholar of arcane arts mastering elemental and utility spells",
-          "rarityWeight": 15,
-          "isSubclass": false,
-          "startingStats": {
-            "health": 60,
-            "mana": 150
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:magic-missile",
-            "@abilities/active/offensive:fireball",
-            "@abilities/active/offensive:ice-shard",
-            "@abilities/active/defensive:arcane-shield"
-          ],
-          "traits": {
-            "spellPower": {
-              "value": 30,
-              "type": "number"
-            },
-            "manaEfficiency": {
-              "value": 15,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 5,
-              "manaPerLevel": 10,
-              "strengthPerLevel": 0.5,
-              "dexterityPerLevel": 1,
-              "constitutionPerLevel": 0.5,
-              "intelligencePerLevel": 3,
-              "wisdomPerLevel": 2,
-              "charismaPerLevel": 1
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:magic-missile",
-                "@abilities/active/offensive:fireball"
-              ],
-              "3": [
-                "@abilities/active/offensive:ice-shard"
-              ],
-              "5": [
-                "@abilities/active/defensive:arcane-shield"
-              ],
-              "10": [
-                "@abilities/active/offensive:lightning-bolt"
-              ],
-              "15": [
-                "@abilities/active/mobility:teleport"
-              ],
-              "20": [
-                "@abilities/active/offensive:meteor"
-              ],
-              "30": [
-                "@abilities/active/utility:time-stop"
-              ],
-              "50": [
-                "@abilities/ultimate:archmages-supremacy"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "elementalist",
-          "name": "Elementalist",
-          "displayName": "Elementalist",
-          "description": "Specialized mage focusing on a single element for devastating power",
-          "rarityWeight": 100,
-          "isSubclass": true,
-          "parentClass": "@classes/mage:Wizard",
-          "startingStats": {
-            "health": 55,
-            "mana": 170
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:elemental-bolt",
-            "@abilities/passive:elemental-mastery",
-            "@abilities/active/defensive:elemental-shield"
-          ],
-          "traits": {
-            "elementalBonus": {
-              "value": 50,
-              "type": "number"
-            },
-            "elementalResist": {
-              "value": 40,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 4.5,
-              "manaPerLevel": 12,
-              "strengthPerLevel": 0.5,
-              "dexterityPerLevel": 1,
-              "constitutionPerLevel": 0.5,
-              "intelligencePerLevel": 3.5,
-              "wisdomPerLevel": 1.5,
-              "charismaPerLevel": 0.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:elemental-bolt",
-                "@abilities/passive:elemental-mastery"
-              ],
-              "5": [
-                "@abilities/active/defensive:elemental-shield"
-              ],
-              "10": [
-                "@abilities/active/offensive:elemental-storm"
-              ],
-              "15": [
-                "@abilities/active/offensive:elemental-fury"
-              ],
-              "20": [
-                "@abilities/active/support:elemental-avatar"
-              ],
-              "30": [
-                "@abilities/ultimate:elemental-apocalypse"
-              ],
-              "50": [
-                "@abilities/ultimate:master-of-elements"
-              ]
-            }
-          }
-        },
-        {
-          "slug": "necromancer",
-          "name": "Necromancer",
-          "displayName": "Necromancer",
-          "description": "Dark mage commanding death magic and undead minions",
-          "rarityWeight": 250,
-          "isSubclass": true,
-          "parentClass": "@classes/mage:Wizard",
-          "startingStats": {
-            "health": 65,
-            "mana": 140
-            },
-          "startingAbilities": [
-            "@abilities/active/offensive:drain-life",
-            "@abilities/active/summon:summon-skeleton",
-            "@abilities/active/offensive:death-bolt",
-            "@abilities/active/utility:soul-harvest"
-          ],
-          "traits": {
-            "lifesteal": {
-              "value": 20,
-              "type": "number"
-            },
-            "minionCount": {
-              "value": 3,
-              "type": "number"
-            }
-          },
-          "progression": {
-            "statGrowth": {
-              "healthPerLevel": 5.5,
-              "manaPerLevel": 9,
-              "strengthPerLevel": 0.5,
-              "dexterityPerLevel": 1,
-              "constitutionPerLevel": 1,
-              "intelligencePerLevel": 2.5,
-              "wisdomPerLevel": 2.5,
-              "charismaPerLevel": 0.5
-            },
-            "abilityUnlocks": {
-              "1": [
-                "@abilities/active/offensive:drain-life",
-                "@abilities/active/summon:summon-skeleton"
-              ],
-              "3": [
-                "@abilities/active/offensive:death-bolt"
-              ],
-              "5": [
-                "@abilities/active/utility:soul-harvest"
-              ],
-              "10": [
-                "@abilities/active/summon:raise-dead"
-              ],
-              "15": [
-                "@abilities/active/offensive:death-and-decay"
-              ],
-              "20": [
-                "@abilities/active/summon:army-of-the-dead"
-              ],
-              "30": [
-                "@abilities/active/support:lich-form"
-              ],
-              "50": [
-                "@abilities/ultimate:death-lord"
-              ]
-            }
-          }
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Player and NPC class definitions with archetypes, subclasses, specializations, and progression data",
+                     "version":  "4.0",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "hierarchical_catalog",
+                     "notes":  [
+                                   "Classes define starting stats, abilities, and progression paths",
+                                   "Archetypes are main class categories",
+                                   "Subclasses are specialized variants within archetypes",
+                                   "rarityWeight determines NPC class distribution and player unlock difficulty",
+                                   "progression field contains stat growth and ability unlock data",
+                                   "Ability names are references to @abilities domain",
+                                   "parentClass uses references to @classes domain"
+                               ]
+                 },
+    "class_types":  {
+                        "cleric":  {
+                                       "metadata":  {
+                                                        "description":  "Divine spellcasters channeling holy power for healing and protection",
+                                                        "primaryStats":  [
+                                                                             "wisdom",
+                                                                             "constitution"
+                                                                         ],
+                                                        "armorProficiency":  [
+                                                                                 "medium",
+                                                                                 "light",
+                                                                                 "shields"
+                                                                             ],
+                                                        "weaponProficiency":  [
+                                                                                  "maces",
+                                                                                  "staves",
+                                                                                  "simple"
+                                                                              ]
+                                                    },
+                                       "items":  [
+                                                     {
+                                                         "slug":  "priest",
+                                                         "name":  "Priest",
+                                                         "displayName":  "Priest",
+                                                         "description":  "Holy healer devoted to protecting and restoring allies",
+                                                         "rarityWeight":  20,
+                                                         "isSubclass":  false,
+                                                         "startingStats":  {
+                                                                               "health":  90,
+                                                                               "mana":  120
+                                                                           },
+                                                         "startingAbilities":  [
+                                                                                   "@abilities/active/support:heal",
+                                                                                   "@abilities/active/support:bless",
+                                                                                   "@abilities/active/offensive:smite",
+                                                                                   "@abilities/active/defensive:divine-shield"
+                                                                               ],
+                                                         "traits":  {
+                                                                        "healingPower":  {
+                                                                                             "value":  30,
+                                                                                             "type":  "number"
+                                                                                         },
+                                                                        "holyResist":  {
+                                                                                           "value":  25,
+                                                                                           "type":  "number"
+                                                                                       }
+                                                                    },
+                                                         "progression":  {
+                                                                             "statGrowth":  {
+                                                                                                "healthPerLevel":  8,
+                                                                                                "manaPerLevel":  8,
+                                                                                                "strengthPerLevel":  1,
+                                                                                                "dexterityPerLevel":  1,
+                                                                                                "constitutionPerLevel":  1.5,
+                                                                                                "intelligencePerLevel":  1.5,
+                                                                                                "wisdomPerLevel":  2.5,
+                                                                                                "charismaPerLevel":  2
+                                                                                            },
+                                                                             "abilityUnlocks":  {
+                                                                                                    "1":  [
+                                                                                                              "@abilities/active/support:heal",
+                                                                                                              "@abilities/active/support:bless"
+                                                                                                          ],
+                                                                                                    "3":  [
+                                                                                                              "@abilities/active/offensive:smite"
+                                                                                                          ],
+                                                                                                    "5":  [
+                                                                                                              "@abilities/active/defensive:divine-shield"
+                                                                                                          ],
+                                                                                                    "10":  [
+                                                                                                               "@abilities/active/utility:resurrection"
+                                                                                                           ],
+                                                                                                    "15":  [
+                                                                                                               "@abilities/active/support:mass-heal"
+                                                                                                           ],
+                                                                                                    "20":  [
+                                                                                                               "@abilities/active/offensive:holy-nova"
+                                                                                                           ],
+                                                                                                    "30":  [
+                                                                                                               "@abilities/active/support:divine-intervention"
+                                                                                                           ],
+                                                                                                    "50":  [
+                                                                                                               "@abilities/ultimate:avatar-of-light"
+                                                                                                           ]
+                                                                                                }
+                                                                         }
+                                                     }
+                                                 ]
+                                   },
+                        "warrior":  {
+                                        "metadata":  {
+                                                         "description":  "Physical combat specialists using strength and endurance",
+                                                         "primaryStats":  [
+                                                                              "strength",
+                                                                              "constitution"
+                                                                          ],
+                                                         "armorProficiency":  [
+                                                                                  "heavy",
+                                                                                  "medium",
+                                                                                  "shields"
+                                                                              ],
+                                                         "weaponProficiency":  [
+                                                                                   "swords",
+                                                                                   "axes",
+                                                                                   "all-martial"
+                                                                               ]
+                                                     },
+                                        "items":  [
+                                                      {
+                                                          "slug":  "fighter",
+                                                          "name":  "Fighter",
+                                                          "displayName":  "Fighter",
+                                                          "description":  "A versatile martial warrior skilled in all forms of combat",
+                                                          "rarityWeight":  30,
+                                                          "isSubclass":  false,
+                                                          "startingStats":  {
+                                                                                "health":  120,
+                                                                                "mana":  30
+                                                                            },
+                                                          "startingAbilities":  [
+                                                                                    "@abilities/active/offensive:*"
+                                                                                ],
+                                                          "traits":  {
+                                                                         "physicalPower":  {
+                                                                                               "value":  35,
+                                                                                               "type":  "number"
+                                                                                           },
+                                                                         "armorBonus":  {
+                                                                                            "value":  20,
+                                                                                            "type":  "number"
+                                                                                        }
+                                                                     },
+                                                          "progression":  {
+                                                                              "healthPerLevel":  12,
+                                                                              "manaPerLevel":  2,
+                                                                              "abilityUnlocks":  {
+
+                                                                                                 }
+                                                                          }
+                                                      }
+                                                  ]
+                                    },
+                        "mage":  {
+                                     "metadata":  {
+                                                      "description":  "Arcane spellcasters who manipulate magical energies",
+                                                      "primaryStats":  [
+                                                                           "intelligence",
+                                                                           "wisdom"
+                                                                       ],
+                                                      "armorProficiency":  [
+                                                                               "robes",
+                                                                               "light"
+                                                                           ],
+                                                      "weaponProficiency":  [
+                                                                                "staves",
+                                                                                "wands",
+                                                                                "daggers"
+                                                                            ]
+                                                  },
+                                     "items":  [
+                                                   {
+                                                       "slug":  "wizard",
+                                                       "name":  "Wizard",
+                                                       "displayName":  "Wizard",
+                                                       "description":  "A scholarly mage with mastery over arcane spells",
+                                                       "rarityWeight":  20,
+                                                       "isSubclass":  false,
+                                                       "startingStats":  {
+                                                                             "health":  70,
+                                                                             "mana":  150
+                                                                         },
+                                                       "startingAbilities":  [
+                                                                                 "@abilities/active/offensive:*"
+                                                                             ],
+                                                       "traits":  {
+                                                                      "spellPower":  {
+                                                                                         "value":  40,
+                                                                                         "type":  "number"
+                                                                                     },
+                                                                      "manaRegen":  {
+                                                                                        "value":  15,
+                                                                                        "type":  "number"
+                                                                                    }
+                                                                  },
+                                                       "progression":  {
+                                                                           "healthPerLevel":  6,
+                                                                           "manaPerLevel":  15,
+                                                                           "abilityUnlocks":  {
+
+                                                                                              }
+                                                                       }
+                                                   }
+                                               ]
+                                 }
+                    }
 }

@@ -1,167 +1,48 @@
-{
-  "metadata": {
-    "description": "Rubber material properties for crafting system - flexible and waterproof",
-    "version": "5.1",
-    "lastUpdated": "2026-01-22",
-    "type": "materials_properties_catalog",
-    "totalMaterials": 5,
-    "usage": "Rubber materials for flexible armor with shock and water resistance.",
-    "notes": [
-      "Rubber materials provide flexibility and elemental resistance",
-      "Focus on constitution and resistance properties",
-      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-    ]
-  },
-  "rubber_types": {
-    "rubber": {
-      "items": [
-        {
-          "slug": "tree-resin",
-          "name": "Tree Resin",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 0,
-            "charisma": 0,
-            "strength": 3,
-            "constitution": 8,
-            "wisdom": 3
-          },
-          "traits": {
-            "durability": 40,
-            "weight": 0.5,
-            "waterResistance": 20,
-            "flexibility": 30
-          },
-          "displayName": "Tree Resin",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 4,
-              "defenseBonus": 1,
-              "value": 3
-            }
-          },
-          "rarityWeight": 70
-        },
-        {
-          "slug": "latex",
-          "name": "Latex",
-          "attributes": {
-            "dexterity": 8,
-            "intelligence": 3,
-            "charisma": 3,
-            "strength": 3,
-            "constitution": 10,
-            "wisdom": 3
-          },
-          "traits": {
-            "durability": 45,
-            "weight": 0.4,
-            "waterResistance": 30,
-            "flexibility": 40,
-            "shockResistance": 20
-          },
-          "displayName": "Latex",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 5,
-              "defenseBonus": 2,
-              "dodgeBonus": 3,
-              "value": 5
-            }
-          },
-          "rarityWeight": 55
-        },
-        {
-          "slug": "amber",
-          "name": "Amber",
-          "attributes": {
-            "dexterity": 5,
-            "intelligence": 8,
-            "charisma": 12,
-            "strength": 3,
-            "constitution": 8,
-            "wisdom": 10
-          },
-          "traits": {
-            "durability": 35,
-            "weight": 0.6,
-            "enchantability": 30,
-            "timePreservation": 25
-          },
-          "displayName": "Amber",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 4,
-              "defenseBonus": 1,
-              "value": 18
-            },
-            "weapon": {
-              "value": 15
-            }
-          },
-          "rarityWeight": 30
-        },
-        {
-          "slug": "vulcanized-rubber",
-          "name": "Vulcanized Rubber",
-          "attributes": {
-            "dexterity": 10,
-            "intelligence": 5,
-            "charisma": 3,
-            "strength": 5,
-            "constitution": 15,
-            "wisdom": 5
-          },
-          "traits": {
-            "durability": 60,
-            "weight": 0.6,
-            "waterResistance": 40,
-            "flexibility": 50,
-            "shockResistance": 35,
-            "fireResistance": 15
-          },
-          "displayName": "Vulcanized Rubber",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 8,
-              "defenseBonus": 3,
-              "dodgeBonus": 5,
-              "value": 12
-            }
-          },
-          "rarityWeight": 40
-        },
-        {
-          "slug": "living-resin",
-          "name": "Living Resin",
-          "attributes": {
-            "dexterity": 12,
-            "intelligence": 12,
-            "charisma": 10,
-            "strength": 8,
-            "constitution": 18,
-            "wisdom": 15
-          },
-          "traits": {
-            "durability": 70,
-            "weight": 0.5,
-            "waterResistance": 50,
-            "flexibility": 60,
-            "regeneration": 10,
-            "enchantability": 40
-          },
-          "displayName": "Living Resin",
-          "itemTypeTraits": {
-            "armor": {
-              "armorRating": 12,
-              "defenseBonus": 5,
-              "healthRegen": 3,
-              "value": 35
-            }
-          },
-          "rarityWeight": 10
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Rubber material properties for crafting system - flexible and waterproof",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-22",
+                     "type":  "materials_properties_catalog",
+                     "totalMaterials":  1,
+                     "usage":  "Rubber materials for flexible armor with shock and water resistance.",
+                     "notes":  [
+                                   "Rubber materials provide flexibility and elemental resistance",
+                                   "Focus on constitution and resistance properties",
+                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+                               ]
+                 },
+    "rubber_types":  {
+                         "rubber":  {
+                                        "items":  [
+                                                      {
+                                                          "slug":  "tree-resin",
+                                                          "name":  "Tree Resin",
+                                                          "attributes":  {
+                                                                             "dexterity":  5,
+                                                                             "intelligence":  0,
+                                                                             "charisma":  0,
+                                                                             "strength":  3,
+                                                                             "constitution":  8,
+                                                                             "wisdom":  3
+                                                                         },
+                                                          "traits":  {
+                                                                         "durability":  40,
+                                                                         "weight":  0.5,
+                                                                         "waterResistance":  20,
+                                                                         "flexibility":  30
+                                                                     },
+                                                          "displayName":  "Tree Resin",
+                                                          "itemTypeTraits":  {
+                                                                                 "armor":  {
+                                                                                               "armorRating":  4,
+                                                                                               "defenseBonus":  1,
+                                                                                               "value":  3
+                                                                                           }
+                                                                             },
+                                                          "rarityWeight":  70
+                                                      }
+                                                  ]
+                                    }
+                     }
 }

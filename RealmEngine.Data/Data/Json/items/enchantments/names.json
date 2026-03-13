@@ -1,431 +1,98 @@
-{
-  "metadata": {
-    "description": "Enchantment naming system using convention-based positioning (_prefix/_suffix suffixes)",
-    "version": "4.3",
-    "lastUpdated": "2026-01-19",
-    "type": "pattern_generation",
-    "supportsTraits": true,
-    "componentKeys": [
-      "base",
-      "element_prefix",
-      "element_suffix",
-      "combat_suffix",
-      "magic_suffix"
-    ],
-    "patternTokens": [
-      "base",
-      "element_prefix",
-      "element_suffix",
-      "combat_suffix",
-      "magic_suffix"
-    ],
-    "totalPatterns": 4,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Enchantments are baked into items at generation time",
-      "Position relative to {base} token determines prefix (before) or suffix (after)",
-      "Prefix patterns: tokens before {base}",
-      "Suffix patterns: tokens after {base}",
-      "No explicit position metadata needed - pattern structure determines position",
-      "The {base} token is resolved by ItemGenerator (not from components)"
-    ]
-  },
-  "components": {
-    "element_prefix": [
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "fireDamage": {
-            "value": 5,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "fire",
-            "type": "string"
-          }
-        },
-        "name": "Flaming"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "iceDamage": {
-            "value": 5,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "ice",
-            "type": "string"
-          },
-          "slowChance": {
-            "value": 0.15,
-            "type": "number"
-          }
-        },
-        "name": "Frozen"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "lightningDamage": {
-            "value": 5,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "lightning",
-            "type": "string"
-          }
-        },
-        "name": "Shocking"
-      },
-      {
-        "rarityWeight": 35,
-        "traits": {
-          "poisonDamage": {
-            "value": 3,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "poison",
-            "type": "string"
-          },
-          "poisonDuration": {
-            "value": 3,
-            "type": "number"
-          }
-        },
-        "name": "Venomous"
-      },
-      {
-        "rarityWeight": 50,
-        "traits": {
-          "holyDamage": {
-            "value": 7,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "holy",
-            "type": "string"
-          }
-        },
-        "name": "Radiant"
-      },
-      {
-        "rarityWeight": 50,
-        "traits": {
-          "darkDamage": {
-            "value": 6,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "dark",
-            "type": "string"
-          }
-        },
-        "name": "Shadowy"
-      },
-      {
-        "rarityWeight": 60,
-        "traits": {
-          "arcaneDamage": {
-            "value": 8,
-            "type": "number"
-          },
-          "damageType": {
-            "value": "arcane",
-            "type": "string"
-          }
-        },
-        "name": "Arcane"
-      }
-    ],
-    "element_suffix": [
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "fireDamage": {
-            "value": 8,
-            "type": "number"
-          },
-          "fireResistance": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of Fire"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "iceDamage": {
-            "value": 8,
-            "type": "number"
-          },
-          "iceResistance": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of Ice"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "lightningDamage": {
-            "value": 8,
-            "type": "number"
-          },
-          "lightningResistance": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of Lightning"
-      },
-      {
-        "rarityWeight": 80,
-        "traits": {
-          "lightningDamage": {
-            "value": 12,
-            "type": "number"
-          },
-          "iceDamage": {
-            "value": 8,
-            "type": "number"
-          },
-          "lightningResistance": {
-            "value": 8,
-            "type": "number"
-          }
-        },
-        "name": "of the Storm"
-      },
-      {
-        "rarityWeight": 100,
-        "traits": {
-          "fireDamage": {
-            "value": 15,
-            "type": "number"
-          },
-          "fireResistance": {
-            "value": 10,
-            "type": "number"
-          },
-          "burnDuration": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of the Inferno"
-      }
-    ],
-    "combat_suffix": [
-      {
-        "rarityWeight": 25,
-        "traits": {
-          "strength": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "of Strength"
-      },
-      {
-        "rarityWeight": 40,
-        "traits": {
-          "strength": {
-            "value": 3,
-            "type": "number"
-          },
-          "meleeDamage": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of Power"
-      },
-      {
-        "rarityWeight": 120,
-        "traits": {
-          "strength": {
-            "value": 5,
-            "type": "number"
-          },
-          "constitution": {
-            "value": 3,
-            "type": "number"
-          },
-          "meleeDamage": {
-            "value": 10,
-            "type": "number"
-          }
-        },
-        "name": "of the Titan"
-      },
-      {
-        "rarityWeight": 25,
-        "traits": {
-          "dexterity": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "of Dexterity"
-      },
-      {
-        "rarityWeight": 40,
-        "traits": {
-          "dexterity": {
-            "value": 3,
-            "type": "number"
-          },
-          "attackSpeed": {
-            "value": 0.05,
-            "type": "number"
-          }
-        },
-        "name": "of Agility"
-      },
-      {
-        "rarityWeight": 100,
-        "traits": {
-          "dexterity": {
-            "value": 5,
-            "type": "number"
-          },
-          "criticalChance": {
-            "value": 0.08,
-            "type": "number"
-          },
-          "attackSpeed": {
-            "value": 0.1,
-            "type": "number"
-          }
-        },
-        "name": "of the Rogue"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "armor": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of Protection"
-      },
-      {
-        "rarityWeight": 90,
-        "traits": {
-          "armor": {
-            "value": 15,
-            "type": "number"
-          },
-          "constitution": {
-            "value": 4,
-            "type": "number"
-          },
-          "damageReduction": {
-            "value": 0.05,
-            "type": "number"
-          }
-        },
-        "name": "of the Guardian"
-      }
-    ],
-    "magic_suffix": [
-      {
-        "rarityWeight": 25,
-        "traits": {
-          "intelligence": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "of Intelligence"
-      },
-      {
-        "rarityWeight": 25,
-        "traits": {
-          "wisdom": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "of Wisdom"
-      },
-      {
-        "rarityWeight": 60,
-        "traits": {
-          "intelligence": {
-            "value": 4,
-            "type": "number"
-          },
-          "spellPower": {
-            "value": 10,
-            "type": "number"
-          }
-        },
-        "name": "of Sorcery"
-      },
-      {
-        "rarityWeight": 150,
-        "traits": {
-          "intelligence": {
-            "value": 6,
-            "type": "number"
-          },
-          "wisdom": {
-            "value": 4,
-            "type": "number"
-          },
-          "spellPower": {
-            "value": 20,
-            "type": "number"
-          },
-          "manaRegeneration": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "of the Archmage"
-      },
-      {
-        "rarityWeight": 45,
-        "traits": {
-          "castSpeed": {
-            "value": 0.1,
-            "type": "number"
-          },
-          "manaCost": {
-            "value": -0.05,
-            "type": "number"
-          }
-        },
-        "name": "of Channeling"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "pattern": "{element_prefix}",
-      "rarityWeight": 40,
-      "note": "Prefix pattern - elemental modifier (position determined by _prefix suffix)"
-    },
-    {
-      "pattern": "{element_suffix}",
-      "rarityWeight": 35,
-      "note": "Suffix pattern - elemental effect (position determined by _suffix suffix)"
-    },
-    {
-      "pattern": "{combat_suffix}",
-      "rarityWeight": 30,
-      "note": "Suffix pattern - combat bonus (position determined by _suffix suffix)"
-    },
-    {
-      "pattern": "{magic_suffix}",
-      "rarityWeight": 35,
-      "note": "Suffix pattern - magical effect (position determined by _suffix suffix)"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "description":  "Enchantment naming system using convention-based positioning (_prefix/_suffix suffixes)",
+                     "version":  "4.3",
+                     "lastUpdated":  "2026-01-19",
+                     "type":  "pattern_generation",
+                     "supportsTraits":  true,
+                     "componentKeys":  [
+                                           "base",
+                                           "element_prefix",
+                                           "element_suffix",
+                                           "combat_suffix",
+                                           "magic_suffix"
+                                       ],
+                     "patternTokens":  [
+                                           "base",
+                                           "element_prefix",
+                                           "element_suffix",
+                                           "combat_suffix",
+                                           "magic_suffix"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Enchantments are baked into items at generation time",
+                                   "Position relative to {base} token determines prefix (before) or suffix (after)",
+                                   "Prefix patterns: tokens before {base}",
+                                   "Suffix patterns: tokens after {base}",
+                                   "No explicit position metadata needed - pattern structure determines position",
+                                   "The {base} token is resolved by ItemGenerator (not from components)"
+                               ]
+                 },
+    "components":  {
+                       "element_prefix":  [
+                                              {
+                                                  "rarityWeight":  30,
+                                                  "traits":  {
+                                                                 "fireDamage":  {
+                                                                                    "value":  5,
+                                                                                    "type":  "number"
+                                                                                },
+                                                                 "damageType":  {
+                                                                                    "value":  "fire",
+                                                                                    "type":  "string"
+                                                                                }
+                                                             },
+                                                  "name":  "Flaming"
+                                              }
+                                          ],
+                       "element_suffix":  [
+                                              {
+                                                  "rarityWeight":  30,
+                                                  "traits":  {
+                                                                 "fireDamage":  {
+                                                                                    "value":  8,
+                                                                                    "type":  "number"
+                                                                                },
+                                                                 "fireResistance":  {
+                                                                                        "value":  5,
+                                                                                        "type":  "number"
+                                                                                    }
+                                                             },
+                                                  "name":  "of Fire"
+                                              }
+                                          ],
+                       "combat_suffix":  [
+                                             {
+                                                 "rarityWeight":  25,
+                                                 "traits":  {
+                                                                "strength":  {
+                                                                                 "value":  2,
+                                                                                 "type":  "number"
+                                                                             }
+                                                            },
+                                                 "name":  "of Strength"
+                                             }
+                                         ],
+                       "magic_suffix":  [
+                                            {
+                                                "rarityWeight":  25,
+                                                "traits":  {
+                                                               "intelligence":  {
+                                                                                    "value":  2,
+                                                                                    "type":  "number"
+                                                                                }
+                                                           },
+                                                "name":  "of Intelligence"
+                                            }
+                                        ]
+                   },
+    "patterns":  [
+                     {
+                         "pattern":  "{element_prefix}",
+                         "rarityWeight":  40,
+                         "note":  "Prefix pattern - elemental modifier (position determined by _prefix suffix)"
+                     }
+                 ]
 }

@@ -1,246 +1,80 @@
-{
-  "metadata": {
-    "version": "4.3",
-    "type": "pattern_generation",
-    "supportsTraits": true,
-    "lastUpdated": "2026-01-19",
-    "description": "Class-specific name generation for NPCs and player character titles",
-    "componentKeys": [
-      "prefix",
-      "suffix",
-      "title"
-    ],
-    "patternTokens": [
-      "prefix",
-      "class",
-      "suffix",
-      "title",
-      "base"
-    ],
-    "totalPatterns": 7,
-    "raritySystem": "weight-based",
-    "notes": [
-      "Generates class-based character names and titles",
-      "Supports trait-based modifiers for reputation and specialization",
-      "Can reference class catalog for dynamic titles"
-    ]
-  },
-  "components": {
-    "prefix": [
-      {
-        "rarityWeight": 10,
-        "traits": {
-          "levelRequirement": {
-            "value": 50,
-            "type": "number"
-          },
-          "reputationBonus": {
-            "value": 10,
-            "type": "number"
-          }
-        },
-        "name": "Master"
-      },
-      {
-        "rarityWeight": 5,
-        "traits": {
-          "levelRequirement": {
-            "value": 70,
-            "type": "number"
-          },
-          "reputationBonus": {
-            "value": 20,
-            "type": "number"
-          }
-        },
-        "name": "Grand"
-      },
-      {
-        "rarityWeight": 1,
-        "traits": {
-          "levelRequirement": {
-            "value": 90,
-            "type": "number"
-          },
-          "reputationBonus": {
-            "value": 50,
-            "type": "number"
-          }
-        },
-        "name": "Legendary"
-      },
-      {
-        "rarityWeight": 15,
-        "traits": {
-          "levelRequirement": {
-            "value": 40,
-            "type": "number"
-          },
-          "reputationBonus": {
-            "value": 5,
-            "type": "number"
-          }
-        },
-        "name": "Elite"
-      },
-      {
-        "rarityWeight": 20,
-        "traits": {
-          "levelRequirement": {
-            "value": 30,
-            "type": "number"
-          },
-          "reputationBonus": {
-            "value": 3,
-            "type": "number"
-          }
-        },
-        "name": "Veteran"
-      },
-      {
-        "rarityWeight": 50,
-        "traits": {
-          "levelRequirement": {
-            "value": 1,
-            "type": "number"
-          },
-          "reputationBonus": {
-            "value": 0,
-            "type": "number"
-          }
-        },
-        "name": "Apprentice"
-      }
-    ],
-    "suffix": [
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "strengthBonus": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "the Brave"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "wisdomBonus": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "the Wise"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "dexterityBonus": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "the Swift"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "intelligenceBonus": {
-            "value": 2,
-            "type": "number"
-          }
-        },
-        "name": "the Cunning"
-      },
-      {
-        "rarityWeight": 15,
-        "traits": {
-          "strengthBonus": {
-            "value": 3,
-            "type": "number"
-          }
-        },
-        "name": "the Mighty"
-      },
-      {
-        "rarityWeight": 10,
-        "traits": {
-          "constitutionBonus": {
-            "value": 3,
-            "type": "number"
-          }
-        },
-        "name": "the Immortal"
-      }
-    ],
-    "title": [
-      {
-        "rarityWeight": 5,
-        "traits": {
-          "questsCompleted": {
-            "value": 100,
-            "type": "number"
-          }
-        },
-        "name": "Slayer of Dragons"
-      },
-      {
-        "rarityWeight": 15,
-        "traits": {
-          "questsCompleted": {
-            "value": 50,
-            "type": "number"
-          }
-        },
-        "name": "Champion of the Realm"
-      },
-      {
-        "rarityWeight": 30,
-        "traits": {
-          "questsCompleted": {
-            "value": 25,
-            "type": "number"
-          }
-        },
-        "name": "Defender of the Weak"
-      },
-      {
-        "rarityWeight": 50,
-        "traits": {
-          "questsCompleted": {
-            "value": 0,
-            "type": "number"
-          }
-        },
-        "name": "Wanderer"
-      }
-    ]
-  },
-  "patterns": [
-    {
-      "template": "{base}",
-      "rarityWeight": 50,
-      "traits": {},
-      "description": "Plain class name"
-    },
-    {
-      "template": "{prefix} {base}",
-      "rarityWeight": 30,
-      "traits": {},
-      "description": "Class with rank prefix"
-    },
-    {
-      "template": "{base} {suffix}",
-      "rarityWeight": 15,
-      "traits": {},
-      "description": "Class with epithet"
-    },
-    {
-      "template": "{prefix} {base}, {title}",
-      "rarityWeight": 5,
-      "traits": {},
-      "description": "Full title with accomplishment"
-    }
-  ]
+﻿{
+    "metadata":  {
+                     "version":  "4.3",
+                     "type":  "pattern_generation",
+                     "supportsTraits":  true,
+                     "lastUpdated":  "2026-01-19",
+                     "description":  "Class-specific name generation for NPCs and player character titles",
+                     "componentKeys":  [
+                                           "prefix",
+                                           "suffix",
+                                           "title"
+                                       ],
+                     "patternTokens":  [
+                                           "prefix",
+                                           "class",
+                                           "suffix",
+                                           "title",
+                                           "base"
+                                       ],
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "notes":  [
+                                   "Generates class-based character names and titles",
+                                   "Supports trait-based modifiers for reputation and specialization",
+                                   "Can reference class catalog for dynamic titles"
+                               ]
+                 },
+    "components":  {
+                       "prefix":  [
+                                      {
+                                          "rarityWeight":  10,
+                                          "traits":  {
+                                                         "levelRequirement":  {
+                                                                                  "value":  50,
+                                                                                  "type":  "number"
+                                                                              },
+                                                         "reputationBonus":  {
+                                                                                 "value":  10,
+                                                                                 "type":  "number"
+                                                                             }
+                                                     },
+                                          "name":  "Master"
+                                      }
+                                  ],
+                       "suffix":  [
+                                      {
+                                          "rarityWeight":  30,
+                                          "traits":  {
+                                                         "strengthBonus":  {
+                                                                               "value":  2,
+                                                                               "type":  "number"
+                                                                           }
+                                                     },
+                                          "name":  "the Brave"
+                                      }
+                                  ],
+                       "title":  [
+                                     {
+                                         "rarityWeight":  5,
+                                         "traits":  {
+                                                        "questsCompleted":  {
+                                                                                "value":  100,
+                                                                                "type":  "number"
+                                                                            }
+                                                    },
+                                         "name":  "Slayer of Dragons"
+                                     }
+                                 ]
+                   },
+    "patterns":  [
+                     {
+                         "template":  "{base}",
+                         "rarityWeight":  50,
+                         "traits":  {
+
+                                    },
+                         "description":  "Plain class name"
+                     }
+                 ]
 }

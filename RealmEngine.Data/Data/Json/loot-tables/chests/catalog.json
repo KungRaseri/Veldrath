@@ -1,296 +1,35 @@
-{
-  "metadata": {
-    "description": "Loot tables for chests - defines drops by rarity, location, and item type",
-    "version": "5.0",
-    "lastUpdated": "2026-01-23",
-    "type": "loot_table_catalog",
-    "notes": [
-      "Chest entities can specify multiple lootLookups with a mergeStrategy",
-      "Merge strategies: addPools (combine all), prioritizeFirst, prioritizeLast",
-      "Example: chest with [@loot-tables/chests/location:dragon-peak, @loot-tables/chests/rarity:legendary]"
-    ]
-  },
-  "chest_types": {
-    "rarity": {
-      "items": [
-        {
-          "poolRefs": [
-            "@material_pools/metals/common"
-          ],
-          "itemCount": [
-            1,
-            3
-          ],
-          "goldRange": [
-            10,
-            50
-          ],
-          "slug": "common",
-          "name": "Common",
-          "rarityWeight": 60
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/uncommon",
-            "@material_pools/leathers/uncommon",
-            "@material_pools/fabrics/uncommon",
-            "@material_pools/gems/common"
-          ],
-          "itemCount": [
-            2,
-            5
-          ],
-          "goldRange": [
-            50,
-            150
-          ],
-          "slug": "uncommon",
-          "name": "Uncommon",
-          "rarityWeight": 30
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/rare",
-            "@material_pools/leathers/rare",
-            "@material_pools/fabrics/rare",
-            "@material_pools/gems/uncommon"
-          ],
-          "itemCount": [
-            3,
-            6
-          ],
-          "goldRange": [
-            150,
-            500
-          ],
-          "slug": "rare",
-          "name": "Rare",
-          "rarityWeight": 20
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/epic",
-            "@material_pools/leathers/epic",
-            "@material_pools/fabrics/epic",
-            "@material_pools/gems/rare"
-          ],
-          "itemCount": [
-            4,
-            8
-          ],
-          "goldRange": [
-            500,
-            1500
-          ],
-          "slug": "epic",
-          "name": "Epic",
-          "rarityWeight": 10
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/legendary",
-            "@material_pools/leathers/legendary",
-            "@material_pools/fabrics/legendary",
-            "@material_pools/gems/legendary"
-          ],
-          "itemCount": [
-            5,
-            10
-          ],
-          "goldRange": [
-            1500,
-            5000
-          ],
-          "slug": "legendary",
-          "name": "Legendary",
-          "rarityWeight": 5
-        }
-      ]
-    },
-    "location": {
-      "items": [
-        {
-          "poolRefs": [
-            "@material_pools/leathers/common"
-          ],
-          "itemCount": [
-            2,
-            4
-          ],
-          "goldRange": [
-            20,
-            80
-          ],
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:goblin-hide",
-              "minQuantity": 3,
-              "maxQuantity": 10,
-              "dropChance": 80,
-              "rarityWeight": 60
-            }
-          ],
-          "slug": "goblin-cave",
-          "name": "Goblin Cave",
-          "rarityWeight": 50
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/legendary"
-          ],
-          "itemCount": [
-            5,
-            10
-          ],
-          "goldRange": [
-            1000,
-            5000
-          ],
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:dragon-scale",
-              "minQuantity": 5,
-              "maxQuantity": 15,
-              "dropChance": 100,
-              "rarityWeight": 20
-            }
-          ],
-          "slug": "dragon-peak",
-          "name": "Dragon Peak",
-          "rarityWeight": 5
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/uncommon"
-          ],
-          "itemCount": [
-            3,
-            6
-          ],
-          "goldRange": [
-            100,
-            300
-          ],
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/ore:iron-ore",
-              "minQuantity": 5,
-              "maxQuantity": 20,
-              "dropChance": 90,
-              "rarityWeight": 70
-            },
-            {
-              "materialRef": "@items/materials/gem:rough-quartz",
-              "minQuantity": 1,
-              "maxQuantity": 5,
-              "dropChance": 50,
-              "rarityWeight": 40
-            }
-          ],
-          "slug": "abandoned-mine",
-          "name": "Abandoned Mine",
-          "rarityWeight": 35
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/rare",
-            "@material_pools/gems/rare"
-          ],
-          "itemCount": [
-            4,
-            8
-          ],
-          "goldRange": [
-            500,
-            2000
-          ],
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/bone:ancient-bone",
-              "minQuantity": 2,
-              "maxQuantity": 8,
-              "dropChance": 70,
-              "rarityWeight": 30
-            }
-          ],
-          "slug": "ancient-tomb",
-          "name": "Ancient Tomb",
-          "rarityWeight": 15
-        }
-      ]
-    },
-    "item": {
-      "items": [
-        {
-          "poolRefs": [
-            "@material_pools/leathers/uncommon",
-            "@material_pools/metals/rare"
-          ],
-          "itemCount": [
-            1,
-            2
-          ],
-          "slug": "armor",
-          "name": "Armor",
-          "rarityWeight": 40
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/rare",
-            "@material_pools/woods/uncommon"
-          ],
-          "itemCount": [
-            1,
-            1
-          ],
-          "slug": "weapons",
-          "name": "Weapons",
-          "rarityWeight": 40
-        },
-        {
-          "poolRefs": [
-            "@material_pools/plants/common"
-          ],
-          "itemCount": [
-            3,
-            8
-          ],
-          "slug": "consumables",
-          "name": "Consumables",
-          "rarityWeight": 60
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/common",
-            "@material_pools/leathers/common",
-            "@material_pools/fabrics/common"
-          ],
-          "itemCount": [
-            5,
-            15
-          ],
-          "slug": "materials",
-          "name": "Materials",
-          "rarityWeight": 70
-        },
-        {
-          "poolRefs": [
-            "@material_pools/gems/uncommon",
-            "@material_pools/gems/rare"
-          ],
-          "itemCount": [
-            1,
-            3
-          ],
-          "goldRange": [
-            100,
-            500
-          ],
-          "slug": "gems",
-          "name": "Gems",
-          "rarityWeight": 25
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Loot tables for chests - defines drops by rarity, location, and item type",
+                     "version":  "5.0",
+                     "lastUpdated":  "2026-01-23",
+                     "type":  "loot_table_catalog",
+                     "notes":  [
+                                   "Chest entities can specify multiple lootLookups with a mergeStrategy",
+                                   "Merge strategies: addPools (combine all), prioritizeFirst, prioritizeLast",
+                                   "Example: chest with [@loot-tables/chests/location:dragon-peak, @loot-tables/chests/rarity:legendary]"
+                               ]
+                 },
+    "chest_types":  {
+                        "rarity":  {
+                                       "items":  [
+                                                     {
+                                                         "poolRefs":  [
+                                                                          "@material_pools/metals/common"
+                                                                      ],
+                                                         "itemCount":  [
+                                                                           1,
+                                                                           3
+                                                                       ],
+                                                         "goldRange":  [
+                                                                           10,
+                                                                           50
+                                                                       ],
+                                                         "slug":  "common",
+                                                         "name":  "Common",
+                                                         "rarityWeight":  60
+                                                     }
+                                                 ]
+                                   }
+                    }
 }

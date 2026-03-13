@@ -1,566 +1,71 @@
-{
-  "metadata": {
-    "description": "Dragon enemy type catalog with base stats and traits",
-    "version": "5.1",
-    "lastUpdated": "2026-01-08",
-    "type": "item_catalog",
-    "total_dragon_types": 5,
-    "total_dragons": 13,
-    "usage": "Provides base enemy types for pattern generation",
-    "notes": [
-      "Base catalog of dragons with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
-      "Abilities use JSON Reference System v4.1 (@abilities/active/offensive:*)",
-      "Level-based ability unlocks provide enemy progression",
-      "Dragons have breath weapon abilities based on breathType trait"
-    ]
-  },
-  "dragon_types": {
-    "chromatic": {
-      "properties": {
-        "size": "huge",
-        "category": "dragon",
-        "behavior": "territorial"
-      },
-      "items": [
-        {
-          "level": 20,
-          "slug": "red-dragon",
-          "name": "Red Dragon",
-          "rarityWeight": 30,
-          "xp": 2000,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 35",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 25",
-            "health": "constitution_mod * 2 + level * 5 + 300"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "22": [
-                "@abilities/active/defensive:*"
-              ],
-              "25": [
-                "@abilities/active/offensive:*"
-              ],
-              "30": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "fire"
-        },
-        {
-          "level": 19,
-          "slug": "blue-dragon",
-          "name": "Blue Dragon",
-          "rarityWeight": 35,
-          "xp": 1800,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 32",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 28",
-            "health": "constitution_mod * 2 + level * 5 + 280"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "22": [
-                "@abilities/active/defensive:*"
-              ],
-              "25": [
-                "@abilities/active/offensive:*"
-              ],
-              "28": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "lightning"
-        },
-        {
-          "level": 18,
-          "slug": "green-dragon",
-          "name": "Green Dragon",
-          "rarityWeight": 40,
-          "xp": 1600,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 30",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 26",
-            "health": "constitution_mod * 2 + level * 5 + 270"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "20": [
-                "@abilities/active/defensive:*"
-              ],
-              "24": [
-                "@abilities/active/offensive:*"
-              ],
-              "28": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "poison"
-        },
-        {
-          "level": 17,
-          "slug": "black-dragon",
-          "name": "Black Dragon",
-          "rarityWeight": 42,
-          "xp": 1500,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 31",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 24",
-            "health": "constitution_mod * 2 + level * 5 + 260"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "20": [
-                "@abilities/active/defensive:*"
-              ],
-              "23": [
-                "@abilities/active/offensive:*"
-              ],
-              "26": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "acid"
-        },
-        {
-          "level": 16,
-          "slug": "white-dragon",
-          "name": "White Dragon",
-          "rarityWeight": 45,
-          "xp": 1400,
-          "attributes": {
-            "constitution": 10,
-            "wisdom": 8,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 8,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 28",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 22",
-            "health": "constitution_mod * 2 + level * 5 + 250"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "18": [
-                "@abilities/active/defensive:*"
-              ],
-              "22": [
-                "@abilities/active/offensive:*"
-              ],
-              "25": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "cold"
-        }
-      ]
-    },
-    "metallic": {
-      "properties": {
-        "size": "huge",
-        "category": "dragon",
-        "behavior": "noble"
-      },
-      "items": [
-        {
-          "level": 22,
-          "slug": "gold-dragon",
-          "name": "Gold Dragon",
-          "rarityWeight": 10,
-          "xp": 2500,
-          "attributes": {
-            "constitution": 24,
-            "wisdom": 18,
-            "strength": 26,
-            "dexterity": 14,
-            "intelligence": 20,
-            "charisma": 22
-          },
-          "stats": {
-            "attack": "strength_mod + level + 38",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 30",
-            "health": "constitution_mod * 2 + level * 5 + 350"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "24": [
-                "@abilities/active/defensive:*"
-              ],
-              "26": [
-                "@abilities/active/support:*"
-              ],
-              "30": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "fire"
-        },
-        {
-          "level": 21,
-          "slug": "silver-dragon",
-          "name": "Silver Dragon",
-          "rarityWeight": 20,
-          "xp": 2200,
-          "attributes": {
-            "constitution": 23,
-            "wisdom": 17,
-            "strength": 25,
-            "dexterity": 13,
-            "intelligence": 19,
-            "charisma": 21
-          },
-          "stats": {
-            "attack": "strength_mod + level + 36",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 28",
-            "health": "constitution_mod * 2 + level * 5 + 320"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "23": [
-                "@abilities/active/defensive:*"
-              ],
-              "26": [
-                "@abilities/active/offensive:*"
-              ],
-              "29": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "cold"
-        },
-        {
-          "level": 19,
-          "slug": "bronze-dragon",
-          "name": "Bronze Dragon",
-          "rarityWeight": 32,
-          "xp": 1900,
-          "attributes": {
-            "constitution": 22,
-            "wisdom": 16,
-            "strength": 24,
-            "dexterity": 13,
-            "intelligence": 18,
-            "charisma": 19
-          },
-          "stats": {
-            "attack": "strength_mod + level + 33",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 26",
-            "health": "constitution_mod * 2 + level * 5 + 290"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "22": [
-                "@abilities/active/defensive:*"
-              ],
-              "25": [
-                "@abilities/active/offensive:*"
-              ],
-              "28": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "lightning"
-        },
-        {
-          "level": 18,
-          "slug": "copper-dragon",
-          "name": "Copper Dragon",
-          "rarityWeight": 38,
-          "xp": 1700,
-          "attributes": {
-            "constitution": 21,
-            "wisdom": 15,
-            "strength": 23,
-            "dexterity": 13,
-            "intelligence": 17,
-            "charisma": 18
-          },
-          "stats": {
-            "attack": "strength_mod + level + 31",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 24",
-            "health": "constitution_mod * 2 + level * 5 + 280"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "20": [
-                "@abilities/active/defensive:*"
-              ],
-              "24": [
-                "@abilities/active/offensive:*"
-              ],
-              "27": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "acid"
-        },
-        {
-          "level": 17,
-          "slug": "brass-dragon",
-          "name": "Brass Dragon",
-          "rarityWeight": 42,
-          "xp": 1600,
-          "attributes": {
-            "constitution": 21,
-            "wisdom": 14,
-            "strength": 23,
-            "dexterity": 12,
-            "intelligence": 16,
-            "charisma": 17
-          },
-          "stats": {
-            "attack": "strength_mod + level + 29",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 23",
-            "health": "constitution_mod * 2 + level * 5 + 270"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "20": [
-                "@abilities/active/defensive:*"
-              ],
-              "23": [
-                "@abilities/active/offensive:*"
-              ],
-              "26": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {},
-          "breathType": "fire"
-        }
-      ]
-    },
-    "drakes": {
-      "properties": {
-        "size": "large",
-        "category": "dragon",
-        "behavior": "aggressive"
-      },
-      "items": [
-        {
-          "level": 12,
-          "slug": "drake",
-          "name": "Drake",
-          "rarityWeight": 80,
-          "xp": 600,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 12,
-            "strength": 20,
-            "dexterity": 12,
-            "intelligence": 6,
-            "charisma": 10
-          },
-          "stats": {
-            "attack": "strength_mod + level + 20",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 15",
-            "health": "constitution_mod * 2 + level * 5 + 150"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "15": [
-                "@abilities/active/offensive:*"
-              ],
-              "18": [
-                "@abilities/active/defensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 14,
-          "slug": "wyrm",
-          "name": "Wyrm",
-          "rarityWeight": 70,
-          "xp": 800,
-          "attributes": {
-            "constitution": 19,
-            "wisdom": 13,
-            "strength": 21,
-            "dexterity": 11,
-            "intelligence": 8,
-            "charisma": 11
-          },
-          "stats": {
-            "attack": "strength_mod + level + 24",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 18",
-            "health": "constitution_mod * 2 + level * 5 + 180"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "16": [
-                "@abilities/active/offensive:*"
-              ],
-              "19": [
-                "@abilities/active/defensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 11,
-          "slug": "wyvern",
-          "name": "Wyvern",
-          "rarityWeight": 82,
-          "xp": 550,
-          "attributes": {
-            "constitution": 17,
-            "wisdom": 11,
-            "strength": 19,
-            "dexterity": 14,
-            "intelligence": 5,
-            "charisma": 9
-          },
-          "stats": {
-            "attack": "strength_mod + level + 18",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 14",
-            "health": "constitution_mod * 2 + level * 5 + 140"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/active/offensive:*"
-              ],
-              "16": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Dragon enemy type catalog with base stats and traits",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "item_catalog",
+                     "total_dragon_types":  5,
+                     "total_dragons":  13,
+                     "usage":  "Provides base enemy types for pattern generation",
+                     "notes":  [
+                                   "Base catalog of dragons with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
+                                   "Abilities use JSON Reference System v4.1 (@abilities/active/offensive:*)",
+                                   "Level-based ability unlocks provide enemy progression",
+                                   "Dragons have breath weapon abilities based on breathType trait"
+                               ]
+                 },
+    "dragon_types":  {
+                         "chromatic":  {
+                                           "properties":  {
+                                                              "size":  "huge",
+                                                              "category":  "dragon",
+                                                              "behavior":  "territorial"
+                                                          },
+                                           "items":  [
+                                                         {
+                                                             "level":  20,
+                                                             "slug":  "red-dragon",
+                                                             "name":  "Red Dragon",
+                                                             "rarityWeight":  30,
+                                                             "xp":  2000,
+                                                             "attributes":  {
+                                                                                "constitution":  10,
+                                                                                "wisdom":  8,
+                                                                                "strength":  10,
+                                                                                "dexterity":  10,
+                                                                                "intelligence":  8,
+                                                                                "charisma":  8
+                                                                            },
+                                                             "stats":  {
+                                                                           "attack":  "strength_mod + level + 35",
+                                                                           "speed":  "30 + dexterity_mod * 5",
+                                                                           "defense":  "10 + dexterity_mod + constitution_mod + 25",
+                                                                           "health":  "constitution_mod * 2 + level * 5 + 300"
+                                                                       },
+                                                             "combat":  {
+                                                                            "abilityUnlocks":  {
+                                                                                                   "22":  [
+                                                                                                              "@abilities/active/defensive:*"
+                                                                                                          ],
+                                                                                                   "25":  [
+                                                                                                              "@abilities/active/offensive:*"
+                                                                                                          ],
+                                                                                                   "30":  [
+                                                                                                              "@abilities/ultimate:*"
+                                                                                                          ]
+                                                                                               },
+                                                                            "abilities":  [
+                                                                                              "@abilities/active/offensive:*",
+                                                                                              "@abilities/active/offensive:*",
+                                                                                              "@abilities/active/offensive:*"
+                                                                                          ]
+                                                                        },
+                                                             "traits":  {
+
+                                                                        },
+                                                             "breathType":  "fire"
+                                                         }
+                                                     ]
+                                       }
+                     }
 }

@@ -1,0 +1,46 @@
+﻿{
+    "metadata":  {
+                     "description":  "Material quality modifiers for budget-based item generation",
+                     "version":  "4.0",
+                     "lastUpdated":  "2026-01-20",
+                     "type":  "pattern_generation",
+                     "supportsTraits":  true,
+                     "totalPatterns":  1,
+                     "raritySystem":  "weight-based",
+                     "componentKeys":  [
+                                           "quality"
+                                       ],
+                     "patternTokens":  [
+                                           "{quality}"
+                                       ],
+                     "notes":  [
+                                   "Quality modifiers affect budget calculation",
+                                   "Negative budgetModifier = discount (easier to afford)",
+                                   "Positive budgetModifier = premium (more expensive)",
+                                   "Used in budget-based generation to adjust affordability"
+                               ]
+                 },
+    "patterns":  [
+                     {
+                         "template":  "{quality}",
+                         "rarityWeight":  100,
+                         "description":  "Quality-only pattern for budget generation"
+                     }
+                 ],
+    "components":  {
+                       "quality":  [
+                                       {
+                                           "name":  "Damaged",
+                                           "value":  "Damaged",
+                                           "rarityWeight":  100,
+                                           "budgetModifier":  -0.3,
+                                           "traits":  {
+                                                          "durability":  {
+                                                                             "value":  -20,
+                                                                             "type":  "number"
+                                                                         }
+                                                      }
+                                       }
+                                   ]
+                   }
+}

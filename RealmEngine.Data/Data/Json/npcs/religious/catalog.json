@@ -1,125 +1,75 @@
-{
-  "metadata": {
-    "type": "hierarchical_catalog",
-    "version": "5.1",
-    "description": "Religious NPCs - clergy and faithful devoted to divine service and spiritual matters",
-    "lastUpdated": "2026-01-08",
-    "socialClass": "religious",
-    "notes": [
-      "Very high wisdom attribute",
-      "Divine lore and healing skills",
-      "Provide blessings and spiritual services",
-      "Often connected to temples or churches"
-    ]
-  },
-  "background_types": {
-    "clergy_initiate": {
-      "metadata": {
-        "description": "Young members of religious orders",
-        "socialClass": "religious",
-        "notes": [
-          "Devoted to faith and service",
-          "Possess holy symbols and prayer items",
-          "High wisdom and divine connection"
-        ]
-      },
-      "items": [
-        {
-          "slug": "acolyteoffaith",
-          "name": "AcolyteOfFaith",
-          "displayName": "Acolyte of Faith",
-          "description": "Devoted to religious service",
-          "attributes": {
-            "strength": 10,
-            "dexterity": 10,
-            "constitution": 12,
-            "intelligence": 11,
-            "wisdom": 16,
-            "charisma": 13
-          },
-          "rarityWeight": 35,
-          "socialClass": "religious",
-          "startingGold": "1d10",
-          "skillBonuses": [
-            "divine_lore",
-            "healing",
-            "wisdom"
-          ],
-          "shopModifiers": {
-            "qualityBonus": 10,
-            "priceMultiplier": 0.95,
-            "shopAppearance": "sanctified"
-          },
-          "specializationHints": [
-            "consumables.potions",
-            "holy_symbols",
-            "blessed_items"
-          ],
-          "uniqueItems": [
-            "Holy Symbol",
-            "Prayer Beads"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:wise",
-          "greetings": [
-            "@social/dialogue/greetings/religious:acolyte-blessed"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "clergy",
-          "schedule": "@social/schedules/*:priest"
-        }
-      ]
-    }
-  },
-  "occupation_types": {
-    "clergy": {
-      "metadata": {
-        "description": "Active priests and religious leaders",
-        "hasShop": false,
-        "notes": [
-          "No shop or inventory",
-          "Provide blessings, marriages, funerals",
-          "Spiritual guidance and healing services"
-        ]
-      },
-      "items": [
-        {
-          "slug": "priest",
-          "name": "Priest",
-          "displayName": "Priest",
-          "strength": 10,
-          "dexterity": 10,
-          "constitution": 12,
-          "intelligence": 13,
-          "wisdom": 17,
-          "charisma": 14,
-          "rarityWeight": 35,
-          "socialClass": "religious",
-          "skillBonuses": [
-            "divine_lore",
-            "healing",
-            "wisdom"
-          ],
-          "baseGold": "2d12",
-          "shopType": null,
-          "shopChance": 0.0,
-          "services": [
-            "blessing",
-            "marriage",
-            "funeral"
-          ],
-          "dialogueStyle": "@social/dialogue/styles/formal:wise",
-          "greetings": [
-            "@social/dialogue/greetings/religious:priest-solemn"
-          ],
-          "farewells": [
-            "@social/dialogue/farewells/simple:simple"
-          ],
-          "faction": "clergy",
-          "schedule": "@social/schedules/*:priest"
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "type":  "hierarchical_catalog",
+                     "version":  "5.1",
+                     "description":  "Religious NPCs - clergy and faithful devoted to divine service and spiritual matters",
+                     "lastUpdated":  "2026-01-08",
+                     "socialClass":  "religious",
+                     "notes":  [
+                                   "Very high wisdom attribute",
+                                   "Divine lore and healing skills",
+                                   "Provide blessings and spiritual services",
+                                   "Often connected to temples or churches"
+                               ]
+                 },
+    "background_types":  {
+                             "clergy_initiate":  {
+                                                     "metadata":  {
+                                                                      "description":  "Young members of religious orders",
+                                                                      "socialClass":  "religious",
+                                                                      "notes":  [
+                                                                                    "Devoted to faith and service",
+                                                                                    "Possess holy symbols and prayer items",
+                                                                                    "High wisdom and divine connection"
+                                                                                ]
+                                                                  },
+                                                     "items":  [
+                                                                   {
+                                                                       "slug":  "acolyteoffaith",
+                                                                       "name":  "AcolyteOfFaith",
+                                                                       "displayName":  "Acolyte of Faith",
+                                                                       "description":  "Devoted to religious service",
+                                                                       "attributes":  {
+                                                                                          "strength":  10,
+                                                                                          "dexterity":  10,
+                                                                                          "constitution":  12,
+                                                                                          "intelligence":  11,
+                                                                                          "wisdom":  16,
+                                                                                          "charisma":  13
+                                                                                      },
+                                                                       "rarityWeight":  35,
+                                                                       "socialClass":  "religious",
+                                                                       "startingGold":  "1d10",
+                                                                       "skillBonuses":  [
+                                                                                            "divine_lore",
+                                                                                            "healing",
+                                                                                            "wisdom"
+                                                                                        ],
+                                                                       "shopModifiers":  {
+                                                                                             "qualityBonus":  10,
+                                                                                             "priceMultiplier":  0.95,
+                                                                                             "shopAppearance":  "sanctified"
+                                                                                         },
+                                                                       "specializationHints":  [
+                                                                                                   "consumables.potions",
+                                                                                                   "holy_symbols",
+                                                                                                   "blessed_items"
+                                                                                               ],
+                                                                       "uniqueItems":  [
+                                                                                           "Holy Symbol",
+                                                                                           "Prayer Beads"
+                                                                                       ],
+                                                                       "dialogueStyle":  "@social/dialogue/styles/formal:wise",
+                                                                       "greetings":  [
+                                                                                         "@social/dialogue/greetings/religious:acolyte-blessed"
+                                                                                     ],
+                                                                       "farewells":  [
+                                                                                         "@social/dialogue/farewells/simple:simple"
+                                                                                     ],
+                                                                       "faction":  "clergy",
+                                                                       "schedule":  "@social/schedules/*:priest"
+                                                                   }
+                                                               ]
+                                                 }
+                         }
 }

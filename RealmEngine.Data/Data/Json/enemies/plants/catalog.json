@@ -1,506 +1,65 @@
-{
-  "metadata": {
-    "description": "Plant creature enemy type catalog with base stats and rarityWeight values",
-    "version": "5.1",
-    "lastUpdated": "2026-01-08",
-    "type": "item_catalog",
-    "total_types": 13,
-    "categories": [
-      "aggressive_plants",
-      "defensive_plants",
-      "mobile_plants",
-      "ancient_plants"
-    ],
-    "usage": "Provides base enemy types for pattern generation",
-    "notes": [
-      "Base catalog of plants with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
-    ]
-  },
-  "plant_types": {
-    "aggressive_plants": {
-      "properties": {
-        "size": "medium",
-        "category": "plant",
-        "damageType": "physical",
-        "behavior": "predatory"
-      },
-      "items": [
-        {
-          "level": 2,
-          "slug": "vine",
-          "name": "Vine",
-          "rarityWeight": 105,
-          "xp": 30,
-          "attributes": {
-            "constitution": 13,
-            "wisdom": 6,
-            "strength": 12,
-            "dexterity": 10,
-            "intelligence": 2,
-            "charisma": 4
-          },
-          "stats": {
-            "attack": "strength_mod + level + 12",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 4",
-            "health": "constitution_mod * 2 + level * 5 + 35"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "3": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 4,
-          "slug": "carnivorous-plant",
-          "name": "Carnivorous Plant",
-          "rarityWeight": 100,
-          "xp": 55,
-          "attributes": {
-            "constitution": 14,
-            "wisdom": 7,
-            "strength": 14,
-            "dexterity": 8,
-            "intelligence": 2,
-            "charisma": 4
-          },
-          "stats": {
-            "attack": "strength_mod + level + 16",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 6",
-            "health": "constitution_mod * 2 + level * 5 + 50"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "5": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 5,
-          "slug": "venus-trap",
-          "name": "Venus Trap",
-          "rarityWeight": 95,
-          "xp": 75,
-          "attributes": {
-            "constitution": 16,
-            "wisdom": 8,
-            "strength": 16,
-            "dexterity": 7,
-            "intelligence": 2,
-            "charisma": 4
-          },
-          "stats": {
-            "attack": "strength_mod + level + 20",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 8",
-            "health": "constitution_mod * 2 + level * 5 + 65"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "7": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 7,
-          "slug": "man-eater",
-          "name": "Man-Eater",
-          "rarityWeight": 85,
-          "xp": 120,
-          "attributes": {
-            "constitution": 17,
-            "wisdom": 9,
-            "strength": 18,
-            "dexterity": 7,
-            "intelligence": 2,
-            "charisma": 5
-          },
-          "stats": {
-            "attack": "strength_mod + level + 28",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 90"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "9": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "defensive_plants": {
-      "properties": {
-        "size": "medium",
-        "category": "plant",
-        "damageType": "physical",
-        "behavior": "territorial"
-      },
-      "items": [
-        {
-          "level": 3,
-          "slug": "thorn-bush",
-          "name": "Thorn Bush",
-          "rarityWeight": 104,
-          "xp": 40,
-          "attributes": {
-            "constitution": 14,
-            "wisdom": 7,
-            "strength": 11,
-            "dexterity": 7,
-            "intelligence": 2,
-            "charisma": 4
-          },
-          "stats": {
-            "attack": "strength_mod + level + 10",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 8",
-            "health": "constitution_mod * 2 + level * 5 + 40"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "4": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Thorny"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 4,
-          "slug": "bramble",
-          "name": "Bramble",
-          "rarityWeight": 100,
-          "xp": 50,
-          "attributes": {
-            "constitution": 15,
-            "wisdom": 7,
-            "strength": 13,
-            "dexterity": 7,
-            "intelligence": 2,
-            "charisma": 4
-          },
-          "stats": {
-            "attack": "strength_mod + level + 14",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 12",
-            "health": "constitution_mod * 2 + level * 5 + 55"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "6": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Thorny"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 7,
-          "slug": "thorn-tree",
-          "name": "Thorn Tree",
-          "rarityWeight": 90,
-          "xp": 110,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 8,
-            "strength": 16,
-            "dexterity": 7,
-            "intelligence": 2,
-            "charisma": 5
-          },
-          "stats": {
-            "attack": "strength_mod + level + 18",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 16",
-            "health": "constitution_mod * 2 + level * 5 + 100"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "9": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/passive/defensive:Thorny",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "mobile_plants": {
-      "properties": {
-        "size": "varies",
-        "category": "plant",
-        "damageType": "physical",
-        "behavior": "wandering"
-      },
-      "items": [
-        {
-          "level": 8,
-          "slug": "shambling-mound",
-          "name": "Shambling Mound",
-          "rarityWeight": 82,
-          "xp": 140,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 10,
-            "strength": 18,
-            "dexterity": 8,
-            "intelligence": 6,
-            "charisma": 5
-          },
-          "stats": {
-            "attack": "strength_mod + level + 24",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 14",
-            "health": "constitution_mod * 2 + level * 5 + 110"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "10": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 10,
-          "slug": "treant",
-          "name": "Treant",
-          "rarityWeight": 70,
-          "xp": 190,
-          "attributes": {
-            "constitution": 20,
-            "wisdom": 14,
-            "strength": 22,
-            "dexterity": 8,
-            "intelligence": 14,
-            "charisma": 10
-          },
-          "stats": {
-            "attack": "strength_mod + level + 32",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 18",
-            "health": "constitution_mod * 2 + level * 5 + 150"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "13": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {}
-        },
-        {
-          "level": 6,
-          "slug": "myconid",
-          "name": "Myconid",
-          "rarityWeight": 92,
-          "xp": 85,
-          "attributes": {
-            "constitution": 14,
-            "wisdom": 14,
-            "strength": 10,
-            "dexterity": 10,
-            "intelligence": 12,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 16",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 10",
-            "health": "constitution_mod * 2 + level * 5 + 70"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "8": [
-                "@abilities/active/offensive:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*"
-            ]
-          },
-          "traits": {},
-          "spore_based": true
-        },
-        {
-          "level": 9,
-          "slug": "awakened-tree",
-          "name": "Awakened Tree",
-          "rarityWeight": 78,
-          "xp": 160,
-          "attributes": {
-            "constitution": 18,
-            "wisdom": 12,
-            "strength": 20,
-            "dexterity": 7,
-            "intelligence": 10,
-            "charisma": 8
-          },
-          "stats": {
-            "attack": "strength_mod + level + 28",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 16",
-            "health": "constitution_mod * 2 + level * 5 + 130"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "12": [
-                "@abilities/active/support:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*"
-            ]
-          },
-          "traits": {}
-        }
-      ]
-    },
-    "ancient_plants": {
-      "properties": {
-        "size": "huge",
-        "category": "plant",
-        "behavior": "legendary"
-      },
-      "items": [
-        {
-          "level": 13,
-          "slug": "elder-treant",
-          "name": "Elder Treant",
-          "rarityWeight": 50,
-          "xp": 300,
-          "attributes": {
-            "constitution": 22,
-            "wisdom": 17,
-            "strength": 24,
-            "dexterity": 8,
-            "intelligence": 14,
-            "charisma": 12
-          },
-          "stats": {
-            "attack": "strength_mod + level + 42",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 24",
-            "health": "constitution_mod * 2 + level * 5 + 220"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "16": [
-                "@abilities/ultimate:*"
-              ],
-              "19": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*",
-              "@abilities/passive/defensive:Regeneration"
-            ]
-          },
-          "traits": {},
-          "rooted": false
-        },
-        {
-          "level": 15,
-          "slug": "ancient-grove-guardian",
-          "name": "Ancient Grove Guardian",
-          "rarityWeight": 30,
-          "xp": 400,
-          "attributes": {
-            "constitution": 24,
-            "wisdom": 19,
-            "strength": 26,
-            "dexterity": 8,
-            "intelligence": 16,
-            "charisma": 14
-          },
-          "stats": {
-            "attack": "strength_mod + level + 50",
-            "speed": "30 + dexterity_mod * 5",
-            "defense": "10 + dexterity_mod + constitution_mod + 28",
-            "health": "constitution_mod * 2 + level * 5 + 280"
-          },
-          "combat": {
-            "abilityUnlocks": {
-              "18": [
-                "@abilities/ultimate:*"
-              ],
-              "21": [
-                "@abilities/ultimate:*"
-              ]
-            },
-            "abilities": [
-              "@abilities/active/offensive:*",
-              "@abilities/active/offensive:*",
-              "@abilities/active/support:*",
-              "@abilities/passive/defensive:Regeneration",
-              "@abilities/passive/defensive:NaturalArmor"
-            ]
-          },
-          "traits": {},
-          "rooted": false
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Plant creature enemy type catalog with base stats and rarityWeight values",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "item_catalog",
+                     "total_types":  13,
+                     "categories":  [
+                                        "aggressive_plants",
+                                        "defensive_plants",
+                                        "mobile_plants",
+                                        "ancient_plants"
+                                    ],
+                     "usage":  "Provides base enemy types for pattern generation",
+                     "notes":  [
+                                   "Base catalog of plants with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
+                               ]
+                 },
+    "plant_types":  {
+                        "aggressive_plants":  {
+                                                  "properties":  {
+                                                                     "size":  "medium",
+                                                                     "category":  "plant",
+                                                                     "damageType":  "physical",
+                                                                     "behavior":  "predatory"
+                                                                 },
+                                                  "items":  [
+                                                                {
+                                                                    "level":  2,
+                                                                    "slug":  "vine",
+                                                                    "name":  "Vine",
+                                                                    "rarityWeight":  105,
+                                                                    "xp":  30,
+                                                                    "attributes":  {
+                                                                                       "constitution":  13,
+                                                                                       "wisdom":  6,
+                                                                                       "strength":  12,
+                                                                                       "dexterity":  10,
+                                                                                       "intelligence":  2,
+                                                                                       "charisma":  4
+                                                                                   },
+                                                                    "stats":  {
+                                                                                  "attack":  "strength_mod + level + 12",
+                                                                                  "speed":  "30 + dexterity_mod * 5",
+                                                                                  "defense":  "10 + dexterity_mod + constitution_mod + 4",
+                                                                                  "health":  "constitution_mod * 2 + level * 5 + 35"
+                                                                              },
+                                                                    "combat":  {
+                                                                                   "abilityUnlocks":  {
+                                                                                                          "3":  [
+                                                                                                                    "@abilities/active/support:*"
+                                                                                                                ]
+                                                                                                      },
+                                                                                   "abilities":  [
+                                                                                                     "@abilities/active/offensive:*"
+                                                                                                 ]
+                                                                               },
+                                                                    "traits":  {
+
+                                                                               }
+                                                                }
+                                                            ]
+                                              }
+                    }
 }

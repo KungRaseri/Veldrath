@@ -1,173 +1,36 @@
-{
-  "metadata": {
-    "description": "Character backgrounds defining origin stories and attribute bonuses",
-    "version": "5.1",
-    "lastUpdated": "2026-02-02",
-    "type": "background_catalog",
-    "totalBackgroundTypes": 6,
-    "totalBackgrounds": 12,
-    "notes": [
-      "Backgrounds provide attribute bonuses and recommended starting locations",
-      "Primary attribute gets +2, secondary attribute gets +1",
-      "Location types reference existing location catalogs: settlement, wilderness, dungeon"
-    ]
-  },
-  "background_types": {
-    "strength": {
-      "items": [
-        {
-          "slug": "soldier",
-          "name": "Soldier",
-          "rarityWeight": 50,
-          "description": "Trained warrior who served in an army or mercenary company.",
-          "primaryAttribute": "strength",
-          "primaryBonus": 2,
-          "secondaryAttribute": "constitution",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "wilderness", "dungeon"]
-        },
-        {
-          "slug": "laborer",
-          "name": "Laborer",
-          "rarityWeight": 50,
-          "description": "Years of hard physical work built your strength and endurance.",
-          "primaryAttribute": "strength",
-          "primaryBonus": 2,
-          "secondaryAttribute": "constitution",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "wilderness", "settlement"]
-        }
-      ]
-    },
-    "dexterity": {
-      "items": [
-        {
-          "slug": "criminal",
-          "name": "Criminal",
-          "rarityWeight": 50,
-          "description": "Thief, smuggler, or street enforcer who survived in the shadows.",
-          "primaryAttribute": "dexterity",
-          "primaryBonus": 2,
-          "secondaryAttribute": "charisma",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "dungeon", "wilderness"]
-        },
-        {
-          "slug": "entertainer",
-          "name": "Entertainer",
-          "rarityWeight": 50,
-          "description": "Acrobat, dancer, or performer who captivates audiences.",
-          "primaryAttribute": "dexterity",
-          "primaryBonus": 2,
-          "secondaryAttribute": "charisma",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "settlement", "wilderness"]
-        }
-      ]
-    },
-    "constitution": {
-      "items": [
-        {
-          "slug": "folk-hero",
-          "name": "Folk Hero",
-          "rarityWeight": 50,
-          "description": "You stood up to oppression and became a local legend.",
-          "primaryAttribute": "constitution",
-          "primaryBonus": 2,
-          "secondaryAttribute": "strength",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "wilderness", "wilderness"]
-        },
-        {
-          "slug": "outlander",
-          "name": "Outlander",
-          "rarityWeight": 50,
-          "description": "You grew up in the wilderness, far from civilization.",
-          "primaryAttribute": "constitution",
-          "primaryBonus": 2,
-          "secondaryAttribute": "wisdom",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["wilderness", "wilderness", "settlement"]
-        }
-      ]
-    },
-    "intelligence": {
-      "items": [
-        {
-          "slug": "scholar",
-          "name": "Scholar",
-          "rarityWeight": 50,
-          "description": "You spent years studying ancient texts and arcane lore.",
-          "primaryAttribute": "intelligence",
-          "primaryBonus": 2,
-          "secondaryAttribute": "wisdom",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "dungeon", "wilderness"]
-        },
-        {
-          "slug": "sage",
-          "name": "Sage",
-          "rarityWeight": 50,
-          "description": "Researcher, librarian, or academic devoted to knowledge.",
-          "primaryAttribute": "intelligence",
-          "primaryBonus": 2,
-          "secondaryAttribute": "wisdom",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "dungeon", "settlement"]
-        }
-      ]
-    },
-    "wisdom": {
-      "items": [
-        {
-          "slug": "acolyte",
-          "name": "Acolyte",
-          "rarityWeight": 50,
-          "description": "Raised in a temple, trained in religious rites and healing.",
-          "primaryAttribute": "wisdom",
-          "primaryBonus": 2,
-          "secondaryAttribute": "charisma",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "wilderness", "dungeon"]
-        },
-        {
-          "slug": "hermit",
-          "name": "Hermit",
-          "rarityWeight": 50,
-          "description": "You lived in isolation, seeking enlightenment and inner truth.",
-          "primaryAttribute": "wisdom",
-          "primaryBonus": 2,
-          "secondaryAttribute": "intelligence",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["wilderness", "dungeon", "wilderness"]
-        }
-      ]
-    },
-    "charisma": {
-      "items": [
-        {
-          "slug": "noble",
-          "name": "Noble",
-          "rarityWeight": 50,
-          "description": "Born to wealth and privilege, trained in etiquette and politics.",
-          "primaryAttribute": "charisma",
-          "primaryBonus": 2,
-          "secondaryAttribute": "intelligence",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "settlement", "wilderness"]
-        },
-        {
-          "slug": "charlatan",
-          "name": "Charlatan",
-          "rarityWeight": 50,
-          "description": "Con artist, swindler, or smooth-talker who lives by wit.",
-          "primaryAttribute": "charisma",
-          "primaryBonus": 2,
-          "secondaryAttribute": "dexterity",
-          "secondaryBonus": 1,
-          "recommendedLocationTypes": ["settlement", "wilderness", "dungeon"]
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Character backgrounds defining origin stories and attribute bonuses",
+                     "version":  "5.1",
+                     "lastUpdated":  "2026-02-02",
+                     "type":  "background_catalog",
+                     "totalBackgroundTypes":  1,
+                     "totalBackgrounds":  1,
+                     "notes":  [
+                                   "Backgrounds provide attribute bonuses and recommended starting locations",
+                                   "Primary attribute gets +2, secondary attribute gets +1",
+                                   "Location types reference existing location catalogs: settlement, wilderness, dungeon"
+                               ]
+                 },
+    "background_types":  {
+                             "strength":  {
+                                              "items":  [
+                                                            {
+                                                                "slug":  "soldier",
+                                                                "name":  "Soldier",
+                                                                "rarityWeight":  50,
+                                                                "description":  "Trained warrior who served in an army or mercenary company.",
+                                                                "primaryAttribute":  "strength",
+                                                                "primaryBonus":  2,
+                                                                "secondaryAttribute":  "constitution",
+                                                                "secondaryBonus":  1,
+                                                                "recommendedLocationTypes":  [
+                                                                                                 "settlement",
+                                                                                                 "wilderness",
+                                                                                                 "dungeon"
+                                                                                             ]
+                                                            }
+                                                        ]
+                                          }
+                         }
 }

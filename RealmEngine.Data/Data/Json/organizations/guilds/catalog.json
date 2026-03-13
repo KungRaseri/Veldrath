@@ -1,451 +1,83 @@
-{
-  "metadata": {
-    "description": "Joinable guilds with progression systems, ranks, and exclusive benefits",
-    "version": "4.0",
-    "lastUpdated": "2026-01-08",
-    "type": "organizations_guilds_catalog"
-  },
-  "combat_types": {
-    "combat": {
-      "items": [
-        {
-          "slug": "fighters-guild",
-          "name": "fighters_guild",
-          "displayName": "Fighters Guild",
-          "rarityWeight": 10,
-          "description": "Brotherhood of warriors dedicated to martial excellence",
-          "headquarters": "@world/locations/towns/cities:Stormhaven",
-          "joinRequirements": {
-            "level": 3,
-            "strength": 12,
-            "skills": [
-              "combat"
-            ],
-            "questRequired": "Prove your worth in the arena"
-          },
-          "ranks": [
-            {
-              "level": 1,
-              "title": "Recruit",
-              "benefits": {
-                "combat_bonus": 1
-              }
-            },
-            {
-              "level": 2,
-              "title": "Warrior",
-              "benefits": {
-                "combat_bonus": 2,
-                "training_access": "advanced"
-              }
-            },
-            {
-              "level": 3,
-              "title": "Veteran",
-              "benefits": {
-                "combat_bonus": 3,
-                "free_repairs": true
-              }
-            },
-            {
-              "level": 4,
-              "title": "Champion",
-              "benefits": {
-                "combat_bonus": 5,
-                "guild_quests": "legendary"
-              }
-            },
-            {
-              "level": 5,
-              "title": "Guildmaster",
-              "benefits": {
-                "combat_bonus": 7,
-                "command_troops": true
-              }
-            }
-          ],
-          "benefits": {
-            "training": "Advanced weapon techniques",
-            "equipment": "Discounted weapons and armor",
-            "quests": "Combat-focused guild missions",
-            "faction_bonus": "@organizations/factions/military:military"
-          },
-          "rivals": [
-            "thieves_guild"
-          ],
-          "allies": [
-            "merchants_guild"
-          ]
-        }
-      ]
-    }
-  },
-  "magic_types": {
-    "magic": {
-      "items": [
-        {
-          "slug": "mages-guild",
-          "name": "mages_guild",
-          "displayName": "Mages Guild",
-          "rarityWeight": 15,
-          "description": "Prestigious academy of arcane scholars and spellcasters",
-          "headquarters": "@world/locations/towns/cities:TheNexus",
-          "joinRequirements": {
-            "level": 5,
-            "intelligence": 14,
-            "skills": [
-              "arcana"
-            ],
-            "questRequired": "Pass the magical aptitude test"
-          },
-          "ranks": [
-            {
-              "level": 1,
-              "title": "Apprentice",
-              "benefits": {
-                "spell_access": "basic"
-              }
-            },
-            {
-              "level": 2,
-              "title": "Adept",
-              "benefits": {
-                "spell_access": "intermediate",
-                "enchanting": true
-              }
-            },
-            {
-              "level": 3,
-              "title": "Magister",
-              "benefits": {
-                "spell_access": "advanced",
-                "research_lab": true
-              }
-            },
-            {
-              "level": 4,
-              "title": "Archmage",
-              "benefits": {
-                "spell_access": "expert",
-                "teleportation": true
-              }
-            },
-            {
-              "level": 5,
-              "title": "Council Member",
-              "benefits": {
-                "spell_access": "all",
-                "create_spells": true
-              }
-            }
-          ],
-          "benefits": {
-            "training": "Spell research and theory",
-            "equipment": "Magical components and scrolls",
-            "quests": "Magical artifact retrieval",
-            "faction_bonus": "@organizations/factions/magical:mages_circle"
-          },
-          "rivals": [],
-          "allies": [
-            "scholars_guild"
-          ]
-        }
-      ]
-    }
-  },
-  "trade_types": {
-    "trade": {
-      "items": [
-        {
-          "slug": "merchants-guild",
-          "name": "merchants_guild",
-          "displayName": "Merchants Guild",
-          "rarityWeight": 8,
-          "description": "Powerful trade organization controlling commerce",
-          "headquarters": "@world/locations/towns/cities:Silverport",
-          "joinRequirements": {
-            "level": 1,
-            "charisma": 12,
-            "gold": 500,
-            "skills": [
-              "persuasion"
-            ]
-          },
-          "ranks": [
-            {
-              "level": 1,
-              "title": "Peddler",
-              "benefits": {
-                "trade_discount": 5
-              }
-            },
-            {
-              "level": 2,
-              "title": "Trader",
-              "benefits": {
-                "trade_discount": 10,
-                "caravan_access": true
-              }
-            },
-            {
-              "level": 3,
-              "title": "Merchant",
-              "benefits": {
-                "trade_discount": 15,
-                "shop_ownership": true
-              }
-            },
-            {
-              "level": 4,
-              "title": "Master Merchant",
-              "benefits": {
-                "trade_discount": 20,
-                "trade_routes": true
-              }
-            },
-            {
-              "level": 5,
-              "title": "Guild Master",
-              "benefits": {
-                "trade_discount": 25,
-                "monopoly_rights": true
-              }
-            }
-          ],
-          "benefits": {
-            "training": "Negotiation and appraisal",
-            "equipment": "Trade goods and inventory",
-            "quests": "Trade route establishment",
-            "faction_bonus": "@organizations/factions/trade:merchants_guild"
-          },
-          "rivals": [
-            "thieves_guild"
-          ],
-          "allies": [
-            "fighters_guild",
-            "craftsmen_guild"
-          ]
-        }
-      ]
-    }
-  },
-  "craft_types": {
-    "craft": {
-      "items": [
-        {
-          "slug": "craftsmen-guild",
-          "name": "craftsmen_guild",
-          "displayName": "Craftsmen Guild",
-          "rarityWeight": 12,
-          "description": "Association of master artisans and skilled workers",
-          "headquarters": "@world/locations/towns:Ironforge",
-          "joinRequirements": {
-            "level": 2,
-            "skills": [
-              "crafting"
-            ],
-            "gold": 300,
-            "questRequired": "Create a masterwork item"
-          },
-          "ranks": [
-            {
-              "level": 1,
-              "title": "Apprentice",
-              "benefits": {
-                "crafting_bonus": 1
-              }
-            },
-            {
-              "level": 2,
-              "title": "Journeyman",
-              "benefits": {
-                "crafting_bonus": 2,
-                "tool_access": true
-              }
-            },
-            {
-              "level": 3,
-              "title": "Craftsman",
-              "benefits": {
-                "crafting_bonus": 3,
-                "workshop": true
-              }
-            },
-            {
-              "level": 4,
-              "title": "Master Craftsman",
-              "benefits": {
-                "crafting_bonus": 5,
-                "teach_apprentices": true
-              }
-            },
-            {
-              "level": 5,
-              "title": "Grandmaster",
-              "benefits": {
-                "crafting_bonus": 7,
-                "legendary_items": true
-              }
-            }
-          ],
-          "benefits": {
-            "training": "Advanced crafting techniques",
-            "equipment": "Tools and rare materials",
-            "quests": "Commission fulfillment",
-            "faction_bonus": "@organizations/factions/labor:craftsmen_guild"
-          },
-          "rivals": [],
-          "allies": [
-            "merchants_guild"
-          ]
-        }
-      ]
-    }
-  },
-  "stealth_types": {
-    "stealth": {
-      "items": [
-        {
-          "slug": "thieves-guild",
-          "name": "thieves_guild",
-          "displayName": "Thieves Guild",
-          "rarityWeight": 20,
-          "description": "Underground network of thieves, spies, and assassins",
-          "headquarters": "@world/locations/towns:CrimsonHarbor",
-          "joinRequirements": {
-            "level": 3,
-            "dexterity": 13,
-            "skills": [
-              "stealth",
-              "lockpicking"
-            ],
-            "questRequired": "Complete a daring heist",
-            "reputation": -10
-          },
-          "ranks": [
-            {
-              "level": 1,
-              "title": "Pickpocket",
-              "benefits": {
-                "stealth_bonus": 1
-              }
-            },
-            {
-              "level": 2,
-              "title": "Burglar",
-              "benefits": {
-                "stealth_bonus": 2,
-                "lockpick_bonus": 2
-              }
-            },
-            {
-              "level": 3,
-              "title": "Thief",
-              "benefits": {
-                "stealth_bonus": 3,
-                "fence_access": true
-              }
-            },
-            {
-              "level": 4,
-              "title": "Master Thief",
-              "benefits": {
-                "stealth_bonus": 5,
-                "black_market": true
-              }
-            },
-            {
-              "level": 5,
-              "title": "Guildmaster",
-              "benefits": {
-                "stealth_bonus": 7,
-                "assassin_contracts": true
-              }
-            }
-          ],
-          "benefits": {
-            "training": "Stealth and infiltration",
-            "equipment": "Thieves' tools and poisons",
-            "quests": "Heists and assassination contracts",
-            "faction_bonus": "@organizations/factions/criminal:thieves_guild"
-          },
-          "rivals": [
-            "fighters_guild",
-            "merchants_guild"
-          ],
-          "allies": []
-        },
-        {
-          "slug": "assassins-guild",
-          "name": "assassins_guild",
-          "displayName": "Assassins Guild",
-          "rarityWeight": 35,
-          "description": "Elite order of professional killers",
-          "headquarters": "@world/locations/dungeons/legendary:ShadowRealm",
-          "joinRequirements": {
-            "level": 8,
-            "dexterity": 15,
-            "skills": [
-              "stealth",
-              "assassination"
-            ],
-            "questRequired": "Execute a marked target",
-            "reputation": -30
-          },
-          "ranks": [
-            {
-              "level": 1,
-              "title": "Initiate",
-              "benefits": {
-                "poison_access": "basic"
-              }
-            },
-            {
-              "level": 2,
-              "title": "Blade",
-              "benefits": {
-                "poison_access": "advanced",
-                "critical_bonus": 2
-              }
-            },
-            {
-              "level": 3,
-              "title": "Assassin",
-              "benefits": {
-                "poison_access": "expert",
-                "shadow_step": true
-              }
-            },
-            {
-              "level": 4,
-              "title": "Master Assassin",
-              "benefits": {
-                "death_attack": true,
-                "contract_choice": true
-              }
-            },
-            {
-              "level": 5,
-              "title": "Shadow Lord",
-              "benefits": {
-                "instant_kill": true,
-                "command_guild": true
-              }
-            }
-          ],
-          "benefits": {
-            "training": "Lethal techniques and poisons",
-            "equipment": "Exotic weapons and tools",
-            "quests": "High-profile assassination contracts",
-            "faction_bonus": "@organizations/factions/criminal:thieves_guild"
-          },
-          "rivals": [
-            "fighters_guild",
-            "clergy"
-          ],
-          "allies": []
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Joinable guilds with progression systems, ranks, and exclusive benefits",
+                     "version":  "4.0",
+                     "lastUpdated":  "2026-01-08",
+                     "type":  "organizations_guilds_catalog"
+                 },
+    "combat_types":  {
+                         "combat":  {
+                                        "items":  [
+                                                      {
+                                                          "slug":  "fighters-guild",
+                                                          "name":  "fighters_guild",
+                                                          "displayName":  "Fighters Guild",
+                                                          "rarityWeight":  10,
+                                                          "description":  "Brotherhood of warriors dedicated to martial excellence",
+                                                          "headquarters":  "@world/locations/towns:Stormhaven",
+                                                          "joinRequirements":  {
+                                                                                   "level":  3,
+                                                                                   "strength":  12,
+                                                                                   "skills":  [
+                                                                                                  "combat"
+                                                                                              ],
+                                                                                   "questRequired":  "Prove your worth in the arena"
+                                                                               },
+                                                          "ranks":  [
+                                                                        {
+                                                                            "level":  1,
+                                                                            "title":  "Recruit",
+                                                                            "benefits":  {
+                                                                                             "combat_bonus":  1
+                                                                                         }
+                                                                        },
+                                                                        {
+                                                                            "level":  2,
+                                                                            "title":  "Warrior",
+                                                                            "benefits":  {
+                                                                                             "combat_bonus":  2,
+                                                                                             "training_access":  "advanced"
+                                                                                         }
+                                                                        },
+                                                                        {
+                                                                            "level":  3,
+                                                                            "title":  "Veteran",
+                                                                            "benefits":  {
+                                                                                             "combat_bonus":  3,
+                                                                                             "free_repairs":  true
+                                                                                         }
+                                                                        },
+                                                                        {
+                                                                            "level":  4,
+                                                                            "title":  "Champion",
+                                                                            "benefits":  {
+                                                                                             "combat_bonus":  5,
+                                                                                             "guild_quests":  "legendary"
+                                                                                         }
+                                                                        },
+                                                                        {
+                                                                            "level":  5,
+                                                                            "title":  "Guildmaster",
+                                                                            "benefits":  {
+                                                                                             "combat_bonus":  7,
+                                                                                             "command_troops":  true
+                                                                                         }
+                                                                        }
+                                                                    ],
+                                                          "benefits":  {
+                                                                           "training":  "Advanced weapon techniques",
+                                                                           "equipment":  "Discounted weapons and armor",
+                                                                           "quests":  "Combat-focused guild missions",
+                                                                           "faction_bonus":  "@organizations/factions/military:military"
+                                                                       },
+                                                          "rivals":  [
+                                                                         "thieves_guild"
+                                                                     ],
+                                                          "allies":  [
+                                                                         "merchants_guild"
+                                                                     ]
+                                                      }
+                                                  ]
+                                    }
+                     }
 }

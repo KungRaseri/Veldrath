@@ -1,377 +1,43 @@
-{
-  "metadata": {
-    "description": "Loot tables for enemies - defines drops from humanoids, beasts, undead, and other creatures",
-    "version": "5.0",
-    "lastUpdated": "2026-01-23",
-    "type": "loot_table_catalog",
-    "notes": [
-      "Enemy-specific entries inherit from their type's poolRefs, goldRange, and dropChance",
-      "Use poolRefs to override inherited pools entirely",
-      "Use additionalPools to add to inherited pools",
-      "Any unspecified field inherits from type defaults"
-    ]
-  },
-  "enemy_types": {
-    "humanoids": {
-      "poolRefs": [
-        "@material_pools/metals/common",
-        "@material_pools/leathers/common"
-      ],
-      "goldRange": [
-        5,
-        20
-      ],
-      "dropChance": 30,
-      "items": [
-        {
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:goblin-hide",
-              "minQuantity": 1,
-              "maxQuantity": 3,
-              "dropChance": 100,
-              "rarityWeight": 60
-            }
-          ],
-          "slug": "goblin",
-          "name": "Goblin",
-          "rarityWeight": 60
-        },
-        {
-          "goldRange": [
-            8,
-            25
-          ],
-          "additionalPools": [
-            "@material_pools/metals/uncommon"
-          ],
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:goblin-hide",
-              "minQuantity": 2,
-              "maxQuantity": 4,
-              "dropChance": 100,
-              "rarityWeight": 60
-            }
-          ],
-          "slug": "goblin-warrior",
-          "name": "Goblin Warrior",
-          "rarityWeight": 40
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/uncommon",
-            "@material_pools/leathers/uncommon"
-          ],
-          "goldRange": [
-            15,
-            40
-          ],
-          "dropChance": 40,
-          "slug": "orc",
-          "name": "Orc",
-          "rarityWeight": 45
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/uncommon",
-            "@material_pools/leathers/uncommon"
-          ],
-          "goldRange": [
-            20,
-            50
-          ],
-          "dropChance": 50,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:orc-hide",
-              "minQuantity": 1,
-              "maxQuantity": 2,
-              "dropChance": 80,
-              "rarityWeight": 50
-            }
-          ],
-          "slug": "orc-warrior",
-          "name": "Orc Warrior",
-          "rarityWeight": 35
-        },
-        {
-          "goldRange": [
-            10,
-            30
-          ],
-          "additionalPools": [
-            "@material_pools/fabrics/common"
-          ],
-          "slug": "bandit",
-          "name": "Bandit",
-          "rarityWeight": 40
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/rare"
-          ],
-          "goldRange": [
-            50,
-            150
-          ],
-          "dropChance": 80,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/gem:ruby",
-              "minQuantity": 1,
-              "maxQuantity": 1,
-              "dropChance": 25,
-              "rarityWeight": 15
-            }
-          ],
-          "slug": "bandit-chief",
-          "name": "Bandit Chief",
-          "rarityWeight": 25
-        }
-      ]
-    },
-    "beasts": {
-      "poolRefs": [
-        "@material_pools/leathers/common",
-        "@material_pools/woods/common"
-      ],
-      "goldRange": [
-        0,
-        5
-      ],
-      "dropChance": 40,
-      "items": [
-        {
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:wolf-pelt",
-              "minQuantity": 1,
-              "maxQuantity": 2,
-              "dropChance": 100,
-              "rarityWeight": 70
-            }
-          ],
-          "slug": "wolf",
-          "name": "Wolf",
-          "rarityWeight": 50
-        },
-        {
-          "poolRefs": [
-            "@material_pools/leathers/uncommon"
-          ],
-          "dropChance": 60,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:dire-wolf-pelt",
-              "minQuantity": 2,
-              "maxQuantity": 3,
-              "dropChance": 100,
-              "rarityWeight": 50
-            }
-          ],
-          "slug": "dire-wolf",
-          "name": "Dire Wolf",
-          "rarityWeight": 30
-        },
-        {
-          "poolRefs": [
-            "@material_pools/leathers/uncommon"
-          ],
-          "goldRange": [
-            0,
-            10
-          ],
-          "dropChance": 50,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:bear-hide",
-              "minQuantity": 2,
-              "maxQuantity": 5,
-              "dropChance": 100,
-              "rarityWeight": 60
-            }
-          ],
-          "slug": "bear",
-          "name": "Bear",
-          "rarityWeight": 35
-        }
-      ]
-    },
-    "undead": {
-      "poolRefs": [
-        "@material_pools/metals/common",
-        "@material_pools/leathers/common"
-      ],
-      "goldRange": [
-        0,
-        10
-      ],
-      "dropChance": 25,
-      "items": [
-        {
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/bone:bone-fragment",
-              "minQuantity": 1,
-              "maxQuantity": 5,
-              "dropChance": 100,
-              "rarityWeight": 80
-            }
-          ],
-          "slug": "skeleton",
-          "name": "Skeleton",
-          "rarityWeight": 50
-        },
-        {
-          "goldRange": [
-            0,
-            5
-          ],
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:rotten-flesh",
-              "minQuantity": 1,
-              "maxQuantity": 3,
-              "dropChance": 100,
-              "rarityWeight": 90
-            }
-          ],
-          "slug": "zombie",
-          "name": "Zombie",
-          "rarityWeight": 50
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/legendary",
-            "@material_pools/gems/legendary"
-          ],
-          "goldRange": [
-            500,
-            2000
-          ],
-          "dropChance": 100,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/bone:lich-phylactery-fragment",
-              "minQuantity": 1,
-              "maxQuantity": 1,
-              "dropChance": 100,
-              "rarityWeight": 5
-            }
-          ],
-          "slug": "lich",
-          "name": "Lich",
-          "rarityWeight": 5
-        }
-      ]
-    },
-    "dragons": {
-      "poolRefs": [
-        "@material_pools/metals/legendary",
-        "@material_pools/gems/legendary",
-        "@material_pools/leathers/epic"
-      ],
-      "goldRange": [
-        1000,
-        5000
-      ],
-      "dropChance": 100,
-      "items": [
-        {
-          "poolRefs": [
-            "@material_pools/metals/rare",
-            "@material_pools/gems/rare"
-          ],
-          "goldRange": [
-            100,
-            500
-          ],
-          "dropChance": 80,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:dragon-scale",
-              "minQuantity": 3,
-              "maxQuantity": 8,
-              "dropChance": 100,
-              "rarityWeight": 30
-            }
-          ],
-          "slug": "dragon-wyrmling",
-          "name": "Dragon Wyrmling",
-          "rarityWeight": 25
-        },
-        {
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/leather:dragon-scale",
-              "minQuantity": 10,
-              "maxQuantity": 20,
-              "dropChance": 100,
-              "rarityWeight": 20
-            },
-            {
-              "materialRef": "@items/materials/gem:dragon-heart",
-              "minQuantity": 1,
-              "maxQuantity": 1,
-              "dropChance": 100,
-              "rarityWeight": 5
-            }
-          ],
-          "slug": "dragon-adult",
-          "name": "Dragon Adult",
-          "rarityWeight": 5
-        }
-      ]
-    },
-    "demons": {
-      "poolRefs": [
-        "@material_pools/metals/rare",
-        "@material_pools/gems/rare"
-      ],
-      "goldRange": [
-        50,
-        200
-      ],
-      "dropChance": 60,
-      "items": [
-        {
-          "poolRefs": [
-            "@material_pools/metals/uncommon"
-          ],
-          "goldRange": [
-            10,
-            40
-          ],
-          "dropChance": 40,
-          "slug": "imp",
-          "name": "Imp",
-          "rarityWeight": 40
-        },
-        {
-          "poolRefs": [
-            "@material_pools/metals/legendary",
-            "@material_pools/gems/legendary"
-          ],
-          "goldRange": [
-            500,
-            2000
-          ],
-          "dropChance": 100,
-          "guaranteedDrops": [
-            {
-              "materialRef": "@items/materials/gem:demon-core",
-              "minQuantity": 1,
-              "maxQuantity": 1,
-              "dropChance": 100,
-              "rarityWeight": 3
-            }
-          ],
-          "slug": "demon-lord",
-          "name": "Demon Lord",
-          "rarityWeight": 3
-        }
-      ]
-    }
-  }
+﻿{
+    "metadata":  {
+                     "description":  "Loot tables for enemies - defines drops from humanoids, beasts, undead, and other creatures",
+                     "version":  "5.0",
+                     "lastUpdated":  "2026-01-23",
+                     "type":  "loot_table_catalog",
+                     "notes":  [
+                                   "Enemy-specific entries inherit from their type\u0027s poolRefs, goldRange, and dropChance",
+                                   "Use poolRefs to override inherited pools entirely",
+                                   "Use additionalPools to add to inherited pools",
+                                   "Any unspecified field inherits from type defaults"
+                               ]
+                 },
+    "enemy_types":  {
+                        "humanoids":  {
+                                          "poolRefs":  [
+                                                           "@material_pools/metals/common",
+                                                           "@material_pools/leathers/common"
+                                                       ],
+                                          "goldRange":  [
+                                                            5,
+                                                            20
+                                                        ],
+                                          "dropChance":  30,
+                                          "items":  [
+                                                        {
+                                                            "guaranteedDrops":  [
+                                                                                    {
+                                                                                        "materialRef":  "@items/materials/leather:goblin-hide",
+                                                                                        "minQuantity":  1,
+                                                                                        "maxQuantity":  3,
+                                                                                        "dropChance":  100,
+                                                                                        "rarityWeight":  60
+                                                                                    }
+                                                                                ],
+                                                            "slug":  "goblin",
+                                                            "name":  "Goblin",
+                                                            "rarityWeight":  60
+                                                        }
+                                                    ]
+                                      }
+                    }
 }
