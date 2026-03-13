@@ -6,6 +6,8 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using RealmEngine.Core;
+using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
@@ -129,6 +131,11 @@ try
     builder.Services.AddRealmEngineData(jsonDataPath);
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
+
+    // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
+    builder.Services.AddDbContext<ContentDbContext>(options => options.UseNpgsql(connectionString));
+    builder.Services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
+    builder.Services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
 
     // ── Health checks ─────────────────────────────────────────────────────────
     builder.Services.AddHealthChecks()

@@ -7,28 +7,7 @@ using RealmEngine.Data.Services;
 namespace RealmEngine.Data.Repositories;
 
 /// <summary>
-/// Repository interface for accessing character background data from catalog
-/// </summary>
-public interface IBackgroundRepository
-{
-    /// <summary>
-    /// Gets all available backgrounds from the catalog
-    /// </summary>
-    Task<List<Background>> GetAllBackgroundsAsync();
-    
-    /// <summary>
-    /// Gets a specific background by ID or slug
-    /// </summary>
-    Task<Background?> GetBackgroundByIdAsync(string backgroundId);
-    
-    /// <summary>
-    /// Gets backgrounds filtered by primary attribute
-    /// </summary>
-    Task<List<Background>> GetBackgroundsByAttributeAsync(string attribute);
-}
-
-/// <summary>
-/// Repository that loads character backgrounds from backgrounds/catalog.json via GameDataCache
+/// Repository that loads character backgrounds from backgrounds/catalog.json via GameDataCache.
 /// </summary>
 public class BackgroundRepository : IBackgroundRepository
 {

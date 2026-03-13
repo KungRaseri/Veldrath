@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Shared.Models;
-using RealmEngine.Data.Repositories;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.Equipment.Queries;
 using RealmEngine.Core.Features.Exploration.Queries;
 using Serilog;

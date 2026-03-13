@@ -1,144 +1,93 @@
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using RealmEngine.Core;
+using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Queries;
-using RealmEngine.Data;
-using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Queries;
 
 [Trait("Category", "Feature")]
-/// <summary>
-/// Tests for GetCharacterClassesHandler using real JSON data.
-/// </summary>
-public class GetCharacterClassesHandlerTests : IDisposable
+public class GetCharacterClassesHandlerTests
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IServiceCollection _services;
-
-    public GetCharacterClassesHandlerTests()
-    {
-        _services = new ServiceCollection();
-        
-        // Register logging
-        _services.AddLogging();
-        
-        // Register RealmEngine services
-        _services.AddRealmEngineData(GetDataPath());
-        _services.AddRealmEngineCore();
-        _services.AddRealmEngineMediatR();
-        
-        _serviceProvider = _services.BuildServiceProvider();
-    }
-
-    private static string GetDataPath()
-    {
-        // Start from test assembly location and navigate to Data/Json
-        var assemblyPath = Path.GetDirectoryName(typeof(GetCharacterClassesHandlerTests).Assembly.Location)!;
-        var solutionRoot = Path.GetFullPath(Path.Combine(assemblyPath, "..", "..", "..", ".."));
-        return Path.Combine(solutionRoot, "RealmEngine.Data", "Data", "Json");
-    }
-
-    public void Dispose()
-    {
-        if (_serviceProvider is IDisposable disposable)
+    private static CharacterClass MakeClass(
+        string name, bool isSubclass = false, string? parentClassId = null) =>
+        new()
         {
-            disposable.Dispose();
-        }
+            Id          = $"warrior:{name}",
+            Name        = name,
+            DisplayName = name,
+            Description = $"The {name} class",
+            IsSubclass  = isSubclass,
+            ParentClassId = parentClassId,
+        };
+
+    [Fact]
+    public async Task Handle_ReturnsAllClasses_FromRepo()
+    {
+        var classes = new List<CharacterClass>
+        {
+            MakeClass("Fighter"),
+            MakeClass("Priest"),
+            MakeClass("Wizard"),
+        };
+
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetAllClasses()).Returns(classes);
+
+        var result = await new GetCharacterClassesHandler(repo.Object)
+            .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
+
+        result.Classes.Should().BeEquivalentTo(classes);
+        repo.Verify(r => r.GetAllClasses(), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_Should_Return_All_Character_Classes()
+    public async Task Handle_ReturnsEmptyList_WhenRepoIsEmpty()
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassesHandler(repository);
-        var query = new GetCharacterClassesQuery();
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetAllClasses()).Returns([]);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await new GetCharacterClassesHandler(repo.Object)
+            .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
 
-        // Assert
         result.Should().NotBeNull();
         result.Classes.Should().NotBeNull();
-        result.Classes.Should().NotBeEmpty();
-        result.Classes.Should().HaveCountGreaterThan(0);
+        result.Classes.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task Handle_Should_Return_Expected_Character_Classes()
+    public async Task Handle_ReturnsResult_WithSubclassInfo()
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassesHandler(repository);
-        var query = new GetCharacterClassesQuery();
+        var paladin = MakeClass("Paladin", isSubclass: true, parentClassId: "warrior:Fighter");
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetAllClasses()).Returns([paladin]);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await new GetCharacterClassesHandler(repo.Object)
+            .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
 
-        // Assert - Check for actual class names from catalog.json (Fighter, Priest, Wizard, etc.)
-        var classNames = result.Classes.Select(c => c.Name).ToList();
-        classNames.Should().Contain("Fighter", "Real class names from catalog should be returned");
-        classNames.Should().Contain("Priest", "Real class names from catalog should be returned");
-        classNames.Should().Contain("Wizard", "Real class names from catalog should be returned");
+        var returnedPaladin = result.Classes.Single();
+        returnedPaladin.IsSubclass.Should().BeTrue();
+        returnedPaladin.ParentClassId.Should().Be("warrior:Fighter");
     }
 
     [Fact]
-    public async Task Handle_Should_Return_Classes_With_Valid_Data()
+    public async Task Handle_ReturnsClasses_WithValidNameAndDescription()
     {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassesHandler(repository);
-        var query = new GetCharacterClassesQuery();
+        var classes = new List<CharacterClass>
+        {
+            MakeClass("Fighter"),
+            MakeClass("Wizard"),
+        };
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetAllClasses()).Returns(classes);
 
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await new GetCharacterClassesHandler(repo.Object)
+            .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
 
-        // Assert
         result.Classes.Should().AllSatisfy(c =>
         {
             c.Name.Should().NotBeNullOrEmpty();
             c.Description.Should().NotBeNullOrEmpty();
         });
-    }
-
-    [Fact]
-    public async Task Handle_Should_Complete_Successfully()
-    {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassesHandler(repository);
-        var query = new GetCharacterClassesQuery();
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert - should complete successfully
-        result.Should().NotBeNull();
-        result.Classes.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task Handle_Should_Return_Subclass_Info()
-    {
-        // Arrange
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICharacterClassRepository>();
-        var handler = new GetCharacterClassesHandler(repository);
-        var query = new GetCharacterClassesQuery();
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert - Paladin should be a subclass
-        var paladin = result.Classes.FirstOrDefault(c => c.Name == "Paladin");
-        paladin.Should().NotBeNull("Paladin should exist in catalog");
-        paladin!.IsSubclass.Should().BeTrue("Paladin should be marked as a subclass");
-        paladin.ParentClassId.Should().NotBeNullOrEmpty("Paladin should have a parent class");
     }
 }

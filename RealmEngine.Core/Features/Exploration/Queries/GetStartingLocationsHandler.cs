@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using RealmEngine.Data.Repositories;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Models;
 

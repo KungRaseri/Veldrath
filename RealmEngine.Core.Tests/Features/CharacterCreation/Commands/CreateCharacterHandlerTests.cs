@@ -2,7 +2,7 @@ using FluentAssertions;
 using MediatR;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
-using RealmEngine.Data.Repositories;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;

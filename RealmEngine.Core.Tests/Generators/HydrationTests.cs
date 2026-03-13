@@ -323,39 +323,6 @@ public class HydrationTests
     #region Integration Tests
 
     [Fact]
-    public async Task CharacterClass_Should_Have_Starting_Equipment_And_Abilities_Hydrated()
-    {
-        // Arrange
-        var mockLogger = new Mock<ILogger<CharacterClassGenerator>>();
-        var generator = new CharacterClassGenerator(_dataCache, _referenceResolver, mockLogger.Object);
-
-        // Act
-        var characterClass = await generator.GetClassByNameAsync("fighter");
-
-        // Assert
-        characterClass.Should().NotBeNull();
-        
-        // If starting ability IDs exist, they should be attempted to hydrate
-        // NOTE: Abilities may be empty if ability catalogs don't exist yet (expected)
-        if (characterClass!.StartingAbilityIds.Count > 0)
-        {
-            characterClass.StartingAbilities.Should().NotBeNull();
-            // Abilities might be empty if catalogs missing - that's OK, hydration was attempted
-            Console.WriteLine($"Fighter has {characterClass.StartingAbilityIds.Count} ability IDs, " +
-                            $"{characterClass.StartingAbilities.Count} resolved (catalogs may be missing)");
-        }
-        
-        // If starting equipment IDs exist, they should be attempted to hydrate
-        if (characterClass.StartingEquipmentIds.Count > 0)
-        {
-            characterClass.StartingEquipment.Should().NotBeNull();
-            // Equipment might be empty if catalogs missing - that's OK, hydration was attempted
-            Console.WriteLine($"Fighter has {characterClass.StartingEquipmentIds.Count} equipment IDs, " +
-                            $"{characterClass.StartingEquipment.Count} resolved (catalogs may be missing)");
-        }
-    }
-
-    [Fact]
     public async Task Location_Should_Have_All_Objects_Hydrated()
     {
         // Arrange

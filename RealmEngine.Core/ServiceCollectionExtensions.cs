@@ -144,20 +144,24 @@ public static class ServiceCollectionExtensions
         {
             services.AddDbContext<GameDbContext>(o =>
                 o.UseNpgsql(persistenceOptions.ConnectionString));
+            services.AddDbContext<ContentDbContext>(o =>
+                o.UseNpgsql(persistenceOptions.ConnectionString));
             services.AddScoped<ISaveGameRepository, EfCoreSaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
+            services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
+            services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
         }
         else if (!persistenceOptions.IsExternal)
         {
             // Default: in-memory (no file I/O, ideal for tests)
             services.AddScoped<ISaveGameRepository, InMemorySaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, InMemoryHallOfFameRepository>();
+            services.AddScoped<ICharacterClassRepository, InMemoryCharacterClassRepository>();
+            services.AddScoped<IBackgroundRepository, InMemoryBackgroundRepository>();
         }
-        // External: host is responsible for registering both repo interfaces.
+        // External: host is responsible for registering ALL repo interfaces.
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();
-        services.AddScoped<ICharacterClassRepository, CharacterClassRepository>();
         services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
-        services.AddSingleton<IBackgroundRepository, BackgroundRepository>();
         
         // Register feature services (concrete implementations)
         services.AddScoped<SaveGameService>();
