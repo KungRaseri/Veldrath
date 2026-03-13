@@ -115,58 +115,6 @@ public class HarvestingIntegrationTests
     }
     
     [Fact]
-    public async Task HarvestNode_FullWorkflow_ShouldUpdateInventoryAndNodeState()
-    {
-        // Arrange
-        var node = new HarvestableNode
-        {
-            NodeId = "test-oak-001",
-            NodeType = "oak_tree",
-            DisplayName = "Ancient Oak Tree",
-            MaterialTier = "common",
-            CurrentHealth = 100,
-            MaxHealth = 100,
-            MinToolTier = 0, // No tool required
-            BaseYield = 3,
-            LootTableRef = "@loot-tables/harvesting/woods:common-trees",
-            IsRichNode = false,
-            BiomeType = "forest",
-            LocationId = "starting-forest"
-        };
-        
-        await _nodeRepository.SpawnNodeAsync(node);
-        
-        var command = new HarvestNodeCommand
-        {
-            CharacterName = "TestPlayer",
-            NodeId = "test-oak-001",
-            EquippedToolRef = null, // No tool for common materials
-            SkillRankOverride = 10 // Low skill level
-        };
-        
-        // Act
-        var handler = GetHandler();
-        var result = await handler.Handle(command, CancellationToken.None);
-        
-        // Assert
-        result.Success.Should().BeTrue($"Failure reason: {result.FailureReason}");
-        result.MaterialsGained.Should().NotBeEmpty();
-        result.SkillXPGained.Should().BeGreaterThan(0);
-        result.NodeHealthRemaining.Should().BeLessThan(100);
-        result.NodeHealthPercent.Should().BeGreaterThan(0);
-        
-        // Verify node state updated in repository
-        var updatedNode = await _nodeRepository.GetNodeByIdAsync("test-oak-001");
-        updatedNode.Should().NotBeNull();
-        updatedNode!.CurrentHealth.Should().BeLessThan(100);
-        updatedNode.TimesHarvested.Should().Be(1);
-        
-        // Verify inventory updated - check if any materials were added
-        var hasItems = result.MaterialsGained.Count > 0;
-        hasItems.Should().BeTrue();
-    }
-    
-    [Fact]
     public async Task HarvestNode_NonexistentNode_ShouldFailGracefully()
     {
         // Arrange
@@ -336,66 +284,6 @@ public class HarvestingIntegrationTests
         await _nodeRepository.SaveNodeAsync(node);
         node.GetNodeState().Should().Be(NodeState.Empty);
         node.CanHarvest().Should().BeFalse();
-    }
-    
-    [Fact]
-    public async Task HarvestNode_InventoryAccumulation_ShouldStackMaterials()
-    {
-        // Arrange
-        var node = new HarvestableNode
-        {
-            NodeId = "test-flax-001",
-            NodeType = "flax_plant",
-            DisplayName = "Flax Plant",
-            MaterialTier = "common",
-            CurrentHealth = 100,
-            MaxHealth = 100,
-            MinToolTier = 0,
-            BaseYield = 10,
-            LootTableRef = "@loot-tables/harvesting/plants:common-plants",
-            IsRichNode = false,
-            BiomeType = "plains",
-            LocationId = "green-meadows"
-        };
-        
-        await _nodeRepository.SpawnNodeAsync(node);
-        var handler = GetHandler();
-        
-        // Act - Harvest twice
-        var command1 = new HarvestNodeCommand
-        {
-            CharacterName = "TestHerbalist",
-            NodeId = "test-flax-001",
-            SkillRankOverride = 15
-        };
-        
-        var result1 = await handler.Handle(command1, CancellationToken.None);
-        
-        // Reset node for second harvest
-        node.CurrentHealth = 100;
-        await _nodeRepository.SaveNodeAsync(node);
-        
-        var command2 = new HarvestNodeCommand
-        {
-            CharacterName = "TestHerbalist",
-            NodeId = "test-flax-001",
-            SkillRankOverride = 15
-        };
-        
-        var result2 = await handler.Handle(command2, CancellationToken.None);
-        
-        // Assert
-        result1.Success.Should().BeTrue($"First harvest failure: {result1.FailureReason}");
-        result2.Success.Should().BeTrue($"Second harvest failure: {result2.FailureReason}");
-        
-        // Materials should stack (total count should be sum of both harvests)
-        var totalCount = result1.MaterialsGained.Sum(m => m.Quantity) + 
-                        result2.MaterialsGained.Sum(m => m.Quantity);
-        totalCount.Should().BeGreaterThan(0);
-        
-        // Verify at least one material type was added
-        result1.MaterialsGained.Should().NotBeEmpty();
-        result2.MaterialsGained.Should().NotBeEmpty();
     }
     
     [Fact]

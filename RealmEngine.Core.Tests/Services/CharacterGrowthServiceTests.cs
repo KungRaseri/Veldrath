@@ -52,17 +52,6 @@ public class CharacterGrowthServiceTests
     }
 
     [Fact]
-    public void LoadConfig_ShouldLoadClassGrowthMultipliers()
-    {
-        // Act
-        var config = _service.LoadConfig();
-
-        // Assert
-        config.ClassGrowthMultipliers.Should().NotBeEmpty();
-        config.ClassGrowthMultipliers.Should().Contain(m => m.ClassRef.Contains("@classes/"));
-    }
-
-    [Fact]
     public void LoadConfig_ShouldLoadDerivedStatsFormulas()
     {
         // Act

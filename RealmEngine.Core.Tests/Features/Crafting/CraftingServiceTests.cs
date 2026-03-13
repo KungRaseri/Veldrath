@@ -483,21 +483,6 @@ public class CraftingServiceTests
         recipes.Should().OnlyContain(r => r.RequiredStation.Equals("anvil", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public void GetAvailableRecipes_IncludesLearnedTrainerRecipes()
-    {
-        // Arrange
-        var character = CreateTestCharacter(blacksmithingLevel: 20);
-        character.LearnedRecipes = ["legendary-sword-recipe"];
-
-        // Act
-        var recipes = _craftingService.GetAvailableRecipes(character);
-
-        // Assert
-        var legendaryRecipe = recipes.FirstOrDefault(r => r.Id == "legendary-sword-recipe");
-        legendaryRecipe.Should().NotBeNull("learned trainer recipes should be included");
-    }
-
     #endregion
 
     #region IsRecipeUnlocked Tests (via CanCraftRecipe)

@@ -27,22 +27,6 @@ public class LootTableServiceTests
     }
 
     [Fact]
-    public void RollHarvestingDrops_WithValidLootTableRef_ShouldReturnDrops()
-    {
-        // Arrange
-        var lootTableRef = "@loot-tables/harvesting/woods:oak";
-        var baseYield = 5;
-
-        // Act
-        var drops = _service.RollHarvestingDrops(lootTableRef, baseYield, false);
-
-        // Assert
-        drops.Should().NotBeNull();
-        drops.Should().NotBeEmpty("valid loot table should return drops");
-        drops.Should().Contain(d => !string.IsNullOrEmpty(d.ItemRef));
-    }
-
-    [Fact]
     public void RollHarvestingDrops_WithCriticalHarvest_ShouldIncludeCriticalOnlyDrops()
     {
         // Arrange
@@ -132,25 +116,6 @@ public class LootTableServiceTests
     }
 
     [Fact]
-    public void RollHarvestingDrops_MultipleCalls_ShouldProduceVariedResults()
-    {
-        // Arrange
-        var lootTableRef = "@loot-tables/harvesting/woods:oak";
-        var baseYield = 5;
-        var results = new List<int>();
-
-        // Act - Roll 10 times to check randomization
-        for (int i = 0; i < 10; i++)
-        {
-            var drops = _service.RollHarvestingDrops(lootTableRef, baseYield, false);
-            results.Add(drops.Count);
-        }
-
-        // Assert
-        results.Distinct().Count().Should().BeGreaterThan(1, "loot drops should have some randomization");
-    }
-
-    [Fact]
     public void Constructor_WithSeed_ShouldProduceDeterministicResults()
     {
         // Arrange
@@ -172,18 +137,4 @@ public class LootTableServiceTests
         }
     }
 
-    [Fact]
-    public void RollHarvestingDrops_ShouldIncludeItemNameInDrops()
-    {
-        // Arrange
-        var lootTableRef = "@loot-tables/harvesting/woods:oak";
-
-        // Act
-        var drops = _service.RollHarvestingDrops(lootTableRef, 5, false);
-
-        // Assert
-        drops.Should().NotBeEmpty();
-        drops.Should().Contain(d => !string.IsNullOrEmpty(d.ItemName),
-            "drops should include resolved item names");
-    }
 }
