@@ -1,5 +1,5 @@
-﻿{
-    "icon":  "Diamond",
-    "description":  "Precious and semi-precious gemstones",
-    "sortOrder":  30
+{
+  "icon": "Diamond",
+  "description": "Precious and semi-precious gemstones",
+  "sortOrder": 30
 }

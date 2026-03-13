@@ -1,106 +1,36 @@
-﻿{
-    "metadata":  {
-                     "description":  "Humanoid enemy type catalog with base stats and traits",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-09",
-                     "type":  "item_catalog",
-                     "total_humanoid_types":  1,
-                     "total_humanoids":  1,
-                     "usage":  "Provides base enemy types for pattern generation",
-                     "notes":  [
-                                   "Base catalog of humanoids with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
-                                   "Abilities use JSON Reference System v4.1 (@abilities/active/offensive:*)",
-                                   "Level-based ability unlocks provide enemy progression",
-                                   "Bosses type added for main quest encounters"
-                               ]
-                 },
-    "humanoid_types":  {
-                           "bandits":  {
-                                           "properties":  {
-                                                              "size":  "medium",
-                                                              "category":  "humanoid",
-                                                              "behavior":  "opportunistic"
-                                                          },
-                                           "items":  [
-                                                         {
-                                                             "level":  3,
-                                                             "slug":  "bandit",
-                                                             "name":  "Bandit",
-                                                             "rarityWeight":  105,
-                                                             "xp":  50,
-                                                             "attributes":  {
-                                                                                "constitution":  10,
-                                                                                "wisdom":  8,
-                                                                                "strength":  10,
-                                                                                "dexterity":  10,
-                                                                                "intelligence":  8,
-                                                                                "charisma":  8
-                                                                            },
-                                                             "stats":  {
-                                                                           "attack":  "strength_mod + level + 8",
-                                                                           "speed":  "30 + dexterity_mod * 5",
-                                                                           "defense":  "10 + dexterity_mod + constitution_mod + 5",
-                                                                           "health":  "constitution_mod * 2 + level * 5 + 35"
-                                                                       },
-                                                             "combat":  {
-                                                                            "abilityUnlocks":  {
-                                                                                                   "5":  [
-                                                                                                             "@abilities/active/offensive:*"
-                                                                                                         ]
-                                                                                               },
-                                                                            "abilities":  [
-                                                                                              "@abilities/active/offensive:*"
-                                                                                          ]
-                                                                        },
-                                                             "traits":  {
-
-                                                                        }
-                                                         }
-                                                     ]
-                                       },
-                           "bosses":  {
-                                          "properties":  {
-                                                             "size":  "large",
-                                                             "category":  "humanoid",
-                                                             "behavior":  "territorial",
-                                                             "isBoss":  true
-                                                         },
-                                          "items":  [
-                                                        {
-                                                            "slug":  "shrine-guardian",
-                                                            "name":  "Shrine Guardian",
-                                                            "rarityWeight":  3,
-                                                            "level":  10,
-                                                            "description":  "An ancient guardian protecting a sacred shrine, empowered by divine magic",
-                                                            "xp":  1000,
-                                                            "gold":  8,
-                                                            "attributes":  {
-                                                                               "strength":  16,
-                                                                               "dexterity":  12,
-                                                                               "constitution":  18,
-                                                                               "intelligence":  14,
-                                                                               "wisdom":  16,
-                                                                               "charisma":  10
-                                                                           },
-                                                            "stats":  {
-                                                                          "health":  "constitution_mod * 4 + level * 15 + 50",
-                                                                          "attack":  "strength_mod + level + 18",
-                                                                          "defense":  "10 + constitution_mod + 8",
-                                                                          "speed":  "25 + dexterity_mod * 5"
-                                                                      },
-                                                            "combat":  {
-                                                                           "abilities":  [
-                                                                                             "@abilities/active/offensive:*",
-                                                                                             "@abilities/active/offensive:*",
-                                                                                             "@abilities/active/offensive:*",
-                                                                                             "@abilities/active/offensive:*"
-                                                                                         ]
-                                                                       },
-                                                            "traits":  {
-
-                                                                       }
-                                                        }
-                                                    ]
-                                      }
-                       }
+{
+  "metadata": {
+    "description": "Humanoid enemy type catalog with base stats and traits",
+    "version": "5.1",
+    "lastUpdated": "2026-01-09",
+    "type": "item_catalog",
+    "total_humanoid_types": 1,
+    "total_humanoids": 1,
+    "usage": "Provides base enemy types for pattern generation",
+    "notes": [
+      "Base catalog of humanoids with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category.",
+      "Abilities use JSON Reference System v4.1 (@abilities/active/offensive:*)",
+      "Level-based ability unlocks provide enemy progression",
+      "Bosses type added for main quest encounters"
+    ]
+  },
+  "humanoid_types": {
+    "bandits": {
+      "properties": {
+        "size": "medium",
+        "category": "humanoid",
+        "behavior": "opportunistic"
+      },
+      "items": []
+    },
+    "bosses": {
+      "properties": {
+        "size": "large",
+        "category": "humanoid",
+        "behavior": "territorial",
+        "isBoss": true
+      },
+      "items": []
+    }
+  }
 }

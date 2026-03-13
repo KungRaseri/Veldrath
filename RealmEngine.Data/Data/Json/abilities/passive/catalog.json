@@ -1,30 +1,19 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.2",
-                     "type":  "abilities_catalog",
-                     "description":  "Passive abilities providing continuous effects",
-                     "totalAbilities":  1,
-                     "lastUpdated":  "2026-01-08"
-                 },
-    "ability_types":  {
-                          "offensive":  {
-                                            "description":  "Offensive passive bonuses",
-                                            "items":  [
-                                                          {
-                                                              "slug":  "venomous-bite",
-                                                              "name":  "Venomous Bite",
-                                                              "displayName":  "Venomous Bite",
-                                                              "description":  "Attacks inflict poison damage over time",
-                                                              "tier":  1,
-                                                              "traits":  {
-                                                                             "category":  {
-                                                                                              "value":  "offensive_traits",
-                                                                                              "type":  "string"
-                                                                                          }
-                                                                         },
-                                                              "rarityWeight":  35
-                                                          }
-                                                      ]
-                                        }
-                      }
+{
+  "metadata": {
+    "version": "4.2",
+    "type": "abilities_catalog",
+    "description": "Passive abilities providing continuous effects",
+    "totalAbilities": 1,
+    "lastUpdated": "2026-01-08"
+  },
+  "ability_types": {
+    "offensive": {
+      "description": "Offensive passive bonuses",
+      "items": []
+    },
+    "defensive": {
+      "items": [],
+      "description": "Passive defensive bonuses"
+    }
+  }
 }

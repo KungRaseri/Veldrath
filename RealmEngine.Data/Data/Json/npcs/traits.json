@@ -1,56 +1,56 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "4.0",
-                     "description":  "NPC personality traits and quirks for characterization",
-                     "lastUpdated":  "2026-01-08",
-                     "componentKeys":  [
-                                           "personality_traits",
-                                           "quirks"
-                                       ],
-                     "totalTraits":  1,
-                     "totalQuirks":  1,
-                     "notes":  [
-                                   "Personality traits affect NPC behavior, dialogue, and shop modifiers",
-                                   "Quirks add memorable flavor and distinctive characteristics",
-                                   "NPCs typically have 1-3 personality traits and 0-2 quirks",
-                                   "Shop modifiers from traits affect prices and availability"
-                               ]
-                 },
-    "personality_traits":  {
-                               "social_positive":  {
-                                                       "metadata":  {
-                                                                        "description":  "Warm and welcoming social traits",
-                                                                        "category":  "social"
-                                                                    },
-                                                       "items":  [
-                                                                     {
-                                                                         "name":  "Friendly",
-                                                                         "rarityWeight":  15,
-                                                                         "description":  "Warm and welcoming to strangers",
-                                                                         "shopModifiers":  {
-                                                                                               "priceMultiplier":  0.95,
-                                                                                               "reputationBonus":  5
-                                                                                           },
-                                                                         "dialogueStyle":  "welcoming"
-                                                                     }
-                                                                 ]
-                                                   }
-                           },
-    "quirks":  {
-                   "speech_common":  {
-                                         "metadata":  {
-                                                          "description":  "Common speech patterns and habits",
-                                                          "category":  "speech"
-                                                      },
-                                         "items":  [
-                                                       {
-                                                           "name":  "LoudLaugher",
-                                                           "displayName":  "Loud Laugher",
-                                                           "rarityWeight":  10,
-                                                           "description":  "Laughs boisterously at everything"
-                                                       }
-                                                   ]
-                                     }
-               }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "4.0",
+    "description": "NPC personality traits and quirks for characterization",
+    "lastUpdated": "2026-01-08",
+    "componentKeys": [
+      "personality_traits",
+      "quirks"
+    ],
+    "totalTraits": 1,
+    "totalQuirks": 1,
+    "notes": [
+      "Personality traits affect NPC behavior, dialogue, and shop modifiers",
+      "Quirks add memorable flavor and distinctive characteristics",
+      "NPCs typically have 1-3 personality traits and 0-2 quirks",
+      "Shop modifiers from traits affect prices and availability"
+    ]
+  },
+  "personality_traits": {
+    "social_positive": {
+      "metadata": {
+        "description": "Warm and welcoming social traits",
+        "category": "social"
+      },
+      "items": [
+        {
+          "name": "Friendly",
+          "rarityWeight": 15,
+          "description": "Warm and welcoming to strangers",
+          "shopModifiers": {
+            "priceMultiplier": 0.95,
+            "reputationBonus": 5
+          },
+          "dialogueStyle": "welcoming"
+        }
+      ]
+    }
+  },
+  "quirks": {
+    "speech_common": {
+      "metadata": {
+        "description": "Common speech patterns and habits",
+        "category": "speech"
+      },
+      "items": [
+        {
+          "name": "LoudLaugher",
+          "displayName": "Loud Laugher",
+          "rarityWeight": 10,
+          "description": "Laughs boisterously at everything"
+        }
+      ]
+    }
+  }
 }

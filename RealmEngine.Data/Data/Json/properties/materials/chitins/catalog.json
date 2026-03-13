@@ -1,73 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Chitin material properties for crafting system - insect and arthropod armor",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Chitin materials for lightweight armor with poison resistance.",
-                     "notes":  [
-                                   "Chitin materials provide light armor with high dexterity bonuses",
-                                   "Natural poison resistance",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "chitin_types":  {
-                         "chitin":  {
-                                        "items":  [
-                                                      {
-                                                          "slug":  "beetle-carapace",
-                                                          "name":  "Beetle Carapace",
-                                                          "attributes":  {
-                                                                             "dexterity":  8,
-                                                                             "intelligence":  0,
-                                                                             "charisma":  0,
-                                                                             "strength":  5,
-                                                                             "constitution":  8,
-                                                                             "wisdom":  0
-                                                                         },
-                                                          "traits":  {
-                                                                         "durability":  45,
-                                                                         "weight":  0.4,
-                                                                         "poisonResistance":  10
-                                                                     },
-                                                          "displayName":  "Beetle Carapace",
-                                                          "itemTypeTraits":  {
-                                                                                 "armor":  {
-                                                                                               "armorRating":  5,
-                                                                                               "defenseBonus":  2,
-                                                                                               "value":  3
-                                                                                           }
-                                                                             },
-                                                          "rarityWeight":  70
-                                                      },
-                                                      {
-                                                          "slug":  "spider-chitin",
-                                                          "rarityWeight":  25,
-                                                          "attributes":  {
-                                                                             "strength":  5,
-                                                                             "dexterity":  5,
-                                                                             "charisma":  5,
-                                                                             "intelligence":  5,
-                                                                             "wisdom":  5,
-                                                                             "constitution":  5
-                                                                         },
-                                                          "name":  "Spider Chitin",
-                                                          "itemTypeTraits":  {
-                                                                                 "armor":  {
-                                                                                               "defenseBonus":  0,
-                                                                                               "armorRating":  5,
-                                                                                               "value":  10
-                                                                                           }
-                                                                             },
-                                                          "displayName":  "Spider Chitin",
-                                                          "traits":  {
-                                                                         "weight":  1,
-                                                                         "enchantability":  15,
-                                                                         "durability":  60
-                                                                     }
-                                                      }
-                                                  ]
-                                    }
-                     }
+{
+  "metadata": {
+    "description": "Chitin material properties for crafting system - insect and arthropod armor",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Chitin materials for lightweight armor with poison resistance.",
+    "notes": [
+      "Chitin materials provide light armor with high dexterity bonuses",
+      "Natural poison resistance",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "chitin_types": {
+    "chitin": {
+      "items": []
+    }
+  }
 }

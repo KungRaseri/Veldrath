@@ -1,75 +1,29 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Magical NPCs - those trained in arcane arts with mystical knowledge and abilities",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "magical",
-                     "notes":  [
-                                   "Very high intelligence attribute",
-                                   "Arcane lore and spellcraft skills",
-                                   "Access to magic items and scrolls",
-                                   "Often mysterious or scholarly demeanor"
-                               ]
-                 },
-    "background_types":  {
-                             "arcane_trained":  {
-                                                    "metadata":  {
-                                                                     "description":  "Apprentices and students of arcane magic",
-                                                                     "socialClass":  "magical",
-                                                                     "notes":  [
-                                                                                   "Studied under magical masters",
-                                                                                   "Possess spellbooks and arcane focuses",
-                                                                                   "High intelligence and magical aptitude"
-                                                                               ]
-                                                                 },
-                                                    "items":  [
-                                                                  {
-                                                                      "slug":  "wizardapprentice",
-                                                                      "name":  "WizardApprentice",
-                                                                      "displayName":  "Wizard\u0027s Apprentice",
-                                                                      "description":  "Studied arcane magic under a master",
-                                                                      "attributes":  {
-                                                                                         "strength":  9,
-                                                                                         "dexterity":  11,
-                                                                                         "constitution":  11,
-                                                                                         "intelligence":  16,
-                                                                                         "wisdom":  12,
-                                                                                         "charisma":  10
-                                                                                     },
-                                                                      "rarityWeight":  45,
-                                                                      "socialClass":  "magical",
-                                                                      "startingGold":  "2d12",
-                                                                      "skillBonuses":  [
-                                                                                           "arcane_lore",
-                                                                                           "spellcraft",
-                                                                                           "intelligence"
-                                                                                       ],
-                                                                      "shopModifiers":  {
-                                                                                            "qualityBonus":  12,
-                                                                                            "priceMultiplier":  1.2,
-                                                                                            "shopAppearance":  "mystical"
-                                                                                        },
-                                                                      "specializationHints":  [
-                                                                                                  "consumables.scrolls",
-                                                                                                  "magic_items",
-                                                                                                  "components"
-                                                                                              ],
-                                                                      "uniqueItems":  [
-                                                                                          "Apprentice\u0027s Spellbook",
-                                                                                          "Arcane Focus"
-                                                                                      ],
-                                                                      "dialogueStyle":  "@social/dialogue/styles/formal:scholarly",
-                                                                      "greetings":  [
-                                                                                        "@social/dialogue/greetings/magical:mage-distracted"
-                                                                                    ],
-                                                                      "farewells":  [
-                                                                                        "@social/dialogue/farewells/scholarly:scholarly"
-                                                                                    ],
-                                                                      "faction":  "mages_circle",
-                                                                      "schedule":  "@social/schedules/*:mage"
-                                                                  }
-                                                              ]
-                                                }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Magical NPCs - those trained in arcane arts with mystical knowledge and abilities",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "magical",
+    "notes": [
+      "Very high intelligence attribute",
+      "Arcane lore and spellcraft skills",
+      "Access to magic items and scrolls",
+      "Often mysterious or scholarly demeanor"
+    ]
+  },
+  "background_types": {
+    "arcane_trained": {
+      "metadata": {
+        "description": "Apprentices and students of arcane magic",
+        "socialClass": "magical",
+        "notes": [
+          "Studied under magical masters",
+          "Possess spellbooks and arcane focuses",
+          "High intelligence and magical aptitude"
+        ]
+      },
+      "items": []
+    }
+  }
 }

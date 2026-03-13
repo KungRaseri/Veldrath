@@ -1,74 +1,31 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.2",
-                     "type":  "skills_catalog",
-                     "description":  "Complete character skill system with attributes, combat, magic, and professions",
-                     "totalSkills":  1,
-                     "lastUpdated":  "2026-01-22"
-                 },
-    "skill_types":  {
-                        "attribute_strength":  {
-                                                   "description":  "STR-based skills - Physical power",
-                                                   "governingAttribute":  "strength",
-                                                   "items":  [
-                                                                 {
-                                                                     "slug":  "athletics",
-                                                                     "name":  "Athletics",
-                                                                     "displayName":  "Athletics",
-                                                                     "description":  "Running, jumping, general physical activity",
-                                                                     "traits":  {
-                                                                                    "baseXPCost":  {
-                                                                                                       "value":  80,
-                                                                                                       "type":  "number"
-                                                                                                   },
-                                                                                    "costMultiplier":  {
-                                                                                                           "value":  0.4,
-                                                                                                           "type":  "number"
-                                                                                                       },
-                                                                                    "maxRank":  {
-                                                                                                    "value":  100,
-                                                                                                    "type":  "number"
-                                                                                                },
-                                                                                    "governingAttribute":  {
-                                                                                                               "value":  "strength",
-                                                                                                               "type":  "string"
-                                                                                                           },
-                                                                                    "effects":  {
-                                                                                                    "value":  [
-                                                                                                                  {
-                                                                                                                      "effectType":  "movement_speed",
-                                                                                                                      "effectValue":  0.002,
-                                                                                                                      "appliesTo":  "movement"
-                                                                                                                  },
-                                                                                                                  {
-                                                                                                                      "effectType":  "jump_height",
-                                                                                                                      "effectValue":  0.01,
-                                                                                                                      "appliesTo":  "jump"
-                                                                                                                  }
-                                                                                                              ],
-                                                                                                    "type":  "array"
-                                                                                                },
-                                                                                    "xpActions":  {
-                                                                                                      "value":  [
-                                                                                                                    {
-                                                                                                                        "action":  "sprint",
-                                                                                                                        "xpAmount":  2
-                                                                                                                    },
-                                                                                                                    {
-                                                                                                                        "action":  "jump_distance",
-                                                                                                                        "xpAmount":  5
-                                                                                                                    },
-                                                                                                                    {
-                                                                                                                        "action":  "complete_physical_challenge",
-                                                                                                                        "xpAmount":  15
-                                                                                                                    }
-                                                                                                                ],
-                                                                                                      "type":  "array"
-                                                                                                  }
-                                                                                },
-                                                                     "rarityWeight":  100
-                                                                 }
-                                                             ]
-                                               }
-                    }
+{
+  "metadata": {
+    "version": "4.2",
+    "type": "skills_catalog",
+    "description": "Complete character skill system with attributes, combat, magic, and professions",
+    "totalSkills": 1,
+    "lastUpdated": "2026-01-22"
+  },
+  "skill_types": {
+    "attribute_strength": {
+      "description": "STR-based skills - Physical power",
+      "governingAttribute": "strength",
+      "items": []
+    },
+    "armor": {
+      "governingAttribute": "constitution",
+      "description": "Armor proficiency skills",
+      "items": []
+    },
+    "profession": {
+      "governingAttribute": "intelligence",
+      "description": "Gathering and crafting profession skills",
+      "items": []
+    },
+    "weapon": {
+      "governingAttribute": "strength",
+      "description": "Weapon proficiency skills",
+      "items": []
+    }
+  }
 }

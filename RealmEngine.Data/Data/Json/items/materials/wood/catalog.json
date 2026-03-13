@@ -1,35 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Wood materials for crafting - from common pine to legendary world tree",
-                     "version":  "5.2",
-                     "lastUpdated":  "2026-01-23",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "wood":  {
-                                        "items":  [
-                                                      {
-                                                          "slug":  "pine-wood",
-                                                          "name":  "Pine Wood",
-                                                          "description":  "Common softwood, easy to work with.",
-                                                          "rarityWeight":  85,
-                                                          "value":  1,
-                                                          "weight":  0.8,
-                                                          "stackSize":  50,
-                                                          "itemType":  "material",
-                                                          "subType":  "wood",
-                                                          "tier":  "raw",
-                                                          "traits":  {
-
-                                                                     },
-                                                          "tags":  [
-                                                                       "wood",
-                                                                       "crafting",
-                                                                       "raw"
-                                                                   ]
-                                                      }
-                                                  ]
-                                    }
-                       }
+{
+  "metadata": {
+    "description": "Wood materials for crafting - from common pine to legendary world tree",
+    "version": "5.2",
+    "lastUpdated": "2026-01-23",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "wood": {
+      "items": []
+    }
+  }
 }

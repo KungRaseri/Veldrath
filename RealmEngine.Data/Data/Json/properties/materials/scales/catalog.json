@@ -1,73 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Scale material properties for crafting system - dragon and reptilian armor",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Scale materials for armor with high defense and elemental resistance.",
-                     "notes":  [
-                                   "Scale materials provide excellent armor with elemental resistances",
-                                   "Focus on constitution and strength",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "scale_types":  {
-                        "scale":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "lizard-scale",
-                                                        "name":  "Lizard Scale",
-                                                        "attributes":  {
-                                                                           "dexterity":  5,
-                                                                           "intelligence":  0,
-                                                                           "charisma":  0,
-                                                                           "strength":  5,
-                                                                           "constitution":  8,
-                                                                           "wisdom":  0
-                                                                       },
-                                                        "traits":  {
-                                                                       "durability":  50,
-                                                                       "weight":  0.6,
-                                                                       "fireResistance":  5
-                                                                   },
-                                                        "displayName":  "Lizard Scale",
-                                                        "itemTypeTraits":  {
-                                                                               "armor":  {
-                                                                                             "armorRating":  6,
-                                                                                             "defenseBonus":  2,
-                                                                                             "value":  3
-                                                                                         }
-                                                                           },
-                                                        "rarityWeight":  70
-                                                    },
-                                                    {
-                                                        "slug":  "serpent-scale",
-                                                        "rarityWeight":  20,
-                                                        "attributes":  {
-                                                                           "strength":  5,
-                                                                           "dexterity":  5,
-                                                                           "charisma":  5,
-                                                                           "intelligence":  5,
-                                                                           "wisdom":  5,
-                                                                           "constitution":  5
-                                                                       },
-                                                        "name":  "Serpent Scale",
-                                                        "itemTypeTraits":  {
-                                                                               "armor":  {
-                                                                                             "defenseBonus":  0,
-                                                                                             "armorRating":  5,
-                                                                                             "value":  10
-                                                                                         }
-                                                                           },
-                                                        "displayName":  "Serpent Scale",
-                                                        "traits":  {
-                                                                       "weight":  1,
-                                                                       "enchantability":  15,
-                                                                       "durability":  60
-                                                                   }
-                                                    }
-                                                ]
-                                  }
-                    }
+{
+  "metadata": {
+    "description": "Scale material properties for crafting system - dragon and reptilian armor",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Scale materials for armor with high defense and elemental resistance.",
+    "notes": [
+      "Scale materials provide excellent armor with elemental resistances",
+      "Focus on constitution and strength",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "scale_types": {
+    "scale": {
+      "items": []
+    }
+  }
 }

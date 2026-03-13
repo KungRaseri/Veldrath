@@ -1,50 +1,19 @@
-﻿{
-    "metadata":  {
-                     "description":  "Faction definitions - political, social, and economic organizations in the game world",
-                     "version":  "5.0",
-                     "lastUpdated":  "2026-01-12",
-                     "type":  "organizations_factions_catalog"
-                 },
-    "faction_types":  {
-                          "trade":  {
-                                        "items":  [
-                                                      {
-                                                          "slug":  "merchants-guild",
-                                                          "name":  "merchants_guild",
-                                                          "displayName":  "Merchants Guild",
-                                                          "rarityWeight":  20,
-                                                          "reputation":  "neutral",
-                                                          "description":  "Trade association of shopkeepers and merchants",
-                                                          "memberTypes":  [
-                                                                              "@npcs/merchants:*"
-                                                                          ],
-                                                          "allies":  [
-                                                                         "craftsmen_guild",
-                                                                         "nobility"
-                                                                     ],
-                                                          "enemies":  [
-                                                                          "thieves_guild"
-                                                                      ],
-                                                          "neutralTowards":  [
-                                                                                 "commoners",
-                                                                                 "mages_circle",
-                                                                                 "scholars_guild"
-                                                                             ],
-                                                          "benefits":  {
-                                                                           "priceModifier":  0.95,
-                                                                           "qualityBonus":  5,
-                                                                           "inventoryAccess":  "expanded"
-                                                                       },
-                                                          "joinRequirements":  {
-                                                                                   "gold":  500,
-                                                                                   "reputation":  25,
-                                                                                   "skills":  [
-                                                                                                  "trade",
-                                                                                                  "persuasion"
-                                                                                              ]
-                                                                               }
-                                                      }
-                                                  ]
-                                    }
-                      }
+{
+  "metadata": {
+    "description": "Faction definitions - political, social, and economic organizations in the game world",
+    "version": "5.0",
+    "lastUpdated": "2026-01-12",
+    "type": "organizations_factions_catalog"
+  },
+  "faction_types": {
+    "trade": {
+      "items": []
+    },
+    "military": {
+      "items": []
+    },
+    "political": {
+      "items": []
+    }
+  }
 }

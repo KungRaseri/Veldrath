@@ -1,49 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Paper material properties for crafting system - light armor and scrolls",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Paper materials for very light armor with inscription and magical bonuses.",
-                     "notes":  [
-                                   "Paper materials are extremely light with high enchantability",
-                                   "Very low physical defense, focus on magical properties",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "paper_types":  {
-                        "paper":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "parchment",
-                                                        "name":  "Parchment",
-                                                        "attributes":  {
-                                                                           "dexterity":  3,
-                                                                           "intelligence":  8,
-                                                                           "charisma":  3,
-                                                                           "strength":  0,
-                                                                           "constitution":  0,
-                                                                           "wisdom":  8
-                                                                       },
-                                                        "traits":  {
-                                                                       "durability":  5,
-                                                                       "weight":  0.1,
-                                                                       "enchantability":  30,
-                                                                       "inscriptionBonus":  20
-                                                                   },
-                                                        "displayName":  "Parchment",
-                                                        "itemTypeTraits":  {
-                                                                               "armor":  {
-                                                                                             "armorRating":  1,
-                                                                                             "defenseBonus":  0,
-                                                                                             "manaBonus":  10,
-                                                                                             "value":  2
-                                                                                         }
-                                                                           },
-                                                        "rarityWeight":  80
-                                                    }
-                                                ]
-                                  }
-                    }
+{
+  "metadata": {
+    "description": "Paper material properties for crafting system - light armor and scrolls",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Paper materials for very light armor with inscription and magical bonuses.",
+    "notes": [
+      "Paper materials are extremely light with high enchantability",
+      "Very low physical defense, focus on magical properties",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "paper_types": {
+    "paper": {
+      "items": []
+    }
+  }
 }

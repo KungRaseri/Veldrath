@@ -1,48 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Crystal material properties for crafting system - magical focus and spell items",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Crystal materials for magical weapons, staves, and enchanted items. High enchantability and mana bonuses.",
-                     "notes":  [
-                                   "Crystal materials focus on intelligence, wisdom, and spell power",
-                                   "Very high enchantability but lower physical durability",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "crystal_types":  {
-                          "crystal":  {
-                                          "items":  [
-                                                        {
-                                                            "slug":  "quartz",
-                                                            "name":  "Quartz",
-                                                            "attributes":  {
-                                                                               "dexterity":  0,
-                                                                               "intelligence":  8,
-                                                                               "charisma":  5,
-                                                                               "strength":  0,
-                                                                               "constitution":  0,
-                                                                               "wisdom":  8
-                                                                           },
-                                                            "traits":  {
-                                                                           "durability":  30,
-                                                                           "weight":  0.8,
-                                                                           "enchantability":  35,
-                                                                           "manaBonus":  10
-                                                                       },
-                                                            "displayName":  "Quartz",
-                                                            "itemTypeTraits":  {
-                                                                                   "weapon":  {
-                                                                                                  "spellPower":  5,
-                                                                                                  "manaRegen":  2,
-                                                                                                  "value":  5
-                                                                                              }
-                                                                               },
-                                                            "rarityWeight":  65
-                                                        }
-                                                    ]
-                                      }
-                      }
+{
+  "metadata": {
+    "description": "Crystal material properties for crafting system - magical focus and spell items",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Crystal materials for magical weapons, staves, and enchanted items. High enchantability and mana bonuses.",
+    "notes": [
+      "Crystal materials focus on intelligence, wisdom, and spell power",
+      "Very high enchantability but lower physical durability",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "crystal_types": {
+    "crystal": {
+      "items": []
+    }
+  }
 }

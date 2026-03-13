@@ -1,50 +1,15 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.2",
-                     "type":  "spells_catalog",
-                     "description":  "All learnable spells organized by magical tradition",
-                     "totalSpells":  1,
-                     "lastUpdated":  "2026-01-08"
-                 },
-    "spell_types":  {
-                        "arcane":  {
-                                       "description":  "Study-based magic: raw power, force, transmutation",
-                                       "items":  [
-                                                     {
-                                                         "slug":  "ray-of-frost",
-                                                         "name":  "Ray of Frost",
-                                                         "displayName":  "Ray of Frost",
-                                                         "description":  "Blast of cold damages and slows",
-                                                         "rank":  0,
-                                                         "traits":  {
-                                                                        "minimumSkillRank":  {
-                                                                                                 "value":  0,
-                                                                                                 "type":  "number"
-                                                                                             },
-                                                                        "manaCost":  {
-                                                                                         "value":  0,
-                                                                                         "type":  "number"
-                                                                                     },
-                                                                        "range":  {
-                                                                                      "value":  30,
-                                                                                      "type":  "number"
-                                                                                  },
-                                                                        "targetType":  {
-                                                                                           "value":  "single",
-                                                                                           "type":  "string"
-                                                                                       },
-                                                                        "damageType":  {
-                                                                                           "value":  "cold",
-                                                                                           "type":  "string"
-                                                                                       },
-                                                                        "baseDamage":  {
-                                                                                           "value":  "1d4",
-                                                                                           "type":  "string"
-                                                                                       }
-                                                                    },
-                                                         "rarityWeight":  100
-                                                     }
-                                                 ]
-                                   }
-                    }
+{
+  "metadata": {
+    "version": "4.2",
+    "type": "spells_catalog",
+    "description": "All learnable spells organized by magical tradition",
+    "totalSpells": 1,
+    "lastUpdated": "2026-01-08"
+  },
+  "spell_types": {
+    "arcane": {
+      "description": "Study-based magic: raw power, force, transmutation",
+      "items": []
+    }
+  }
 }

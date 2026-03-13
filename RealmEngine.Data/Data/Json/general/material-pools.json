@@ -1,386 +1,386 @@
-﻿{
-    "metadata":  {
-                     "description":  "Material pool definitions organized by material type and rarity - used by loot-tables.json",
-                     "version":  "5.0",
-                     "lastUpdated":  "2026-01-21",
-                     "type":  "material_pools",
-                     "notes":  [
-                                   "Pools organized as: material_type → rarity → items",
-                                   "References actual material items (ingots, fabrics, leathers) not properties",
-                                   "Used by loot-tables.json to determine what materials drop from sources"
-                               ]
-                 },
-    "pools":  {
-                  "metals":  {
-                                 "common":  [
-                                                {
-                                                    "itemRef":  "@items/materials/ingot:copper-ingot",
-                                                    "rarityWeight":  80
-                                                }
-                                            ]
-                             }
-              },
-    "_deprecated_pools":  {
-                              "_note":  "Old pool structure kept for reference during migration - will be removed after code update",
-                              "humanoid_low":  {
-                                                   "description":  "Low-tier humanoid enemies (goblins, bandits, cultists)",
-                                                   "metals":  {
-                                                                  "@properties/materials/metals:copper":  {
-                                                                                                              "rarityWeight":  80
-                                                                                                          },
-                                                                  "@properties/materials/metals:tin":  {
-                                                                                                           "rarityWeight":  70
-                                                                                                       },
-                                                                  "@properties/materials/metals:iron":  {
-                                                                                                            "rarityWeight":  60
-                                                                                                        },
-                                                                  "@properties/materials/metals:bronze":  {
-                                                                                                              "rarityWeight":  30
-                                                                                                          },
-                                                                  "@properties/materials/metals:steel":  {
-                                                                                                             "rarityWeight":  10
-                                                                                                         }
-                                                              },
-                                                   "leathers":  {
-                                                                    "@properties/materials/leathers:scraps":  {
-                                                                                                                  "rarityWeight":  90
-                                                                                                              },
-                                                                    "@properties/materials/leathers:rawhide":  {
-                                                                                                                   "rarityWeight":  80
-                                                                                                               },
-                                                                    "@properties/materials/leathers:hide":  {
-                                                                                                                "rarityWeight":  60
-                                                                                                            },
-                                                                    "@properties/materials/leathers:leather":  {
-                                                                                                                   "rarityWeight":  40
-                                                                                                               }
-                                                                },
-                                                   "woods":  {
-                                                                 "@properties/materials/woods:pine":  {
-                                                                                                          "rarityWeight":  85
-                                                                                                      },
-                                                                 "@properties/materials/woods:birch":  {
-                                                                                                           "rarityWeight":  75
-                                                                                                       },
-                                                                 "@properties/materials/woods:oak":  {
-                                                                                                         "rarityWeight":  50
-                                                                                                     }
-                                                             }
-                                               },
-                              "humanoid_mid":  {
-                                                   "description":  "Mid-tier humanoid enemies (knights, guards, mercenaries)",
-                                                   "metals":  {
-                                                                  "@properties/materials/metals:steel":  {
-                                                                                                             "rarityWeight":  50
-                                                                                                         },
-                                                                  "@properties/materials/metals:silver":  {
-                                                                                                              "rarityWeight":  30
-                                                                                                          },
-                                                                  "@properties/materials/metals:cold-iron":  {
-                                                                                                                 "rarityWeight":  15
-                                                                                                             },
-                                                                  "@properties/materials/metals:mithril":  {
-                                                                                                               "rarityWeight":  5
-                                                                                                           }
-                                                              },
-                                                   "leathers":  {
-                                                                    "@properties/materials/leathers:leather":  {
-                                                                                                                   "rarityWeight":  50
-                                                                                                               },
-                                                                    "@properties/materials/leathers:studded-leather":  {
-                                                                                                                           "rarityWeight":  30
-                                                                                                                       },
-                                                                    "@properties/materials/leathers:hardened-leather":  {
-                                                                                                                            "rarityWeight":  20
-                                                                                                                        }
-                                                                },
-                                                   "woods":  {
-                                                                 "@properties/materials/woods:oak":  {
-                                                                                                         "rarityWeight":  45
-                                                                                                     },
-                                                                 "@properties/materials/woods:ash":  {
-                                                                                                         "rarityWeight":  35
-                                                                                                     },
-                                                                 "@properties/materials/woods:maple":  {
-                                                                                                           "rarityWeight":  20
-                                                                                                       }
-                                                             },
-                                                   "fabrics":  {
-                                                                   "@properties/materials/fabrics:cotton":  {
-                                                                                                                "rarityWeight":  50
-                                                                                                            },
-                                                                   "@properties/materials/fabrics:wool":  {
-                                                                                                              "rarityWeight":  40
-                                                                                                          },
-                                                                   "@properties/materials/fabrics:silk":  {
-                                                                                                              "rarityWeight":  10
-                                                                                                          }
-                                                               }
-                                               },
-                              "humanoid_high":  {
-                                                    "description":  "High-tier humanoid enemies (champions, warlords, elite guards)",
-                                                    "metals":  {
-                                                                   "@properties/materials/metals:mithril":  {
-                                                                                                                "rarityWeight":  40
-                                                                                                            },
-                                                                   "@properties/materials/metals:adamantine":  {
-                                                                                                                   "rarityWeight":  30
-                                                                                                               },
-                                                                   "@properties/materials/metals:dragon-steel":  {
-                                                                                                                     "rarityWeight":  20
-                                                                                                                 },
-                                                                   "@properties/materials/metals:godforged":  {
-                                                                                                                  "rarityWeight":  10
-                                                                                                              }
-                                                               },
-                                                    "leathers":  {
-                                                                     "@properties/materials/leathers:chimera-hide":  {
-                                                                                                                         "rarityWeight":  35
-                                                                                                                     },
-                                                                     "@properties/materials/leathers:shadow-leather":  {
-                                                                                                                           "rarityWeight":  30
-                                                                                                                       },
-                                                                     "@properties/materials/leathers:dragon-leather":  {
-                                                                                                                           "rarityWeight":  20
-                                                                                                                       }
-                                                                 },
-                                                    "fabrics":  {
-                                                                    "@properties/materials/fabrics:shimmercloth":  {
-                                                                                                                       "rarityWeight":  40
-                                                                                                                   },
-                                                                    "@properties/materials/fabrics:ethereal-silk":  {
-                                                                                                                        "rarityWeight":  30
-                                                                                                                    },
-                                                                    "@properties/materials/fabrics:voidweave":  {
-                                                                                                                    "rarityWeight":  20
-                                                                                                                },
-                                                                    "@properties/materials/fabrics:starweave":  {
-                                                                                                                    "rarityWeight":  10
-                                                                                                                }
-                                                                }
-                                                },
-                              "beast_common":  {
-                                                   "description":  "Common beasts (wolves, bears, dire animals)",
-                                                   "metals":  {
-                                                                  "@properties/materials/metals:iron":  {
-                                                                                                            "rarityWeight":  70
-                                                                                                        },
-                                                                  "@properties/materials/metals:bronze":  {
-                                                                                                              "rarityWeight":  30
-                                                                                                          }
-                                                              }
-                                               },
-                              "beast_rare":  {
-                                                 "description":  "Rare beasts (chimeras, manticores)",
-                                                 "metals":  {
-                                                                "@properties/materials/metals:steel":  {
-                                                                                                           "rarityWeight":  40
-                                                                                                       },
-                                                                "@properties/materials/metals:silver":  {
-                                                                                                            "rarityWeight":  35
-                                                                                                        },
-                                                                "@properties/materials/metals:mithril":  {
-                                                                                                             "rarityWeight":  20
-                                                                                                         },
-                                                                "@properties/materials/metals:dragonbone":  {
-                                                                                                                "rarityWeight":  5
-                                                                                                            }
-                                                            }
-                                             },
-                              "undead_low":  {
-                                                 "description":  "Low-tier undead (skeletons, zombies)",
-                                                 "metals":  {
-                                                                "@properties/materials/metals:iron":  {
-                                                                                                          "rarityWeight":  50
-                                                                                                      },
-                                                                "@properties/materials/metals:obsidian":  {
-                                                                                                              "rarityWeight":  40
-                                                                                                          },
-                                                                "@properties/materials/metals:cold-iron":  {
-                                                                                                               "rarityWeight":  10
-                                                                                                           }
-                                                            }
-                                             },
-                              "undead_high":  {
-                                                  "description":  "High-tier undead (liches, death knights, vampire lords)",
-                                                  "metals":  {
-                                                                 "@properties/materials/metals:cold-iron":  {
-                                                                                                                "rarityWeight":  30
-                                                                                                            },
-                                                                 "@properties/materials/metals:silver":  {
-                                                                                                             "rarityWeight":  30
-                                                                                                         },
-                                                                 "@properties/materials/metals:darksteel":  {
-                                                                                                                "rarityWeight":  20
-                                                                                                            },
-                                                                 "@properties/materials/metals:void-crystal":  {
-                                                                                                                   "rarityWeight":  15
-                                                                                                               },
-                                                                 "@properties/materials/metals:obsidian":  {
-                                                                                                               "rarityWeight":  5
-                                                                                                           }
-                                                             }
-                                              },
-                              "undead":  {
-                                             "description":  "Generic undead creatures - alias for undead_low",
-                                             "metals":  {
-                                                            "@properties/materials/metals:iron":  {
-                                                                                                      "rarityWeight":  60
-                                                                                                  },
-                                                            "@properties/materials/metals:copper":  {
-                                                                                                        "rarityWeight":  30
-                                                                                                    },
-                                                            "@properties/materials/metals:bronze":  {
-                                                                                                        "rarityWeight":  20
-                                                                                                    }
-                                                        }
-                                         },
-                              "demon":  {
-                                            "description":  "Demonic enemies (imps, demons, demon lords)",
-                                            "metals":  {
-                                                           "@properties/materials/metals:darksteel":  {
-                                                                                                          "rarityWeight":  35
-                                                                                                      },
-                                                           "@properties/materials/metals:obsidian":  {
-                                                                                                         "rarityWeight":  30
-                                                                                                     },
-                                                           "@properties/materials/metals:bronze":  {
-                                                                                                       "rarityWeight":  25
-                                                                                                   },
-                                                           "@properties/materials/metals:void-crystal":  {
-                                                                                                             "rarityWeight":  10
-                                                                                                         }
-                                                       }
-                                        },
-                              "dragon":  {
-                                             "description":  "Draconic enemies (dragons, drakes, wyverns)",
-                                             "metals":  {
-                                                            "@properties/materials/metals:dragonbone":  {
-                                                                                                            "rarityWeight":  40
-                                                                                                        },
-                                                            "@properties/materials/metals:adamantine":  {
-                                                                                                            "rarityWeight":  25
-                                                                                                        },
-                                                            "@properties/materials/metals:dragon-steel":  {
-                                                                                                              "rarityWeight":  20
-                                                                                                          },
-                                                            "@properties/materials/metals:celestial-ore":  {
-                                                                                                               "rarityWeight":  10
-                                                                                                           },
-                                                            "@properties/materials/metals:godforged":  {
-                                                                                                           "rarityWeight":  5
-                                                                                                       }
-                                                        }
-                                         },
-                              "dragon_hoard":  {
-                                                   "description":  "Dragon hoard treasures (rare and legendary materials)",
-                                                   "metals":  {
-                                                                  "@properties/materials/metals:mithril":  {
-                                                                                                               "rarityWeight":  30
-                                                                                                           },
-                                                                  "@properties/materials/metals:adamantine":  {
-                                                                                                                  "rarityWeight":  25
-                                                                                                              },
-                                                                  "@properties/materials/metals:dragonbone":  {
-                                                                                                                  "rarityWeight":  20
-                                                                                                              },
-                                                                  "@properties/materials/metals:celestial-ore":  {
-                                                                                                                     "rarityWeight":  15
-                                                                                                                 },
-                                                                  "@properties/materials/metals:godforged":  {
-                                                                                                                 "rarityWeight":  10
-                                                                                                             }
-                                                              }
-                                               },
-                              "elemental":  {
-                                                "description":  "Elemental creatures (fire, water, earth, air)",
-                                                "metals":  {
-                                                               "@properties/materials/metals:crystal":  {
-                                                                                                            "rarityWeight":  45
-                                                                                                        },
-                                                               "@properties/materials/metals:electrum":  {
-                                                                                                             "rarityWeight":  30
-                                                                                                         },
-                                                               "@properties/materials/metals:celestial-ore":  {
-                                                                                                                  "rarityWeight":  20
-                                                                                                              },
-                                                               "@properties/materials/metals:void-crystal":  {
-                                                                                                                 "rarityWeight":  5
-                                                                                                             }
-                                                           }
-                                            },
-                              "elemental_fire":  {
-                                                     "description":  "Fire elemental materials (obsidian, heat-resistant metals)",
-                                                     "metals":  {
-                                                                    "@properties/materials/metals:obsidian":  {
-                                                                                                                  "rarityWeight":  40
-                                                                                                              },
-                                                                    "@properties/materials/metals:steel":  {
-                                                                                                               "rarityWeight":  30
-                                                                                                           },
-                                                                    "@properties/materials/metals:mithril":  {
-                                                                                                                 "rarityWeight":  20
-                                                                                                             },
-                                                                    "@properties/materials/metals:dragonbone":  {
-                                                                                                                    "rarityWeight":  10
-                                                                                                                }
-                                                                }
-                                                 },
-                              "fey":  {
-                                          "description":  "Fey creatures (sprites, dryads, archfey)",
-                                          "metals":  {
-                                                         "@properties/materials/metals:silver":  {
-                                                                                                     "rarityWeight":  40
-                                                                                                 },
-                                                         "@properties/materials/metals:electrum":  {
-                                                                                                       "rarityWeight":  30
-                                                                                                   },
-                                                         "@properties/materials/metals:mithril":  {
-                                                                                                      "rarityWeight":  20
-                                                                                                  },
-                                                         "@properties/materials/metals:celestial-ore":  {
-                                                                                                            "rarityWeight":  10
-                                                                                                        }
-                                                     }
-                                      },
-                              "elemental_ice":  {
-                                                    "description":  "Ice elementals - frost and crystal materials",
-                                                    "metals":  {
-                                                                   "@properties/materials/metals:silver":  {
-                                                                                                               "rarityWeight":  50
-                                                                                                           },
-                                                                   "@properties/materials/metals:cold-iron":  {
-                                                                                                                  "rarityWeight":  40
-                                                                                                              },
-                                                                   "@properties/materials/metals:mithril":  {
-                                                                                                                "rarityWeight":  20
-                                                                                                            },
-                                                                   "@properties/materials/metals:adamantine":  {
-                                                                                                                   "rarityWeight":  10
-                                                                                                               }
-                                                               }
-                                                },
-                              "beast":  {
-                                            "description":  "Generic beasts and animals - natural materials",
-                                            "metals":  {
-                                                           "@properties/materials/metals:iron":  {
-                                                                                                     "rarityWeight":  70
-                                                                                                 },
-                                                           "@properties/materials/metals:bronze":  {
-                                                                                                       "rarityWeight":  30
-                                                                                                   }
-                                                       },
-                                            "leathers":  {
-                                                             "@properties/materials/leathers:hide":  {
-                                                                                                         "rarityWeight":  60
-                                                                                                     },
-                                                             "@properties/materials/leathers:leather":  {
-                                                                                                            "rarityWeight":  40
-                                                                                                        }
-                                                         }
-                                        },
-                              "demonic":  {
-                                              "description":  "Demonic creatures - cursed and dark materials - DEPRECATED"
-                                          }
-                          }
+{
+  "metadata": {
+    "description": "Material pool definitions organized by material type and rarity - used by loot-tables.json",
+    "version": "5.0",
+    "lastUpdated": "2026-01-21",
+    "type": "material_pools",
+    "notes": [
+      "Pools organized as: material_type → rarity → items",
+      "References actual material items (ingots, fabrics, leathers) not properties",
+      "Used by loot-tables.json to determine what materials drop from sources"
+    ]
+  },
+  "pools": {
+    "metals": {
+      "common": [
+        {
+          "itemRef": "@items/materials/ingot:copper-ingot",
+          "rarityWeight": 80
+        }
+      ]
+    }
+  },
+  "_deprecated_pools": {
+    "_note": "Old pool structure kept for reference during migration - will be removed after code update",
+    "humanoid_low": {
+      "description": "Low-tier humanoid enemies (goblins, bandits, cultists)",
+      "metals": {
+        "@properties/materials/metals:copper": {
+          "rarityWeight": 80
+        },
+        "@properties/materials/metals:tin": {
+          "rarityWeight": 70
+        },
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 10
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:scraps": {
+          "rarityWeight": 90
+        },
+        "@properties/materials/leathers:rawhide": {
+          "rarityWeight": 80
+        },
+        "@properties/materials/leathers:hide": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/leathers:leather": {
+          "rarityWeight": 40
+        }
+      },
+      "woods": {
+        "@properties/materials/woods:pine": {
+          "rarityWeight": 85
+        },
+        "@properties/materials/woods:birch": {
+          "rarityWeight": 75
+        },
+        "@properties/materials/woods:oak": {
+          "rarityWeight": 50
+        }
+      }
+    },
+    "humanoid_mid": {
+      "description": "Mid-tier humanoid enemies (knights, guards, mercenaries)",
+      "metals": {
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 15
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 5
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:leather": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/leathers:studded-leather": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/leathers:hardened-leather": {
+          "rarityWeight": 20
+        }
+      },
+      "woods": {
+        "@properties/materials/woods:oak": {
+          "rarityWeight": 45
+        },
+        "@properties/materials/woods:ash": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/woods:maple": {
+          "rarityWeight": 20
+        }
+      },
+      "fabrics": {
+        "@properties/materials/fabrics:cotton": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/fabrics:wool": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/fabrics:silk": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "humanoid_high": {
+      "description": "High-tier humanoid enemies (champions, warlords, elite guards)",
+      "metals": {
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:dragon-steel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:godforged": {
+          "rarityWeight": 10
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:chimera-hide": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/leathers:shadow-leather": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/leathers:dragon-leather": {
+          "rarityWeight": 20
+        }
+      },
+      "fabrics": {
+        "@properties/materials/fabrics:shimmercloth": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/fabrics:ethereal-silk": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/fabrics:voidweave": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/fabrics:starweave": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "beast_common": {
+      "description": "Common beasts (wolves, bears, dire animals)",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 70
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 30
+        }
+      }
+    },
+    "beast_rare": {
+      "description": "Rare beasts (chimeras, manticores)",
+      "metals": {
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "undead_low": {
+      "description": "Low-tier undead (skeletons, zombies)",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "undead_high": {
+      "description": "High-tier undead (liches, death knights, vampire lords)",
+      "metals": {
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:darksteel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:void-crystal": {
+          "rarityWeight": 15
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "undead": {
+      "description": "Generic undead creatures - alias for undead_low",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/metals:copper": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 20
+        }
+      }
+    },
+    "demon": {
+      "description": "Demonic enemies (imps, demons, demon lords)",
+      "metals": {
+        "@properties/materials/metals:darksteel": {
+          "rarityWeight": 35
+        },
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 25
+        },
+        "@properties/materials/metals:void-crystal": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "dragon": {
+      "description": "Draconic enemies (dragons, drakes, wyverns)",
+      "metals": {
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 25
+        },
+        "@properties/materials/metals:dragon-steel": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 10
+        },
+        "@properties/materials/metals:godforged": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "dragon_hoard": {
+      "description": "Dragon hoard treasures (rare and legendary materials)",
+      "metals": {
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 25
+        },
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 15
+        },
+        "@properties/materials/metals:godforged": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "elemental": {
+      "description": "Elemental creatures (fire, water, earth, air)",
+      "metals": {
+        "@properties/materials/metals:crystal": {
+          "rarityWeight": 45
+        },
+        "@properties/materials/metals:electrum": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:void-crystal": {
+          "rarityWeight": 5
+        }
+      }
+    },
+    "elemental_fire": {
+      "description": "Fire elemental materials (obsidian, heat-resistant metals)",
+      "metals": {
+        "@properties/materials/metals:obsidian": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:steel": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:dragonbone": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "fey": {
+      "description": "Fey creatures (sprites, dryads, archfey)",
+      "metals": {
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:electrum": {
+          "rarityWeight": 30
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:celestial-ore": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "elemental_ice": {
+      "description": "Ice elementals - frost and crystal materials",
+      "metals": {
+        "@properties/materials/metals:silver": {
+          "rarityWeight": 50
+        },
+        "@properties/materials/metals:cold-iron": {
+          "rarityWeight": 40
+        },
+        "@properties/materials/metals:mithril": {
+          "rarityWeight": 20
+        },
+        "@properties/materials/metals:adamantine": {
+          "rarityWeight": 10
+        }
+      }
+    },
+    "beast": {
+      "description": "Generic beasts and animals - natural materials",
+      "metals": {
+        "@properties/materials/metals:iron": {
+          "rarityWeight": 70
+        },
+        "@properties/materials/metals:bronze": {
+          "rarityWeight": 30
+        }
+      },
+      "leathers": {
+        "@properties/materials/leathers:hide": {
+          "rarityWeight": 60
+        },
+        "@properties/materials/leathers:leather": {
+          "rarityWeight": 40
+        }
+      }
+    },
+    "demonic": {
+      "description": "Demonic creatures - cursed and dark materials - DEPRECATED"
+    }
+  }
 }

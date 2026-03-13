@@ -1,65 +1,28 @@
-﻿{
-    "metadata":  {
-                     "description":  "Plant creature enemy type catalog with base stats and rarityWeight values",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "item_catalog",
-                     "total_types":  13,
-                     "categories":  [
-                                        "aggressive_plants",
-                                        "defensive_plants",
-                                        "mobile_plants",
-                                        "ancient_plants"
-                                    ],
-                     "usage":  "Provides base enemy types for pattern generation",
-                     "notes":  [
-                                   "Base catalog of plants with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
-                               ]
-                 },
-    "plant_types":  {
-                        "aggressive_plants":  {
-                                                  "properties":  {
-                                                                     "size":  "medium",
-                                                                     "category":  "plant",
-                                                                     "damageType":  "physical",
-                                                                     "behavior":  "predatory"
-                                                                 },
-                                                  "items":  [
-                                                                {
-                                                                    "level":  2,
-                                                                    "slug":  "vine",
-                                                                    "name":  "Vine",
-                                                                    "rarityWeight":  105,
-                                                                    "xp":  30,
-                                                                    "attributes":  {
-                                                                                       "constitution":  13,
-                                                                                       "wisdom":  6,
-                                                                                       "strength":  12,
-                                                                                       "dexterity":  10,
-                                                                                       "intelligence":  2,
-                                                                                       "charisma":  4
-                                                                                   },
-                                                                    "stats":  {
-                                                                                  "attack":  "strength_mod + level + 12",
-                                                                                  "speed":  "30 + dexterity_mod * 5",
-                                                                                  "defense":  "10 + dexterity_mod + constitution_mod + 4",
-                                                                                  "health":  "constitution_mod * 2 + level * 5 + 35"
-                                                                              },
-                                                                    "combat":  {
-                                                                                   "abilityUnlocks":  {
-                                                                                                          "3":  [
-                                                                                                                    "@abilities/active/support:*"
-                                                                                                                ]
-                                                                                                      },
-                                                                                   "abilities":  [
-                                                                                                     "@abilities/active/offensive:*"
-                                                                                                 ]
-                                                                               },
-                                                                    "traits":  {
-
-                                                                               }
-                                                                }
-                                                            ]
-                                              }
-                    }
+{
+  "metadata": {
+    "description": "Plant creature enemy type catalog with base stats and rarityWeight values",
+    "version": "5.1",
+    "lastUpdated": "2026-01-08",
+    "type": "item_catalog",
+    "total_types": 13,
+    "categories": [
+      "aggressive_plants",
+      "defensive_plants",
+      "mobile_plants",
+      "ancient_plants"
+    ],
+    "usage": "Provides base enemy types for pattern generation",
+    "notes": "Base catalog of plants with inherent stats and traits. Each item has individual properties. Type-level traits apply to all items in category."
+  },
+  "plant_types": {
+    "aggressive_plants": {
+      "properties": {
+        "size": "medium",
+        "category": "plant",
+        "damageType": "physical",
+        "behavior": "predatory"
+      },
+      "items": []
+    }
+  }
 }

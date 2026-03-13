@@ -1,64 +1,64 @@
-﻿{
-    "components":  {
-                       "base_sound":  [
-                                          "echoing"
-                                      ],
-                       "volume":  [
-                                      "silent"
-                                  ],
-                       "nature":  [
-                                      "metallic"
-                                  ],
-                       "combat":  [
-                                      "clang"
-                                  ],
-                       "ambient":  [
-                                       "rustle"
-                                   ],
-                       "intensity":  [
-                                         "gentle"
-                                     ]
-                   },
-    "patterns":  [
-                     "base_sound",
-                     "{volume} {base_sound}",
-                     "{nature} {base_sound}",
-                     "{intensity} {base_sound}",
-                     "combat",
-                     "ambient"
-                 ],
-    "metadata":  {
-                     "description":  "Sound descriptions for combat, environmental atmosphere, and immersive audio narratives",
-                     "version":  "4.0",
-                     "type":  "pattern_generation",
-                     "lastUpdated":  "2026-01-08",
-                     "componentKeys":  [
-                                           "base_sound",
-                                           "volume",
-                                           "nature",
-                                           "combat",
-                                           "ambient",
-                                           "intensity"
-                                       ],
-                     "pattern_count":  6,
-                     "patternTokens":  [
-                                           "base_sound",
-                                           "volume",
-                                           "nature",
-                                           "combat",
-                                           "ambient",
-                                           "intensity"
-                                       ],
-                     "component_counts":  {
-                                              "base_sound":  1,
-                                              "volume":  1,
-                                              "nature":  1,
-                                              "combat":  1,
-                                              "ambient":  1,
-                                              "intensity":  1
-                                          },
-                     "notes":  [
-                                   "Reference data for general sounds. Used as component source in name generation and stat calculations."
-                               ]
-                 }
+{
+  "components": {
+    "base_sound": [
+      "echoing"
+    ],
+    "volume": [
+      "silent"
+    ],
+    "nature": [
+      "metallic"
+    ],
+    "combat": [
+      "clang"
+    ],
+    "ambient": [
+      "rustle"
+    ],
+    "intensity": [
+      "gentle"
+    ]
+  },
+  "patterns": [
+    "base_sound",
+    "{volume} {base_sound}",
+    "{nature} {base_sound}",
+    "{intensity} {base_sound}",
+    "combat",
+    "ambient"
+  ],
+  "metadata": {
+    "description": "Sound descriptions for combat, environmental atmosphere, and immersive audio narratives",
+    "version": "4.0",
+    "type": "pattern_generation",
+    "lastUpdated": "2026-01-08",
+    "componentKeys": [
+      "base_sound",
+      "volume",
+      "nature",
+      "combat",
+      "ambient",
+      "intensity"
+    ],
+    "pattern_count": 6,
+    "patternTokens": [
+      "base_sound",
+      "volume",
+      "nature",
+      "combat",
+      "ambient",
+      "intensity"
+    ],
+    "component_counts": {
+      "base_sound": 1,
+      "volume": 1,
+      "nature": 1,
+      "combat": 1,
+      "ambient": 1,
+      "intensity": 1
+    },
+    "notes": [
+      "Reference data for general sounds. Used as component source in name generation and stat calculations."
+    ]
+  }
 }

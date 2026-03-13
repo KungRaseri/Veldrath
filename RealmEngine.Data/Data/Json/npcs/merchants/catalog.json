@@ -1,102 +1,29 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Merchant NPCs - traders and sellers specializing in commerce with large inventories",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "merchant",
-                     "notes":  [
-                                   "Primary focus on buying and selling goods",
-                                   "Largest inventories with variety bonus",
-                                   "Higher haggling skills and gold reserves",
-                                   "Accept all item categories for trade"
-                               ]
-                 },
-    "occupation_types":  {
-                             "general_traders":  {
-                                                     "metadata":  {
-                                                                      "description":  "Traders and sellers of goods",
-                                                                      "hasShop":  true,
-                                                                      "notes":  [
-                                                                                    "Primary focus is buying and selling",
-                                                                                    "Usually have the largest inventories",
-                                                                                    "Higher haggling skills and gold reserves"
-                                                                                ]
-                                                                  },
-                                                     "items":  [
-                                                                   {
-                                                                       "slug":  "generalmerchant",
-                                                                       "name":  "GeneralMerchant",
-                                                                       "displayName":  "General Merchant",
-                                                                       "description":  "Jack-of-all-trades merchant selling everything",
-                                                                       "attributes":  {
-                                                                                          "strength":  10,
-                                                                                          "dexterity":  11,
-                                                                                          "constitution":  11,
-                                                                                          "intelligence":  12,
-                                                                                          "wisdom":  12,
-                                                                                          "charisma":  15
-                                                                                      },
-                                                                       "rarityWeight":  10,
-                                                                       "socialClass":  "merchant",
-                                                                       "skillBonuses":  [
-                                                                                            "persuasion",
-                                                                                            "appraisal",
-                                                                                            "haggling"
-                                                                                        ],
-                                                                       "baseGold":  "5d10",
-                                                                       "shopType":  "general_store",
-                                                                       "shopChance":  0.95,
-                                                                       "shopInventory":  {
-                                                                                             "coreItems":  [
-                                                                                                               {
-                                                                                                                   "item":  "@items/materials:*",
-                                                                                                                   "baseQuantity":  10,
-                                                                                                                   "restockDaily":  true
-                                                                                                               },
-                                                                                                               {
-                                                                                                                   "item":  "@items/materials:*",
-                                                                                                                   "baseQuantity":  5,
-                                                                                                                   "restockDaily":  true
-                                                                                                               },
-                                                                                                               {
-                                                                                                                   "item":  "@items/materials:*",
-                                                                                                                   "baseQuantity":  20,
-                                                                                                                   "restockDaily":  true
-                                                                                                               }
-                                                                                                           ],
-                                                                                             "dynamicCategories":  [
-                                                                                                                       "all"
-                                                                                                                   ],
-                                                                                             "dynamicItemCount":  "{3d10} {10}",
-                                                                                             "dynamicRefreshDaily":  true,
-                                                                                             "varietyBonus":  50,
-                                                                                             "economy":  {
-                                                                                                             "acceptsPlayerItems":  true,
-                                                                                                             "acceptedCategories":  [
-                                                                                                                                        "all"
-                                                                                                                                    ],
-                                                                                                             "buyPriceMultiplier":  0.35,
-                                                                                                             "sellPriceMultiplier":  1.0,
-                                                                                                             "resellPriceMultiplier":  0.85,
-                                                                                                             "playerItemDecayDaily":  0.1,
-                                                                                                             "playerItemDecayDays":  7,
-                                                                                                             "maxPlayerItems":  20,
-                                                                                                             "bankGoldFormula":  "baseGold * 15 + background.startingGold * 10",
-                                                                                                             "bankGoldRestockDaily":  true
-                                                                                                         }
-                                                                                         },
-                                                                       "dialogueStyle":  "@social/dialogue/styles/casual:greedy",
-                                                                       "greetings":  [
-                                                                                         "@social/dialogue/greetings/merchant:merchant-eager"
-                                                                                     ],
-                                                                       "farewells":  [
-                                                                                         "@social/dialogue/farewells/merchant:merchant"
-                                                                                     ],
-                                                                       "faction":  "merchants_guild",
-                                                                       "schedule":  "@social/schedules/*:merchant"
-                                                                   }
-                                                               ]
-                                                 }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Merchant NPCs - traders and sellers specializing in commerce with large inventories",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "merchant",
+    "notes": [
+      "Primary focus on buying and selling goods",
+      "Largest inventories with variety bonus",
+      "Higher haggling skills and gold reserves",
+      "Accept all item categories for trade"
+    ]
+  },
+  "occupation_types": {
+    "general_traders": {
+      "metadata": {
+        "description": "Traders and sellers of goods",
+        "hasShop": true,
+        "notes": [
+          "Primary focus is buying and selling",
+          "Usually have the largest inventories",
+          "Higher haggling skills and gold reserves"
+        ]
+      },
+      "items": []
+    }
+  }
 }

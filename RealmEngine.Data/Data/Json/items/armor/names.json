@@ -1,74 +1,35 @@
-﻿{
-    "metadata":  {
-                     "description":  "Unified armor naming system with prefix/suffix support and trait assignment (v4.2 - Hybrid Enhancement System)",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "supportsTraits":  true,
-                     "componentKeys":  [
-                                           "prefix",
-                                           "suffix"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "prefix",
-                                           "suffix"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "Base token resolves from items/armor/catalog.json",
-                                   "Material references use v4.1 syntax for metals (armor-appropriate)",
-                                   "Prefixes and suffixes merged from separate files (deprecated in v4.0)",
-                                   "Traits are applied when components are selected in patterns",
-                                   "Trait merging: numbers take highest, strings take last, booleans use OR",
-                                   "Emergent rarity calculated from combined component weights",
-                                   "Materials are now applied through the budget-based generation system, not pattern references",
-                                   "Enchantments can be added to patterns using component tokens or references"
-                               ]
-                 },
-    "components":  {
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  50,
-                                          "traits":  {
-                                                         "durability":  {
-                                                                            "value":  120,
-                                                                            "type":  "number"
-                                                                        },
-                                                         "armorBonus":  {
-                                                                            "value":  2,
-                                                                            "type":  "number"
-                                                                        },
-                                                         "strengthBonus":  {
-                                                                               "value":  2,
-                                                                               "type":  "number"
-                                                                           }
-                                                     },
-                                          "name":  "Sturdy"
-                                      }
-                                  ],
-                       "suffix":  [
-                                      {
-                                          "rarityWeight":  50,
-                                          "traits":  {
-                                                         "armorBonus":  {
-                                                                            "value":  5,
-                                                                            "type":  "number"
-                                                                        },
-                                                         "damageReduction":  {
-                                                                                 "value":  3,
-                                                                                 "type":  "number"
-                                                                             }
-                                                     },
-                                          "name":  "of Protection"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "pattern":  "{base}",
-                         "rarityWeight":  100
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Unified armor naming system with prefix/suffix support and trait assignment (v4.2 - Hybrid Enhancement System)",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "supportsTraits": true,
+    "componentKeys": [
+      "prefix",
+      "suffix"
+    ],
+    "patternTokens": [
+      "base",
+      "prefix",
+      "suffix"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "Base token resolves from items/armor/catalog.json",
+      "Material references use v4.1 syntax for metals (armor-appropriate)",
+      "Prefixes and suffixes merged from separate files (deprecated in v4.0)",
+      "Traits are applied when components are selected in patterns",
+      "Trait merging: numbers take highest, strings take last, booleans use OR",
+      "Emergent rarity calculated from combined component weights",
+      "Materials are now applied through the budget-based generation system, not pattern references",
+      "Enchantments can be added to patterns using component tokens or references"
+    ]
+  },
+  "components": {
+    "prefix": [],
+    "suffix": []
+  },
+  "patterns": []
 }

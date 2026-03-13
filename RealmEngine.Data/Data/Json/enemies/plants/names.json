@@ -1,61 +1,36 @@
-﻿{
-    "metadata":  {
-                     "description":  "Plant creature name generation patterns with weight-based rarity components",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "componentKeys":  [
-                                           "age",
-                                           "type",
-                                           "title"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "age",
-                                           "type",
-                                           "title"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "base_token: Resolves to item name from plants/catalog.json",
-                                   "plant_variety: Includes carnivorous plants, treants, myconids, awakened plants",
-                                   "weight_ranges: Young (5) → Primordial (80), Vine (5) → Primal (35)",
-                                   "traits: Most plants vulnerable to fire, some rooted, some mobile",
-                                   "Upgraded to v4.0 with supportsTraits metadata"
-                               ],
-                     "supportsTraits":  true
-                 },
-    "components":  {
-                       "age":  [
-                                   {
-                                       "rarityWeight":  5,
-                                       "name":  "Young"
-                                   }
-                               ],
-                       "type":  [
-                                    {
-                                        "rarityWeight":  6,
-                                        "name":  "Thorn"
-                                    }
-                                ],
-                       "title":  [
-                                     {
-                                         "rarityWeight":  10,
-                                         "name":  "Strangler"
-                                     }
-                                 ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  8,
-                                          "name":  "Overgrown"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "rarityWeight":  50,
-                         "pattern":  "base"
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Plant creature name generation patterns with weight-based rarity components",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "componentKeys": [
+      "age",
+      "type",
+      "title"
+    ],
+    "patternTokens": [
+      "base",
+      "age",
+      "type",
+      "title"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "base_token: Resolves to item name from plants/catalog.json",
+      "plant_variety: Includes carnivorous plants, treants, myconids, awakened plants",
+      "weight_ranges: Young (5) → Primordial (80), Vine (5) → Primal (35)",
+      "traits: Most plants vulnerable to fire, some rooted, some mobile",
+      "Upgraded to v4.0 with supportsTraits metadata"
+    ],
+    "supportsTraits": true
+  },
+  "components": {
+    "age": [],
+    "type": [],
+    "title": [],
+    "prefix": []
+  },
+  "patterns": []
 }

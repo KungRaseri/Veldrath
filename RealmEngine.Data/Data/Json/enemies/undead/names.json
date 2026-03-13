@@ -1,60 +1,35 @@
-﻿{
-    "metadata":  {
-                     "description":  "Undead enemy name generation with pattern-based system and weight-based rarity",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "componentKeys":  [
-                                           "condition",
-                                           "origin",
-                                           "title"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "condition",
-                                           "origin",
-                                           "title"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "Base token resolves from enemies/undead/catalog.json",
-                                   "All components have rarityWeight for emergent rarity calculation",
-                                   "Component weights combine via multipliers from general/rarity_config.json",
-                                   "Upgraded to v4.0 with supportsTraits metadata"
-                               ],
-                     "supportsTraits":  true
-                 },
-    "components":  {
-                       "condition":  [
-                                         {
-                                             "rarityWeight":  8,
-                                             "name":  "Rotting"
-                                         }
-                                     ],
-                       "origin":  [
-                                      {
-                                          "rarityWeight":  20,
-                                          "name":  "Plague"
-                                      }
-                                  ],
-                       "title":  [
-                                     {
-                                         "rarityWeight":  30,
-                                         "name":  "Knight"
-                                     }
-                                 ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  35,
-                                          "name":  "Ancient"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "rarityWeight":  50,
-                         "pattern":  "base"
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Undead enemy name generation with pattern-based system and weight-based rarity",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "componentKeys": [
+      "condition",
+      "origin",
+      "title"
+    ],
+    "patternTokens": [
+      "base",
+      "condition",
+      "origin",
+      "title"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "Base token resolves from enemies/undead/catalog.json",
+      "All components have rarityWeight for emergent rarity calculation",
+      "Component weights combine via multipliers from general/rarity_config.json",
+      "Upgraded to v4.0 with supportsTraits metadata"
+    ],
+    "supportsTraits": true
+  },
+  "components": {
+    "condition": [],
+    "origin": [],
+    "title": [],
+    "prefix": []
+  },
+  "patterns": []
 }

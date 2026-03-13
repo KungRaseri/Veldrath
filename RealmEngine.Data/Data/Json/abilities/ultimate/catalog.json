@@ -1,62 +1,15 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.2",
-                     "type":  "abilities_catalog",
-                     "description":  "Ultimate abilities - powerful once-per-battle skills",
-                     "totalAbilities":  1,
-                     "lastUpdated":  "2026-01-08"
-                 },
-    "ability_types":  {
-                          "ultimate":  {
-                                           "description":  "Ultimate abilities",
-                                           "items":  [
-                                                         {
-                                                             "slug":  "demon-lord",
-                                                             "name":  "Demon Lord",
-                                                             "displayName":  "Demon Lord",
-                                                             "description":  "Commands legions of lesser demons",
-                                                             "tier":  5,
-                                                             "traits":  {
-                                                                            "damageMultiplier":  {
-                                                                                                     "value":  2.0,
-                                                                                                     "type":  "number"
-                                                                                                 },
-                                                                            "healthMultiplier":  {
-                                                                                                     "value":  3.0,
-                                                                                                     "type":  "number"
-                                                                                                 },
-                                                                            "armorBonus":  {
-                                                                                               "value":  10,
-                                                                                               "type":  "number"
-                                                                                           },
-                                                                            "summonType":  {
-                                                                                               "value":  "demon",
-                                                                                               "type":  "string"
-                                                                                           },
-                                                                            "summonCount":  {
-                                                                                                "value":  10,
-                                                                                                "type":  "number"
-                                                                                            },
-                                                                            "areaOfEffect":  {
-                                                                                                 "value":  50,
-                                                                                                 "type":  "number"
-                                                                                             },
-                                                                            "abilityClass":  {
-                                                                                                 "value":  "passive",
-                                                                                                 "type":  "string"
-                                                                                             },
-                                                                            "targetType":  {
-                                                                                               "value":  "self",
-                                                                                               "type":  "string"
-                                                                                           },
-                                                                            "cooldown":  {
-                                                                                             "value":  120,
-                                                                                             "type":  "number"
-                                                                                         }
-                                                                        },
-                                                             "rarityWeight":  250
-                                                         }
-                                                     ]
-                                       }
-                      }
+{
+  "metadata": {
+    "version": "4.2",
+    "type": "abilities_catalog",
+    "description": "Ultimate abilities - powerful once-per-battle skills",
+    "totalAbilities": 1,
+    "lastUpdated": "2026-01-08"
+  },
+  "ability_types": {
+    "ultimate": {
+      "description": "Ultimate abilities",
+      "items": []
+    }
+  }
 }

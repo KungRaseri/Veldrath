@@ -1,30 +1,27 @@
-﻿{
-    "metadata":  {
-                     "version":  "4.0",
-                     "type":  "hierarchical_catalog",
-                     "description":  "Farewell dialogue templates organized by NPC type and context",
-                     "lastUpdated":  "2026-01-08",
-                     "notes":  [
-                                   "Templates support variable substitution: {player_name}, {faction}",
-                                   "Used when conversation ends or player leaves",
-                                   "Referenced via @dialogue/farewells:{name}"
-                               ]
-                 },
-    "noble_types":  {
-                        "noble":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "noble",
-                                                        "name":  "noble",
-                                                        "displayName":  "Noble Farewell",
-                                                        "rarityWeight":  15,
-                                                        "templates":  [
-                                                                          "Farewell, {player_name}. May fortune favor your endeavors.",
-                                                                          "Until we meet again. Safe travels.",
-                                                                          "Our doors remain open to you, always."
-                                                                      ]
-                                                    }
-                                                ]
-                                  }
-                    }
+{
+  "metadata": {
+    "version": "4.0",
+    "type": "hierarchical_catalog",
+    "description": "Farewell dialogue templates organized by NPC type and context",
+    "lastUpdated": "2026-01-08",
+    "notes": [
+      "Templates support variable substitution: {player_name}, {faction}",
+      "Used when conversation ends or player leaves",
+      "Referenced via @dialogue/farewells:{name}"
+    ]
+  },
+  "noble_types": {
+    "noble": {
+      "items": []
+    },
+    "scholarly": {
+      "items": []
+    },
+    "simple": {
+      "items": []
+    },
+    "merchant": {
+      "items": []
+    }
+  }
 }

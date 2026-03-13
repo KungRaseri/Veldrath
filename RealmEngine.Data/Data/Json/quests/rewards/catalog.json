@@ -1,24 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Quest rewards catalog organized by reward type",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "quest_rewards_catalog"
-                 },
-    "reward_types":  {
-                         "gold":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "small-purse",
-                                                        "name":  "small-purse",
-                                                        "rarityWeight":  50,
-                                                        "amount":  {
-                                                                       "min":  10,
-                                                                       "max":  50
-                                                                   },
-                                                        "description":  "Small monetary reward"
-                                                    }
-                                                ]
-                                  }
-                     }
+{
+  "metadata": {
+    "description": "Quest rewards catalog organized by reward type",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "quest_rewards_catalog"
+  },
+  "reward_types": {
+    "gold": {
+      "items": []
+    }
+  }
 }

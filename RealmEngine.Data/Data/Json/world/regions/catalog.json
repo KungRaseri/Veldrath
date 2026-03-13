@@ -1,58 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Kingdoms, territories, and political regions defining the game world\u0027s geography",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "world_regions_catalog"
-                 },
-    "kingdoms_types":  {
-                           "kingdoms":  {
-                                            "items":  [
-                                                          {
-                                                              "slug":  "goldenvale",
-                                                              "name":  "Goldenvale",
-                                                              "displayName":  "Kingdom of Goldenvale",
-                                                              "rarityWeight":  15,
-                                                              "description":  "Prosperous central kingdom known for trade and agriculture",
-                                                              "government":  "Constitutional Monarchy",
-                                                              "capital":  "@world/locations/towns:GoldenSpire",
-                                                              "population":  "Large",
-                                                              "economy":  "Trade \u0026 Agriculture",
-                                                              "military":  "Professional Army",
-                                                              "majorCities":  [
-                                                                                  "@world/locations/towns:Silverport",
-                                                                                  "@world/locations/towns:Ironforge"
-                                                                              ],
-                                                              "terrain":  [
-                                                                              "plains",
-                                                                              "hills",
-                                                                              "forests"
-                                                                          ],
-                                                              "climate":  "Temperate",
-                                                              "resources":  [
-                                                                                "grain",
-                                                                                "gold",
-                                                                                "livestock"
-                                                                            ],
-                                                              "factions":  [
-                                                                               "@organizations/factions/political:nobility",
-                                                                               "@organizations/factions/trade:merchants_guild",
-                                                                               "@organizations/factions/military:city_guard"
-                                                                           ],
-                                                              "relations":  {
-                                                                                "allies":  [
-                                                                                               "Frostheim",
-                                                                                               "Sanctuary_Theocracy"
-                                                                                           ],
-                                                                                "neutral":  [
-                                                                                                "Desert_Emirates"
-                                                                                            ],
-                                                                                "enemies":  [
-                                                                                                "Shadow_Empire"
-                                                                                            ]
-                                                                            }
-                                                          }
-                                                      ]
-                                        }
-                       }
+{
+  "metadata": {
+    "description": "Kingdoms, territories, and political regions defining the game world's geography",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "world_regions_catalog"
+  },
+  "kingdoms_types": {
+    "kingdoms": {
+      "items": []
+    }
+  }
 }

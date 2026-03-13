@@ -1,37 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Defensive runes providing protection modifiers",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "rune_catalog"
-                 },
-    "rune_types":  {
-                       "defensive":  {
-                                         "items":  [
-                                                       {
-                                                           "rarityWeight":  55,
-                                                           "name":  "Protection Rune",
-                                                           "slug":  "protection-rune",
-                                                           "attributes":  {
-                                                                              "constitution":  10,
-                                                                              "strength":  10,
-                                                                              "intelligence":  8,
-                                                                              "dexterity":  10,
-                                                                              "wisdom":  8,
-                                                                              "charisma":  8
-                                                                          },
-                                                           "traits":  {
-                                                                          "armor":  {
-                                                                                        "value":  20,
-                                                                                        "type":  "number"
-                                                                                    },
-                                                                          "physicalResistance":  {
-                                                                                                     "value":  10,
-                                                                                                     "type":  "number"
-                                                                                                 }
-                                                                      }
-                                                       }
-                                                   ]
-                                     }
-                   }
+{
+  "metadata": {
+    "description": "Defensive runes providing protection modifiers",
+    "version": "5.1",
+    "lastUpdated": "2026-01-08",
+    "type": "rune_catalog"
+  },
+  "rune_types": {
+    "defensive": {
+      "items": []
+    }
+  }
 }

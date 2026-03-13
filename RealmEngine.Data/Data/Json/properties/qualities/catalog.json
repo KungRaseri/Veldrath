@@ -1,42 +1,42 @@
-﻿{
-    "metadata":  {
-                     "description":  "Universal quality tiers for all items",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "quality_catalog",
-                     "notes":  [
-                                   "Qualities modify base items with bonus stats",
-                                   "itemTypeTraits allow quality effects to vary by item type (weapon vs armor)",
-                                   "Higher rarityWeight = more common quality"
-                               ]
-                 },
-    "quality_types":  {
-                          "Fine":  {
-                                       "name":  "Fine",
-                                       "rarityWeight":  15,
-                                       "description":  "",
-                                       "itemTypeTraits":  {
-                                                              "weapon":  {
-                                                                             "durability":  {
-                                                                                                "value":  120,
-                                                                                                "type":  "number"
-                                                                                            },
-                                                                             "damageBonus":  {
-                                                                                                 "value":  1,
-                                                                                                 "type":  "number"
-                                                                                             }
-                                                                         },
-                                                              "armor":  {
-                                                                            "armorBonus":  {
-                                                                                               "value":  2,
-                                                                                               "type":  "number"
-                                                                                           },
-                                                                            "valueMultiplier":  {
-                                                                                                    "value":  1.2,
-                                                                                                    "type":  "number"
-                                                                                                }
-                                                                        }
-                                                          }
-                                   }
-                      }
+{
+  "metadata": {
+    "description": "Universal quality tiers for all items",
+    "version": "5.1",
+    "lastUpdated": "2026-01-19",
+    "type": "quality_catalog",
+    "notes": [
+      "Qualities modify base items with bonus stats",
+      "itemTypeTraits allow quality effects to vary by item type (weapon vs armor)",
+      "Higher rarityWeight = more common quality"
+    ]
+  },
+  "quality_types": {
+    "Fine": {
+      "name": "Fine",
+      "rarityWeight": 15,
+      "description": "",
+      "itemTypeTraits": {
+        "weapon": {
+          "durability": {
+            "value": 120,
+            "type": "number"
+          },
+          "damageBonus": {
+            "value": 1,
+            "type": "number"
+          }
+        },
+        "armor": {
+          "armorBonus": {
+            "value": 2,
+            "type": "number"
+          },
+          "valueMultiplier": {
+            "value": 1.2,
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
 }

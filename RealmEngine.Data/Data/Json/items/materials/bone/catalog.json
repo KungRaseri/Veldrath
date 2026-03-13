@@ -1,36 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Bone materials for tribal and necromantic crafting",
-                     "version":  "1.0",
-                     "lastUpdated":  "2026-01-23",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "bone":  {
-                                        "items":  [
-                                                      {
-                                                          "slug":  "beast-bone",
-                                                          "name":  "Beast Bone",
-                                                          "description":  "Common animal bone, suitable for basic weapons and totems.",
-                                                          "propertyRef":  "@properties/materials/bones:bone",
-                                                          "rarityWeight":  70,
-                                                          "value":  3,
-                                                          "weight":  0.5,
-                                                          "stackSize":  50,
-                                                          "itemType":  "material",
-                                                          "subType":  "bone",
-                                                          "tier":  "raw",
-                                                          "traits":  {
-
-                                                                     },
-                                                          "tags":  [
-                                                                       "bone",
-                                                                       "crafting",
-                                                                       "tribal"
-                                                                   ]
-                                                      }
-                                                  ]
-                                    }
-                       }
+{
+  "metadata": {
+    "description": "Bone materials for tribal and necromantic crafting",
+    "version": "1.0",
+    "lastUpdated": "2026-01-23",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "bone": {
+      "items": []
+    }
+  }
 }

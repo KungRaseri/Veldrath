@@ -1,36 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Character backgrounds defining origin stories and attribute bonuses",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-02-02",
-                     "type":  "background_catalog",
-                     "totalBackgroundTypes":  1,
-                     "totalBackgrounds":  1,
-                     "notes":  [
-                                   "Backgrounds provide attribute bonuses and recommended starting locations",
-                                   "Primary attribute gets +2, secondary attribute gets +1",
-                                   "Location types reference existing location catalogs: settlement, wilderness, dungeon"
-                               ]
-                 },
-    "background_types":  {
-                             "strength":  {
-                                              "items":  [
-                                                            {
-                                                                "slug":  "soldier",
-                                                                "name":  "Soldier",
-                                                                "rarityWeight":  50,
-                                                                "description":  "Trained warrior who served in an army or mercenary company.",
-                                                                "primaryAttribute":  "strength",
-                                                                "primaryBonus":  2,
-                                                                "secondaryAttribute":  "constitution",
-                                                                "secondaryBonus":  1,
-                                                                "recommendedLocationTypes":  [
-                                                                                                 "settlement",
-                                                                                                 "wilderness",
-                                                                                                 "dungeon"
-                                                                                             ]
-                                                            }
-                                                        ]
-                                          }
-                         }
+{
+  "metadata": {
+    "description": "Character backgrounds defining origin stories and attribute bonuses",
+    "version": "5.1",
+    "lastUpdated": "2026-02-02",
+    "type": "background_catalog",
+    "totalBackgroundTypes": 1,
+    "totalBackgrounds": 1,
+    "notes": [
+      "Backgrounds provide attribute bonuses and recommended starting locations",
+      "Primary attribute gets +2, secondary attribute gets +1",
+      "Location types reference existing location catalogs: settlement, wilderness, dungeon"
+    ]
+  },
+  "background_types": {
+    "strength": {
+      "items": []
+    }
+  }
 }

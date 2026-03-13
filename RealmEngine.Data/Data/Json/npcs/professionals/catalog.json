@@ -1,74 +1,29 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Professional NPCs - specialized service providers with expertise in healing, knowledge, or technical skills",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "professional",
-                     "notes":  [
-                                   "High intelligence/wisdom attributes",
-                                   "Specialized skill bonuses",
-                                   "Often provide services beyond selling items",
-                                   "May have research, identification, or healing abilities"
-                               ]
-                 },
-    "background_types":  {
-                             "scholarly":  {
-                                               "metadata":  {
-                                                                "description":  "Characters dedicated to learning and knowledge",
-                                                                "socialClass":  "professional",
-                                                                "notes":  [
-                                                                              "High intelligence, moderate wisdom",
-                                                                              "Bonuses to knowledge and appraisal",
-                                                                              "Often have unique scholarly items"
-                                                                          ]
-                                                            },
-                                               "items":  [
-                                                             {
-                                                                 "slug":  "scholarlyscribe",
-                                                                 "name":  "ScholarlyScribe",
-                                                                 "displayName":  "Scholarly Scribe",
-                                                                 "description":  "Dedicated to learning and record-keeping",
-                                                                 "attributes":  {
-                                                                                    "strength":  9,
-                                                                                    "dexterity":  11,
-                                                                                    "constitution":  11,
-                                                                                    "intelligence":  15,
-                                                                                    "wisdom":  13,
-                                                                                    "charisma":  11
-                                                                                },
-                                                                 "rarityWeight":  22,
-                                                                 "socialClass":  "professional",
-                                                                 "startingGold":  "2d10",
-                                                                 "skillBonuses":  [
-                                                                                      "knowledge",
-                                                                                      "literacy",
-                                                                                      "appraisal"
-                                                                                  ],
-                                                                 "shopModifiers":  {
-                                                                                       "qualityBonus":  5,
-                                                                                       "priceMultiplier":  1.1,
-                                                                                       "shopAppearance":  "scholarly"
-                                                                                   },
-                                                                 "specializationHints":  [
-                                                                                             "consumables.scrolls",
-                                                                                             "books"
-                                                                                         ],
-                                                                 "uniqueItems":  [
-                                                                                     "Ink-stained Quill",
-                                                                                     "Bound Journal"
-                                                                                 ],
-                                                                 "dialogueStyle":  "@social/dialogue/styles/formal:scholarly",
-                                                                 "greetings":  [
-                                                                                   "@social/dialogue/greetings/scholarly:scholarly-formal"
-                                                                               ],
-                                                                 "farewells":  [
-                                                                                   "@social/dialogue/farewells/scholarly:scholarly"
-                                                                               ],
-                                                                 "faction":  "scholars_guild",
-                                                                 "schedule":  "@social/schedules/*:scholar"
-                                                             }
-                                                         ]
-                                           }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Professional NPCs - specialized service providers with expertise in healing, knowledge, or technical skills",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "professional",
+    "notes": [
+      "High intelligence/wisdom attributes",
+      "Specialized skill bonuses",
+      "Often provide services beyond selling items",
+      "May have research, identification, or healing abilities"
+    ]
+  },
+  "background_types": {
+    "scholarly": {
+      "metadata": {
+        "description": "Characters dedicated to learning and knowledge",
+        "socialClass": "professional",
+        "notes": [
+          "High intelligence, moderate wisdom",
+          "Bonuses to knowledge and appraisal",
+          "Often have unique scholarly items"
+        ]
+      },
+      "items": []
+    }
+  }
 }

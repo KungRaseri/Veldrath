@@ -1,72 +1,59 @@
-﻿{
-    "metadata":  {
-                     "description":  "Quest objectives catalog organized by objective type",
-                     "version":  "4.0",
-                     "lastUpdated":  "2025-12-31",
-                     "type":  "quest_objectives_catalog"
-                 },
-    "objective_types":  {
-                            "kill":  {
-                                         "items":  [
-                                                       {
-                                                           "slug":  "goblin-extermination",
-                                                           "name":  "goblin-extermination",
-                                                           "rarityWeight":  30,
-                                                           "targetType":  "goblin",
-                                                           "targetCount":  {
-                                                                               "min":  5,
-                                                                               "max":  10
-                                                                           },
-                                                           "description":  "Slay goblins threatening the region",
-                                                           "locationHint":  "goblin-camps"
-                                                       }
-                                                   ],
-                                         "fetch_objectives":  [
-                                                                  {
-                                                                      "name":  "herb-gathering",
-                                                                      "rarityWeight":  25,
-                                                                      "itemType":  "herbs",
-                                                                      "itemCount":  {
-                                                                                        "min":  5,
-                                                                                        "max":  20
-                                                                                    },
-                                                                      "description":  "Collect medicinal herbs",
-                                                                      "locationHint":  "forests"
-                                                                  },
-                                                                  {
-                                                                      "name":  "ore-collection",
-                                                                      "rarityWeight":  35,
-                                                                      "itemType":  "ore",
-                                                                      "itemCount":  {
-                                                                                        "min":  3,
-                                                                                        "max":  10
-                                                                                    },
-                                                                      "description":  "Mine valuable ore deposits",
-                                                                      "locationHint":  "caves"
-                                                                  },
-                                                                  {
-                                                                      "name":  "artifact-retrieval",
-                                                                      "rarityWeight":  150,
-                                                                      "itemType":  "artifact",
-                                                                      "itemCount":  {
-                                                                                        "min":  1,
-                                                                                        "max":  1
-                                                                                    },
-                                                                      "description":  "Recover ancient artifact",
-                                                                      "locationHint":  "ruins"
-                                                                  },
-                                                                  {
-                                                                      "name":  "lost-item-recovery",
-                                                                      "rarityWeight":  40,
-                                                                      "itemType":  "personal-item",
-                                                                      "itemCount":  {
-                                                                                        "min":  1,
-                                                                                        "max":  1
-                                                                                    },
-                                                                      "description":  "Find and return lost belongings",
-                                                                      "locationHint":  "various"
-                                                                  }
-                                                              ]
-                                     }
-                        }
+{
+  "metadata": {
+    "description": "Quest objectives catalog organized by objective type",
+    "version": "4.0",
+    "lastUpdated": "2025-12-31",
+    "type": "quest_objectives_catalog"
+  },
+  "objective_types": {
+    "kill": {
+      "items": [],
+      "fetch_objectives": [
+        {
+          "name": "herb-gathering",
+          "rarityWeight": 25,
+          "itemType": "herbs",
+          "itemCount": {
+            "min": 5,
+            "max": 20
+          },
+          "description": "Collect medicinal herbs",
+          "locationHint": "forests"
+        },
+        {
+          "name": "ore-collection",
+          "rarityWeight": 35,
+          "itemType": "ore",
+          "itemCount": {
+            "min": 3,
+            "max": 10
+          },
+          "description": "Mine valuable ore deposits",
+          "locationHint": "caves"
+        },
+        {
+          "name": "artifact-retrieval",
+          "rarityWeight": 150,
+          "itemType": "artifact",
+          "itemCount": {
+            "min": 1,
+            "max": 1
+          },
+          "description": "Recover ancient artifact",
+          "locationHint": "ruins"
+        },
+        {
+          "name": "lost-item-recovery",
+          "rarityWeight": 40,
+          "itemType": "personal-item",
+          "itemCount": {
+            "min": 1,
+            "max": 1
+          },
+          "description": "Find and return lost belongings",
+          "locationHint": "various"
+        }
+      ]
+    }
+  }
 }

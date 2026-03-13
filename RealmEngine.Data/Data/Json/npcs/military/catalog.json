@@ -1,78 +1,29 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Military NPCs - soldiers, guards, and combat-trained individuals with martial discipline",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "military",
-                     "notes":  [
-                                   "High strength and constitution",
-                                   "Combat and tactics skills",
-                                   "May have military connections or past service",
-                                   "Disciplined and tactical mindset"
-                               ]
-                 },
-    "background_types":  {
-                             "former_military":  {
-                                                     "metadata":  {
-                                                                      "description":  "Retired or former military personnel",
-                                                                      "socialClass":  "military",
-                                                                      "notes":  [
-                                                                                    "Combat-focused training and experience",
-                                                                                    "Disciplined mindset",
-                                                                                    "Often have connections to military organizations"
-                                                                                ]
-                                                                  },
-                                                     "items":  [
-                                                                   {
-                                                                       "slug":  "formersoldier",
-                                                                       "name":  "FormerSoldier",
-                                                                       "displayName":  "Former Soldier",
-                                                                       "description":  "Served in the military and retired or deserted",
-                                                                       "attributes":  {
-                                                                                          "strength":  15,
-                                                                                          "dexterity":  12,
-                                                                                          "constitution":  14,
-                                                                                          "intelligence":  10,
-                                                                                          "wisdom":  11,
-                                                                                          "charisma":  10
-                                                                                      },
-                                                                       "rarityWeight":  30,
-                                                                       "socialClass":  "military",
-                                                                       "startingGold":  "2d10",
-                                                                       "skillBonuses":  [
-                                                                                            "melee_combat",
-                                                                                            "tactics",
-                                                                                            "discipline",
-                                                                                            "endurance"
-                                                                                        ],
-                                                                       "shopModifiers":  {
-                                                                                             "qualityBonus":  15,
-                                                                                             "priceMultiplier":  1.0,
-                                                                                             "shopAppearance":  "utilitarian",
-                                                                                             "combatItemBonus":  20
-                                                                                         },
-                                                                       "specializationHints":  [
-                                                                                                   "weapons.melee",
-                                                                                                   "armor.medium",
-                                                                                                   "armor.heavy"
-                                                                                               ],
-                                                                       "uniqueItems":  [
-                                                                                           "Officer\u0027s Sword",
-                                                                                           "Battle-worn Shield",
-                                                                                           "Military Medal"
-                                                                                       ],
-                                                                       "dialogueStyle":  "@social/dialogue/styles/casual:professional",
-                                                                       "greetings":  [
-                                                                                         "@social/dialogue/greetings/military:military-formal"
-                                                                                     ],
-                                                                       "farewells":  [
-                                                                                         "@social/dialogue/farewells/simple:simple"
-                                                                                     ],
-                                                                       "faction":  "city_guard",
-                                                                       "schedule":  "@social/schedules/*:guard"
-                                                                   }
-                                                               ]
-                                                 }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Military NPCs - soldiers, guards, and combat-trained individuals with martial discipline",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "military",
+    "notes": [
+      "High strength and constitution",
+      "Combat and tactics skills",
+      "May have military connections or past service",
+      "Disciplined and tactical mindset"
+    ]
+  },
+  "background_types": {
+    "former_military": {
+      "metadata": {
+        "description": "Retired or former military personnel",
+        "socialClass": "military",
+        "notes": [
+          "Combat-focused training and experience",
+          "Disciplined mindset",
+          "Often have connections to military organizations"
+        ]
+      },
+      "items": []
+    }
+  }
 }

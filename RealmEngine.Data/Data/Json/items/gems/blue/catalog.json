@@ -1,37 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Blue gems providing mana and magic damage bonuses",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "gem_catalog"
-                 },
-    "gem_types":  {
-                      "blue":  {
-                                   "items":  [
-                                                 {
-                                                     "rarityWeight":  50,
-                                                     "slug":  "sapphire",
-                                                     "name":  "Sapphire",
-                                                     "attributes":  {
-                                                                        "constitution":  10,
-                                                                        "intelligence":  8,
-                                                                        "dexterity":  10,
-                                                                        "wisdom":  8,
-                                                                        "strength":  10,
-                                                                        "charisma":  8
-                                                                    },
-                                                     "traits":  {
-                                                                    "magicDamage":  {
-                                                                                        "value":  8,
-                                                                                        "type":  "number"
-                                                                                    },
-                                                                    "manaRegen":  {
-                                                                                      "value":  5,
-                                                                                      "type":  "number"
-                                                                                  }
-                                                                }
-                                                 }
-                                             ]
-                               }
-                  }
+{
+  "metadata": {
+    "description": "Blue gems providing mana and magic damage bonuses",
+    "version": "5.1",
+    "lastUpdated": "2026-01-08",
+    "type": "gem_catalog"
+  },
+  "gem_types": {
+    "blue": {
+      "items": []
+    }
+  }
 }

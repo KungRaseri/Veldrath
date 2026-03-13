@@ -1,55 +1,19 @@
-﻿{
-    "metadata":  {
-                     "description":  "Gemstone material properties for crafting system - stat bonuses applied to sockets, enchantments, jewelry",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-10",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Material properties define stat bonuses based on item type. itemTypeTraits apply bonuses to socket, enchantment, and jewelry.",
-                     "notes":  [
-                                   "Gemstone materials focus on magical bonuses and stat increases",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "gemstone_types":  {
-                           "gemstone":  {
-                                            "items":  [
-                                                          {
-                                                              "slug":  "topaz",
-                                                              "name":  "Topaz",
-                                                              "attributes":  {
-                                                                                 "dexterity":  10,
-                                                                                 "intelligence":  8,
-                                                                                 "charisma":  8,
-                                                                                 "strength":  10,
-                                                                                 "constitution":  10,
-                                                                                 "wisdom":  8
-                                                                             },
-                                                              "traits":  {
-                                                                             "magicPower":  55,
-                                                                             "attunement":  65,
-                                                                             "durability":  70,
-                                                                             "visualColor":  "yellow"
-                                                                         },
-                                                              "displayName":  "Topaz",
-                                                              "itemTypeTraits":  {
-                                                                                     "socket":  {
-                                                                                                    "bonusLightningDamage":  20,
-                                                                                                    "dexterityBonus":  3
-                                                                                                },
-                                                                                     "enchantment":  {
-                                                                                                         "lightningDamage":  15,
-                                                                                                         "shockChance":  10
-                                                                                                     },
-                                                                                     "jewelry":  {
-                                                                                                     "dexterityBonus":  2,
-                                                                                                     "resistLightning":  15,
-                                                                                                     "value":  80
-                                                                                                 }
-                                                                                 },
-                                                              "rarityWeight":  30
-                                                          }
-                                                      ]
-                                        }
-                       }
+{
+  "metadata": {
+    "description": "Gemstone material properties for crafting system - stat bonuses applied to sockets, enchantments, jewelry",
+    "version": "5.1",
+    "lastUpdated": "2026-01-10",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Material properties define stat bonuses based on item type. itemTypeTraits apply bonuses to socket, enchantment, and jewelry.",
+    "notes": [
+      "Gemstone materials focus on magical bonuses and stat increases",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "gemstone_types": {
+    "gemstone": {
+      "items": []
+    }
+  }
 }

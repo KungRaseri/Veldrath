@@ -1,67 +1,36 @@
-﻿{
-    "metadata":  {
-                     "description":  "Unified weapon naming system with prefix/suffix support and trait assignment (v4.2 - Hybrid Enhancement System)",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "supportsTraits":  true,
-                     "componentKeys":  [
-                                           "prefix",
-                                           "suffix"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "prefix",
-                                           "suffix"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "Base token resolves from items/weapons/catalog.json",
-                                   "Material references use v4.1 syntax for metals (weapon-appropriate)",
-                                   "Materials filtered by itemTypeTraits.weapon context",
-                                   "Component tokens ({prefix}, {base}, etc.) resolve from components section",
-                                   "Traits are applied when components are selected in patterns",
-                                   "Trait merging: numbers take highest, strings take last, booleans use OR",
-                                   "Emergent rarity calculated from combined component weights",
-                                   "Materials are now applied through the budget-based generation system, not pattern references",
-                                   "Enchantments can be added to patterns using component tokens or references"
-                               ]
-                 },
-    "components":  {
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  50,
-                                          "traits":  {
-                                                         "durability":  {
-                                                                            "value":  50,
-                                                                            "type":  "number"
-                                                                        },
-                                                         "damageMultiplier":  {
-                                                                                  "value":  0.8,
-                                                                                  "type":  "number"
-                                                                              }
-                                                     },
-                                          "name":  "Rusty"
-                                      }
-                                  ],
-                       "suffix":  [
-                                      {
-                                          "rarityWeight":  50,
-                                          "traits":  {
-                                                         "damageBonus":  {
-                                                                             "value":  5,
-                                                                             "type":  "number"
-                                                                         }
-                                                     },
-                                          "name":  "of Slaying"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "pattern":  "{base}",
-                         "rarityWeight":  100
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Unified weapon naming system with prefix/suffix support and trait assignment (v4.2 - Hybrid Enhancement System)",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "supportsTraits": true,
+    "componentKeys": [
+      "prefix",
+      "suffix"
+    ],
+    "patternTokens": [
+      "base",
+      "prefix",
+      "suffix"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "Base token resolves from items/weapons/catalog.json",
+      "Material references use v4.1 syntax for metals (weapon-appropriate)",
+      "Materials filtered by itemTypeTraits.weapon context",
+      "Component tokens ({prefix}, {base}, etc.) resolve from components section",
+      "Traits are applied when components are selected in patterns",
+      "Trait merging: numbers take highest, strings take last, booleans use OR",
+      "Emergent rarity calculated from combined component weights",
+      "Materials are now applied through the budget-based generation system, not pattern references",
+      "Enchantments can be added to patterns using component tokens or references"
+    ]
+  },
+  "components": {
+    "prefix": [],
+    "suffix": []
+  },
+  "patterns": []
 }

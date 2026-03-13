@@ -1,35 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Elemental essence materials for enchanting and high-level crafting",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-10",
-                     "type":  "items_materials_catalog"
-                 },
-    "material_types":  {
-                           "essence":  {
-                                           "items":  [
-                                                         {
-                                                             "slug":  "essence-of-earth",
-                                                             "name":  "Essence of Earth",
-                                                             "description":  "Condensed earth magic, grants stability and defensive properties.",
-                                                             "rarityWeight":  30,
-                                                             "value":  35,
-                                                             "weight":  0.05,
-                                                             "stackSize":  10,
-                                                             "itemType":  "material",
-                                                             "subType":  "essence",
-                                                             "traits":  {
-
-                                                                        },
-                                                             "tags":  [
-                                                                          "essence",
-                                                                          "earth",
-                                                                          "enchanting",
-                                                                          "defensive",
-                                                                          "elemental"
-                                                                      ]
-                                                         }
-                                                     ]
-                                       }
-                       }
+{
+  "metadata": {
+    "description": "Elemental essence materials for enchanting and high-level crafting",
+    "version": "4.0",
+    "lastUpdated": "2026-01-10",
+    "type": "items_materials_catalog"
+  },
+  "material_types": {
+    "essence": {
+      "items": []
+    }
+  }
 }

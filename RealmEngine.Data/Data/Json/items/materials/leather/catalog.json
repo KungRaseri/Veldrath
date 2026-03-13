@@ -1,35 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Leather materials for crafting - from raw hides to exotic dragon leather",
-                     "version":  "5.2",
-                     "lastUpdated":  "2026-01-23",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "leather":  {
-                                           "items":  [
-                                                         {
-                                                             "slug":  "scraps",
-                                                             "name":  "Leather Scraps",
-                                                             "description":  "Torn bits of leather, barely usable.",
-                                                             "rarityWeight":  90,
-                                                             "value":  1,
-                                                             "weight":  0.1,
-                                                             "stackSize":  100,
-                                                             "itemType":  "material",
-                                                             "subType":  "leather",
-                                                             "tier":  "raw",
-                                                             "traits":  {
-
-                                                                        },
-                                                             "tags":  [
-                                                                          "leather",
-                                                                          "crafting",
-                                                                          "raw"
-                                                                      ]
-                                                         }
-                                                     ]
-                                       }
-                       }
+{
+  "metadata": {
+    "description": "Leather materials for crafting - from raw hides to exotic dragon leather",
+    "version": "5.2",
+    "lastUpdated": "2026-01-23",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "leather": {
+      "items": []
+    }
+  }
 }

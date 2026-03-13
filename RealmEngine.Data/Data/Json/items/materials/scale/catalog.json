@@ -1,37 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Reptilian scale materials for exotic armor crafting",
-                     "version":  "1.0",
-                     "lastUpdated":  "2026-01-21",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "scale":  {
-                                         "items":  [
-                                                       {
-                                                           "slug":  "snake-scale",
-                                                           "name":  "Snake Scale",
-                                                           "description":  "Flexible scales from large serpents.",
-                                                           "propertyRef":  "@properties/materials/scales:serpent-scale",
-                                                           "rarityWeight":  60,
-                                                           "value":  8,
-                                                           "weight":  0.1,
-                                                           "stackSize":  100,
-                                                           "itemType":  "material",
-                                                           "subType":  "scale",
-                                                           "tier":  "raw",
-                                                           "traits":  {
-
-                                                                      },
-                                                           "tags":  [
-                                                                        "scale",
-                                                                        "crafting",
-                                                                        "reptile",
-                                                                        "flexible"
-                                                                    ]
-                                                       }
-                                                   ]
-                                     }
-                       }
+{
+  "metadata": {
+    "description": "Reptilian scale materials for exotic armor crafting",
+    "version": "1.0",
+    "lastUpdated": "2026-01-21",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "scale": {
+      "items": []
+    }
+  }
 }

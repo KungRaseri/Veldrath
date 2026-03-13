@@ -1,60 +1,35 @@
-﻿{
-    "metadata":  {
-                     "description":  "Elemental enemy name generation with pattern-based system and weight-based rarity",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "componentKeys":  [
-                                           "element",
-                                           "size",
-                                           "title"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "element",
-                                           "size",
-                                           "title"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "Base token resolves from enemies/elementals/catalog.json",
-                                   "All components have rarityWeight for emergent rarity calculation",
-                                   "Component weights combine via multipliers from general/rarity_config.json",
-                                   "Upgraded to v4.0 with supportsTraits metadata"
-                               ],
-                     "supportsTraits":  true
-                 },
-    "components":  {
-                       "element":  [
-                                       {
-                                           "rarityWeight":  20,
-                                           "name":  "Fire"
-                                       }
-                                   ],
-                       "size":  [
-                                    {
-                                        "rarityWeight":  8,
-                                        "name":  "Lesser"
-                                    }
-                                ],
-                       "title":  [
-                                     {
-                                         "rarityWeight":  50,
-                                         "name":  "of the Volcano"
-                                     }
-                                 ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  25,
-                                          "name":  "Raging"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "rarityWeight":  50,
-                         "pattern":  "base"
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Elemental enemy name generation with pattern-based system and weight-based rarity",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "componentKeys": [
+      "element",
+      "size",
+      "title"
+    ],
+    "patternTokens": [
+      "base",
+      "element",
+      "size",
+      "title"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "Base token resolves from enemies/elementals/catalog.json",
+      "All components have rarityWeight for emergent rarity calculation",
+      "Component weights combine via multipliers from general/rarity_config.json",
+      "Upgraded to v4.0 with supportsTraits metadata"
+    ],
+    "supportsTraits": true
+  },
+  "components": {
+    "element": [],
+    "size": [],
+    "title": [],
+    "prefix": []
+  },
+  "patterns": []
 }

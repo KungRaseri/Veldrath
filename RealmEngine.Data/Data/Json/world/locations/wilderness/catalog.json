@@ -1,33 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Wilderness and outdoor location definitions organized by danger level",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "world_locations_wilderness_catalog"
-                 },
-    "low_danger_types":  {
-                             "low_danger":  {
-                                                "items":  [
-                                                              {
-                                                                  "slug":  "goldenplains",
-                                                                  "name":  "GoldenPlains",
-                                                                  "displayName":  "Golden Plains",
-                                                                  "rarityWeight":  10,
-                                                                  "description":  "Peaceful grasslands perfect for travel",
-                                                                  "terrain":  "Plains",
-                                                                  "danger":  "Low",
-                                                                  "locationType":  "wilderness",
-                                                                  "isStartingZone":  true,
-                                                                  "recommendedLevel":  "1-5",
-                                                                  "encounters":  [
-                                                                                     "@enemies/beasts/wolves:Wolf",
-                                                                                     "@enemies/humanoids/bandits:Bandit"
-                                                                                 ],
-                                                                  "resources":  [
-                                                                                    "@items/materials:*"
-                                                                                ]
-                                                              }
-                                                          ]
-                                            }
-                         }
+{
+  "metadata": {
+    "description": "Wilderness and outdoor location definitions organized by danger level",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "world_locations_wilderness_catalog"
+  },
+  "low_danger_types": {
+    "low_danger": {
+      "items": []
+    }
+  }
 }

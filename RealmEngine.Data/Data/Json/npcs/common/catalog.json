@@ -1,66 +1,30 @@
-﻿{
-    "metadata":  {
-                     "type":  "hierarchical_catalog",
-                     "version":  "5.1",
-                     "description":  "Common folk NPCs - everyday people from humble origins including farmers, laborers, refugees, and former slaves",
-                     "lastUpdated":  "2026-01-08",
-                     "socialClass":  "common",
-                     "notes":  [
-                                   "Most populous social class representing everyday citizens",
-                                   "Practical skills and modest resources, no special privileges",
-                                   "Includes troubled past individuals (orphans, refugees, exiles, former slaves)",
-                                   "Backgrounds represent past/history, occupations represent current job",
-                                   "NPCs can have both background AND occupation"
-                               ]
-                 },
-    "background_types":  {
-                             "everyday_folk":  {
-                                                   "metadata":  {
-                                                                    "description":  "Everyday people from humble origins",
-                                                                    "socialClass":  "common",
-                                                                    "notes":  [
-                                                                                  "Most common background type",
-                                                                                  "Practical skills and modest resources",
-                                                                                  "No special privileges but no social stigma"
-                                                                              ]
-                                                                },
-                                                   "items":  [
-                                                                 {
-                                                                     "slug":  "farmer",
-                                                                     "name":  "Farmer",
-                                                                     "displayName":  "Farmer",
-                                                                     "description":  "Works the land for a living",
-                                                                     "attributes":  {
-                                                                                        "strength":  12,
-                                                                                        "dexterity":  10,
-                                                                                        "constitution":  13,
-                                                                                        "intelligence":  10,
-                                                                                        "wisdom":  11,
-                                                                                        "charisma":  9
-                                                                                    },
-                                                                     "rarityWeight":  5,
-                                                                     "socialClass":  "common",
-                                                                     "startingGold":  "1d6",
-                                                                     "skillBonuses":  [
-                                                                                          "endurance",
-                                                                                          "farming",
-                                                                                          "herbalism"
-                                                                                      ],
-                                                                     "shopModifiers":  {
-                                                                                           "qualityBonus":  0,
-                                                                                           "priceMultiplier":  0.95,
-                                                                                           "shopAppearance":  "rustic"
-                                                                                       },
-                                                                     "specializationHints":  [
-                                                                                                 "consumables.food",
-                                                                                                 "tools.farming"
-                                                                                             ],
-                                                                     "uniqueItems":  [
-
-                                                                                     ],
-                                                                     "dialogueStyle":  "@social/dialogue/styles/casual:friendly"
-                                                                 }
-                                                             ]
-                                               }
-                         }
+{
+  "metadata": {
+    "type": "hierarchical_catalog",
+    "version": "5.1",
+    "description": "Common folk NPCs - everyday people from humble origins including farmers, laborers, refugees, and former slaves",
+    "lastUpdated": "2026-01-08",
+    "socialClass": "common",
+    "notes": [
+      "Most populous social class representing everyday citizens",
+      "Practical skills and modest resources, no special privileges",
+      "Includes troubled past individuals (orphans, refugees, exiles, former slaves)",
+      "Backgrounds represent past/history, occupations represent current job",
+      "NPCs can have both background AND occupation"
+    ]
+  },
+  "background_types": {
+    "everyday_folk": {
+      "metadata": {
+        "description": "Everyday people from humble origins",
+        "socialClass": "common",
+        "notes": [
+          "Most common background type",
+          "Practical skills and modest resources",
+          "No special privileges but no social stigma"
+        ]
+      },
+      "items": []
+    }
+  }
 }

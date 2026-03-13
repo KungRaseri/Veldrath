@@ -1,47 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Glass material properties for crafting system - fragile but sharp",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Glass materials for fragile weapons with high damage potential.",
-                     "notes":  [
-                                   "Glass materials have high damage but very low durability",
-                                   "Focus on critical hits and piercing damage",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "glass_types":  {
-                        "glass":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "common-glass",
-                                                        "name":  "Common Glass",
-                                                        "attributes":  {
-                                                                           "dexterity":  5,
-                                                                           "intelligence":  3,
-                                                                           "charisma":  5,
-                                                                           "strength":  0,
-                                                                           "constitution":  0,
-                                                                           "wisdom":  0
-                                                                       },
-                                                        "traits":  {
-                                                                       "durability":  10,
-                                                                       "weight":  0.6,
-                                                                       "sharpness":  40
-                                                                   },
-                                                        "displayName":  "Common Glass",
-                                                        "itemTypeTraits":  {
-                                                                               "weapon":  {
-                                                                                              "damage":  5,
-                                                                                              "critChance":  3,
-                                                                                              "value":  2
-                                                                                          }
-                                                                           },
-                                                        "rarityWeight":  75
-                                                    }
-                                                ]
-                                  }
-                    }
+{
+  "metadata": {
+    "description": "Glass material properties for crafting system - fragile but sharp",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Glass materials for fragile weapons with high damage potential.",
+    "notes": [
+      "Glass materials have high damage but very low durability",
+      "Focus on critical hits and piercing damage",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "glass_types": {
+    "glass": {
+      "items": []
+    }
+  }
 }

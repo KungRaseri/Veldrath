@@ -1,60 +1,35 @@
-﻿{
-    "metadata":  {
-                     "description":  "Goblinoid name generation patterns with weight-based rarity components",
-                     "version":  "4.3",
-                     "lastUpdated":  "2026-01-19",
-                     "type":  "pattern_generation",
-                     "componentKeys":  [
-                                           "rank",
-                                           "tribe",
-                                           "title"
-                                       ],
-                     "patternTokens":  [
-                                           "base",
-                                           "rank",
-                                           "tribe",
-                                           "title"
-                                       ],
-                     "totalPatterns":  1,
-                     "raritySystem":  "weight-based",
-                     "notes":  [
-                                   "base_token: Resolves to item name from goblinoids/catalog.json",
-                                   "tribal_culture: Goblinoids organize in tribes/clans with hierarchies",
-                                   "weight_ranges: Young (3) → King (60), Cave (5) → Skullcrusher (35)",
-                                   "Upgraded to v4.0 with supportsTraits metadata"
-                               ],
-                     "supportsTraits":  true
-                 },
-    "components":  {
-                       "rank":  [
-                                    {
-                                        "rarityWeight":  3,
-                                        "name":  "Young"
-                                    }
-                                ],
-                       "tribe":  [
-                                     {
-                                         "rarityWeight":  5,
-                                         "name":  "Cave"
-                                     }
-                                 ],
-                       "title":  [
-                                     {
-                                         "rarityWeight":  8,
-                                         "name":  "Raider"
-                                     }
-                                 ],
-                       "prefix":  [
-                                      {
-                                          "rarityWeight":  5,
-                                          "name":  "Sneaky"
-                                      }
-                                  ]
-                   },
-    "patterns":  [
-                     {
-                         "rarityWeight":  50,
-                         "pattern":  "base"
-                     }
-                 ]
+{
+  "metadata": {
+    "description": "Goblinoid name generation patterns with weight-based rarity components",
+    "version": "4.3",
+    "lastUpdated": "2026-01-19",
+    "type": "pattern_generation",
+    "componentKeys": [
+      "rank",
+      "tribe",
+      "title"
+    ],
+    "patternTokens": [
+      "base",
+      "rank",
+      "tribe",
+      "title"
+    ],
+    "totalPatterns": 1,
+    "raritySystem": "weight-based",
+    "notes": [
+      "base_token: Resolves to item name from goblinoids/catalog.json",
+      "tribal_culture: Goblinoids organize in tribes/clans with hierarchies",
+      "weight_ranges: Young (3) → King (60), Cave (5) → Skullcrusher (35)",
+      "Upgraded to v4.0 with supportsTraits metadata"
+    ],
+    "supportsTraits": true
+  },
+  "components": {
+    "rank": [],
+    "tribe": [],
+    "title": [],
+    "prefix": []
+  },
+  "patterns": []
 }

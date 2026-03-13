@@ -1,50 +1,20 @@
-﻿{
-    "metadata":  {
-                     "description":  "Coral material properties for crafting system - underwater and coastal materials",
-                     "version":  "5.1",
-                     "lastUpdated":  "2026-01-22",
-                     "type":  "materials_properties_catalog",
-                     "totalMaterials":  1,
-                     "usage":  "Coral materials for armor and decorative items with water affinity.",
-                     "notes":  [
-                                   "Coral materials provide water resistance and unique aesthetics",
-                                   "Focus on charisma and wisdom",
-                                   "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
-                               ]
-                 },
-    "coral_types":  {
-                        "coral":  {
-                                      "items":  [
-                                                    {
-                                                        "slug":  "red-coral",
-                                                        "name":  "Red Coral",
-                                                        "attributes":  {
-                                                                           "dexterity":  3,
-                                                                           "intelligence":  5,
-                                                                           "charisma":  8,
-                                                                           "strength":  3,
-                                                                           "constitution":  5,
-                                                                           "wisdom":  5
-                                                                       },
-                                                        "traits":  {
-                                                                       "durability":  35,
-                                                                       "weight":  0.8,
-                                                                       "waterResistance":  20
-                                                                   },
-                                                        "displayName":  "Red Coral",
-                                                        "itemTypeTraits":  {
-                                                                               "armor":  {
-                                                                                             "armorRating":  4,
-                                                                                             "defenseBonus":  1,
-                                                                                             "value":  8
-                                                                                         },
-                                                                               "weapon":  {
-                                                                                              "value":  6
-                                                                                          }
-                                                                           },
-                                                        "rarityWeight":  55
-                                                    }
-                                                ]
-                                  }
-                    }
+{
+  "metadata": {
+    "description": "Coral material properties for crafting system - underwater and coastal materials",
+    "version": "5.1",
+    "lastUpdated": "2026-01-22",
+    "type": "materials_properties_catalog",
+    "totalMaterials": 1,
+    "usage": "Coral materials for armor and decorative items with water affinity.",
+    "notes": [
+      "Coral materials provide water resistance and unique aesthetics",
+      "Focus on charisma and wisdom",
+      "Runtime: Pick material by rarityWeight → Apply shared + itemTypeTraits[itemType] → Calculate final stats"
+    ]
+  },
+  "coral_types": {
+    "coral": {
+      "items": []
+    }
+  }
 }

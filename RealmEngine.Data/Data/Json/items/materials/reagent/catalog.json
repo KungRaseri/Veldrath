@@ -1,28 +1,14 @@
-﻿{
-    "metadata":  {
-                     "description":  "Crafting reagents used in various professions",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-10",
-                     "type":  "item_catalog",
-                     "totalItems":  1
-                 },
-    "material_types":  {
-                           "reagent":  {
-                                           "items":  [
-                                                         {
-                                                             "name":  "Flux Powder",
-                                                             "slug":  "flux-powder",
-                                                             "description":  "Basic flux powder that improves smelting yields",
-                                                             "rarityWeight":  60,
-                                                             "value":  3,
-                                                             "weight":  0.1,
-                                                             "stackable":  true,
-                                                             "maxStack":  99,
-                                                             "traits":  {
-
-                                                                        }
-                                                         }
-                                                     ]
-                                       }
-                       }
+{
+  "metadata": {
+    "description": "Crafting reagents used in various professions",
+    "version": "4.0",
+    "lastUpdated": "2026-01-10",
+    "type": "item_catalog",
+    "totalItems": 1
+  },
+  "material_types": {
+    "reagent": {
+      "items": []
+    }
+  }
 }

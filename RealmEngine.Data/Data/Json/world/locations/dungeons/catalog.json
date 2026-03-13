@@ -1,33 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Dungeon and dangerous location definitions organized by difficulty",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-08",
-                     "type":  "world_locations_dungeons_catalog"
-                 },
-    "easy_types":  {
-                       "easy":  {
-                                    "items":  [
-                                                  {
-                                                      "slug":  "bandithideout",
-                                                      "name":  "BanditHideout",
-                                                      "displayName":  "Bandit Hideout",
-                                                      "rarityWeight":  15,
-                                                      "description":  "Fortified camp of outlaws",
-                                                      "type":  "Camp",
-                                                      "difficulty":  "Easy",
-                                                      "locationType":  "dungeon",
-                                                      "isStartingZone":  true,
-                                                      "recommendedLevel":  "1-5",
-                                                      "enemyTypes":  [
-                                                                         "@enemies/humanoids/bandits:Bandit"
-                                                                     ],
-                                                      "rewards":  [
-                                                                      "@items/weapons:*",
-                                                                      "@items/consumables:*"
-                                                                  ]
-                                                  }
-                                              ]
-                                }
-                   }
+{
+  "metadata": {
+    "description": "Dungeon and dangerous location definitions organized by difficulty",
+    "version": "4.0",
+    "lastUpdated": "2026-01-08",
+    "type": "world_locations_dungeons_catalog"
+  },
+  "easy_types": {
+    "easy": {
+      "items": []
+    }
+  }
 }

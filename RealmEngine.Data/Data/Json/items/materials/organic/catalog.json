@@ -1,34 +1,13 @@
-﻿{
-    "metadata":  {
-                     "description":  "Organic material items - herbs and plant components for alchemy",
-                     "version":  "4.0",
-                     "lastUpdated":  "2026-01-10",
-                     "type":  "items_materials_catalog"
-                 },
-    "material_types":  {
-                           "organic":  {
-                                           "items":  [
-                                                         {
-                                                             "slug":  "bloodroot",
-                                                             "name":  "Bloodroot",
-                                                             "description":  "A crimson herb with medicinal properties, used in healing potions.",
-                                                             "rarityWeight":  60,
-                                                             "value":  3,
-                                                             "weight":  0.1,
-                                                             "stackSize":  20,
-                                                             "itemType":  "material",
-                                                             "subType":  "organic",
-                                                             "traits":  {
-
-                                                                        },
-                                                             "tags":  [
-                                                                          "herb",
-                                                                          "alchemy",
-                                                                          "healing",
-                                                                          "plant"
-                                                                      ]
-                                                         }
-                                                     ]
-                                       }
-                       }
+{
+  "metadata": {
+    "description": "Organic material items - herbs and plant components for alchemy",
+    "version": "4.0",
+    "lastUpdated": "2026-01-10",
+    "type": "items_materials_catalog"
+  },
+  "material_types": {
+    "organic": {
+      "items": []
+    }
+  }
 }
