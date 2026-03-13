@@ -28,6 +28,9 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<SaveGameRecord> SaveGames => Set<SaveGameRecord>();
     public DbSet<HallOfFameEntry> HallOfFameEntries => Set<HallOfFameEntry>();
 
+    // Content tables — catalog items, name patterns, and config all stored here.
+    public DbSet<Entities.ContentItem> ContentItems => Set<Entities.ContentItem>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder); // required — scaffolds all Identity tables
@@ -99,6 +102,21 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
         {
             e.HasKey(h => h.Id);
             e.HasIndex(h => h.FameScore);
+        });
+
+        builder.Entity<Entities.ContentItem>(e =>
+        {
+            e.HasKey(ci => ci.Id);
+            // Enforce uniqueness of the content address (mirrors @domain/type_key:slug).
+            e.HasIndex(ci => new { ci.Domain, ci.TypeKey, ci.Slug }).IsUnique();
+            // Fast lookups by domain alone (e.g. "load all enemies").
+            e.HasIndex(ci => ci.Domain);
+            e.Property(ci => ci.Domain).HasMaxLength(64).IsRequired();
+            e.Property(ci => ci.TypeKey).HasMaxLength(64).IsRequired();
+            e.Property(ci => ci.Slug).HasMaxLength(128).IsRequired();
+            e.Property(ci => ci.DisplayName).HasMaxLength(256);
+            // JSONB gives free GIN-indexable document storage on PostgreSQL.
+            e.Property(ci => ci.Data).HasColumnType("jsonb").IsRequired();
         });
     }
 }

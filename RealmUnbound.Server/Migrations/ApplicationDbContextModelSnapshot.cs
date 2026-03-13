@@ -286,6 +286,57 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ContentItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Domain");
+
+                    b.HasIndex("Domain", "TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("ContentItems");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerAccount", b =>
                 {
                     b.Property<Guid>("Id")
