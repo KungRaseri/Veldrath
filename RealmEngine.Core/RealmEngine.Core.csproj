@@ -1,61 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <RootNamespace>RealmEngine.Core</RootNamespace>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Enforce XML documentation for public APIs (CS1591) -->
     <!-- DO NOT CHANGE THIS -->
     <NoWarn></NoWarn>
-    
     <!-- NuGet Package Metadata -->
     <PackageId>RealmEngine.Core</PackageId>
     <Title>Game Core Library</Title>
     <Description>Core game mechanics library with generators, validators, and game features. Includes character generation, item generation, ability system, quest management, and save/load functionality. Designed for integration with Godot Engine.</Description>
-    <Authors>Console Game Team</Authors>
-    <Company>Console Game</Company>
-    <Product>Console Game Engine</Product>
     <PackageTags>game;rpg;generator;godot;csharp;dotnet</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryType>git</RepositoryType>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Business Logic & CQRS -->
-    <PackageReference Include="MediatR" Version="12.4.1" />
-    <PackageReference Include="FluentValidation" Version="12.1.1" />
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <!-- Utilities -->
-    <PackageReference Include="Humanizer" Version="3.0.1" />
-    <PackageReference Include="Polly" Version="8.6.5" />
-    <PackageReference Include="Bogus" Version="35.6.5" />
-    
+    <PackageReference Include="Bogus" />
+    <PackageReference Include="Humanizer" />
+    <PackageReference Include="Polly" />
     <!-- Logging -->
-    <PackageReference Include="Serilog" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
-    
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Serilog" />
     <!-- Configuration -->
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.1" />
-    
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <!-- JSON -->
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>

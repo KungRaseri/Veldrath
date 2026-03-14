@@ -2,27 +2,44 @@
   <PropertyGroup>
     <!--
       Shared build configuration for all projects.
-      
+
       Component versions are set in versions/*.props:
         - versions/engine.props   → RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data
         - versions/tooling.props  → RealmForge
         - versions/server.props   → RealmUnbound.Server
         - versions/client.props   → RealmUnbound.Client
-      
+
       Each component folder has a Directory.Build.props that imports this file
       plus its matching versions/*.props file.
-      
+
       Test projects (no component Directory.Build.props) use the fallback below.
     -->
-    
+
     <!-- Fallback version for test projects and anything without a component-level override -->
     <VersionMajor Condition="'$(VersionMajor)' == ''">0</VersionMajor>
     <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
-    
+
     <!-- Version will be set by build script to: $(VersionMajor).$(VersionMinor).$(VersionPatch)-$(GitHash) -->
     <Version Condition="'$(Version)' == ''">$(VersionMajor).$(VersionMinor).0</Version>
     <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(VersionMajor).$(VersionMinor).0</AssemblyVersion>
     <FileVersion Condition="'$(FileVersion)' == ''">$(VersionMajor).$(VersionMinor).0.0</FileVersion>
     <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(VersionMajor).$(VersionMinor).0-dev</InformationalVersion>
+
+    <!-- Language and platform — every project targets .NET 10 with C# latest -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- NuGet ownership metadata — applies to all projects; harmless for non-packable ones -->
+  <PropertyGroup>
+    <Authors>Console Game Team</Authors>
+    <Company>Console Game</Company>
+    <Product>Console Game Engine</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 </Project>
