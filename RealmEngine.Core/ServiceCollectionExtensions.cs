@@ -115,8 +115,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BudgetHelperService>();
         
         // Register catalog loaders
-        services.AddSingleton<RecipeCatalogLoader>();
-        services.AddSingleton<ItemCatalogLoader>();
+        services.AddScoped<RecipeCatalogLoader>();
+        services.AddScoped<ItemCatalogLoader>();
         
         // Register config/utility services
         services.AddScoped<RarityConfigService>();
@@ -146,6 +146,9 @@ public static class ServiceCollectionExtensions
                 o.UseNpgsql(persistenceOptions.ConnectionString));
             services.AddDbContext<ContentDbContext>(o =>
                 o.UseNpgsql(persistenceOptions.ConnectionString));
+            services.AddDbContextFactory<ContentDbContext>(o =>
+                o.UseNpgsql(persistenceOptions.ConnectionString));
+            services.AddSingleton<GameConfigService, DbGameConfigService>();
             services.AddScoped<ISaveGameRepository, EfCoreSaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
             services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
@@ -157,10 +160,16 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IRecipeRepository, EfCoreRecipeRepository>();
             services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
             services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
+            services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
         }
         else if (!persistenceOptions.IsExternal)
         {
             // Default: in-memory (no file I/O, ideal for tests)
+            services.AddDbContext<ContentDbContext>(o =>
+                o.UseInMemoryDatabase("RealmEngineContent"));
+            services.AddDbContextFactory<ContentDbContext>(o =>
+                o.UseInMemoryDatabase("RealmEngineContent"));
+            services.AddSingleton<GameConfigService, NullGameConfigService>();
             services.AddScoped<ISaveGameRepository, InMemorySaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, InMemoryHallOfFameRepository>();
             services.AddScoped<ICharacterClassRepository, InMemoryCharacterClassRepository>();
@@ -172,6 +181,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IRecipeRepository, InMemoryRecipeRepository>();
             services.AddScoped<ILootTableRepository, InMemoryLootTableRepository>();
             services.AddScoped<ISpellRepository, InMemorySpellRepository>();
+            services.AddScoped<ISkillRepository, InMemorySkillRepository>();
         }
         // External: host is responsible for registering ALL repo interfaces.
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();
@@ -240,29 +250,12 @@ public static class ServiceCollectionExtensions
     }
     
     /// <summary>
-    /// Registers all RealmEngine Data services (cache, repositories, reference resolver).
-    /// Call this before registering Core services.
+    /// Previously registered JSON file-based data services. No longer needed — all data is loaded from the database.
+    /// Kept for backward compatibility but does nothing.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="jsonDataPath">Optional path to a JSON data folder. Leave empty if not using file-based game data.</param>
-    /// <returns>The service collection for chaining.</returns>
+    [Obsolete("JSON file-based data loading has been replaced by the database. Call AddRealmEngineCore() instead.")]
     public static IServiceCollection AddRealmEngineData(this IServiceCollection services, string jsonDataPath = "")
     {
-        // Register IMemoryCache if not already registered
-        services.AddMemoryCache();
-        
-        // Register GameDataCache as singleton with path
-        services.AddSingleton<GameDataCache>(sp => 
-            new GameDataCache(jsonDataPath, sp.GetService<IMemoryCache>()));
-        
-        // Register data services
-        services.AddScoped<ReferenceResolverService>();
-        services.AddScoped<ItemGenerationRulesService>();
-        services.AddScoped<ResourceNodeLoaderService>();
-        
-        // Note: Repositories are registered in AddRealmEngineCore since they're used by Core services
-        // and the interface/implementation split requires them to be in Core's DI scope
-        
         return services;
     }
 }

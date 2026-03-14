@@ -1,9 +1,8 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
-using RealmEngine.Data.Services;
 using RealmEngine.Shared.Models;
 using Newtonsoft.Json.Linq;
 
@@ -14,7 +13,6 @@ namespace RealmEngine.Core.Features.ItemGeneration.Commands;
 /// </summary>
 public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCommand, GenerateRandomItemsResult>
 {
-    private readonly GameDataCache _dataCache;
     private readonly ItemGenerator _itemGenerator;
     private readonly CategoryDiscoveryService _categoryDiscovery;
     private readonly ILogger<GenerateRandomItemsHandler> _logger;
@@ -23,17 +21,14 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
     /// <summary>
     /// Initializes a new instance of the <see cref="GenerateRandomItemsHandler"/> class.
     /// </summary>
-    /// <param name="dataCache">The game data cache.</param>
     /// <param name="itemGenerator">The item generator service.</param>
     /// <param name="categoryDiscovery">The category discovery service.</param>
     /// <param name="logger">The logger instance.</param>
     public GenerateRandomItemsHandler(
-        GameDataCache dataCache,
         ItemGenerator itemGenerator,
         CategoryDiscoveryService categoryDiscovery,
         ILogger<GenerateRandomItemsHandler> logger)
     {
-        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
         _itemGenerator = itemGenerator ?? throw new ArgumentNullException(nameof(itemGenerator));
         _categoryDiscovery = categoryDiscovery ?? throw new ArgumentNullException(nameof(categoryDiscovery));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

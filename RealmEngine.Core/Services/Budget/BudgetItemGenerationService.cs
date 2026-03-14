@@ -421,6 +421,8 @@ public class BudgetItemGenerationService
         }
 
         _logger.LogWarning("No items found for category key: {Key}", configKey);
+        return null;
+    }
 
     /// <summary>
     /// Get names.json data for a leaf category.
