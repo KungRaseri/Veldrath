@@ -15,8 +15,9 @@ public class FileTreeNodeViewModel : ReactiveObject
     public string? TableName { get; init; }
 
     // Populated only on typeKey-level directory nodes
-    public string? Domain { get; init; }
-    public string? TypeKey { get; init; }
+    public string? Domain      { get; init; }
+    public string? TypeKey     { get; init; }
+    public string? DomainLabel { get; init; }  // Human-readable domain for breadcrumbs
 
     // Wired by MainWindowViewModel after tree load
     public ICommand? NewEntityCommand { get; set; }

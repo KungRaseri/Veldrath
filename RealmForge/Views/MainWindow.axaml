@@ -121,6 +121,9 @@
                     <DataTemplate DataType="vm:HomeViewModel">
                         <views:HomeView />
                     </DataTemplate>
+                    <DataTemplate DataType="vm:EntityListViewModel">
+                        <views:EntityListView />
+                    </DataTemplate>
                     <DataTemplate DataType="vm:EntityEditorViewModel">
                         <views:EntityEditorView />
                     </DataTemplate>
