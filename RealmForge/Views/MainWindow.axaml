@@ -3,59 +3,135 @@
         xmlns:vm="using:RealmForge.ViewModels"
         xmlns:views="using:RealmForge.Views"
         x:Class="RealmForge.Views.MainWindow"
+        x:Name="mainWindow"
         Title="RealmForge — Content Editor"
-        Width="1200" Height="800"
+        Width="1280" Height="840"
         MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen"
         Background="#1e1e1e">
 
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
-
     <Grid RowDefinitions="Auto,*">
 
         <!-- ── Title Bar ─────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="#252526" Padding="8,6" BorderThickness="0,0,0,1" BorderBrush="#333">
+        <Border Grid.Row="0" Background="#252526" Padding="8,6"
+                BorderThickness="0,0,0,1" BorderBrush="#333">
             <Grid ColumnDefinitions="Auto,*,Auto">
+
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
                     <Button Content="☰"
                             Command="{Binding TogglePaneCommand}"
-                            Background="Transparent"
-                            Foreground="#ccc"
-                            Padding="8,4"
-                            CornerRadius="4" />
+                            Background="Transparent" Foreground="#ccc"
+                            Padding="8,4" CornerRadius="4" />
                     <TextBlock Text="RealmForge"
                                FontSize="16" FontWeight="SemiBold"
-                               Foreground="#e0e0e0"
-                               VerticalAlignment="Center" />
+                               Foreground="#e0e0e0" VerticalAlignment="Center" />
                     <TextBlock Text="v4.0"
-                               FontSize="11" Foreground="#666"
+                               FontSize="11" Foreground="#555"
                                VerticalAlignment="Center" Margin="4,0,0,0" />
                 </StackPanel>
 
-                <!-- Navigation -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
-                            HorizontalAlignment="Center">
+                <Panel Grid.Column="1" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                    <Button Content="↺"
+                            Command="{Binding RefreshTreeCommand}"
+                            Background="Transparent" Foreground="#888"
+                            Padding="8,4" CornerRadius="4"
+                            ToolTip.Tip="Refresh content tree" />
+                    <ToggleButton Content="🌙"
+                                  IsChecked="{Binding IsDarkMode}"
+                                  Background="Transparent"
+                                  Padding="8,4" />
                 </StackPanel>
 
-                <!-- Theme toggle -->
-                <ToggleButton Grid.Column="2"
-                              Content="🌙"
-                              IsChecked="{Binding IsDarkMode}"
-                              Background="Transparent"
-                              Padding="8,4" />
             </Grid>
         </Border>
 
-        <!-- ── Content ───────────────────────────────────────────────────── -->
-        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}">
-            <ContentControl.DataTemplates>
-                <DataTemplate DataType="vm:HomeViewModel">
-                    <views:HomeView />
-                </DataTemplate>
-            </ContentControl.DataTemplates>
-        </ContentControl>
+        <!-- ── SplitView ─────────────────────────────────────────────────── -->
+        <SplitView Grid.Row="1"
+                   IsPaneOpen="{Binding IsPaneOpen}"
+                   DisplayMode="Inline"
+                   OpenPaneLength="280"
+                   PaneBackground="#1b1b1b">
+
+            <!-- ── Left pane: content tree ─────────────────────────────── -->
+            <SplitView.Pane>
+                <Grid RowDefinitions="*,Auto">
+
+                    <!-- Loading indicator -->
+                    <TextBlock Grid.Row="0" Text="Loading…"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="#555" FontSize="13"
+                               IsVisible="{Binding IsLoadingTree}" />
+
+                    <!-- Content tree -->
+                    <TreeView Grid.Row="0"
+                              ItemsSource="{Binding TreeNodes}"
+                              SelectedItem="{Binding SelectedNode}"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Margin="0,4,0,0"
+                              IsVisible="{Binding !IsLoadingTree}">
+
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                <Setter Property="Padding" Value="2,3" />
+                            </Style>
+                        </TreeView.Styles>
+
+                        <TreeView.DataTemplates>
+                            <TreeDataTemplate DataType="vm:FileTreeNodeViewModel"
+                                             ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <StackPanel.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="New Entity"
+                                                      Command="{Binding NewEntityCommand}"
+                                                      IsVisible="{Binding NewEntityCommand, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                            <MenuItem Header="Delete"
+                                                      Command="{Binding DeleteCommand}"
+                                                      IsVisible="{Binding DeleteCommand, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                        </ContextMenu>
+                                    </StackPanel.ContextMenu>
+                                    <TextBlock Text="{Binding Icon}"
+                                               Foreground="#555" FontSize="10"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="13" Foreground="#ccc"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </TreeDataTemplate>
+                        </TreeView.DataTemplates>
+
+                    </TreeView>
+
+                    <!-- Pane footer -->
+                    <Border Grid.Row="1" Background="#161616" Padding="10,5"
+                            BorderThickness="0,1,0,0" BorderBrush="#222">
+                        <TextBlock Text="Ready" Foreground="#3c3c3c" FontSize="11" />
+                    </Border>
+
+                </Grid>
+            </SplitView.Pane>
+
+            <!-- ── Main content area ──────────────────────────────────── -->
+            <ContentControl Content="{Binding CurrentPage}">
+                <ContentControl.DataTemplates>
+                    <DataTemplate DataType="vm:HomeViewModel">
+                        <views:HomeView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:EntityEditorViewModel">
+                        <views:EntityEditorView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:NewEntityViewModel">
+                        <views:NewEntityView />
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+
+        </SplitView>
 
     </Grid>
 </Window>
+

@@ -48,7 +48,10 @@ public class ContentTreeService(IServiceScopeFactory scopeFactory, ILogger<Conte
                     {
                         Name = FormatLabel(typeGroup.Key),
                         FullPath = $"{domainGroup.Key}/{typeGroup.Key}",
-                        IsDirectory = true
+                        IsDirectory = true,
+                        TableName = typeGroup.First().TableName,
+                        Domain = domainGroup.Key,
+                        TypeKey = typeGroup.Key
                     };
 
                     foreach (var entry in typeGroup)

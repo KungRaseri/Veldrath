@@ -148,6 +148,159 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
     /// Excludes ICollection navigation properties from JSON serialisation so the
     /// editor only presents the entity's own data columns.
     /// </summary>
+    /// <summary>
+    /// Creates a new entity in <paramref name="tableName"/>, registers it in ContentRegistry,
+    /// and returns the new entity's ID with its serialised JSON. Returns null if the DB is unavailable.
+    /// </summary>
+    public async Task<(Guid EntityId, string Json)?> CreateEntityAsync(
+        string tableName, string domain, string typeKey, string slug, string? displayName)
+    {
+        if (!KnownTables.Contains(tableName)) return null;
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return null;
+
+            var entity = NewEntityInstance(tableName);
+            entity.TypeKey = typeKey;
+            entity.Slug = slug;
+            entity.DisplayName = displayName;
+            entity.IsActive = true;
+
+            AddToDbSet(db, tableName, entity);
+            db.ContentRegistry.Add(new ContentRegistry
+            {
+                EntityId = entity.Id,
+                TableName = tableName,
+                Domain = domain,
+                TypeKey = typeKey,
+                Slug = slug
+            });
+
+            await db.SaveChangesAsync();
+            return (entity.Id, JsonConvert.SerializeObject(entity, SerializeSettings));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create entity in {TableName}", tableName);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Deletes the entity and removes its ContentRegistry entry. Returns false if not found or DB unavailable.
+    /// </summary>
+    public async Task<bool> DeleteEntityAsync(Guid entityId, string tableName)
+    {
+        if (!KnownTables.Contains(tableName)) return false;
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+
+            var removed = tableName switch
+            {
+                "Abilities"          => await RemoveFromSet<Ability>(db, entityId),
+                "Enemies"            => await RemoveFromSet<Enemy>(db, entityId),
+                "Weapons"            => await RemoveFromSet<Weapon>(db, entityId),
+                "Armors"             => await RemoveFromSet<Armor>(db, entityId),
+                "Items"              => await RemoveFromSet<Item>(db, entityId),
+                "Materials"          => await RemoveFromSet<Material>(db, entityId),
+                "Enchantments"       => await RemoveFromSet<Enchantment>(db, entityId),
+                "Skills"             => await RemoveFromSet<Skill>(db, entityId),
+                "Spells"             => await RemoveFromSet<Spell>(db, entityId),
+                "CharacterClasses"   => await RemoveFromSet<CharacterClass>(db, entityId),
+                "Backgrounds"        => await RemoveFromSet<Background>(db, entityId),
+                "Npcs"               => await RemoveFromSet<Npc>(db, entityId),
+                "Quests"             => await RemoveFromSet<Quest>(db, entityId),
+                "Recipes"            => await RemoveFromSet<Recipe>(db, entityId),
+                "LootTables"         => await RemoveFromSet<LootTable>(db, entityId),
+                "Organizations"      => await RemoveFromSet<Organization>(db, entityId),
+                "MaterialProperties" => await RemoveFromSet<MaterialProperty>(db, entityId),
+                "WorldLocations"     => await RemoveFromSet<WorldLocation>(db, entityId),
+                "Dialogues"          => await RemoveFromSet<Dialogue>(db, entityId),
+                _                    => false
+            };
+
+            if (removed)
+            {
+                var reg = await db.ContentRegistry
+                    .Where(r => r.EntityId == entityId)
+                    .FirstOrDefaultAsync();
+                if (reg is not null) db.ContentRegistry.Remove(reg);
+                await db.SaveChangesAsync();
+            }
+
+            return removed;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to delete entity {EntityId} from {TableName}", entityId, tableName);
+            return false;
+        }
+    }
+
+    private static ContentBase NewEntityInstance(string tableName) => tableName switch
+    {
+        "Abilities"          => new Ability(),
+        "Enemies"            => new Enemy(),
+        "Weapons"            => new Weapon(),
+        "Armors"             => new Armor(),
+        "Items"              => new Item(),
+        "Materials"          => new Material(),
+        "Enchantments"       => new Enchantment(),
+        "Skills"             => new Skill(),
+        "Spells"             => new Spell(),
+        "CharacterClasses"   => new CharacterClass(),
+        "Backgrounds"        => new Background(),
+        "Npcs"               => new Npc(),
+        "Quests"             => new Quest(),
+        "Recipes"            => new Recipe(),
+        "LootTables"         => new LootTable(),
+        "Organizations"      => new Organization(),
+        "MaterialProperties" => new MaterialProperty(),
+        "WorldLocations"     => new WorldLocation(),
+        "Dialogues"          => new Dialogue(),
+        _                    => throw new ArgumentException($"Unknown table: {tableName}")
+    };
+
+    private static void AddToDbSet(ContentDbContext db, string tableName, ContentBase entity)
+    {
+        switch (tableName)
+        {
+            case "Abilities":          db.Abilities.Add((Ability)entity);                    break;
+            case "Enemies":            db.Enemies.Add((Enemy)entity);                        break;
+            case "Weapons":            db.Weapons.Add((Weapon)entity);                       break;
+            case "Armors":             db.Armors.Add((Armor)entity);                         break;
+            case "Items":              db.Items.Add((Item)entity);                            break;
+            case "Materials":          db.Materials.Add((Material)entity);                   break;
+            case "Enchantments":       db.Enchantments.Add((Enchantment)entity);             break;
+            case "Skills":             db.Skills.Add((Skill)entity);                         break;
+            case "Spells":             db.Spells.Add((Spell)entity);                         break;
+            case "CharacterClasses":   db.CharacterClasses.Add((CharacterClass)entity);      break;
+            case "Backgrounds":        db.Backgrounds.Add((Background)entity);               break;
+            case "Npcs":               db.Npcs.Add((Npc)entity);                             break;
+            case "Quests":             db.Quests.Add((Quest)entity);                         break;
+            case "Recipes":            db.Recipes.Add((Recipe)entity);                       break;
+            case "LootTables":         db.LootTables.Add((LootTable)entity);                 break;
+            case "Organizations":      db.Organizations.Add((Organization)entity);           break;
+            case "MaterialProperties": db.MaterialProperties.Add((MaterialProperty)entity);  break;
+            case "WorldLocations":     db.WorldLocations.Add((WorldLocation)entity);         break;
+            case "Dialogues":          db.Dialogues.Add((Dialogue)entity);                   break;
+        }
+    }
+
+    private static async Task<bool> RemoveFromSet<T>(ContentDbContext db, Guid entityId)
+        where T : ContentBase
+    {
+        var entity = await db.Set<T>().FindAsync(entityId);
+        if (entity is null) return false;
+        db.Set<T>().Remove(entity);
+        return true;
+    }
+
     private sealed class NavCollectionIgnoringResolver : DefaultContractResolver
     {
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)

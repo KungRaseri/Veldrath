@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             x:Class="RealmForge.Views.NewEntityView">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#252526" Padding="14,10"
+                BorderThickness="0,0,0,1" BorderBrush="#333">
+            <StackPanel Spacing="2">
+                <TextBlock Text="New Entity"
+                           FontSize="16" FontWeight="SemiBold" Foreground="#e0e0e0" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Table:" Foreground="#555" FontSize="12" />
+                    <TextBlock Text="{Binding TypeKeyNode.TableName}"
+                               Foreground="#888" FontSize="12" />
+                    <TextBlock Text="·" Foreground="#444" FontSize="12" />
+                    <TextBlock Text="Domain:" Foreground="#555" FontSize="12" />
+                    <TextBlock Text="{Binding TypeKeyNode.Domain}"
+                               Foreground="#888" FontSize="12" />
+                    <TextBlock Text="·" Foreground="#444" FontSize="12" />
+                    <TextBlock Text="Type:" Foreground="#555" FontSize="12" />
+                    <TextBlock Text="{Binding TypeKeyNode.TypeKey}"
+                               Foreground="#888" FontSize="12" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Form ───────────────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel MaxWidth="520" Margin="48,40" Spacing="28" VerticalAlignment="Top">
+
+                <!-- Display Name -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Display Name" Foreground="#ccc" FontSize="13" />
+                    <TextBox Text="{Binding DisplayName}"
+                             Watermark="e.g. Iron Longsword"
+                             Background="#2d2d2d" Foreground="#e0e0e0"
+                             BorderBrush="#555" Padding="10,8" CornerRadius="4" />
+                </StackPanel>
+
+                <!-- Slug -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Slug" Foreground="#ccc" FontSize="13" />
+                    <TextBox Text="{Binding Slug}"
+                             Watermark="e.g. iron-longsword"
+                             Background="#2d2d2d" Foreground="#e0e0e0"
+                             BorderBrush="#555" Padding="10,8" CornerRadius="4"
+                             FontFamily="Cascadia Code,Consolas,monospace" />
+                    <TextBlock Text="URL-safe identifier, auto-derived from display name. Unique within the type."
+                               Foreground="#555" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Error -->
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#f48771"
+                           IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           TextWrapping="Wrap" />
+
+                <!-- Actions -->
+                <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Background="#3a3a3a" Foreground="#ccc"
+                            Padding="16,8" CornerRadius="4" />
+                    <Button Content="Create Entity"
+                            Command="{Binding CreateCommand}"
+                            Background="#0e639c" Foreground="White"
+                            Padding="20,8" CornerRadius="4"
+                            IsEnabled="{Binding !IsCreating}" />
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

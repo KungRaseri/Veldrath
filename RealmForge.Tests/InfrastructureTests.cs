@@ -13,8 +13,9 @@ public class InfrastructureTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<EditorSettingsService>();
-        services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(
-            sp.GetRequiredService<EditorSettingsService>()));
+        services.AddSingleton<ContentEditorService>();
+        services.AddSingleton<ContentTreeService>();
+        services.AddSingleton<MainWindowViewModel>();
         return services.BuildServiceProvider();
     }
 
@@ -46,8 +47,8 @@ public class InfrastructureTests
     {
         var dir = new FileTreeNodeViewModel { IsDirectory = true };
         var file = new FileTreeNodeViewModel { IsDirectory = false };
-        dir.Icon.Should().Be("📁");
-        file.Icon.Should().Be("📄");
+        dir.Icon.Should().Be("▶");
+        file.Icon.Should().Be("·");
     }
 
 }

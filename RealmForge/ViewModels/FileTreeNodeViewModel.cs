@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using ReactiveUI;
 
 namespace RealmForge.ViewModels;
@@ -12,6 +13,15 @@ public class FileTreeNodeViewModel : ReactiveObject
     public bool IsDirectory { get; init; }
     public Guid? EntityId { get; init; }
     public string? TableName { get; init; }
+
+    // Populated only on typeKey-level directory nodes
+    public string? Domain { get; init; }
+    public string? TypeKey { get; init; }
+
+    // Wired by MainWindowViewModel after tree load
+    public ICommand? NewEntityCommand { get; set; }
+    public ICommand? DeleteCommand { get; set; }
+
     public ObservableCollection<FileTreeNodeViewModel> Children { get; } = new();
 
     public bool IsExpanded
@@ -20,5 +30,5 @@ public class FileTreeNodeViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
     }
 
-    public string Icon => IsDirectory ? "📁" : "📄";
+    public string Icon => IsDirectory ? "▶" : "·";
 }
