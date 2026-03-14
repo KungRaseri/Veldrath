@@ -25,13 +25,4 @@
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Copy JSON game data from RealmEngine.Data to output (files are None/pack-only in data project) -->
-    <Content Include="..\RealmEngine.Data\Data\**\*.*">
-      <Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-
 </Project>

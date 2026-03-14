@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 def format_json_file(filepath):
@@ -19,7 +20,7 @@ def format_json_file(filepath):
         return False
 
 def main():
-    json_dir = Path("RealmEngine.Data/Data/Json")
+    json_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("Data")
     
     if not json_dir.exists():
         print(f"ERROR: Directory not found: {json_dir}")

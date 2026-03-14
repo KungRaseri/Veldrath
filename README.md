@@ -155,7 +155,6 @@ RealmEngine/
 ├── RealmEngine.Core/           # Game logic and MediatR handlers
 │   └── Features/               # Vertical slices (Combat, Crafting, Inventory, etc.)
 ├── RealmEngine.Data/           # Data access and JSON loading
-│   └── Data/Json/              # JSON game data files
 ├── RealmEngine.Shared/         # Shared models and utilities
 ├── RealmUnbound.Server/        # ASP.NET Core game server
 ├── RealmUnbound.Client/        # Avalonia desktop client

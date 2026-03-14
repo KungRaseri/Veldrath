@@ -30,12 +30,4 @@
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
   </ItemGroup>
 
-  <!-- Include Data/Json files in NuGet package only (not in build output) -->
-  <ItemGroup>
-    <None Include="Data\**\*.*" Exclude="Data\**\*.ps1">
-      <Pack>true</Pack>
-      <PackagePath>contentFiles\any\net9.0\Data;content\Data</PackagePath>
-    </None>
-  </ItemGroup>
-
 </Project>

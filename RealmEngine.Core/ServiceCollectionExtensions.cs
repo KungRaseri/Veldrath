@@ -244,9 +244,9 @@ public static class ServiceCollectionExtensions
     /// Call this before registering Core services.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="jsonDataPath">The path to the JSON data folder (e.g., "Data/Json").</param>
+    /// <param name="jsonDataPath">Optional path to a JSON data folder. Leave empty if not using file-based game data.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddRealmEngineData(this IServiceCollection services, string jsonDataPath)
+    public static IServiceCollection AddRealmEngineData(this IServiceCollection services, string jsonDataPath = "")
     {
         // Register IMemoryCache if not already registered
         services.AddMemoryCache();

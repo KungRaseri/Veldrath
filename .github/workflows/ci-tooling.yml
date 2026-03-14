@@ -157,8 +157,6 @@ jobs:
           --output ./publish/RealmForge-Windows `
           /p:Version=$version /p:AssemblyVersion=$version /p:FileVersion=$version.0
 
-        New-Item -ItemType Directory -Force -Path ./publish/RealmForge-Windows/Data
-        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "./publish/RealmForge-Windows/Data/" -Recurse
         Compress-Archive -Path "./publish/RealmForge-Windows/*" `
           -DestinationPath "RealmForge-Windows-$version.zip" -Force
         Write-Output "Created RealmForge-Windows-$version.zip"
