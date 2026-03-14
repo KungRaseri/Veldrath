@@ -65,11 +65,14 @@ public partial class App : Application
             client.BaseAddress = new Uri(ServerBaseUrl));
         services.AddHttpClient<IZoneService, HttpZoneService>(client =>
             client.BaseAddress = new Uri(ServerBaseUrl));
+        services.AddHttpClient<IContentService, HttpContentService>(client =>
+            client.BaseAddress = new Uri(ServerBaseUrl));
 
         // App services
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IHubConnectionFactory, HubConnectionFactory>();
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
+        services.AddSingleton<ContentCache>();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();
