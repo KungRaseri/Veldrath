@@ -97,6 +97,8 @@ public partial class App : Application
         }
 
         services.AddSingleton<EditorSettingsService>();
+        services.AddSingleton<ContentEditorService>();
+        services.AddSingleton<ContentTreeService>();
 
         services.AddSingleton<MainWindowViewModel>();
     }

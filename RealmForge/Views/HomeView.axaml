@@ -51,9 +51,10 @@
                 </Border>
             </ItemsControl>
 
-            <TextBlock Text="Content editing features are coming soon."
-                       FontSize="14" Foreground="#666"
-                       HorizontalAlignment="Center"
+            <TextBlock Text="Select an entity from the tree to start editing, or right-click a category to create a new one."
+                       FontSize="14" Foreground="#555"
+                       HorizontalAlignment="Center" TextAlignment="Center"
+                       TextWrapping="Wrap"
                        Margin="0,16,0,0" />
         </StackPanel>
     </ScrollViewer>

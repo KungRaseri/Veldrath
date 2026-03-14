@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             x:Class="RealmForge.Views.EntityEditorView">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#252526" Padding="14,10"
+                BorderThickness="0,0,0,1" BorderBrush="#333">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding DisplayName}"
+                                   FontSize="16" FontWeight="SemiBold" Foreground="#e0e0e0" />
+                        <Border Background="#3a3a3a" CornerRadius="3" Padding="6,2"
+                                IsVisible="{Binding IsDirty}">
+                            <TextBlock Text="Unsaved" Foreground="#cca700" FontSize="11" />
+                        </Border>
+                        <Border Background="#1e3a1e" CornerRadius="3" Padding="6,2"
+                                IsVisible="{Binding IsSaving}">
+                            <TextBlock Text="Saving…" Foreground="#4ec9b0" FontSize="11" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding TableName}"
+                               FontSize="11" Foreground="#555" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Discard"
+                            Command="{Binding DiscardCommand}"
+                            Background="#3a3a3a" Foreground="#ccc"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="Save"
+                            Command="{Binding SaveCommand}"
+                            Background="#0e639c" Foreground="White"
+                            Padding="18,6" CornerRadius="4" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── JSON editor ────────────────────────────────────────────────── -->
+        <TextBox Grid.Row="1"
+                 Text="{Binding Json}"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 FontFamily="Cascadia Code,Cascadia Mono,Consolas,Courier New,monospace"
+                 FontSize="13"
+                 Background="#1e1e1e"
+                 Foreground="#d4d4d4"
+                 CaretBrush="White"
+                 SelectionBrush="#264f78"
+                 BorderThickness="0"
+                 Padding="16"
+                 TextWrapping="NoWrap"
+                 IsEnabled="{Binding !IsSaving}" />
+
+        <!-- ── Status bar ─────────────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="#252526" Padding="14,5"
+                BorderThickness="0,1,0,0" BorderBrush="#2a2a2a"
+                IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="#888" FontSize="12" />
+        </Border>
+
+    </Grid>
+</UserControl>
