@@ -45,7 +45,7 @@ public partial class JsonEditorView : UserControl
                     interaction.Input);
 
                 var dialog = new ReferencePickerDialog { DataContext = pickerVm };
-                await pickerVm.InitializeAsync(_vm.DataFolderPath);
+                await pickerVm.InitializeAsync();
 
                 var result = await dialog.ShowDialog<string?>(
                     this.FindAncestorOfType<Window>()!);
@@ -57,7 +57,7 @@ public partial class JsonEditorView : UserControl
     {
         if (_vm == null) return;
         if (e.AddedItems.Count > 0 && e.AddedItems[0] is FileTreeNodeViewModel node && !node.IsDirectory)
-            _vm.LoadFileCommand.Execute(node.FullPath).Subscribe();
+            _vm.LoadEntityCommand.Execute(node).Subscribe();
     }
 
     private void JsonModeBtn_Click(object? sender, RoutedEventArgs e)

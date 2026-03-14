@@ -43,13 +43,6 @@
                 </TreeView.DataTemplates>
             </TreeView>
 
-            <Border Grid.Row="2" Background="#252526" Padding="6,4"
-                    BorderThickness="0,1,0,0" BorderBrush="#333">
-                <TextBlock Text="{Binding DataFolderPath}"
-                           FontSize="10" Foreground="#555"
-                           TextTrimming="CharacterEllipsis"
-                           ToolTip.Tip="{Binding DataFolderPath}" />
-            </Border>
         </Grid>
 
         <!-- Splitter -->

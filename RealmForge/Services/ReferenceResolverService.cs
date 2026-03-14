@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
+using RealmEngine.Data.Persistence;
 using RealmForge.Models;
 using System.Text.RegularExpressions;
 
@@ -11,8 +13,8 @@ namespace RealmForge.Services;
 /// </summary>
 public class ReferenceResolverService
 {
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ReferenceResolverService> _logger;
-    private readonly FileManagementService _fileService;
     private Dictionary<string, List<ReferenceInfo>> _referenceCache = new();
     private List<ReferenceCategory> _categories = new();
     private bool _isInitialized = false;
@@ -20,10 +22,10 @@ public class ReferenceResolverService
     // Reference syntax pattern: @domain/path/subpath:item-name
     private static readonly Regex ReferencePattern = new(@"^@(?<domain>[^/]+)/(?<path>[^:]+):(?<item>[^?\[\]]+)", RegexOptions.Compiled);
 
-    public ReferenceResolverService(ILogger<ReferenceResolverService> logger, FileManagementService fileService)
+    public ReferenceResolverService(IServiceScopeFactory scopeFactory, ILogger<ReferenceResolverService> logger)
     {
+        _scopeFactory = scopeFactory;
         _logger = logger;
-        _fileService = fileService;
     }
 
     /// <summary>
@@ -62,152 +64,41 @@ public class ReferenceResolverService
     }
 
     /// <summary>
-    /// Build reference catalog by scanning all JSON files
+    /// Populates the reference catalog from the ContentRegistry table.
     /// </summary>
-    public async Task BuildReferenceCatalogAsync(string dataPath)
+    public async Task BuildReferenceCatalogAsync()
     {
         try
         {
-            _logger.LogInformation("Building reference catalog from: {DataPath}", dataPath);
-            
-            _referenceCache.Clear();
-            _categories.Clear();
-
-            if (!Directory.Exists(dataPath))
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db == null)
             {
-                _logger.LogWarning("Data path does not exist: {DataPath}", dataPath);
+                _isInitialized = true;
                 return;
             }
 
-            // Scan each domain folder
-            var domainFolders = Directory.GetDirectories(dataPath);
-            _logger.LogDebug("Found {Count} domain folders", domainFolders.Length);
-
-            foreach (var domainFolder in domainFolders)
+            var entries = await db.ContentRegistry.AsNoTracking().ToListAsync();
+            foreach (var entry in entries)
             {
-                var domainName = Path.GetFileName(domainFolder);
-                await ScanDomainAsync(domainName, domainFolder);
+                AddToCache(new ReferenceInfo
+                {
+                    Domain = entry.Domain,
+                    Path = entry.TypeKey,
+                    Name = entry.Slug,
+                    DisplayName = FormatDisplayName(entry.Slug),
+                    Category = entry.Domain,
+                    FilePath = $"{entry.TableName}/{entry.EntityId}"
+                });
             }
 
-            // Build category summary
             BuildCategorySummary();
-
             _isInitialized = true;
-            _logger.LogInformation("Reference catalog built: {ItemCount} items across {CategoryCount} categories", 
-                _referenceCache.Values.Sum(list => list.Count), 
-                _categories.Count);
+            _logger.LogInformation("Reference catalog built: {Count} entries", entries.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to build reference catalog");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Scan a domain folder for catalog files
-    /// </summary>
-    private async Task ScanDomainAsync(string domain, string domainPath)
-    {
-        try
-        {
-            _logger.LogDebug("Scanning domain: {Domain}", domain);
-
-            // Find all catalog.json files recursively
-            var catalogFiles = Directory.GetFiles(domainPath, "catalog.json", SearchOption.AllDirectories);
-            _logger.LogDebug("Found {Count} catalog files in {Domain}", catalogFiles.Length, domain);
-
-            foreach (var catalogFile in catalogFiles)
-            {
-                await ProcessCatalogFileAsync(domain, catalogFile, domainPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error scanning domain: {Domain}", domain);
-        }
-    }
-
-    /// <summary>
-    /// Process a single catalog.json file
-    /// </summary>
-    private async Task ProcessCatalogFileAsync(string domain, string catalogFile, string domainRootPath)
-    {
-        try
-        {
-            var json = await _fileService.LoadJsonFileAsync(catalogFile);
-            
-            // Determine the path relative to domain root
-            var catalogDir = Path.GetDirectoryName(catalogFile);
-            var relativePath = !string.IsNullOrEmpty(catalogDir)
-                ? catalogDir.Replace(domainRootPath, "")
-                    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                    .Replace("\\", "/")
-                : "";
-
-            // Check if this is a catalog with items
-            if (json is not null && json["items"] is JArray itemsArray)
-            {
-                _logger.LogDebug("Processing {Count} items from {Path}", itemsArray.Count, catalogFile);
-
-                foreach (var item in itemsArray.Cast<JObject>())
-                {
-                    var refInfo = CreateReferenceInfo(domain, relativePath, item, catalogFile);
-                    if (refInfo != null)
-                    {
-                        AddToCache(refInfo);
-                    }
-                }
-            }
-            else
-            {
-                _logger.LogDebug("Catalog file has no items array: {Path}", catalogFile);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing catalog file: {File}", catalogFile);
-        }
-    }
-
-    /// <summary>
-    /// Create a ReferenceInfo from a JSON item
-    /// </summary>
-    private ReferenceInfo? CreateReferenceInfo(string domain, string path, JObject item, string filePath)
-    {
-        try
-        {
-            var name = item["name"]?.ToString();
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return null;
-            }
-
-            var refInfo = new ReferenceInfo
-            {
-                Domain = domain,
-                Path = path,
-                Name = name,
-                DisplayName = FormatDisplayName(name),
-                Category = domain,
-                FilePath = filePath,
-                RarityWeight = item["rarityWeight"]?.Value<int>() ?? 0
-            };
-
-            // Extract metadata
-            if (item["description"] != null)
-                refInfo.Metadata["description"] = item["description"]!.ToString();
-            if (item["level"] != null)
-                refInfo.Metadata["level"] = item["level"]!.Value<int>();
-            if (item["type"] != null)
-                refInfo.Metadata["type"] = item["type"]!.ToString();
-
-            return refInfo;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Error creating reference info for item in {File}", filePath);
-            return null;
         }
     }
 

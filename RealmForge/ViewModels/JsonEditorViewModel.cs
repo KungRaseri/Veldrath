@@ -16,18 +16,19 @@ public enum EditorMode { Json, Form }
 
 public class JsonEditorViewModel : ReactiveObject
 {
-    private readonly FileManagementService _fileMgr;
-    private readonly EditorSettingsService _settings;
     private readonly ModelValidationService _validator;
     private readonly ReferenceResolverService _referenceResolver;
+    private readonly ContentTreeService _contentTree;
+    private readonly ContentEditorService _contentEditor;
     private readonly ILogger<JsonEditorViewModel> _logger;
 
-    private string? _currentFilePath;
+    private Guid? _currentEntityId;
+    private string? _currentTableName;
+    private string? _currentFileName;
     private EditorMode _editorMode = EditorMode.Json;
     private bool _isDirty;
     private bool _isBusy;
     private string _statusMessage = string.Empty;
-    private string _dataFolderPath = string.Empty;
     private bool _hasValidationResult;
     private bool _isValid;
     private bool _isLoadingContent;
@@ -36,16 +37,16 @@ public class JsonEditorViewModel : ReactiveObject
     public Interaction<string?, string?> ShowReferencePickerInteraction { get; } = new();
 
     public JsonEditorViewModel(
-        FileManagementService fileMgr,
-        EditorSettingsService settings,
         ModelValidationService validator,
         ReferenceResolverService referenceResolver,
+        ContentTreeService contentTree,
+        ContentEditorService contentEditor,
         ILogger<JsonEditorViewModel> logger)
     {
-        _fileMgr = fileMgr;
-        _settings = settings;
         _validator = validator;
         _referenceResolver = referenceResolver;
+        _contentTree = contentTree;
+        _contentEditor = contentEditor;
         _logger = logger;
 
         FileTree = new ObservableCollection<FileTreeNodeViewModel>();
@@ -59,11 +60,11 @@ public class JsonEditorViewModel : ReactiveObject
                 IsDirty = true;
         };
 
-        var canSave = this.WhenAnyValue(x => x.CurrentFilePath, x => x.IsDirty,
-            (p, d) => p != null && d);
-        var canValidate = this.WhenAnyValue(x => x.CurrentFilePath, (string? p) => p != null);
+        var canSave = this.WhenAnyValue(x => x.CurrentFileName, x => x.IsDirty,
+            (n, d) => n != null && d);
+        var canValidate = this.WhenAnyValue(x => x.CurrentFileName, (string? n) => n != null);
 
-        LoadFileCommand = ReactiveCommand.CreateFromTask<string>(LoadFileAsync);
+        LoadEntityCommand = ReactiveCommand.CreateFromTask<FileTreeNodeViewModel>(LoadEntityAsync);
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSave);
         ValidateCommand = ReactiveCommand.CreateFromTask(ValidateAsync, canValidate);
         RefreshTreeCommand = ReactiveCommand.CreateFromTask(RefreshTreeAsync);
@@ -79,10 +80,10 @@ public class JsonEditorViewModel : ReactiveObject
     public ObservableCollection<JsonPropertyViewModel> FormProperties { get; }
     public ObservableCollection<string> ValidationErrors { get; }
 
-    public string? CurrentFilePath
+    public string? CurrentFileName
     {
-        get => _currentFilePath;
-        private set => this.RaiseAndSetIfChanged(ref _currentFilePath, value);
+        get => _currentFileName;
+        private set => this.RaiseAndSetIfChanged(ref _currentFileName, value);
     }
 
     public EditorMode EditorMode
@@ -112,11 +113,6 @@ public class JsonEditorViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
     }
 
-    public string DataFolderPath
-    {
-        get => _dataFolderPath;
-        private set => this.RaiseAndSetIfChanged(ref _dataFolderPath, value);
-    }
 
     public bool HasValidationResult
     {
@@ -130,9 +126,7 @@ public class JsonEditorViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _isValid, value);
     }
 
-    public string? CurrentFileName => CurrentFilePath != null ? Path.GetFileName(CurrentFilePath) : null;
-
-    public ReactiveCommand<string, Unit> LoadFileCommand { get; }
+    public ReactiveCommand<FileTreeNodeViewModel, Unit> LoadEntityCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
     public ReactiveCommand<Unit, Unit> ValidateCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTreeCommand { get; }
@@ -144,10 +138,8 @@ public class JsonEditorViewModel : ReactiveObject
     {
         try
         {
-            var editorSettings = await _settings.LoadSettingsAsync();
-            DataFolderPath = editorSettings.DataFolderPath;
             await RefreshTreeAsync();
-            _ = _referenceResolver.BuildReferenceCatalogAsync(DataFolderPath);
+            _ = _referenceResolver.BuildReferenceCatalogAsync();
         }
         catch (Exception ex)
         {
@@ -156,20 +148,28 @@ public class JsonEditorViewModel : ReactiveObject
         }
     }
 
-    private async Task LoadFileAsync(string filePath)
+    private async Task LoadEntityAsync(FileTreeNodeViewModel node)
     {
+        if (node.EntityId == null || node.TableName == null) return;
         try
         {
             IsBusy = true;
-            StatusMessage = $"Loading {Path.GetFileName(filePath)}...";
+            StatusMessage = $"Loading {node.Name}...";
 
-            var json = await File.ReadAllTextAsync(filePath);
+            var json = await _contentEditor.GetEntityJsonAsync(node.EntityId.Value, node.TableName);
+            if (json == null)
+            {
+                StatusMessage = $"Entity not found: {node.Name}";
+                return;
+            }
 
             _isLoadingContent = true;
             TextDocument.Text = json;
             _isLoadingContent = false;
 
-            CurrentFilePath = filePath;
+            _currentEntityId = node.EntityId.Value;
+            _currentTableName = node.TableName;
+            CurrentFileName = node.Name;
             IsDirty = false;
 
             if (EditorMode == EditorMode.Form)
@@ -177,13 +177,12 @@ public class JsonEditorViewModel : ReactiveObject
 
             ValidationErrors.Clear();
             HasValidationResult = false;
-            StatusMessage = $"Opened: {Path.GetFileName(filePath)}";
-            this.RaisePropertyChanged(nameof(CurrentFileName));
+            StatusMessage = $"Opened: {node.Name}";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load file: {FilePath}", filePath);
-            StatusMessage = $"Error loading file: {ex.Message}";
+            _logger.LogError(ex, "Failed to load entity: {EntityId} ({Table})", node.EntityId, node.TableName);
+            StatusMessage = $"Error loading entity: {ex.Message}";
         }
         finally
         {
@@ -193,7 +192,7 @@ public class JsonEditorViewModel : ReactiveObject
 
     private async Task SaveAsync()
     {
-        if (CurrentFilePath == null) return;
+        if (_currentEntityId == null || _currentTableName == null) return;
         try
         {
             IsBusy = true;
@@ -215,9 +214,9 @@ public class JsonEditorViewModel : ReactiveObject
                 JObject.Parse(jsonText);
             }
 
-            await File.WriteAllTextAsync(CurrentFilePath, jsonText);
+            await _contentEditor.SaveEntityJsonAsync(_currentEntityId.Value, _currentTableName, jsonText);
             IsDirty = false;
-            StatusMessage = $"Saved: {Path.GetFileName(CurrentFilePath)}";
+            StatusMessage = $"Saved: {CurrentFileName}";
         }
         catch (JsonException ex)
         {
@@ -225,7 +224,7 @@ public class JsonEditorViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save file");
+            _logger.LogError(ex, "Failed to save entity");
             StatusMessage = $"Error saving: {ex.Message}";
         }
         finally
@@ -236,7 +235,7 @@ public class JsonEditorViewModel : ReactiveObject
 
     private async Task ValidateAsync()
     {
-        if (CurrentFilePath == null) return;
+        if (_currentTableName == null) return;
         try
         {
             IsBusy = true;
@@ -254,7 +253,7 @@ public class JsonEditorViewModel : ReactiveObject
                 return;
             }
 
-            var result = await _validator.ValidateAsync(jobj, CurrentFilePath);
+            var result = await _validator.ValidateAsync(jobj, _currentTableName);
             HasValidationResult = true;
             IsValid = result.IsValid;
 
@@ -282,47 +281,16 @@ public class JsonEditorViewModel : ReactiveObject
 
     private async Task RefreshTreeAsync()
     {
+        FileTree.Clear();
         try
         {
-            var editorSettings = await _settings.LoadSettingsAsync();
-            DataFolderPath = editorSettings.DataFolderPath;
-            FileTree.Clear();
-
-            if (!Directory.Exists(DataFolderPath)) return;
-
-            foreach (var node in BuildTree(DataFolderPath))
+            var nodes = await _contentTree.BuildTreeAsync();
+            foreach (var node in nodes)
                 FileTree.Add(node);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to refresh file tree");
-        }
-    }
-
-    private static IEnumerable<FileTreeNodeViewModel> BuildTree(string path)
-    {
-        foreach (var dir in Directory.GetDirectories(path).OrderBy(d => d))
-        {
-            var node = new FileTreeNodeViewModel
-            {
-                Name = Path.GetFileName(dir),
-                FullPath = dir,
-                IsDirectory = true
-            };
-            foreach (var child in BuildTree(dir))
-                node.Children.Add(child);
-            if (node.Children.Count > 0)
-                yield return node;
-        }
-
-        foreach (var file in Directory.GetFiles(path, "*.json").OrderBy(f => f))
-        {
-            yield return new FileTreeNodeViewModel
-            {
-                Name = Path.GetFileName(file),
-                FullPath = file,
-                IsDirectory = false
-            };
+            _logger.LogError(ex, "Failed to refresh content tree");
         }
     }
 

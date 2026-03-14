@@ -10,6 +10,8 @@ public class FileTreeNodeViewModel : ReactiveObject
     public string Name { get; init; } = string.Empty;
     public string FullPath { get; init; } = string.Empty;
     public bool IsDirectory { get; init; }
+    public Guid? EntityId { get; init; }
+    public string? TableName { get; init; }
     public ObservableCollection<FileTreeNodeViewModel> Children { get; } = new();
 
     public bool IsExpanded
