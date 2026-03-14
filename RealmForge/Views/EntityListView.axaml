@@ -1,0 +1,182 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             x:Class="RealmForge.Views.EntityListView">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#252526" Padding="16,12"
+                BorderThickness="0,0,0,1" BorderBrush="#333">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <StackPanel Spacing="8">
+                    <!-- Breadcrumb + count -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding DomainLabel}"
+                                   Foreground="#888" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="›"
+                                   Foreground="#555" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding TypeKeyLabel}"
+                                   FontSize="17" FontWeight="SemiBold"
+                                   Foreground="#e0e0e0" VerticalAlignment="Center" />
+                        <Border Background="#2d2d2d" CornerRadius="10" Padding="8,2"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TotalCount}"
+                                       Foreground="#888" FontSize="11" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Search -->
+                    <TextBox Text="{Binding FilterText}"
+                             Watermark="Filter by name or slug…"
+                             Background="#1a1a1a" Foreground="#ccc"
+                             BorderBrush="#383838" Padding="8,5" CornerRadius="4"
+                             MaxWidth="380" HorizontalAlignment="Left" />
+                </StackPanel>
+
+                <!-- New Entity button -->
+                <Button Grid.Column="1"
+                        Content="＋  New Entity"
+                        Command="{Binding NewEntityCommand}"
+                        Background="#0e639c" Foreground="White"
+                        Padding="14,7" CornerRadius="4"
+                        VerticalAlignment="Center" Margin="16,0,0,0" />
+            </Grid>
+        </Border>
+
+        <!-- ── List ───────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+
+            <!-- Column header strip -->
+            <Border Grid.Row="0" Background="#1a1a1a" Padding="16,5"
+                    BorderThickness="0,0,0,1" BorderBrush="#2a2a2a">
+                <Grid ColumnDefinitions="*,160,56,90,124,44">
+                    <TextBlock Grid.Column="0" Text="NAME"
+                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Text="SLUG"
+                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="2" Text="WEIGHT"
+                               Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="STATUS"
+                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="4" Text="UPDATED"
+                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                </Grid>
+            </Border>
+
+            <!-- Loading indicator -->
+            <TextBlock Grid.Row="1" Text="Loading…"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="#555" FontSize="13"
+                       IsVisible="{Binding IsLoading}" />
+
+            <!-- Rows -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding !IsLoading}">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:EntityListRowViewModel">
+                            <Border BorderThickness="0,0,0,1" BorderBrush="#1e1e1e">
+                                <Grid ColumnDefinitions="*,44">
+
+                                <!-- Clickable row area (opens editor) -->
+                                <Button Grid.Column="0"
+                                        Command="{Binding OpenCommand}"
+                                        Background="Transparent"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Stretch"
+                                        Padding="16,8" CornerRadius="0">
+                                    <Grid ColumnDefinitions="*,160,56,90,124">
+
+                                        <!-- Name / DisplayName -->
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Label}"
+                                                   Foreground="#ddd" FontSize="13"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+
+                                        <!-- Slug -->
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Slug}"
+                                                   FontFamily="Cascadia Code,Consolas,monospace"
+                                                   Foreground="#666" FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+
+                                        <!-- RarityWeight -->
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding RarityWeight}"
+                                                   Foreground="#7bb0df" FontSize="12"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+
+                                        <!-- IsActive badge -->
+                                        <Panel Grid.Column="3" VerticalAlignment="Center">
+                                            <Border Background="#1a3a1e" CornerRadius="3" Padding="6,2"
+                                                    HorizontalAlignment="Left"
+                                                    IsVisible="{Binding IsActive}">
+                                                <TextBlock Text="Active"
+                                                           Foreground="#4ec9b0" FontSize="11" />
+                                            </Border>
+                                            <Border Background="#3a1a1a" CornerRadius="3" Padding="6,2"
+                                                    HorizontalAlignment="Left"
+                                                    IsVisible="{Binding !IsActive}">
+                                                <TextBlock Text="Inactive"
+                                                           Foreground="#a05050" FontSize="11" />
+                                            </Border>
+                                        </Panel>
+
+                                        <!-- UpdatedAt -->
+                                        <TextBlock Grid.Column="4"
+                                                   Text="{Binding UpdatedText}"
+                                                   Foreground="#555" FontSize="11"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </Button>
+
+                                <!-- Delete button -->
+                                <Button Grid.Column="1"
+                                        Command="{Binding RequestDeleteCommand}"
+                                        Content="✕"
+                                        Background="Transparent" Foreground="#6a3a3a"
+                                        FontSize="13" Width="44"
+                                        VerticalAlignment="Stretch"
+                                        ToolTip.Tip="Delete entity" />
+                            </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ── Delete confirmation banner ─────────────────────────────────── -->
+        <Border Grid.Row="2" Background="#2a1212" Padding="16,10"
+                BorderThickness="0,1,0,0" BorderBrush="#5a2020"
+                IsVisible="{Binding PendingDelete, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Permanently delete"
+                               Foreground="#c08080" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding PendingDelete.Label}"
+                               Foreground="#ffaaaa" FontWeight="SemiBold" FontSize="13"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="? This cannot be undone."
+                               Foreground="#c08080" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Content="Delete"
+                        Command="{Binding ConfirmDeleteCommand}"
+                        Background="#8b1a1a" Foreground="White"
+                        Padding="14,6" CornerRadius="4" Margin="0,0,8,0" />
+                <Button Grid.Column="2"
+                        Content="Cancel"
+                        Command="{Binding CancelDeleteCommand}"
+                        Background="#363636" Foreground="#ccc"
+                        Padding="14,6" CornerRadius="4" />
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>

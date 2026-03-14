@@ -58,7 +58,7 @@ public class MainWindowViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Bound to TreeView.SelectedItem — opens leaf nodes in the editor automatically.
+    /// Bound to TreeView.SelectedItem — opens leaf nodes in the editor, TypeKey directories in the list.
     /// </summary>
     public FileTreeNodeViewModel? SelectedNode
     {
@@ -68,6 +68,8 @@ public class MainWindowViewModel : ReactiveObject
             this.RaiseAndSetIfChanged(ref _selectedNode, value);
             if (value is { IsDirectory: false })
                 _ = OpenEntityAsync(value);
+            else if (value is { IsDirectory: true, TableName: not null })
+                OpenEntityList(value);
         }
     }
 
@@ -122,6 +124,32 @@ public class MainWindowViewModel : ReactiveObject
         var entity = await _contentEditorService.LoadEntityAsync(node.EntityId.Value, node.TableName);
         if (entity is null) return;
         CurrentPage = new EntityEditorViewModel(entity, node.TableName, _contentEditorService);
+    }
+
+    private async Task OpenEntityByIdAsync(Guid entityId, string tableName)
+    {
+        var entity = await _contentEditorService.LoadEntityAsync(entityId, tableName);
+        if (entity is null) return;
+        CurrentPage = new EntityEditorViewModel(entity, tableName, _contentEditorService);
+    }
+
+    private void OpenEntityList(FileTreeNodeViewModel typeKeyNode)
+    {
+        CurrentPage = new EntityListViewModel(
+            domainLabel:  typeKeyNode.DomainLabel ?? typeKeyNode.Domain ?? "",
+            typeKeyLabel: typeKeyNode.Name,
+            tableName:    typeKeyNode.TableName!,
+            domain:       typeKeyNode.Domain!,
+            typeKey:      typeKeyNode.TypeKey!,
+            service:      _contentEditorService,
+            onOpen:    row => _ = OpenEntityByIdAsync(row.EntityId, row.TableName),
+            onNew:     () => _ = StartNewEntityAsync(typeKeyNode),
+            onDeleted: deletedId =>
+            {
+                if (CurrentPage is EntityEditorViewModel vm && vm.EntityId == deletedId)
+                    CurrentPage = new HomeViewModel();
+                _ = LoadTreeAsync();
+            });
     }
 
     private Task StartNewEntityAsync(FileTreeNodeViewModel typeKeyNode)

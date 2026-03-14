@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
+using RealmForge.ViewModels;
 
 namespace RealmForge.Services;
 
@@ -256,6 +257,69 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         if (entity is null) return false;
         db.Set<T>().Remove(entity);
         return true;
+    }
+
+    /// <summary>
+    /// Loads a summary list (ContentBase scalars only) for the given table + TypeKey,
+    /// sorted by Slug. Commands on each row are wired by EntityListViewModel after load.
+    /// </summary>
+    public async Task<IReadOnlyList<EntityListRowViewModel>> GetEntityListAsync(
+        string tableName, string typeKey)
+    {
+        if (!KnownTables.Contains(tableName)) return [];
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+
+            return tableName switch
+            {
+                "Abilities"          => await SelectRows(db.Abilities, typeKey),
+                "Enemies"            => await SelectRows(db.Enemies, typeKey),
+                "Weapons"            => await SelectRows(db.Weapons, typeKey),
+                "Armors"             => await SelectRows(db.Armors, typeKey),
+                "Items"              => await SelectRows(db.Items, typeKey),
+                "Materials"          => await SelectRows(db.Materials, typeKey),
+                "Enchantments"       => await SelectRows(db.Enchantments, typeKey),
+                "Skills"             => await SelectRows(db.Skills, typeKey),
+                "Spells"             => await SelectRows(db.Spells, typeKey),
+                "CharacterClasses"   => await SelectRows(db.CharacterClasses, typeKey),
+                "Backgrounds"        => await SelectRows(db.Backgrounds, typeKey),
+                "Npcs"               => await SelectRows(db.Npcs, typeKey),
+                "Quests"             => await SelectRows(db.Quests, typeKey),
+                "Recipes"            => await SelectRows(db.Recipes, typeKey),
+                "LootTables"         => await SelectRows(db.LootTables, typeKey),
+                "Organizations"      => await SelectRows(db.Organizations, typeKey),
+                "MaterialProperties" => await SelectRows(db.MaterialProperties, typeKey),
+                "WorldLocations"     => await SelectRows(db.WorldLocations, typeKey),
+                "Dialogues"          => await SelectRows(db.Dialogues, typeKey),
+                _                    => []
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to load entity list for {TableName}/{TypeKey}", tableName, typeKey);
+            return [];
+        }
+    }
+
+    private static Task<List<EntityListRowViewModel>> SelectRows<T>(
+        DbSet<T> dbSet, string typeKey) where T : ContentBase
+    {
+        return dbSet.AsNoTracking()
+            .Where(e => e.TypeKey == typeKey)
+            .OrderBy(e => e.Slug)
+            .Select(e => new EntityListRowViewModel
+            {
+                EntityId     = e.Id,
+                Slug         = e.Slug,
+                DisplayName  = e.DisplayName,
+                RarityWeight = e.RarityWeight,
+                IsActive     = e.IsActive,
+                UpdatedAt    = e.UpdatedAt
+            })
+            .ToListAsync();
     }
 }
 
