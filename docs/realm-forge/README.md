@@ -1,117 +1,56 @@
-# RealmForge - Game Data Editor & Modding Tool
+﻿# RealmForge — Content Editor
 
-**Version**: 3.0 (Blazor Hybrid)  
-**Last Updated**: January 12, 2026  
-**Status**: Active Development  
-**Technology**: .NET MAUI Blazor Hybrid
-
----
+**Status**: Active Development
+**Technology**: .NET 10 / Avalonia / ReactiveUI
 
 ## Overview
 
-RealmForge is a cross-platform desktop application for editing RealmEngine JSON game data and creating game mods. Built with .NET MAUI Blazor Hybrid, it provides a form-based interface backed by RealmEngine.Shared models with JSON fallback for advanced users.
-
-### Key Features
-
-- **Dynamic Form Editor** - Auto-generated forms from C# models
-- **Form/JSON Toggle** - Structured editing with raw JSON fallback
-- **Model-Driven** - Direct integration with RealmEngine.Shared models
-- **Modding Support** - Create, package, and distribute mods (planned)
-
----
-
-## Current Status (v3.0)
-
-### ✅ Implemented
-- Dynamic form generation from models using reflection
-- Form/JSON mode toggle with bi-directional sync
-- File browser for JSON data navigation
-- Model detection (Item, Enemy, Spell, Ability)
-- Type-specific form inputs (string, int, double, bool, enum)
-- Basic save/load functionality
-
-### 🔄 In Progress
-- Monaco Editor integration for JSON mode
-- FluentValidation error display
-- Complex property editing (lists, nested objects)
-- Native folder picker
-
-### 📋 Planned
-- Multi-file tabbed editing
-- Reference browser with visual picker
-- Undo/redo system
-- Mod project management
-- Mod packaging and distribution
-
-See [Roadmap](features/roadmap.md) for detailed timeline.
-
----
+RealmForge is the official content management tool for RealmEngine. It connects directly to the Postgres database via ContentDbContext and provides a desktop UI for browsing and editing all game content entities.
 
 ## Architecture
 
-**Technology Stack:**
-- .NET 9.0 MAUI Blazor Hybrid
-- Blazor Components (HTML/CSS/Razor)
-- RealmEngine.Shared (models)
-- RealmEngine.Data (data access)
-- System.Reflection (dynamic forms)
+- **UI**: Avalonia 11 with ReactiveUI view-models
+- **Data access**: ContentDbContext (EF Core via RealmEngine.Data) — no JSON files on disk
+- **Content tree**: Driven by ContentRegistry routing table (Domain → TypeKey → Entity)
+- **Editor**: AvaloniaEdit JSON text view of DB entity fields; form mode for individual properties
+- **References**: DB-backed reference picker via ContentRegistry
 
-**Key Components:**
-- `DynamicFormEditor.razor` - Generic form generator
-- `JsonEditor.razor` - Form/JSON toggle editor
-- `Home.razor` - Welcome screen
+## Running
 
-See [Architecture](features/architecture.md) for details.
+`powershell
+dotnet run --project RealmForge
+`
 
----
+Requires a ContentDb connection string in ppsettings.json:
 
-## Running RealmForge
+`json
+{
+  "ConnectionStrings": {
+    "ContentDb": "Host=localhost;Database=realmengine;Username=...;Password=..."
+  }
+}
+`
+"@ | Set-Content "c:\code\RealmEngine\RealmForge\README.md" -Encoding UTF8
 
-```powershell
-# Development
-dotnet run --project RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
+@"
+# RealmForge — Developer Notes
 
-# Build
-dotnet build RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
-```
+**Last Updated**: March 2026
+**Technology**: .NET 10 / Avalonia 11 / ReactiveUI / EF Core (Postgres)
 
----
+## Overview
 
-## Documentation
+RealmForge is the content authoring tool for RealmEngine. It queries and modifies game content directly in Postgres via ContentDbContext. There is no JSON file editing — all content is DB-first.
 
-### Features
-- [JSON Editing](features/json-editing.md) - Form/JSON editor features
-- [Form System](features/form-system.md) - Dynamic form generation
-- [Modding Framework](features/modding-framework.md) - Mod creation and management
-- Validation System - Data validation
-- [Roadmap](features/roadmap.md) - Development timeline
+## Key Services
 
-### Technical
-- [Architecture](features/architecture.md) - Technical design
-- Models - RealmEngine.Shared model integration
-- File Formats - JSON v5.1 standards
+| Service | Purpose |
+|---|---|
+| ContentTreeService | Builds left-panel hierarchy from ContentRegistry |
+| ContentEditorService | Loads and saves typed entities from correct DbSet by table name |
+| ReferenceResolverService | Builds @domain/path:item reference catalog from ContentRegistry |
+| EditorSettingsService | Persists minimal editor preferences (theme) to local JSON |
 
----
+## Long-term Direction
 
-## Requirements
-
-- Windows 10/11 (64-bit) - *Current*
-- macOS 10.15+ - *Planned*
-- Linux (Ubuntu 20.04+) - *Planned*
-- .NET 9.0 Runtime
-- 150 MB disk space
-- 2 GB RAM minimum
-
----
-
-## License
-
-Part of the RealmEngine project. See main repository LICENSE.
-
----
-
-## Version History
-
-- **v3.0** (Jan 12, 2026) - Blazor Hybrid rewrite, dynamic forms
-- **v2.0** (Jan 5, 2026) - WPF implementation, JSON v4.1 support
-- **v1.0** (Dec 2025) - Initial release
+The current entity editor presents DB content as JSON text. In future versions this will be replaced by proper form-based editing. JSON export (DB → file) will be supported server-side for deployment pipelines.

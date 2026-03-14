@@ -74,10 +74,6 @@
                                    ToolTip.Tip="Unsaved changes" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                        <Button Content=" Validate"
-                                Command="{Binding ValidateCommand}"
-                                Background="#0063b1" Foreground="White"
-                                Padding="10,4" CornerRadius="4" />
                         <Button Content=" Save"
                                 Command="{Binding SaveCommand}"
                                 Background="#107c41" Foreground="White"
@@ -167,12 +163,12 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- No file open placeholder -->
-                <StackPanel IsVisible="{Binding CurrentFilePath, Converter={x:Static ObjectConverters.IsNull}}"
+                <!-- No entity open placeholder -->
+                <StackPanel IsVisible="{Binding CurrentFileName, Converter={x:Static ObjectConverters.IsNull}}"
                             HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
-                    <TextBlock Text="No file open" FontSize="20" Foreground="#444"
+                    <TextBlock Text="No entity open" FontSize="20" Foreground="#444"
                                HorizontalAlignment="Center" />
-                    <TextBlock Text="Select a JSON file from the tree on the left"
+                    <TextBlock Text="Select an entity from the content tree on the left"
                                FontSize="14" Foreground="#333"
                                HorizontalAlignment="Center" />
                 </StackPanel>
@@ -185,34 +181,13 @@
                 </Border>
             </Grid>
 
-            <!-- Status / Validation panel -->
-            <Grid Grid.Row="2" RowDefinitions="Auto,Auto">
-                <Border Grid.Row="0" Background="#007acc" Padding="8,3"
+            <!-- Status bar -->
+            <Grid Grid.Row="2">
+                <Border Background="#007acc" Padding="8,3"
                         IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding StatusMessage}"
                                FontSize="12" Foreground="White" />
                 </Border>
-
-                <Expander Grid.Row="1"
-                          IsVisible="{Binding HasValidationResult}"
-                          Header="{Binding ValidationErrors.Count, StringFormat='Validation  {0} issue(s)'}"
-                          Background="#1e1e1e">
-                    <Border MaxHeight="180" Background="#252526">
-                        <ScrollViewer>
-                            <ItemsControl ItemsSource="{Binding ValidationErrors}" Margin="8">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}"
-                                                   Foreground="#f48771"
-                                                   FontFamily="Consolas,monospace"
-                                                   FontSize="12" Margin="0,2"
-                                                   TextWrapping="Wrap" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </Border>
-                </Expander>
             </Grid>
         </Grid>
     </Grid>

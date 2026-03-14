@@ -4,7 +4,7 @@
 
 **RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
 
-This repository also contains the **official game built on top of that engine**: RealmUnbound, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. RealmForge, an Avalonia data-editing tool for the JSON game data, is here too.
+This repository also contains the **official game built on top of that engine**: RealmUnbound, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. RealmForge, an Avalonia DB content editor for managing game entities in Postgres, is here too.
 
 ## Project Structure
 
@@ -15,7 +15,7 @@ RealmEngine/
 ├── RealmEngine.Data/          # JSON loading, LiteDB persistence (zero UI dependencies)
 ├── RealmUnbound.Server/       # ASP.NET Core game server with SignalR hub
 ├── RealmUnbound.Client/       # Avalonia cross-platform desktop client (ReactiveUI)
-├── RealmForge/                # Avalonia tool for editing JSON game data (ReactiveUI)
+├── RealmForge/                # Avalonia DB content editor for game entities (ReactiveUI)
 ├── [Project].Tests/           # One test project per library/application
 ├── .vscode/                   # Build tasks and debug launch configs
 ├── docs/                      # Documentation (MkDocs → GitHub Pages)
@@ -170,7 +170,7 @@ All game data uses `rarityWeight` exclusively for both selection probability and
 ```powershell
 dotnet build Realm.Full.slnx              # Full build
 dotnet test Realm.Full.slnx               # All 8,500+ tests
-dotnet run --project RealmForge           # Launch the JSON data editor
+dotnet run --project RealmForge           # Launch the DB content editor
 dotnet run --project RealmUnbound.Server  # Start the game server
 dotnet run --project RealmUnbound.Client  # Start the game client
 ```
