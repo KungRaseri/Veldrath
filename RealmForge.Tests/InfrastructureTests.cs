@@ -13,12 +13,7 @@ public class InfrastructureTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<EditorSettingsService>();
-        services.AddSingleton<ReferenceResolverService>();
-        services.AddSingleton<ContentTreeService>();
-        services.AddSingleton<ContentEditorService>();
-        services.AddSingleton<JsonEditorViewModel>();
         services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(
-            sp.GetRequiredService<JsonEditorViewModel>(),
             sp.GetRequiredService<EditorSettingsService>()));
         return services.BuildServiceProvider();
     }
@@ -55,21 +50,4 @@ public class InfrastructureTests
         file.Icon.Should().Be("📄");
     }
 
-    [Fact]
-    public void JsonPropertyViewModel_TypeChecks_Are_Mutually_Exclusive()
-    {
-        var stringProp = new JsonPropertyViewModel { ValueType = JsonValueType.String };
-        var boolProp = new JsonPropertyViewModel { ValueType = JsonValueType.Boolean };
-        var refProp = new JsonPropertyViewModel { ValueType = JsonValueType.Reference };
-
-        stringProp.IsEditable.Should().BeTrue();
-        stringProp.IsBool.Should().BeFalse();
-        stringProp.IsReference.Should().BeFalse();
-
-        boolProp.IsBool.Should().BeTrue();
-        boolProp.IsEditable.Should().BeFalse();
-
-        refProp.IsReference.Should().BeTrue();
-        refProp.IsEditable.Should().BeFalse();
-    }
 }
