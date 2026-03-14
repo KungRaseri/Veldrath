@@ -128,8 +128,7 @@ try
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
 
     // ── RealmEngine services ─────────────────────────────────────────────────
-    var jsonDataPath = builder.Configuration["RealmEngine:DataPath"] ?? "Data/Json";
-    builder.Services.AddRealmEngineData(jsonDataPath);
+    builder.Services.AddRealmEngineData();
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
 

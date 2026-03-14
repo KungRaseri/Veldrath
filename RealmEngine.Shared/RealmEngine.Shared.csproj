@@ -26,11 +26,4 @@
     <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
 
-  <!-- Include JSON data files -->
-  <ItemGroup>
-    <None Include="Data\Json\**\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

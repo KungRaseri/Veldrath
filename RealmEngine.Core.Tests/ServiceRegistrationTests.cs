@@ -55,7 +55,7 @@ public class ServiceRegistrationTests
         
         // Register RealmEngine services FIRST (before MediatR)
         // This ensures all handler dependencies are available when MediatR scans
-        _services.AddRealmEngineData(GetDataPath());
+        _services.AddRealmEngineData();
         _services.AddRealmEngineCore();
         
         // Override SaveGameRepository to use in-memory implementation for test isolation
@@ -72,14 +72,6 @@ public class ServiceRegistrationTests
         _services.AddRealmEngineMediatR();
         
         _serviceProvider = _services.BuildServiceProvider();
-    }
-
-    private static string GetDataPath()
-    {
-        // Start from test assembly location and navigate to Data/Json
-        var assemblyPath = Path.GetDirectoryName(typeof(ServiceRegistrationTests).Assembly.Location)!;
-        var solutionRoot = Path.GetFullPath(Path.Combine(assemblyPath, "..", "..", ".."));
-        return Path.Combine(solutionRoot, "RealmEngine.Data", "Data", "Json");
     }
 
     #region Debug Tests

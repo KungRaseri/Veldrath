@@ -34,8 +34,7 @@ try
     builder.Services.Configure<DiscordSettings>(builder.Configuration.GetSection("Discord"));
 
     // Wire up the RealmEngine — data → core → MediatR must be registered in this order
-    var jsonDataPath = Path.Combine(AppContext.BaseDirectory, "Data", "Json");
-    builder.Services.AddRealmEngineData(jsonDataPath);
+    builder.Services.AddRealmEngineData();
     builder.Services.AddRealmEngineCore();
     builder.Services.AddRealmEngineMediatR();
 

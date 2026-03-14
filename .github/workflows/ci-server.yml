@@ -153,8 +153,6 @@ jobs:
           --configuration ${{ env.CONFIGURATION }} \
           --output ./publish/RealmUnbound-Server \
           /p:Version=$VERSION /p:AssemblyVersion=$VERSION /p:FileVersion=$VERSION.0
-        mkdir -p ./publish/RealmUnbound-Server/Data
-        cp -r RealmEngine.Data/Data/Json ./publish/RealmUnbound-Server/Data/
         cd ./publish && zip -r "../RealmUnbound-Server-$VERSION.zip" RealmUnbound-Server/
         echo "Created RealmUnbound-Server-$VERSION.zip"
 

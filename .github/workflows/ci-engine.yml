@@ -182,22 +182,11 @@ jobs:
       run: |
         $version = "${{ steps.version.outputs.version-no-hash }}"
         New-Item -ItemType Directory -Force -Path package/Libraries
-        New-Item -ItemType Directory -Force -Path package/Data
         Copy-Item -Path "RealmEngine.Shared/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
         Copy-Item -Path "RealmEngine.Core/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
         Copy-Item -Path "RealmEngine.Data/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
-        Copy-Item -Path "RealmEngine.Data/Data/Json" -Destination "package/Data/" -Recurse
         Compress-Archive -Path "package/*" -DestinationPath "RealmEngine-Libraries-$version.zip" -Force
         Write-Output "Created RealmEngine-Libraries-$version.zip"
-      shell: pwsh
-
-    - name: Package - JSON Data only
-      run: |
-        $version = "${{ steps.version.outputs.version-no-hash }}"
-        New-Item -ItemType Directory -Force -Path package-data/Json
-        Copy-Item -Path "RealmEngine.Data/Data/Json/*" -Destination "package-data/Json/" -Recurse
-        Compress-Archive -Path "package-data/*" -DestinationPath "RealmEngine-Data-$version.zip" -Force
-        Write-Output "Created RealmEngine-Data-$version.zip"
       shell: pwsh
 
     - name: Upload artifacts
@@ -206,7 +195,6 @@ jobs:
         name: engine-release-artifacts
         path: |
           RealmEngine-Libraries-*.zip
-          RealmEngine-Data-*.zip
         retention-days: 7
 
     - name: Create release tag

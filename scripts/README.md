@@ -54,10 +54,10 @@ Also wired to the **test-coverage** VS Code task (`Ctrl+Shift+B` → test-covera
 
 ## `format-json-files.py`
 
-Re-formats all JSON files under `RealmEngine.Data/Data/Json/` to consistent 2-space indentation and UTF-8 without BOM. Run from the repo root.
+Re-formats all JSON files in a given directory to consistent 2-space indentation and UTF-8 without BOM. Pass the data directory as an argument. Run from the repo root.
 
 ```powershell
-python scripts/format-json-files.py
+python scripts/format-json-files.py path/to/data
 ```
 
 
@@ -75,7 +75,7 @@ python scripts/format-json-files.py
 **Output**: Creates `package/` folder in repo root with:
 - `Libraries/` - RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data DLLs
 - `ContentBuilder/` - WPF JSON editor application
-- `Data/Json/` - 186 game data files
+- `Data/` - game data files
 - `package-manifest.json` - Build metadata
 
 **Parameters**:
@@ -101,7 +101,7 @@ python scripts/format-json-files.py
 3. Validates package exists
 4. Validates Godot project (checks for project.godot)
 5. Copies Libraries/ to Godot project
-6. Copies Data/Json/ to Godot project
+6. Copies Data/ to Godot project
 7. Optionally copies RealmForge
 8. Creates deployment info file
 

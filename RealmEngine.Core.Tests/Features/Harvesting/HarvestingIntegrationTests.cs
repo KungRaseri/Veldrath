@@ -376,15 +376,8 @@ public class HarvestingIntegrationTests
             _config
         );
         
-        // Get absolute path to Data/Json directory
-        var dataPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json"
-        );
-        dataPath = Path.GetFullPath(dataPath);
-        
         // Initialize GameDataCache
-        var dataCache = new GameDataCache(dataPath);
+        var dataCache = new GameDataCache("");
         dataCache.LoadAllData();
         
         var referenceResolver = new ReferenceResolverService(
