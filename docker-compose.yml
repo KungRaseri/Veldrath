@@ -31,9 +31,6 @@ services:
       # Override DB to the Postgres container; everything else comes from appsettings.Development.json
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
       - Database__Provider=postgres
-    volumes:
-      # Bind-mount JSON catalog so local edits are reflected without rebuilding
-      - ./RealmEngine.Data/Data/Json:/app/Data/Json:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s

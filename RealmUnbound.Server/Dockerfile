@@ -37,9 +37,6 @@ RUN apt-get update \
 
 COPY --from=build /app/publish .
 
-# Copy JSON game catalog data (RealmEngine.Data does not embed these in build output)
-COPY RealmEngine.Data/Data/Json ./Data/Json
-
 EXPOSE 8080
 EXPOSE 8081
 ENV ASPNETCORE_URLS=http://+:8080
