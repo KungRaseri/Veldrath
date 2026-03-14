@@ -15,4 +15,7 @@ public sealed record DiscordSettings
     /// Set to <c>0</c> in production to register commands globally.
     /// </summary>
     public ulong DevGuildId { get; init; }
+
+    /// <summary>Gets the base URL of the RealmUnbound.Server API (used for live status).</summary>
+    public string ServerBaseUrl { get; init; } = "http://localhost:8080";
 }
