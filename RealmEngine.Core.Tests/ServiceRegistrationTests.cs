@@ -55,7 +55,6 @@ public class ServiceRegistrationTests
         
         // Register RealmEngine services FIRST (before MediatR)
         // This ensures all handler dependencies are available when MediatR scans
-        _services.AddRealmEngineData();
         _services.AddRealmEngineCore();
         
         // Override SaveGameRepository to use in-memory implementation for test isolation

@@ -248,14 +248,4 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
-    
-    /// <summary>
-    /// Previously registered JSON file-based data services. No longer needed — all data is loaded from the database.
-    /// Kept for backward compatibility but does nothing.
-    /// </summary>
-    [Obsolete("JSON file-based data loading has been replaced by the database. Call AddRealmEngineCore() instead.")]
-    public static IServiceCollection AddRealmEngineData(this IServiceCollection services, string jsonDataPath = "")
-    {
-        return services;
-    }
 }

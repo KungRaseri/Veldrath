@@ -128,7 +128,6 @@ try
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
 
     // ── RealmEngine services ─────────────────────────────────────────────────
-    builder.Services.AddRealmEngineData();
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
 
