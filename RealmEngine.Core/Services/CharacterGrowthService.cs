@@ -5,45 +5,30 @@ using RealmEngine.Data.Services;
 namespace RealmEngine.Core.Services;
 
 /// <summary>
-/// Service for loading character stat growth configuration from configuration/growth-stats.json
-/// Provides stat formulas, growth multipliers, and caps using class references
+/// Service for loading character stat growth configuration from the database.
 /// </summary>
 public class CharacterGrowthService
 {
-    private readonly GameDataCache _dataCache;
-    private readonly ReferenceResolverService _referenceResolver;
+    private readonly GameConfigService _configService;
     private GrowthStatsConfig? _config;
 
-    /// <summary>
-    /// Initializes a new instance of CharacterGrowthService
-    /// </summary>
-    /// <param name="dataCache">Game data cache instance</param>
-    /// <param name="referenceResolver">Reference resolver for class lookups</param>
-    public CharacterGrowthService(GameDataCache dataCache, ReferenceResolverService referenceResolver)
+    public CharacterGrowthService(GameConfigService configService)
     {
-        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
-        _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
-    }
-
-    /// <summary>
-    /// Loads the growth stats configuration
-    /// </summary>
-    public GrowthStatsConfig LoadConfig()
-    {
+        _configService = configService ?? throw new ArgumentNullException(nameof(configService));
         if (_config != null)
             return _config;
 
         try
         {
-            var file = _dataCache.GetFile("configuration/growth-stats.json");
-            if (file == null)
+            var rawJson = _configService.GetData("growth-stats");
+            if (rawJson == null)
             {
-                Log.Warning("growth-stats.json not found, using defaults");
+                Log.Warning("growth-stats not found in database, using defaults");
                 _config = GetDefaultConfig();
                 return _config;
             }
 
-            var json = file.JsonData;
+            var json = JObject.Parse(rawJson);
 
             _config = new GrowthStatsConfig
             {

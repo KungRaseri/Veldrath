@@ -9,46 +9,30 @@ namespace RealmEngine.Core.Services.Budget;
 /// </summary>
 public class BudgetConfigFactory
 {
-    private readonly GameDataCache _dataCache;
+    private readonly GameConfigService _configService;
     private readonly ILogger<BudgetConfigFactory> _logger;
-    
+
     private BudgetConfig? _budgetConfig;
     private MaterialPools? _materialPools;
     private EnemyTypes? _enemyTypes;
     private MaterialFilterConfig? _materialFilters;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BudgetConfigFactory"/> class.
-    /// </summary>
-    /// <param name="dataCache">The game data cache.</param>
-    /// <param name="logger">The logger instance.</param>
-    public BudgetConfigFactory(GameDataCache dataCache, ILogger<BudgetConfigFactory> logger)
+    public BudgetConfigFactory(GameConfigService configService, ILogger<BudgetConfigFactory> logger)
     {
-        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    /// <summary>
-    /// Load or get cached budget configuration.
-    /// </summary>
-    public BudgetConfig GetBudgetConfig()
-    {
-        if (_budgetConfig != null)
-            return _budgetConfig;
-
+        _configService = configService ?? throw new ArgumentNullException(nameof(configService));
         try
         {
-            var configFile = _dataCache.GetFile("general/budget-config.json");
-            if (configFile?.JsonData == null)
+            var json = _configService.GetData("budget-config");
+            if (json == null)
             {
-                _logger.LogError("Failed to load budget-config.json");
+                _logger.LogWarning("budget-config not found in database, using defaults");
                 return CreateDefaultBudgetConfig();
             }
 
-            _budgetConfig = configFile.JsonData.ToObject<BudgetConfig>();
+            _budgetConfig = JsonConvert.DeserializeObject<BudgetConfig>(json);
             if (_budgetConfig == null)
             {
-                _logger.LogError("Failed to deserialize budget-config.json");
+                _logger.LogError("Failed to deserialize budget-config");
                 return CreateDefaultBudgetConfig();
             }
 
@@ -72,17 +56,17 @@ public class BudgetConfigFactory
 
         try
         {
-            var configFile = _dataCache.GetFile("general/material-pools.json");
-            if (configFile?.JsonData == null)
+            var json = _configService.GetData("material-pools");
+            if (json == null)
             {
-                _logger.LogError("Failed to load material-pools.json");
+                _logger.LogWarning("material-pools not found in database, using defaults");
                 return CreateDefaultMaterialPools();
             }
 
-            _materialPools = configFile.JsonData.ToObject<MaterialPools>();
+            _materialPools = JsonConvert.DeserializeObject<MaterialPools>(json);
             if (_materialPools == null)
             {
-                _logger.LogError("Failed to deserialize material-pools.json");
+                _logger.LogError("Failed to deserialize material-pools");
                 return CreateDefaultMaterialPools();
             }
 
@@ -106,17 +90,17 @@ public class BudgetConfigFactory
 
         try
         {
-            var configFile = _dataCache.GetFile("enemies/enemy-types.json");
-            if (configFile?.JsonData == null)
+            var json = _configService.GetData("enemy-types");
+            if (json == null)
             {
-                _logger.LogError("Failed to load enemy-types.json");
+                _logger.LogWarning("enemy-types not found in database, using defaults");
                 return CreateDefaultEnemyTypes();
             }
 
-            _enemyTypes = configFile.JsonData.ToObject<EnemyTypes>();
+            _enemyTypes = JsonConvert.DeserializeObject<EnemyTypes>(json);
             if (_enemyTypes == null)
             {
-                _logger.LogError("Failed to deserialize enemy-types.json");
+                _logger.LogError("Failed to deserialize enemy-types");
                 return CreateDefaultEnemyTypes();
             }
 
@@ -153,17 +137,17 @@ public class BudgetConfigFactory
 
         try
         {
-            var configFile = _dataCache.GetFile("configuration/material-filters.json");
-            if (configFile?.JsonData == null)
+            var json = _configService.GetData("material-filters");
+            if (json == null)
             {
-                _logger.LogError("Failed to load material-filters.json");
+                _logger.LogWarning("material-filters not found in database, using defaults");
                 return CreateDefaultMaterialFilters();
             }
 
-            _materialFilters = configFile.JsonData.ToObject<MaterialFilterConfig>();
+            _materialFilters = JsonConvert.DeserializeObject<MaterialFilterConfig>(json);
             if (_materialFilters == null)
             {
-                _logger.LogError("Failed to deserialize material-filters.json");
+                _logger.LogError("Failed to deserialize material-filters");
                 return CreateDefaultMaterialFilters();
             }
 

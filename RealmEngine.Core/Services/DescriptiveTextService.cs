@@ -6,11 +6,10 @@ namespace RealmEngine.Core.Services;
 
 /// <summary>
 /// Service for generating descriptive text using procedural word lists.
-/// Provides atmospheric descriptions for items, locations, NPCs, and combat.
 /// </summary>
 public class DescriptiveTextService
 {
-    private readonly GameDataCache _dataCache;
+    private readonly GameConfigService _configService;
     private readonly Random _random = new();
     private Dictionary<string, List<string>>? _adjectives;
     private Dictionary<string, List<string>>? _colors;
@@ -21,13 +20,9 @@ public class DescriptiveTextService
     private Dictionary<string, List<string>>? _weather;
     private Dictionary<string, List<string>>? _timeOfDay;
 
-    /// <summary>
-    /// Initializes a new instance of the DescriptiveTextService class.
-    /// </summary>
-    /// <param name="dataCache">The game data cache service.</param>
-    public DescriptiveTextService(GameDataCache dataCache)
+    public DescriptiveTextService(GameConfigService configService)
     {
-        _dataCache = dataCache;
+        _configService = configService;
     }
 
     /// <summary>
@@ -219,30 +214,30 @@ public class DescriptiveTextService
         return $"A {string.Join(" ", parts)}";
     }
 
+    private JObject? _data;
+
+    private JObject LoadData()
+    {
+        if (_data != null) return _data;
+        var raw = _configService.GetData("descriptive-text");
+        _data = raw != null ? JObject.Parse(raw) : new JObject();
+        return _data;
+    }
+
     private void EnsureAdjectivesLoaded()
     {
         if (_adjectives != null) return;
-        
-        var file = _dataCache.GetFile("general/adjectives.json");
-        if (file == null)
-        {
-            Log.Warning("Adjectives file not found");
-            _adjectives = new Dictionary<string, List<string>>();
-            return;
-        }
 
         _adjectives = new Dictionary<string, List<string>>();
-        var components = file.JsonData["components"] as JObject;
-        
+        var components = LoadData()["components"] as JObject;
+
         if (components != null)
         {
             foreach (var prop in components.Properties())
             {
                 var list = prop.Value.ToObject<List<string>>();
                 if (list != null)
-                {
                     _adjectives[prop.Name] = list;
-                }
             }
         }
     }
@@ -250,27 +245,18 @@ public class DescriptiveTextService
     private void EnsureColorsLoaded()
     {
         if (_colors != null) return;
-        
-        var file = _dataCache.GetFile("general/colors.json");
-        if (file == null)
-        {
-            Log.Warning("Colors file not found");
-            _colors = new Dictionary<string, List<string>>();
-            return;
-        }
 
         _colors = new Dictionary<string, List<string>>();
-        var components = file.JsonData["components"] as JObject;
-        
-        if (components != null)
+        var data = LoadData();
+        var colorSection = data["colors"] as JObject ?? data["components"] as JObject;
+
+        if (colorSection != null)
         {
-            foreach (var prop in components.Properties())
+            foreach (var prop in colorSection.Properties())
             {
                 var list = prop.Value.ToObject<List<string>>();
                 if (list != null)
-                {
                     _colors[prop.Name] = list;
-                }
             }
         }
     }
@@ -278,82 +264,41 @@ public class DescriptiveTextService
     private void EnsureSmellsLoaded()
     {
         if (_smells != null) return;
-        
-        var file = _dataCache.GetFile("general/smells.json");
-        if (file == null)
-        {
-            _smells = new List<string>();
-            return;
-        }
-
-        _smells = file.JsonData["smells"]?.ToObject<List<string>>() ?? new List<string>();
+        _smells = LoadData()["smells"]?.ToObject<List<string>>() ?? [];
     }
 
     private void EnsureSoundsLoaded()
     {
         if (_sounds != null) return;
-        
-        var file = _dataCache.GetFile("general/sounds.json");
-        if (file == null)
-        {
-            _sounds = new List<string>();
-            return;
-        }
-
-        _sounds = file.JsonData["sounds"]?.ToObject<List<string>>() ?? new List<string>();
+        _sounds = LoadData()["sounds"]?.ToObject<List<string>>() ?? [];
     }
 
     private void EnsureTexturesLoaded()
     {
         if (_textures != null) return;
-        
-        var file = _dataCache.GetFile("general/textures.json");
-        if (file == null)
-        {
-            _textures = new List<string>();
-            return;
-        }
-
-        _textures = file.JsonData["textures"]?.ToObject<List<string>>() ?? new List<string>();
+        _textures = LoadData()["textures"]?.ToObject<List<string>>() ?? [];
     }
 
     private void EnsureVerbsLoaded()
     {
         if (_verbs != null) return;
-        
-        var file = _dataCache.GetFile("general/verbs.json");
-        if (file == null)
-        {
-            _verbs = new List<string>();
-            return;
-        }
-
-        _verbs = file.JsonData["verbs"]?.ToObject<List<string>>() ?? new List<string>();
+        _verbs = LoadData()["verbs"]?.ToObject<List<string>>() ?? [];
     }
 
     private void EnsureWeatherLoaded()
     {
         if (_weather != null) return;
-        
-        var file = _dataCache.GetFile("general/weather.json");
-        if (file == null)
-        {
-            _weather = new Dictionary<string, List<string>>();
-            return;
-        }
 
         _weather = new Dictionary<string, List<string>>();
-        var conditions = file.JsonData["weather_conditions"] as JObject;
-        
+        var conditions = LoadData()["weather_conditions"] as JObject;
+
         if (conditions != null)
         {
             foreach (var prop in conditions.Properties())
             {
                 var list = prop.Value.ToObject<List<string>>();
                 if (list != null)
-                {
                     _weather[prop.Name] = list;
-                }
             }
         }
     }
@@ -361,26 +306,17 @@ public class DescriptiveTextService
     private void EnsureTimeOfDayLoaded()
     {
         if (_timeOfDay != null) return;
-        
-        var file = _dataCache.GetFile("general/time_of_day.json");
-        if (file == null)
-        {
-            _timeOfDay = new Dictionary<string, List<string>>();
-            return;
-        }
 
         _timeOfDay = new Dictionary<string, List<string>>();
-        var periods = file.JsonData["time_periods"] as JObject;
-        
+        var periods = LoadData()["time_periods"] as JObject;
+
         if (periods != null)
         {
             foreach (var prop in periods.Properties())
             {
                 var list = prop.Value.ToObject<List<string>>();
                 if (list != null)
-                {
                     _timeOfDay[prop.Name] = list;
-                }
             }
         }
     }

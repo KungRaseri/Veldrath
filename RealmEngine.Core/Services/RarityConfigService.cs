@@ -5,21 +5,16 @@ using Serilog;
 namespace RealmEngine.Core.Services;
 
 /// <summary>
-/// Service for loading rarity tier configuration from JSON.
-/// Provides tier definitions, colors, and drop chances for rarity system.
+/// Service for loading rarity tier configuration from the database.
 /// </summary>
 public class RarityConfigService
 {
-    private readonly GameDataCache _dataCache;
+    private readonly GameConfigService _configService;
     private RarityConfig? _cachedConfig;
 
-    /// <summary>
-    /// Initializes a new instance of the RarityConfigService class.
-    /// </summary>
-    /// <param name="dataCache">The game data cache service.</param>
-    public RarityConfigService(GameDataCache dataCache)
+    public RarityConfigService(GameConfigService configService)
     {
-        _dataCache = dataCache;
+        _configService = configService;
     }
 
     /// <summary>
@@ -32,18 +27,19 @@ public class RarityConfigService
             return _cachedConfig;
         }
 
-        var configFile = _dataCache.GetFile("configuration/rarity.json");
-        
-        if (configFile == null)
+var rawJson = _configService.GetData("rarity");
+
+        if (rawJson == null)
         {
-            Log.Warning("Rarity config not found, using defaults");
+            Log.Warning("Rarity config not found in database, using defaults");
             return GetDefaultConfig();
         }
 
         try
         {
             var tiers = new List<RarityTierDefinition>();
-            var tiersArray = configFile.JsonData["tiers"] as JArray;
+            var parsed = JObject.Parse(rawJson);
+            var tiersArray = parsed["tiers"] as JArray;
 
             if (tiersArray != null)
             {

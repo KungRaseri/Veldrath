@@ -11,40 +11,24 @@ namespace RealmEngine.Core.Services.Budget;
 /// </summary>
 public class BudgetItemGenerationService
 {
-    private readonly GameDataCache _dataCache;
-    private readonly ReferenceResolverService _referenceResolver;
     private readonly BudgetCalculator _budgetCalculator;
     private readonly MaterialPoolService _materialPoolService;
     private readonly BudgetConfigFactory _configFactory;
-    private readonly ItemGenerationRulesService _generationRulesService;
+    private readonly GameConfigService _configService;
     private readonly ILogger<BudgetItemGenerationService> _logger;
     private readonly Random _random;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BudgetItemGenerationService"/> class.
-    /// </summary>
-    /// <param name="dataCache">The game data cache.</param>
-    /// <param name="referenceResolver">The reference resolver service.</param>
-    /// <param name="budgetCalculator">The budget calculator.</param>
-    /// <param name="materialPoolService">The material pool service.</param>
-    /// <param name="configFactory">The budget config factory.</param>
-    /// <param name="generationRulesService">The item generation rules service.</param>
-    /// <param name="logger">The logger instance.</param>
     public BudgetItemGenerationService(
-        GameDataCache dataCache,
-        ReferenceResolverService referenceResolver,
         BudgetCalculator budgetCalculator,
         MaterialPoolService materialPoolService,
         BudgetConfigFactory configFactory,
-        ItemGenerationRulesService generationRulesService,
+        GameConfigService configService,
         ILogger<BudgetItemGenerationService> logger)
     {
-        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
-        _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
         _budgetCalculator = budgetCalculator ?? throw new ArgumentNullException(nameof(budgetCalculator));
         _materialPoolService = materialPoolService ?? throw new ArgumentNullException(nameof(materialPoolService));
         _configFactory = configFactory ?? throw new ArgumentNullException(nameof(configFactory));
-        _generationRulesService = generationRulesService ?? throw new ArgumentNullException(nameof(generationRulesService));
+        _configService = configService ?? throw new ArgumentNullException(nameof(configService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _random = new Random();
     }
@@ -416,22 +400,27 @@ public class BudgetItemGenerationService
     /// </summary>
     private List<JToken>? GetItemsForCategory(string category)
     {
-        // Load direct catalog for this leaf category
-        var catalogPath = $"items/{category}/catalog.json";
-        var catalogFile = _dataCache.GetFile(catalogPath);
-        
-        if (catalogFile?.JsonData != null)
+        var configKey = $"items/{category}";
+        var raw = _configService.GetData(configKey);
+        if (raw == null)
         {
-            var items = GetItemsFromCatalog(catalogFile.JsonData);
-            if (items != null && items.Any())
-            {
-                return items.ToList();
-            }
+            _logger.LogWarning("No catalog data for category key: {Key}", configKey);
+            return null;
         }
 
-        _logger.LogWarning("No items found in catalog: {Path}", catalogPath);
-        return null;
-    }
+        try
+        {
+            var catalogJson = JObject.Parse(raw);
+            var items = GetItemsFromCatalog(catalogJson);
+            if (items != null && items.Any())
+                return items.ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse catalog for key: {Key}", configKey);
+        }
+
+        _logger.LogWarning("No items found for category key: {Key}", configKey);
 
     /// <summary>
     /// Get names.json data for a leaf category.
@@ -439,21 +428,15 @@ public class BudgetItemGenerationService
     /// </summary>
     private JToken? GetNamesDataForCategory(string category)
     {
-        // Skip names.json lookup for material subcategories - they only have catalog.json
         if (category?.StartsWith("materials/", StringComparison.OrdinalIgnoreCase) == true)
-        {
             return null;
-        }
-        
-        // Load direct names.json for this leaf category
-        var namesPath = $"items/{category}/names.json";
-        if (!_dataCache.FileExists(namesPath))
-        {
-            return null;
-        }
-        
-        var namesFile = _dataCache.GetFile(namesPath);
-        return namesFile?.JsonData;
+
+        var configKey = $"items/{category}/names";
+        var raw = _configService.GetData(configKey);
+        if (raw == null) return null;
+
+        try { return JObject.Parse(raw); }
+        catch { return null; }
     }
 
     /// <summary>
@@ -487,15 +470,15 @@ public class BudgetItemGenerationService
     /// </summary>
     private Task<(JToken? Component, double Modifier, int Cost)> SelectAffordableQualityAsync(int availableBudget)
     {
-        var namesPath = "items/materials/names.json";
-        if (!_dataCache.FileExists(namesPath))
+        var namesRaw = _configService.GetData("items/materials/names");
+        if (namesRaw == null)
             return Task.FromResult<(JToken?, double, int)>((null, 0.0, 0));
 
-        var namesFile = _dataCache.GetFile(namesPath);
-        if (namesFile?.JsonData == null)
-            return Task.FromResult<(JToken?, double, int)>((null, 0.0, 0));
+        JObject namesJson;
+        try { namesJson = JObject.Parse(namesRaw); }
+        catch { return Task.FromResult<(JToken?, double, int)>((null, 0.0, 0)); }
 
-        var qualityComponents = namesFile.JsonData["components"]?["quality"];
+        var qualityComponents = namesJson["components"]?["quality"];
         if (qualityComponents == null || !qualityComponents.Any())
             return Task.FromResult<(JToken?, double, int)>((null, 0.0, 0));
 
@@ -623,8 +606,8 @@ public class BudgetItemGenerationService
         var result = new List<(JToken Component, int Cost)>();
         
         // Get component limits for this rarity tier
-        var maxPrefixes = _generationRulesService.GetMaxPrefixes(rarityTier);
-        var maxSuffixes = _generationRulesService.GetMaxSuffixes(rarityTier);
+        var maxPrefixes = GetMaxComponentsByRarity(rarityTier, "prefixes");
+        var maxSuffixes = GetMaxComponentsByRarity(rarityTier, "suffixes");
         var prefixCount = 0;
         var suffixCount = 0;
 
@@ -815,26 +798,25 @@ public class BudgetItemGenerationService
     private Dictionary<SocketType, List<Socket>> GenerateSocketsForItem(ItemRarity rarity, string itemType)
     {
         var sockets = new Dictionary<SocketType, List<Socket>>();
-        
+
         try
         {
-            // Load socket configuration
-            var socketConfigPath = "configuration/socket-config.json";
-            if (!_dataCache.FileExists(socketConfigPath))
+            var raw = _configService.GetData("socket-config");
+            if (raw == null)
             {
-                _logger.LogWarning("Socket config not found at {Path}, returning empty sockets", socketConfigPath);
+                _logger.LogWarning("socket-config not found in database, returning empty sockets");
                 return sockets;
             }
 
-            var socketConfig = _dataCache.GetFile(socketConfigPath);
-            if (socketConfig?.JsonData == null)
+            JObject socketConfig;
+            try { socketConfig = JObject.Parse(raw); }
+            catch
             {
-                _logger.LogWarning("Socket config JsonData is null, returning empty sockets");
+                _logger.LogWarning("Failed to parse socket-config, returning empty sockets");
                 return sockets;
             }
 
-            // Get socket count based on rarity
-            var socketCounts = socketConfig.JsonData["socketCounts"]?[rarity.ToString()];
+            var socketCounts = socketConfig["socketCounts"]?[rarity.ToString()];
             if (socketCounts == null)
             {
                 _logger.LogDebug("No socket count configuration for rarity {Rarity}", rarity);
@@ -871,7 +853,7 @@ public class BudgetItemGenerationService
             }
 
             // Get socket type weights for item type
-            var socketTypeWeights = socketConfig.JsonData["socketTypeWeights"]?[itemType];
+            var socketTypeWeights = socketConfig["socketTypeWeights"]?[itemType];
             if (socketTypeWeights == null)
             {
                 _logger.LogWarning("No socket type weights for item type {ItemType}, defaulting to equal weights", itemType);
@@ -950,10 +932,10 @@ public class BudgetItemGenerationService
         List<(SocketType type, Socket socket)> sockets,
         int socketCount,
         ItemRarity rarity,
-        CachedJsonFile socketConfig)
+        JObject socketConfig)
     {
         // Get link chances for this rarity
-        var linkChances = socketConfig.JsonData["linkChances"]?[rarity.ToString()];
+        var linkChances = socketConfig["linkChances"]?[rarity.ToString()];
         if (linkChances == null)
         {
             _logger.LogDebug("No link chances configured for rarity {Rarity}, sockets will be unlinked", rarity);
@@ -1021,6 +1003,15 @@ public class BudgetItemGenerationService
     /// Calculate item rarity from budget amount.
     /// Higher budgets indicate rarer items.
     /// </summary>
+    private static int GetMaxComponentsByRarity(string rarityTier, string componentType) =>
+        rarityTier.ToLowerInvariant() switch
+        {
+            "legendary" => 2,
+            "epic" => 2,
+            "rare" => 1,
+            _ => 0
+        };
+
     private ItemRarity CalculateRarityFromBudget(int budget)
     {
         // Budget thresholds for rarity tiers

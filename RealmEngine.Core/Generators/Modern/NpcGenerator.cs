@@ -48,14 +48,6 @@ public class NpcGenerator(INpcRepository repository, ILogger<NpcGenerator> logge
     private NPC? SelectWeighted(List<NPC> items)
     {
         if (items.Count == 0) return null;
-        var total = items.Sum(i => i.RarityWeight > 0 ? i.RarityWeight : 1);
-        var roll = _random.Next(total);
-        var cumulative = 0;
-        foreach (var item in items)
-        {
-            cumulative += item.RarityWeight > 0 ? item.RarityWeight : 1;
-            if (roll < cumulative) return item;
-        }
-        return items[^1];
+        return items[_random.Next(items.Count)];
     }
 }
