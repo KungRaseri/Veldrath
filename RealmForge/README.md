@@ -16,7 +16,6 @@ RealmForge is a desktop application for editing RealmEngine's JSON data files. B
 - **Model Detection** - Automatically detects Item, Enemy, Spell, Ability from filename
 - **Type-Specific Inputs** - String, int, double, bool, enum fields with proper controls
 - **Bi-Directional Sync** - Form ↔ JSON serialization
-- **File Browser** - Navigate Data/Json folder structure
 - **Save/Load** - Persist changes to files
 - **Basic Validation** - JSON parsing validation
 
@@ -164,19 +163,16 @@ RealmForge/
 
 ## Known Limitations
 
-1. **Hardcoded Data Path**: Currently points to `RealmEngine.Data/Data/Json`
-   - TODO: Add native folder picker dialog
-
-2. **Simple Model Detection**: Based on filename string matching
+1. **Simple Model Detection**: Based on filename string matching
    - TODO: Parse JSON metadata/type field for better detection
 
-3. **Complex Types Not Editable**: Lists, Dictionaries, nested objects show as read-only
+2. **Complex Types Not Editable**: Lists, Dictionaries, nested objects show as read-only
    - TODO: Recursive form generation or inline JSON editor for complex fields
 
-4. **Basic JSON Editor**: Plain textarea
+3. **Basic JSON Editor**: Plain textarea
    - TODO: Integrate Monaco Editor for syntax highlighting, error detection
 
-5. **No Validation Feedback**: Model validation not yet integrated
+4. **No Validation Feedback**: Model validation not yet integrated
    - TODO: Display FluentValidation errors in form
 
 ## Technical Implementation

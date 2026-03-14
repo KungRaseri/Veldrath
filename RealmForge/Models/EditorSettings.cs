@@ -11,11 +11,6 @@ public class EditorSettings
     public string Theme { get; set; } = "Dark";
 
     /// <summary>
-    /// Path to the game data folder
-    /// </summary>
-    public string DataFolderPath { get; set; } = "";
-
-    /// <summary>
     /// Auto-save interval in seconds (0 = disabled)
     /// </summary>
     public int AutoSaveIntervalSeconds { get; set; } = 120; // 2 minutes

@@ -16,8 +16,12 @@ public class InfrastructureTests
         services.AddSingleton<FileManagementService>();
         services.AddScoped<ModelValidationService>();
         services.AddSingleton<ReferenceResolverService>();
+        services.AddSingleton<ContentTreeService>();
+        services.AddSingleton<ContentEditorService>();
         services.AddSingleton<JsonEditorViewModel>();
-        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(
+            sp.GetRequiredService<JsonEditorViewModel>(),
+            sp.GetRequiredService<EditorSettingsService>()));
         return services.BuildServiceProvider();
     }
 

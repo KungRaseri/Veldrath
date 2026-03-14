@@ -100,6 +100,8 @@ public partial class App : Application
         services.AddSingleton<FileManagementService>();
         services.AddScoped<ModelValidationService>();
         services.AddSingleton<ReferenceResolverService>();
+        services.AddSingleton<ContentTreeService>();
+        services.AddSingleton<ContentEditorService>();
 
         services.AddSingleton<JsonEditorViewModel>();
         services.AddSingleton<MainWindowViewModel>();

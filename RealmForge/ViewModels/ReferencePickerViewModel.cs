@@ -60,13 +60,13 @@ public class ReferencePickerViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isLoading, value);
     }
 
-    public async Task InitializeAsync(string dataPath)
+    public async Task InitializeAsync()
     {
         if (_resolver.IsInitialized) return;
         IsLoading = true;
         try
         {
-            await _resolver.BuildReferenceCatalogAsync(dataPath);
+            await _resolver.BuildReferenceCatalogAsync();
             var cats = _resolver.GetCategories().Select(c => c.Id).ToList();
             Categories.Clear();
             Categories.Add("(All)");
