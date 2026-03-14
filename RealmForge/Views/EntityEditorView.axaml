@@ -11,57 +11,152 @@
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="{Binding DisplayName}"
+                        <TextBlock Text="{Binding EntityHeading}"
                                    FontSize="16" FontWeight="SemiBold" Foreground="#e0e0e0" />
-                        <Border Background="#3a3a3a" CornerRadius="3" Padding="6,2"
+                        <Border Background="#3a2800" CornerRadius="3" Padding="6,2"
                                 IsVisible="{Binding IsDirty}">
-                            <TextBlock Text="Unsaved" Foreground="#cca700" FontSize="11" />
-                        </Border>
-                        <Border Background="#1e3a1e" CornerRadius="3" Padding="6,2"
-                                IsVisible="{Binding IsSaving}">
-                            <TextBlock Text="Saving…" Foreground="#4ec9b0" FontSize="11" />
+                            <TextBlock Text="Unsaved changes" Foreground="#cca700" FontSize="11" />
                         </Border>
                     </StackPanel>
-                    <TextBlock Text="{Binding TableName}"
-                               FontSize="11" Foreground="#555" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding TableName}" Foreground="#555" FontSize="11" />
+                        <TextBlock Text="·" Foreground="#444" FontSize="11" />
+                        <TextBlock Text="{Binding TypeKey}" Foreground="#555" FontSize="11" />
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Content="Discard"
                             Command="{Binding DiscardCommand}"
                             Background="#3a3a3a" Foreground="#ccc"
-                            Padding="12,6" CornerRadius="4" />
+                            Padding="12,6" CornerRadius="4"
+                            IsEnabled="{Binding !IsSaving}" />
                     <Button Content="Save"
                             Command="{Binding SaveCommand}"
                             Background="#0e639c" Foreground="White"
-                            Padding="18,6" CornerRadius="4" />
+                            Padding="20,6" CornerRadius="4"
+                            IsEnabled="{Binding !IsSaving}" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ── JSON editor ────────────────────────────────────────────────── -->
-        <TextBox Grid.Row="1"
-                 Text="{Binding Json}"
-                 AcceptsReturn="True"
-                 AcceptsTab="True"
-                 FontFamily="Cascadia Code,Cascadia Mono,Consolas,Courier New,monospace"
-                 FontSize="13"
-                 Background="#1e1e1e"
-                 Foreground="#d4d4d4"
-                 CaretBrush="White"
-                 SelectionBrush="#264f78"
-                 BorderThickness="0"
-                 Padding="16"
-                 TextWrapping="NoWrap"
-                 IsEnabled="{Binding !IsSaving}" />
+        <!-- ── Form ───────────────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="28,20" Spacing="24" MaxWidth="800">
+
+                <!-- ── Common Fields ──────────────────────────────────────── -->
+                <Border Background="#252526" CornerRadius="6" Padding="20">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="Common Fields"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   Foreground="#888" LetterSpacing="1" />
+
+                        <!-- Display Name -->
+                        <Grid ColumnDefinitions="160,*">
+                            <TextBlock Grid.Column="0" Text="Display Name"
+                                       Foreground="#bbb" FontSize="13"
+                                       VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding DisplayName}"
+                                     Watermark="Human-readable label"
+                                     Background="#1e1e1e" Foreground="#e0e0e0"
+                                     BorderBrush="#444" Padding="8,6" CornerRadius="4" />
+                        </Grid>
+
+                        <!-- Slug -->
+                        <Grid ColumnDefinitions="160,*">
+                            <TextBlock Grid.Column="0" Text="Slug"
+                                       Foreground="#bbb" FontSize="13"
+                                       VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding Slug}"
+                                     Watermark="url-safe-identifier"
+                                     Background="#1e1e1e" Foreground="#e0e0e0"
+                                     BorderBrush="#444" Padding="8,6" CornerRadius="4"
+                                     FontFamily="Cascadia Code,Consolas,monospace" />
+                        </Grid>
+
+                        <!-- Rarity Weight -->
+                        <Grid ColumnDefinitions="160,*">
+                            <TextBlock Grid.Column="0" Text="Rarity Weight"
+                                       Foreground="#bbb" FontSize="13"
+                                       VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="1"
+                                           Value="{Binding RarityWeight}"
+                                           Minimum="1" Maximum="100" Increment="1"
+                                           Background="#1e1e1e" Foreground="#e0e0e0"
+                                           BorderBrush="#444" Padding="6,4" CornerRadius="4" />
+                        </Grid>
+
+                        <!-- Is Active -->
+                        <Grid ColumnDefinitions="160,*">
+                            <TextBlock Grid.Column="0" Text="Active"
+                                       Foreground="#bbb" FontSize="13"
+                                       VerticalAlignment="Center" />
+                            <CheckBox Grid.Column="1"
+                                      IsChecked="{Binding IsActive}"
+                                      Content="Enabled for generation and references"
+                                      Foreground="#bbb" FontSize="13" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Type-Specific Field Groups (Stats, Traits, Effects…) ── -->
+                <ItemsControl ItemsSource="{Binding FieldGroups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:FieldGroupViewModel">
+                            <Border Background="#252526" CornerRadius="6" Padding="20" Margin="0,0,0,0">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Text="{Binding GroupName}"
+                                               FontSize="12" FontWeight="SemiBold"
+                                               Foreground="#888" LetterSpacing="1" />
+
+                                    <ItemsControl ItemsSource="{Binding Fields}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:FieldRowViewModel">
+                                                <Grid ColumnDefinitions="160,*" Margin="0,4,0,0">
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding Label}"
+                                                               Foreground="#bbb" FontSize="13"
+                                                               VerticalAlignment="Center" />
+
+                                                    <!-- Text field -->
+                                                    <TextBox Grid.Column="1"
+                                                             Text="{Binding StringValue}"
+                                                             Background="#1e1e1e" Foreground="#e0e0e0"
+                                                             BorderBrush="#444" Padding="8,5" CornerRadius="4"
+                                                             IsVisible="{Binding IsText}" />
+
+                                                    <!-- Numeric field -->
+                                                    <NumericUpDown Grid.Column="1"
+                                                                   Value="{Binding NumberValue}"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="6,3" CornerRadius="4"
+                                                                   IsVisible="{Binding IsNumber}" />
+
+                                                    <!-- Bool field -->
+                                                    <CheckBox Grid.Column="1"
+                                                              IsChecked="{Binding BoolValue}"
+                                                              Foreground="#bbb" FontSize="13"
+                                                              IsVisible="{Binding IsBool}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- ── Status bar ─────────────────────────────────────────────────── -->
         <Border Grid.Row="2" Background="#252526" Padding="14,5"
                 BorderThickness="0,1,0,0" BorderBrush="#2a2a2a"
                 IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-            <TextBlock Text="{Binding StatusMessage}"
-                       Foreground="#888" FontSize="12" />
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#888" FontSize="12" />
         </Border>
 
     </Grid>
 </UserControl>
+
