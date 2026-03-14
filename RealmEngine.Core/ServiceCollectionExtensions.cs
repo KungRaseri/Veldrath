@@ -244,7 +244,6 @@ public static class ServiceCollectionExtensions
         // Register data services
         services.AddScoped<ReferenceResolverService>();
         services.AddScoped<ItemGenerationRulesService>();
-        services.AddScoped<ExperienceConfigService>();
         services.AddScoped<ResourceNodeLoaderService>();
         
         // Note: Repositories are registered in AddRealmEngineCore since they're used by Core services
