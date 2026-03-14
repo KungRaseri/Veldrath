@@ -150,6 +150,13 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
             services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
             services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
+            services.AddScoped<IAbilityRepository, EfCoreAbilityRepository>();
+            services.AddScoped<IEnemyRepository, EfCoreEnemyRepository>();
+            services.AddScoped<INpcRepository, EfCoreNpcRepository>();
+            services.AddScoped<IQuestRepository, EfCoreQuestRepository>();
+            services.AddScoped<IRecipeRepository, EfCoreRecipeRepository>();
+            services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
+            services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
         }
         else if (!persistenceOptions.IsExternal)
         {
@@ -158,6 +165,13 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IHallOfFameRepository, InMemoryHallOfFameRepository>();
             services.AddScoped<ICharacterClassRepository, InMemoryCharacterClassRepository>();
             services.AddScoped<IBackgroundRepository, InMemoryBackgroundRepository>();
+            services.AddScoped<IAbilityRepository, InMemoryAbilityRepository>();
+            services.AddScoped<IEnemyRepository, InMemoryEnemyRepository>();
+            services.AddScoped<INpcRepository, InMemoryNpcRepository>();
+            services.AddScoped<IQuestRepository, InMemoryQuestRepository>();
+            services.AddScoped<IRecipeRepository, InMemoryRecipeRepository>();
+            services.AddScoped<ILootTableRepository, InMemoryLootTableRepository>();
+            services.AddScoped<ISpellRepository, InMemorySpellRepository>();
         }
         // External: host is responsible for registering ALL repo interfaces.
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();

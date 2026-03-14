@@ -136,6 +136,13 @@ try
     builder.Services.AddDbContext<ContentDbContext>(options => options.UseNpgsql(connectionString));
     builder.Services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
     builder.Services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
+    builder.Services.AddScoped<IAbilityRepository, EfCoreAbilityRepository>();
+    builder.Services.AddScoped<IEnemyRepository, EfCoreEnemyRepository>();
+    builder.Services.AddScoped<INpcRepository, EfCoreNpcRepository>();
+    builder.Services.AddScoped<IQuestRepository, EfCoreQuestRepository>();
+    builder.Services.AddScoped<IRecipeRepository, EfCoreRecipeRepository>();
+    builder.Services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
+    builder.Services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
 
     // ── Health checks ─────────────────────────────────────────────────────────
     builder.Services.AddHealthChecks()
@@ -152,8 +159,14 @@ try
     // Run any pending EF migrations on startup (creates DB on first run, updates schema on upgrade)
     using (var scope = app.Services.CreateScope())
     {
-        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
-            .Database.MigrateAsync();
+        var services = scope.ServiceProvider;
+        await services.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
+
+        // ContentDbContext uses Npgsql-specific SQL (JSONB, etc.); only run migrations
+        // against PostgreSQL. Test environments swap in SQLite and call EnsureCreated() instead.
+        var contentDb = services.GetRequiredService<ContentDbContext>();
+        if (contentDb.Database.ProviderName?.Contains("Npgsql") == true)
+            await contentDb.Database.MigrateAsync();
     }
 
     // Auth & character endpoints
