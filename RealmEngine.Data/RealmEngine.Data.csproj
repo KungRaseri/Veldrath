@@ -1,47 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <RootNamespace>RealmEngine.Data</RootNamespace>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Enforce XML documentation for public APIs (CS1591) -->
     <NoWarn></NoWarn>
-    
+    <ContentTargetFolders>content</ContentTargetFolders>
     <!-- NuGet Package Metadata -->
     <PackageId>RealmEngine.Data</PackageId>
     <Title>Game Data Library</Title>
     <Description>Data loading, validation, and management library for the Console Game engine. Provides JSON data services for loading abilities, items, enemies, NPCs, quests, and other game data. Includes caching, validation, and reference resolution for v4.0+ JSON standards.</Description>
-    <Authors>Console Game Team</Authors>
-    <Company>Console Game</Company>
-    <Product>Console Game Engine</Product>
     <PackageTags>game;rpg;data;json;validation;godot;csharp;dotnet</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryType>git</RepositoryType>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <ContentTargetFolders>content</ContentTargetFolders>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Data Access -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <!-- Logging -->
-    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog" />
   </ItemGroup>
 
   <ItemGroup>
