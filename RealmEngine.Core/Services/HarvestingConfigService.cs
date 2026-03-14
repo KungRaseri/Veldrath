@@ -1,25 +1,20 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using RealmEngine.Data.Services;
 using Serilog;
 
 namespace RealmEngine.Core.Services;
 
 /// <summary>
-/// Service for loading harvesting system configuration from JSON.
-/// Provides formulas, thresholds, and multipliers for resource gathering mechanics.
+/// Service for loading harvesting system configuration from the database.
 /// </summary>
 public class HarvestingConfigService
 {
-    private readonly GameDataCache _dataCache;
+    private readonly GameConfigService _configService;
     private HarvestingConfig? _cachedConfig;
 
-    /// <summary>
-    /// Initializes a new instance of the HarvestingConfigService class.
-    /// </summary>
-    /// <param name="dataCache">The game data cache service.</param>
-    public HarvestingConfigService(GameDataCache dataCache)
+    public HarvestingConfigService(GameConfigService configService)
     {
-        _dataCache = dataCache;
+        _configService = configService;
     }
 
     /// <summary>
@@ -32,21 +27,21 @@ public class HarvestingConfigService
             return _cachedConfig;
         }
 
-        var configFile = _dataCache.GetFile("configuration/harvesting-config.json");
-        
-        if (configFile == null)
+var json = _configService.GetData("harvesting-config");
+
+        if (json == null)
         {
-            Log.Warning("Harvesting config not found, using defaults");
+            Log.Warning("Harvesting config not found in database, using defaults");
             return GetDefaultConfig();
         }
 
         try
         {
             var config = new HarvestingConfig();
-            var json = configFile.JsonData;
+            var jobj = JObject.Parse(json);
 
             // Node Health
-            var nodeHealth = json["nodeHealth"] as JObject;
+            var nodeHealth = jobj["nodeHealth"] as JObject;
             if (nodeHealth != null)
             {
                 config.BaseDepletion = nodeHealth["baseDepletion"]?.Value<int>() ?? 20;
@@ -57,7 +52,7 @@ public class HarvestingConfigService
             }
 
             // Yield Calculation
-            var yieldCalc = json["yieldCalculation"] as JObject;
+            var yieldCalc = jobj["yieldCalculation"] as JObject;
             if (yieldCalc != null)
             {
                 config.SkillScaling = yieldCalc["skillScaling"]?.Value<double>() ?? 0.003;
@@ -68,7 +63,7 @@ public class HarvestingConfigService
             }
 
             // Critical Harvest
-            var criticalHarvest = json["criticalHarvest"] as JObject;
+            var criticalHarvest = jobj["criticalHarvest"] as JObject;
             if (criticalHarvest != null)
             {
                 config.CriticalBaseChance = criticalHarvest["baseChance"]?.Value<double>() ?? 0.05;
