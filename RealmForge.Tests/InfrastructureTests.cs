@@ -13,8 +13,6 @@ public class InfrastructureTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<EditorSettingsService>();
-        services.AddSingleton<FileManagementService>();
-        services.AddScoped<ModelValidationService>();
         services.AddSingleton<ReferenceResolverService>();
         services.AddSingleton<ContentTreeService>();
         services.AddSingleton<ContentEditorService>();
@@ -37,23 +35,6 @@ public class InfrastructureTests
     {
         var sp = BuildServices();
         var svc = sp.GetRequiredService<EditorSettingsService>();
-        svc.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void FileManagementService_Should_Resolve()
-    {
-        var sp = BuildServices();
-        var svc = sp.GetRequiredService<FileManagementService>();
-        svc.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void ModelValidationService_Should_Resolve()
-    {
-        var sp = BuildServices();
-        using var scope = sp.CreateScope();
-        var svc = scope.ServiceProvider.GetRequiredService<ModelValidationService>();
         svc.Should().NotBeNull();
     }
 

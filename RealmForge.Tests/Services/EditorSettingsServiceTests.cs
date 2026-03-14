@@ -27,7 +27,6 @@ public class EditorSettingsServiceTests : IDisposable
         var settings = await _sut.LoadSettingsAsync();
         settings.Should().NotBeNull();
         settings.Theme.Should().Be("Dark");
-        settings.DefaultEditorMode.Should().Be("Form");
     }
 
     [Fact]

@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ReactiveUI;
-using RealmForge.Models;
 using RealmForge.Services;
 
 namespace RealmForge.ViewModels;
@@ -16,7 +15,6 @@ public enum EditorMode { Json, Form }
 
 public class JsonEditorViewModel : ReactiveObject
 {
-    private readonly ModelValidationService _validator;
     private readonly ReferenceResolverService _referenceResolver;
     private readonly ContentTreeService _contentTree;
     private readonly ContentEditorService _contentEditor;
@@ -29,21 +27,17 @@ public class JsonEditorViewModel : ReactiveObject
     private bool _isDirty;
     private bool _isBusy;
     private string _statusMessage = string.Empty;
-    private bool _hasValidationResult;
-    private bool _isValid;
     private bool _isLoadingContent;
 
     // Interaction for opening the reference picker dialog
     public Interaction<string?, string?> ShowReferencePickerInteraction { get; } = new();
 
     public JsonEditorViewModel(
-        ModelValidationService validator,
         ReferenceResolverService referenceResolver,
         ContentTreeService contentTree,
         ContentEditorService contentEditor,
         ILogger<JsonEditorViewModel> logger)
     {
-        _validator = validator;
         _referenceResolver = referenceResolver;
         _contentTree = contentTree;
         _contentEditor = contentEditor;
@@ -51,7 +45,6 @@ public class JsonEditorViewModel : ReactiveObject
 
         FileTree = new ObservableCollection<FileTreeNodeViewModel>();
         FormProperties = new ObservableCollection<JsonPropertyViewModel>();
-        ValidationErrors = new ObservableCollection<string>();
         TextDocument = new TextDocument();
 
         TextDocument.Changed += (_, _) =>
@@ -62,11 +55,9 @@ public class JsonEditorViewModel : ReactiveObject
 
         var canSave = this.WhenAnyValue(x => x.CurrentFileName, x => x.IsDirty,
             (n, d) => n != null && d);
-        var canValidate = this.WhenAnyValue(x => x.CurrentFileName, (string? n) => n != null);
 
         LoadEntityCommand = ReactiveCommand.CreateFromTask<FileTreeNodeViewModel>(LoadEntityAsync);
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSave);
-        ValidateCommand = ReactiveCommand.CreateFromTask(ValidateAsync, canValidate);
         RefreshTreeCommand = ReactiveCommand.CreateFromTask(RefreshTreeAsync);
         ToggleModeCommand = ReactiveCommand.Create(ToggleMode);
         OpenReferencePickerCommand = ReactiveCommand.CreateFromTask<JsonPropertyViewModel>(OpenReferencePickerAsync);
@@ -78,7 +69,6 @@ public class JsonEditorViewModel : ReactiveObject
     public TextDocument TextDocument { get; }
     public ObservableCollection<FileTreeNodeViewModel> FileTree { get; }
     public ObservableCollection<JsonPropertyViewModel> FormProperties { get; }
-    public ObservableCollection<string> ValidationErrors { get; }
 
     public string? CurrentFileName
     {
@@ -114,21 +104,8 @@ public class JsonEditorViewModel : ReactiveObject
     }
 
 
-    public bool HasValidationResult
-    {
-        get => _hasValidationResult;
-        private set => this.RaiseAndSetIfChanged(ref _hasValidationResult, value);
-    }
-
-    public bool IsValid
-    {
-        get => _isValid;
-        private set => this.RaiseAndSetIfChanged(ref _isValid, value);
-    }
-
     public ReactiveCommand<FileTreeNodeViewModel, Unit> LoadEntityCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
-    public ReactiveCommand<Unit, Unit> ValidateCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTreeCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleModeCommand { get; }
     public ReactiveCommand<JsonPropertyViewModel, Unit> OpenReferencePickerCommand { get; }
@@ -175,8 +152,6 @@ public class JsonEditorViewModel : ReactiveObject
             if (EditorMode == EditorMode.Form)
                 SyncFormFromText();
 
-            ValidationErrors.Clear();
-            HasValidationResult = false;
             StatusMessage = $"Opened: {node.Name}";
         }
         catch (Exception ex)
@@ -226,52 +201,6 @@ public class JsonEditorViewModel : ReactiveObject
         {
             _logger.LogError(ex, "Failed to save entity");
             StatusMessage = $"Error saving: {ex.Message}";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task ValidateAsync()
-    {
-        if (_currentTableName == null) return;
-        try
-        {
-            IsBusy = true;
-            StatusMessage = "Validating...";
-            ValidationErrors.Clear();
-
-            JObject jobj;
-            try { jobj = JObject.Parse(TextDocument.Text); }
-            catch (JsonException ex)
-            {
-                ValidationErrors.Add($"JSON syntax error: {ex.Message}");
-                HasValidationResult = true;
-                IsValid = false;
-                StatusMessage = "Validation failed: invalid JSON";
-                return;
-            }
-
-            var result = await _validator.ValidateAsync(jobj, _currentTableName);
-            HasValidationResult = true;
-            IsValid = result.IsValid;
-
-            if (result.IsValid)
-            {
-                StatusMessage = "✓ Validation passed";
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                    ValidationErrors.Add($"{error.PropertyName}: {error.ErrorMessage}");
-                StatusMessage = $"Validation failed: {result.Errors.Count} error(s)";
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Validation error");
-            StatusMessage = $"Validation error: {ex.Message}";
         }
         finally
         {
