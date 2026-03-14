@@ -14,6 +14,7 @@ using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Characters;
+using RealmUnbound.Server.Features.Content;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
@@ -169,10 +170,11 @@ try
             await contentDb.Database.MigrateAsync();
     }
 
-    // Auth & character endpoints
+    // Auth, character, zone & content catalog endpoints
     app.MapAuthEndpoints();
     app.MapCharacterEndpoints();
     app.MapZoneEndpoints();
+    app.MapContentEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game");
