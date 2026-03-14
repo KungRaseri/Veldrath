@@ -3,8 +3,8 @@
         xmlns:vm="using:RealmForge.ViewModels"
         xmlns:views="using:RealmForge.Views"
         x:Class="RealmForge.Views.MainWindow"
-        Title="RealmForge — JSON Editor"
-        Width="1400" Height="900"
+        Title="RealmForge — Content Editor"
+        Width="1200" Height="800"
         MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen"
         Background="#1e1e1e">
@@ -34,17 +34,9 @@
                                VerticalAlignment="Center" Margin="4,0,0,0" />
                 </StackPanel>
 
-                <!-- Navigation buttons -->
+                <!-- Navigation -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
                             HorizontalAlignment="Center">
-                    <Button Content="🏠  Home"
-                            Command="{Binding NavigateHomeCommand}"
-                            Background="Transparent" Foreground="#ccc"
-                            Padding="12,4" CornerRadius="4" />
-                    <Button Content="📝  JSON Editor"
-                            Command="{Binding NavigateEditorCommand}"
-                            Background="Transparent" Foreground="#ccc"
-                            Padding="12,4" CornerRadius="4" />
                 </StackPanel>
 
                 <!-- Theme toggle -->
@@ -61,9 +53,6 @@
             <ContentControl.DataTemplates>
                 <DataTemplate DataType="vm:HomeViewModel">
                     <views:HomeView />
-                </DataTemplate>
-                <DataTemplate DataType="vm:JsonEditorViewModel">
-                    <views:JsonEditorView />
                 </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>
