@@ -4,6 +4,7 @@ WORKDIR /src
 
 # Copy project files and MSBuild props first for layer-cached restore
 COPY Directory.Build.props                                 ./
+COPY Directory.Packages.props                              ./
 COPY versions/                                             versions/
 COPY RealmUnbound.Server/RealmUnbound.Server.csproj        RealmUnbound.Server/
 COPY RealmUnbound.Server/Directory.Build.props             RealmUnbound.Server/

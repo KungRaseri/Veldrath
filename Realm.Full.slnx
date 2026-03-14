@@ -12,4 +12,6 @@
   <Project Path="RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj" />
   <Project Path="RealmForge/RealmForge.csproj" />
   <Project Path="RealmForge.Tests/RealmForge.Tests.csproj" />
+  <Project Path="RealmUnbound.Discord/RealmUnbound.Discord.csproj" />
+  <Project Path="RealmUnbound.Discord.Tests/RealmUnbound.Discord.Tests.csproj" />
 </Solution>

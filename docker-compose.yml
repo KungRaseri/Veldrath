@@ -41,5 +41,19 @@ services:
       postgres:
         condition: service_healthy
 
+  discord:
+    build:
+      context: .
+      dockerfile: RealmUnbound.Discord/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      # Bot token — set via .env file or shell environment, never hardcoded here.
+      # Create a .env file at the repo root with: DISCORD_TOKEN=your_token_here
+      - Discord__Token=${DISCORD_TOKEN}
+      # Optional: set to your dev server ID for instant slash command registration.
+      # Leave as 0 (or unset) to register commands globally in production.
+      - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
+    restart: unless-stopped
+
 volumes:
   postgres_data:
