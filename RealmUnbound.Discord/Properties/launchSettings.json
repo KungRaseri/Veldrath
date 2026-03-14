@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "RealmUnbound.Discord": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

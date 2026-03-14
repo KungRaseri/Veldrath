@@ -7,4 +7,6 @@
   <Project Path="RealmUnbound.Client/RealmUnbound.Client.csproj" />
   <Project Path="RealmUnbound.Server/RealmUnbound.Server.csproj" />
   <Project Path="RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj" />
+  <Project Path="RealmUnbound.Discord/RealmUnbound.Discord.csproj" />
+  <Project Path="RealmUnbound.Discord.Tests/RealmUnbound.Discord.Tests.csproj" />
 </Solution>
