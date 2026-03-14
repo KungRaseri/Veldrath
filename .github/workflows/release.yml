@@ -7,6 +7,7 @@ on:
       - 'tooling/v*'
       - 'server/v*'
       - 'client/v*'
+      - 'discord/v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -57,6 +58,11 @@ jobs:
           WORKFLOW="ci-client.yml"
           ARTIFACT_NAME="client-release-artifacts"
           VERSION="${TAG#client/v}"
+        elif [[ "$TAG" == discord/v* ]]; then
+          COMPONENT="discord"
+          WORKFLOW="ci-discord.yml"
+          ARTIFACT_NAME="discord-release-artifacts"
+          VERSION="${TAG#discord/v}"
         else
           echo "Unknown tag prefix: $TAG"
           exit 1
@@ -215,6 +221,25 @@ jobs:
               echo "- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
               echo "- \`RealmUnbound-Client-macOS-x64-$VERSION.zip\` — macOS desktop app (osx-x64, Intel, self-contained)"
               echo "- \`RealmUnbound-Client-macOS-arm64-$VERSION.zip\` — macOS desktop app (osx-arm64, Apple Silicon, self-contained)"
+              echo ""
+              echo "### Changes"
+              printf '%s\n' "$CHANGELOG"
+            } > release-body.md
+            ;;
+          discord)
+            NAME="RealmUnbound Discord Bot $VERSION"
+            {
+              echo "## RealmUnbound Discord Bot $VERSION"
+              echo ""
+              echo "The Herald — Discord bot for RealmUnbound."
+              echo ""
+              echo "### Docker Image"
+              echo '```'
+              echo "docker pull ghcr.io/$REPO_OWNER_LC/realmunbound-discord:$VERSION"
+              echo '```'
+              echo ""
+              echo "### Packages"
+              echo "- \`RealmUnbound-Discord-$VERSION.zip\` — Self-contained bot binary"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
