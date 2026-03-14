@@ -9,7 +9,9 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" />
+    <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
@@ -19,7 +21,16 @@
   <ItemGroup>
     <ProjectReference Include="..\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
+    <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy JSON game data from RealmEngine.Data to output (files are None/pack-only in data project) -->
+    <Content Include="..\RealmEngine.Data\Data\**\*.*">
+      <Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 

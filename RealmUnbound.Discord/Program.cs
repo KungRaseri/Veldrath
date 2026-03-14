@@ -1,6 +1,9 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
+using RealmEngine.Data;
+using RealmEngine.Core;
 using RealmUnbound.Discord;
 using RealmUnbound.Discord.Services;
 using RealmUnbound.Discord.Settings;
@@ -29,6 +32,20 @@ try
     builder.Logging.AddSerilog(Log.Logger, dispose: true);
 
     builder.Services.Configure<DiscordSettings>(builder.Configuration.GetSection("Discord"));
+
+    // Wire up the RealmEngine — data → core → MediatR must be registered in this order
+    var jsonDataPath = Path.Combine(AppContext.BaseDirectory, "Data", "Json");
+    builder.Services.AddRealmEngineData(jsonDataPath);
+    builder.Services.AddRealmEngineCore();
+    builder.Services.AddRealmEngineMediatR();
+
+    // Typed HttpClient for server status; base URL is configurable in Discord settings
+    builder.Services.AddHttpClient<ServerStatusService>((sp, client) =>
+    {
+        var settings = sp.GetRequiredService<IOptions<DiscordSettings>>().Value;
+        client.BaseAddress = new Uri(settings.ServerBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(5);
+    });
 
     builder.Services.AddSingleton(_ => new DiscordSocketClient(new DiscordSocketConfig
     {
