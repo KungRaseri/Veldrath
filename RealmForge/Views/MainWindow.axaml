@@ -64,6 +64,32 @@
                                Foreground="#555" FontSize="13"
                                IsVisible="{Binding IsLoadingTree}" />
 
+                    <!-- Empty / error state message -->
+                    <StackPanel Grid.Row="0"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Spacing="10" Margin="16,0"
+                                IsVisible="{Binding HasTreePaneMessage}">
+                        <TextBlock Text="⚠"
+                                   Foreground="#6a4a20" FontSize="20"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding TreePaneMessage}"
+                                   Foreground="#6a5a40" FontSize="12"
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                        <Button Content="Retry"
+                                Command="{Binding RefreshTreeCommand}"
+                                Background="#2a2010" Foreground="#a08040"
+                                Padding="14,5" CornerRadius="4"
+                                HorizontalAlignment="Center" />
+                        <Button Content="Seed sample data"
+                                Command="{Binding SeedDevDataCommand}"
+                                IsEnabled="{Binding !IsSeeding}"
+                                Background="#1a2a1a" Foreground="#40a060"
+                                Padding="14,5" CornerRadius="4"
+                                HorizontalAlignment="Center"
+                                ToolTip.Tip="Insert dev sample entities across all content domains" />
+                    </StackPanel>
+
                     <!-- Content tree -->
                     <TreeView Grid.Row="0"
                               ItemsSource="{Binding TreeNodes}"
@@ -106,10 +132,19 @@
 
                     </TreeView>
 
-                    <!-- Pane footer -->
-                    <Border Grid.Row="1" Background="#161616" Padding="10,5"
+                    <!-- Pane footer: DB status -->
+                    <Border Grid.Row="1" Background="#161616" Padding="10,6"
                             BorderThickness="0,1,0,0" BorderBrush="#222">
-                        <TextBlock Text="Ready" Foreground="#3c3c3c" FontSize="11" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <!-- Green dot when connected -->
+                            <Ellipse Width="6" Height="6" Fill="#00aa55"
+                                     VerticalAlignment="Center"
+                                     IsVisible="{Binding DbStatus,
+                                         Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            <TextBlock Text="{Binding DbStatus}"
+                                       Foreground="#4a4a4a" FontSize="11"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </Border>
 
                 </Grid>
