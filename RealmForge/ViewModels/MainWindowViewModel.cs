@@ -119,10 +119,9 @@ public class MainWindowViewModel : ReactiveObject
     private async Task OpenEntityAsync(FileTreeNodeViewModel node)
     {
         if (node.EntityId is null || node.TableName is null) return;
-        var json = await _contentEditorService.GetEntityJsonAsync(node.EntityId.Value, node.TableName);
-        if (json is null) return;
-        CurrentPage = new EntityEditorViewModel(
-            node.EntityId.Value, node.TableName, node.Name, _contentEditorService, json);
+        var entity = await _contentEditorService.LoadEntityAsync(node.EntityId.Value, node.TableName);
+        if (entity is null) return;
+        CurrentPage = new EntityEditorViewModel(entity, node.TableName, _contentEditorService);
     }
 
     private Task StartNewEntityAsync(FileTreeNodeViewModel typeKeyNode)

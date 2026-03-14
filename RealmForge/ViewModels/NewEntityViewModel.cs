@@ -80,25 +80,23 @@ public partial class NewEntityViewModel : ReactiveObject
         ErrorMessage = null;
         try
         {
-            var result = await _editorService.CreateEntityAsync(
+            var entity = await _editorService.CreateEntityAsync(
                 TypeKeyNode.TableName!,
                 TypeKeyNode.Domain!,
                 TypeKeyNode.TypeKey!,
                 Slug.Trim(),
                 DisplayName.Trim());
 
-            if (result is null)
+            if (entity is null)
             {
                 ErrorMessage = "Failed to create entity. Check database connection and logs.";
                 return;
             }
 
             var editor = new EntityEditorViewModel(
-                result.Value.EntityId,
+                entity,
                 TypeKeyNode.TableName!,
-                DisplayName.Trim(),
-                _editorService,
-                result.Value.Json);
+                _editorService);
 
             _onCreated(editor);
         }
