@@ -120,7 +120,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             AllowQuality = true
         };
 
-        var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+        var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
         return item;
     }
 }

@@ -1043,7 +1043,7 @@ public class CombatService
             };
 
             // Generate item
-            var item = await _itemGenerator!.GenerateItemWithBudgetAsync(request);
+            var item = await _itemGenerator!.GenerateItemModelWithBudgetAsync(request);
             if (item != null)
             {
                 loot.Add(item);

@@ -111,4 +111,29 @@ public class LocationGenerator
         IsStartingZone = false,
         LocationType = e.LocationType,
     };
+
+    /// <summary>Generates an enemy appropriate for the given location's level range and type.</summary>
+    public virtual async Task<Enemy?> GenerateLocationAppropriateEnemyAsync(Location location, EnemyGenerator enemyGenerator)
+    {
+        // Determine family based on location type
+        var family = location.LocationType?.ToLowerInvariant() switch
+        {
+            "dungeon" => "undead",
+            "forest" => "beasts",
+            "swamp" => "beasts",
+            "ruins" => "undead",
+            "cave" => "beasts",
+            _ => "humanoids"
+        };
+
+        var enemies = await enemyGenerator.GenerateEnemiesAsync(family, count: 10, hydrate: true);
+        var levelMatches = enemies
+            .Where(e => Math.Abs(e.Level - location.Level) <= 3)
+            .ToList();
+
+        if (levelMatches.Count > 0)
+            return levelMatches[_random.Next(levelMatches.Count)];
+
+        return enemies.Count > 0 ? enemies[_random.Next(enemies.Count)] : null;
+    }
 }

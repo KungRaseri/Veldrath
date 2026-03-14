@@ -1,14 +1,16 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Moq;
 using RealmEngine.Core.Features.Harvesting;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Services.Harvesting;
+using RealmEngine.Data.Entities;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
-using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
-using System.IO;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Features.Harvesting;
@@ -376,23 +378,18 @@ public class HarvestingIntegrationTests
             _config
         );
         
-        // Initialize GameDataCache
-        var dataCache = new GameDataCache("");
-        dataCache.LoadAllData();
-        
-        var referenceResolver = new ReferenceResolverService(
-            dataCache,
-            localLoggerFactory.CreateLogger<ReferenceResolverService>()
-        );
+        // Use InMemoryLootTableRepository + mocked DbContextFactory
+        var lootTableRepo = new InMemoryLootTableRepository();
+        var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
         
         var lootTableService = new RealmEngine.Core.Services.LootTableService(
             localLoggerFactory.CreateLogger<RealmEngine.Core.Services.LootTableService>(),
-            dataCache,
-            referenceResolver
+            lootTableRepo,
+            dbFactory.Object
         );
         
         var skillCatalogService = new SkillCatalogService(
-            dataCache,
+            new InMemorySkillRepository(),
             localLoggerFactory.CreateLogger<SkillCatalogService>()
         );
         

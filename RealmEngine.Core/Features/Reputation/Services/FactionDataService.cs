@@ -1,175 +1,77 @@
-using Newtonsoft.Json.Linq;
+﻿using Microsoft.EntityFrameworkCore;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
-using RealmEngine.Data.Services;
 using Serilog;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace RealmEngine.Core.Features.Reputation.Services;
 
 /// <summary>
-/// Service for loading faction data from JSON catalogs.
+/// Service for loading faction data from the content database.
 /// </summary>
 public class FactionDataService
 {
-    private readonly GameDataCache _dataCache;
+    private readonly IDbContextFactory<ContentDbContext> _dbFactory;
     private List<Faction>? _cachedFactions;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FactionDataService"/> class.
-    /// </summary>
-    /// <param name="dataCache">The game data cache service.</param>
-    public FactionDataService(GameDataCache dataCache)
+    public FactionDataService(IDbContextFactory<ContentDbContext> dbFactory)
     {
-        _dataCache = dataCache;
+        _dbFactory = dbFactory;
     }
 
-    /// <summary>
-    /// Loads all factions from the organizations/factions catalog.
-    /// </summary>
     public List<Faction> LoadFactions()
     {
         if (_cachedFactions != null)
-        {
             return _cachedFactions;
-        }
-
-        var catalogPath = "organizations/factions/catalog.json";
-        var catalogFile = _dataCache.GetFile(catalogPath);
-        
-        if (catalogFile == null)
-        {
-            Log.Warning("Faction catalog not found at {Path}", catalogPath);
-            return new List<Faction>();
-        }
 
         try
         {
-            var catalog = catalogFile.JsonData;
+            using var db = _dbFactory.CreateDbContext();
+            var orgs = db.Organizations
+                .Where(o => o.IsActive && o.OrgType == "faction")
+                .ToList();
 
-            var factions = new List<Faction>();
-
-            // Parse the faction_types structure
-            var factionTypes = catalog["faction_types"] as JObject;
-            if (factionTypes != null)
+            _cachedFactions = orgs.Select(o => new Faction
             {
-                foreach (var typeProperty in factionTypes.Properties())
-                {
-                    var typeName = typeProperty.Name;
-                    var typeObject = typeProperty.Value as JObject;
-                    
-                    if (typeObject?["items"] is JArray items)
-                    {
-                        foreach (var item in items)
-                        {
-                            var faction = ParseFactionItem(item, typeName);
-                            if (faction != null)
-                            {
-                                factions.Add(faction);
-                            }
-                        }
-                    }
-                }
-            }
+                Id = o.Slug,
+                Name = o.DisplayName ?? o.Slug,
+                Type = MapOrgTypeToFactionType(o.TypeKey),
+                Description = "",
+                HomeLocation = "",
+                AllyFactionIds = [],
+                EnemyFactionIds = [],
+            }).ToList();
 
-            _cachedFactions = factions;
-            Log.Information("Loaded {Count} factions from catalog", factions.Count);
-            return factions;
+            Log.Information("Loaded {Count} factions from database", _cachedFactions.Count);
+            return _cachedFactions;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to load faction catalog from {Path}", catalogPath);
-            return new List<Faction>();
+            Log.Error(ex, "Failed to load factions from database");
+            return [];
         }
     }
 
-    /// <summary>
-    /// Gets a faction by its slug/name.
-    /// </summary>
     public Faction? GetFactionBySlug(string slug)
     {
         var factions = LoadFactions();
-        return factions.FirstOrDefault(f => 
+        return factions.FirstOrDefault(f =>
             f.Id.Equals(slug, StringComparison.OrdinalIgnoreCase) ||
             f.Name.Equals(slug, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>
-    /// Gets all factions of a specific type.
-    /// </summary>
     public List<Faction> GetFactionsByType(FactionType type)
     {
-        var factions = LoadFactions();
-        return factions.Where(f => f.Type == type).ToList();
+        return LoadFactions().Where(f => f.Type == type).ToList();
     }
 
-    private Faction? ParseFactionItem(JToken item, string typeName)
+    private static FactionType MapOrgTypeToFactionType(string typeKey)
     {
-        try
+        return typeKey.ToLowerInvariant() switch
         {
-            var slug = item["slug"]?.ToString();
-            var name = item["name"]?.ToString();
-            var displayName = item["displayName"]?.ToString();
-            var description = item["description"]?.ToString();
-
-            if (string.IsNullOrEmpty(slug))
-            {
-                Log.Warning("Faction item missing slug in type {TypeName}", typeName);
-                return null;
-            }
-
-            // Map type name to FactionType enum
-            var factionType = MapTypeNameToEnum(typeName);
-
-            // Parse allies and enemies
-            var allies = item["allies"]?.ToObject<List<string>>() ?? new List<string>();
-            var enemies = item["enemies"]?.ToObject<List<string>>() ?? new List<string>();
-
-            // Determine starting reputation based on reputation field
-            var reputationStr = item["reputation"]?.ToString()?.ToLower();
-            int startingReputation = reputationStr switch
-            {
-                "criminal" => -500,
-                "lawful" => 0,
-                "lawful_good" => 500,
-                "lawful_neutral" => 0,
-                _ => 0
-            };
-
-            var faction = new Faction
-            {
-                Id = slug,
-                Name = displayName ?? name ?? slug,
-                Type = factionType,
-                Description = description ?? "",
-                HomeLocation = "", // Not in old schema
-                AllyFactionIds = allies,
-                EnemyFactionIds = enemies
-            };
-
-            return faction;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to parse faction item in type {TypeName}", typeName);
-            return null;
-        }
-    }
-
-    private FactionType MapTypeNameToEnum(string typeName)
-    {
-        return typeName.ToLower() switch
-        {
-            "trade" => FactionType.Guild,
-            "labor" => FactionType.Guild,
             "criminal" => FactionType.Criminal,
-            "military" => FactionType.Guild,
-            "magical" => FactionType.Guild,
-            "academic" => FactionType.Guild,
             "religious" => FactionType.Religious,
-            "social" => FactionType.Neutral,
-            "political" => FactionType.Kingdom,
-            _ => FactionType.Neutral
+            "political" or "kingdom" => FactionType.Kingdom,
+            _ => FactionType.Guild,
         };
     }
 }

@@ -20,6 +20,17 @@ public class BudgetConfigFactory
     public BudgetConfigFactory(GameConfigService configService, ILogger<BudgetConfigFactory> logger)
     {
         _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Load or get cached budget configuration.
+    /// </summary>
+    public BudgetConfig GetBudgetConfig()
+    {
+        if (_budgetConfig != null)
+            return _budgetConfig;
+
         try
         {
             var json = _configService.GetData("budget-config");

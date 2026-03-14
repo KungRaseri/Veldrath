@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Services;
 using Xunit;
@@ -7,96 +6,17 @@ using Xunit;
 namespace RealmEngine.Core.Tests.Services;
 
 /// <summary>
-/// Tests for CharacterGrowthService configuration loading and stat calculations.
+/// Tests for CharacterGrowthService stat calculations and default configuration.
+/// Uses NullGameConfigService to test fallback/default behaviour.
 /// </summary>
 public class CharacterGrowthServiceTests
 {
-    private readonly GameDataCache _dataCache;
-    private readonly ReferenceResolverService _referenceResolver;
     private readonly CharacterGrowthService _service;
 
     public CharacterGrowthServiceTests()
     {
-        var dataPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
-
-        _dataCache = new GameDataCache(dataPath, null);
-        _dataCache.LoadAllData();
-
-        _referenceResolver = new ReferenceResolverService(_dataCache, NullLogger<ReferenceResolverService>.Instance);
-        _service = new CharacterGrowthService(_dataCache, _referenceResolver);
-    }
-
-    [Fact]
-    public void LoadConfig_ShouldLoadGrowthStatsConfiguration()
-    {
-        // Act
-        var config = _service.LoadConfig();
-
-        // Assert
-        config.Should().NotBeNull();
-        config.Version.Should().NotBeNullOrEmpty();
-        config.DerivedStats.Should().NotBeNull();
-        config.StatCaps.Should().NotBeNull();
-        config.ClassGrowthMultipliers.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void LoadConfig_ShouldCacheConfiguration()
-    {
-        // Act
-        var config1 = _service.LoadConfig();
-        var config2 = _service.LoadConfig();
-
-        // Assert
-        config1.Should().BeSameAs(config2, "configuration should be cached");
-    }
-
-    [Fact]
-    public void LoadConfig_ShouldLoadDerivedStatsFormulas()
-    {
-        // Act
-        var config = _service.LoadConfig();
-
-        // Assert
-        config.DerivedStats.Should().NotBeNull();
-        config.DerivedStats.Should().NotBeEmpty();
-        config.DerivedStats.Should().ContainKey("health");
-        config.DerivedStats["health"].Formula.Should().NotBeNullOrEmpty();
-    }
-
-    [Fact]
-    public void LoadConfig_ShouldLoadStatCaps()
-    {
-        // Act
-        var config = _service.LoadConfig();
-
-        // Assert
-        config.StatCaps.Should().NotBeNull();
-        config.StatCaps.SoftCaps.Should().NotBeNull();
-        config.StatCaps.HardCaps.Should().NotBeNull();
-        config.StatCaps.SoftCaps.StatLimits.Should().NotBeEmpty();
-        config.StatCaps.HardCaps.StatLimits.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public void GetClassMultipliers_WithValidClassReference_ShouldReturnMultipliers()
-    {
-        // Arrange
-        var config = _service.LoadConfig();
-        var validClassRef = config.ClassGrowthMultipliers.FirstOrDefault()?.ClassRef;
-        
-        if (validClassRef == null)
-        {
-            // Skip test if no class multipliers exist
-            return;
-        }
-
-        // Act
-        var multipliers = _service.GetClassMultipliers(validClassRef);
-
-        // Assert
-        multipliers.Should().NotBeNull();
-        multipliers!.ClassRef.Should().Be(validClassRef);
+        // NullGameConfigService always returns null -> service falls back to built-in defaults.
+        _service = new CharacterGrowthService(new NullGameConfigService());
     }
 
     [Fact]
@@ -110,39 +30,74 @@ public class CharacterGrowthServiceTests
     }
 
     [Fact]
-    public void LoadConfig_ShouldLoadStatPointAllocationRules()
+    public void CalculateDerivedStat_ShouldReturnNonNegativeValue()
     {
-        // Act
-        var config = _service.LoadConfig();
+        // Act - default config has no derived stat formulas, result should be baseValue
+        var result = _service.CalculateDerivedStat("health", 50, 15, 1, 1.0);
 
         // Assert
-        config.StatPointAllocation.Should().NotBeNull();
-        config.StatPointAllocation.PointsPerLevel.Should().BeGreaterThan(0);
+        result.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
-    public void LoadConfig_ShouldLoadRespecSystemConfiguration()
+    public void ApplySoftCap_WithValueBelowCap_ShouldReturnUnchanged()
     {
-        // Act
-        var config = _service.LoadConfig();
+        // Arrange
+        var lowValue = 10.0;
 
-        // Assert
-        config.RespecSystem.Should().NotBeNull();
-        config.RespecSystem.CostFormula.Should().NotBeNullOrEmpty();
+        // Act
+        var result = _service.ApplySoftCap("strength", lowValue);
+
+        // Assert - value below cap passes through unchanged
+        result.Should().Be(lowValue);
     }
 
     [Fact]
-    public void LoadConfig_WithMissingFile_ShouldReturnDefaultConfig()
+    public void ApplyHardCap_WithValueBelowCap_ShouldReturnUnchanged()
     {
-        // Arrange - Create service with invalid data path
-        var invalidDataCache = new GameDataCache("invalid/path", null);
-        var service = new CharacterGrowthService(invalidDataCache, _referenceResolver);
+        // Arrange
+        var lowValue = 10.0;
 
         // Act
-        var config = service.LoadConfig();
+        var result = _service.ApplyHardCap("strength", lowValue);
 
         // Assert
-        config.Should().NotBeNull("default config should be returned when file is missing");
-        config.Version.Should().NotBeNullOrEmpty();
+        result.Should().Be(lowValue);
+    }
+
+    [Fact]
+    public void CalculateRespecCost_AtLevelOne_ShouldReturnPositiveValue()
+    {
+        // Act
+        var cost = _service.CalculateRespecCost(1);
+
+        // Assert
+        cost.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public void CalculateRespecCost_ShouldIncreaseWithLevel()
+    {
+        // Act
+        var costLevel1 = _service.CalculateRespecCost(1);
+        var costLevel10 = _service.CalculateRespecCost(10);
+        var costLevel50 = _service.CalculateRespecCost(50);
+
+        // Assert
+        costLevel10.Should().BeGreaterThanOrEqualTo(costLevel1);
+        costLevel50.Should().BeGreaterThanOrEqualTo(costLevel10);
+    }
+
+    [Fact]
+    public void ClearCache_ShouldNotThrow()
+    {
+        // Arrange
+        _service.GetClassMultipliers("@classes/warriors:fighter");
+
+        // Act
+        var act = () => _service.ClearCache();
+
+        // Assert
+        act.Should().NotThrow();
     }
 }

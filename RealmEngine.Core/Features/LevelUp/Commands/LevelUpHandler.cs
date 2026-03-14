@@ -169,7 +169,7 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
                 return [];
             }
 
-            if (!characterClass.AbilityUnlocks.TryGetValue(level, out var abilities))
+            if (characterClass.Progression?.AbilityUnlocks.TryGetValue(level, out var abilities) != true || abilities == null)
                 return [];
 
             _logger.LogInformation("Found {Count} abilities unlocking at level {Level} for {ClassName}: {Abilities}",

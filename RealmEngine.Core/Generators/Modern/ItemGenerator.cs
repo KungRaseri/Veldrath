@@ -14,6 +14,8 @@ public class ItemGenerator(
     BudgetItemGenerationService budgetGenerator,
     ILogger<ItemGenerator> logger)
 {
+    private readonly EnchantmentGenerator _enchantmentGenerator = enchantmentGenerator;
+    private readonly SocketGenerator _socketGenerator = socketGenerator;
     private readonly Random _random = new();
 
     /// <summary>Generates a list of items matching the given category/type.</summary>
@@ -64,6 +66,13 @@ public class ItemGenerator(
     public Task<BudgetItemResult> GenerateItemWithBudgetAsync(BudgetItemRequest request)
         => budgetGenerator.GenerateItemAsync(request);
 
+    /// <summary>Generates an item using the budget-based generation system and returns it as a shared Item model.</summary>
+    public async Task<Item?> GenerateItemModelWithBudgetAsync(BudgetItemRequest request)
+    {
+        var result = await budgetGenerator.GenerateItemAsync(request);
+        return BudgetResultToItem(result);
+    }
+
     /// <summary>Generates multiple items using the budget-based generation system.</summary>
     public async Task<List<BudgetItemResult>> GenerateItemsWithBudgetAsync(BudgetItemRequest request, int count = 10)
     {
@@ -71,6 +80,21 @@ public class ItemGenerator(
         for (int i = 0; i < count; i++)
             results.Add(await budgetGenerator.GenerateItemAsync(request));
         return results;
+    }
+
+    private static Item? BudgetResultToItem(BudgetItemResult? result)
+    {
+        if (result == null) return null;
+        var materialName = result.Material?["name"]?.ToString();
+        var name = string.IsNullOrWhiteSpace(result.Pattern)
+            ? (materialName ?? "Generated Item")
+            : result.Pattern;
+        return new Item
+        {
+            Name = name,
+            Price = result.SpentBudget,
+            Type = ItemType.Material,
+        };
     }
 
     private Data.Entities.Item? SelectWeighted(List<Data.Entities.Item> items)

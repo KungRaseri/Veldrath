@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Moq;
 using RealmEngine.Core.Services;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
-using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Tests.Services;
 
@@ -12,14 +14,12 @@ namespace RealmEngine.Core.Tests.Services;
 public class ShopEconomyServiceTests
 {
     private readonly ShopEconomyService _service;
-    private readonly GameDataCache _dataCache;
     private readonly ItemCatalogLoader _catalogLoader;
 
     public ShopEconomyServiceTests()
     {
-        var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
-        _dataCache = new GameDataCache(testDataPath);
-        _catalogLoader = new ItemCatalogLoader(_dataCache);
+        var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
+        _catalogLoader = new ItemCatalogLoader(dbFactory.Object);
         _service = new ShopEconomyService(_catalogLoader);
     }
 

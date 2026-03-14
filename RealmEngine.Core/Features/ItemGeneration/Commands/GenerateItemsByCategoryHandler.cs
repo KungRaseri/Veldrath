@@ -155,7 +155,7 @@ public class GenerateItemsByCategoryHandler : IRequestHandler<GenerateItemsByCat
                         EnemyLevel = budget / 5,
                         AllowQuality = true
                     };
-                    item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+                    item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
                 }
                 else
                 {
@@ -200,7 +200,7 @@ public class GenerateItemsByCategoryHandler : IRequestHandler<GenerateItemsByCat
                     AllowQuality = true
                 };
 
-                var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+                var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
                 
                 if (item != null)
                 {

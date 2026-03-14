@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using RealmEngine.Core.Abstractions;
@@ -7,6 +8,7 @@ using RealmEngine.Core.Features.Exploration.Queries;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Shop.Queries;
 using RealmEngine.Core.Services;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Xunit;
@@ -55,10 +57,9 @@ public class ShopQueryAPITests : IDisposable
         services.AddSingleton<SaveGameService>();
         services.AddSingleton<ISaveGameService>(sp => sp.GetRequiredService<SaveGameService>());
         
-        // Register GameDataCache with required dataRootPath
-        var dataPath = Path.Combine(AppContext.BaseDirectory, "..\\..\\..\\..\\RealmEngine.Data\\Data\\Json");
-        services.AddSingleton(new RealmEngine.Data.Services.GameDataCache(dataPath));
-        
+        // Register ItemCatalogLoader with mocked DbContextFactory
+        var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
+        services.AddSingleton(dbFactory.Object);
         services.AddSingleton<ItemCatalogLoader>();
         services.AddSingleton<ShopEconomyService>();
 
