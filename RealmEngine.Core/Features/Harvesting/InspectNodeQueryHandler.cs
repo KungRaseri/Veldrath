@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Features.Harvesting;
@@ -83,7 +82,7 @@ public class InspectNodeQueryHandler : IRequestHandler<InspectNodeQuery, NodeIns
                 try
                 {
                     // Get a sample roll to show possible materials (NOT async)
-                    var sampleDrops = _lootTableService.RollHarvestingDrops(node.LootTableRef, baseYield, false);
+                    var sampleDrops = await _lootTableService.RollHarvestingDrops(node.LootTableRef, baseYield, false);
                     possibleMaterials = sampleDrops
                         .Select(d => $"{d.ItemName} ({d.Quantity} typical)")
                         .Distinct()

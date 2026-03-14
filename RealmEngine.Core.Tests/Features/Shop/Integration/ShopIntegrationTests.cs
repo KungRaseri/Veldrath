@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -7,7 +8,7 @@ using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Shop.Commands;
 using RealmEngine.Core.Services;
-using RealmEngine.Data.Services;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Xunit;
@@ -49,10 +50,9 @@ public class ShopIntegrationTests : IDisposable
         // Register MediatR with shop command handlers
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(BrowseShopCommand).Assembly));
 
-        // Register GameDataCache and ItemCatalogLoader
-        var testDataPath = Path.Combine("..", "..", "..", "..", "RealmEngine.Data", "Data", "Json");
-        var dataCache = new GameDataCache(testDataPath);
-        services.AddSingleton(dataCache);
+        // Register ItemCatalogLoader with mocked DbContextFactory
+        var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
+        services.AddSingleton(dbFactory.Object);
         services.AddSingleton<ItemCatalogLoader>();
 
         // Register core services

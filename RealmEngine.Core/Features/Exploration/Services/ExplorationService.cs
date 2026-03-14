@@ -134,7 +134,7 @@ public class ExplorationService
                         ItemCategory = lootResult.ItemCategory ?? "materials"
                     };
                     
-                    var item = await _itemGenerator.GenerateItemWithBudgetAsync(request);
+                    var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
                     if (item != null)
                     {
                         player.Inventory.Add(item);

@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using RealmEngine.Data.Services;
+using RealmEngine.Data.Entities;
+using RealmEngine.Data.Persistence;
 
 namespace RealmEngine.Core.Services.Budget;
 
@@ -9,8 +11,7 @@ namespace RealmEngine.Core.Services.Budget;
 /// </summary>
 public class MaterialPoolService
 {
-    private readonly GameDataCache _dataCache;
-    private readonly ReferenceResolverService _referenceResolver;
+    private readonly IDbContextFactory<ContentDbContext> _dbFactory;
     private readonly BudgetCalculator _budgetCalculator;
     private readonly MaterialPools _materialPools;
     private readonly EnemyTypes _enemyTypes;
@@ -20,22 +21,19 @@ public class MaterialPoolService
     /// <summary>
     /// Initializes a new instance of the <see cref="MaterialPoolService"/> class.
     /// </summary>
-    /// <param name="dataCache">The game data cache.</param>
-    /// <param name="referenceResolver">The reference resolver service.</param>
+    /// <param name="dbFactory">The database context factory.</param>
     /// <param name="budgetCalculator">The budget calculator.</param>
     /// <param name="materialPools">The material pools configuration.</param>
     /// <param name="enemyTypes">The enemy types configuration.</param>
     /// <param name="logger">The logger instance.</param>
     public MaterialPoolService(
-        GameDataCache dataCache,
-        ReferenceResolverService referenceResolver,
+        IDbContextFactory<ContentDbContext> dbFactory,
         BudgetCalculator budgetCalculator,
         MaterialPools materialPools,
         EnemyTypes enemyTypes,
         ILogger<MaterialPoolService> logger)
     {
-        _dataCache = dataCache ?? throw new ArgumentNullException(nameof(dataCache));
-        _referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
+        _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         _budgetCalculator = budgetCalculator ?? throw new ArgumentNullException(nameof(budgetCalculator));
         _materialPools = materialPools ?? throw new ArgumentNullException(nameof(materialPools));
         _enemyTypes = enemyTypes ?? throw new ArgumentNullException(nameof(enemyTypes));
@@ -84,37 +82,22 @@ public class MaterialPoolService
             }
 
             // Resolve and evaluate all material references
+            using var db = await _dbFactory.CreateDbContextAsync();
             foreach (var (materialRef, weight) in materialRefs)
             {
-                var resolved = await _referenceResolver.ResolveToObjectAsync(materialRef);
-                if (resolved == null)
+                var slug = ExtractSlug(materialRef);
+                var material = await db.Materials.FirstOrDefaultAsync(m => m.Slug == slug && m.IsActive);
+                if (material == null)
                 {
                     _logger.LogWarning("Failed to resolve material reference: {Ref}", materialRef);
                     continue;
                 }
 
-                // Check if this is a material item (with propertyRef) - resolve to property instead
-                var propertyRef = GetStringProperty(resolved, "propertyRef");
-                if (!string.IsNullOrEmpty(propertyRef))
-                {
-                    _logger.LogDebug("Material item {ItemName} has propertyRef {PropertyRef}, resolving to property",
-                        GetStringProperty(resolved, "name"), propertyRef);
-                    var propertyResolved = await _referenceResolver.ResolveToObjectAsync(propertyRef);
-                    if (propertyResolved != null)
-                    {
-                        resolved = propertyResolved;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to resolve propertyRef {PropertyRef} for material {MaterialRef}, using item instead",
-                            propertyRef, materialRef);
-                    }
-                }
-
+                var resolved = MaterialToJToken(material);
                 var cost = _budgetCalculator.CalculateMaterialCost(resolved);
                 var materialEntry = (resolved, cost, weight);
                 allMaterials.Add(materialEntry);
-                
+
                 if (_budgetCalculator.CanAfford(availableBudget, cost))
                 {
                     affordableMaterials.Add(materialEntry);
@@ -201,4 +184,15 @@ public class MaterialPoolService
             return defaultValue;
         }
     }
+
+    private static JToken MaterialToJToken(Material m) =>
+        new JObject
+        {
+            ["name"] = m.DisplayName ?? m.Slug,
+            ["rarityWeight"] = m.RarityWeight,
+            ["costScale"] = (double)m.CostScale
+        };
+
+    private static string ExtractSlug(string materialRef) =>
+        materialRef.Contains(':') ? materialRef.Split(':')[^1] : materialRef;
 }

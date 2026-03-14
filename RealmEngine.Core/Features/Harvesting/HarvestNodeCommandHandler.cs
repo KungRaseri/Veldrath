@@ -126,7 +126,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
             var yield = _calculator.CalculateYield(node, skillRank, toolTier, isCritical);
 
             // Roll loot table for actual materials
-            var materials = _lootTableService.RollHarvestingDrops(node.LootTableRef, yield, isCritical);
+            var materials = await _lootTableService.RollHarvestingDrops(node.LootTableRef, yield, isCritical);
 
             // Calculate node depletion
             var depletion = _calculator.CalculateDepletion(node, skillRank, toolTier, toolValidation.HasNoTool);

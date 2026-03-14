@@ -15,6 +15,10 @@ public class CharacterGrowthService
     public CharacterGrowthService(GameConfigService configService)
     {
         _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+    }
+
+    private GrowthStatsConfig LoadConfig()
+    {
         if (_config != null)
             return _config;
 
@@ -40,7 +44,7 @@ public class CharacterGrowthService
                 RespecSystem = ParseRespecSystem(json["respecSystem"] as JObject)
             };
 
-            Log.Information("✅ Loaded growth stats config (version {Version}) with {Count} class multipliers", 
+            Log.Information("✅ Loaded growth stats config (version {Version}) with {Count} class multipliers",
                 _config.Version, _config.ClassGrowthMultipliers.Count);
             return _config;
         }

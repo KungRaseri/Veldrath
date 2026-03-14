@@ -49,6 +49,7 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
         BaseName    = e.DisplayName ?? e.Slug,
         Health      = e.Stats.Health ?? 50,
         Level       = e.MinLevel,
+        RarityWeight = e.RarityWeight,
         Attributes  =
         {
             ["strength"]     = e.Stats.Strength ?? 10,

@@ -403,28 +403,6 @@ public class ServiceRegistrationTests
     #region Data Services
 
     [Fact]
-    public void GameDataCache_Should_Be_Registered_As_Singleton()
-    {
-        // Act
-        var service1 = _serviceProvider.GetService<GameDataCache>();
-        var service2 = _serviceProvider.GetService<GameDataCache>();
-
-        // Assert
-        service1.Should().NotBeNull("GameDataCache should be registered");
-        service1.Should().BeSameAs(service2, "GameDataCache should be a singleton");
-    }
-
-    [Fact]
-    public void ReferenceResolverService_Should_Be_Registered()
-    {
-        // Act
-        var service = _serviceProvider.GetService<ReferenceResolverService>();
-
-        // Assert
-        service.Should().NotBeNull("ReferenceResolverService should be registered");
-    }
-
-    [Fact]
     public void CategoryDiscoveryService_Should_Be_Registered_As_Singleton()
     {
         // Act

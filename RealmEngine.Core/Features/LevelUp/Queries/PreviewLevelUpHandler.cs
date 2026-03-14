@@ -142,7 +142,7 @@ public class PreviewLevelUpHandler : IRequestHandler<PreviewLevelUpQuery, Previe
                 return [];
             }
 
-            if (!characterClass.AbilityUnlocks.TryGetValue(level, out var abilities))
+            if (characterClass.Progression?.AbilityUnlocks.TryGetValue(level, out var abilities) != true || abilities == null)
                 return [];
 
             return abilities;

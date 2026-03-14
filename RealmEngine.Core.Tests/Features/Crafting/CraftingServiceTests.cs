@@ -1,8 +1,8 @@
 using FluentAssertions;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Services;
+using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Models;
-using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Tests.Features.Crafting;
 
@@ -13,14 +13,7 @@ public class CraftingServiceTests
 
     public CraftingServiceTests()
     {
-        // Use test data path
-        var testDataPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "..", "..", "..", "..", "RealmEngine.Data", "Data", "Json"
-        );
-
-        var dataCache = new GameDataCache(testDataPath);
-        _recipeCatalogLoader = new RecipeCatalogLoader(dataCache);
+        _recipeCatalogLoader = new RecipeCatalogLoader(new InMemoryRecipeRepository());
         _craftingService = new CraftingService(_recipeCatalogLoader);
     }
 

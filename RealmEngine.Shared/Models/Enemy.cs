@@ -146,6 +146,11 @@ public class Enemy : ITraitable
     public int GoldReward { get; set; } = 10;
 
     /// <summary>
+    /// Selection weight for random draws — higher = more common (range 1–100).
+    /// </summary>
+    public int RarityWeight { get; set; } = 50;
+
+    /// <summary>
     /// Gets or sets the classification type of this enemy (Common, Elite, Boss, etc.).
     /// </summary>
     public EnemyType Type { get; set; } = EnemyType.Common;

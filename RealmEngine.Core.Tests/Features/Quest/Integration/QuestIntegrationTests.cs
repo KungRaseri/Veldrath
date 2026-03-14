@@ -1,7 +1,6 @@
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RealmEngine.Core.Features.Combat;
@@ -12,9 +11,9 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Abstractions;
+using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using RealmEngine.Data.Services;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Features.Quest.Integration;
@@ -48,14 +47,10 @@ public class QuestIntegrationTests
             // Do nothing for tests
         });
 
-        // Create real GameDataCache for AbilityCatalogService (with fake path - won't load any files)
-        var memoryCache = new MemoryCache(new MemoryCacheOptions());
-        var gameDataCache = new GameDataCache("fakepath", memoryCache);
-
-        // Mock SkillCatalogService to avoid file system dependencies
-        var mockSkillCatalog = new Mock<SkillCatalogService>(gameDataCache, null);
+        // Mock SkillCatalogService to avoid database dependencies
+        var mockSkillCatalog = new Mock<SkillCatalogService>(new InMemorySkillRepository(), null);
         mockSkillCatalog.Setup(s => s.GetSkillDefinition(It.IsAny<string>()))
-            .Returns(new RealmEngine.Core.Features.Progression.Services.SkillDefinition 
+            .Returns(new SkillDefinition 
             { 
                 SkillId = "test_skill",
                 Name = "Test Skill",
@@ -72,7 +67,6 @@ public class QuestIntegrationTests
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(StartQuestCommand).Assembly));
         services.AddSingleton(mockTimer.Object);
         services.AddSingleton(mockRepository.Object);
-        services.AddSingleton(gameDataCache);
         services.AddSingleton<SaveGameService>();
         services.AddSingleton<ISaveGameService>(sp => sp.GetRequiredService<SaveGameService>());
         services.AddSingleton<MainQuestService>();
@@ -80,6 +74,8 @@ public class QuestIntegrationTests
         services.AddSingleton<QuestProgressService>();
         services.AddSingleton<QuestRewardService>();
         services.AddSingleton<QuestInitializationService>();
+        services.AddSingleton<IAbilityRepository, InMemoryAbilityRepository>();
+        services.AddSingleton<ISpellRepository, InMemorySpellRepository>();
         services.AddSingleton<AbilityCatalogService>();
         services.AddSingleton<SpellCatalogService>();
         services.AddSingleton(mockSkillCatalog.Object);

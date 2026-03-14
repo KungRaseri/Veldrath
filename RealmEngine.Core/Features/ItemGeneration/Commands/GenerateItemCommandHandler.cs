@@ -43,7 +43,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
             // Use budget-based generation if budget request provided
             if (request.BudgetRequest != null)
             {
-                var item = await _itemGenerator.GenerateItemWithBudgetAsync(request.BudgetRequest);
+                var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request.BudgetRequest);
                 
                 if (item == null)
                 {

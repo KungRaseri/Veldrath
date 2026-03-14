@@ -47,6 +47,7 @@ public class GetStartingLocationsHandler : IRequestHandler<GetStartingLocationsQ
             {
                 Id = $"{l.TypeKey}:{l.Slug}",
                 Name = l.DisplayName ?? l.TypeKey,
+                Description = l.DisplayName ?? l.TypeKey,
                 Type = l.TypeKey,
                 LocationType = l.LocationType,
                 IsStartingZone = true,

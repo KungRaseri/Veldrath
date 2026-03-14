@@ -77,7 +77,7 @@ var json = _configService.GetData("harvesting-config");
             }
 
             // Tool Requirements
-            var toolReqs = json["toolRequirements"] as JObject;
+            var toolReqs = jobj["toolRequirements"] as JObject;
             if (toolReqs != null)
             {
                 config.EnforceMinimumTool = toolReqs["enforceMinimum"]?.Value<bool>() ?? true;
@@ -87,7 +87,7 @@ var json = _configService.GetData("harvesting-config");
             }
 
             // Skill XP
-            var skillXP = json["skillXP"] as JObject;
+            var skillXP = jobj["skillXP"] as JObject;
             if (skillXP != null)
             {
                 config.BaseXP = skillXP["baseXP"]?.Value<int>() ?? 10;
@@ -105,7 +105,7 @@ var json = _configService.GetData("harvesting-config");
             }
 
             // Durability Loss
-            var durability = json["durabilityLoss"] as JObject;
+            var durability = jobj["durabilityLoss"] as JObject;
             if (durability != null)
             {
                 config.BaseDurabilityLoss = durability["baseLoss"]?.Value<int>() ?? 1;

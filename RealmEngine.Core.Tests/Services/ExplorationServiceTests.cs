@@ -4,7 +4,6 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Death.Queries;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Generators;
-using RealmEngine.Data.Services;
 using RealmEngine.Shared.Models;
 using MediatR;
 using Moq;
@@ -27,12 +26,7 @@ public class ExplorationServiceTests
     {
         private readonly List<Location> _testLocations;
         
-        public StubLocationGenerator() : base(
-            new GameDataCache(Path.GetTempPath()),
-            new ReferenceResolverService(
-                new GameDataCache(Path.GetTempPath()),
-                Mock.Of<ILogger<ReferenceResolverService>>()),
-            Mock.Of<ILogger<LocationGenerator>>())
+        public StubLocationGenerator() : base()
         {
             _testLocations = new List<Location>
             {
