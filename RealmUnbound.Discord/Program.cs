@@ -34,7 +34,6 @@ try
     builder.Services.Configure<DiscordSettings>(builder.Configuration.GetSection("Discord"));
 
     // Wire up the RealmEngine — data → core → MediatR must be registered in this order
-    builder.Services.AddRealmEngineData();
     builder.Services.AddRealmEngineCore();
     builder.Services.AddRealmEngineMediatR();
 
