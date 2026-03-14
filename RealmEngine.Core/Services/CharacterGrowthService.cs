@@ -39,7 +39,8 @@ public class CharacterGrowthService
             if (file == null)
             {
                 Log.Warning("growth-stats.json not found, using defaults");
-                return GetDefaultConfig();
+                _config = GetDefaultConfig();
+                return _config;
             }
 
             var json = file.JsonData;
@@ -61,7 +62,8 @@ public class CharacterGrowthService
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to load growth-stats.json, using defaults");
-            return GetDefaultConfig();
+            _config = GetDefaultConfig();
+            return _config;
         }
     }
 

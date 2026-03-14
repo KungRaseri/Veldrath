@@ -146,11 +146,10 @@ public class SplashViewModelTests : TestBase
     public async Task SplashViewModel_Should_Eventually_Navigate_To_MainMenu()
     {
         var nav = new FakeNavigationService();
-        _ = new SplashViewModel(nav);
+        var vm = new SplashViewModel(nav);
 
-        // SplashViewModel.RunSplashAsync takes ~1.9s total (50 steps × 18ms + 4 × 120ms + 300ms)
-        // We wait a bit beyond that to cover CI variance
-        await Task.Delay(2500);
+        // Await the actual task so the test never races against wall-clock timing.
+        await vm.SplashTask;
 
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }

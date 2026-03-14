@@ -24,10 +24,14 @@ public class SplashViewModel : ViewModelBase
     public string Title => "RealmUnbound";
     public string Subtitle => "An Epic Adventure Awaits";
 
+    // The task returned by RunSplashAsync; exposed so tests can await actual completion
+    // instead of relying on wall-clock timing.
+    public Task SplashTask { get; }
+
     public SplashViewModel(INavigationService navigation)
     {
         _navigation = navigation;
-        _ = RunSplashAsync();
+        SplashTask = RunSplashAsync();
     }
 
     private async Task RunSplashAsync()
