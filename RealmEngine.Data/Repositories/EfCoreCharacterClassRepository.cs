@@ -26,14 +26,14 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
             if (_cache is not null)
                 return _cache;
 
-            var entities = await db.CharacterClasses
+            var entities = await db.ActorClasses
                 .Where(c => c.IsActive)
                 .Include(c => c.AbilityUnlocks)
                     .ThenInclude(u => u.Ability)
                 .ToListAsync();
 
             _cache = entities.Select(MapToModel).ToList();
-            logger.LogDebug("Loaded {Count} character classes from database", _cache.Count);
+            logger.LogDebug("Loaded {Count} actor classes from database", _cache.Count);
             return _cache;
         }
         finally
@@ -102,7 +102,7 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
         _cacheLock.Dispose();
     }
 
-    private static CharacterClass MapToModel(Entities.CharacterClass entity) => new()
+    private static CharacterClass MapToModel(Entities.ActorClass entity) => new()
     {
         Id           = $"{entity.TypeKey}:{entity.DisplayName ?? entity.Slug}",
         Slug         = entity.Slug,

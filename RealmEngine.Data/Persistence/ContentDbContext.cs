@@ -23,8 +23,14 @@ public class ContentDbContext : DbContext
     // ── Catalog content ───────────────────────────────────────────────────────
     /// <summary>Active and passive character abilities.</summary>
     public DbSet<Ability> Abilities => Set<Ability>();
-    /// <summary>Enemies and monsters.</summary>
-    public DbSet<Enemy> Enemies => Set<Enemy>();
+    /// <summary>Biological species definitions.</summary>
+    public DbSet<Species> Species => Set<Species>();
+    /// <summary>Actor class definitions (replaces CharacterClasses).</summary>
+    public DbSet<ActorClass> ActorClasses => Set<ActorClass>();
+    /// <summary>Composed actor templates (replaces separate Enemies and Npcs).</summary>
+    public DbSet<ActorArchetype> ActorArchetypes => Set<ActorArchetype>();
+    /// <summary>Named unique actor instances that override an archetype.</summary>
+    public DbSet<ActorInstance> ActorInstances => Set<ActorInstance>();
     /// <summary>Weapons.</summary>
     public DbSet<Weapon> Weapons => Set<Weapon>();
     /// <summary>Armor pieces.</summary>
@@ -39,12 +45,8 @@ public class ContentDbContext : DbContext
     public DbSet<Skill> Skills => Set<Skill>();
     /// <summary>Magic spells.</summary>
     public DbSet<Spell> Spells => Set<Spell>();
-    /// <summary>Playable character classes.</summary>
-    public DbSet<CharacterClass> CharacterClasses => Set<CharacterClass>();
     /// <summary>Character background origins.</summary>
     public DbSet<Background> Backgrounds => Set<Background>();
-    /// <summary>Non-player characters.</summary>
-    public DbSet<Npc> Npcs => Set<Npc>();
     /// <summary>Quests.</summary>
     public DbSet<Quest> Quests => Set<Quest>();
     /// <summary>Crafting recipes.</summary>
@@ -61,12 +63,14 @@ public class ContentDbContext : DbContext
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
 
     // ── Junction tables ───────────────────────────────────────────────────────
-    /// <summary>Many-to-many: enemies ↔ abilities.</summary>
-    public DbSet<EnemyAbilityPool> EnemyAbilityPools => Set<EnemyAbilityPool>();
-    /// <summary>Many-to-many: character classes ↔ ability unlocks.</summary>
+    /// <summary>Many-to-many: species ↔ innate abilities.</summary>
+    public DbSet<SpeciesAbilityPool> SpeciesAbilityPools => Set<SpeciesAbilityPool>();
+    /// <summary>Many-to-many: actor archetypes ↔ abilities.</summary>
+    public DbSet<ArchetypeAbilityPool> ArchetypeAbilityPools => Set<ArchetypeAbilityPool>();
+    /// <summary>Many-to-many: actor instances ↔ override abilities.</summary>
+    public DbSet<InstanceAbilityPool> InstanceAbilityPools => Set<InstanceAbilityPool>();
+    /// <summary>Many-to-many: actor classes ↔ ability unlocks.</summary>
     public DbSet<ClassAbilityUnlock> ClassAbilityUnlocks => Set<ClassAbilityUnlock>();
-    /// <summary>Many-to-many: NPCs ↔ abilities.</summary>
-    public DbSet<NpcAbility> NpcAbilities => Set<NpcAbility>();
     /// <summary>Loot table line items.</summary>
     public DbSet<LootTableEntry> LootTableEntries => Set<LootTableEntry>();
     /// <summary>Recipe ingredient lines.</summary>

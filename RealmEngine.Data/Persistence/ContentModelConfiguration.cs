@@ -49,26 +49,69 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Enemies ───────────────────────────────────────────────────────────
+        // ── Species ───────────────────────────────────────────────────────────
 
-        builder.Entity<Enemy>(e =>
+        builder.Entity<Species>(e =>
         {
             ConfigureContent(e);
-            e.HasOne(x => x.LootTable)
-             .WithMany()
-             .HasForeignKey(x => x.LootTableId)
-             .OnDelete(DeleteBehavior.SetNull);
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
-            e.OwnsOne(x => x.Properties, o => o.ToJson());
         });
 
-        builder.Entity<EnemyAbilityPool>(e =>
+        builder.Entity<SpeciesAbilityPool>(e =>
         {
-            e.HasKey(x => new { x.EnemyId, x.AbilityId });
-            e.HasOne(x => x.Enemy).WithMany(en => en.AbilityPool)
-             .HasForeignKey(x => x.EnemyId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Ability).WithMany(a => a.EnemyPool)
+            e.HasKey(x => new { x.SpeciesId, x.AbilityId });
+            e.HasOne(x => x.Species).WithMany(s => s.AbilityPool)
+             .HasForeignKey(x => x.SpeciesId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Ability).WithMany(a => a.SpeciesPool)
+             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Actor Archetypes ──────────────────────────────────────────────────
+
+        builder.Entity<ActorArchetype>(e =>
+        {
+            ConfigureContent(e);
+            e.HasOne(x => x.Species).WithMany(s => s.Archetypes)
+             .HasForeignKey(x => x.SpeciesId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Class).WithMany(c => c.Archetypes)
+             .HasForeignKey(x => x.ClassId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Background).WithMany()
+             .HasForeignKey(x => x.BackgroundId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.LootTable).WithMany()
+             .HasForeignKey(x => x.LootTableId).OnDelete(DeleteBehavior.SetNull);
+            e.OwnsOne(x => x.Stats, o => o.ToJson());
+            e.OwnsOne(x => x.Traits, o => o.ToJson());
+        });
+
+        builder.Entity<ArchetypeAbilityPool>(e =>
+        {
+            e.HasKey(x => new { x.ArchetypeId, x.AbilityId });
+            e.HasOne(x => x.Archetype).WithMany(a => a.AbilityPool)
+             .HasForeignKey(x => x.ArchetypeId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Ability).WithMany(a => a.ArchetypePool)
+             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Actor Instances ───────────────────────────────────────────────────
+
+        builder.Entity<ActorInstance>(e =>
+        {
+            ConfigureContent(e);
+            e.HasOne(x => x.Archetype).WithMany(a => a.Instances)
+             .HasForeignKey(x => x.ArchetypeId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.LootTable).WithMany()
+             .HasForeignKey(x => x.LootTableOverride).OnDelete(DeleteBehavior.SetNull);
+            e.Property(x => x.FactionOverride).HasMaxLength(64);
+            e.OwnsOne(x => x.StatOverrides, o => o.ToJson());
+        });
+
+        builder.Entity<InstanceAbilityPool>(e =>
+        {
+            e.HasKey(x => new { x.InstanceId, x.AbilityId });
+            e.HasOne(x => x.Instance).WithMany(i => i.AbilityPool)
+             .HasForeignKey(x => x.InstanceId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Ability).WithMany(a => a.InstancePool)
              .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -143,9 +186,9 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Character Classes ─────────────────────────────────────────────────
+        // ── Actor Classes ─────────────────────────────────────────────────────
 
-        builder.Entity<CharacterClass>(e =>
+        builder.Entity<ActorClass>(e =>
         {
             ConfigureContent(e);
             e.Property(x => x.PrimaryStat).HasMaxLength(32).IsRequired();
@@ -169,26 +212,6 @@ public static class ContentModelConfiguration
             ConfigureContent(e);
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
-        });
-
-        // ── NPCs ──────────────────────────────────────────────────────────────
-
-        builder.Entity<Npc>(e =>
-        {
-            ConfigureContent(e);
-            e.Property(x => x.Faction).HasMaxLength(64);
-            e.OwnsOne(x => x.Stats, o => o.ToJson());
-            e.OwnsOne(x => x.Traits, o => o.ToJson());
-            e.OwnsOne(x => x.Schedule, o => o.ToJson());
-        });
-
-        builder.Entity<NpcAbility>(e =>
-        {
-            e.HasKey(x => new { x.NpcId, x.AbilityId });
-            e.HasOne(x => x.Npc).WithMany(n => n.Abilities)
-             .HasForeignKey(x => x.NpcId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Ability).WithMany(a => a.NpcAssignments)
-             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Quests ────────────────────────────────────────────────────────────

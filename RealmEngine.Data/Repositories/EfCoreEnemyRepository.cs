@@ -13,18 +13,18 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
     /// <inheritdoc />
     public async Task<List<Enemy>> GetAllAsync()
     {
-        var entities = await db.Enemies.AsNoTracking()
+        var entities = await db.ActorArchetypes.AsNoTracking()
             .Where(e => e.IsActive)
             .ToListAsync();
 
-        logger.LogDebug("Loaded {Count} enemies from database", entities.Count);
+        logger.LogDebug("Loaded {Count} actor archetypes from database", entities.Count);
         return entities.Select(MapToModel).ToList();
     }
 
     /// <inheritdoc />
     public async Task<Enemy?> GetBySlugAsync(string slug)
     {
-        var entity = await db.Enemies.AsNoTracking()
+        var entity = await db.ActorArchetypes.AsNoTracking()
             .Where(e => e.IsActive && e.Slug == slug)
             .FirstOrDefaultAsync();
 
@@ -34,14 +34,14 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
     /// <inheritdoc />
     public async Task<List<Enemy>> GetByFamilyAsync(string family)
     {
-        var entities = await db.Enemies.AsNoTracking()
+        var entities = await db.ActorArchetypes.AsNoTracking()
             .Where(e => e.IsActive && e.TypeKey == family)
             .ToListAsync();
 
         return entities.Select(MapToModel).ToList();
     }
 
-    private static Enemy MapToModel(Entities.Enemy e) => new()
+    private static Enemy MapToModel(Entities.ActorArchetype e) => new()
     {
         Id          = e.Slug,
         Slug        = e.Slug,
@@ -52,10 +52,10 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
         RarityWeight = e.RarityWeight,
         Attributes  =
         {
-            ["strength"]     = e.Stats.Strength ?? 10,
-            ["dexterity"]    = e.Stats.Dexterity ?? 10,
-            ["intelligence"] = e.Stats.Intelligence ?? 10,
-            ["constitution"] = e.Stats.Constitution ?? 10,
+            ["strength"]     = e.Stats.Strength     ?? 10,
+            ["dexterity"]    = e.Stats.Agility       ?? 10,
+            ["intelligence"] = e.Stats.Intelligence  ?? 10,
+            ["constitution"] = e.Stats.Constitution  ?? 10,
         },
     };
 }

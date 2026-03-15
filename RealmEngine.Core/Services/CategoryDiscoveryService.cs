@@ -41,14 +41,14 @@ public class CategoryDiscoveryService
             .Union(db.Materials.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey)));
 
         DiscoverDomain(db, "abilities", () => db.Abilities.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
-        DiscoverDomain(db, "enemies", () => db.Enemies.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
-        DiscoverDomain(db, "npcs", () => db.Npcs.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
+        DiscoverDomain(db, "species", () => db.Species.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
+        DiscoverDomain(db, "actors", () => db.ActorArchetypes.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "quests", () => db.Quests.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "spells", () => db.Spells.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "skills", () => db.Skills.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "recipes", () => db.Recipes.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "enchantments", () => db.Enchantments.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
-        DiscoverDomain(db, "classes", () => db.CharacterClasses.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
+        DiscoverDomain(db, "classes", () => db.ActorClasses.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "locations", () => db.WorldLocations.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "organizations", () => db.Organizations.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "dialogues", () => db.Dialogues.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));

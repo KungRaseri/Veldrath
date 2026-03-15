@@ -10,12 +10,10 @@ public class MainWindowViewModel : ReactiveObject
 {
     private readonly ContentEditorService _contentEditorService;
     private readonly ContentTreeService _contentTreeService;
-    private readonly DevDataSeederService _devDataSeeder;
     private object? _currentPage;
     private bool _isPaneOpen = true;
     private bool _isDarkMode = true;
     private bool _isLoadingTree;
-    private bool _isSeeding;
     private FileTreeNodeViewModel? _selectedNode;
     private string _dbStatus = "Connecting…";
     private string? _treePaneMessage;
@@ -23,17 +21,14 @@ public class MainWindowViewModel : ReactiveObject
     public MainWindowViewModel(
         EditorSettingsService settingsService,
         ContentEditorService contentEditorService,
-        ContentTreeService contentTreeService,
-        DevDataSeederService devDataSeeder)
+        ContentTreeService contentTreeService)
     {
         _contentEditorService = contentEditorService;
         _contentTreeService = contentTreeService;
-        _devDataSeeder = devDataSeeder;
 
         TogglePaneCommand = ReactiveCommand.Create(() => { IsPaneOpen = !IsPaneOpen; });
         ToggleThemeCommand = ReactiveCommand.Create(() => { IsDarkMode = !IsDarkMode; });
         RefreshTreeCommand = ReactiveCommand.CreateFromTask(LoadTreeAsync);
-        SeedDevDataCommand = ReactiveCommand.CreateFromTask(SeedDevDataAsync);
 
         CurrentPage = new HomeViewModel();
         _ = LoadSettingsAsync(settingsService);
@@ -61,7 +56,11 @@ public class MainWindowViewModel : ReactiveObject
     public bool IsLoadingTree
     {
         get => _isLoadingTree;
-        private set => this.RaiseAndSetIfChanged(ref _isLoadingTree, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _isLoadingTree, value);
+            this.RaisePropertyChanged(nameof(IsTreeVisible));
+        }
     }
 
     /// <summary>Short status text shown in the sidebar footer (e.g. "Connected" / connection error).</summary>
@@ -71,20 +70,22 @@ public class MainWindowViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _dbStatus, value);
     }
 
-    /// <summary>Non-null when the tree has no nodes — explains why (no DB / no content).</summary>
+    /// <summary>Non-null only when the database is unreachable — explains the error.</summary>
     public string? TreePaneMessage
     {
         get => _treePaneMessage;
-        private set => this.RaiseAndSetIfChanged(ref _treePaneMessage, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _treePaneMessage, value);
+            this.RaisePropertyChanged(nameof(HasTreePaneMessage));
+            this.RaisePropertyChanged(nameof(IsTreeVisible));
+        }
     }
 
     public bool HasTreePaneMessage => TreePaneMessage is not null;
 
-    public bool IsSeeding
-    {
-        get => _isSeeding;
-        private set => this.RaiseAndSetIfChanged(ref _isSeeding, value);
-    }
+    /// <summary>True when the tree should be shown — DB is reachable and not currently loading.</summary>
+    public bool IsTreeVisible => !_isLoadingTree && !HasTreePaneMessage;
 
     /// <summary>
     /// Bound to TreeView.SelectedItem — opens leaf nodes in the editor, TypeKey directories in the list.
@@ -107,7 +108,6 @@ public class MainWindowViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> TogglePaneCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleThemeCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTreeCommand { get; }
-    public ReactiveCommand<Unit, Unit> SeedDevDataCommand { get; }
 
     public async Task LoadTreeAsync()
     {
@@ -123,16 +123,10 @@ public class MainWindowViewModel : ReactiveObject
                 TreeNodes.Add(n);
             }
 
-            if (nodes.Count == 0)
-            {
-                DbStatus = "Connected — no content";
-                TreePaneMessage = "No content in ContentRegistry.\nRight-click a category after\nadding entries to the database.";
-            }
-            else
-            {
-                DbStatus = $"Connected · {nodes.Sum(n => n.Children.Sum(c => c.Children.Count))} entities";
-                TreePaneMessage = null;
-            }
+            var entityCount = nodes.Sum(n => n.Children.Sum(c => c.Children.Count));
+            DbStatus = entityCount == 0
+                ? "Connected — no entities yet"
+                : $"Connected · {entityCount} entities";
         }
         catch (Exception ex)
         {
@@ -143,7 +137,6 @@ public class MainWindowViewModel : ReactiveObject
         finally
         {
             IsLoadingTree = false;
-            this.RaisePropertyChanged(nameof(HasTreePaneMessage));
         }
     }
 
@@ -222,20 +215,6 @@ public class MainWindowViewModel : ReactiveObject
         if (CurrentPage is EntityEditorViewModel editor && editor.EntityId == leafNode.EntityId)
             CurrentPage = new HomeViewModel();
 
-        await LoadTreeAsync();
-    }
-
-    private async Task SeedDevDataAsync()
-    {
-        IsSeeding = true;
-        try
-        {
-            await _devDataSeeder.SeedIfEmptyAsync();
-        }
-        finally
-        {
-            IsSeeding = false;
-        }
         await LoadTreeAsync();
     }
 

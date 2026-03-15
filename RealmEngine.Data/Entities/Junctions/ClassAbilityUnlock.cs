@@ -14,8 +14,8 @@ public class ClassAbilityUnlock
     /// <summary>Starting rank of the unlocked ability (usually 1).</summary>
     public int Rank { get; set; } = 1;
 
-    /// <summary>Navigation property for the owning class.</summary>
-    public CharacterClass? Class { get; set; }
+    /// <summary>Navigation property for the owning actor class.</summary>
+    public ActorClass? Class { get; set; }
     /// <summary>Navigation property for the unlocked ability.</summary>
     public Ability? Ability { get; set; }
 }

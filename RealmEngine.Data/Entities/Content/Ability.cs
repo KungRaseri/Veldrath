@@ -13,12 +13,14 @@ public class Ability : ContentBase
     /// <summary>Boolean trait flags for this ability.</summary>
     public AbilityTraits Traits { get; set; } = new();
 
-    /// <summary>Enemies that have this ability in their combat pool.</summary>
-    public ICollection<EnemyAbilityPool> EnemyPool { get; set; } = [];
+    /// <summary>Species that have this ability as a natural innate ability.</summary>
+    public ICollection<SpeciesAbilityPool> SpeciesPool { get; set; } = [];
+    /// <summary>Archetype combat pools that include this ability.</summary>
+    public ICollection<ArchetypeAbilityPool> ArchetypePool { get; set; } = [];
+    /// <summary>Actor instances that have this ability in their override pool.</summary>
+    public ICollection<InstanceAbilityPool> InstancePool { get; set; } = [];
     /// <summary>Class levels that unlock this ability.</summary>
     public ICollection<ClassAbilityUnlock> ClassUnlocks { get; set; } = [];
-    /// <summary>NPCs that have this ability assigned.</summary>
-    public ICollection<NpcAbility> NpcAssignments { get; set; } = [];
 }
 
 /// <summary>Combat and scaling statistics owned by an Ability.</summary>

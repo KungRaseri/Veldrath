@@ -1,27 +1,30 @@
 namespace RealmEngine.Data.Entities;
 
 /// <summary>
-/// Playable character class. Named CharacterClass to avoid conflict with C# keyword.
+/// Actor class definition — the role/job archetype that shapes combat style and growth.
+/// Applies to both player characters and any actor archetype (replacing CharacterClass).
 /// HitDie = sides of the health die per level (e.g. 10 for Fighter, 6 for Wizard).
 /// </summary>
-public class CharacterClass : ContentBase
+public class ActorClass : ContentBase
 {
-    /// <summary>Sides of the health die rolled per level (e.g. 10 for Fighter, 6 for Wizard).</summary>
+    /// <summary>Sides of the health die rolled per level (e.g. 10 = Fighter, 6 = Wizard).</summary>
     public int HitDie { get; set; } = 8;
     /// <summary>"strength" | "dexterity" | "intelligence" | "constitution" — governs primary scaling.</summary>
     public string PrimaryStat { get; set; } = string.Empty;
 
     /// <summary>Base and growth statistics for this class.</summary>
-    public ClassStats Stats { get; set; } = new();
+    public ActorClassStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags classifying this class's playstyle.</summary>
-    public ClassTraits Traits { get; set; } = new();
+    public ActorClassTraits Traits { get; set; } = new();
 
-    /// <summary>Abilities unlocked as the character levels in this class.</summary>
+    /// <summary>Abilities unlocked as the actor levels in this class.</summary>
     public ICollection<ClassAbilityUnlock> AbilityUnlocks { get; set; } = [];
+    /// <summary>Archetypes that use this class.</summary>
+    public ICollection<ActorArchetype> Archetypes { get; set; } = [];
 }
 
-/// <summary>Base and growth statistics owned by a CharacterClass.</summary>
-public class ClassStats
+/// <summary>Base and growth statistics owned by an ActorClass.</summary>
+public class ActorClassStats
 {
     /// <summary>Starting hit points at level 1.</summary>
     public int? BaseHealth { get; set; }
@@ -41,8 +44,8 @@ public class ClassStats
     public float? ConstitutionGrowth { get; set; }
 }
 
-/// <summary>Boolean trait flags classifying a CharacterClass's playstyle.</summary>
-public class ClassTraits
+/// <summary>Boolean trait flags classifying an ActorClass's playstyle.</summary>
+public class ActorClassTraits
 {
     /// <summary>True if the class can wield two weapons simultaneously.</summary>
     public bool? CanDualWield { get; set; }
