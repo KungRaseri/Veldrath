@@ -12,8 +12,8 @@ using RealmUnbound.Server.Data;
 namespace RealmUnbound.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260313221747_InitialSchema")]
-    partial class InitialSchema
+    [Migration("20260315050941_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -202,6 +202,201 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Abilities");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BackgroundId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LootTableId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MaxLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("SpeciesId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BackgroundId");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("LootTableId");
+
+                    b.HasIndex("SpeciesId");
+
+                    b.HasIndex("TypeKey");
+
+                    b.HasIndex("TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("ActorArchetypes");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorClass", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("HitDie")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PrimaryStat")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TypeKey");
+
+                    b.HasIndex("TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("ActorClasses");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ArchetypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("FactionOverride")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("LevelOverride")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("LootTableOverride")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchetypeId");
+
+                    b.HasIndex("LootTableOverride");
+
+                    b.HasIndex("TypeKey");
+
+                    b.HasIndex("TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("ActorInstances");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ArchetypeAbilityPool", b =>
+                {
+                    b.Property<Guid>("ArchetypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AbilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<float>("UseChance")
+                        .HasColumnType("real");
+
+                    b.HasKey("ArchetypeId", "AbilityId");
+
+                    b.HasIndex("AbilityId");
+
+                    b.ToTable("ArchetypeAbilityPools");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.Armor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -294,56 +489,6 @@ namespace RealmUnbound.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("Backgrounds");
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.CharacterClass", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("HitDie")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("PrimaryStat")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<int>("RarityWeight")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("TypeKey")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TypeKey");
-
-                    b.HasIndex("TypeKey", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("CharacterClasses");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.ClassAbilityUnlock", b =>
@@ -488,77 +633,6 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Enchantments");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Enemy", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("LootTableId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("MaxLevel")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MinLevel")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RarityWeight")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("TypeKey")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LootTableId");
-
-                    b.HasIndex("TypeKey");
-
-                    b.HasIndex("TypeKey", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("Enemies");
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.EnemyAbilityPool", b =>
-                {
-                    b.Property<Guid>("EnemyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AbilityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<float>("UseChance")
-                        .HasColumnType("real");
-
-                    b.HasKey("EnemyId", "AbilityId");
-
-                    b.HasIndex("AbilityId");
-
-                    b.ToTable("EnemyAbilityPools");
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.GameConfig", b =>
                 {
                     b.Property<string>("ConfigKey")
@@ -578,6 +652,21 @@ namespace RealmUnbound.Server.Migrations
                     b.HasKey("ConfigKey");
 
                     b.ToTable("GameConfigs");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.InstanceAbilityPool", b =>
+                {
+                    b.Property<Guid>("InstanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AbilityId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("InstanceId", "AbilityId");
+
+                    b.HasIndex("AbilityId");
+
+                    b.ToTable("InstanceAbilityPools");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.Item", b =>
@@ -893,67 +982,6 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("NamePatternSets");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Npc", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Faction")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("RarityWeight")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("TypeKey")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TypeKey");
-
-                    b.HasIndex("TypeKey", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("Npcs");
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.NpcAbility", b =>
-                {
-                    b.Property<Guid>("NpcId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AbilityId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("NpcId", "AbilityId");
-
-                    b.HasIndex("AbilityId");
-
-                    b.ToTable("NpcAbilities");
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1176,6 +1204,63 @@ namespace RealmUnbound.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("Skills");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.Species", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TypeKey");
+
+                    b.HasIndex("TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("Species");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.SpeciesAbilityPool", b =>
+                {
+                    b.Property<Guid>("SpeciesId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AbilityId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SpeciesId", "AbilityId");
+
+                    b.HasIndex("AbilityId");
+
+                    b.ToTable("SpeciesAbilityPools");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.Spell", b =>
@@ -1883,6 +1968,274 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.Background", "Background")
+                        .WithMany()
+                        .HasForeignKey("BackgroundId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RealmEngine.Data.Entities.ActorClass", "Class")
+                        .WithMany("Archetypes")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RealmEngine.Data.Entities.LootTable", "LootTable")
+                        .WithMany()
+                        .HasForeignKey("LootTableId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RealmEngine.Data.Entities.Species", "Species")
+                        .WithMany("Archetypes")
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.OwnsOne("RealmEngine.Data.Entities.ArchetypeStats", "Stats", b1 =>
+                        {
+                            b1.Property<Guid>("ActorArchetypeId");
+
+                            b1.Property<int?>("Agility");
+
+                            b1.Property<int?>("ArmorClass");
+
+                            b1.Property<int?>("AttackBonus");
+
+                            b1.Property<int?>("Constitution");
+
+                            b1.Property<int?>("Damage");
+
+                            b1.Property<int?>("ExperienceReward");
+
+                            b1.Property<int?>("GoldRewardMax");
+
+                            b1.Property<int?>("GoldRewardMin");
+
+                            b1.Property<int?>("Health");
+
+                            b1.Property<int?>("Intelligence");
+
+                            b1.Property<int?>("Mana");
+
+                            b1.Property<int?>("Strength");
+
+                            b1.Property<int?>("TradeGold");
+
+                            b1.Property<int?>("TradeSkill");
+
+                            b1.HasKey("ActorArchetypeId");
+
+                            b1.ToTable("ActorArchetypes");
+
+                            b1.ToJson("Stats");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ActorArchetypeId");
+                        });
+
+                    b.OwnsOne("RealmEngine.Data.Entities.ArchetypeTraits", "Traits", b1 =>
+                        {
+                            b1.Property<Guid>("ActorArchetypeId");
+
+                            b1.Property<bool?>("Aggressive");
+
+                            b1.Property<bool?>("Boss");
+
+                            b1.Property<bool?>("Caster");
+
+                            b1.Property<bool?>("ColdImmune");
+
+                            b1.Property<bool?>("Elite");
+
+                            b1.Property<bool?>("FireImmune");
+
+                            b1.Property<bool?>("HasDialogue");
+
+                            b1.Property<bool?>("Hostile");
+
+                            b1.Property<bool?>("Immortal");
+
+                            b1.Property<bool?>("PackHunter");
+
+                            b1.Property<bool?>("PoisonImmune");
+
+                            b1.Property<bool?>("QuestGiver");
+
+                            b1.Property<bool?>("Ranged");
+
+                            b1.Property<bool?>("Shopkeeper");
+
+                            b1.Property<bool?>("Wanderer");
+
+                            b1.HasKey("ActorArchetypeId");
+
+                            b1.ToTable("ActorArchetypes");
+
+                            b1.ToJson("Traits");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ActorArchetypeId");
+                        });
+
+                    b.Navigation("Background");
+
+                    b.Navigation("Class");
+
+                    b.Navigation("LootTable");
+
+                    b.Navigation("Species");
+
+                    b.Navigation("Stats")
+                        .IsRequired();
+
+                    b.Navigation("Traits")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorClass", b =>
+                {
+                    b.OwnsOne("RealmEngine.Data.Entities.ActorClassStats", "Stats", b1 =>
+                        {
+                            b1.Property<Guid>("ActorClassId");
+
+                            b1.Property<int?>("BaseHealth");
+
+                            b1.Property<int?>("BaseMana");
+
+                            b1.Property<float?>("ConstitutionGrowth");
+
+                            b1.Property<float?>("DexterityGrowth");
+
+                            b1.Property<float?>("HealthGrowth");
+
+                            b1.Property<float?>("IntelligenceGrowth");
+
+                            b1.Property<float?>("ManaGrowth");
+
+                            b1.Property<float?>("StrengthGrowth");
+
+                            b1.HasKey("ActorClassId");
+
+                            b1.ToTable("ActorClasses");
+
+                            b1.ToJson("Stats");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ActorClassId");
+                        });
+
+                    b.OwnsOne("RealmEngine.Data.Entities.ActorClassTraits", "Traits", b1 =>
+                        {
+                            b1.Property<Guid>("ActorClassId");
+
+                            b1.Property<bool?>("CanDualWield");
+
+                            b1.Property<bool?>("CanWearHeavy");
+
+                            b1.Property<bool?>("CanWearShield");
+
+                            b1.Property<bool?>("Melee");
+
+                            b1.Property<bool?>("Ranged");
+
+                            b1.Property<bool?>("Spellcaster");
+
+                            b1.Property<bool?>("Stealth");
+
+                            b1.HasKey("ActorClassId");
+
+                            b1.ToTable("ActorClasses");
+
+                            b1.ToJson("Traits");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ActorClassId");
+                        });
+
+                    b.Navigation("Stats")
+                        .IsRequired();
+
+                    b.Navigation("Traits")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorInstance", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.ActorArchetype", "Archetype")
+                        .WithMany("Instances")
+                        .HasForeignKey("ArchetypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmEngine.Data.Entities.LootTable", "LootTable")
+                        .WithMany()
+                        .HasForeignKey("LootTableOverride")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.OwnsOne("RealmEngine.Data.Entities.InstanceStatOverrides", "StatOverrides", b1 =>
+                        {
+                            b1.Property<Guid>("ActorInstanceId");
+
+                            b1.Property<int?>("Agility");
+
+                            b1.Property<int?>("ArmorClass");
+
+                            b1.Property<int?>("AttackBonus");
+
+                            b1.Property<int?>("Constitution");
+
+                            b1.Property<int?>("Damage");
+
+                            b1.Property<int?>("ExperienceReward");
+
+                            b1.Property<int?>("GoldRewardMax");
+
+                            b1.Property<int?>("GoldRewardMin");
+
+                            b1.Property<int?>("Health");
+
+                            b1.Property<int?>("Intelligence");
+
+                            b1.Property<int?>("Mana");
+
+                            b1.Property<int?>("Strength");
+
+                            b1.HasKey("ActorInstanceId");
+
+                            b1.ToTable("ActorInstances");
+
+                            b1.ToJson("StatOverrides");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ActorInstanceId");
+                        });
+
+                    b.Navigation("Archetype");
+
+                    b.Navigation("LootTable");
+
+                    b.Navigation("StatOverrides")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ArchetypeAbilityPool", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.Ability", "Ability")
+                        .WithMany("ArchetypePool")
+                        .HasForeignKey("AbilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmEngine.Data.Entities.ActorArchetype", "Archetype")
+                        .WithMany("AbilityPool")
+                        .HasForeignKey("ArchetypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ability");
+
+                    b.Navigation("Archetype");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.Armor", b =>
                 {
                     b.OwnsOne("RealmEngine.Data.Entities.ArmorStats", "Stats", b1 =>
@@ -2009,73 +2362,6 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.CharacterClass", b =>
-                {
-                    b.OwnsOne("RealmEngine.Data.Entities.ClassStats", "Stats", b1 =>
-                        {
-                            b1.Property<Guid>("CharacterClassId");
-
-                            b1.Property<int?>("BaseHealth");
-
-                            b1.Property<int?>("BaseMana");
-
-                            b1.Property<float?>("ConstitutionGrowth");
-
-                            b1.Property<float?>("DexterityGrowth");
-
-                            b1.Property<float?>("HealthGrowth");
-
-                            b1.Property<float?>("IntelligenceGrowth");
-
-                            b1.Property<float?>("ManaGrowth");
-
-                            b1.Property<float?>("StrengthGrowth");
-
-                            b1.HasKey("CharacterClassId");
-
-                            b1.ToTable("CharacterClasses");
-
-                            b1.ToJson("Stats");
-
-                            b1.WithOwner()
-                                .HasForeignKey("CharacterClassId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.ClassTraits", "Traits", b1 =>
-                        {
-                            b1.Property<Guid>("CharacterClassId");
-
-                            b1.Property<bool?>("CanDualWield");
-
-                            b1.Property<bool?>("CanWearHeavy");
-
-                            b1.Property<bool?>("CanWearShield");
-
-                            b1.Property<bool?>("Melee");
-
-                            b1.Property<bool?>("Ranged");
-
-                            b1.Property<bool?>("Spellcaster");
-
-                            b1.Property<bool?>("Stealth");
-
-                            b1.HasKey("CharacterClassId");
-
-                            b1.ToTable("CharacterClasses");
-
-                            b1.ToJson("Traits");
-
-                            b1.WithOwner()
-                                .HasForeignKey("CharacterClassId");
-                        });
-
-                    b.Navigation("Stats")
-                        .IsRequired();
-
-                    b.Navigation("Traits")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.ClassAbilityUnlock", b =>
                 {
                     b.HasOne("RealmEngine.Data.Entities.Ability", "Ability")
@@ -2084,7 +2370,7 @@ namespace RealmUnbound.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RealmEngine.Data.Entities.CharacterClass", "Class")
+                    b.HasOne("RealmEngine.Data.Entities.ActorClass", "Class")
                         .WithMany("AbilityUnlocks")
                         .HasForeignKey("ClassId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2214,136 +2500,23 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Enemy", b =>
-                {
-                    b.HasOne("RealmEngine.Data.Entities.LootTable", "LootTable")
-                        .WithMany()
-                        .HasForeignKey("LootTableId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.OwnsOne("RealmEngine.Data.Entities.EnemyProperties", "Properties", b1 =>
-                        {
-                            b1.Property<Guid>("EnemyId");
-
-                            b1.Property<float?>("AttackRange");
-
-                            b1.Property<float?>("AttackSpeed");
-
-                            b1.Property<float?>("DetectRadius");
-
-                            b1.Property<string>("Faction");
-
-                            b1.Property<float?>("MovementSpeed");
-
-                            b1.HasKey("EnemyId");
-
-                            b1.ToTable("Enemies");
-
-                            b1.ToJson("Properties");
-
-                            b1.WithOwner()
-                                .HasForeignKey("EnemyId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.EnemyStats", "Stats", b1 =>
-                        {
-                            b1.Property<Guid>("EnemyId");
-
-                            b1.Property<int?>("Armor");
-
-                            b1.Property<int?>("Constitution");
-
-                            b1.Property<int?>("Dexterity");
-
-                            b1.Property<int?>("GoldRewardMax");
-
-                            b1.Property<int?>("GoldRewardMin");
-
-                            b1.Property<int?>("Health");
-
-                            b1.Property<int?>("Intelligence");
-
-                            b1.Property<int?>("MagicResist");
-
-                            b1.Property<int?>("Mana");
-
-                            b1.Property<int?>("Strength");
-
-                            b1.Property<int?>("XpReward");
-
-                            b1.HasKey("EnemyId");
-
-                            b1.ToTable("Enemies");
-
-                            b1.ToJson("Stats");
-
-                            b1.WithOwner()
-                                .HasForeignKey("EnemyId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.EnemyTraits", "Traits", b1 =>
-                        {
-                            b1.Property<Guid>("EnemyId");
-
-                            b1.Property<bool?>("Aggressive");
-
-                            b1.Property<bool?>("Boss");
-
-                            b1.Property<bool?>("ColdImmune");
-
-                            b1.Property<bool?>("Elite");
-
-                            b1.Property<bool?>("FireImmune");
-
-                            b1.Property<bool?>("PackHunter");
-
-                            b1.Property<bool?>("PoisonImmune");
-
-                            b1.Property<bool?>("Ranged");
-
-                            b1.Property<bool?>("Spellcaster");
-
-                            b1.Property<bool?>("Undead");
-
-                            b1.HasKey("EnemyId");
-
-                            b1.ToTable("Enemies");
-
-                            b1.ToJson("Traits");
-
-                            b1.WithOwner()
-                                .HasForeignKey("EnemyId");
-                        });
-
-                    b.Navigation("LootTable");
-
-                    b.Navigation("Properties")
-                        .IsRequired();
-
-                    b.Navigation("Stats")
-                        .IsRequired();
-
-                    b.Navigation("Traits")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.EnemyAbilityPool", b =>
+            modelBuilder.Entity("RealmEngine.Data.Entities.InstanceAbilityPool", b =>
                 {
                     b.HasOne("RealmEngine.Data.Entities.Ability", "Ability")
-                        .WithMany("EnemyPool")
+                        .WithMany("InstancePool")
                         .HasForeignKey("AbilityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RealmEngine.Data.Entities.Enemy", "Enemy")
+                    b.HasOne("RealmEngine.Data.Entities.ActorInstance", "Instance")
                         .WithMany("AbilityPool")
-                        .HasForeignKey("EnemyId")
+                        .HasForeignKey("InstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Ability");
 
-                    b.Navigation("Enemy");
+                    b.Navigation("Instance");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.Item", b =>
@@ -2590,107 +2763,6 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Set");
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.Npc", b =>
-                {
-                    b.OwnsOne("RealmEngine.Data.Entities.NpcSchedule", "Schedule", b1 =>
-                        {
-                            b1.Property<Guid>("NpcId");
-
-                            b1.Property<string>("Afternoon");
-
-                            b1.Property<string>("Evening");
-
-                            b1.Property<string>("Morning");
-
-                            b1.Property<string>("Night");
-
-                            b1.HasKey("NpcId");
-
-                            b1.ToTable("Npcs");
-
-                            b1.ToJson("Schedule");
-
-                            b1.WithOwner()
-                                .HasForeignKey("NpcId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.NpcStats", "Stats", b1 =>
-                        {
-                            b1.Property<Guid>("NpcId");
-
-                            b1.Property<int?>("Disposition");
-
-                            b1.Property<int?>("Gold");
-
-                            b1.Property<int?>("Health");
-
-                            b1.Property<int?>("TradeSkill");
-
-                            b1.HasKey("NpcId");
-
-                            b1.ToTable("Npcs");
-
-                            b1.ToJson("Stats");
-
-                            b1.WithOwner()
-                                .HasForeignKey("NpcId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.NpcTraits", "Traits", b1 =>
-                        {
-                            b1.Property<Guid>("NpcId");
-
-                            b1.Property<bool?>("HasDialogue");
-
-                            b1.Property<bool?>("Hostile");
-
-                            b1.Property<bool?>("Immortal");
-
-                            b1.Property<bool?>("QuestGiver");
-
-                            b1.Property<bool?>("Shopkeeper");
-
-                            b1.Property<bool?>("Wanderer");
-
-                            b1.HasKey("NpcId");
-
-                            b1.ToTable("Npcs");
-
-                            b1.ToJson("Traits");
-
-                            b1.WithOwner()
-                                .HasForeignKey("NpcId");
-                        });
-
-                    b.Navigation("Schedule")
-                        .IsRequired();
-
-                    b.Navigation("Stats")
-                        .IsRequired();
-
-                    b.Navigation("Traits")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.NpcAbility", b =>
-                {
-                    b.HasOne("RealmEngine.Data.Entities.Ability", "Ability")
-                        .WithMany("NpcAssignments")
-                        .HasForeignKey("AbilityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RealmEngine.Data.Entities.Npc", "Npc")
-                        .WithMany("Abilities")
-                        .HasForeignKey("NpcId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Ability");
-
-                    b.Navigation("Npc");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.Organization", b =>
@@ -2986,6 +3058,98 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.Species", b =>
+                {
+                    b.OwnsOne("RealmEngine.Data.Entities.SpeciesStats", "Stats", b1 =>
+                        {
+                            b1.Property<Guid>("SpeciesId");
+
+                            b1.Property<int?>("BaseAgility");
+
+                            b1.Property<int?>("BaseConstitution");
+
+                            b1.Property<int?>("BaseHealth");
+
+                            b1.Property<int?>("BaseIntelligence");
+
+                            b1.Property<int?>("BaseStrength");
+
+                            b1.Property<float?>("MovementSpeed");
+
+                            b1.Property<int?>("NaturalArmor");
+
+                            b1.Property<string>("SizeCategory");
+
+                            b1.HasKey("SpeciesId");
+
+                            b1.ToTable("Species");
+
+                            b1.ToJson("Stats");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SpeciesId");
+                        });
+
+                    b.OwnsOne("RealmEngine.Data.Entities.SpeciesTraits", "Traits", b1 =>
+                        {
+                            b1.Property<Guid>("SpeciesId");
+
+                            b1.Property<bool?>("Aquatic");
+
+                            b1.Property<bool?>("Beast");
+
+                            b1.Property<bool?>("Construct");
+
+                            b1.Property<bool?>("Darkvision");
+
+                            b1.Property<bool?>("Demon");
+
+                            b1.Property<bool?>("Dragon");
+
+                            b1.Property<bool?>("Elemental");
+
+                            b1.Property<bool?>("Flying");
+
+                            b1.Property<bool?>("Humanoid");
+
+                            b1.Property<bool?>("Undead");
+
+                            b1.HasKey("SpeciesId");
+
+                            b1.ToTable("Species");
+
+                            b1.ToJson("Traits");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SpeciesId");
+                        });
+
+                    b.Navigation("Stats")
+                        .IsRequired();
+
+                    b.Navigation("Traits")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.SpeciesAbilityPool", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.Ability", "Ability")
+                        .WithMany("SpeciesPool")
+                        .HasForeignKey("AbilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmEngine.Data.Entities.Species", "Species")
+                        .WithMany("AbilityPool")
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ability");
+
+                    b.Navigation("Species");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.Spell", b =>
                 {
                     b.OwnsOne("RealmEngine.Data.Entities.SpellStats", "Stats", b1 =>
@@ -3222,19 +3386,30 @@ namespace RealmUnbound.Server.Migrations
 
             modelBuilder.Entity("RealmEngine.Data.Entities.Ability", b =>
                 {
+                    b.Navigation("ArchetypePool");
+
                     b.Navigation("ClassUnlocks");
 
-                    b.Navigation("EnemyPool");
+                    b.Navigation("InstancePool");
 
-                    b.Navigation("NpcAssignments");
+                    b.Navigation("SpeciesPool");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.CharacterClass", b =>
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
+                {
+                    b.Navigation("AbilityPool");
+
+                    b.Navigation("Instances");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorClass", b =>
                 {
                     b.Navigation("AbilityUnlocks");
+
+                    b.Navigation("Archetypes");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Enemy", b =>
+            modelBuilder.Entity("RealmEngine.Data.Entities.ActorInstance", b =>
                 {
                     b.Navigation("AbilityPool");
                 });
@@ -3251,14 +3426,16 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Patterns");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Npc", b =>
-                {
-                    b.Navigation("Abilities");
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.Recipe", b =>
                 {
                     b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.Species", b =>
+                {
+                    b.Navigation("AbilityPool");
+
+                    b.Navigation("Archetypes");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
