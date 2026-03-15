@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RealmUnbound.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialSchema : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,6 +34,28 @@ namespace RealmUnbound.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Abilities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActorClasses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    HitDie = table.Column<int>(type: "integer", nullable: false),
+                    PrimaryStat = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Stats = table.Column<string>(type: "jsonb", nullable: false),
+                    Traits = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActorClasses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -118,28 +140,6 @@ namespace RealmUnbound.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Backgrounds", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CharacterClasses",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    HitDie = table.Column<int>(type: "integer", nullable: false),
-                    PrimaryStat = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Stats = table.Column<string>(type: "jsonb", nullable: false),
-                    Traits = table.Column<string>(type: "jsonb", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CharacterClasses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -339,28 +339,6 @@ namespace RealmUnbound.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Npcs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Faction = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Schedule = table.Column<string>(type: "jsonb", nullable: false),
-                    Stats = table.Column<string>(type: "jsonb", nullable: false),
-                    Traits = table.Column<string>(type: "jsonb", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Npcs", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Organizations",
                 columns: table => new
                 {
@@ -465,6 +443,26 @@ namespace RealmUnbound.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Species",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Stats = table.Column<string>(type: "jsonb", nullable: false),
+                    Traits = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Species", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Spells",
                 columns: table => new
                 {
@@ -558,6 +556,32 @@ namespace RealmUnbound.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Zones", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClassAbilityUnlocks",
+                columns: table => new
+                {
+                    ClassId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AbilityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    LevelRequired = table.Column<int>(type: "integer", nullable: false),
+                    Rank = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClassAbilityUnlocks", x => new { x.ClassId, x.AbilityId });
+                    table.ForeignKey(
+                        name: "FK_ClassAbilityUnlocks_Abilities_AbilityId",
+                        column: x => x.AbilityId,
+                        principalTable: "Abilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ClassAbilityUnlocks_ActorClasses_ClassId",
+                        column: x => x.ClassId,
+                        principalTable: "ActorClasses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -721,62 +745,6 @@ namespace RealmUnbound.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ClassAbilityUnlocks",
-                columns: table => new
-                {
-                    ClassId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AbilityId = table.Column<Guid>(type: "uuid", nullable: false),
-                    LevelRequired = table.Column<int>(type: "integer", nullable: false),
-                    Rank = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ClassAbilityUnlocks", x => new { x.ClassId, x.AbilityId });
-                    table.ForeignKey(
-                        name: "FK_ClassAbilityUnlocks_Abilities_AbilityId",
-                        column: x => x.AbilityId,
-                        principalTable: "Abilities",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ClassAbilityUnlocks_CharacterClasses_ClassId",
-                        column: x => x.ClassId,
-                        principalTable: "CharacterClasses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Enemies",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MinLevel = table.Column<int>(type: "integer", nullable: false),
-                    MaxLevel = table.Column<int>(type: "integer", nullable: false),
-                    LootTableId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Properties = table.Column<string>(type: "jsonb", nullable: false),
-                    Stats = table.Column<string>(type: "jsonb", nullable: false),
-                    Traits = table.Column<string>(type: "jsonb", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Enemies", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Enemies_LootTables_LootTableId",
-                        column: x => x.LootTableId,
-                        principalTable: "LootTables",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "LootTableEntries",
                 columns: table => new
                 {
@@ -842,30 +810,6 @@ namespace RealmUnbound.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "NpcAbilities",
-                columns: table => new
-                {
-                    NpcId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AbilityId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_NpcAbilities", x => new { x.NpcId, x.AbilityId });
-                    table.ForeignKey(
-                        name: "FK_NpcAbilities_Abilities_AbilityId",
-                        column: x => x.AbilityId,
-                        principalTable: "Abilities",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_NpcAbilities_Npcs_NpcId",
-                        column: x => x.NpcId,
-                        principalTable: "Npcs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RecipeIngredients",
                 columns: table => new
                 {
@@ -882,6 +826,80 @@ namespace RealmUnbound.Server.Migrations
                         name: "FK_RecipeIngredients_Recipes_RecipeId",
                         column: x => x.RecipeId,
                         principalTable: "Recipes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActorArchetypes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SpeciesId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ClassId = table.Column<Guid>(type: "uuid", nullable: true),
+                    BackgroundId = table.Column<Guid>(type: "uuid", nullable: true),
+                    MinLevel = table.Column<int>(type: "integer", nullable: false),
+                    MaxLevel = table.Column<int>(type: "integer", nullable: false),
+                    LootTableId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Stats = table.Column<string>(type: "jsonb", nullable: false),
+                    Traits = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActorArchetypes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActorArchetypes_ActorClasses_ClassId",
+                        column: x => x.ClassId,
+                        principalTable: "ActorClasses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ActorArchetypes_Backgrounds_BackgroundId",
+                        column: x => x.BackgroundId,
+                        principalTable: "Backgrounds",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ActorArchetypes_LootTables_LootTableId",
+                        column: x => x.LootTableId,
+                        principalTable: "LootTables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ActorArchetypes_Species_SpeciesId",
+                        column: x => x.SpeciesId,
+                        principalTable: "Species",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SpeciesAbilityPools",
+                columns: table => new
+                {
+                    SpeciesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AbilityId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpeciesAbilityPools", x => new { x.SpeciesId, x.AbilityId });
+                    table.ForeignKey(
+                        name: "FK_SpeciesAbilityPools_Abilities_AbilityId",
+                        column: x => x.AbilityId,
+                        principalTable: "Abilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SpeciesAbilityPools_Species_SpeciesId",
+                        column: x => x.SpeciesId,
+                        principalTable: "Species",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -915,26 +933,85 @@ namespace RealmUnbound.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EnemyAbilityPools",
+                name: "ActorInstances",
                 columns: table => new
                 {
-                    EnemyId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ArchetypeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    LevelOverride = table.Column<int>(type: "integer", nullable: true),
+                    LootTableOverride = table.Column<Guid>(type: "uuid", nullable: true),
+                    FactionOverride = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    StatOverrides = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActorInstances", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActorInstances_ActorArchetypes_ArchetypeId",
+                        column: x => x.ArchetypeId,
+                        principalTable: "ActorArchetypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ActorInstances_LootTables_LootTableOverride",
+                        column: x => x.LootTableOverride,
+                        principalTable: "LootTables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ArchetypeAbilityPools",
+                columns: table => new
+                {
+                    ArchetypeId = table.Column<Guid>(type: "uuid", nullable: false),
                     AbilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     UseChance = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EnemyAbilityPools", x => new { x.EnemyId, x.AbilityId });
+                    table.PrimaryKey("PK_ArchetypeAbilityPools", x => new { x.ArchetypeId, x.AbilityId });
                     table.ForeignKey(
-                        name: "FK_EnemyAbilityPools_Abilities_AbilityId",
+                        name: "FK_ArchetypeAbilityPools_Abilities_AbilityId",
                         column: x => x.AbilityId,
                         principalTable: "Abilities",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EnemyAbilityPools_Enemies_EnemyId",
-                        column: x => x.EnemyId,
-                        principalTable: "Enemies",
+                        name: "FK_ArchetypeAbilityPools_ActorArchetypes_ArchetypeId",
+                        column: x => x.ArchetypeId,
+                        principalTable: "ActorArchetypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InstanceAbilityPools",
+                columns: table => new
+                {
+                    InstanceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AbilityId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstanceAbilityPools", x => new { x.InstanceId, x.AbilityId });
+                    table.ForeignKey(
+                        name: "FK_InstanceAbilityPools_Abilities_AbilityId",
+                        column: x => x.AbilityId,
+                        principalTable: "Abilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InstanceAbilityPools_ActorInstances_InstanceId",
+                        column: x => x.InstanceId,
+                        principalTable: "ActorInstances",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -961,6 +1038,74 @@ namespace RealmUnbound.Server.Migrations
                 table: "Abilities",
                 columns: new[] { "TypeKey", "Slug" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorArchetypes_BackgroundId",
+                table: "ActorArchetypes",
+                column: "BackgroundId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorArchetypes_ClassId",
+                table: "ActorArchetypes",
+                column: "ClassId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorArchetypes_LootTableId",
+                table: "ActorArchetypes",
+                column: "LootTableId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorArchetypes_SpeciesId",
+                table: "ActorArchetypes",
+                column: "SpeciesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorArchetypes_TypeKey",
+                table: "ActorArchetypes",
+                column: "TypeKey");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorArchetypes_TypeKey_Slug",
+                table: "ActorArchetypes",
+                columns: new[] { "TypeKey", "Slug" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorClasses_TypeKey",
+                table: "ActorClasses",
+                column: "TypeKey");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorClasses_TypeKey_Slug",
+                table: "ActorClasses",
+                columns: new[] { "TypeKey", "Slug" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorInstances_ArchetypeId",
+                table: "ActorInstances",
+                column: "ArchetypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorInstances_LootTableOverride",
+                table: "ActorInstances",
+                column: "LootTableOverride");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorInstances_TypeKey",
+                table: "ActorInstances",
+                column: "TypeKey");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActorInstances_TypeKey_Slug",
+                table: "ActorInstances",
+                columns: new[] { "TypeKey", "Slug" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ArchetypeAbilityPools_AbilityId",
+                table: "ArchetypeAbilityPools",
+                column: "AbilityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Armors_TypeKey",
@@ -1022,17 +1167,6 @@ namespace RealmUnbound.Server.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CharacterClasses_TypeKey",
-                table: "CharacterClasses",
-                column: "TypeKey");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CharacterClasses_TypeKey_Slug",
-                table: "CharacterClasses",
-                columns: new[] { "TypeKey", "Slug" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Characters_AccountId_SlotIndex",
                 table: "Characters",
                 columns: new[] { "AccountId", "SlotIndex" },
@@ -1077,30 +1211,14 @@ namespace RealmUnbound.Server.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enemies_LootTableId",
-                table: "Enemies",
-                column: "LootTableId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Enemies_TypeKey",
-                table: "Enemies",
-                column: "TypeKey");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Enemies_TypeKey_Slug",
-                table: "Enemies",
-                columns: new[] { "TypeKey", "Slug" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EnemyAbilityPools_AbilityId",
-                table: "EnemyAbilityPools",
-                column: "AbilityId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_HallOfFameEntries_FameScore",
                 table: "HallOfFameEntries",
                 column: "FameScore");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstanceAbilityPools_AbilityId",
+                table: "InstanceAbilityPools",
+                column: "AbilityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Items_TypeKey",
@@ -1169,22 +1287,6 @@ namespace RealmUnbound.Server.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_NpcAbilities_AbilityId",
-                table: "NpcAbilities",
-                column: "AbilityId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Npcs_TypeKey",
-                table: "Npcs",
-                column: "TypeKey");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Npcs_TypeKey_Slug",
-                table: "Npcs",
-                columns: new[] { "TypeKey", "Slug" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Organizations_TypeKey",
                 table: "Organizations",
                 column: "TypeKey");
@@ -1245,6 +1347,22 @@ namespace RealmUnbound.Server.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Species_TypeKey",
+                table: "Species",
+                column: "TypeKey");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Species_TypeKey_Slug",
+                table: "Species",
+                columns: new[] { "TypeKey", "Slug" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpeciesAbilityPools_AbilityId",
+                table: "SpeciesAbilityPools",
+                column: "AbilityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Spells_TypeKey",
                 table: "Spells",
                 column: "TypeKey");
@@ -1299,6 +1417,9 @@ namespace RealmUnbound.Server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "ArchetypeAbilityPools");
+
+            migrationBuilder.DropTable(
                 name: "Armors");
 
             migrationBuilder.DropTable(
@@ -1317,9 +1438,6 @@ namespace RealmUnbound.Server.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Backgrounds");
-
-            migrationBuilder.DropTable(
                 name: "ClassAbilityUnlocks");
 
             migrationBuilder.DropTable(
@@ -1332,13 +1450,13 @@ namespace RealmUnbound.Server.Migrations
                 name: "Enchantments");
 
             migrationBuilder.DropTable(
-                name: "EnemyAbilityPools");
-
-            migrationBuilder.DropTable(
                 name: "GameConfigs");
 
             migrationBuilder.DropTable(
                 name: "HallOfFameEntries");
+
+            migrationBuilder.DropTable(
+                name: "InstanceAbilityPools");
 
             migrationBuilder.DropTable(
                 name: "Items");
@@ -1359,9 +1477,6 @@ namespace RealmUnbound.Server.Migrations
                 name: "NamePatterns");
 
             migrationBuilder.DropTable(
-                name: "NpcAbilities");
-
-            migrationBuilder.DropTable(
                 name: "Organizations");
 
             migrationBuilder.DropTable(
@@ -1378,6 +1493,9 @@ namespace RealmUnbound.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "Skills");
+
+            migrationBuilder.DropTable(
+                name: "SpeciesAbilityPools");
 
             migrationBuilder.DropTable(
                 name: "Spells");
@@ -1398,22 +1516,16 @@ namespace RealmUnbound.Server.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "CharacterClasses");
-
-            migrationBuilder.DropTable(
-                name: "Enemies");
+                name: "ActorInstances");
 
             migrationBuilder.DropTable(
                 name: "NamePatternSets");
 
             migrationBuilder.DropTable(
-                name: "Abilities");
-
-            migrationBuilder.DropTable(
-                name: "Npcs");
-
-            migrationBuilder.DropTable(
                 name: "Recipes");
+
+            migrationBuilder.DropTable(
+                name: "Abilities");
 
             migrationBuilder.DropTable(
                 name: "Characters");
@@ -1422,10 +1534,22 @@ namespace RealmUnbound.Server.Migrations
                 name: "Zones");
 
             migrationBuilder.DropTable(
-                name: "LootTables");
+                name: "ActorArchetypes");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "ActorClasses");
+
+            migrationBuilder.DropTable(
+                name: "Backgrounds");
+
+            migrationBuilder.DropTable(
+                name: "LootTables");
+
+            migrationBuilder.DropTable(
+                name: "Species");
         }
     }
 }
