@@ -126,85 +126,75 @@
                                 HorizontalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Content tree -->
-                    <TreeView Grid.Row="0"
-                              ItemsSource="{Binding TreeNodes}"
-                              SelectedItem="{Binding SelectedNode}"
-                              Background="Transparent"
-                              BorderThickness="0"
-                              Margin="0,4,0,0"
-                              IsVisible="{Binding IsTreeVisible}">
-
-                        <TreeView.Styles>
-                            <Style Selector="TreeViewItem">
-                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                                <Setter Property="Padding" Value="2,3" />
+                    <!-- Content navigation: domain list with inline chips on selection -->
+                    <ListBox Grid.Row="0"
+                             ItemsSource="{Binding TreeNodes}"
+                             SelectedItem="{Binding SelectedDomainGroup, Mode=TwoWay}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="4,4,4,4"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             IsVisible="{Binding IsTreeVisible}">
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,1" />
+                                <Setter Property="CornerRadius" Value="6" />
                             </Style>
-                            <!-- Replace FluentAvalonia's glyph-based toggle with a path chevron
-                                 so it always renders correctly against our dark pane background. -->
-                            <Style Selector="TreeViewItem /template/ ToggleButton">
-                                <Setter Property="Width" Value="16" />
-                                <Setter Property="Template">
-                                    <ControlTemplate>
-                                        <Border Background="Transparent" Width="16"
-                                                VerticalAlignment="Stretch">
-                                            <Path HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
-                                                  Width="7" Height="5"
-                                                  Stretch="Uniform"
-                                                  Stroke="#5a5a5a"
-                                                  StrokeThickness="1.5"
-                                                  StrokeLineCap="Round"
-                                                  Fill="Transparent"
-                                                  Data="M 0 0 L 5 4 L 10 0"
-                                                  RenderTransformOrigin="50%,50%"
-                                                  RenderTransform="rotate(-90deg)" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter>
+                            <Style Selector="ListBoxItem:selected">
+                                <Setter Property="Background" Value="#1d3145" />
                             </Style>
-                            <Style Selector="TreeViewItem /template/ ToggleButton:checked /template/ Path">
-                                <Setter Property="Stroke" Value="#909090" />
-                                <Setter Property="RenderTransform" Value="rotate(0deg)" />
+                            <Style Selector="ListBoxItem:not(:selected):pointerover">
+                                <Setter Property="Background" Value="#1c2530" />
                             </Style>
-                            <Style Selector="TreeViewItem /template/ ToggleButton:pointerover /template/ Path">
-                                <Setter Property="Stroke" Value="#cccccc" />
-                            </Style>
-                        </TreeView.Styles>
-
-                        <TreeView.DataTemplates>
-                            <TreeDataTemplate DataType="vm:FileTreeNodeViewModel"
-                                             ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <StackPanel.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="New Entity"
-                                                      Command="{Binding NewEntityCommand}"
-                                                      IsVisible="{Binding NewEntityCommand, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                                            <MenuItem Header="Delete"
-                                                      Command="{Binding DeleteCommand}"
-                                                      IsVisible="{Binding DeleteCommand, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                                        </ContextMenu>
-                                    </StackPanel.ContextMenu>
-                                    <!-- Game icon for top-level domain nodes -->
-                                    <Image Width="16" Height="16"
-                                           VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                           IsVisible="{Binding IconPath, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                           Source="{Binding IconPath, Converter={x:Static converters:AvaresBitmapConverter.Instance}}" />
-                                    <!-- Fallback glyph for typekey and entity leaf nodes -->
-                                    <TextBlock Text="{Binding Icon}"
-                                               Foreground="#555" FontSize="10"
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="vm:FileTreeNodeViewModel">
+                                <StackPanel>
+                                    <!-- Domain group header row -->
+                                    <Grid ColumnDefinitions="Auto,*" Margin="8,7,8,7">
+                                        <Image Grid.Column="0"
+                                               Width="18" Height="18"
                                                VerticalAlignment="Center"
-                                               IsVisible="{Binding IconPath, Converter={x:Static ObjectConverters.IsNull}}" />
-                                    <TextBlock Text="{Binding Name}"
-                                               FontSize="13" Foreground="#ccc"
-                                               VerticalAlignment="Center" />
+                                               Opacity="0.75"
+                                               Source="{Binding IconPath, Converter={x:Static converters:AvaresBitmapConverter.Instance}}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   FontSize="13" Foreground="#c8c8c8"
+                                                   VerticalAlignment="Center"
+                                                   Margin="10,0,0,0" />
+                                    </Grid>
+                                    <!-- Type key chips — visible only when this row is selected -->
+                                    <ItemsControl ItemsSource="{Binding Children}"
+                                                  Margin="8,0,8,8"
+                                                  IsVisible="{Binding $parent[ListBoxItem].IsSelected}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:FileTreeNodeViewModel">
+                                                <StackPanel Orientation="Horizontal" Spacing="1" Margin="0,2,3,0">
+                                                    <Button Content="{Binding Name}"
+                                                            Command="{Binding #mainWindow.DataContext.OpenTypeKeyCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#2d2d2d" Foreground="#aaa"
+                                                            FontSize="11" Padding="8,4"
+                                                            CornerRadius="10,0,0,10" />
+                                                    <Button Content="+"
+                                                            Command="{Binding NewEntityCommand}"
+                                                            Background="#2d2d2d" Foreground="#555"
+                                                            FontSize="11" Padding="5,4"
+                                                            CornerRadius="0,10,10,0" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
-                            </TreeDataTemplate>
-                        </TreeView.DataTemplates>
-
-                    </TreeView>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
                     <!-- Pane footer: DB status -->
                     <Border Grid.Row="1" Background="#161616" Padding="10,6"

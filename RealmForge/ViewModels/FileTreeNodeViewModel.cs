@@ -34,4 +34,5 @@ public class FileTreeNodeViewModel : ReactiveObject
 
     public string  Icon     => IsDirectory ? "▸" : "·";
     public string? IconPath { get; init; }
+    public int EntityCount  => Children.Sum(c => c.Children.Count);
 }
