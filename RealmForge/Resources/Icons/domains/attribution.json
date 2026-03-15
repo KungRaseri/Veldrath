@@ -1,0 +1,32 @@
+{
+  "license": "CC BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "source": "https://game-icons.net",
+  "icons": [
+    { "file": "act-actors.png",    "original": "crossed-swords",     "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "act-items.png",     "original": "chest",               "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "act-world.png",     "original": "world",               "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "act-powers.png",    "original": "magic-swirl",         "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "act-systems.png",   "original": "cog",                 "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "species.png",       "original": "frankenstein-creature","artist": "Lorc",       "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "classes.png",       "original": "private-first-class", "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "backgrounds.png",   "original": "scroll-quill",        "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "skills.png",        "original": "skills",              "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "archetypes.png",    "original": "organigram",          "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "instances.png",     "original": "meeple-group",        "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "weapons.png",       "original": "crossed-swords",      "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "armor.png",         "original": "leather-armor",       "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "materials.png",     "original": "stone-crafting",      "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "material-props.png","original": "gears",               "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "enchantments.png",  "original": "magic-swirl",         "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "consumables.png",   "original": "health-potion",       "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "locations.png",     "original": "castle",              "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "organizations.png", "original": "meeple-army",         "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "quests.png",        "original": "treasure-map",        "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "dialogues.png",     "original": "chat-bubble",         "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "abilities.png",     "original": "magic-palm",          "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "spells.png",        "original": "spell-book",          "artist": "Delapouite",  "artist_url": "https://delapouite.com" },
+    { "file": "loot-tables.png",   "original": "knapsack",            "artist": "Lorc",        "artist_url": "https://lorcblog.blogspot.com" },
+    { "file": "recipes.png",       "original": "crafting",            "artist": "Delapouite",  "artist_url": "https://delapouite.com" }
+  ]
+}

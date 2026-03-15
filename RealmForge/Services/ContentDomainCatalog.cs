@@ -167,4 +167,41 @@ public static class ContentDomainCatalog
         new("recipes", "Recipes", "recipes", "alchemy",  "Recipes", "Alchemy"),
         new("recipes", "Recipes", "recipes", "cooking",  "Recipes", "Cooking"),
     ];
+    /// <summary>Maps a DomainGroup key to one of the five activity bar sections.</summary>
+    public static string GetActivityKey(string domainGroup) => domainGroup switch
+    {
+        var g when g.StartsWith("actors/") => "actors",
+        var g when g.StartsWith("items/")  => "items",
+        var g when g.StartsWith("world/")  => "world",
+        "abilities" or "spells"            => "powers",
+        _                                  => "systems",
+    };
+
+    private const string IconBase = "avares://RealmForge/Resources/Icons/domains";
+
+    /// <summary>Returns an avares:// URI string for the game icon representing a domain group tree node.</summary>
+    public static string GetDomainIconPath(string domainGroup) => domainGroup switch
+    {
+        "actors/species"            => $"{IconBase}/species.png",
+        "actors/classes"            => $"{IconBase}/classes.png",
+        "actors/backgrounds"        => $"{IconBase}/backgrounds.png",
+        "actors/skills"             => $"{IconBase}/skills.png",
+        "actors/archetypes"         => $"{IconBase}/archetypes.png",
+        "actors/instances"          => $"{IconBase}/instances.png",
+        "items/weapons"             => $"{IconBase}/weapons.png",
+        "items/armor"               => $"{IconBase}/armor.png",
+        "items/materials"           => $"{IconBase}/materials.png",
+        "items/material-properties" => $"{IconBase}/material-props.png",
+        "items/enchantments"        => $"{IconBase}/enchantments.png",
+        "items/consumables"         => $"{IconBase}/consumables.png",
+        "world/locations"           => $"{IconBase}/locations.png",
+        "world/organizations"       => $"{IconBase}/organizations.png",
+        "world/quests"              => $"{IconBase}/quests.png",
+        "world/dialogues"           => $"{IconBase}/dialogues.png",
+        "abilities"                 => $"{IconBase}/abilities.png",
+        "spells"                    => $"{IconBase}/spells.png",
+        "loot-tables"               => $"{IconBase}/loot-tables.png",
+        "recipes"                   => $"{IconBase}/recipes.png",
+        _                           => $"{IconBase}/skills.png",
+    };
 }

@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:RealmForge.ViewModels"
         xmlns:views="using:RealmForge.Views"
+        xmlns:converters="using:RealmForge.Converters"
         x:Class="RealmForge.Views.MainWindow"
         x:Name="mainWindow"
         Title="RealmForge — Content Editor"
@@ -42,17 +43,59 @@
                                   IsChecked="{Binding IsDarkMode}"
                                   Background="Transparent"
                                   Padding="8,4" />
+                    <Button Content="…"
+                            Command="{Binding ShowAboutCommand}"
+                            Background="Transparent" Foreground="#555"
+                            Padding="8,4" CornerRadius="4"
+                            ToolTip.Tip="About RealmForge" />
                 </StackPanel>
 
             </Grid>
         </Border>
 
-        <!-- ── SplitView ─────────────────────────────────────────────────── -->
-        <SplitView Grid.Row="1"
-                   IsPaneOpen="{Binding IsPaneOpen}"
-                   DisplayMode="Inline"
-                   OpenPaneLength="280"
-                   PaneBackground="#1b1b1b">
+        <!-- ── Main content area ────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="48,*">
+
+            <!-- ── Activity bar ─────────────────────────────────────────── -->
+            <Border Grid.Column="0" Background="#1b1b1b"
+                    BorderThickness="0,0,1,0" BorderBrush="#2d2d2d">
+                <ItemsControl ItemsSource="{Binding ActivitySections}"
+                              Margin="0,6,0,0" VerticalAlignment="Top">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:ActivitySectionViewModel">
+                            <Panel Height="48" Width="48">
+                                <Rectangle Width="2" HorizontalAlignment="Left" Fill="#6caed8"
+                                           IsVisible="{Binding IsActive}" />
+                                <Button Command="{Binding #mainWindow.DataContext.SelectActivityCommand}"
+                                        CommandParameter="{Binding Key}"
+                                        Background="Transparent"
+                                        Width="48" Height="48"
+                                        Padding="0"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        CornerRadius="0"
+                                        ToolTip.Tip="{Binding Label}">
+                                    <Image Width="24" Height="24"
+                                           Source="{Binding IconPath, Converter={x:Static converters:AvaresBitmapConverter.Instance}}"
+                                           Classes.active="{Binding IsActive}">
+                                        <Image.Styles>
+                                            <Style Selector="Image"><Setter Property="Opacity" Value="0.4" /></Style>
+                                            <Style Selector="Image.active"><Setter Property="Opacity" Value="0.9" /></Style>
+                                        </Image.Styles>
+                                    </Image>
+                                </Button>
+                            </Panel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <!-- ── SplitView: sidebar tree + content ──────────────────────── -->
+            <SplitView Grid.Column="1"
+                       IsPaneOpen="{Binding IsPaneOpen}"
+                       DisplayMode="Inline"
+                       OpenPaneLength="280"
+                       PaneBackground="#1b1b1b">
 
             <!-- ── Left pane: content tree ─────────────────────────────── -->
             <SplitView.Pane>
@@ -97,6 +140,36 @@
                                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                                 <Setter Property="Padding" Value="2,3" />
                             </Style>
+                            <!-- Replace FluentAvalonia's glyph-based toggle with a path chevron
+                                 so it always renders correctly against our dark pane background. -->
+                            <Style Selector="TreeViewItem /template/ ToggleButton">
+                                <Setter Property="Width" Value="16" />
+                                <Setter Property="Template">
+                                    <ControlTemplate>
+                                        <Border Background="Transparent" Width="16"
+                                                VerticalAlignment="Stretch">
+                                            <Path HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Width="7" Height="5"
+                                                  Stretch="Uniform"
+                                                  Stroke="#5a5a5a"
+                                                  StrokeThickness="1.5"
+                                                  StrokeLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Data="M 0 0 L 5 4 L 10 0"
+                                                  RenderTransformOrigin="50%,50%"
+                                                  RenderTransform="rotate(-90deg)" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter>
+                            </Style>
+                            <Style Selector="TreeViewItem /template/ ToggleButton:checked /template/ Path">
+                                <Setter Property="Stroke" Value="#909090" />
+                                <Setter Property="RenderTransform" Value="rotate(0deg)" />
+                            </Style>
+                            <Style Selector="TreeViewItem /template/ ToggleButton:pointerover /template/ Path">
+                                <Setter Property="Stroke" Value="#cccccc" />
+                            </Style>
                         </TreeView.Styles>
 
                         <TreeView.DataTemplates>
@@ -113,9 +186,17 @@
                                                       IsVisible="{Binding DeleteCommand, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                         </ContextMenu>
                                     </StackPanel.ContextMenu>
+                                    <!-- Game icon for top-level domain nodes -->
+                                    <Image Width="16" Height="16"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           IsVisible="{Binding IconPath, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                           Source="{Binding IconPath, Converter={x:Static converters:AvaresBitmapConverter.Instance}}" />
+                                    <!-- Fallback glyph for typekey and entity leaf nodes -->
                                     <TextBlock Text="{Binding Icon}"
                                                Foreground="#555" FontSize="10"
-                                               VerticalAlignment="Center" />
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IconPath, Converter={x:Static ObjectConverters.IsNull}}" />
                                     <TextBlock Text="{Binding Name}"
                                                FontSize="13" Foreground="#ccc"
                                                VerticalAlignment="Center" />
@@ -162,6 +243,8 @@
             </ContentControl>
 
         </SplitView>
+
+        </Grid>
 
     </Grid>
 </Window>

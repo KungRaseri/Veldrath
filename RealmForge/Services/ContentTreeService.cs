@@ -37,11 +37,17 @@ public class ContentTreeService(IServiceScopeFactory scopeFactory, ILogger<Conte
         foreach (var domainGroup in ContentDomainCatalog.All.GroupBy(e => e.DomainGroup))
         {
             var domainEntry = domainGroup.First();
+            var rawLabel    = domainEntry.DomainLabel;
+            var sepIdx      = rawLabel.IndexOf(" › ", StringComparison.Ordinal);
+            var shortName   = sepIdx >= 0 ? rawLabel[(sepIdx + 3)..] : rawLabel;
+
             var domainNode = new FileTreeNodeViewModel
             {
-                Name        = domainEntry.DomainLabel,
+                Name        = shortName,
                 FullPath    = domainGroup.Key,
                 IsDirectory = true,
+                IconPath    = ContentDomainCatalog.GetDomainIconPath(domainGroup.Key),
+                ActivityKey = ContentDomainCatalog.GetActivityKey(domainGroup.Key),
             };
 
             foreach (var entry in domainGroup)
