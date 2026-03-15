@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             x:Class="RealmForge.Views.AboutView"
+             Width="540">
+
+    <Design.DataContext>
+        <vm:AboutViewModel />
+    </Design.DataContext>
+
+    <Border Background="#1e1e1e" CornerRadius="8">
+        <StackPanel Spacing="0">
+
+            <!-- Header -->
+            <Border Background="#252526" Padding="24,20"
+                    CornerRadius="8,8,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding AppName}"
+                               FontSize="22" FontWeight="Bold"
+                               Foreground="#e0e0e0" />
+                    <TextBlock Text="{Binding AppVersion}"
+                               FontSize="12" Foreground="#555" />
+                    <TextBlock Text="{Binding AppDescription}"
+                               FontSize="13" Foreground="#888"
+                               TextWrapping="Wrap"
+                               Margin="0,8,0,0" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="20" Margin="24,20,24,24">
+
+                <!-- Icon Attribution -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Icon Attribution"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="#c0c0c0" />
+                    <Border Background="#161616" CornerRadius="6" Padding="1">
+                        <Border Background="#252526" CornerRadius="5" Padding="14,10">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,*,*">
+                                    <TextBlock Grid.Column="0" Text="Artist"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Foreground="#555" />
+                                    <TextBlock Grid.Column="1" Text="URL"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Foreground="#555" />
+                                    <TextBlock Grid.Column="2" Text="Icons used"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Foreground="#555" />
+                                </Grid>
+                                <Separator Background="#333" Height="1" Margin="0,2" />
+                                <ItemsControl ItemsSource="{Binding IconCredits}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:AboutViewModel+IconCredit">
+                                            <Grid ColumnDefinitions="*,*,*" Margin="0,3,0,0">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Artist}"
+                                                           FontSize="12" Foreground="#ccc"
+                                                           VerticalAlignment="Top" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Url}"
+                                                           FontSize="11" Foreground="#5a8fbf"
+                                                           TextWrapping="Wrap"
+                                                           VerticalAlignment="Top" />
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding Icons}"
+                                                           FontSize="11" Foreground="#666"
+                                                           TextWrapping="Wrap"
+                                                           VerticalAlignment="Top" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+
+                    <TextBlock FontSize="11" Foreground="#444" TextWrapping="Wrap">
+                        <Run Text="Icons sourced from " />
+                        <Run Text="game-icons.net" FontWeight="SemiBold" Foreground="#5a5a5a" />
+                        <Run Text=" and licensed under " />
+                        <Run Text="Creative Commons Attribution 3.0 (CC BY 3.0)." FontWeight="SemiBold" Foreground="#5a5a5a" />
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- License section -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="License"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="#c0c0c0" />
+                    <Border Background="#252526" CornerRadius="5" Padding="14,10">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="RealmForge — Content Editor for RealmEngine"
+                                       FontSize="12" Foreground="#888" />
+                            <TextBlock Text="RealmEngine is licensed under the MIT License."
+                                       FontSize="12" Foreground="#666" />
+                            <TextBlock Text="See THIRD-PARTY-NOTICES.md in the repository for full third-party attribution."
+                                       FontSize="11" Foreground="#444"
+                                       TextWrapping="Wrap" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+            </StackPanel>
+        </StackPanel>
+    </Border>
+
+</UserControl>

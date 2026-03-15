@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
+using Avalonia.Controls;
 using ReactiveUI;
 using RealmForge.Services;
+using RealmForge.Views;
 using Serilog;
 
 namespace RealmForge.ViewModels;
@@ -17,6 +19,8 @@ public class MainWindowViewModel : ReactiveObject
     private FileTreeNodeViewModel? _selectedNode;
     private string _dbStatus = "Connecting…";
     private string? _treePaneMessage;
+    private string _selectedActivityKey = "actors";
+    private Dictionary<string, List<FileTreeNodeViewModel>> _nodesByActivity = new();
 
     public MainWindowViewModel(
         EditorSettingsService settingsService,
@@ -26,9 +30,31 @@ public class MainWindowViewModel : ReactiveObject
         _contentEditorService = contentEditorService;
         _contentTreeService = contentTreeService;
 
-        TogglePaneCommand = ReactiveCommand.Create(() => { IsPaneOpen = !IsPaneOpen; });
-        ToggleThemeCommand = ReactiveCommand.Create(() => { IsDarkMode = !IsDarkMode; });
-        RefreshTreeCommand = ReactiveCommand.CreateFromTask(LoadTreeAsync);
+        const string iconBase = "avares://RealmForge/Resources/Icons/domains";
+        ActivitySections =
+        [
+            new("actors",  "Actors",  $"{iconBase}/act-actors.png"),
+            new("items",   "Items",   $"{iconBase}/act-items.png"),
+            new("world",   "World",   $"{iconBase}/act-world.png"),
+            new("powers",  "Powers",  $"{iconBase}/act-powers.png"),
+            new("systems", "Systems", $"{iconBase}/act-systems.png"),
+        ];
+        ActivitySections[0].IsActive = true;
+
+        TogglePaneCommand   = ReactiveCommand.Create(() => { IsPaneOpen = !IsPaneOpen; });
+        ToggleThemeCommand  = ReactiveCommand.Create(() => { IsDarkMode = !IsDarkMode; });
+        RefreshTreeCommand  = ReactiveCommand.CreateFromTask(LoadTreeAsync);
+        ShowAboutCommand    = ReactiveCommand.CreateFromTask(ShowAboutAsync);
+        SelectActivityCommand = ReactiveCommand.Create<string>(key =>
+        {
+            if (key == _selectedActivityKey)
+                IsPaneOpen = !IsPaneOpen;
+            else
+            {
+                SelectedActivityKey = key;
+                IsPaneOpen = true;
+            }
+        });
 
         CurrentPage = new HomeViewModel();
         _ = LoadSettingsAsync(settingsService);
@@ -87,6 +113,20 @@ public class MainWindowViewModel : ReactiveObject
     /// <summary>True when the tree should be shown — DB is reachable and not currently loading.</summary>
     public bool IsTreeVisible => !_isLoadingTree && !HasTreePaneMessage;
 
+    public string SelectedActivityKey
+    {
+        get => _selectedActivityKey;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedActivityKey, value);
+            foreach (var s in ActivitySections)
+                s.IsActive = s.Key == value;
+            FilterTreeNodes();
+        }
+    }
+
+    public IReadOnlyList<ActivitySectionViewModel> ActivitySections { get; }
+
     /// <summary>
     /// Bound to TreeView.SelectedItem — opens leaf nodes in the editor, TypeKey directories in the list.
     /// </summary>
@@ -108,6 +148,8 @@ public class MainWindowViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> TogglePaneCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleThemeCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTreeCommand { get; }
+    public ReactiveCommand<string, Unit> SelectActivityCommand { get; }
+    public ReactiveCommand<Unit, Unit> ShowAboutCommand { get; }
 
     public async Task LoadTreeAsync()
     {
@@ -116,17 +158,21 @@ public class MainWindowViewModel : ReactiveObject
         try
         {
             var nodes = await _contentTreeService.BuildTreeAsync();
-            TreeNodes.Clear();
+
+            // Wire commands for all nodes once, before grouping by activity
             foreach (var n in nodes)
-            {
                 WireNodeCommands(n);
-                TreeNodes.Add(n);
-            }
+
+            _nodesByActivity = nodes
+                .GroupBy(n => n.ActivityKey ?? "systems")
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             var entityCount = nodes.Sum(n => n.Children.Sum(c => c.Children.Count));
             DbStatus = entityCount == 0
                 ? "Connected — no entities yet"
                 : $"Connected · {entityCount} entities";
+
+            FilterTreeNodes();
         }
         catch (Exception ex)
         {
@@ -154,6 +200,14 @@ public class MainWindowViewModel : ReactiveObject
 
         foreach (var child in node.Children)
             WireNodeCommands(child);
+    }
+
+    private void FilterTreeNodes()
+    {
+        TreeNodes.Clear();
+        if (_nodesByActivity.TryGetValue(_selectedActivityKey, out var nodes))
+            foreach (var n in nodes)
+                TreeNodes.Add(n);
     }
 
     private async Task OpenEntityAsync(FileTreeNodeViewModel node)
@@ -214,8 +268,30 @@ public class MainWindowViewModel : ReactiveObject
         // Clear editor if it had the deleted entity open
         if (CurrentPage is EntityEditorViewModel editor && editor.EntityId == leafNode.EntityId)
             CurrentPage = new HomeViewModel();
+        _ = LoadTreeAsync();
+    }
 
-        await LoadTreeAsync();
+    private Window? _ownerWindow;
+
+    public void SetOwnerWindow(Window window) => _ownerWindow = window;
+
+    private async Task ShowAboutAsync()
+    {
+        var dialog = new Window
+        {
+            Title             = "About RealmForge",
+            Width             = 560,
+            SizeToContent     = SizeToContent.Height,
+            CanResize         = false,
+            SystemDecorations = Avalonia.Controls.SystemDecorations.Full,
+            Background        = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1e1e1e")),
+            Content           = new AboutView { DataContext = new AboutViewModel() },
+        };
+
+        if (_ownerWindow is not null)
+            await dialog.ShowDialog(_ownerWindow);
+        else
+            dialog.Show();
     }
 
     private async Task LoadSettingsAsync(EditorSettingsService settingsService)

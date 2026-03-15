@@ -18,6 +18,7 @@ public class FileTreeNodeViewModel : ReactiveObject
     public string? Domain      { get; init; }
     public string? TypeKey     { get; init; }
     public string? DomainLabel { get; init; }  // Human-readable domain for breadcrumbs
+    public string? ActivityKey { get; init; }  // Which activity bar section this node belongs to
 
     // Wired by MainWindowViewModel after tree load
     public ICommand? NewEntityCommand { get; set; }
@@ -31,5 +32,6 @@ public class FileTreeNodeViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
     }
 
-    public string Icon => IsDirectory ? "▶" : "·";
+    public string  Icon     => IsDirectory ? "▸" : "·";
+    public string? IconPath { get; init; }
 }
