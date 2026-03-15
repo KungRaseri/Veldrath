@@ -91,8 +91,9 @@ public class AuthService(
 
         await refreshTokenRepo.RevokeAsync(stored.Id, clientIp, newRefreshId, ct);
 
-        var (jwt, expiry) = GenerateJwt(user);
-        return (new AuthResponse(jwt, rawNew, expiry, user.Id, user.UserName!), null);
+        var isCurator = await userManager.IsInRoleAsync(user, "Curator");
+        var (jwt, expiry) = GenerateJwt(user, isCurator);
+        return (new AuthResponse(jwt, rawNew, expiry, user.Id, user.UserName!, isCurator), null);
     }
 
     public async Task RevokeAsync(
@@ -152,7 +153,8 @@ public class AuthService(
     private async Task<AuthResponse> IssueTokenPairAsync(
         PlayerAccount user, string clientIp, CancellationToken ct)
     {
-        var (jwt, expiry) = GenerateJwt(user);
+        var isCurator = await userManager.IsInRoleAsync(user, "Curator");
+        var (jwt, expiry) = GenerateJwt(user, isCurator);
         var (rawRefresh, hashRefresh) = GenerateRefreshToken();
         var refreshDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "30");
 
@@ -164,10 +166,10 @@ public class AuthService(
             CreatedByIp = clientIp,
         }, ct);
 
-        return new AuthResponse(jwt, rawRefresh, expiry, user.Id, user.UserName!);
+        return new AuthResponse(jwt, rawRefresh, expiry, user.Id, user.UserName!, isCurator);
     }
 
-    private (string Jwt, DateTimeOffset Expiry) GenerateJwt(PlayerAccount user)
+    private (string Jwt, DateTimeOffset Expiry) GenerateJwt(PlayerAccount user, bool isCurator = false)
     {
         var keyBytes = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
         var creds = new SigningCredentials(
@@ -177,17 +179,19 @@ public class AuthService(
         var expiryMinutes = int.Parse(config["Jwt:AccessTokenExpiryMinutes"] ?? "15");
         var expiry = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.UniqueName, user.UserName!),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
+        if (isCurator)
+            claims.Add(new Claim(ClaimTypes.Role, "Curator"));
 
         var token = new JwtSecurityToken(
             issuer: config["Jwt:Issuer"],
             audience: config["Jwt:Audience"],
-            claims: claims,
+            claims: claims.ToArray(),
             expires: expiry.UtcDateTime,
             signingCredentials: creds);
 

@@ -528,7 +528,83 @@
 				"clear": true
 			}
 		},
-
+		// ── RealmFoundry ──────────────────────────────────────────────────────
+		{
+			"label": "build-realmfoundry",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/RealmFoundry/RealmFoundry.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "build"
+		},
+		{
+			"label": "run-realmfoundry",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"${workspaceFolder}/RealmFoundry/RealmFoundry.csproj",
+				"--no-build"
+			],
+			"isBackground": true,
+			"dependsOn": "build-realmfoundry",
+			"problemMatcher": {
+				"pattern": { "regexp": "^.*$", "file": 1, "location": 2, "message": 3 },
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "RealmFoundry starting",
+					"endsPattern": "Now listening on:"
+				}
+			},
+			"presentation": {
+				"echo": true, "reveal": "always",
+				"focus": false, "panel": "dedicated", "clear": true
+			}
+		},
+		{
+			"label": "watch-realmfoundry",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"watch",
+				"run",
+				"--project",
+				"${workspaceFolder}/RealmFoundry/RealmFoundry.csproj",
+				"--non-interactive"
+			],
+			"isBackground": true,
+			"problemMatcher": "$msCompile",
+			"options": { "env": { "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true" } },
+			"presentation": {
+				"echo": true, "reveal": "always",
+				"focus": false, "panel": "dedicated", "clear": false
+			}
+		},
+		{
+			"label": "test-realmfoundry",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/RealmFoundry.Tests/RealmFoundry.Tests.csproj",
+				"--verbosity", "normal",
+				"--collect", "XPlat Code Coverage",
+				"--settings", "coverage.runsettings",
+				"--results-directory", "${workspaceFolder}/coverage-results"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "test",
+			"presentation": {
+				"echo": true, "reveal": "always",
+				"focus": false, "panel": "shared", "clear": true
+			}
+		},
 		// ── Docker ───────────────────────────────────────────────────────────────
 		{
 			"label": "docker-compose-up",

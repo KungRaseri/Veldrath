@@ -30,8 +30,10 @@ try
     var serverUrl = builder.Configuration["RealmUnbound:ServerUrl"]
         ?? throw new InvalidOperationException("RealmUnbound:ServerUrl is not configured.");
 
+    builder.Services.AddScoped<AuthRefreshHandler>();
     builder.Services.AddHttpClient<RealmFoundryApiClient>(client =>
-        client.BaseAddress = new Uri(serverUrl));
+        client.BaseAddress = new Uri(serverUrl))
+        .AddHttpMessageHandler<AuthRefreshHandler>();
 
     builder.Services.AddScoped<AuthStateService>();
 

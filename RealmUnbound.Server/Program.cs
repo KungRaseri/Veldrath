@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.RateLimiting;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -115,7 +116,18 @@ try
             };
         });
 
-    builder.Services.AddAuthorization();
+    builder.Services.AddAuthorization(options =>
+        options.AddPolicy("Curator", p => p.RequireRole("Curator")));
+
+    builder.Services.AddRateLimiter(opts =>
+    {
+        opts.AddFixedWindowLimiter("foundry-writes", o =>
+        {
+            o.Window = TimeSpan.FromMinutes(1);
+            o.PermitLimit = 5;
+        });
+        opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    });
 
     // ── OAuth providers ───────────────────────────────────────────────────────
     // Registered conditionally so the server starts cleanly when credentials are
@@ -195,21 +207,33 @@ try
     app.UseCors("AllowLocalClient");
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseRateLimiter();
 
     // Run any pending EF migrations on startup (creates DB on first run, updates schema on upgrade)
+    // Skip all migrations and seeding for non-Postgres providers (e.g. SQLite in test environments,
+    // which call EnsureCreated() on the test host after startup).
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
-        await services.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
+        var appDb = services.GetRequiredService<ApplicationDbContext>();
 
-        // ContentDbContext uses Npgsql-specific SQL (JSONB, etc.); only run migrations
-        // against PostgreSQL. Test environments swap in SQLite and call EnsureCreated() instead.
-        var contentDb = services.GetRequiredService<ContentDbContext>();
-        if (contentDb.Database.ProviderName?.Contains("Npgsql") == true)
-            await contentDb.Database.MigrateAsync();
+        if (appDb.Database.ProviderName?.Contains("Npgsql") == true)
+        {
+            await appDb.Database.MigrateAsync();
 
-        // Seed baseline content (idempotent — skips each table that already has rows).
-        await DatabaseSeeder.SeedAsync(services);
+            // ContentDbContext uses Npgsql-specific SQL (JSONB, etc.).
+            var contentDb = services.GetRequiredService<ContentDbContext>();
+            if (contentDb.Database.ProviderName?.Contains("Npgsql") == true)
+                await contentDb.Database.MigrateAsync();
+
+            // Seed baseline content (idempotent — skips each table that already has rows).
+            await DatabaseSeeder.SeedAsync(services);
+
+            // Ensure the Curator identity role exists (idempotent).
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            if (!await roleManager.RoleExistsAsync("Curator"))
+                await roleManager.CreateAsync(new IdentityRole<Guid>("Curator"));
+        }
     }
 
     // Auth, character, zone & content catalog endpoints

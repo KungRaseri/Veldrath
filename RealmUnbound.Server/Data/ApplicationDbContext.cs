@@ -25,6 +25,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<ZoneSession> ZoneSessions => Set<ZoneSession>();
     public DbSet<FoundrySubmission> FoundrySubmissions => Set<FoundrySubmission>();
     public DbSet<FoundryVote> FoundryVotes => Set<FoundryVote>();
+    public DbSet<FoundryNotification> FoundryNotifications => Set<FoundryNotification>();
 
     // Engine entities — stored in server DB so character saves survive reconnect.
     public DbSet<SaveGameRecord> SaveGames => Set<SaveGameRecord>();
@@ -119,9 +120,25 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .HasForeignKey(s => s.ReviewerId)
              .IsRequired(false)
              .OnDelete(DeleteBehavior.SetNull);
+            e.Property(s => s.Description).HasMaxLength(2000);
             e.HasIndex(s => s.Status);
             e.HasIndex(s => s.ContentType);
             e.HasIndex(s => s.CreatedAt);
+        });
+
+        builder.Entity<FoundryNotification>(e =>
+        {
+            e.HasKey(n => n.Id);
+            e.Property(n => n.Message).HasMaxLength(500);
+            e.HasOne(n => n.Recipient)
+             .WithMany()
+             .HasForeignKey(n => n.RecipientId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(n => n.Submission)
+             .WithMany()
+             .HasForeignKey(n => n.SubmissionId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(n => new { n.RecipientId, n.IsRead });
         });
 
         builder.Entity<FoundryVote>(e =>

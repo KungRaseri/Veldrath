@@ -295,6 +295,41 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubmissionId");
+
+                    b.HasIndex("RecipientId", "IsRead");
+
+                    b.ToTable("FoundryNotifications");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -307,6 +342,10 @@ namespace RealmUnbound.Server.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Payload")
                         .IsRequired()
@@ -675,6 +714,25 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryNotification", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.FoundrySubmission", "Submission")
+                        .WithMany()
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Recipient");
+
+                    b.Navigation("Submission");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>

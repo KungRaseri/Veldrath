@@ -34,17 +34,25 @@ public sealed class RealmFoundryApiClient(HttpClient http)
 
     // ── Submissions ───────────────────────────────────────────────────────
 
-    public async Task<IReadOnlyList<FoundrySubmissionSummaryDto>> GetSubmissionsAsync(
-        string? status = null, string? contentType = null, CancellationToken ct = default)
+    public async Task<PagedResult<FoundrySubmissionSummaryDto>> GetSubmissionsAsync(
+        string? status = null, string? contentType = null,
+        string? search = null, int page = 1, int pageSize = 20,
+        CancellationToken ct = default)
     {
         var url = "/api/foundry/submissions";
-        var qs  = BuildQuery(("status", status), ("contentType", contentType));
+        var qs  = BuildQuery(
+            ("status",      status),
+            ("contentType", contentType),
+            ("search",      search),
+            ("page",        page.ToString()),
+            ("pageSize",    pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
 
         var resp = await http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
-            ? await resp.Content.ReadFromJsonAsync<List<FoundrySubmissionSummaryDto>>(ct) ?? []
-            : [];
+            ? await resp.Content.ReadFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(ct)
+              ?? new([],  0, page, pageSize)
+            : new([], 0, page, pageSize);
     }
 
     public async Task<FoundrySubmissionDto?> GetSubmissionAsync(Guid id, CancellationToken ct = default)
@@ -93,7 +101,23 @@ public sealed class RealmFoundryApiClient(HttpClient http)
         return (null, body);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // ── Notifications ──────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/foundry/notifications", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<FoundryNotificationDto>>(ct) ?? []
+            : [];
+    }
+
+    public async Task<bool> MarkNotificationReadAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"/api/foundry/notifications/{id}/read", null, ct);
+        return resp.IsSuccessStatusCode;
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────
 
     private static string BuildQuery(params (string Key, string? Value)[] pairs)
     {

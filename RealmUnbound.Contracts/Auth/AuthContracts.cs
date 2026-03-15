@@ -9,4 +9,5 @@ public record AuthResponse(
     string RefreshToken,
     DateTimeOffset AccessTokenExpiry,
     Guid AccountId,
-    string Username);
+    string Username,
+    bool IsCurator = false);

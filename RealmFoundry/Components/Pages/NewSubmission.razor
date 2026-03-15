@@ -34,6 +34,11 @@ else
     </div>
 
     <div class="form-group">
+        <label>Description (Markdown, optional)</label>
+        <textarea @bind="_description" rows="4" placeholder="Describe what this content adds, its lore context, balance reasoning, etc."></textarea>
+    </div>
+
+    <div class="form-group">
         <label>Payload (JSON)</label>
         <textarea @bind="_payload" rows="12" placeholder='{ "name": "Example Item" }'></textarea>
     </div>
@@ -51,6 +56,7 @@ else
 @code {
     private string  _contentType = "";
     private string  _title       = "";
+    private string  _description = "";
     private string  _payload     = "";
     private bool    _submitting  = false;
     private string? _error;
@@ -65,7 +71,8 @@ else
 
         _submitting = true;
         var (dto, error) = await Api.CreateSubmissionAsync(
-            new(_contentType, _title.Trim(), _payload.Trim()));
+            new(_contentType, _title.Trim(), _payload.Trim(),
+                string.IsNullOrWhiteSpace(_description) ? null : _description.Trim()));
 
         _submitting = false;
 

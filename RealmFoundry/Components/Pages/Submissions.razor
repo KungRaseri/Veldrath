@@ -10,6 +10,7 @@
 </div>
 
 <div class="filters">
+    <input @bind="_searchFilter" @bind:event="oninput" placeholder="Search by title…" />
     <select @bind="_statusFilter">
         <option value="">All statuses</option>
         <option value="Pending">Pending</option>
@@ -27,14 +28,14 @@
         <option value="Recipe">Recipe</option>
         <option value="LootTable">Loot Table</option>
     </select>
-    <button class="btn" @onclick="LoadAsync">Search</button>
+    <button class="btn" @onclick="SearchAsync">Search</button>
 </div>
 
 @if (_loading)
 {
     <p>Loading…</p>
 }
-else if (_submissions.Count == 0)
+else if (_result.Items.Count == 0)
 {
     <p class="muted">No submissions found.</p>
 }
@@ -52,7 +53,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var s in _submissions)
+            @foreach (var s in _result.Items)
             {
                 <tr>
                     <td><a href="submissions/@s.Id">@s.Title</a></td>
@@ -65,20 +66,41 @@ else
             }
         </tbody>
     </table>
+
+    <div class="pagination">
+        <button class="btn btn-sm" @onclick="PrevPageAsync" disabled="@(_page <= 1)">&#x2190; Prev</button>
+        <span>Page @_page of @TotalPages</span>
+        <button class="btn btn-sm" @onclick="NextPageAsync" disabled="@(_page >= TotalPages)">Next &#x2192;</button>
+    </div>
 }
 
 @code {
+    private string? _searchFilter;
     private string? _statusFilter;
     private string? _typeFilter;
     private bool    _loading = true;
-    private IReadOnlyList<FoundrySubmissionSummaryDto> _submissions = [];
+    private int     _page    = 1;
+    private const int PageSize = 20;
+
+    private PagedResult<FoundrySubmissionSummaryDto> _result = new([], 0, 1, PageSize);
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_result.TotalCount / (double)PageSize));
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task SearchAsync()
+    {
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPageAsync() { _page--; await LoadAsync(); }
+    private async Task NextPageAsync() { _page++; await LoadAsync(); }
 
     private async Task LoadAsync()
     {
         _loading = true;
-        _submissions = await Api.GetSubmissionsAsync(_statusFilter, _typeFilter);
+        _result  = await Api.GetSubmissionsAsync(_statusFilter, _typeFilter, _searchFilter, _page, PageSize);
         _loading = false;
     }
 
