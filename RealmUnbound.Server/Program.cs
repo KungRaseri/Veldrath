@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Identity;
@@ -132,15 +133,19 @@ try
     // ── OAuth providers ───────────────────────────────────────────────────────
     // Registered conditionally so the server starts cleanly when credentials are
     // absent (CI, local dev without OAuth app registrations).
+    // SignInScheme must be explicitly set to IdentityConstants.ExternalScheme so
+    // the OAuth middleware writes the external cookie that GetExternalLoginInfoAsync reads.
     var discordId     = builder.Configuration["OAuth:Discord:ClientId"];
     var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"];
     if (!string.IsNullOrEmpty(discordId) && !string.IsNullOrEmpty(discordSecret))
         builder.Services.AddAuthentication()
             .AddDiscord(o =>
             {
+                o.SignInScheme  = IdentityConstants.ExternalScheme;
                 o.ClientId     = discordId;
                 o.ClientSecret = discordSecret;
                 o.Scope.Add("email");
+                o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
             });
 
     var googleId     = builder.Configuration["OAuth:Google:ClientId"];
@@ -149,8 +154,10 @@ try
         builder.Services.AddAuthentication()
             .AddGoogle(o =>
             {
+                o.SignInScheme  = IdentityConstants.ExternalScheme;
                 o.ClientId     = googleId;
                 o.ClientSecret = googleSecret;
+                o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
             });
 
     var msId     = builder.Configuration["OAuth:Microsoft:ClientId"];
@@ -159,8 +166,10 @@ try
         builder.Services.AddAuthentication()
             .AddMicrosoftAccount(o =>
             {
+                o.SignInScheme  = IdentityConstants.ExternalScheme;
                 o.ClientId     = msId;
                 o.ClientSecret = msSecret;
+                o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
             });
 
 
@@ -196,6 +205,30 @@ try
     builder.Services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
     builder.Services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
 
+    // ── Cookie policy ──────────────────────────────────────────────────────────
+    // When running on plain HTTP (Docker dev, CI), browsers reject SameSite=None
+    // cookies without the Secure flag, and will not send Secure cookies over HTTP.
+    // That breaks the OAuth correlation cookie and makes GetExternalLoginInfoAsync
+    // return null → 401. SameAsRequest + None→Lax fallback fixes this without
+    // requiring HTTPS in development.
+    builder.Services.Configure<CookiePolicyOptions>(options =>
+    {
+        options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+        options.Secure = CookieSecurePolicy.SameAsRequest;
+        options.OnAppendCookie = ctx =>
+        {
+            if (!ctx.Context.Request.IsHttps && ctx.CookieOptions.SameSite == SameSiteMode.None)
+                ctx.CookieOptions.SameSite = SameSiteMode.Lax;
+        };
+    });
+
+    // ── DataProtection key persistence ────────────────────────────────────────
+    // Keys are used to encrypt OAuth correlation and external cookies.
+    // Persisting to a mounted volume prevents key loss on container restart.
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
+        .SetApplicationName("RealmUnbound.Server");
+
     // ── Health checks ─────────────────────────────────────────────────────────
     builder.Services.AddHealthChecks()
         .AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"])
@@ -205,6 +238,7 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseCors("AllowLocalClient");
+    app.UseCookiePolicy();
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseRateLimiter();

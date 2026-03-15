@@ -23,6 +23,54 @@ public static class ExternalAuthEndpoints
         return app;
     }
 
+    /// <summary>
+    /// Registered on every OAuth provider's <c>OnTicketReceived</c> event.
+    /// Issues JWT tokens directly from the OAuth ticket and redirects to
+    /// <c>returnUrl</c> — bypassing the external-cookie round-trip that
+    /// fails on plain HTTP because <see cref="SignInManager{TUser}.GetExternalLoginInfoAsync"/>
+    /// requires a <c>LoginProvider</c> key the framework never writes.
+    /// </summary>
+    public static async Task HandleOAuthTicket(TicketReceivedContext ctx)
+    {
+        var authSvc     = ctx.HttpContext.RequestServices.GetRequiredService<AuthService>();
+        var principal   = ctx.Principal!;
+        var email       = principal.FindFirstValue(ClaimTypes.Email);
+        var displayName = principal.FindFirstValue(ClaimTypes.Name);
+        var providerKey = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                       ?? principal.FindFirstValue("sub");
+        var clientIp    = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        var (response, _) = await authSvc.ExternalLoginOrRegisterAsync(
+            ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp);
+
+        if (response is null)
+        {
+            ctx.HandleResponse();
+            ctx.Response.Redirect("/login?error=auth_failed");
+            return;
+        }
+
+        string? returnUrl = null;
+        ctx.Properties?.Items.TryGetValue("returnUrl", out returnUrl);
+
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
+        {
+            var uriBuilder   = new UriBuilder(returnUrl);
+            var query        = HttpUtility.ParseQueryString(uriBuilder.Query);
+            query["jwt"]     = response.AccessToken;
+            query["refresh"] = response.RefreshToken;
+            query["expires"] = response.AccessTokenExpiry.ToUnixTimeSeconds().ToString();
+            uriBuilder.Query = query.ToString();
+
+            ctx.HandleResponse();
+            ctx.Response.Redirect(uriBuilder.ToString());
+            return;
+        }
+
+        // No valid returnUrl — fall through to default cookie sign-in so the
+        // /api/auth/external/callback endpoint can return JSON to API callers.
+    }
+
     // GET /api/auth/external/{provider}?returnUrl={optional}
     // Kicks off the OAuth redirect for the requested provider.
     private static IResult Challenge(string provider, string? returnUrl, HttpContext context)

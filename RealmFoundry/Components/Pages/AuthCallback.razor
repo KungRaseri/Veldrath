@@ -1,7 +1,7 @@
 @page "/auth/callback"
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Signing in… — RealmFoundry</PageTitle>
 
@@ -15,63 +15,78 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery] public string? Jwt     { get; set; }
-    [SupplyParameterFromQuery] public string? Refresh { get; set; }
-    [SupplyParameterFromQuery] public string? Expires { get; set; }
-
     private string? _error;
 
-    protected override async Task OnInitializedAsync()
+    // OnAfterRenderAsync(firstRender) is the correct place for ProtectedSessionStorage
+    // calls — it guarantees the JS bridge is ready. OnInitializedAsync can fire before
+    // the browser-side Blazor runtime has finished wiring up JS interop for storage.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (string.IsNullOrEmpty(Jwt))
+        if (!firstRender) return;
+
+        var uri   = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+        var jwt     = query.TryGetValue("jwt",     out var j) ? j.ToString() : null;
+        var refresh = query.TryGetValue("refresh", out var r) ? r.ToString() : null;
+        var expires = query.TryGetValue("expires", out var e) ? e.ToString() : null;
+
+        if (string.IsNullOrEmpty(jwt))
         {
             _error = "No token received.";
+            StateHasChanged();
             return;
         }
 
-        // Parse the access token expiry from Unix seconds.
-        var expiry = long.TryParse(Expires, out var unixSeconds)
+        var expiry = long.TryParse(expires, out var unixSeconds)
             ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
             : DateTimeOffset.UtcNow.AddMinutes(15);
 
-        // Decode username + account ID from the JWT payload (no signature check —
-        // the server already validated the token before issuing it as a redirect param).
-        var parts = Jwt.Split('.');
+        var parts = jwt.Split('.');
         if (parts.Length != 3)
         {
             _error = "Invalid token.";
+            StateHasChanged();
             return;
         }
 
         Dictionary<string, System.Text.Json.JsonElement>? payload;
         try
         {
-            // JWT Base64Url padding
             var json = parts[1].Replace('-', '+').Replace('_', '/');
-            json = json.PadRight(json.Length + (4 - json.Length % 4) % 4, '=');
+            json  = json.PadRight(json.Length + (4 - json.Length % 4) % 4, '=');
             var bytes = Convert.FromBase64String(json);
             payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(bytes);
         }
         catch
         {
             _error = "Invalid token.";
+            StateHasChanged();
             return;
         }
 
         var username = (payload?.TryGetValue("unique_name", out var un) == true ? un.GetString() : null)
-            ?? (payload?.TryGetValue("name", out var n) == true ? n.GetString() : null)
+            ?? (payload?.TryGetValue("name",        out var n)  == true ? n.GetString()  : null)
             ?? "unknown";
         var sub = payload?.TryGetValue("sub", out var s) == true ? s.GetString() : null;
 
         if (!Guid.TryParse(sub, out var accountId))
         {
             _error = "Invalid account claim.";
+            StateHasChanged();
             return;
         }
 
-        await AuthState.SetTokensAsync(new RealmUnbound.Contracts.Auth.AuthResponse(
-            Jwt, Refresh ?? "", expiry, accountId, username));
+        var isCurator = payload?.TryGetValue("role", out var role) == true
+            && role.ValueKind == System.Text.Json.JsonValueKind.String
+            && role.GetString() == "Curator";
 
-        Nav.NavigateTo("/");
+        await AuthState.SetTokensAsync(new RealmUnbound.Contracts.Auth.AuthResponse(
+            jwt, refresh ?? "", expiry, accountId, username, isCurator));
+
+        // forceLoad: true — full page reload so AuthInitializer.InitialiseAsync()
+        // restores auth state from ProtectedSessionStorage on the new circuit.
+        // This avoids relying on circuit continuity across Blazor Web App navigation.
+        Nav.NavigateTo("/", forceLoad: true);
     }
 }

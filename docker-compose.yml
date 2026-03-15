@@ -49,6 +49,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
 
   discord:
     build:
@@ -73,10 +75,17 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8081
+      # Internal URL for server-side HttpClient calls (container-to-container)
       - RealmUnbound__ServerUrl=http://server:8080
+      # Public URL the browser navigates to for OAuth redirects
+      - RealmUnbound__PublicServerUrl=http://localhost:8080
+    volumes:
+      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       server:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  dataprotection_keys:
+  foundry_dataprotection_keys:
