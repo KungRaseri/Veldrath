@@ -33,6 +33,8 @@ try
     builder.Services.AddHttpClient<RealmFoundryApiClient>(client =>
         client.BaseAddress = new Uri(serverUrl));
 
+    builder.Services.AddScoped<AuthStateService>();
+
     var app = builder.Build();
 
     if (!app.Environment.IsDevelopment())

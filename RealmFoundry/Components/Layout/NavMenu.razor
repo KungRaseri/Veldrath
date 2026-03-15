@@ -1,3 +1,6 @@
+@implements IDisposable
+@inject AuthStateService AuthState
+
 <nav class="nav-links">
     <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
         Home
@@ -5,4 +8,32 @@
     <NavLink class="nav-item" href="submissions">
         Submissions
     </NavLink>
+
+    <div class="nav-spacer"></div>
+
+    @if (AuthState.IsLoggedIn)
+    {
+        <span class="nav-username">@AuthState.Username</span>
+        <button class="nav-item nav-logout" @onclick="LogOutAsync">Sign out</button>
+    }
+    else
+    {
+        <NavLink class="nav-item" href="login">Sign in</NavLink>
+    }
 </nav>
+
+@code {
+    protected override void OnInitialized()
+        => AuthState.OnChange += Refresh;
+
+    public void Dispose()
+        => AuthState.OnChange -= Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task LogOutAsync()
+    {
+        await AuthState.LogOutAsync();
+        Refresh();
+    }
+}

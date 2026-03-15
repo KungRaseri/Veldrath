@@ -1,0 +1,93 @@
+@page "/submissions/{Id:guid}"
+@inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
+@rendermode InteractiveServer
+
+<PageTitle>@(_submission?.Title ?? "Submission") — RealmFoundry</PageTitle>
+
+@if (_submission is null)
+{
+    <p>@(_loading ? "Loading…" : "Submission not found.")</p>
+}
+else
+{
+    <div class="submission-header">
+        <div>
+            <h1>@_submission.Title</h1>
+            <p class="muted">@_submission.ContentType · @_submission.SubmitterName · @_submission.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</p>
+        </div>
+        <span class="badge @BadgeClass(_submission.Status)">@_submission.Status</span>
+    </div>
+
+    <div class="vote-bar">
+        <button class="btn btn-sm" @onclick="() => VoteAsync(1)"  disabled="@(!AuthState.IsLoggedIn)">▲ Upvote</button>
+        <strong>@_submission.VoteScore</strong>
+        <button class="btn btn-sm" @onclick="() => VoteAsync(-1)" disabled="@(!AuthState.IsLoggedIn)">▼ Downvote</button>
+        @if (!AuthState.IsLoggedIn)
+        {
+            <span class="muted"> (<a href="/login">sign in</a> to vote)</span>
+        }
+    </div>
+
+    @if (_voteMessage is not null) { <p class="feedback">@_voteMessage</p> }
+
+    <h2>Payload</h2>
+    <pre class="payload">@_submission.Payload</pre>
+
+    @if (_submission.ReviewNotes is not null)
+    {
+        <h2>Review Notes</h2>
+        <blockquote>@_submission.ReviewNotes</blockquote>
+    }
+
+    @if (AuthState.IsLoggedIn && _submission.Status == "Pending")
+    {
+        <div class="review-panel">
+            <h2>Review</h2>
+            <textarea @bind="_reviewNotes" placeholder="Optional notes…" rows="3"></textarea>
+            <div class="review-actions">
+                <button class="btn btn-green" @onclick="() => SubmitReviewAsync(true)">Approve</button>
+                <button class="btn btn-red"   @onclick="() => SubmitReviewAsync(false)">Reject</button>
+            </div>
+            @if (_reviewMessage is not null) { <p class="feedback">@_reviewMessage</p> }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private FoundrySubmissionDto? _submission;
+    private bool    _loading       = true;
+    private string? _voteMessage;
+    private string? _reviewMessage;
+    private string? _reviewNotes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _submission = await Api.GetSubmissionAsync(Id);
+        _loading = false;
+    }
+
+    private async Task VoteAsync(int value)
+    {
+        var (updated, error) = await Api.VoteAsync(Id, value);
+        _voteMessage = error ?? $"Vote recorded (score: {updated?.VoteScore})";
+        if (updated is not null && _submission is not null)
+            _submission = _submission with { VoteScore = updated.VoteScore };
+    }
+
+    private async Task SubmitReviewAsync(bool approve)
+    {
+        var (result, error) = await Api.ReviewAsync(Id, new(approve, _reviewNotes));
+        _reviewMessage = error ?? (approve ? "Submission approved." : "Submission rejected.");
+        if (result is not null) _submission = result;
+    }
+
+    private static string BadgeClass(string status) => status switch
+    {
+        "Approved" or "Curated" => "badge-green",
+        "Rejected"              => "badge-red",
+        _                       => "badge-grey",
+    };
+}

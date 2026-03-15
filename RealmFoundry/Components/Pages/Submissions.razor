@@ -1,0 +1,91 @@
+@page "/submissions"
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Submissions — RealmFoundry</PageTitle>
+
+<div class="page-header">
+    <h1>Submissions</h1>
+    <a href="submissions/new" class="btn">+ New Submission</a>
+</div>
+
+<div class="filters">
+    <select @bind="_statusFilter">
+        <option value="">All statuses</option>
+        <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Curated">Curated</option>
+        <option value="Rejected">Rejected</option>
+    </select>
+    <select @bind="_typeFilter">
+        <option value="">All types</option>
+        <option value="Item">Item</option>
+        <option value="Spell">Spell</option>
+        <option value="Ability">Ability</option>
+        <option value="Npc">NPC</option>
+        <option value="Quest">Quest</option>
+        <option value="Recipe">Recipe</option>
+        <option value="LootTable">Loot Table</option>
+    </select>
+    <button class="btn" @onclick="LoadAsync">Search</button>
+</div>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_submissions.Count == 0)
+{
+    <p class="muted">No submissions found.</p>
+}
+else
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>By</th>
+                <th>Score</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in _submissions)
+            {
+                <tr>
+                    <td><a href="submissions/@s.Id">@s.Title</a></td>
+                    <td>@s.ContentType</td>
+                    <td><span class="badge @BadgeClass(s.Status)">@s.Status</span></td>
+                    <td>@s.SubmitterName</td>
+                    <td>@s.VoteScore</td>
+                    <td>@s.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private string? _statusFilter;
+    private string? _typeFilter;
+    private bool    _loading = true;
+    private IReadOnlyList<FoundrySubmissionSummaryDto> _submissions = [];
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _submissions = await Api.GetSubmissionsAsync(_statusFilter, _typeFilter);
+        _loading = false;
+    }
+
+    private static string BadgeClass(string status) => status switch
+    {
+        "Approved" or "Curated" => "badge-green",
+        "Rejected"              => "badge-red",
+        _                       => "badge-grey",
+    };
+}

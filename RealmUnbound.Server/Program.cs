@@ -18,6 +18,7 @@ using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Content;
+using RealmUnbound.Server.Features.Foundry;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
@@ -152,6 +153,7 @@ try
 
 
     builder.Services.AddScoped<AuthService>();
+    builder.Services.AddScoped<FoundryService>();
 
     // ── Repositories ──────────────────────────────────────────────────────────
     builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
@@ -213,6 +215,7 @@ try
     // Auth, character, zone & content catalog endpoints
     app.MapAuthEndpoints();
     app.MapExternalAuthEndpoints();
+    app.MapFoundryEndpoints();
     app.MapCharacterEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();

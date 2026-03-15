@@ -77,6 +77,50 @@
                     Height="40"
                     FontSize="14" />
 
+            <!-- OAuth sign-in divider -->
+            <Grid ColumnDefinitions="*,Auto,*" Margin="0,12,0,4">
+                <Separator Grid.Column="0" VerticalAlignment="Center" Opacity="0.3" />
+                <TextBlock Grid.Column="1"
+                           Text="or sign in with"
+                           Classes="muted"
+                           FontSize="12"
+                           Margin="8,0" />
+                <Separator Grid.Column="2" VerticalAlignment="Center" Opacity="0.3" />
+            </Grid>
+
+            <!-- Discord -->
+            <Button Classes="accent"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="discord"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="40"
+                    FontSize="14">
+                Discord
+            </Button>
+
+            <!-- Google -->
+            <Button Classes="ghost"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="google"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="40"
+                    FontSize="14">
+                Google
+            </Button>
+
+            <!-- Microsoft -->
+            <Button Classes="ghost"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="microsoft"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="40"
+                    FontSize="14">
+                Microsoft
+            </Button>
+
             <!-- Busy indicator -->
             <ProgressBar IsIndeterminate="True"
                          IsVisible="{Binding IsBusy}"

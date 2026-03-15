@@ -1,0 +1,77 @@
+@page "/submissions/new"
+@inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>New Submission — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsLoggedIn)
+{
+    <p>You must <a href="/login">sign in</a> to submit content.</p>
+}
+else
+{
+    <h1>New Submission</h1>
+
+    <div class="form-group">
+        <label>Content Type</label>
+        <select @bind="_contentType">
+            <option value="">— select type —</option>
+            <option value="Item">Item</option>
+            <option value="Spell">Spell</option>
+            <option value="Ability">Ability</option>
+            <option value="Npc">NPC</option>
+            <option value="Quest">Quest</option>
+            <option value="Recipe">Recipe</option>
+            <option value="LootTable">Loot Table</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Title</label>
+        <input @bind="_title" placeholder="Give your submission a short name" maxlength="200" />
+    </div>
+
+    <div class="form-group">
+        <label>Payload (JSON)</label>
+        <textarea @bind="_payload" rows="12" placeholder='{ "name": "Example Item" }'></textarea>
+    </div>
+
+    @if (_error is not null)
+    {
+        <p class="error">@_error</p>
+    }
+
+    <button class="btn" @onclick="SubmitAsync" disabled="@_submitting">
+        @(_submitting ? "Submitting…" : "Submit")
+    </button>
+}
+
+@code {
+    private string  _contentType = "";
+    private string  _title       = "";
+    private string  _payload     = "";
+    private bool    _submitting  = false;
+    private string? _error;
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_contentType)) { _error = "Please select a content type."; return; }
+        if (string.IsNullOrWhiteSpace(_title))       { _error = "Title is required.";            return; }
+        if (string.IsNullOrWhiteSpace(_payload))     { _error = "Payload cannot be empty.";      return; }
+
+        _submitting = true;
+        var (dto, error) = await Api.CreateSubmissionAsync(
+            new(_contentType, _title.Trim(), _payload.Trim()));
+
+        _submitting = false;
+
+        if (dto is not null)
+            Nav.NavigateTo($"/submissions/{dto.Id}");
+        else
+            _error = $"Submission failed: {error}";
+    }
+}

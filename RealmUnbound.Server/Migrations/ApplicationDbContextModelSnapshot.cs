@@ -295,6 +295,90 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("SubmitterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentType");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SubmitterId");
+
+                    b.ToTable("FoundrySubmissions");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("VoterId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VoterId");
+
+                    b.HasIndex("SubmissionId", "VoterId")
+                        .IsUnique();
+
+                    b.ToTable("FoundryVotes");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -593,6 +677,43 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Submitter")
+                        .WithMany()
+                        .HasForeignKey("SubmitterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Reviewer");
+
+                    b.Navigation("Submitter");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryVote", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.FoundrySubmission", "Submission")
+                        .WithMany("Votes")
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Voter")
+                        .WithMany()
+                        .HasForeignKey("VoterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Submission");
+
+                    b.Navigation("Voter");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RefreshToken", b =>
                 {
                     b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Account")
@@ -621,6 +742,11 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Character");
 
                     b.Navigation("Zone");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
+                {
+                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>

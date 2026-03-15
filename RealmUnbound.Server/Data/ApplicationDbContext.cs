@@ -23,6 +23,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Zone> Zones => Set<Zone>();
     public DbSet<ZoneSession> ZoneSessions => Set<ZoneSession>();
+    public DbSet<FoundrySubmission> FoundrySubmissions => Set<FoundrySubmission>();
+    public DbSet<FoundryVote> FoundryVotes => Set<FoundryVote>();
 
     // Engine entities — stored in server DB so character saves survive reconnect.
     public DbSet<SaveGameRecord> SaveGames => Set<SaveGameRecord>();
@@ -99,6 +101,42 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
         {
             e.HasKey(h => h.Id);
             e.HasIndex(h => h.FameScore);
+        });
+
+        builder.Entity<FoundrySubmission>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Title).HasMaxLength(200);
+            e.Property(s => s.Payload).HasColumnType("jsonb");
+            e.Property(s => s.ContentType).HasConversion<string>();
+            e.Property(s => s.Status).HasConversion<string>();
+            e.HasOne(s => s.Submitter)
+             .WithMany()
+             .HasForeignKey(s => s.SubmitterId)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(s => s.Reviewer)
+             .WithMany()
+             .HasForeignKey(s => s.ReviewerId)
+             .IsRequired(false)
+             .OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(s => s.Status);
+            e.HasIndex(s => s.ContentType);
+            e.HasIndex(s => s.CreatedAt);
+        });
+
+        builder.Entity<FoundryVote>(e =>
+        {
+            e.HasKey(v => v.Id);
+            // One vote per player per submission.
+            e.HasIndex(v => new { v.SubmissionId, v.VoterId }).IsUnique();
+            e.HasOne(v => v.Submission)
+             .WithMany(s => s.Votes)
+             .HasForeignKey(v => v.SubmissionId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(v => v.Voter)
+             .WithMany()
+             .HasForeignKey(v => v.VoterId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

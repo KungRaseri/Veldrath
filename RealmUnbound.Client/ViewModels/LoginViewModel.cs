@@ -34,7 +34,8 @@ public class LoginViewModel : ViewModelBase
     }
 
     public ReactiveCommand<Unit, Unit> LoginCommand { get; }
-    public ReactiveCommand<Unit, Unit> BackCommand { get; }
+    public ReactiveCommand<Unit, Unit> BackCommand  { get; }
+    public ReactiveCommand<string, Unit> LoginExternalCommand { get; }
 
     public LoginViewModel(IAuthService auth, INavigationService navigation, SessionStore sessionStore)
     {
@@ -53,8 +54,10 @@ public class LoginViewModel : ViewModelBase
             x => x.Email, x => x.Password, x => x.IsBusy,
             (e, p, busy) => !string.IsNullOrWhiteSpace(e) && !string.IsNullOrWhiteSpace(p) && !busy);
 
-        LoginCommand = ReactiveCommand.CreateFromTask(DoLoginAsync, canSubmit);
-        BackCommand  = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
+        LoginCommand         = ReactiveCommand.CreateFromTask(DoLoginAsync, canSubmit);
+        LoginExternalCommand = ReactiveCommand.CreateFromTask<string>(DoLoginExternalAsync,
+            this.WhenAnyValue(x => x.IsBusy, busy => !busy));
+        BackCommand          = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
     }
 
     private async Task DoLoginAsync()
@@ -73,6 +76,24 @@ public class LoginViewModel : ViewModelBase
 
                 _navigation.NavigateTo<CharacterSelectViewModel>();
             }
+            else
+            {
+                ErrorMessage = error?.Message ?? "Login failed.";
+                ErrorDetails = error?.Details ?? string.Empty;
+            }
+        }
+        finally { IsBusy = false; }
+    }
+
+    private async Task DoLoginExternalAsync(string provider)
+    {
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var (response, error) = await _auth.LoginExternalAsync(provider);
+            if (response is not null)
+                _navigation.NavigateTo<CharacterSelectViewModel>();
             else
             {
                 ErrorMessage = error?.Message ?? "Login failed.";
