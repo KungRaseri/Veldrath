@@ -133,6 +133,8 @@ try
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
     builder.Services.AddDbContext<ContentDbContext>(options => options.UseNpgsql(connectionString));
+    builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));
+    builder.Services.AddSingleton<GameConfigService, DbGameConfigService>();
     builder.Services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
     builder.Services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
     builder.Services.AddScoped<IAbilityRepository, EfCoreAbilityRepository>();
@@ -142,6 +144,7 @@ try
     builder.Services.AddScoped<IRecipeRepository, EfCoreRecipeRepository>();
     builder.Services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
     builder.Services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
+    builder.Services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
 
     // ── Health checks ─────────────────────────────────────────────────────────
     builder.Services.AddHealthChecks()
