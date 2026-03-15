@@ -18,6 +18,7 @@ public class SkillCatalogService
     private bool _initialized;
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
+    [ActivatorUtilitiesConstructor]
     public SkillCatalogService(IServiceScopeFactory scopeFactory, ILogger<SkillCatalogService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));

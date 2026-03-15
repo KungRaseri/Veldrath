@@ -20,6 +20,7 @@ public class SpellCatalogService
     private bool _initialized;
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
+    [ActivatorUtilitiesConstructor]
     public SpellCatalogService(IServiceScopeFactory scopeFactory, ILogger<SpellCatalogService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
