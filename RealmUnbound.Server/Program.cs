@@ -166,6 +166,9 @@ try
         var contentDb = services.GetRequiredService<ContentDbContext>();
         if (contentDb.Database.ProviderName?.Contains("Npgsql") == true)
             await contentDb.Database.MigrateAsync();
+
+        // Seed baseline content (idempotent — skips each table that already has rows).
+        await DatabaseSeeder.SeedAsync(services);
     }
 
     // Auth, character, zone & content catalog endpoints
