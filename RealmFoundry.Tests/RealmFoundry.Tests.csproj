@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RealmFoundry\RealmFoundry.csproj" />
+    <ProjectReference Include="..\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="RealmFoundry.Services" />
+  </ItemGroup>
+
+</Project>

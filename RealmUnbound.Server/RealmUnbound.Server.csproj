@@ -18,6 +18,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <!-- JWT authentication -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <!-- OAuth providers -->
+    <PackageReference Include="AspNet.Security.OAuth.Discord" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
     <!-- MediatR (for GameHub command dispatch — aligned with engine version) -->
     <PackageReference Include="MediatR" />
     <!-- Health checks -->
