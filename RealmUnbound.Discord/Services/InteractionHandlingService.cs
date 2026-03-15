@@ -14,7 +14,7 @@ namespace RealmUnbound.Discord.Services;
 internal sealed class InteractionHandlingService(
     DiscordSocketClient client,
     InteractionService interactions,
-    IServiceProvider services,
+    IServiceScopeFactory scopeFactory,
     IOptions<DiscordSettings> settings,
     ILogger<InteractionHandlingService> logger)
 {
@@ -25,7 +25,8 @@ internal sealed class InteractionHandlingService(
     /// </summary>
     public async Task InitializeAsync()
     {
-        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), services);
+        // Pass null so Discord.NET uses reflection only — no DI resolution at discovery time.
+        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), null);
 
         client.Ready             += RegisterCommandsAsync;
         client.InteractionCreated += HandleInteractionAsync;
@@ -55,8 +56,9 @@ internal sealed class InteractionHandlingService(
 
     private async Task HandleInteractionAsync(SocketInteraction interaction)
     {
+        using var scope = scopeFactory.CreateScope();
         var ctx    = new SocketInteractionContext(client, interaction);
-        var result = await interactions.ExecuteCommandAsync(ctx, services);
+        var result = await interactions.ExecuteCommandAsync(ctx, scope.ServiceProvider);
 
         if (!result.IsSuccess)
             logger.LogWarning("Interaction failed: {Error}", result.ErrorReason);
