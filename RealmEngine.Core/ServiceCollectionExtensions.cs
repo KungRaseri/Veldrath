@@ -147,10 +147,8 @@ public static class ServiceCollectionExtensions
         {
             services.AddDbContext<GameDbContext>(o =>
                 o.UseNpgsql(persistenceOptions.ConnectionString));
-            services.AddDbContext<ContentDbContext>(o =>
-                o.UseNpgsql(persistenceOptions.ConnectionString));
             services.AddDbContextFactory<ContentDbContext>(o =>
-                o.UseNpgsql(persistenceOptions.ConnectionString));
+                o.UseNpgsql(persistenceOptions.ConnectionString), ServiceLifetime.Scoped);
             services.AddSingleton<GameConfigService, DbGameConfigService>();
             services.AddScoped<ISaveGameRepository, EfCoreSaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
@@ -168,10 +166,8 @@ public static class ServiceCollectionExtensions
         else if (!persistenceOptions.IsExternal)
         {
             // Default: in-memory (no file I/O, ideal for tests)
-            services.AddDbContext<ContentDbContext>(o =>
-                o.UseInMemoryDatabase("RealmEngineContent"));
             services.AddDbContextFactory<ContentDbContext>(o =>
-                o.UseInMemoryDatabase("RealmEngineContent"));
+                o.UseInMemoryDatabase("RealmEngineContent"), ServiceLifetime.Scoped);
             services.AddSingleton<GameConfigService, NullGameConfigService>();
             services.AddScoped<ISaveGameRepository, InMemorySaveGameRepository>();
             services.AddScoped<IHallOfFameRepository, InMemoryHallOfFameRepository>();
