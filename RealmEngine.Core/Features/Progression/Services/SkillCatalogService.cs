@@ -1,5 +1,6 @@
 ﻿using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -10,11 +11,20 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// </summary>
 public class SkillCatalogService
 {
-    private readonly ISkillRepository _repository;
+    private readonly IServiceScopeFactory? _scopeFactory;
+    private readonly ISkillRepository? _repository;
     private readonly ILogger<SkillCatalogService> _logger;
     private readonly Dictionary<string, SkillDefinition> _skillDefinitions = new();
     private bool _initialized;
 
+    // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
+    public SkillCatalogService(IServiceScopeFactory scopeFactory, ILogger<SkillCatalogService>? logger = null)
+    {
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _logger = logger ?? NullLogger<SkillCatalogService>.Instance;
+    }
+
+    // Secondary constructor for direct construction in tests
     public SkillCatalogService(ISkillRepository repository, ILogger<SkillCatalogService>? logger = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -32,7 +42,18 @@ public class SkillCatalogService
 
         try
         {
-            var all = await _repository.GetAllAsync();
+            IEnumerable<SkillDefinition> all;
+            if (_scopeFactory is not null)
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var repo = scope.ServiceProvider.GetRequiredService<ISkillRepository>();
+                all = await repo.GetAllAsync();
+            }
+            else
+            {
+                all = await _repository!.GetAllAsync();
+            }
+
             foreach (var skill in all)
                 _skillDefinitions[skill.SkillId] = skill;
 

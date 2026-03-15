@@ -1,5 +1,6 @@
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -11,12 +12,21 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// </summary>
 public class SpellCatalogService
 {
-    private readonly ISpellRepository _repository;
+    private readonly IServiceScopeFactory? _scopeFactory;
+    private readonly ISpellRepository? _repository;
     private readonly ILogger<SpellCatalogService> _logger;
     private readonly Dictionary<string, Spell> _spells = new();
     private readonly Dictionary<MagicalTradition, List<string>> _spellsByTradition = new();
     private bool _initialized;
 
+    // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
+    public SpellCatalogService(IServiceScopeFactory scopeFactory, ILogger<SpellCatalogService>? logger = null)
+    {
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _logger = logger ?? NullLogger<SpellCatalogService>.Instance;
+    }
+
+    // Secondary constructor for direct construction in tests
     public SpellCatalogService(ISpellRepository repository, ILogger<SpellCatalogService>? logger = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -34,7 +44,18 @@ public class SpellCatalogService
 
         try
         {
-            var all = await _repository.GetAllAsync();
+            IEnumerable<Spell> all;
+            if (_scopeFactory is not null)
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var repo = scope.ServiceProvider.GetRequiredService<ISpellRepository>();
+                all = await repo.GetAllAsync();
+            }
+            else
+            {
+                all = await _repository!.GetAllAsync();
+            }
+
             foreach (var spell in all)
             {
                 _spells[spell.SpellId] = spell;
