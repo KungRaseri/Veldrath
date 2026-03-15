@@ -1,0 +1,77 @@
+@page "/auth/callback"
+@inject AuthStateService AuthState
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Signing in… — RealmFoundry</PageTitle>
+
+@if (_error is not null)
+{
+    <p class="error">Login failed: @_error. <a href="/login">Try again</a>.</p>
+}
+else
+{
+    <p>Signing you in…</p>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Jwt     { get; set; }
+    [SupplyParameterFromQuery] public string? Refresh { get; set; }
+    [SupplyParameterFromQuery] public string? Expires { get; set; }
+
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(Jwt))
+        {
+            _error = "No token received.";
+            return;
+        }
+
+        // Parse the access token expiry from Unix seconds.
+        var expiry = long.TryParse(Expires, out var unixSeconds)
+            ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
+            : DateTimeOffset.UtcNow.AddMinutes(15);
+
+        // Decode username + account ID from the JWT payload (no signature check —
+        // the server already validated the token before issuing it as a redirect param).
+        var parts = Jwt.Split('.');
+        if (parts.Length != 3)
+        {
+            _error = "Invalid token.";
+            return;
+        }
+
+        Dictionary<string, System.Text.Json.JsonElement>? payload;
+        try
+        {
+            // JWT Base64Url padding
+            var json = parts[1].Replace('-', '+').Replace('_', '/');
+            json = json.PadRight(json.Length + (4 - json.Length % 4) % 4, '=');
+            var bytes = Convert.FromBase64String(json);
+            payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(bytes);
+        }
+        catch
+        {
+            _error = "Invalid token.";
+            return;
+        }
+
+        var username = (payload?.TryGetValue("unique_name", out var un) == true ? un.GetString() : null)
+            ?? (payload?.TryGetValue("name", out var n) == true ? n.GetString() : null)
+            ?? "unknown";
+        var sub = payload?.TryGetValue("sub", out var s) == true ? s.GetString() : null;
+
+        if (!Guid.TryParse(sub, out var accountId))
+        {
+            _error = "Invalid account claim.";
+            return;
+        }
+
+        await AuthState.SetTokensAsync(new RealmUnbound.Contracts.Auth.AuthResponse(
+            Jwt, Refresh ?? "", expiry, accountId, username));
+
+        Nav.NavigateTo("/");
+    }
+}

@@ -38,6 +38,10 @@ public class FakeAuthService : IAuthService
         return Task.FromResult(LoginResult);
     }
 
+    public Task<(AuthResponse? Response, AppError? Error)> LoginExternalAsync(
+        string provider, CancellationToken ct = default)
+        => Task.FromResult(LoginResult);
+
     public Task<bool> RefreshAsync()
     {
         RefreshCallCount++;

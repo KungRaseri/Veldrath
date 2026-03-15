@@ -1,5 +1,8 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Web;
 using Microsoft.Extensions.Logging;
 using RealmUnbound.Contracts.Auth;
 
@@ -10,6 +13,7 @@ public interface IAuthService
 {
     Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password);
     Task<(AuthResponse? Response, AppError? Error)> LoginAsync(string email, string password);
+    Task<(AuthResponse? Response, AppError? Error)> LoginExternalAsync(string provider, CancellationToken ct = default);
     Task<bool> RefreshAsync();
     Task LogoutAsync();
 }
@@ -127,6 +131,77 @@ public class HttpAuthService(
         finally
         {
             tokens.Clear();
+        }
+    }
+
+    public async Task<(AuthResponse? Response, AppError? Error)> LoginExternalAsync(
+        string provider, CancellationToken ct = default)
+    {
+        using var listener = new OAuthLocalListener();
+
+        // Build the challenge URL, passing the localhost callback as returnUrl.
+        var serverBase = http.BaseAddress?.ToString().TrimEnd('/') ?? string.Empty;
+        var challengeUrl = $"{serverBase}/api/auth/external/{Uri.EscapeDataString(provider)}"
+                         + $"?returnUrl={Uri.EscapeDataString(listener.CallbackUrl)}";
+
+        try
+        {
+            // Open the system browser so the user can authenticate with the provider.
+            Process.Start(new ProcessStartInfo(challengeUrl) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to open browser for OAuth");
+            return (null, new AppError("Could not open the browser. Please try again."));
+        }
+
+        var result = await listener.WaitForCallbackAsync(ct);
+        if (result is null)
+            return (null, new AppError("Authentication timed out or was cancelled."));
+
+        // Decode the JWT payload to extract username + account ID claims.
+        var (username, accountId) = ExtractClaims(result.AccessToken);
+        if (accountId == Guid.Empty)
+            return (null, new AppError("Invalid token received from server."));
+
+        var response = new AuthResponse(
+            result.AccessToken,
+            result.RefreshToken,
+            result.AccessTokenExpiry,
+            accountId,
+            username);
+
+        tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId);
+        return (response, null);
+    }
+
+    // Decodes JWT claims without signature verification (server already validated the token).
+    private static (string Username, Guid AccountId) ExtractClaims(string jwt)
+    {
+        try
+        {
+            var parts = jwt.Split('.');
+            if (parts.Length != 3) return ("unknown", Guid.Empty);
+
+            var padded = parts[1].Replace('-', '+').Replace('_', '/');
+            padded = padded.PadRight(padded.Length + (4 - padded.Length % 4) % 4, '=');
+            var bytes = Convert.FromBase64String(padded);
+            var payload = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bytes);
+            if (payload is null) return ("unknown", Guid.Empty);
+
+            var username = payload.TryGetValue("unique_name", out var un) ? un.GetString()
+                : payload.TryGetValue("name", out var n) ? n.GetString()
+                : null;
+
+            Guid.TryParse(
+                payload.TryGetValue("sub", out var sub) ? sub.GetString() : null,
+                out var accountId);
+
+            return (username ?? "unknown", accountId);
+        }
+        catch
+        {
+            return ("unknown", Guid.Empty);
         }
     }
 }
