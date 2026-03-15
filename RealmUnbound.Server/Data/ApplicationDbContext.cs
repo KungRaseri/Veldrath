@@ -34,7 +34,10 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
 
     // ── Catalog content ───────────────────────────────────────────────────────
     public DbSet<Ability> Abilities => Set<Ability>();
-    public DbSet<Enemy> Enemies => Set<Enemy>();
+    public DbSet<Species> Species => Set<Species>();
+    public DbSet<ActorClass> ActorClasses => Set<ActorClass>();
+    public DbSet<ActorArchetype> ActorArchetypes => Set<ActorArchetype>();
+    public DbSet<ActorInstance> ActorInstances => Set<ActorInstance>();
     public DbSet<Weapon> Weapons => Set<Weapon>();
     public DbSet<Armor> Armors => Set<Armor>();
     public DbSet<Item> Items => Set<Item>();
@@ -42,9 +45,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<Enchantment> Enchantments => Set<Enchantment>();
     public DbSet<Skill> Skills => Set<Skill>();
     public DbSet<Spell> Spells => Set<Spell>();
-    public DbSet<CharacterClass> CharacterClasses => Set<CharacterClass>();
     public DbSet<Background> Backgrounds => Set<Background>();
-    public DbSet<Npc> Npcs => Set<Npc>();
     public DbSet<Quest> Quests => Set<Quest>();
     public DbSet<Recipe> Recipes => Set<Recipe>();
     public DbSet<LootTable> LootTables => Set<LootTable>();
@@ -54,9 +55,10 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
 
     // ── Junction tables ───────────────────────────────────────────────────────
-    public DbSet<EnemyAbilityPool> EnemyAbilityPools => Set<EnemyAbilityPool>();
+    public DbSet<SpeciesAbilityPool> SpeciesAbilityPools => Set<SpeciesAbilityPool>();
+    public DbSet<ArchetypeAbilityPool> ArchetypeAbilityPools => Set<ArchetypeAbilityPool>();
+    public DbSet<InstanceAbilityPool> InstanceAbilityPools => Set<InstanceAbilityPool>();
     public DbSet<ClassAbilityUnlock> ClassAbilityUnlocks => Set<ClassAbilityUnlock>();
-    public DbSet<NpcAbility> NpcAbilities => Set<NpcAbility>();
     public DbSet<LootTableEntry> LootTableEntries => Set<LootTableEntry>();
     public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
 
