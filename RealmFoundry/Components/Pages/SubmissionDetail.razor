@@ -2,6 +2,7 @@
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 @rendermode InteractiveServer
+@using Markdig
 
 <PageTitle>@(_submission?.Title ?? "Submission") — RealmFoundry</PageTitle>
 
@@ -31,6 +32,12 @@ else
 
     @if (_voteMessage is not null) { <p class="feedback">@_voteMessage</p> }
 
+    @if (!string.IsNullOrWhiteSpace(_submission.Description))
+    {
+        <h2>Description</h2>
+        <div class="prose">@((MarkupString)Markdown.ToHtml(_submission.Description))</div>
+    }
+
     <h2>Payload</h2>
     <pre class="payload">@_submission.Payload</pre>
 
@@ -40,7 +47,7 @@ else
         <blockquote>@_submission.ReviewNotes</blockquote>
     }
 
-    @if (AuthState.IsLoggedIn && _submission.Status == "Pending")
+    @if (AuthState.IsCurator && _submission.Status == "Pending")
     {
         <div class="review-panel">
             <h2>Review</h2>

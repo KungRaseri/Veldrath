@@ -7,10 +7,12 @@ namespace RealmUnbound.Server.Features.Foundry;
 /// <summary>
 /// Minimal API endpoints for the community content portal.
 /// POST   /api/foundry/submissions              — create submission [Authorize]
-/// GET    /api/foundry/submissions              — list (filter by type/status)
+/// GET    /api/foundry/submissions              — list (filter by type/status/search, paginated)
 /// GET    /api/foundry/submissions/{id}         — detail
 /// POST   /api/foundry/submissions/{id}/vote    — upvote/downvote [Authorize]
-/// POST   /api/foundry/submissions/{id}/review  — approve/reject [Authorize(Curator+)]
+/// POST   /api/foundry/submissions/{id}/review  — approve/reject [Authorize(Curator)]
+/// GET    /api/foundry/notifications            — get own notifications [Authorize]
+/// POST   /api/foundry/notifications/{id}/read  — mark notification read [Authorize]
 /// </summary>
 public static class FoundryEndpoints
 {
@@ -18,11 +20,13 @@ public static class FoundryEndpoints
     {
         var group = app.MapGroup("/api/foundry").WithTags("Foundry");
 
-        group.MapPost("/submissions",                  CreateAsync).RequireAuthorization();
-        group.MapGet("/submissions",                   ListAsync);
-        group.MapGet("/submissions/{id:guid}",         GetAsync);
-        group.MapPost("/submissions/{id:guid}/vote",   VoteAsync).RequireAuthorization();
-        group.MapPost("/submissions/{id:guid}/review", ReviewAsync).RequireAuthorization();
+        group.MapPost("/submissions",                     CreateAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
+        group.MapGet("/submissions",                      ListAsync);
+        group.MapGet("/submissions/{id:guid}",            GetAsync);
+        group.MapPost("/submissions/{id:guid}/vote",      VoteAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
+        group.MapPost("/submissions/{id:guid}/review",    ReviewAsync).RequireAuthorization("Curator");
+        group.MapGet("/notifications",                    GetNotificationsAsync).RequireAuthorization();
+        group.MapPost("/notifications/{id:guid}/read",    MarkNotificationReadAsync).RequireAuthorization();
 
         return app;
     }
@@ -43,14 +47,19 @@ public static class FoundryEndpoints
             : Results.BadRequest(new { error });
     }
 
-    // GET /api/foundry/submissions?status=Pending&contentType=Item
+    // GET /api/foundry/submissions?status=Pending&contentType=Item&search=sword&page=1&pageSize=20
     private static async Task<IResult> ListAsync(
         string? status,
         string? contentType,
+        string? search,
+        int page,
+        int pageSize,
         FoundryService service,
         CancellationToken ct)
     {
-        var results = await service.ListSubmissionsAsync(status, contentType, ct);
+        page     = Math.Max(1, page == 0 ? 1 : page);
+        pageSize = Math.Clamp(pageSize == 0 ? 20 : pageSize, 1, 100);
+        var results = await service.ListSubmissionsAsync(status, contentType, search, page, pageSize, ct);
         return Results.Ok(results);
     }
 
@@ -81,10 +90,7 @@ public static class FoundryEndpoints
             : Results.BadRequest(new { error });
     }
 
-    // POST /api/foundry/submissions/{id}/review
-    // Restricted to Curator and Archivist roles (enforced at the application layer
-    // via role checks in the service once FoundryRole system lands; for now any
-    // authenticated user can call the endpoint — the TODO is noted in FoundryService).
+    // POST /api/foundry/submissions/{id}/review  [Curator]
     private static async Task<IResult> ReviewAsync(
         Guid id,
         [FromBody] ReviewRequest request,
@@ -99,6 +105,33 @@ public static class FoundryEndpoints
         return dto is not null
             ? Results.Ok(dto)
             : Results.BadRequest(new { error });
+    }
+
+    // GET /api/foundry/notifications
+    private static async Task<IResult> GetNotificationsAsync(
+        FoundryService service,
+        ClaimsPrincipal user,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        if (accountId is null) return Results.Unauthorized();
+
+        var notifications = await service.GetNotificationsAsync(accountId.Value, ct);
+        return Results.Ok(notifications);
+    }
+
+    // POST /api/foundry/notifications/{id}/read
+    private static async Task<IResult> MarkNotificationReadAsync(
+        Guid id,
+        FoundryService service,
+        ClaimsPrincipal user,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        if (accountId is null) return Results.Unauthorized();
+
+        var found = await service.MarkNotificationReadAsync(id, accountId.Value, ct);
+        return found ? Results.NoContent() : Results.NotFound();
     }
 
     private static Guid? GetAccountId(ClaimsPrincipal user)

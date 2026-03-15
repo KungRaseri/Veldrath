@@ -22,6 +22,7 @@ public class FoundryService(ApplicationDbContext db)
             SubmitterId = submitterId,
             ContentType = contentType,
             Title       = request.Title,
+            Description = request.Description,
             Payload     = request.Payload,
             Status      = FoundrySubmissionStatus.Pending,
         };
@@ -33,8 +34,8 @@ public class FoundryService(ApplicationDbContext db)
         return (MapToDto(submission), null);
     }
 
-    public async Task<IReadOnlyList<FoundrySubmissionSummaryDto>> ListSubmissionsAsync(
-        string? status, string? contentType, CancellationToken ct)
+    public async Task<PagedResult<FoundrySubmissionSummaryDto>> ListSubmissionsAsync(
+        string? status, string? contentType, string? search, int page, int pageSize, CancellationToken ct)
     {
         var query = db.FoundrySubmissions
             .Include(s => s.Submitter)
@@ -47,11 +48,17 @@ public class FoundryService(ApplicationDbContext db)
         if (contentType is not null && Enum.TryParse<FoundryContentType>(contentType, ignoreCase: true, out var ct2))
             query = query.Where(s => s.ContentType == ct2);
 
-        var results = await query
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(s => s.Title.Contains(search));
+
+        var total = await query.CountAsync(ct);
+        var items = await query
             .OrderByDescending(s => s.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(ct);
 
-        return results.Select(MapToSummary).ToList();
+        return new PagedResult<FoundrySubmissionSummaryDto>(items.Select(MapToSummary).ToList(), total, page, pageSize);
     }
 
     public async Task<FoundrySubmissionDto?> GetSubmissionAsync(Guid id, CancellationToken ct)
@@ -125,8 +132,50 @@ public class FoundryService(ApplicationDbContext db)
         submission.UpdatedAt   = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
+
+        db.FoundryNotifications.Add(new FoundryNotification
+        {
+            Id           = Guid.NewGuid(),
+            RecipientId  = submission.SubmitterId,
+            SubmissionId = submissionId,
+            Message      = request.Approved
+                ? $"Your submission \"{submission.Title}\" was approved!"
+                : $"Your submission \"{submission.Title}\" was rejected. {request.Notes}",
+        });
+        await db.SaveChangesAsync(ct);
+
         await db.Entry(submission).Reference(s => s.Reviewer).LoadAsync(ct);
         return (MapToDto(submission), null);
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(Guid accountId, CancellationToken ct) =>
+        await db.FoundryNotifications
+            .Include(n => n.Submission)
+            .AsNoTracking()
+            .Where(n => n.RecipientId == accountId)
+            .OrderByDescending(n => n.CreatedAt)
+            .Select(n => new FoundryNotificationDto(
+                n.Id,
+                n.SubmissionId,
+                n.Submission!.Title,
+                n.Message,
+                n.IsRead,
+                n.CreatedAt))
+            .ToListAsync(ct);
+
+    public async Task<bool> MarkNotificationReadAsync(Guid notificationId, Guid accountId, CancellationToken ct)
+    {
+        var notification = await db.FoundryNotifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.RecipientId == accountId, ct);
+
+        if (notification is null) return false;
+
+        notification.IsRead = true;
+        notification.ReadAt  = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────
@@ -144,6 +193,7 @@ public class FoundryService(ApplicationDbContext db)
         s.Id,
         s.ContentType.ToString(),
         s.Title,
+        s.Description,
         s.Payload,
         s.Status.ToString(),
         s.Submitter?.UserName ?? "?",

@@ -32,6 +32,7 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <!-- SignalR Client -->
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 
   <ItemGroup>

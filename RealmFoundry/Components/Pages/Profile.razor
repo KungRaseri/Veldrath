@@ -1,0 +1,42 @@
+@page "/profile"
+@inject AuthStateService AuthState
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Profile — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsLoggedIn)
+{
+    <p>You must <a href="/login">sign in</a> to view your profile.</p>
+}
+else
+{
+    <h1>@AuthState.Username</h1>
+
+    <div class="profile-card">
+        <div class="profile-row">
+            <span class="label">Account ID</span>
+            <span class="value muted">@AuthState.AccountId</span>
+        </div>
+
+        @if (AuthState.IsCurator)
+        {
+            <div class="profile-row">
+                <span class="label">Role</span>
+                <span class="badge badge-blue">Curator</span>
+            </div>
+        }
+
+        @if (AuthState.TokenExpiry.HasValue)
+        {
+            <div class="profile-row">
+                <span class="label">Session expires</span>
+                <span class="value muted">@AuthState.TokenExpiry.Value.ToLocalTime().ToString("g")</span>
+            </div>
+        }
+    </div>
+
+    <div style="margin-top:1.5rem">
+        <a class="btn" href="/submissions?submitter=me">My Submissions</a>
+    </div>
+}

@@ -31,6 +31,15 @@ services:
       # Override DB to the Postgres container; everything else comes from appsettings.Development.json
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
       - Database__Provider=postgres
+      # JWT signing key — set in .env, never hardcode here
+      - Jwt__Key=${JWT_KEY}
+      # OAuth provider credentials — set in .env, never hardcode here
+      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
+      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
+      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
+      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -54,6 +63,20 @@ services:
       # Leave as 0 (or unset) to register commands globally in production.
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
     restart: unless-stopped
+
+  foundry:
+    build:
+      context: .
+      dockerfile: RealmFoundry/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8081
+      - RealmUnbound__ServerUrl=http://server:8080
+    depends_on:
+      server:
+        condition: service_healthy
 
 volumes:
   postgres_data:

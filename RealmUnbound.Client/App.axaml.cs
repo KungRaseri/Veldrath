@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ReactiveUI;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Client.Views;
@@ -36,6 +37,29 @@ public partial class App : Application
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
+        // Restore persisted session (DPAPI-encrypted) so the user stays logged in across restarts.
+        if (OperatingSystem.IsWindows())
+        {
+#pragma warning disable CA1416 // ProtectedData is Windows-only — guarded by OperatingSystem.IsWindows()
+            var persistence = Services.GetRequiredService<TokenPersistenceService>();
+            var tokenStore  = Services.GetRequiredService<TokenStore>();
+            var saved = persistence.Load();
+            if (saved is not null)
+                tokenStore.Set(saved.AccessToken, saved.RefreshToken, saved.Username, saved.AccountId,
+                               saved.AccessTokenExpiry, saved.IsCurator);
+
+            // Mirror every token update to persistent storage, and clear on logout.
+            tokenStore.WhenAnyValue(t => t.AccessToken).Subscribe(at =>
+            {
+                if (at is not null && tokenStore.RefreshToken is not null && tokenStore.Username is not null && tokenStore.AccountId.HasValue)
+                    persistence.Save(at, tokenStore.RefreshToken, tokenStore.Username, tokenStore.AccountId.Value,
+                                      tokenStore.AccessTokenExpiry ?? DateTimeOffset.UtcNow.AddMinutes(15), tokenStore.IsCurator);
+                else if (at is null)
+                    persistence.Clear();
+            });
+#pragma warning restore CA1416
+        }
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
@@ -54,6 +78,9 @@ public partial class App : Application
 
         // Token store (singleton — shared between auth service and connection service)
         services.AddSingleton<TokenStore>();
+
+        // Persists DPAPI-encrypted tokens so sessions survive restarts.
+        services.AddSingleton<TokenPersistenceService>();
 
         // Persists lightweight session preferences (email only — never tokens/passwords)
         services.AddSingleton<SessionStore>();

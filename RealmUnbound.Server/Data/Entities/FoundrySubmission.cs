@@ -38,6 +38,9 @@ public class FoundrySubmission
     /// <summary>Human-readable title summarising the submission.</summary>
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>Optional markdown description giving context, balance rationale, etc.</summary>
+    public string? Description { get; set; }
+
     /// <summary>Serialised content payload (JSONB in Postgres).</summary>
     public string Payload { get; set; } = "{}";
 

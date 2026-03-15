@@ -52,7 +52,8 @@ public class HttpAuthService(
             if (response.IsSuccessStatusCode)
             {
                 var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
-                if (auth is not null) tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId);
+                if (auth is not null) tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                                                   auth.AccessTokenExpiry, auth.IsCurator);
                 return (auth, null);
             }
 
@@ -73,7 +74,8 @@ public class HttpAuthService(
             if (response.IsSuccessStatusCode)
             {
                 var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
-                if (auth is not null) tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId);
+                if (auth is not null) tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                                                   auth.AccessTokenExpiry, auth.IsCurator);
                 return (auth, null);
             }
 
@@ -102,7 +104,8 @@ public class HttpAuthService(
             var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
             if (auth is null) { tokens.Clear(); return false; }
 
-            tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId);
+            tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                        auth.AccessTokenExpiry, auth.IsCurator);
             return true;
         }
         catch (Exception ex)
@@ -171,7 +174,8 @@ public class HttpAuthService(
             accountId,
             username);
 
-        tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId);
+        tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
+                    response.AccessTokenExpiry, response.IsCurator);
         return (response, null);
     }
 

@@ -1,5 +1,7 @@
 @implements IDisposable
 @inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
 
 <nav class="nav-links">
     <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
@@ -13,7 +15,13 @@
 
     @if (AuthState.IsLoggedIn)
     {
-        <span class="nav-username">@AuthState.Username</span>
+        <NavLink class="nav-item" href="profile">@AuthState.Username</NavLink>
+        @if (_unreadCount > 0)
+        {
+            <NavLink class="nav-item nav-bell" href="notifications">
+                🔔 <span class="badge badge-red">@_unreadCount</span>
+            </NavLink>
+        }
         <button class="nav-item nav-logout" @onclick="LogOutAsync">Sign out</button>
     }
     else
@@ -23,17 +31,40 @@
 </nav>
 
 @code {
+    private int _unreadCount;
+
     protected override void OnInitialized()
         => AuthState.OnChange += Refresh;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AuthState.IsLoggedIn)
+            await LoadNotificationCountAsync();
+    }
 
     public void Dispose()
         => AuthState.OnChange -= Refresh;
 
-    private void Refresh() => InvokeAsync(StateHasChanged);
+    private void Refresh() => InvokeAsync(async () =>
+    {
+        if (AuthState.IsLoggedIn)
+            await LoadNotificationCountAsync();
+        else
+            _unreadCount = 0;
+        StateHasChanged();
+    });
+
+    private async Task LoadNotificationCountAsync()
+    {
+        var notifications = await Api.GetNotificationsAsync();
+        _unreadCount = notifications.Count(n => !n.IsRead);
+        StateHasChanged();
+    }
 
     private async Task LogOutAsync()
     {
         await AuthState.LogOutAsync();
+        _unreadCount = 0;
         Refresh();
     }
 }
