@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -113,7 +116,41 @@ try
 
     builder.Services.AddAuthorization();
 
-    // ── Auth service ──────────────────────────────────────────────────────────
+    // ── OAuth providers ───────────────────────────────────────────────────────
+    // Registered conditionally so the server starts cleanly when credentials are
+    // absent (CI, local dev without OAuth app registrations).
+    var discordId     = builder.Configuration["OAuth:Discord:ClientId"];
+    var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"];
+    if (!string.IsNullOrEmpty(discordId) && !string.IsNullOrEmpty(discordSecret))
+        builder.Services.AddAuthentication()
+            .AddDiscord(o =>
+            {
+                o.ClientId     = discordId;
+                o.ClientSecret = discordSecret;
+                o.Scope.Add("email");
+            });
+
+    var googleId     = builder.Configuration["OAuth:Google:ClientId"];
+    var googleSecret = builder.Configuration["OAuth:Google:ClientSecret"];
+    if (!string.IsNullOrEmpty(googleId) && !string.IsNullOrEmpty(googleSecret))
+        builder.Services.AddAuthentication()
+            .AddGoogle(o =>
+            {
+                o.ClientId     = googleId;
+                o.ClientSecret = googleSecret;
+            });
+
+    var msId     = builder.Configuration["OAuth:Microsoft:ClientId"];
+    var msSecret = builder.Configuration["OAuth:Microsoft:ClientSecret"];
+    if (!string.IsNullOrEmpty(msId) && !string.IsNullOrEmpty(msSecret))
+        builder.Services.AddAuthentication()
+            .AddMicrosoftAccount(o =>
+            {
+                o.ClientId     = msId;
+                o.ClientSecret = msSecret;
+            });
+
+
     builder.Services.AddScoped<AuthService>();
 
     // ── Repositories ──────────────────────────────────────────────────────────
@@ -175,6 +212,7 @@ try
 
     // Auth, character, zone & content catalog endpoints
     app.MapAuthEndpoints();
+    app.MapExternalAuthEndpoints();
     app.MapCharacterEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();

@@ -1,0 +1,152 @@
+/* RealmFoundry ─────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --color-bg:      #0d1117;
+    --color-surface: #161b22;
+    --color-border:  #30363d;
+    --color-text:    #c9d1d9;
+    --color-muted:   #8b949e;
+    --color-accent:  #7c5cbf;
+    --color-link:    #58a6ff;
+    --sidebar-w:     220px;
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+a { color: var(--color-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1rem;
+    gap: 1.5rem;
+    flex-shrink: 0;
+}
+
+.brand a {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    letter-spacing: 0.5px;
+}
+
+.nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.nav-item {
+    display: block;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    color: var(--color-text);
+    transition: background 0.15s;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background: rgba(124, 92, 191, 0.2);
+    color: #fff;
+    text-decoration: none;
+}
+
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+
+.top-bar {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.page-body {
+    padding: 2rem 1.5rem;
+    max-width: 960px;
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+
+h1 { font-size: 2rem;   font-weight: 600; margin-bottom: 0.5rem; }
+h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
+
+p { margin-bottom: 0.75rem; }
+p.lead { font-size: 1.05rem; color: var(--color-muted); margin-bottom: 2rem; }
+
+/* ── Feature cards ───────────────────────────────────────────────────────── */
+
+.feature-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+}
+
+.card h3 { color: var(--color-accent); }
+.card p  { color: var(--color-muted); margin: 0.5rem 0 1rem; font-size: 0.9rem; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.btn {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    background: var(--color-accent);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: opacity 0.15s;
+}
+
+.btn:hover { opacity: 0.85; text-decoration: none; }
+
+/* ── Blazor error UI ─────────────────────────────────────────────────────── */
+
+#blazor-error-ui {
+    background: #321;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    bottom: 1rem;
+    right: 1rem;
+    color: var(--color-text);
+    display: none;
+    padding: 0.75rem 1rem;
+    position: fixed;
+    z-index: 1000;
+}
+
+#blazor-error-ui .reload  { color: var(--color-link); }
+#blazor-error-ui .dismiss { cursor: pointer; float: right; margin-left: 1rem; }

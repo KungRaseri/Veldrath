@@ -1,0 +1,7 @@
+<Project>
+  <!-- RealmFoundry: Community content submission web app -->
+  <PropertyGroup>
+    <VersionMajor>0</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+  </PropertyGroup>
+</Project>

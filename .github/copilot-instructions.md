@@ -4,7 +4,7 @@
 
 **RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
 
-This repository also contains the **official game built on top of that engine**: RealmUnbound, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. RealmForge, an Avalonia DB content editor for managing game entities in Postgres, is here too.
+This repository also contains the **official game built on top of that engine**: RealmUnbound, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. RealmForge, an Avalonia DB content editor for managing game entities in Postgres, is here too. RealmFoundry is a Blazor Server web app for community content submission and curation.
 
 ## Project Structure
 
@@ -16,6 +16,7 @@ RealmEngine/
 ├── RealmUnbound.Server/       # ASP.NET Core game server with SignalR hub
 ├── RealmUnbound.Client/       # Avalonia cross-platform desktop client (ReactiveUI)
 ├── RealmForge/                # Avalonia DB content editor for game entities (ReactiveUI)
+├── RealmFoundry/              # Blazor Server web app — community content submission portal
 ├── [Project].Tests/           # One test project per library/application
 ├── .vscode/                   # Build tasks and debug launch configs
 ├── docs/                      # Documentation (DocFX → GitHub Pages)
@@ -29,6 +30,7 @@ RealmEngine/
 | `RealmEngine.slnx` | Core + Data + Shared + tests | Engine-only development, CI |
 | `RealmUnbound.slnx` | Client + Server + tests | Multiplayer development |
 | `RealmForge.slnx` | RealmForge + tests | Tooling development |
+| `RealmFoundry.slnx` | RealmFoundry + Server + tests | Community portal development |
 | `Realm.Full.slnx` | Everything | Full-stack local development |
 
 ## Architecture
@@ -93,6 +95,7 @@ var result = await mediator.Send(new SomeGameCommand { ... });
 dotnet build Realm.Full.slnx              # Full build
 dotnet test Realm.Full.slnx               # All 8,500+ tests
 dotnet run --project RealmForge           # Launch the DB content editor
+dotnet run --project RealmFoundry         # Launch the community content portal
 dotnet run --project RealmUnbound.Server  # Start the game server
 dotnet run --project RealmUnbound.Client  # Start the game client
 ```

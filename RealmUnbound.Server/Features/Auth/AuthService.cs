@@ -106,6 +106,49 @@ public class AuthService(
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
+    public async Task<(AuthResponse? Response, string? Error)> ExternalLoginOrRegisterAsync(
+        string provider, string providerKey, string? email, string? displayName,
+        string clientIp, CancellationToken ct = default)
+    {
+        // 1. Find an existing account by linked external login.
+        var user = await userManager.FindByLoginAsync(provider, providerKey);
+
+        // 2. Fallback: match by verified email so existing accounts aren't duplicated.
+        if (user is null && email is not null)
+            user = await userManager.FindByEmailAsync(email);
+
+        if (user is null)
+        {
+            var baseName = SanitizeUsername(displayName ?? email ?? providerKey);
+            var username = await ResolveUniqueUsernameAsync(baseName, ct);
+
+            user = new PlayerAccount
+            {
+                UserName       = username,
+                Email          = email,
+                EmailConfirmed = email is not null,
+            };
+
+            var create = await userManager.CreateAsync(user);
+            if (!create.Succeeded)
+                return (null, string.Join("; ", create.Errors.Select(e => e.Description)));
+        }
+
+        // 3. Ensure the external login is linked (idempotent).
+        var logins = await userManager.GetLoginsAsync(user);
+        if (!logins.Any(l => l.LoginProvider == provider && l.ProviderKey == providerKey))
+        {
+            var link = await userManager.AddLoginAsync(
+                user, new UserLoginInfo(provider, providerKey, provider));
+            if (!link.Succeeded)
+                return (null, string.Join("; ", link.Errors.Select(e => e.Description)));
+        }
+
+        return (await IssueTokenPairAsync(user, clientIp, ct), null);
+    }
+
+    // ── Internals ─────────────────────────────────────────────────────────────
+
     private async Task<AuthResponse> IssueTokenPairAsync(
         PlayerAccount user, string clientIp, CancellationToken ct)
     {
@@ -155,6 +198,23 @@ public class AuthService(
     {
         var raw = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         return (raw, HashToken(raw));
+    }
+
+    private async Task<string> ResolveUniqueUsernameAsync(string baseName, CancellationToken ct)
+    {
+        _ = ct; // UserManager doesn't expose CT here but the loop is fast
+        var candidate = baseName;
+        var attempt   = 0;
+        while (await userManager.FindByNameAsync(candidate) is not null)
+            candidate = $"{baseName}{++attempt}";
+        return candidate;
+    }
+
+    private static string SanitizeUsername(string raw)
+    {
+        var clean = new string(raw.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+        if (clean.Length > 32) clean = clean[..32];
+        return clean.Length > 0 ? clean : "player";
     }
 
     internal static string HashToken(string rawToken)
