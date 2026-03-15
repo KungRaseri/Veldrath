@@ -16,8 +16,9 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 {
     private static readonly HashSet<string> KnownTables = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Abilities", "Enemies", "Weapons", "Armors", "Items", "Materials", "Enchantments",
-        "Skills", "Spells", "CharacterClasses", "Backgrounds", "Npcs", "Quests", "Recipes",
+        "Abilities", "Species", "ActorClasses", "ActorArchetypes", "ActorInstances",
+        "Weapons", "Armors", "Items", "Materials", "Enchantments",
+        "Skills", "Spells", "Backgrounds", "Quests", "Recipes",
         "LootTables", "Organizations", "MaterialProperties", "WorldLocations", "Dialogues"
     };
 
@@ -37,7 +38,10 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             return tableName switch
             {
                 "Abilities"          => await db.Abilities.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Enemies"            => await db.Enemies.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Species"            => await db.Species.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ActorClasses"       => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ActorArchetypes"    => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ActorInstances"     => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Weapons"            => await db.Weapons.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Armors"             => await db.Armors.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Items"              => await db.Items.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
@@ -45,9 +49,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "Enchantments"       => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Skills"             => await db.Skills.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Spells"             => await db.Spells.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "CharacterClasses"   => await db.CharacterClasses.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Backgrounds"        => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Npcs"               => await db.Npcs.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Quests"             => await db.Quests.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Recipes"            => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "LootTables"         => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
@@ -148,7 +150,10 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             var removed = tableName switch
             {
                 "Abilities"          => await RemoveFromSet<Ability>(db, entityId),
-                "Enemies"            => await RemoveFromSet<Enemy>(db, entityId),
+                "Species"            => await RemoveFromSet<Species>(db, entityId),
+                "ActorClasses"       => await RemoveFromSet<ActorClass>(db, entityId),
+                "ActorArchetypes"    => await RemoveFromSet<ActorArchetype>(db, entityId),
+                "ActorInstances"     => await RemoveFromSet<ActorInstance>(db, entityId),
                 "Weapons"            => await RemoveFromSet<Weapon>(db, entityId),
                 "Armors"             => await RemoveFromSet<Armor>(db, entityId),
                 "Items"              => await RemoveFromSet<Item>(db, entityId),
@@ -156,9 +161,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "Enchantments"       => await RemoveFromSet<Enchantment>(db, entityId),
                 "Skills"             => await RemoveFromSet<Skill>(db, entityId),
                 "Spells"             => await RemoveFromSet<Spell>(db, entityId),
-                "CharacterClasses"   => await RemoveFromSet<CharacterClass>(db, entityId),
                 "Backgrounds"        => await RemoveFromSet<Background>(db, entityId),
-                "Npcs"               => await RemoveFromSet<Npc>(db, entityId),
                 "Quests"             => await RemoveFromSet<Quest>(db, entityId),
                 "Recipes"            => await RemoveFromSet<Recipe>(db, entityId),
                 "LootTables"         => await RemoveFromSet<LootTable>(db, entityId),
@@ -203,7 +206,10 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
     private static ContentBase NewEntityInstance(string tableName) => tableName switch
     {
         "Abilities"          => new Ability(),
-        "Enemies"            => new Enemy(),
+        "Species"            => new Species(),
+        "ActorClasses"       => new ActorClass(),
+        "ActorArchetypes"    => new ActorArchetype(),
+        "ActorInstances"     => new ActorInstance(),
         "Weapons"            => new Weapon(),
         "Armors"             => new Armor(),
         "Items"              => new Item(),
@@ -211,9 +217,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         "Enchantments"       => new Enchantment(),
         "Skills"             => new Skill(),
         "Spells"             => new Spell(),
-        "CharacterClasses"   => new CharacterClass(),
         "Backgrounds"        => new Background(),
-        "Npcs"               => new Npc(),
         "Quests"             => new Quest(),
         "Recipes"            => new Recipe(),
         "LootTables"         => new LootTable(),
@@ -228,25 +232,26 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
     {
         switch (tableName)
         {
-            case "Abilities":          db.Abilities.Add((Ability)entity);                    break;
-            case "Enemies":            db.Enemies.Add((Enemy)entity);                        break;
-            case "Weapons":            db.Weapons.Add((Weapon)entity);                       break;
-            case "Armors":             db.Armors.Add((Armor)entity);                         break;
-            case "Items":              db.Items.Add((Item)entity);                            break;
-            case "Materials":          db.Materials.Add((Material)entity);                   break;
-            case "Enchantments":       db.Enchantments.Add((Enchantment)entity);             break;
-            case "Skills":             db.Skills.Add((Skill)entity);                         break;
-            case "Spells":             db.Spells.Add((Spell)entity);                         break;
-            case "CharacterClasses":   db.CharacterClasses.Add((CharacterClass)entity);      break;
-            case "Backgrounds":        db.Backgrounds.Add((Background)entity);               break;
-            case "Npcs":               db.Npcs.Add((Npc)entity);                             break;
-            case "Quests":             db.Quests.Add((Quest)entity);                         break;
-            case "Recipes":            db.Recipes.Add((Recipe)entity);                       break;
-            case "LootTables":         db.LootTables.Add((LootTable)entity);                 break;
-            case "Organizations":      db.Organizations.Add((Organization)entity);           break;
-            case "MaterialProperties": db.MaterialProperties.Add((MaterialProperty)entity);  break;
-            case "WorldLocations":     db.WorldLocations.Add((WorldLocation)entity);         break;
-            case "Dialogues":          db.Dialogues.Add((Dialogue)entity);                   break;
+            case "Abilities":          db.Abilities.Add((Ability)entity);                       break;
+            case "Species":            db.Species.Add((Species)entity);                         break;
+            case "ActorClasses":       db.ActorClasses.Add((ActorClass)entity);                 break;
+            case "ActorArchetypes":    db.ActorArchetypes.Add((ActorArchetype)entity);           break;
+            case "ActorInstances":     db.ActorInstances.Add((ActorInstance)entity);             break;
+            case "Weapons":            db.Weapons.Add((Weapon)entity);                          break;
+            case "Armors":             db.Armors.Add((Armor)entity);                            break;
+            case "Items":              db.Items.Add((Item)entity);                              break;
+            case "Materials":          db.Materials.Add((Material)entity);                      break;
+            case "Enchantments":       db.Enchantments.Add((Enchantment)entity);                break;
+            case "Skills":             db.Skills.Add((Skill)entity);                            break;
+            case "Spells":             db.Spells.Add((Spell)entity);                            break;
+            case "Backgrounds":        db.Backgrounds.Add((Background)entity);                  break;
+            case "Quests":             db.Quests.Add((Quest)entity);                            break;
+            case "Recipes":            db.Recipes.Add((Recipe)entity);                          break;
+            case "LootTables":         db.LootTables.Add((LootTable)entity);                    break;
+            case "Organizations":      db.Organizations.Add((Organization)entity);              break;
+            case "MaterialProperties": db.MaterialProperties.Add((MaterialProperty)entity);     break;
+            case "WorldLocations":     db.WorldLocations.Add((WorldLocation)entity);            break;
+            case "Dialogues":          db.Dialogues.Add((Dialogue)entity);                      break;
         }
     }
 
@@ -276,7 +281,10 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             return tableName switch
             {
                 "Abilities"          => await SelectRows(db.Abilities, typeKey),
-                "Enemies"            => await SelectRows(db.Enemies, typeKey),
+                "Species"            => await SelectRows(db.Species, typeKey),
+                "ActorClasses"       => await SelectRows(db.ActorClasses, typeKey),
+                "ActorArchetypes"    => await SelectRows(db.ActorArchetypes, typeKey),
+                "ActorInstances"     => await SelectRows(db.ActorInstances, typeKey),
                 "Weapons"            => await SelectRows(db.Weapons, typeKey),
                 "Armors"             => await SelectRows(db.Armors, typeKey),
                 "Items"              => await SelectRows(db.Items, typeKey),
@@ -284,9 +292,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "Enchantments"       => await SelectRows(db.Enchantments, typeKey),
                 "Skills"             => await SelectRows(db.Skills, typeKey),
                 "Spells"             => await SelectRows(db.Spells, typeKey),
-                "CharacterClasses"   => await SelectRows(db.CharacterClasses, typeKey),
                 "Backgrounds"        => await SelectRows(db.Backgrounds, typeKey),
-                "Npcs"               => await SelectRows(db.Npcs, typeKey),
                 "Quests"             => await SelectRows(db.Quests, typeKey),
                 "Recipes"            => await SelectRows(db.Recipes, typeKey),
                 "LootTables"         => await SelectRows(db.LootTables, typeKey),

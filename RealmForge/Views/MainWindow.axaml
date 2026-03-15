@@ -64,7 +64,7 @@
                                Foreground="#555" FontSize="13"
                                IsVisible="{Binding IsLoadingTree}" />
 
-                    <!-- Empty / error state message -->
+                    <!-- Error state (DB unreachable) -->
                     <StackPanel Grid.Row="0"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Spacing="10" Margin="16,0"
@@ -81,13 +81,6 @@
                                 Background="#2a2010" Foreground="#a08040"
                                 Padding="14,5" CornerRadius="4"
                                 HorizontalAlignment="Center" />
-                        <Button Content="Seed sample data"
-                                Command="{Binding SeedDevDataCommand}"
-                                IsEnabled="{Binding !IsSeeding}"
-                                Background="#1a2a1a" Foreground="#40a060"
-                                Padding="14,5" CornerRadius="4"
-                                HorizontalAlignment="Center"
-                                ToolTip.Tip="Insert dev sample entities across all content domains" />
                     </StackPanel>
 
                     <!-- Content tree -->
@@ -97,7 +90,7 @@
                               Background="Transparent"
                               BorderThickness="0"
                               Margin="0,4,0,0"
-                              IsVisible="{Binding !IsLoadingTree}">
+                              IsVisible="{Binding IsTreeVisible}">
 
                         <TreeView.Styles>
                             <Style Selector="TreeViewItem">

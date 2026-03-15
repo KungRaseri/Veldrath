@@ -7,83 +7,78 @@ using RealmForge.ViewModels;
 namespace RealmForge.Services;
 
 /// <summary>
-/// Builds the left-panel content tree by querying the ContentRegistry routing table.
-/// Returns a three-level hierarchy: Domain → TypeKey → Entity (leaf).
+/// Builds the left-panel content tree from <see cref="ContentDomainCatalog"/>, overlaid with
+/// entity leaf nodes pulled from ContentRegistry. All domain categories are always present in
+/// the tree regardless of whether any entities have been created yet.
+/// Throws if the database is unreachable — callers are responsible for catching.
 /// </summary>
 public class ContentTreeService(IServiceScopeFactory scopeFactory, ILogger<ContentTreeService> logger)
 {
     public async Task<IReadOnlyList<FileTreeNodeViewModel>> BuildTreeAsync()
     {
-        try
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetService<ContentDbContext>();
+        if (db is null)
         {
-            using var scope = scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetService<ContentDbContext>();
-            if (db is null)
+            logger.LogWarning("ContentDbContext not registered");
+            return [];
+        }
+
+        // Single query: group all registry entries by (Domain, TypeKey)
+        var registryLookup = await db.ContentRegistry
+            .AsNoTracking()
+            .GroupBy(e => new { e.Domain, e.TypeKey })
+            .ToDictionaryAsync(
+                g => (g.Key.Domain, g.Key.TypeKey),
+                g => g.OrderBy(e => e.Slug).ToList());
+
+        var result = new List<FileTreeNodeViewModel>();
+
+        foreach (var domainGroup in ContentDomainCatalog.All.GroupBy(e => e.DomainGroup))
+        {
+            var domainEntry = domainGroup.First();
+            var domainNode = new FileTreeNodeViewModel
             {
-                logger.LogWarning("ContentDbContext not registered — content tree will be empty");
-                return [];
-            }
+                Name        = domainEntry.DomainLabel,
+                FullPath    = domainGroup.Key,
+                IsDirectory = true,
+            };
 
-            var entries = await db.ContentRegistry
-                .AsNoTracking()
-                .OrderBy(e => e.Domain)
-                .ThenBy(e => e.TypeKey)
-                .ThenBy(e => e.Slug)
-                .ToListAsync();
-
-            var result = new List<FileTreeNodeViewModel>();
-
-            foreach (var domainGroup in entries.GroupBy(e => e.Domain))
+            foreach (var entry in domainGroup)
             {
-                var domainNode = new FileTreeNodeViewModel
+                var typeNode = new FileTreeNodeViewModel
                 {
-                    Name = FormatLabel(domainGroup.Key),
-                    FullPath = domainGroup.Key,
-                    IsDirectory = true
+                    Name        = entry.TypeKeyLabel,
+                    FullPath    = $"{entry.Domain}/{entry.TypeKey}",
+                    IsDirectory = true,
+                    TableName   = entry.TableName,
+                    Domain      = entry.Domain,
+                    TypeKey     = entry.TypeKey,
+                    DomainLabel = entry.DomainLabel,
                 };
 
-                foreach (var typeGroup in domainGroup.GroupBy(e => e.TypeKey))
+                if (registryLookup.TryGetValue((entry.Domain, entry.TypeKey), out var entities))
                 {
-                    var typeNode = new FileTreeNodeViewModel
-                    {
-                        Name        = FormatLabel(typeGroup.Key),
-                        FullPath    = $"{domainGroup.Key}/{typeGroup.Key}",
-                        IsDirectory = true,
-                        TableName   = typeGroup.First().TableName,
-                        Domain      = domainGroup.Key,
-                        TypeKey     = typeGroup.Key,
-                        DomainLabel = FormatLabel(domainGroup.Key)
-                    };
-
-                    foreach (var entry in typeGroup)
+                    foreach (var reg in entities)
                     {
                         typeNode.Children.Add(new FileTreeNodeViewModel
                         {
-                            Name = entry.Slug,
-                            FullPath = $"{entry.TableName}/{entry.EntityId}",
-                            EntityId = entry.EntityId,
-                            TableName = entry.TableName,
-                            IsDirectory = false
+                            Name        = reg.Slug,
+                            FullPath    = $"{entry.TableName}/{reg.EntityId}",
+                            EntityId    = reg.EntityId,
+                            TableName   = entry.TableName,
+                            IsDirectory = false,
                         });
                     }
-
-                    domainNode.Children.Add(typeNode);
                 }
 
-                result.Add(domainNode);
+                domainNode.Children.Add(typeNode);
             }
 
-            return result;
+            result.Add(domainNode);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to build content tree");
-            return [];
-        }
-    }
 
-    private static string FormatLabel(string key) =>
-        string.Join(" ", key.Replace('/', ' ')
-            .Split(['-', '_', ' '], StringSplitOptions.RemoveEmptyEntries)
-            .Select(w => char.ToUpper(w[0]) + w[1..]));
+        return result;
+    }
 }
+
