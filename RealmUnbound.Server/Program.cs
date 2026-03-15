@@ -132,7 +132,6 @@ try
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
-    builder.Services.AddDbContext<ContentDbContext>(options => options.UseNpgsql(connectionString));
     builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));
     builder.Services.AddSingleton<GameConfigService, DbGameConfigService>();
     builder.Services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();

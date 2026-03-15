@@ -18,6 +18,7 @@ public class AbilityCatalogService
     private bool _initialized;
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
+    [ActivatorUtilitiesConstructor]
     public AbilityCatalogService(IServiceScopeFactory scopeFactory, ILogger<AbilityCatalogService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
