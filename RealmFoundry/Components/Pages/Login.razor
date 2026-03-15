@@ -28,7 +28,8 @@
 
     protected override void OnInitialized()
     {
-        var serverUrl = Config["RealmUnbound:ServerUrl"]?.TrimEnd('/') ?? "";
+        // PublicServerUrl is the browser-reachable address; ServerUrl may be an internal Docker hostname.
+        var serverUrl = (Config["RealmUnbound:PublicServerUrl"] ?? Config["RealmUnbound:ServerUrl"])?.TrimEnd('/') ?? "";
         // The return URL is this Blazor app's /auth/callback route where we'll
         // receive the JWT from the server's redirect and update AuthStateService.
         var callbackBase = Nav.BaseUri.TrimEnd('/') + "/auth/callback";

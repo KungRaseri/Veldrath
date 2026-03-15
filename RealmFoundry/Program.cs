@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using Serilog.Events;
 using RealmFoundry;
@@ -37,15 +38,21 @@ try
 
     builder.Services.AddScoped<AuthStateService>();
 
+    // ── DataProtection key persistence ────────────────────────────────────────
+    // Persisting to a mounted volume prevents antiforgery token failures on
+    // container restart caused by ephemeral in-memory keys.
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
+        .SetApplicationName("RealmFoundry");
+
     var app = builder.Build();
 
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Error");
         app.UseHsts();
+        app.UseHttpsRedirection();
     }
-
-    app.UseHttpsRedirection();
     app.UseStaticFiles();
     app.UseAntiforgery();
 
