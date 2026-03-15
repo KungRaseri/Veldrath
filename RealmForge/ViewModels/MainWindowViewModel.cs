@@ -21,6 +21,7 @@ public class MainWindowViewModel : ReactiveObject
     private string? _treePaneMessage;
     private string _selectedActivityKey = "actors";
     private Dictionary<string, List<FileTreeNodeViewModel>> _nodesByActivity = new();
+    private FileTreeNodeViewModel? _selectedDomainGroup;
 
     public MainWindowViewModel(
         EditorSettingsService settingsService,
@@ -54,6 +55,12 @@ public class MainWindowViewModel : ReactiveObject
                 SelectedActivityKey = key;
                 IsPaneOpen = true;
             }
+        });
+
+        OpenTypeKeyCommand = ReactiveCommand.Create<FileTreeNodeViewModel>(node =>
+        {
+            if (node.IsDirectory && node.TableName is not null)
+                OpenEntityList(node);
         });
 
         CurrentPage = new HomeViewModel();
@@ -145,11 +152,18 @@ public class MainWindowViewModel : ReactiveObject
 
     public ObservableCollection<FileTreeNodeViewModel> TreeNodes { get; } = new();
 
+    public FileTreeNodeViewModel? SelectedDomainGroup
+    {
+        get => _selectedDomainGroup;
+        set => this.RaiseAndSetIfChanged(ref _selectedDomainGroup, value);
+    }
+
     public ReactiveCommand<Unit, Unit> TogglePaneCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleThemeCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTreeCommand { get; }
     public ReactiveCommand<string, Unit> SelectActivityCommand { get; }
     public ReactiveCommand<Unit, Unit> ShowAboutCommand { get; }
+    public ReactiveCommand<FileTreeNodeViewModel, Unit> OpenTypeKeyCommand { get; }
 
     public async Task LoadTreeAsync()
     {
@@ -208,6 +222,7 @@ public class MainWindowViewModel : ReactiveObject
         if (_nodesByActivity.TryGetValue(_selectedActivityKey, out var nodes))
             foreach (var n in nodes)
                 TreeNodes.Add(n);
+        SelectedDomainGroup = TreeNodes.FirstOrDefault();
     }
 
     private async Task OpenEntityAsync(FileTreeNodeViewModel node)
