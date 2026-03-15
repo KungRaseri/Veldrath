@@ -25,8 +25,11 @@ internal sealed class InteractionHandlingService(
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Pass null so Discord.NET uses reflection only — no DI resolution at discovery time.
-        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), null);
+        // Create a scope so Discord.NET can instantiate module types during reflection/discovery.
+        using (var scope = scopeFactory.CreateScope())
+        {
+            await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
+        }
 
         client.Ready             += RegisterCommandsAsync;
         client.InteractionCreated += HandleInteractionAsync;
