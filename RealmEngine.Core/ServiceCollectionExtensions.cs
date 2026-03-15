@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using MediatR;
@@ -128,9 +129,11 @@ public static class ServiceCollectionExtensions
         // Register catalog services (singletons for shared catalogs)
         // NOTE: These catalog services require InitializeAsync() to be called after DI container is built
         // Example: await serviceProvider.GetRequiredService<AbilityCatalogService>().InitializeAsync();
-        services.AddSingleton<AbilityCatalogService>();
-        services.AddSingleton<SpellCatalogService>();  // Changed from Scoped to Singleton for caching
-        services.AddSingleton<SkillCatalogService>();  // Changed from Scoped to Singleton for caching
+        // Factory lambdas are used to explicitly select the IServiceScopeFactory constructor,
+        // avoiding ambiguity with the secondary test constructor that takes IXxxRepository.
+        services.AddSingleton(sp => new AbilityCatalogService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<AbilityCatalogService>>()));
+        services.AddSingleton(sp => new SpellCatalogService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SpellCatalogService>>()));
+        services.AddSingleton(sp => new SkillCatalogService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SkillCatalogService>>()));
         
         // Register interfaces to implementations
         services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
