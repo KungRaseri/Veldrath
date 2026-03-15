@@ -28,48 +28,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<SaveGameRecord> SaveGames => Set<SaveGameRecord>();
     public DbSet<HallOfFameEntry> HallOfFameEntries => Set<HallOfFameEntry>();
 
-    // ── Content registry & vocabulary ────────────────────────────────────────
-    public DbSet<ContentRegistry> ContentRegistry => Set<ContentRegistry>();
-    public DbSet<TraitDefinition> TraitDefinitions => Set<TraitDefinition>();
-
-    // ── Catalog content ───────────────────────────────────────────────────────
-    public DbSet<Ability> Abilities => Set<Ability>();
-    public DbSet<Species> Species => Set<Species>();
-    public DbSet<ActorClass> ActorClasses => Set<ActorClass>();
-    public DbSet<ActorArchetype> ActorArchetypes => Set<ActorArchetype>();
-    public DbSet<ActorInstance> ActorInstances => Set<ActorInstance>();
-    public DbSet<Weapon> Weapons => Set<Weapon>();
-    public DbSet<Armor> Armors => Set<Armor>();
-    public DbSet<Item> Items => Set<Item>();
-    public DbSet<Material> Materials => Set<Material>();
-    public DbSet<Enchantment> Enchantments => Set<Enchantment>();
-    public DbSet<Skill> Skills => Set<Skill>();
-    public DbSet<Spell> Spells => Set<Spell>();
-    public DbSet<Background> Backgrounds => Set<Background>();
-    public DbSet<Quest> Quests => Set<Quest>();
-    public DbSet<Recipe> Recipes => Set<Recipe>();
-    public DbSet<LootTable> LootTables => Set<LootTable>();
-    public DbSet<Organization> Organizations => Set<Organization>();
-    public DbSet<MaterialProperty> MaterialProperties => Set<MaterialProperty>();
-    public DbSet<WorldLocation> WorldLocations => Set<WorldLocation>();
-    public DbSet<Dialogue> Dialogues => Set<Dialogue>();
-
-    // ── Junction tables ───────────────────────────────────────────────────────
-    public DbSet<SpeciesAbilityPool> SpeciesAbilityPools => Set<SpeciesAbilityPool>();
-    public DbSet<ArchetypeAbilityPool> ArchetypeAbilityPools => Set<ArchetypeAbilityPool>();
-    public DbSet<InstanceAbilityPool> InstanceAbilityPools => Set<InstanceAbilityPool>();
-    public DbSet<ClassAbilityUnlock> ClassAbilityUnlocks => Set<ClassAbilityUnlock>();
-    public DbSet<LootTableEntry> LootTableEntries => Set<LootTableEntry>();
-    public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
-
-    // ── Name patterns ─────────────────────────────────────────────────────────
-    public DbSet<NamePatternSet> NamePatternSets => Set<NamePatternSet>();
-    public DbSet<NamePattern> NamePatterns => Set<NamePattern>();
-    public DbSet<NameComponent> NameComponents => Set<NameComponent>();
-
-    // ── System configuration ──────────────────────────────────────────────────
-    public DbSet<GameConfig> GameConfigs => Set<GameConfig>();
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder); // required — scaffolds all Identity tables
@@ -142,8 +100,5 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasKey(h => h.Id);
             e.HasIndex(h => h.FameScore);
         });
-
-        // All 31 content entity configurations are defined once in ContentModelConfiguration.
-        ContentModelConfiguration.Configure(builder);
     }
 }
