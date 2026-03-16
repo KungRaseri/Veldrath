@@ -1,4 +1,32 @@
+using System.Text.Json;
+
 namespace RealmUnbound.Contracts.Content;
+
+// ── Content Browse ─────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Lightweight summary row used in paged content browse lists.
+/// Returned by <c>GET /api/content/browse?type=…</c>.
+/// </summary>
+public record ContentSummaryDto(
+    Guid Id,
+    string Slug,
+    string? DisplayName,
+    string TypeKey,
+    string ContentType,
+    int RarityWeight,
+    bool IsActive,
+    DateTimeOffset UpdatedAt);
+
+/// <summary>
+/// Full content entity detail returned by <c>GET /api/content/browse/{type}/{slug}</c>.
+/// <see cref="Payload"/> is the complete entity serialized as camelCase JSON so that
+/// field names align with <see cref="ContentSchema.ContentFieldDescriptor.Name"/> paths.
+/// </summary>
+public record ContentDetailDto(ContentSummaryDto Summary, JsonElement Payload);
+
+/// <summary>Top-level info about one content type — used by the schema listing endpoint.</summary>
+public record ContentTypeInfoDto(string ContentType, string DisplayLabel, string Description);
 
 // ── Ability ───────────────────────────────────────────────────────────────────
 

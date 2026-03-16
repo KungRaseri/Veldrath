@@ -1,8 +1,15 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmUnbound.Contracts.Content;
+using RealmUnbound.Contracts.Foundry;
+using SharedAbility = RealmEngine.Shared.Models.Ability;
+using SharedQuest   = RealmEngine.Shared.Models.Quest;
+using SharedRecipe  = RealmEngine.Shared.Models.Recipe;
+using SharedSpell   = RealmEngine.Shared.Models.Spell;
 
 namespace RealmUnbound.Server.Features.Content;
 
@@ -32,14 +39,25 @@ namespace RealmUnbound.Server.Features.Content;
 /// GET /api/content/backgrounds/{slug}    — single background
 /// GET /api/content/skills                — all active skills
 /// GET /api/content/skills/{slug}         — single skill
+///
+/// GET /api/content/schema                — all registered content type schemas (public)
+/// GET /api/content/browse                — paged list across any entity type (public)
+/// GET /api/content/browse/{type}/{slug}  — full entity detail by type + slug (public)
 /// /// </summary>
 public static class ContentEndpoints
 {
+    private static readonly JsonSerializerOptions _detailJsonOpts =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     public static IEndpointRouteBuilder MapContentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/content")
             .WithTags("Content")
-            .RequireAuthorization();
+            .AllowAnonymous();
+
+        // ── Public schema + browse (no auth, no player session required) ───────
+        group.MapGet("/schema",                   GetSchemaAsync);
+        group.MapGet("/browse",                   BrowseAsync);
+        group.MapGet("/browse/{type}/{slug}",     BrowseDetailAsync);
 
         // Abilities
         group.MapGet("/abilities",        GetAbilitiesAsync);
@@ -86,6 +104,122 @@ public static class ContentEndpoints
         group.MapGet("/skills/{slug}",    GetSkillBySlugAsync);
 
         return app;
+    }
+
+    // ── Schema ────────────────────────────────────────────────────────────────
+
+    private static IResult GetSchemaAsync() =>
+        Results.Ok(ContentSchemaRegistry.All.Values.Select(s =>
+            new ContentTypeInfoDto(s.ContentType, s.DisplayLabel, s.Description)));
+
+    // ── Generic browse (paged summary list) ───────────────────────────────────
+
+    private static async Task<IResult> BrowseAsync(
+        string type,
+        string? search,
+        int page,
+        int pageSize,
+        ContentDbContext db,
+        CancellationToken ct)
+    {
+        page     = Math.Max(1, page == 0 ? 1 : page);
+        pageSize = Math.Clamp(pageSize == 0 ? 20 : pageSize, 1, 100);
+
+        var result = type.ToLowerInvariant() switch
+        {
+            "ability"          => await BrowseSet(db.Abilities,          type, search, page, pageSize, ct),
+            "species"          => await BrowseSet(db.Species,            type, search, page, pageSize, ct),
+            "class"            => await BrowseSet(db.ActorClasses,       type, search, page, pageSize, ct),
+            "archetype"        => await BrowseSet(db.ActorArchetypes,    type, search, page, pageSize, ct),
+            "instance"         => await BrowseSet(db.ActorInstances,     type, search, page, pageSize, ct),
+            "background"       => await BrowseSet(db.Backgrounds,        type, search, page, pageSize, ct),
+            "skill"            => await BrowseSet(db.Skills,             type, search, page, pageSize, ct),
+            "weapon"           => await BrowseSet(db.Weapons,            type, search, page, pageSize, ct),
+            "armor"            => await BrowseSet(db.Armors,             type, search, page, pageSize, ct),
+            "item"             => await BrowseSet(db.Items,              type, search, page, pageSize, ct),
+            "material"         => await BrowseSet(db.Materials,          type, search, page, pageSize, ct),
+            "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, page, pageSize, ct),
+            "enchantment"      => await BrowseSet(db.Enchantments,       type, search, page, pageSize, ct),
+            "spell"            => await BrowseSet(db.Spells,             type, search, page, pageSize, ct),
+            "quest"            => await BrowseSet(db.Quests,             type, search, page, pageSize, ct),
+            "recipe"           => await BrowseSet(db.Recipes,            type, search, page, pageSize, ct),
+            "loottable"        => await BrowseSet(db.LootTables,         type, search, page, pageSize, ct),
+            "organization"     => await BrowseSet(db.Organizations,      type, search, page, pageSize, ct),
+            "worldlocation"    => await BrowseSet(db.WorldLocations,     type, search, page, pageSize, ct),
+            "dialogue"         => await BrowseSet(db.Dialogues,          type, search, page, pageSize, ct),
+            _                  => null,
+        };
+
+        return result is null
+            ? Results.NotFound(new { error = $"Unknown content type: {type}" })
+            : Results.Ok(result);
+    }
+
+    private static async Task<PagedResult<ContentSummaryDto>> BrowseSet<T>(
+        IQueryable<T> set, string contentType,
+        string? search, int page, int pageSize, CancellationToken ct)
+        where T : ContentBase
+    {
+        var query = set.Where(x => x.IsActive);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x =>
+                EF.Functions.ILike(x.Slug, $"%{search}%") ||
+                (x.DisplayName != null && EF.Functions.ILike(x.DisplayName, $"%{search}%")));
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(x => x.DisplayName ?? x.Slug)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new ContentSummaryDto(
+                x.Id, x.Slug, x.DisplayName, x.TypeKey, contentType,
+                x.RarityWeight, x.IsActive, x.UpdatedAt))
+            .ToListAsync(ct);
+
+        return new PagedResult<ContentSummaryDto>(items, total, page, pageSize);
+    }
+
+    // ── Generic browse (full entity detail) ───────────────────────────────────
+
+    private static async Task<IResult> BrowseDetailAsync(
+        string type,
+        string slug,
+        ContentDbContext db,
+        CancellationToken ct)
+    {
+        static ContentSummaryDto Summary(ContentBase e, string t) =>
+            new(e.Id, e.Slug, e.DisplayName, e.TypeKey, t, e.RarityWeight, e.IsActive, e.UpdatedAt);
+
+        ContentBase? entity = type.ToLowerInvariant() switch
+        {
+            "ability"          => await db.Abilities.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "species"          => await db.Species.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "class"            => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "archetype"        => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "instance"         => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "background"       => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "skill"            => await db.Skills.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "weapon"           => await db.Weapons.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "armor"            => await db.Armors.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "item"             => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "material"         => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "materialproperty" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "enchantment"      => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "spell"            => await db.Spells.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "quest"            => await db.Quests.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "recipe"           => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "loottable"        => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "organization"     => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "worldlocation"    => await db.WorldLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "dialogue"         => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            _                  => null,
+        };
+
+        if (entity is null) return Results.NotFound();
+
+        var payload = JsonSerializer.SerializeToElement(entity, entity.GetType(), _detailJsonOpts);
+        return Results.Ok(new ContentDetailDto(Summary(entity, type), payload));
     }
 
     // ── Abilities ─────────────────────────────────────────────────────────────
@@ -188,7 +322,7 @@ public static class ContentEndpoints
 
     // ── Mapping helpers ───────────────────────────────────────────────────────
 
-    private static AbilityDto ToDto(Ability a) => new(
+    private static AbilityDto ToDto(SharedAbility a) => new(
         Slug:          a.Slug,
         DisplayName:   a.DisplayName,
         AbilityType:   a.Type.ToString(),
@@ -214,7 +348,7 @@ public static class ContentEndpoints
         DisplayName: n.DisplayName,
         Category:    n.Occupation);
 
-    private static QuestDto ToDto(Quest q) => new(
+    private static QuestDto ToDto(SharedQuest q) => new(
         Slug:         q.Slug,
         Title:        q.Title,
         DisplayName:  q.DisplayName,
@@ -223,7 +357,7 @@ public static class ContentEndpoints
         RarityWeight: q.RarityWeight,
         Description:  q.Description);
 
-    private static RecipeDto ToDto(Recipe r) => new(
+    private static RecipeDto ToDto(SharedRecipe r) => new(
         Slug:                r.Slug,
         Name:                r.Name,
         Category:            r.Category,
@@ -243,7 +377,7 @@ public static class ContentEndpoints
         Entries:      t.Entries.Select(e => new LootTableEntryDto(
             e.ItemDomain, e.ItemSlug, e.DropWeight, e.QuantityMin, e.QuantityMax, e.IsGuaranteed)).ToList());
 
-    private static SpellDto ToDto(Spell s) => new(
+    private static SpellDto ToDto(SharedSpell s) => new(
         SpellId:     s.SpellId,
         Name:        s.Name,
         DisplayName: s.DisplayName,

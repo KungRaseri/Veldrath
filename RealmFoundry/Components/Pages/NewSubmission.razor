@@ -1,4 +1,7 @@
 @page "/submissions/new"
+@using RealmUnbound.Contracts.Content
+@using System.Text.Json
+@using System.Globalization
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
@@ -12,54 +15,140 @@
 }
 else
 {
-    <h1>New Submission</h1>
+    <div class="submission-form-shell">
+        <h1>New Submission</h1>
 
-    <div class="form-group">
-        <label>Content Type</label>
-        <select @bind="_contentType">
-            <option value="">— select type —</option>
-            <option value="Item">Item</option>
-            <option value="Spell">Spell</option>
-            <option value="Ability">Ability</option>
-            <option value="Npc">NPC</option>
-            <option value="Quest">Quest</option>
-            <option value="Recipe">Recipe</option>
-            <option value="LootTable">Loot Table</option>
-        </select>
+        <div class="form-group">
+            <label>Content Type</label>
+            <select @bind="_contentType" @bind:after="OnTypeChanged">
+                <option value="">— select type —</option>
+                @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
+                {
+                    <option value="@schema.ContentType">@schema.DisplayLabel</option>
+                }
+            </select>
+            @if (_schema is not null)
+            {
+                <p class="field-hint">@_schema.Description</p>
+            }
+        </div>
+
+        <div class="form-group">
+            <label>Title</label>
+            <input @bind="_title" placeholder="Give your submission a short name" maxlength="200" />
+        </div>
+
+        <div class="form-group">
+            <label>Description <span class="optional">(Markdown, optional)</span></label>
+            <textarea @bind="_description" rows="4"
+                      placeholder="Describe what this content adds, its lore context, balance reasoning, etc."></textarea>
+        </div>
+
+        @if (_schema is not null)
+        {
+            <div class="schema-form">
+                @foreach (var group in _schema.Groups)
+                {
+                    <fieldset class="field-group">
+                        <legend>@group.Label</legend>
+                        @foreach (var field in group.Fields)
+                        {
+                            <div class="form-group">
+                                <label>
+                                    @field.Label
+                                    @if (field.Required) { <span class="required">*</span> }
+                                </label>
+
+                                @if (field.FieldType == ContentFieldType.Boolean)
+                                {
+                                    <input type="checkbox"
+                                           checked="@GetBool(field.Name)"
+                                           @onchange="e => SetBool(field.Name, (bool)(e.Value ?? false))" />
+                                }
+                                else if (field.FieldType == ContentFieldType.LongText)
+                                {
+                                    <textarea rows="4"
+                                              value="@GetString(field.Name)"
+                                              @oninput="e => SetString(field.Name, e.Value?.ToString())"
+                                              placeholder="@field.Hint"></textarea>
+                                }
+                                else if (field.FieldType == ContentFieldType.EnumString && field.EnumValues is not null)
+                                {
+                                    <select value="@GetString(field.Name)"
+                                            @onchange="e => SetString(field.Name, e.Value?.ToString())">
+                                        <option value="">— select —</option>
+                                        @foreach (var v in field.EnumValues.Where(v => v != ""))
+                                        {
+                                            <option value="@v">@v</option>
+                                        }
+                                    </select>
+                                }
+                                else if (field.FieldType is ContentFieldType.Integer or ContentFieldType.Decimal)
+                                {
+                                    <input type="number"
+                                           step="@(field.FieldType == ContentFieldType.Decimal ? "any" : "1")"
+                                           min="@field.Min" max="@field.Max"
+                                           value="@GetString(field.Name)"
+                                           @oninput="e => SetString(field.Name, e.Value?.ToString())"
+                                           placeholder="@field.Default" />
+                                }
+                                else
+                                {
+                                    <input type="text"
+                                           value="@GetString(field.Name)"
+                                           @oninput="e => SetString(field.Name, e.Value?.ToString())"
+                                           placeholder="@(field.FieldType == ContentFieldType.Slug ? "e.g. my-content-slug" : field.Hint ?? "")" />
+                                }
+
+                                @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
+                                {
+                                    <p class="field-hint">@field.Hint</p>
+                                }
+                            </div>
+                        }
+                    </fieldset>
+                }
+            </div>
+        }
+
+        @if (_error is not null)
+        {
+            <p class="error">@_error</p>
+        }
+
+        <div class="form-actions">
+            <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@_submitting">
+                @(_submitting ? "Submitting…" : "Submit")
+            </button>
+            <a class="btn btn-secondary" href="/submissions">Cancel</a>
+        </div>
     </div>
-
-    <div class="form-group">
-        <label>Title</label>
-        <input @bind="_title" placeholder="Give your submission a short name" maxlength="200" />
-    </div>
-
-    <div class="form-group">
-        <label>Description (Markdown, optional)</label>
-        <textarea @bind="_description" rows="4" placeholder="Describe what this content adds, its lore context, balance reasoning, etc."></textarea>
-    </div>
-
-    <div class="form-group">
-        <label>Payload (JSON)</label>
-        <textarea @bind="_payload" rows="12" placeholder='{ "name": "Example Item" }'></textarea>
-    </div>
-
-    @if (_error is not null)
-    {
-        <p class="error">@_error</p>
-    }
-
-    <button class="btn" @onclick="SubmitAsync" disabled="@_submitting">
-        @(_submitting ? "Submitting…" : "Submit")
-    </button>
 }
 
 @code {
     private string  _contentType = "";
     private string  _title       = "";
     private string  _description = "";
-    private string  _payload     = "";
-    private bool    _submitting  = false;
+    private bool    _submitting;
     private string? _error;
+
+    private ContentTypeSchema? _schema;
+
+    // Flat key → string value store for all schema fields
+    private readonly Dictionary<string, string> _values = new();
+
+    private void OnTypeChanged()
+    {
+        _schema = string.IsNullOrEmpty(_contentType)
+            ? null
+            : ContentSchemaRegistry.Get(_contentType);
+        _values.Clear();
+    }
+
+    private string? GetString(string key)  => _values.TryGetValue(key, out var v) ? v : null;
+    private bool    GetBool(string key)    => _values.TryGetValue(key, out var v) && v == "true";
+    private void    SetString(string key, string? v) => _values[key] = v ?? "";
+    private void    SetBool(string key, bool v)      => _values[key] = v ? "true" : "false";
 
     private async Task SubmitAsync()
     {
@@ -67,11 +156,12 @@ else
 
         if (string.IsNullOrWhiteSpace(_contentType)) { _error = "Please select a content type."; return; }
         if (string.IsNullOrWhiteSpace(_title))       { _error = "Title is required.";            return; }
-        if (string.IsNullOrWhiteSpace(_payload))     { _error = "Payload cannot be empty.";      return; }
+
+        var payload = BuildPayloadJson();
 
         _submitting = true;
         var (dto, error) = await Api.CreateSubmissionAsync(
-            new(_contentType, _title.Trim(), _payload.Trim(),
+            new(_contentType, _title.Trim(), payload,
                 string.IsNullOrWhiteSpace(_description) ? null : _description.Trim()));
 
         _submitting = false;
@@ -81,4 +171,32 @@ else
         else
             _error = $"Submission failed: {error}";
     }
+
+    // Build a nested JSON object from the flat dot-path key/value store.
+    private string BuildPayloadJson()
+    {
+        var root = new Dictionary<string, object?>();
+        foreach (var (key, rawValue) in _values.Where(kv => !string.IsNullOrWhiteSpace(kv.Value)))
+        {
+            var parts = key.Split('.', 2);
+            if (parts.Length == 1)
+            {
+                root[parts[0]] = ParseValue(rawValue);
+            }
+            else
+            {
+                if (!root.TryGetValue(parts[0], out var node) || node is not Dictionary<string, object?> dict)
+                    root[parts[0]] = dict = new Dictionary<string, object?>();
+                dict[parts[1]] = ParseValue(rawValue);
+            }
+        }
+        return JsonSerializer.Serialize(root, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private static object? ParseValue(string s) =>
+        s == "true"  ? (object?)true  :
+        s == "false" ? (object?)false :
+        long.TryParse(s, out var l)                                                  ? l :
+        double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d :
+        (object?)s;
 }

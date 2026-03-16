@@ -1,4 +1,5 @@
 using RealmUnbound.Contracts.Auth;
+using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Foundry;
 
 namespace RealmFoundry.Services;
@@ -101,10 +102,48 @@ public class RealmFoundryApiClient(HttpClient http)
         return (null, body);
     }
 
+    // ── Content Browse (public, no auth required) ─────────────────────
+
+    public async Task<IReadOnlyList<ContentTypeInfoDto>> GetContentTypesAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/content/schema", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>(ct) ?? []
+            : [];
+    }
+
+    public async Task<PagedResult<ContentSummaryDto>> BrowseContentAsync(
+        string contentType, string? search = null, int page = 1, int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var url = "/api/content/browse";
+        var qs  = BuildQuery(
+            ("type",     contentType),
+            ("search",   search),
+            ("page",     page.ToString()),
+            ("pageSize", pageSize.ToString()));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>(ct)
+              ?? new([], 0, page, pageSize)
+            : new([], 0, page, pageSize);
+    }
+
+    public async Task<ContentDetailDto?> GetContentDetailAsync(
+        string contentType, string slug, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync(
+            $"/api/content/browse/{Uri.EscapeDataString(contentType)}/{Uri.EscapeDataString(slug)}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<ContentDetailDto>(ct)
+            : null;
+    }
+
     // ── Notifications ──────────────────────────────────────────────────
 
-    public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(CancellationToken ct = default)
-    {
+    public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(CancellationToken ct = default)    {
         var resp = await http.GetAsync("/api/foundry/notifications", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<FoundryNotificationDto>>(ct) ?? []

@@ -1,0 +1,239 @@
+@page "/content/{ContentType}"
+@page "/content/{ContentType}/{Slug}"
+@using RealmUnbound.Contracts.Content
+@using System.Text.Json
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>@(_schema?.DisplayLabel ?? ContentType) — RealmFoundry</PageTitle>
+
+@if (_schema is null)
+{
+    <p class="error">Unknown content type: <strong>@ContentType</strong>. <a href="/content">Browse all types</a></p>
+}
+else
+{
+    <div class="content-detail-shell">
+
+        <!-- ── Left pane: list ───────────────────────────────────────────── -->
+        <aside class="content-list-pane">
+            <div class="list-header">
+                <a class="back-link" href="/content">← All Types</a>
+                <h2>@_schema.DisplayLabel</h2>
+                <p class="list-desc">@_schema.Description</p>
+            </div>
+
+            <div class="search-bar">
+                <input placeholder="Search…"
+                       value="@_search"
+                       @oninput="OnSearchInput" />
+            </div>
+
+            @if (_loading)
+            {
+                <p class="loading">Loading…</p>
+            }
+            else if (_items.Count == 0)
+            {
+                <p class="empty">No active content found.</p>
+            }
+            else
+            {
+                <ul class="item-list">
+                    @foreach (var item in _items)
+                    {
+                        var isSelected = item.Slug == Slug;
+                        <li class="@(isSelected ? "item-row selected" : "item-row")">
+                            <a href="/content/@ContentType/@item.Slug">
+                                <span class="item-name">@(item.DisplayName ?? item.Slug)</span>
+                                <span class="item-meta">@item.TypeKey · @item.RarityWeight rw</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+
+                @if (_totalCount > _pageSize)
+                {
+                    <div class="pagination">
+                        <button disabled="@(_page <= 1)" @onclick="PrevPage">‹ Prev</button>
+                        <span>@_page / @TotalPages</span>
+                        <button disabled="@(_page >= TotalPages)" @onclick="NextPage">Next ›</button>
+                    </div>
+                }
+            }
+        </aside>
+
+        <!-- ── Right pane: detail ────────────────────────────────────────── -->
+        <main class="content-detail-pane">
+            @if (Slug is null)
+            {
+                <div class="detail-empty">
+                    <p>Select an item from the list to view its details.</p>
+                </div>
+            }
+            else if (_detailLoading)
+            {
+                <p class="loading">Loading details…</p>
+            }
+            else if (_detail is null)
+            {
+                <p class="error">Could not load details for <strong>@Slug</strong>.</p>
+            }
+            else
+            {
+                <div class="detail-header">
+                    <h2>@(_detail.Summary.DisplayName ?? _detail.Summary.Slug)</h2>
+                    <div class="detail-meta">
+                        <span class="badge">@_detail.Summary.TypeKey</span>
+                        <span class="badge">Rarity @_detail.Summary.RarityWeight</span>
+                        <span class="badge @(_detail.Summary.IsActive ? "badge-green" : "badge-red")">
+                            @(_detail.Summary.IsActive ? "Active" : "Inactive")
+                        </span>
+                        <span class="updated">Updated @_detail.Summary.UpdatedAt.ToString("yyyy-MM-dd")</span>
+                    </div>
+                    <a class="btn btn-sm btn-primary"
+                       href="/submissions/new?type=@ContentType&ref=@_detail.Summary.Slug">
+                        Submit based on this
+                    </a>
+                </div>
+
+                @foreach (var group in _schema.Groups)
+                {
+                    <section class="detail-group">
+                        <h3>@group.Label</h3>
+                        <dl class="field-list">
+                            @foreach (var field in group.Fields)
+                            {
+                                var value = GetFieldValue(_detail.Payload, field.Name);
+                                if (string.IsNullOrWhiteSpace(value)) continue;
+
+                                <dt>@field.Label</dt>
+                                <dd>
+                                    @if (field.FieldType == ContentFieldType.LongText)
+                                    {
+                                        <pre class="json-block">@value</pre>
+                                    }
+                                    else if (field.FieldType == ContentFieldType.Boolean)
+                                    {
+                                        <span class="@(value == "True" || value == "true" ? "bool-true" : "bool-false")">
+                                            @(value is "True" or "true" ? "Yes" : "No")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @value
+                                    }
+                                </dd>
+                            }
+                        </dl>
+                    </section>
+                }
+            }
+        </main>
+    </div>
+}
+
+@code {
+    [Parameter] public string ContentType { get; set; } = "";
+    [Parameter] public string? Slug { get; set; }
+
+    private ContentTypeSchema? _schema;
+
+    private List<ContentSummaryDto> _items = [];
+    private int  _totalCount;
+    private int  _page     = 1;
+    private int  _pageSize = 25;
+    private bool _loading;
+    private string? _search;
+    private System.Timers.Timer? _debounce;
+
+    private ContentDetailDto? _detail;
+    private bool _detailLoading;
+
+    private int TotalPages => (int)Math.Ceiling((double)_totalCount / _pageSize);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _schema = ContentSchemaRegistry.Get(ContentType);
+        if (_schema is null) return;
+
+        // Load the list when ContentType changes (reset page + search)
+        if (_items.Count == 0 || _currentLoadedType != ContentType)
+        {
+            _currentLoadedType = ContentType;
+            _page   = 1;
+            _search = null;
+            await LoadListAsync();
+        }
+
+        // Load the detail when Slug changes
+        if (Slug is not null && Slug != _loadedSlug)
+            await LoadDetailAsync();
+        else if (Slug is null)
+            _detail = null;
+    }
+
+    private string? _currentLoadedType;
+    private string? _loadedSlug;
+
+    private async Task LoadListAsync()
+    {
+        _loading = true;
+        var result = await Api.BrowseContentAsync(ContentType, _search, _page, _pageSize);
+        _items      = [.. result.Items];
+        _totalCount = result.TotalCount;
+        _loading    = false;
+    }
+
+    private async Task LoadDetailAsync()
+    {
+        _detailLoading = true;
+        _loadedSlug    = Slug;
+        _detail        = await Api.GetContentDetailAsync(ContentType, Slug!);
+        _detailLoading = false;
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString();
+        _debounce?.Dispose();
+        _debounce = new System.Timers.Timer(300);
+        _debounce.Elapsed += async (_, _) =>
+        {
+            _debounce?.Dispose();
+            _page = 1;
+            await InvokeAsync(async () =>
+            {
+                await LoadListAsync();
+                StateHasChanged();
+            });
+        };
+        _debounce.AutoReset = false;
+        _debounce.Start();
+    }
+
+    private async Task PrevPage() { if (_page > 1) { _page--; await LoadListAsync(); } }
+    private async Task NextPage() { if (_page < TotalPages) { _page++; await LoadListAsync(); } }
+
+    // Resolve a dot-separated field path from the payload JsonElement.
+    private static string? GetFieldValue(JsonElement payload, string fieldName)
+    {
+        var parts   = fieldName.Split('.', 2);
+        var current = payload;
+
+        foreach (var part in parts)
+        {
+            if (!current.TryGetProperty(part, out var next)) return null;
+            current = next;
+        }
+
+        return current.ValueKind switch
+        {
+            JsonValueKind.Null      => null,
+            JsonValueKind.Undefined => null,
+            JsonValueKind.Array     => current.GetRawText(),
+            JsonValueKind.Object    => current.GetRawText(),
+            _                       => current.ToString(),
+        };
+    }
+}
