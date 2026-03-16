@@ -24,6 +24,7 @@ public static class DatabaseSeeder
         await SeedSpeciesAsync(db);
         await SeedClassAbilityUnlocksAsync(db);
         await SeedSpeciesAbilityPoolsAsync(db);
+        await SeedContentRegistryAsync(db);
     }
 
     // Stat/trait factory helpers — keeps data rows concise.
@@ -270,7 +271,7 @@ public static class DatabaseSeeder
             new ActorClass
             {
                 Slug         = "warrior",
-                TypeKey      = "melee",
+                TypeKey      = "warriors",
                 DisplayName  = "Warrior",
                 RarityWeight = 50,
                 HitDie       = 10,
@@ -303,7 +304,7 @@ public static class DatabaseSeeder
             new ActorClass
             {
                 Slug         = "mage",
-                TypeKey      = "caster",
+                TypeKey      = "casters",
                 DisplayName  = "Mage",
                 RarityWeight = 40,
                 HitDie       = 6,
@@ -352,7 +353,7 @@ public static class DatabaseSeeder
             new Ability
             {
                 Slug         = "power-strike",
-                TypeKey      = "active",
+                TypeKey      = "active/offensive",
                 AbilityType  = "active",
                 DisplayName  = "Power Strike",
                 RarityWeight = 50,
@@ -391,7 +392,7 @@ public static class DatabaseSeeder
             new Ability
             {
                 Slug         = "toughness",
-                TypeKey      = "passive",
+                TypeKey      = "passive/defensive",
                 AbilityType  = "passive",
                 DisplayName  = "Toughness",
                 RarityWeight = 50,
@@ -420,7 +421,7 @@ public static class DatabaseSeeder
             new Ability
             {
                 Slug         = "fireball",
-                TypeKey      = "active",
+                TypeKey      = "active/offensive",
                 AbilityType  = "active",
                 DisplayName  = "Fireball",
                 RarityWeight = 45,
@@ -461,7 +462,7 @@ public static class DatabaseSeeder
             new Ability
             {
                 Slug         = "arcane-focus",
-                TypeKey      = "passive",
+                TypeKey      = "passive/utility",
                 AbilityType  = "passive",
                 DisplayName  = "Arcane Focus",
                 RarityWeight = 45,
@@ -489,7 +490,7 @@ public static class DatabaseSeeder
             new Ability
             {
                 Slug         = "bite",
-                TypeKey      = "active",
+                TypeKey      = "active/offensive",
                 AbilityType  = "active",
                 DisplayName  = "Bite",
                 RarityWeight = 60,
@@ -609,7 +610,7 @@ public static class DatabaseSeeder
             new Background
             {
                 Slug         = "soldier",
-                TypeKey      = "military",
+                TypeKey      = "common",
                 DisplayName  = "Soldier",
                 RarityWeight = 55,
                 IsActive     = true,
@@ -635,7 +636,7 @@ public static class DatabaseSeeder
             new Background
             {
                 Slug         = "scholar",
-                TypeKey      = "academic",
+                TypeKey      = "scholar",
                 DisplayName  = "Scholar",
                 RarityWeight = 45,
                 IsActive     = true,
@@ -661,6 +662,49 @@ public static class DatabaseSeeder
         );
 
         await db.SaveChangesAsync();
+    }
+
+    // ── Content Registry ──────────────────────────────────────────────────────
+
+    private static async Task SeedContentRegistryAsync(ContentDbContext db)
+    {
+        // Collect all entity IDs already registered so we can skip them.
+        var registered = await db.ContentRegistry.Select(r => r.EntityId).ToHashSetAsync();
+
+        var entries = new List<ContentRegistry>();
+
+        void Register(Guid id, string tableName, string domain, string typeKey, string slug)
+        {
+            if (!registered.Contains(id))
+                entries.Add(new ContentRegistry { EntityId = id, TableName = tableName, Domain = domain, TypeKey = typeKey, Slug = slug });
+        }
+
+        foreach (var e in await db.ActorClasses.AsNoTracking().ToListAsync())
+            Register(e.Id, "ActorClasses", "actors/classes", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Abilities.AsNoTracking().ToListAsync())
+            Register(e.Id, "Abilities", "abilities", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Skills.AsNoTracking().ToListAsync())
+            Register(e.Id, "Skills", "actors/skills", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Backgrounds.AsNoTracking().ToListAsync())
+            Register(e.Id, "Backgrounds", "actors/backgrounds", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Species.AsNoTracking().ToListAsync())
+            Register(e.Id, "Species", "actors/species", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Materials.AsNoTracking().ToListAsync())
+            Register(e.Id, "Materials", "items/materials", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.MaterialProperties.AsNoTracking().ToListAsync())
+            Register(e.Id, "MaterialProperties", "items/material-properties", e.TypeKey, e.Slug);
+
+        if (entries.Count > 0)
+        {
+            db.ContentRegistry.AddRange(entries);
+            await db.SaveChangesAsync();
+        }
     }
 
     // ── Class Ability Unlocks ───────────────────────────────────────────────
