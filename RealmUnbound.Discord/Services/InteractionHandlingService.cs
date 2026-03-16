@@ -39,6 +39,15 @@ internal sealed class InteractionHandlingService(
             logger.LogDebug("[Interactions] {Source}: {Message}", message.Source, message.Message);
             return Task.CompletedTask;
         };
+
+        interactions.InteractionExecuted += (_, ctx, result) =>
+        {
+            if (!result.IsSuccess)
+                logger.LogWarning("Interaction '{Name}' failed: [{Error}] {Reason}",
+                    (ctx?.Interaction as ISlashCommandInteraction)?.Data?.Name ?? "unknown",
+                    result.Error, result.ErrorReason);
+            return Task.CompletedTask;
+        };
     }
 
     private async Task RegisterCommandsAsync()
@@ -61,9 +70,6 @@ internal sealed class InteractionHandlingService(
     {
         using var scope = scopeFactory.CreateScope();
         var ctx    = new SocketInteractionContext(client, interaction);
-        var result = await interactions.ExecuteCommandAsync(ctx, scope.ServiceProvider);
-
-        if (!result.IsSuccess)
-            logger.LogWarning("Interaction failed: {Error}", result.ErrorReason);
+        await interactions.ExecuteCommandAsync(ctx, scope.ServiceProvider);
     }
 }
