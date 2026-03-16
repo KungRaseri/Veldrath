@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
@@ -15,9 +16,6 @@ namespace RealmUnbound.Client;
 [ExcludeFromCodeCoverage]
 public partial class App : Application
 {
-    // Server base URL — override via config or env in production
-    private const string ServerBaseUrl = "http://localhost:8080/";
-
     public static IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
@@ -33,8 +31,14 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .Build();
+
+        var serverBaseUrl = configuration["ServerBaseUrl"] ?? "http://localhost:8080/";
+
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServices(services, configuration, serverBaseUrl);
         Services = services.BuildServiceProvider();
 
         // Restore persisted session (DPAPI-encrypted) so the user stays logged in across restarts.
@@ -71,7 +75,7 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(IServiceCollection services, IConfiguration configuration, string serverBaseUrl)
     {
         // Logging
         services.AddLogging(b => b.AddSerilog(dispose: true));
@@ -87,13 +91,13 @@ public partial class App : Application
 
         // HTTP client for auth + character APIs
         services.AddHttpClient<IAuthService, HttpAuthService>(client =>
-            client.BaseAddress = new Uri(ServerBaseUrl));
+            client.BaseAddress = new Uri(serverBaseUrl));
         services.AddHttpClient<ICharacterService, HttpCharacterService>(client =>
-            client.BaseAddress = new Uri(ServerBaseUrl));
+            client.BaseAddress = new Uri(serverBaseUrl));
         services.AddHttpClient<IZoneService, HttpZoneService>(client =>
-            client.BaseAddress = new Uri(ServerBaseUrl));
+            client.BaseAddress = new Uri(serverBaseUrl));
         services.AddHttpClient<IContentService, HttpContentService>(client =>
-            client.BaseAddress = new Uri(ServerBaseUrl));
+            client.BaseAddress = new Uri(serverBaseUrl));
 
         // App services
         services.AddSingleton<INavigationService, NavigationService>();
@@ -111,7 +115,7 @@ public partial class App : Application
         services.AddTransient(sp =>
         {
             var vm = ActivatorUtilities.CreateInstance<CharacterSelectViewModel>(sp);
-            vm.ServerUrl = ServerBaseUrl.TrimEnd('/');
+            vm.ServerUrl = serverBaseUrl.TrimEnd('/');
             return vm;
         });
     }
