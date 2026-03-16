@@ -52,7 +52,10 @@ try
     }));
 
     builder.Services.AddSingleton(provider =>
-        new InteractionService(provider.GetRequiredService<DiscordSocketClient>()));
+        new InteractionService(
+            provider.GetRequiredService<DiscordSocketClient>(),
+            new InteractionServiceConfig { DefaultRunMode = RunMode.Sync }
+        ));
 
     builder.Services.AddSingleton<InteractionHandlingService>();
     builder.Services.AddHostedService<BotWorker>();
