@@ -72,5 +72,5 @@ public class ItemCategoryInfo
     /// <summary>
     /// Whether this category has a names.json file for procedural generation.
     /// </summary>
-    public bool HasNamesFile { get; set; }
+    public bool HasNamePatterns { get; set; }
 }

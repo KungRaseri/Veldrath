@@ -9,11 +9,11 @@ namespace RealmEngine.Core.Features.Crafting.Commands;
 /// </summary>
 public class DiscoverRecipeHandler : IRequestHandler<DiscoverRecipeCommand, DiscoverRecipeResult>
 {
-    private readonly RecipeCatalogLoader _recipeCatalogLoader;
+    private readonly RecipeDataService _recipeCatalogLoader;
     private readonly Random _random = new();
 
     /// <summary>Initializes the handler.</summary>
-    public DiscoverRecipeHandler(RecipeCatalogLoader recipeCatalogLoader)
+    public DiscoverRecipeHandler(RecipeDataService recipeCatalogLoader)
     {
         _recipeCatalogLoader = recipeCatalogLoader;
     }

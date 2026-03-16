@@ -9,27 +9,27 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// <summary>
 /// Service for loading and accessing ability definitions from the database.
 /// </summary>
-public class AbilityCatalogService
+public class AbilityDataService
 {
     private readonly IServiceScopeFactory? _scopeFactory;
     private readonly IAbilityRepository? _repository;
-    private readonly ILogger<AbilityCatalogService> _logger;
+    private readonly ILogger<AbilityDataService> _logger;
     private readonly Dictionary<string, Ability> _abilities = new();
     private bool _initialized;
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
     [ActivatorUtilitiesConstructor]
-    public AbilityCatalogService(IServiceScopeFactory scopeFactory, ILogger<AbilityCatalogService>? logger = null)
+    public AbilityDataService(IServiceScopeFactory scopeFactory, ILogger<AbilityDataService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-        _logger = logger ?? NullLogger<AbilityCatalogService>.Instance;
+        _logger = logger ?? NullLogger<AbilityDataService>.Instance;
     }
 
     // Secondary constructor for direct construction in tests
-    public AbilityCatalogService(IAbilityRepository repository, ILogger<AbilityCatalogService>? logger = null)
+    public AbilityDataService(IAbilityRepository repository, ILogger<AbilityDataService>? logger = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _logger = logger ?? NullLogger<AbilityCatalogService>.Instance;
+        _logger = logger ?? NullLogger<AbilityDataService>.Instance;
     }
 
     /// <summary>Initialize by loading all abilities from the repository.</summary>

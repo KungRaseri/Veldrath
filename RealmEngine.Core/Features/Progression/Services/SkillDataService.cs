@@ -9,27 +9,27 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// <summary>
 /// Service for loading and accessing skill definitions from the database.
 /// </summary>
-public class SkillCatalogService
+public class SkillDataService
 {
     private readonly IServiceScopeFactory? _scopeFactory;
     private readonly ISkillRepository? _repository;
-    private readonly ILogger<SkillCatalogService> _logger;
+    private readonly ILogger<SkillDataService> _logger;
     private readonly Dictionary<string, SkillDefinition> _skillDefinitions = new();
     private bool _initialized;
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
     [ActivatorUtilitiesConstructor]
-    public SkillCatalogService(IServiceScopeFactory scopeFactory, ILogger<SkillCatalogService>? logger = null)
+    public SkillDataService(IServiceScopeFactory scopeFactory, ILogger<SkillDataService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-        _logger = logger ?? NullLogger<SkillCatalogService>.Instance;
+        _logger = logger ?? NullLogger<SkillDataService>.Instance;
     }
 
     // Secondary constructor for direct construction in tests
-    public SkillCatalogService(ISkillRepository repository, ILogger<SkillCatalogService>? logger = null)
+    public SkillDataService(ISkillRepository repository, ILogger<SkillDataService>? logger = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _logger = logger ?? NullLogger<SkillCatalogService>.Instance;
+        _logger = logger ?? NullLogger<SkillDataService>.Instance;
     }
 
     /// <summary>Initialize by loading all skills from the repository.</summary>

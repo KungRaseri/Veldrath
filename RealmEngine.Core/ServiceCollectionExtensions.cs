@@ -29,6 +29,7 @@ using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Features.Socketing;
 using RealmEngine.Core.Features.Achievements.Services;
+using RealmEngine.Core.Repositories;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
@@ -110,14 +111,16 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<BudgetConfigFactory>().GetEnemyTypes());
         services.AddSingleton<MaterialFilterConfig>(sp =>
             sp.GetRequiredService<BudgetConfigFactory>().GetMaterialFilters());
+        services.AddSingleton<SocketConfig>(sp =>
+            sp.GetRequiredService<BudgetConfigFactory>().GetSocketConfig());
         services.AddSingleton<BudgetCalculator>();
         services.AddScoped<BudgetItemGenerationService>();
         services.AddScoped<MaterialPoolService>();
         services.AddScoped<BudgetHelperService>();
         
         // Register catalog loaders
-        services.AddScoped<RecipeCatalogLoader>();
-        services.AddScoped<ItemCatalogLoader>();
+        services.AddScoped<RecipeDataService>();
+        services.AddScoped<ItemDataService>();
         
         // Register config/utility services
         services.AddScoped<RarityConfigService>();
@@ -131,9 +134,10 @@ public static class ServiceCollectionExtensions
         // Example: await serviceProvider.GetRequiredService<AbilityCatalogService>().InitializeAsync();
         // Factory lambdas are used to explicitly select the IServiceScopeFactory constructor,
         // avoiding ambiguity with the secondary test constructor that takes IXxxRepository.
-        services.AddSingleton(sp => new AbilityCatalogService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<AbilityCatalogService>>()));
-        services.AddSingleton(sp => new SpellCatalogService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SpellCatalogService>>()));
-        services.AddSingleton(sp => new SkillCatalogService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SkillCatalogService>>()));
+        services.AddSingleton(sp => new AbilityDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<AbilityDataService>>()));
+        services.AddSingleton(sp => new SpellDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SpellDataService>>()));
+        services.AddSingleton(sp => new SkillDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SkillDataService>>()));
+        services.AddSingleton(sp => new NamePatternService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<NamePatternService>>()));
         
         // Register interfaces to implementations
         services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
@@ -164,6 +168,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
             services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
             services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
+            services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
         }
         else if (!persistenceOptions.IsExternal)
         {
@@ -185,6 +190,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ILootTableRepository, InMemoryLootTableRepository>();
             services.AddScoped<ISpellRepository, InMemorySpellRepository>();
             services.AddScoped<ISkillRepository, InMemorySkillRepository>();
+            services.AddScoped<INamePatternRepository, InMemoryNamePatternRepository>();
         }
         // External: host is responsible for registering ALL repo interfaces.
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();

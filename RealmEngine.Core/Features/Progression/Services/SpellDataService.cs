@@ -10,28 +10,28 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// Service for loading and accessing spell definitions from the database.
 /// Provides spell metadata organized by magical tradition (Arcane, Divine, Occult, Primal).
 /// </summary>
-public class SpellCatalogService
+public class SpellDataService
 {
     private readonly IServiceScopeFactory? _scopeFactory;
     private readonly ISpellRepository? _repository;
-    private readonly ILogger<SpellCatalogService> _logger;
+    private readonly ILogger<SpellDataService> _logger;
     private readonly Dictionary<string, Spell> _spells = new();
     private readonly Dictionary<MagicalTradition, List<string>> _spellsByTradition = new();
     private bool _initialized;
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
     [ActivatorUtilitiesConstructor]
-    public SpellCatalogService(IServiceScopeFactory scopeFactory, ILogger<SpellCatalogService>? logger = null)
+    public SpellDataService(IServiceScopeFactory scopeFactory, ILogger<SpellDataService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-        _logger = logger ?? NullLogger<SpellCatalogService>.Instance;
+        _logger = logger ?? NullLogger<SpellDataService>.Instance;
     }
 
     // Secondary constructor for direct construction in tests
-    public SpellCatalogService(ISpellRepository repository, ILogger<SpellCatalogService>? logger = null)
+    public SpellDataService(ISpellRepository repository, ILogger<SpellDataService>? logger = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _logger = logger ?? NullLogger<SpellCatalogService>.Instance;
+        _logger = logger ?? NullLogger<SpellDataService>.Instance;
     }
 
     /// <summary>Initialize by loading all spells from the repository.</summary>

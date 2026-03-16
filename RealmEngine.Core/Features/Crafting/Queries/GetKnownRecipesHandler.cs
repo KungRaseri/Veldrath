@@ -10,11 +10,11 @@ namespace RealmEngine.Core.Features.Crafting.Queries;
 /// </summary>
 public class GetKnownRecipesHandler : IRequestHandler<GetKnownRecipesQuery, GetKnownRecipesResult>
 {
-    private readonly RecipeCatalogLoader _recipeCatalogLoader;
+    private readonly RecipeDataService _recipeCatalogLoader;
     private readonly CraftingService _craftingService;
 
     /// <summary>Initializes the handler.</summary>
-    public GetKnownRecipesHandler(RecipeCatalogLoader recipeCatalogLoader, CraftingService craftingService)
+    public GetKnownRecipesHandler(RecipeDataService recipeCatalogLoader, CraftingService craftingService)
     {
         _recipeCatalogLoader = recipeCatalogLoader;
         _craftingService = craftingService;

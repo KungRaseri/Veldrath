@@ -4,13 +4,13 @@ using Serilog;
 
 namespace RealmEngine.Core.Services;
 
-public class RecipeCatalogLoader
+public class RecipeDataService
 {
     private readonly IRecipeRepository _repository;
     private readonly Dictionary<string, List<Recipe>> _cache = new();
     private List<Recipe>? _allRecipesCache;
 
-    public RecipeCatalogLoader(IRecipeRepository repository)
+    public RecipeDataService(IRecipeRepository repository)
     {
         _repository = repository;
     }

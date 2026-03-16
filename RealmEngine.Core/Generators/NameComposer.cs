@@ -1,22 +1,16 @@
-using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Shared.Models;
+using RealmEngine.Data.Entities;
 
 namespace RealmEngine.Core.Generators;
 
 /// <summary>
-/// Utility class for composing entity names from pattern-based components.
-/// Supports Enemy, NPC, Ability, and other domain name generation.
+/// Composes entity names from <see cref="NamePatternSet"/> data loaded from the database.
 /// </summary>
 public class NameComposer
 {
     private readonly ILogger<NameComposer> _logger;
     private readonly Random _random;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NameComposer"/> class.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
     public NameComposer(ILogger<NameComposer> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -24,269 +18,174 @@ public class NameComposer
     }
 
     /// <summary>
-    /// Composes a name from a pattern and components dictionary.
+    /// Picks a weighted-random <see cref="NamePattern"/> from the set and composes a name from it.
+    /// Returns <see cref="string.Empty"/> when the set has no patterns.
+    /// <paramref name="componentValues"/> is populated with each resolved token → value pair.
     /// </summary>
-    /// <param name="pattern">Pattern string with tokens like "{size} {base} {title}"</param>
-    /// <param name="components">Components dictionary from names.json</param>
-    /// <param name="componentValues">Output dictionary of resolved component values</param>
-    /// <returns>The composed name string</returns>
-    public string ComposeName(string pattern, JToken components, out Dictionary<string, string> componentValues)
+    public string ComposeName(NamePatternSet patternSet, out Dictionary<string, string> componentValues)
     {
         componentValues = new Dictionary<string, string>();
-        
-        if (string.IsNullOrWhiteSpace(pattern))
+
+        var pattern = SelectPattern(patternSet.Patterns);
+        if (pattern is null)
         {
+            _logger.LogWarning("No patterns in NamePatternSet '{Path}'", patternSet.EntityPath);
             return string.Empty;
         }
 
-        var result = pattern;
-        
-        // Find all tokens in the pattern like {size}, {base}, {title}
-        var tokens = System.Text.RegularExpressions.Regex.Matches(pattern, @"\{([^}]+)\}");
-        
+        return ComposeFromTemplate(pattern.Template, patternSet.Components, out componentValues);
+    }
+
+    /// <summary>
+    /// Composes a name from an explicit <paramref name="template"/> (e.g. <c>"{prefix} {base}"</c>)
+    /// and the given <paramref name="components"/> collection.
+    /// </summary>
+    public string ComposeFromTemplate(
+        string template,
+        IEnumerable<NameComponent> components,
+        out Dictionary<string, string> componentValues)
+    {
+        componentValues = new Dictionary<string, string>();
+
+        if (string.IsNullOrWhiteSpace(template))
+            return string.Empty;
+
+        // Group components by their ComponentKey for fast lookup
+        var grouped = components
+            .GroupBy(c => c.ComponentKey, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        var result = template;
+        var tokens = System.Text.RegularExpressions.Regex.Matches(template, @"\{([^}]+)\}");
+
         foreach (System.Text.RegularExpressions.Match match in tokens)
         {
-            var token = match.Groups[1].Value; // e.g., "size", "base", "title"
-            var componentArray = components?[token];
-            
-            if (componentArray != null && componentArray.Any())
+            var token = match.Groups[1].Value;
+
+            if (grouped.TryGetValue(token, out var pool) && pool.Count > 0)
             {
-                // Select random component by weight
-                var selectedComponent = GetRandomWeightedComponent(componentArray);
-                if (selectedComponent != null)
+                var selected = SelectWeightedComponent(pool);
+                if (selected is not null)
                 {
-                    var value = GetStringProperty(selectedComponent, "value") 
-                              ?? GetStringProperty(selectedComponent, "name") 
-                              ?? token;
-                    
-                    // Store the resolved value for this component
-                    componentValues[token] = value;
-                    
-                    // Replace token with actual value
-                    result = result.Replace($"{{{token}}}", value);
+                    componentValues[token] = selected.Value;
+                    result = result.Replace($"{{{token}}}", selected.Value);
                 }
             }
             else
             {
-                // No components found for this token, remove it
-                result = result.Replace($"{{{token}}}", "");
+                // No components for this token — remove placeholder
+                result = result.Replace($"{{{token}}}", string.Empty);
             }
         }
-        
-        // If pattern is just "base" without braces, return the base directly
-        if (pattern == "base" && components?["base"] != null)
+
+        // Handle bare "base" pattern (no braces)
+        if (template == "base" && grouped.TryGetValue("base", out var basePart) && basePart.Count > 0)
         {
-            var baseComponents = components["base"];
-            if (baseComponents != null)
+            var selected = SelectWeightedComponent(basePart);
+            if (selected is not null)
             {
-                var selectedComponent = GetRandomWeightedComponent(baseComponents);
-                if (selectedComponent != null)
-                {
-                    var value = GetStringProperty(selectedComponent, "value") 
-                              ?? GetStringProperty(selectedComponent, "name") 
-                              ?? "";
-                    componentValues["base"] = value;
-                    return value;
-                }
+                componentValues["base"] = selected.Value;
+                return selected.Value;
             }
         }
-        
-        // Clean up extra spaces
-        result = System.Text.RegularExpressions.Regex.Replace(result.Trim(), @"\s+", " ");
-        
-        return result;
+
+        return System.Text.RegularExpressions.Regex.Replace(result.Trim(), @"\s+", " ");
     }
 
-    /// <summary>
-    /// Selects a random component from an array using rarityWeight.
-    /// </summary>
-    private JToken? GetRandomWeightedComponent(JToken components)
+    /// <summary>Selects a weighted-random <see cref="NamePattern"/> from the collection.</summary>
+    public NamePattern? SelectPattern(IEnumerable<NamePattern> patterns)
     {
-        var componentList = components.ToList();
-        if (!componentList.Any()) return null;
+        var list = patterns.ToList();
+        if (list.Count == 0) return null;
 
-        var totalWeight = componentList.Sum(c => GetIntProperty(c, "rarityWeight", 1));
-        var randomValue = _random.Next(1, totalWeight + 1);
+        var total = list.Sum(p => p.RarityWeight > 0 ? p.RarityWeight : 1);
+        var roll = _random.Next(total);
+        var cumulative = 0;
 
-        int currentWeight = 0;
-        foreach (var component in componentList)
+        foreach (var p in list)
         {
-            currentWeight += GetIntProperty(component, "rarityWeight", 1);
-            if (randomValue <= currentWeight)
-            {
-                return component;
-            }
+            cumulative += p.RarityWeight > 0 ? p.RarityWeight : 1;
+            if (roll < cumulative) return p;
         }
 
-        return componentList.First();
+        return list[^1];
     }
 
-    /// <summary>
-    /// Safely gets a string property from a JToken.
-    /// </summary>
-    private static string? GetStringProperty(JToken? token, string propertyName)
+    /// <summary>Selects a weighted-random <see cref="NameComponent"/> from a pool sharing the same key.</summary>
+    public NameComponent? SelectWeightedComponent(IEnumerable<NameComponent> pool)
     {
-        return token?[propertyName]?.Value<string>();
-    }
+        var list = pool.ToList();
+        if (list.Count == 0) return null;
 
-    /// <summary>
-    /// Safely gets an integer property from a JToken.
-    /// </summary>
-    private static int GetIntProperty(JToken? token, string propertyName, int defaultValue = 0)
-    {
-        var value = token?[propertyName]?.Value<int>();
-        return value ?? defaultValue;
-    }
+        var total = list.Sum(c => c.RarityWeight > 0 ? c.RarityWeight : 1);
+        var roll = _random.Next(total);
+        var cumulative = 0;
 
-    /// <summary>
-    /// Selects a random pattern from a patterns array using rarityWeight.
-    /// </summary>
-    /// <param name="patterns">The patterns array.</param>
-    /// <returns>The selected pattern.</returns>
-    public JToken? GetRandomWeightedPattern(JToken patterns)
-    {
-        var patternList = patterns.ToList();
-        if (!patternList.Any()) return null;
-
-        var totalWeight = patternList.Sum(p => GetIntProperty(p, "rarityWeight", 1));
-        var randomValue = _random.Next(1, totalWeight + 1);
-
-        int currentWeight = 0;
-        foreach (var pattern in patternList)
+        foreach (var c in list)
         {
-            currentWeight += GetIntProperty(pattern, "rarityWeight", 1);
-            if (randomValue <= currentWeight)
-            {
-                return pattern;
-            }
+            cumulative += c.RarityWeight > 0 ? c.RarityWeight : 1;
+            if (roll < cumulative) return c;
         }
 
-        return patternList.First();
+        return list[^1];
     }
 
     /// <summary>
-    /// Composes a name from a pattern and components, returning structured component data.
-    /// This method categorizes components into prefixes and suffixes based on their position relative to {base}.
+    /// Composes a name and separates the resolved tokens into prefixes, base name, and suffixes
+    /// based on their position relative to the <c>{base}</c> token in the pattern.
     /// </summary>
-    /// <param name="pattern">Pattern string with tokens like "{size} {base} {title}"</param>
-    /// <param name="components">Components dictionary from names.json</param>
-    /// <returns>Tuple containing (composed name, base name, prefix components, suffix components)</returns>
-    public (string name, string baseName, List<NameComponent> prefixes, List<NameComponent> suffixes) 
-        ComposeNameWithComponents(string pattern, JToken components)
+    public (List<string> prefixes, string baseName, List<string> suffixes) ComposeNameStructured(
+        NamePatternSet patternSet,
+        out Dictionary<string, string> componentValues)
     {
-        var prefixes = new List<NameComponent>();
-        var suffixes = new List<NameComponent>();
+        componentValues = new Dictionary<string, string>();
+
+        var pattern = SelectPattern(patternSet.Patterns);
+        if (pattern is null)
+            return ([], string.Empty, []);
+
+        var template = pattern.Template;
+        var grouped = patternSet.Components
+            .GroupBy(c => c.ComponentKey, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        var tokens = System.Text.RegularExpressions.Regex.Matches(template, @"\{([^}]+)\}");
+        var prefixes = new List<string>();
+        var suffixes = new List<string>();
         string baseName = string.Empty;
-        
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            return (string.Empty, string.Empty, prefixes, suffixes);
-        }
-
-        var result = pattern;
-        var nameParts = new List<string>();
         bool foundBase = false;
-        
-        // Find all tokens in the pattern like {size}, {base}, {title}
-        var tokens = System.Text.RegularExpressions.Regex.Matches(pattern, @"\{([^}]+)\}");
-        
+
         foreach (System.Text.RegularExpressions.Match match in tokens)
         {
-            var token = match.Groups[1].Value; // e.g., "size", "base", "title"
-            
-            // Special handling for {base} token - it's a positional marker
+            var token = match.Groups[1].Value;
+
             if (token == "base")
             {
                 foundBase = true;
-                var baseComponentArray = components?[token];
-                
-                // If base component exists, resolve it; otherwise leave as placeholder
-                if (baseComponentArray != null && baseComponentArray.Any())
+                if (grouped.TryGetValue("base", out var basePool))
                 {
-                    var selectedComponent = GetRandomWeightedComponent(baseComponentArray);
-                    if (selectedComponent != null)
+                    var selected = SelectWeightedComponent(basePool);
+                    if (selected is not null)
                     {
-                        var value = GetStringProperty(selectedComponent, "value") 
-                                  ?? GetStringProperty(selectedComponent, "name") 
-                                  ?? token;
-                        baseName = value;
-                        nameParts.Add(value);
-                        result = result.Replace($"{{{token}}}", value);
+                        baseName = selected.Value;
+                        componentValues["base"] = baseName;
                     }
-                }
-                else
-                {
-                    // {base} exists in pattern but has no component - it's a placeholder
-                    // Don't add to nameParts, just mark position for prefix/suffix categorization
-                    result = result.Replace($"{{{token}}}", "");
                 }
                 continue;
             }
-            
-            var componentArray = components?[token];
-            
-            if (componentArray != null && componentArray.Any())
-            {
-                // Select random component by weight
-                var selectedComponent = GetRandomWeightedComponent(componentArray);
-                if (selectedComponent != null)
-                {
-                    var value = GetStringProperty(selectedComponent, "value") 
-                              ?? GetStringProperty(selectedComponent, "name") 
-                              ?? token;
-                    
-                    // Categorize component based on position relative to {base}
-                    if (token == "base")
-                    {
-                        baseName = value;
-                        foundBase = true;
-                        nameParts.Add(value);
-                    }
-                    else if (!foundBase)
-                    {
-                        // Token appears before {base} → Prefix
-                        prefixes.Add(new NameComponent { Token = token, Value = value });
-                        nameParts.Add(value);
-                    }
-                    else
-                    {
-                        // Token appears after {base} → Suffix
-                        suffixes.Add(new NameComponent { Token = token, Value = value });
-                        nameParts.Add(value);
-                    }
-                    
-                    // Replace token with actual value in result string
-                    result = result.Replace($"{{{token}}}", value);
-                }
-            }
+
+            if (!grouped.TryGetValue(token, out var pool) || pool.Count == 0) continue;
+
+            var comp = SelectWeightedComponent(pool);
+            if (comp is null) continue;
+
+            componentValues[token] = comp.Value;
+            if (!foundBase)
+                prefixes.Add(comp.Value);
             else
-            {
-                // No components found for this token, remove it
-                result = result.Replace($"{{{token}}}", "");
-            }
+                suffixes.Add(comp.Value);
         }
-        
-        // If pattern is just "base" without braces, return the base directly
-        if (pattern == "base" && components?["base"] != null)
-        {
-            var baseComponents = components["base"];
-            if (baseComponents != null)
-            {
-                var selectedComponent = GetRandomWeightedComponent(baseComponents);
-                if (selectedComponent != null)
-                {
-                    var value = GetStringProperty(selectedComponent, "value") 
-                              ?? GetStringProperty(selectedComponent, "name") 
-                              ?? "";
-                    baseName = value;
-                    return (value, baseName, prefixes, suffixes);
-                }
-            }
-        }
-        
-        // Clean up the composed name
-        var composedName = string.Join(" ", nameParts.Where(p => !string.IsNullOrWhiteSpace(p)));
-        
-        return (composedName, baseName, prefixes, suffixes);
+
+        return (prefixes, baseName, suffixes);
     }
 }

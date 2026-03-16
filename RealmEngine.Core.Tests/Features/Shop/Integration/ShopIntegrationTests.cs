@@ -53,7 +53,7 @@ public class ShopIntegrationTests : IDisposable
         // Register ItemCatalogLoader with mocked DbContextFactory
         var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
         services.AddSingleton(dbFactory.Object);
-        services.AddSingleton<ItemCatalogLoader>();
+        services.AddSingleton<ItemDataService>();
 
         // Register core services
         services.AddSingleton(mockRepository.Object);

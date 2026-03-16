@@ -7,13 +7,16 @@ namespace RealmEngine.Core.Features.ItemGeneration.Queries;
 public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableItemCategoriesQuery, GetAvailableItemCategoriesResult>
 {
     private readonly CategoryDiscoveryService _categoryDiscovery;
+    private readonly NamePatternService _namePatternService;
     private readonly ILogger<GetAvailableItemCategoriesHandler> _logger;
 
     public GetAvailableItemCategoriesHandler(
         CategoryDiscoveryService categoryDiscovery,
+        NamePatternService namePatternService,
         ILogger<GetAvailableItemCategoriesHandler> logger)
     {
         _categoryDiscovery = categoryDiscovery ?? throw new ArgumentNullException(nameof(categoryDiscovery));
+        _namePatternService = namePatternService ?? throw new ArgumentNullException(nameof(namePatternService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -42,7 +45,7 @@ public class GetAvailableItemCategoriesHandler : IRequestHandler<GetAvailableIte
                 if (catInfo != null)
                 {
                     categoryInfo.ItemCount = catInfo.ItemCount;
-                    categoryInfo.HasNamesFile = catInfo.ItemCount > 0;
+                    categoryInfo.HasNamePatterns = _namePatternService.HasPatternSet($"items/{category}");
                 }
 
                 categories.Add(categoryInfo);

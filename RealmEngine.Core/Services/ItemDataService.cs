@@ -6,12 +6,12 @@ using Serilog;
 
 namespace RealmEngine.Core.Services;
 
-public class ItemCatalogLoader
+public class ItemDataService
 {
     private readonly IDbContextFactory<ContentDbContext> _dbFactory;
     private readonly Dictionary<string, List<ItemTemplate>> _cache = new();
 
-    public ItemCatalogLoader(IDbContextFactory<ContentDbContext> dbFactory)
+    public ItemDataService(IDbContextFactory<ContentDbContext> dbFactory)
     {
         _dbFactory = dbFactory;
     }
@@ -46,21 +46,21 @@ public class ItemCatalogLoader
         {
             var rarity = GetRarity(w.RarityWeight);
             if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
-            results.Add(new ItemTemplate { Name = w.DisplayName ?? w.TypeKey, Category = category, Type = w.WeaponType, RarityWeight = w.RarityWeight, BasePrice = w.Stats.Value ?? 0, Rarity = rarity });
+            results.Add(new ItemTemplate { Slug = w.Slug, Name = w.DisplayName ?? w.TypeKey, Category = category, Type = w.WeaponType, RarityWeight = w.RarityWeight, BasePrice = w.Stats.Value ?? 0, Rarity = rarity });
         }
 
         foreach (var a in db.Armors.AsNoTracking().Where(a => a.IsActive && a.TypeKey == category).ToList())
         {
             var rarity = GetRarity(a.RarityWeight);
             if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
-            results.Add(new ItemTemplate { Name = a.DisplayName ?? a.TypeKey, Category = category, Type = a.ArmorType, RarityWeight = a.RarityWeight, BasePrice = a.Stats.Value ?? 0, Rarity = rarity });
+            results.Add(new ItemTemplate { Slug = a.Slug, Name = a.DisplayName ?? a.TypeKey, Category = category, Type = a.ArmorType, RarityWeight = a.RarityWeight, BasePrice = a.Stats.Value ?? 0, Rarity = rarity });
         }
 
         foreach (var i in db.Items.AsNoTracking().Where(i => i.IsActive && i.TypeKey == category).ToList())
         {
             var rarity = GetRarity(i.RarityWeight);
             if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
-            results.Add(new ItemTemplate { Name = i.DisplayName ?? i.TypeKey, Category = category, Type = i.ItemType, RarityWeight = i.RarityWeight, BasePrice = i.Stats.Value ?? 0, Rarity = rarity });
+            results.Add(new ItemTemplate { Slug = i.Slug, Name = i.DisplayName ?? i.TypeKey, Category = category, Type = i.ItemType, RarityWeight = i.RarityWeight, BasePrice = i.Stats.Value ?? 0, Rarity = rarity });
         }
 
         return results;
@@ -88,6 +88,7 @@ public class ItemCatalogLoader
 
 public class ItemTemplate
 {
+    public string Slug { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;

@@ -13,7 +13,7 @@ namespace RealmEngine.Core.Features.Crafting.Services;
 /// </summary>
 public class CraftingService
 {
-    private readonly RecipeCatalogLoader _recipeCatalogLoader;
+    private readonly RecipeDataService _recipeCatalogLoader;
     private readonly BudgetHelperService? _budgetHelper;
     private readonly ItemGenerator? _itemGenerator;
     private readonly Random _random = new();
@@ -26,7 +26,7 @@ public class CraftingService
     /// <param name="budgetHelper">Optional budget helper for quality calculations.</param>
     /// <param name="itemGenerator">Optional item generator for procedural crafted items.</param>
     public CraftingService(
-        RecipeCatalogLoader recipeCatalogLoader,
+        RecipeDataService recipeCatalogLoader,
         BudgetHelperService? budgetHelper = null,
         ItemGenerator? itemGenerator = null)
     {

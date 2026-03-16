@@ -16,7 +16,7 @@ public class ShopEconomyService
 {
     private readonly Dictionary<string, ShopInventory> _shopInventories = new();
     private DateTime _lastRefreshDate = DateTime.UtcNow.Date;
-    private readonly ItemCatalogLoader _catalogLoader;
+    private readonly ItemDataService _catalogLoader;
     private readonly Random _random = new();
     private readonly BudgetHelperService? _budgetHelper;
     private readonly ItemGenerator? _itemGenerator;
@@ -28,7 +28,7 @@ public class ShopEconomyService
     /// <param name="budgetHelper">Optional budget helper for procedural inventory generation.</param>
     /// <param name="itemGenerator">Optional item generator for procedural inventory.</param>
     public ShopEconomyService(
-        ItemCatalogLoader catalogLoader,
+        ItemDataService catalogLoader,
         BudgetHelperService? budgetHelper = null,
         ItemGenerator? itemGenerator = null)
     {

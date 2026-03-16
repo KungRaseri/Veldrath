@@ -10,7 +10,7 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// </summary>
 public class SkillProgressionService
 {
-    private readonly SkillCatalogService _catalogService;
+    private readonly SkillDataService _catalogService;
     private readonly ILogger<SkillProgressionService> _logger;
 
     /// <summary>
@@ -19,7 +19,7 @@ public class SkillProgressionService
     /// <param name="catalogService">The skill catalog service.</param>
     /// <param name="logger">Optional logger instance.</param>
     public SkillProgressionService(
-        SkillCatalogService catalogService, 
+        SkillDataService catalogService, 
         ILogger<SkillProgressionService>? logger = null)
     {
         _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));

@@ -32,8 +32,8 @@ public class CombatService
     public CombatService(
         SaveGameService saveGameService,
         IMediator mediator,
-        AbilityCatalogService abilityCatalogService,
-        SpellCatalogService spellCatalogService,
+        AbilityDataService abilityCatalogService,
+        SpellDataService spellCatalogService,
         ItemGenerator? itemGenerator = null)
     {
         _saveGameService = saveGameService;
@@ -500,7 +500,7 @@ public class CombatService
     /// Execute spell casting by enemy using AI to decide which spell to use.
     /// Returns null if no spell was cast.
     /// </summary>
-    public CastSpellResult? ExecuteEnemySpell(Enemy enemy, Character player, SpellCatalogService spellCatalog)
+    public CastSpellResult? ExecuteEnemySpell(Enemy enemy, Character player, SpellDataService spellCatalog)
     {
         // AI decides which spell to cast (if any)
         string? chosenSpellId = _enemySpellCastingAI.DecideSpellCasting(enemy, player);
