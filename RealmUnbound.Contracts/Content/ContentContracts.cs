@@ -87,3 +87,39 @@ public record SpellDto(
     string School,
     int Rank,
     int ManaCost);
+
+// ── ActorClass ────────────────────────────────────────────────────────────────
+
+public record ActorClassDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    int HitDie,
+    string PrimaryStat,
+    int RarityWeight);
+
+// ── Species ───────────────────────────────────────────────────────────────────
+
+public record SpeciesDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    int RarityWeight);
+
+// ── Background ────────────────────────────────────────────────────────────────
+
+public record BackgroundDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    int RarityWeight);
+
+// ── Skill ─────────────────────────────────────────────────────────────────────
+
+public record SkillDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    int MaxRank,
+    string? GoverningAttribute,
+    int RarityWeight);

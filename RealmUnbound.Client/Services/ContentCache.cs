@@ -10,13 +10,17 @@ namespace RealmUnbound.Client.Services;
 /// </summary>
 public class ContentCache(IContentService contentService, ILogger<ContentCache> logger)
 {
-    private List<AbilityDto>?   _abilities;
-    private List<EnemyDto>?     _enemies;
-    private List<NpcDto>?       _npcs;
-    private List<QuestDto>?     _quests;
-    private List<RecipeDto>?    _recipes;
-    private List<LootTableDto>? _lootTables;
-    private List<SpellDto>?     _spells;
+    private List<AbilityDto>?     _abilities;
+    private List<EnemyDto>?       _enemies;
+    private List<NpcDto>?         _npcs;
+    private List<QuestDto>?       _quests;
+    private List<RecipeDto>?      _recipes;
+    private List<LootTableDto>?   _lootTables;
+    private List<SpellDto>?       _spells;
+    private List<ActorClassDto>?  _classes;
+    private List<SpeciesDto>?     _species;
+    private List<BackgroundDto>?  _backgrounds;
+    private List<SkillDto>?       _skills;
 
     // ── Catalog accessors (lazy-load) ─────────────────────────────────────────
 
@@ -90,6 +94,46 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
         return _spells;
     }
 
+    public async Task<IReadOnlyList<ActorClassDto>> GetClassesAsync()
+    {
+        if (_classes is null)
+        {
+            logger.LogDebug("ContentCache: loading classes from server");
+            _classes = await contentService.GetClassesAsync();
+        }
+        return _classes;
+    }
+
+    public async Task<IReadOnlyList<SpeciesDto>> GetSpeciesAsync()
+    {
+        if (_species is null)
+        {
+            logger.LogDebug("ContentCache: loading species from server");
+            _species = await contentService.GetSpeciesAsync();
+        }
+        return _species;
+    }
+
+    public async Task<IReadOnlyList<BackgroundDto>> GetBackgroundsAsync()
+    {
+        if (_backgrounds is null)
+        {
+            logger.LogDebug("ContentCache: loading backgrounds from server");
+            _backgrounds = await contentService.GetBackgroundsAsync();
+        }
+        return _backgrounds;
+    }
+
+    public async Task<IReadOnlyList<SkillDto>> GetSkillsAsync()
+    {
+        if (_skills is null)
+        {
+            logger.LogDebug("ContentCache: loading skills from server");
+            _skills = await contentService.GetSkillsAsync();
+        }
+        return _skills;
+    }
+
     // ── Slug lookups ──────────────────────────────────────────────────────────
 
     public async Task<AbilityDto?> GetAbilityAsync(string slug)
@@ -141,6 +185,34 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
                ?? await contentService.GetSpellAsync(slug);
     }
 
+    public async Task<ActorClassDto?> GetClassAsync(string slug)
+    {
+        var list = await GetClassesAsync();
+        return list.FirstOrDefault(c => c.Slug == slug)
+               ?? await contentService.GetClassAsync(slug);
+    }
+
+    public async Task<SpeciesDto?> GetOneSpeciesAsync(string slug)
+    {
+        var list = await GetSpeciesAsync();
+        return list.FirstOrDefault(s => s.Slug == slug)
+               ?? await contentService.GetSpeciesAsync(slug);
+    }
+
+    public async Task<BackgroundDto?> GetBackgroundAsync(string slug)
+    {
+        var list = await GetBackgroundsAsync();
+        return list.FirstOrDefault(b => b.Slug == slug)
+               ?? await contentService.GetBackgroundAsync(slug);
+    }
+
+    public async Task<SkillDto?> GetSkillAsync(string slug)
+    {
+        var list = await GetSkillsAsync();
+        return list.FirstOrDefault(s => s.Slug == slug)
+               ?? await contentService.GetSkillAsync(slug);
+    }
+
     // ── Cache management ──────────────────────────────────────────────────────
 
     /// <summary>Clears all cached catalogs so they are re-fetched on next access.</summary>
@@ -153,6 +225,10 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
         _recipes    = null;
         _lootTables = null;
         _spells     = null;
+        _classes    = null;
+        _species    = null;
+        _backgrounds = null;
+        _skills     = null;
         logger.LogInformation("ContentCache invalidated");
         return Task.CompletedTask;
     }

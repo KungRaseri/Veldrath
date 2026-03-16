@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmUnbound.Contracts.Content;
@@ -21,8 +23,16 @@ namespace RealmUnbound.Server.Features.Content;
 /// GET /api/content/loot-tables           — all active loot tables
 /// GET /api/content/loot-tables/{slug}    — single loot table
 /// GET /api/content/spells                — all active spells
-/// GET /api/content/spells/{slug}         — single spell
-/// </summary>
+/// GET /api/content/spells/{slug}          — single spell
+/// GET /api/content/classes               — all active actor classes
+/// GET /api/content/classes/{slug}        — single actor class
+/// GET /api/content/species               — all active species
+/// GET /api/content/species/{slug}        — single species
+/// GET /api/content/backgrounds           — all active backgrounds
+/// GET /api/content/backgrounds/{slug}    — single background
+/// GET /api/content/skills                — all active skills
+/// GET /api/content/skills/{slug}         — single skill
+/// /// </summary>
 public static class ContentEndpoints
 {
     public static IEndpointRouteBuilder MapContentEndpoints(this IEndpointRouteBuilder app)
@@ -58,6 +68,22 @@ public static class ContentEndpoints
         // Spells
         group.MapGet("/spells",           GetSpellsAsync);
         group.MapGet("/spells/{slug}",    GetSpellBySlugAsync);
+
+        // Actor classes
+        group.MapGet("/classes",          GetClassesAsync);
+        group.MapGet("/classes/{slug}",   GetClassBySlugAsync);
+
+        // Species
+        group.MapGet("/species",          GetSpeciesAsync);
+        group.MapGet("/species/{slug}",   GetSpeciesBySlugAsync);
+
+        // Backgrounds
+        group.MapGet("/backgrounds",          GetBackgroundsAsync);
+        group.MapGet("/backgrounds/{slug}",   GetBackgroundBySlugAsync);
+
+        // Skills
+        group.MapGet("/skills",           GetSkillsAsync);
+        group.MapGet("/skills/{slug}",    GetSkillBySlugAsync);
 
         return app;
     }
@@ -224,4 +250,114 @@ public static class ContentEndpoints
         School:      s.Tradition.ToString(),
         Rank:        s.Rank,
         ManaCost:    s.ManaCost);
+
+    // ── Actor Classes ─────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetClassesAsync(ContentDbContext db)
+    {
+        var items = await db.ActorClasses
+            .Where(c => c.IsActive)
+            .AsNoTracking()
+            .ToListAsync();
+        return Results.Ok(items.Select(ToDto));
+    }
+
+    private static async Task<IResult> GetClassBySlugAsync(string slug, ContentDbContext db)
+    {
+        var item = await db.ActorClasses
+            .Where(c => c.IsActive && c.Slug == slug)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
+    }
+
+    // ── Species ───────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetSpeciesAsync(ContentDbContext db)
+    {
+        var items = await db.Species
+            .Where(s => s.IsActive)
+            .AsNoTracking()
+            .ToListAsync();
+        return Results.Ok(items.Select(ToDto));
+    }
+
+    private static async Task<IResult> GetSpeciesBySlugAsync(string slug, ContentDbContext db)
+    {
+        var item = await db.Species
+            .Where(s => s.IsActive && s.Slug == slug)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
+    }
+
+    // ── Backgrounds ───────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetBackgroundsAsync(ContentDbContext db)
+    {
+        var items = await db.Backgrounds
+            .Where(b => b.IsActive)
+            .AsNoTracking()
+            .ToListAsync();
+        return Results.Ok(items.Select(ToDto));
+    }
+
+    private static async Task<IResult> GetBackgroundBySlugAsync(string slug, ContentDbContext db)
+    {
+        var item = await db.Backgrounds
+            .Where(b => b.IsActive && b.Slug == slug)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
+    }
+
+    // ── Skills ────────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetSkillsAsync(ContentDbContext db)
+    {
+        var items = await db.Skills
+            .Where(s => s.IsActive)
+            .AsNoTracking()
+            .ToListAsync();
+        return Results.Ok(items.Select(ToDto));
+    }
+
+    private static async Task<IResult> GetSkillBySlugAsync(string slug, ContentDbContext db)
+    {
+        var item = await db.Skills
+            .Where(s => s.IsActive && s.Slug == slug)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
+    }
+
+    // ── Mapping helpers (new content types) ───────────────────────────────────
+
+    private static ActorClassDto ToDto(RealmEngine.Data.Entities.ActorClass c) => new(
+        Slug:        c.Slug,
+        DisplayName: c.DisplayName ?? c.Slug,
+        TypeKey:     c.TypeKey,
+        HitDie:      c.HitDie,
+        PrimaryStat: c.PrimaryStat,
+        RarityWeight: c.RarityWeight);
+
+    private static SpeciesDto ToDto(RealmEngine.Data.Entities.Species s) => new(
+        Slug:        s.Slug,
+        DisplayName: s.DisplayName ?? s.Slug,
+        TypeKey:     s.TypeKey,
+        RarityWeight: s.RarityWeight);
+
+    private static BackgroundDto ToDto(RealmEngine.Data.Entities.Background b) => new(
+        Slug:        b.Slug,
+        DisplayName: b.DisplayName ?? b.Slug,
+        TypeKey:     b.TypeKey,
+        RarityWeight: b.RarityWeight);
+
+    private static SkillDto ToDto(RealmEngine.Data.Entities.Skill s) => new(
+        Slug:               s.Slug,
+        DisplayName:        s.DisplayName ?? s.Slug,
+        TypeKey:            s.TypeKey,
+        MaxRank:            s.MaxRank,
+        GoverningAttribute: s.GoverningAttribute,
+        RarityWeight:       s.RarityWeight);
 }

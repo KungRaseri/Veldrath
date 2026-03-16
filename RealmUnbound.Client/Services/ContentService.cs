@@ -29,6 +29,18 @@ public interface IContentService
 
     Task<List<SpellDto>> GetSpellsAsync();
     Task<SpellDto?> GetSpellAsync(string slug);
+
+    Task<List<ActorClassDto>> GetClassesAsync();
+    Task<ActorClassDto?> GetClassAsync(string slug);
+
+    Task<List<SpeciesDto>> GetSpeciesAsync();
+    Task<SpeciesDto?> GetSpeciesAsync(string slug);
+
+    Task<List<BackgroundDto>> GetBackgroundsAsync();
+    Task<BackgroundDto?> GetBackgroundAsync(string slug);
+
+    Task<List<SkillDto>> GetSkillsAsync();
+    Task<SkillDto?> GetSkillAsync(string slug);
 }
 
 // ── Implementation ─────────────────────────────────────────────────────────────
@@ -94,4 +106,16 @@ public class HttpContentService(
 
     public Task<List<SpellDto>> GetSpellsAsync()                => GetListAsync<SpellDto>("api/content/spells");
     public Task<SpellDto?> GetSpellAsync(string slug)           => GetSingleAsync<SpellDto>($"api/content/spells/{slug}");
+
+    public Task<List<ActorClassDto>> GetClassesAsync()                  => GetListAsync<ActorClassDto>("api/content/classes");
+    public Task<ActorClassDto?> GetClassAsync(string slug)              => GetSingleAsync<ActorClassDto>($"api/content/classes/{slug}");
+
+    public Task<List<SpeciesDto>> GetSpeciesAsync()                     => GetListAsync<SpeciesDto>("api/content/species");
+    public Task<SpeciesDto?> GetSpeciesAsync(string slug)               => GetSingleAsync<SpeciesDto>($"api/content/species/{slug}");
+
+    public Task<List<BackgroundDto>> GetBackgroundsAsync()              => GetListAsync<BackgroundDto>("api/content/backgrounds");
+    public Task<BackgroundDto?> GetBackgroundAsync(string slug)         => GetSingleAsync<BackgroundDto>($"api/content/backgrounds/{slug}");
+
+    public Task<List<SkillDto>> GetSkillsAsync()                        => GetListAsync<SkillDto>("api/content/skills");
+    public Task<SkillDto?> GetSkillAsync(string slug)                   => GetSingleAsync<SkillDto>($"api/content/skills/{slug}");
 }
