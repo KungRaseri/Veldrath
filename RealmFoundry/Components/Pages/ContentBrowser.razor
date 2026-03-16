@@ -1,0 +1,25 @@
+@page "/content"
+@using RealmUnbound.Contracts.Content
+@rendermode InteractiveServer
+
+<PageTitle>Content — RealmFoundry</PageTitle>
+
+<div class="content-browser">
+    <header class="browser-header">
+        <h1>Base Content</h1>
+        <p class="browser-desc">
+            Browse all canonical game content authored in RealmForge.
+            Select a content type below to explore the full catalog.
+        </p>
+    </header>
+
+    <div class="content-type-grid">
+        @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
+        {
+            <a class="content-type-card" href="/content/@schema.ContentType">
+                <span class="card-label">@schema.DisplayLabel</span>
+                <span class="card-desc">@schema.Description</span>
+            </a>
+        }
+    </div>
+</div>
