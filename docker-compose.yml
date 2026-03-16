@@ -64,6 +64,8 @@ services:
       # Optional: set to your dev server ID for instant slash command registration.
       # Leave as 0 (or unset) to register commands globally in production.
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
+      # Use the Docker service name — "localhost" inside the container refers to itself, not the server.
+      - Discord__ServerBaseUrl=http://server:8080
     restart: unless-stopped
 
   foundry:
