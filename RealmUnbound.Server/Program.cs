@@ -253,12 +253,26 @@ try
 
         if (appDb.Database.ProviderName?.Contains("Npgsql") == true)
         {
-            await appDb.Database.MigrateAsync();
-
             // ContentDbContext uses Npgsql-specific SQL (JSONB, etc.).
             var contentDb = services.GetRequiredService<ContentDbContext>();
+
+            // Build the union of all migrations known to every context that shares this database.
+            // RepairStaleMigrationsAsync uses this to avoid treating another context's valid
+            // migrations as stale entries to be deleted.
+            var allKnown = appDb.Database.GetMigrations()
+                .Concat(contentDb.Database.ProviderName?.Contains("Npgsql") == true
+                    ? contentDb.Database.GetMigrations()
+                    : [])
+                .ToHashSet(StringComparer.Ordinal);
+
+            await RepairStaleMigrationsAsync(appDb, app.Environment.IsDevelopment(), allKnown);
+            await appDb.Database.MigrateAsync();
+
             if (contentDb.Database.ProviderName?.Contains("Npgsql") == true)
+            {
+                await RepairStaleMigrationsAsync(contentDb, app.Environment.IsDevelopment(), allKnown);
                 await contentDb.Database.MigrateAsync();
+            }
 
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
@@ -315,6 +329,50 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+// Detects migrations in __EFMigrationsHistory that no longer exist in the codebase
+// (e.g., after migrations are squashed or renamed during development).  In that state,
+// EF would try to re-apply the first known migration on top of existing tables and crash.
+// Dev: drop the database so MigrateAsync can rebuild it cleanly.
+// Prod: throw so a human can act — never silently drop production data.
+static async Task RepairStaleMigrationsAsync(DbContext db, bool isDevelopment, IReadOnlySet<string>? allKnownMigrations = null)
+{
+    if (!await db.Database.CanConnectAsync())
+        return;
+
+    IEnumerable<string> applied;
+    try
+    {
+        applied = await db.Database.GetAppliedMigrationsAsync();
+    }
+    catch
+    {
+        // History table doesn't exist yet — nothing to repair.
+        return;
+    }
+
+    // Use the combined known set when provided so that migrations belonging to
+    // another DbContext sharing the same __EFMigrationsHistory table are not
+    // incorrectly treated as stale entries from this context.
+    var globalKnown = allKnownMigrations ?? db.Database.GetMigrations().ToHashSet(StringComparer.Ordinal);
+    var stale = applied.Where(m => !globalKnown.Contains(m)).ToList();
+
+    if (stale.Count == 0)
+        return;
+
+    if (!isDevelopment)
+        throw new InvalidOperationException(
+            $"Database contains migration(s) that no longer exist in the codebase: {string.Join(", ", stale)}. " +
+            "Reconcile manually with 'dotnet ef database update'.");
+
+    Log.Warning(
+        "Stale migration history detected — {Count} migration(s) not found in codebase: {Migrations}. " +
+        "Dropping and recreating the development database...",
+        stale.Count, string.Join(", ", stale));
+
+    await db.Database.EnsureDeletedAsync();
+    Log.Information("Development database dropped; migrations will be re-applied from scratch.");
 }
 
 // Required for WebApplicationFactory<Program> in integration tests.
