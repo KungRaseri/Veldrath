@@ -22,6 +22,8 @@ public static class DatabaseSeeder
         await SeedSkillsAsync(db);
         await SeedBackgroundsAsync(db);
         await SeedSpeciesAsync(db);
+        await SeedClassAbilityUnlocksAsync(db);
+        await SeedSpeciesAbilityPoolsAsync(db);
     }
 
     // Stat/trait factory helpers — keeps data rows concise.
@@ -482,6 +484,45 @@ public static class DatabaseSeeder
                     CanCrit        = false,
                     RequiresWeapon = false,
                 },
+            },
+            // Wolf innate — natural bite attack
+            new Ability
+            {
+                Slug         = "bite",
+                TypeKey      = "active",
+                AbilityType  = "active",
+                DisplayName  = "Bite",
+                RarityWeight = 60,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new AbilityStats
+                {
+                    Cooldown   = 4.0f,
+                    ManaCost   = 0,
+                    CastTime   = 0.2f,
+                    Range      = 1,
+                    DamageMin  = 8,
+                    DamageMax  = 14,
+                    MaxTargets = 1,
+                },
+                Effects = new AbilityEffects
+                {
+                    DamageType       = "physical",
+                    ConditionApplied = "bleeding",
+                    ConditionChance  = 0.25f,
+                },
+                Traits = new AbilityTraits
+                {
+                    RequiresTarget = true,
+                    IsAoe          = false,
+                    HasCooldown    = true,
+                    IsInstant      = true,
+                    IsChanneled    = false,
+                    CanCrit        = true,
+                    IsPassive      = false,
+                    RequiresWeapon = false,
+                },
             }
         );
 
@@ -618,6 +659,53 @@ public static class DatabaseSeeder
                 },
             }
         );
+
+        await db.SaveChangesAsync();
+    }
+
+    // ── Class Ability Unlocks ───────────────────────────────────────────────
+
+    private static async Task SeedClassAbilityUnlocksAsync(ContentDbContext db)
+    {
+        if (await db.ClassAbilityUnlocks.AnyAsync())
+            return;
+
+        var warrior = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "warrior");
+        var mage    = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "mage");
+
+        var powerStrike  = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "power-strike");
+        var toughness    = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "toughness");
+        var fireball     = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "fireball");
+        var arcaneFocus  = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "arcane-focus");
+
+        if (warrior is null || mage is null || powerStrike is null ||
+            toughness is null || fireball is null || arcaneFocus is null)
+            return;
+
+        db.ClassAbilityUnlocks.AddRange(
+            new ClassAbilityUnlock { ClassId = warrior.Id, AbilityId = powerStrike.Id, LevelRequired = 1, Rank = 1 },
+            new ClassAbilityUnlock { ClassId = warrior.Id, AbilityId = toughness.Id,   LevelRequired = 1, Rank = 1 },
+            new ClassAbilityUnlock { ClassId = mage.Id,    AbilityId = fireball.Id,     LevelRequired = 1, Rank = 1 },
+            new ClassAbilityUnlock { ClassId = mage.Id,    AbilityId = arcaneFocus.Id,  LevelRequired = 1, Rank = 1 }
+        );
+
+        await db.SaveChangesAsync();
+    }
+
+    // ── Species Ability Pools ─────────────────────────────────────────────────
+
+    private static async Task SeedSpeciesAbilityPoolsAsync(ContentDbContext db)
+    {
+        if (await db.SpeciesAbilityPools.AnyAsync())
+            return;
+
+        var wolf = await db.Species.FirstOrDefaultAsync(s => s.Slug == "wolf");
+        var bite = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "bite");
+
+        if (wolf is null || bite is null)
+            return;
+
+        db.SpeciesAbilityPools.Add(new SpeciesAbilityPool { SpeciesId = wolf.Id, AbilityId = bite.Id });
 
         await db.SaveChangesAsync();
     }
