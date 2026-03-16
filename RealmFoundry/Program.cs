@@ -45,19 +45,36 @@ try
         .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
         .SetApplicationName("RealmFoundry");
 
+    // ── Antiforgery ───────────────────────────────────────────────────────────
+    // Use a fixed cookie name so stale cookies from before a key rotation are
+    // easily identified, and set SameSite=Strict + no Secure flag for HTTP dev.
+    builder.Services.AddAntiforgery(options =>
+    {
+        options.Cookie.Name     = "rf-af";
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    });
+
     var app = builder.Build();
 
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Error");
         app.UseHsts();
-        app.UseHttpsRedirection();
+        // HTTPS redirection is handled by the reverse proxy / Docker host, not the container.
     }
-    app.UseStaticFiles();
     app.UseAntiforgery();
 
+    // UseStaticFiles serves physical wwwroot files (e.g. _framework/, favicon.ico).
+    // MapStaticAssets handles fingerprinted/compressed endpoints from the publish manifest.
+    // Both are needed: in Development inside Docker, UseStaticWebAssets() auto-wires a
+    // dev-time manifest pointing at source project obj/ paths that don't exist in the
+    // container, so MapStaticAssets() alone can't resolve _framework/ assets.
+    app.UseStaticFiles();
+    app.MapStaticAssets();
     app.MapRazorComponents<App>()
-        .AddInteractiveServerRenderMode();
+        .AddInteractiveServerRenderMode()
+        .DisableAntiforgery();  // Blazor Server's _blazor hub uses WebSockets — antiforgery doesn't apply
 
     app.Run();
 }
