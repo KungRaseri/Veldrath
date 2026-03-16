@@ -6,6 +6,9 @@ public class Skill : ContentBase
     /// <summary>Maximum learnable rank for this skill.</summary>
     public int MaxRank { get; set; } = 5;
 
+    /// <summary>Primary attribute that governs this skill's scaling (e.g. "strength", "dexterity", "intelligence", "constitution").</summary>
+    public string? GoverningAttribute { get; set; }
+
     /// <summary>Progression statistics per rank.</summary>
     public SkillStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags classifying this skill.</summary>
