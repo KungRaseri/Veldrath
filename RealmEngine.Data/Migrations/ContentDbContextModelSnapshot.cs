@@ -769,10 +769,16 @@ namespace RealmEngine.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<double>("BudgetModifier")
+                        .HasColumnType("double precision");
+
                     b.Property<string>("ComponentKey")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("SetId")
                         .HasColumnType("uuid");

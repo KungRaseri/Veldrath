@@ -263,7 +263,7 @@ public class ServiceRegistrationTests
     public void AbilityCatalogService_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<AbilityCatalogService>();
+        var service = _serviceProvider.GetService<AbilityDataService>();
 
         // Assert
         service.Should().NotBeNull("AbilityCatalogService should be registered (required by GetAvailableAbilitiesHandler)");
@@ -273,7 +273,7 @@ public class ServiceRegistrationTests
     public void SpellCatalogService_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<SpellCatalogService>();
+        var service = _serviceProvider.GetService<SpellDataService>();
 
         // Assert
         service.Should().NotBeNull("SpellCatalogService should be registered as singleton (required by GetLearnableSpellsHandler)");
@@ -283,7 +283,7 @@ public class ServiceRegistrationTests
     public void RecipeCatalogLoader_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<RecipeCatalogLoader>();
+        var service = _serviceProvider.GetService<RecipeDataService>();
 
         // Assert
         service.Should().NotBeNull("RecipeCatalogLoader should be registered");
@@ -293,7 +293,7 @@ public class ServiceRegistrationTests
     public void ItemCatalogLoader_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<ItemCatalogLoader>();
+        var service = _serviceProvider.GetService<ItemDataService>();
 
         // Assert
         service.Should().NotBeNull("ItemCatalogLoader should be registered");

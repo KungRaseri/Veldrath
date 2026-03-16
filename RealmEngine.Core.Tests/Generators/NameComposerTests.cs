@@ -1,15 +1,12 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Generators;
+using RealmEngine.Data.Entities;
 using Xunit;
 using Xunit.Abstractions;
-using Newtonsoft.Json.Linq;
 
 namespace RealmEngine.Core.Tests.Generators;
 
-/// <summary>
-/// Tests for the NameComposer utility that handles pattern-based name generation.
-/// </summary>
 public class NameComposerTests
 {
     private readonly ITestOutputHelper _output;
@@ -21,179 +18,190 @@ public class NameComposerTests
         _composer = new NameComposer(NullLogger<NameComposer>.Instance);
     }
 
-    [Fact]
-    public void Should_Compose_Simple_Base_Name()
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    private static NamePatternSet BuildSet(string entityPath, string template, params (string key, string value, int weight)[] components)
     {
-        // Arrange
-        var components = JToken.Parse(@"
+        var set = new NamePatternSet
         {
-            ""base"": [
-                { ""value"": ""Wolf"", ""rarityWeight"": 100 }
-            ]
-        }");
+            Id = Guid.NewGuid(),
+            EntityPath = entityPath,
+            Patterns = [new NamePattern { Id = Guid.NewGuid(), Template = template, RarityWeight = 100 }],
+            Components = components.Select((c, i) => new NameComponent
+            {
+                Id = Guid.NewGuid(),
+                ComponentKey = c.key,
+                Value = c.value,
+                RarityWeight = c.weight,
+                SortOrder = i
+            }).ToList()
+        };
+        set.Patterns.First().SetId = set.Id;
+        set.Components.Cast<NameComponent>().ToList().ForEach(c => c.SetId = set.Id);
+        return set;
+    }
 
-        // Act
-        var name = _composer.ComposeName("base", components, out var componentValues);
+    // ── ComposeName ───────────────────────────────────────────────────────────
 
-        // Assert
+    [Fact]
+    public void ComposeName_SimpleBase_ReturnsBaseValue()
+    {
+        var set = BuildSet("test/base", "base", ("base", "Wolf", 100));
+
+        var name = _composer.ComposeName(set, out var values);
+
         name.Should().Be("Wolf");
-        componentValues.Should().ContainKey("base");
-        componentValues["base"].Should().Be("Wolf");
-        
+        values.Should().ContainKey("base").WhoseValue.Should().Be("Wolf");
         _output.WriteLine($"Name: {name}");
-        _output.WriteLine($"Components: {string.Join(", ", componentValues.Select(kv => $"{kv.Key}={kv.Value}"))}");
     }
 
     [Fact]
-    public void Should_Compose_Name_With_Multiple_Tokens()
+    public void ComposeName_MultipleTokens_ReturnsComposedString()
     {
-        // Arrange
-        var components = JToken.Parse(@"
-        {
-            ""size"": [
-                { ""value"": ""Giant"", ""rarityWeight"": 50 }
-            ],
-            ""type"": [
-                { ""value"": ""Frost"", ""rarityWeight"": 30 }
-            ],
-            ""base"": [
-                { ""value"": ""Wolf"", ""rarityWeight"": 100 }
-            ]
-        }");
+        var set = BuildSet(
+            "test/multi",
+            "{size} {type} {base}",
+            ("size", "Giant", 50),
+            ("type", "Frost", 30),
+            ("base", "Wolf", 100));
 
-        // Act
-        var name = _composer.ComposeName("{size} {type} {base}", components, out var componentValues);
+        var name = _composer.ComposeName(set, out var values);
 
-        // Assert
         name.Should().Be("Giant Frost Wolf");
-        componentValues.Should().ContainKey("size");
-        componentValues.Should().ContainKey("type");
-        componentValues.Should().ContainKey("base");
-        componentValues["size"].Should().Be("Giant");
-        componentValues["type"].Should().Be("Frost");
-        componentValues["base"].Should().Be("Wolf");
-        
+        values.Keys.Should().Contain(["size", "type", "base"]);
         _output.WriteLine($"Name: {name}");
-        _output.WriteLine($"Components: {string.Join(", ", componentValues.Select(kv => $"{kv.Key}={kv.Value}"))}");
     }
 
     [Fact]
-    public void Should_Handle_Missing_Optional_Tokens()
+    public void ComposeName_MissingOptionalToken_SkipsToken()
     {
-        // Arrange
-        var components = JToken.Parse(@"
-        {
-            ""base"": [
-                { ""value"": ""Wolf"", ""rarityWeight"": 100 }
-            ],
-            ""title"": [
-                { ""value"": ""the Devourer"", ""rarityWeight"": 50 }
-            ]
-        }");
+        var set = BuildSet(
+            "test/optional",
+            "{type} {base} {title}",
+            ("base", "Wolf", 100),
+            ("title", "the Devourer", 50));
+        // "type" is missing from components
 
-        // Act - pattern includes {type} but it's not in components
-        var name = _composer.ComposeName("{type} {base} {title}", components, out var componentValues);
+        var name = _composer.ComposeName(set, out var values);
 
-        // Assert
+        // "{type} " removed, result is "Wolf the Devourer"
         name.Should().Be("Wolf the Devourer");
-        componentValues.Should().ContainKey("base");
-        componentValues.Should().ContainKey("title");
-        componentValues.Should().NotContainKey("type"); // Missing token not added
-        
+        values.Should().ContainKey("base");
+        values.Should().ContainKey("title");
+        values.Should().NotContainKey("type");
         _output.WriteLine($"Name: {name}");
-        _output.WriteLine($"Components: {string.Join(", ", componentValues.Select(kv => $"{kv.Key}={kv.Value}"))}");
     }
 
     [Fact]
-    public void Should_Select_Random_Pattern_By_Weight()
+    public void ComposeName_NoPatterns_ReturnsEmpty()
     {
-        // Arrange
-        var patterns = JToken.Parse(@"[
-            { ""pattern"": ""base"", ""rarityWeight"": 50 },
-            { ""pattern"": ""{size} {base}"", ""rarityWeight"": 40 },
-            { ""pattern"": ""{type} {base}"", ""rarityWeight"": 30 }
-        ]");
-
-        // Act
-        var results = new Dictionary<string, int>();
-        for (int i = 0; i < 100; i++)
+        var set = new NamePatternSet
         {
-            var pattern = _composer.GetRandomWeightedPattern(patterns);
-            var patternStr = pattern?["pattern"]?.Value<string>() ?? "";
-            
-            if (!results.ContainsKey(patternStr))
-                results[patternStr] = 0;
-            results[patternStr]++;
+            Id = Guid.NewGuid(),
+            EntityPath = "test/empty",
+            Patterns = [],
+            Components = []
+        };
+
+        var name = _composer.ComposeName(set, out var values);
+
+        name.Should().BeEmpty();
+        values.Should().BeEmpty();
+    }
+
+    // ── SelectPattern ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SelectPattern_SinglePattern_AlwaysReturnsThatPattern()
+    {
+        var pattern = new NamePattern { Id = Guid.NewGuid(), Template = "{base}", RarityWeight = 100 };
+
+        var selected = _composer.SelectPattern([pattern]);
+
+        selected.Should().Be(pattern);
+    }
+
+    [Fact]
+    public void SelectPattern_EmptyCollection_ReturnsNull()
+    {
+        var result = _composer.SelectPattern([]);
+        result.Should().BeNull();
+    }
+
+    // ── SelectWeightedComponent ───────────────────────────────────────────────
+
+    [Fact]
+    public void SelectWeightedComponent_SingleEntry_AlwaysReturnsThatEntry()
+    {
+        var comp = new NameComponent { Id = Guid.NewGuid(), ComponentKey = "base", Value = "Dragon", RarityWeight = 100 };
+
+        var selected = _composer.SelectWeightedComponent([comp]);
+
+        selected.Should().Be(comp);
+    }
+
+    [Fact]
+    public void SelectWeightedComponent_EmptyPool_ReturnsNull()
+    {
+        var result = _composer.SelectWeightedComponent([]);
+        result.Should().BeNull();
+    }
+
+    // ── ComposeFromTemplate ───────────────────────────────────────────────────
+
+    [Fact]
+    public void ComposeFromTemplate_TemplateAndComponents_SubstitutesTokens()
+    {
+        var components = new List<NameComponent>
+        {
+            new() { ComponentKey = "adjective", Value = "Dark", RarityWeight = 100 },
+            new() { ComponentKey = "noun", Value = "Flame", RarityWeight = 100 }
+        };
+
+        var name = _composer.ComposeFromTemplate("{adjective} {noun}", components, out var values);
+
+        name.Should().Be("Dark Flame");
+        values["adjective"].Should().Be("Dark");
+        values["noun"].Should().Be("Flame");
+    }
+
+    // ── ComposeNameStructured ─────────────────────────────────────────────────
+
+    [Fact]
+    public void ComposeNameStructured_PrefixBaseAndSuffix_CategorisedCorrectly()
+    {
+        var set = BuildSet(
+            "test/structured",
+            "{prefix} {base} {suffix}",
+            ("prefix", "Shadow", 100),
+            ("base", "Blade", 100),
+            ("suffix", "of Doom", 100));
+
+        var (prefixes, baseName, suffixes) = _composer.ComposeNameStructured(set, out _);
+
+        prefixes.Should().ContainSingle().Which.Should().Be("Shadow");
+        baseName.Should().Be("Blade");
+        suffixes.Should().ContainSingle().Which.Should().Be("of Doom");
+    }
+
+    // ── Weight distribution (statistical) ────────────────────────────────────
+
+    [Fact]
+    public void SelectWeightedComponent_HighWeight_SelectedMoreOften()
+    {
+        var rare = new NameComponent { ComponentKey = "x", Value = "Rare", RarityWeight = 1 };
+        var common = new NameComponent { ComponentKey = "x", Value = "Common", RarityWeight = 99 };
+        var pool = new[] { rare, common };
+
+        var counts = new Dictionary<string, int> { ["Rare"] = 0, ["Common"] = 0 };
+        for (int i = 0; i < 1000; i++)
+        {
+            var selected = _composer.SelectWeightedComponent(pool);
+            counts[selected!.Value]++;
         }
 
-        // Assert
-        results.Should().ContainKey("base");
-        results.Should().ContainKey("{size} {base}");
-        results.Should().ContainKey("{type} {base}");
-        
-        // More common patterns should appear more often (not strict since it's random)
-        _output.WriteLine("\nPattern selection distribution (100 samples):");
-        foreach (var result in results.OrderByDescending(kv => kv.Value))
-        {
-            _output.WriteLine($"  {result.Key}: {result.Value} times");
-        }
-    }
-
-    [Fact]
-    public void Should_Compose_Ability_Name_With_Power_And_School()
-    {
-        // Arrange
-        var components = JToken.Parse(@"
-        {
-            ""power"": [
-                { ""value"": ""Greater"", ""rarityWeight"": 30 }
-            ],
-            ""school"": [
-                { ""value"": ""Frost"", ""rarityWeight"": 50 }
-            ],
-            ""base"": [
-                { ""value"": ""Bolt"", ""rarityWeight"": 100 }
-            ]
-        }");
-
-        // Act
-        var name = _composer.ComposeName("{power} {school} {base}", components, out var componentValues);
-
-        // Assert
-        name.Should().Be("Greater Frost Bolt");
-        componentValues["power"].Should().Be("Greater");
-        componentValues["school"].Should().Be("Frost");
-        componentValues["base"].Should().Be("Bolt");
-        
-        _output.WriteLine($"Ability Name: {name}");
-    }
-
-    [Fact]
-    public void Should_Compose_NPC_Name_With_Title_Prefix_And_Suffix()
-    {
-        // Arrange
-        var components = JToken.Parse(@"
-        {
-            ""title_prefix"": [
-                { ""value"": ""Master"", ""rarityWeight"": 40 }
-            ],
-            ""base"": [
-                { ""value"": ""Garrick"", ""rarityWeight"": 100 }
-            ],
-            ""title_suffix"": [
-                { ""value"": ""the Wise"", ""rarityWeight"": 30 }
-            ]
-        }");
-
-        // Act
-        var name = _composer.ComposeName("{title_prefix} {base} {title_suffix}", components, out var componentValues);
-
-        // Assert
-        name.Should().Be("Master Garrick the Wise");
-        componentValues["title_prefix"].Should().Be("Master");
-        componentValues["base"].Should().Be("Garrick");
-        componentValues["title_suffix"].Should().Be("the Wise");
-        
-        _output.WriteLine($"NPC Name: {name}");
+        counts["Common"].Should().BeGreaterThan(counts["Rare"],
+            because: "the 99-weight component should dominate");
+        _output.WriteLine($"Rare={counts["Rare"]} Common={counts["Common"]}");
     }
 }

@@ -48,7 +48,7 @@ public class QuestIntegrationTests
         });
 
         // Mock SkillCatalogService to avoid database dependencies
-        var mockSkillCatalog = new Mock<SkillCatalogService>(new InMemorySkillRepository(), null);
+        var mockSkillCatalog = new Mock<SkillDataService>(new InMemorySkillRepository(), null);
         mockSkillCatalog.Setup(s => s.GetSkillDefinition(It.IsAny<string>()))
             .Returns(new SkillDefinition 
             { 
@@ -76,8 +76,8 @@ public class QuestIntegrationTests
         services.AddSingleton<QuestInitializationService>();
         services.AddSingleton<IAbilityRepository, InMemoryAbilityRepository>();
         services.AddSingleton<ISpellRepository, InMemorySpellRepository>();
-        services.AddSingleton<AbilityCatalogService>();
-        services.AddSingleton<SpellCatalogService>();
+        services.AddSingleton(sp => new AbilityDataService(sp.GetRequiredService<IAbilityRepository>()));
+        services.AddSingleton(sp => new SpellDataService(sp.GetRequiredService<ISpellRepository>()));
         services.AddSingleton(mockSkillCatalog.Object);
         services.AddSingleton<SkillProgressionService>();
         services.AddSingleton<CombatService>();

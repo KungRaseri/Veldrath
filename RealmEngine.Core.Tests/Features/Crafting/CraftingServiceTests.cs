@@ -9,11 +9,11 @@ namespace RealmEngine.Core.Tests.Features.Crafting;
 public class CraftingServiceTests
 {
     private readonly CraftingService _craftingService;
-    private readonly RecipeCatalogLoader _recipeCatalogLoader;
+    private readonly RecipeDataService _recipeCatalogLoader;
 
     public CraftingServiceTests()
     {
-        _recipeCatalogLoader = new RecipeCatalogLoader(new InMemoryRecipeRepository());
+        _recipeCatalogLoader = new RecipeDataService(new InMemoryRecipeRepository());
         _craftingService = new CraftingService(_recipeCatalogLoader);
     }
 

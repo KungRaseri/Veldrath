@@ -9,13 +9,13 @@ namespace RealmEngine.Core.Features.Progression.Commands;
 /// </summary>
 public class LearnAbilityHandler : IRequestHandler<LearnAbilityCommand, LearnAbilityResult>
 {
-    private readonly AbilityCatalogService _abilityCatalog;
+    private readonly AbilityDataService _abilityCatalog;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LearnAbilityHandler"/> class.
     /// </summary>
     /// <param name="abilityCatalog">The ability catalog service.</param>
-    public LearnAbilityHandler(AbilityCatalogService abilityCatalog)
+    public LearnAbilityHandler(AbilityDataService abilityCatalog)
     {
         _abilityCatalog = abilityCatalog ?? throw new ArgumentNullException(nameof(abilityCatalog));
     }

@@ -17,6 +17,15 @@ public class NameComponent
     /// <summary>The actual word or phrase — e.g. "Dark", "Shadow", "Frost".</summary>
     public string Value { get; set; } = string.Empty;
 
+    /// <summary>Relative selection weight — higher = more likely to be chosen. Defaults to 50.</summary>
+    public int RarityWeight { get; set; } = 50;
+
+    /// <summary>
+    /// Optional budget modifier used by quality components (e.g. "Masterwork" = 0.3 extra budget).
+    /// Zero for all non-quality components.
+    /// </summary>
+    public double BudgetModifier { get; set; } = 0.0;
+
     /// <summary>Display order within the component pool in RealmForge.</summary>
     public int SortOrder { get; set; }
 

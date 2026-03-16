@@ -1,50 +1,32 @@
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
-using RealmEngine.Data.Services;
+using RealmEngine.Core.Services.Budget;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Generators.Modern;
 
-/// <summary>Generates socket slots for items using socket configuration from the database or defaults.</summary>
-public class SocketGenerator(GameConfigService configService, ILogger<SocketGenerator> logger)
+/// <summary>Generates socket slots for items using database-driven socket configuration.</summary>
+public class SocketGenerator(SocketConfig socketConfig, ILogger<SocketGenerator> logger)
 {
     private readonly Random _random = new();
 
-    private static readonly Dictionary<SocketType, int> DefaultTypeWeights = new()
-    {
-        [SocketType.Gem] = 25,
-        [SocketType.Rune] = 25,
-        [SocketType.Crystal] = 25,
-        [SocketType.Orb] = 25,
-    };
-
-    /// <summary>Generates sockets for an item based on rarity and item type.</summary>
+    /// <summary>Generates sockets for an item based on its rarity and item type.</summary>
     public Dictionary<SocketType, List<Socket>> GenerateSockets(ItemRarity rarity, ItemType itemType, string? material)
     {
         var sockets = new Dictionary<SocketType, List<Socket>>();
 
         try
         {
-            var configJson = configService.GetData("socket-config");
-            var config = configJson is not null ? JObject.Parse(configJson) : null;
-
-            var socketCount = DetermineSocketCount(config, rarity);
+            var socketCount = DetermineSocketCount(rarity);
             if (socketCount == 0) return sockets;
 
-            var typeWeights = GetTypeWeights(config, itemType.ToString());
+            var typeWeights = GetTypeWeights(itemType.ToString());
 
-            var allSockets = new List<(SocketType type, Socket socket)>();
             for (int i = 0; i < socketCount; i++)
             {
                 var socketType = SelectSocketType(typeWeights);
-                allSockets.Add((socketType, new Socket { Type = socketType }));
-            }
-
-            foreach (var (socketType, socket) in allSockets)
-            {
                 if (!sockets.ContainsKey(socketType))
                     sockets[socketType] = [];
-                sockets[socketType].Add(socket);
+                sockets[socketType].Add(new Socket { Type = socketType });
             }
 
             logger.LogDebug("Generated {Count} sockets for {Rarity} {ItemType}", socketCount, rarity, itemType);
@@ -57,39 +39,46 @@ public class SocketGenerator(GameConfigService configService, ILogger<SocketGene
         return sockets;
     }
 
-    private int DetermineSocketCount(JObject? config, ItemRarity rarity)
+    private int DetermineSocketCount(ItemRarity rarity)
     {
-        var chances = config?["socketCounts"]?[rarity.ToString()]?["chances"]?.Values<int>().ToArray();
-        if (chances is null || chances.Length == 0)
+        if (socketConfig.SocketCounts.TryGetValue(rarity.ToString(), out var entry)
+            && entry.Chances.Length > 0)
         {
-            // Default: rare+ gets 1-2 sockets, others none
-            return rarity >= ItemRarity.Rare ? _random.Next(1, 3) : 0;
+            var total = entry.Chances.Sum();
+            if (total == 0) return 0;
+
+            var roll = _random.Next(total);
+            var cumulative = 0;
+            for (int i = 0; i < entry.Chances.Length; i++)
+            {
+                cumulative += entry.Chances[i];
+                if (roll < cumulative) return i;
+            }
+            return 0;
         }
 
-        var total = chances.Sum();
-        if (total == 0) return 0;
-
-        var roll = _random.Next(total);
-        var cumulative = 0;
-        for (int i = 0; i < chances.Length; i++)
-        {
-            cumulative += chances[i];
-            if (roll < cumulative) return i;
-        }
-        return 0;
+        // Type-default fallback (used when DB has no socket-config rows yet)
+        return rarity >= ItemRarity.Rare ? _random.Next(1, 3) : 0;
     }
 
-    private Dictionary<SocketType, int> GetTypeWeights(JObject? config, string itemTypeName)
+    private Dictionary<SocketType, int> GetTypeWeights(string itemTypeName)
     {
-        var node = config?["socketTypeWeights"]?[itemTypeName];
-        if (node is null) return DefaultTypeWeights;
+        if (socketConfig.SocketTypeWeights.TryGetValue(itemTypeName, out var w))
+        {
+            return new Dictionary<SocketType, int>
+            {
+                [SocketType.Gem]     = w.Gem,
+                [SocketType.Rune]    = w.Rune,
+                [SocketType.Crystal] = w.Crystal,
+                [SocketType.Orb]     = w.Orb,
+            };
+        }
 
+        // Type-default fallback: equal distribution across all socket types
         return new Dictionary<SocketType, int>
         {
-            [SocketType.Gem] = node["Gem"]?.Value<int>() ?? 25,
-            [SocketType.Rune] = node["Rune"]?.Value<int>() ?? 25,
-            [SocketType.Crystal] = node["Crystal"]?.Value<int>() ?? 25,
-            [SocketType.Orb] = node["Orb"]?.Value<int>() ?? 25,
+            [SocketType.Gem] = 25, [SocketType.Rune] = 25,
+            [SocketType.Crystal] = 25, [SocketType.Orb] = 25,
         };
     }
 
@@ -106,3 +95,4 @@ public class SocketGenerator(GameConfigService configService, ILogger<SocketGene
         return SocketType.Gem;
     }
 }
+

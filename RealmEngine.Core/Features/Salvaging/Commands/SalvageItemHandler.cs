@@ -10,13 +10,13 @@ namespace RealmEngine.Core.Features.Salvaging.Commands;
 /// </summary>
 public class SalvageItemHandler : IRequestHandler<SalvageItemCommand, SalvageItemResult>
 {
-    private readonly RecipeCatalogLoader? _recipeCatalogLoader;
+    private readonly RecipeDataService? _recipeCatalogLoader;
 
     /// <summary>
     /// Initializes a new instance of the SalvageItemHandler class.
     /// </summary>
     /// <param name="recipeCatalogLoader">Optional recipe catalog loader for recipe-based salvaging.</param>
-    public SalvageItemHandler(RecipeCatalogLoader? recipeCatalogLoader = null)
+    public SalvageItemHandler(RecipeDataService? recipeCatalogLoader = null)
     {
         _recipeCatalogLoader = recipeCatalogLoader;
     }

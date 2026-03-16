@@ -10,7 +10,7 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// </summary>
 public class SpellCastingService
 {
-    private readonly SpellCatalogService _spellCatalog;
+    private readonly SpellDataService _spellCatalog;
     private readonly SkillProgressionService _skillProgression;
     private readonly ILogger<SpellCastingService> _logger;
 
@@ -21,7 +21,7 @@ public class SpellCastingService
     /// <param name="skillProgression">The skill progression service.</param>
     /// <param name="logger">Optional logger instance.</param>
     public SpellCastingService(
-        SpellCatalogService spellCatalog,
+        SpellDataService spellCatalog,
         SkillProgressionService skillProgression,
         ILogger<SpellCastingService>? logger = null)
     {

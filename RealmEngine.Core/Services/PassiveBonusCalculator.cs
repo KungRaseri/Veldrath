@@ -9,13 +9,13 @@ namespace RealmEngine.Core.Services;
 /// </summary>
 public class PassiveBonusCalculator : IPassiveBonusCalculator
 {
-    private readonly AbilityCatalogService _abilityCatalogService;
+    private readonly AbilityDataService _abilityCatalogService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PassiveBonusCalculator"/> class.
     /// </summary>
     /// <param name="abilityCatalogService">The ability catalog service.</param>
-    public PassiveBonusCalculator(AbilityCatalogService abilityCatalogService)
+    public PassiveBonusCalculator(AbilityDataService abilityCatalogService)
     {
         _abilityCatalogService = abilityCatalogService;
     }

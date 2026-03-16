@@ -8,13 +8,13 @@ namespace RealmEngine.Core.Features.Progression.Queries;
 /// </summary>
 public class GetAvailableAbilitiesHandler : IRequestHandler<GetAvailableAbilitiesQuery, GetAvailableAbilitiesResult>
 {
-    private readonly AbilityCatalogService _abilityService;
+    private readonly AbilityDataService _abilityService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetAvailableAbilitiesHandler"/> class.
     /// </summary>
     /// <param name="abilityService">The ability catalog service.</param>
-    public GetAvailableAbilitiesHandler(AbilityCatalogService abilityService)
+    public GetAvailableAbilitiesHandler(AbilityDataService abilityService)
     {
         _abilityService = abilityService ?? throw new ArgumentNullException(nameof(abilityService));
     }

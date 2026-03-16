@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using RealmEngine.Data.Entities;
+using RealmEngine.Shared.Models;
+using EntityNameComponent = RealmEngine.Data.Entities.NameComponent;
 
 namespace RealmEngine.Core.Services.Budget;
 
@@ -153,6 +156,32 @@ public class BudgetCalculator
         
         // Default to 0 for unknown patterns
         return 0;
+    }
+
+    // ── Typed overloads for entity-based generation ──────────────────────────
+
+    /// <summary>Calculates the cost of an <see cref="ItemTemplate"/> using its <c>RarityWeight</c>.</summary>
+    public int CalculateMaterialCost(ItemTemplate item)
+    {
+        if (item.RarityWeight <= 0) return 999999;
+        var numerator = _config.Formulas.Material.Numerator ?? 6000;
+        return (int)Math.Round((double)numerator / item.RarityWeight);
+    }
+
+    /// <summary>Calculates the selection cost of a <see cref="EntityNameComponent"/> using its <c>RarityWeight</c>.</summary>
+    public int CalculateComponentCost(EntityNameComponent component)
+    {
+        if (component.RarityWeight <= 0) return 999999;
+        var numerator = _config.Formulas.Component.Numerator ?? 100;
+        return (int)Math.Round((double)numerator / component.RarityWeight);
+    }
+
+    /// <summary>Calculates the quality cost of a <see cref="EntityNameComponent"/> (quality pool) using its <c>RarityWeight</c>.</summary>
+    public int CalculateQualityCost(EntityNameComponent component)
+    {
+        if (component.RarityWeight <= 0) return 999999;
+        var numerator = _config.Formulas.MaterialQuality.Numerator ?? 150;
+        return (int)Math.Round((double)numerator / component.RarityWeight);
     }
 
     /// <summary>

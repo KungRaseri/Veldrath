@@ -388,9 +388,9 @@ public class HarvestingIntegrationTests
             dbFactory.Object
         );
         
-        var skillCatalogService = new SkillCatalogService(
+        var skillCatalogService = new SkillDataService(
             new InMemorySkillRepository(),
-            localLoggerFactory.CreateLogger<SkillCatalogService>()
+            localLoggerFactory.CreateLogger<SkillDataService>()
         );
         
         var skillProgressionService = new SkillProgressionService(

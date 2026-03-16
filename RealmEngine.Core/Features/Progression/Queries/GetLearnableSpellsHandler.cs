@@ -8,13 +8,13 @@ namespace RealmEngine.Core.Features.Progression.Queries;
 /// </summary>
 public class GetLearnableSpellsHandler : IRequestHandler<GetLearnableSpellsQuery, GetLearnableSpellsResult>
 {
-    private readonly SpellCatalogService _spellService;
+    private readonly SpellDataService _spellService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetLearnableSpellsHandler"/> class.
     /// </summary>
     /// <param name="spellService">The spell catalog service.</param>
-    public GetLearnableSpellsHandler(SpellCatalogService spellService)
+    public GetLearnableSpellsHandler(SpellDataService spellService)
     {
         _spellService = spellService ?? throw new ArgumentNullException(nameof(spellService));
     }

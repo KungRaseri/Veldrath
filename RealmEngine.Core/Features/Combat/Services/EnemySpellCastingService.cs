@@ -8,14 +8,14 @@ namespace RealmEngine.Core.Features.Combat.Services;
 /// </summary>
 public class EnemySpellCastingService
 {
-    private readonly SpellCatalogService? _spellCatalogService;
+    private readonly SpellDataService? _spellCatalogService;
     private readonly Random _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnemySpellCastingService"/> class.
     /// </summary>
     /// <param name="spellCatalogService">The spell catalog service.</param>
-    public EnemySpellCastingService(SpellCatalogService? spellCatalogService = null)
+    public EnemySpellCastingService(SpellDataService? spellCatalogService = null)
     {
         _spellCatalogService = spellCatalogService;
         _random = new Random();

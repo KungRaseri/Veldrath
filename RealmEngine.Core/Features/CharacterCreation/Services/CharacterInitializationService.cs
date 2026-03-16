@@ -11,7 +11,7 @@ namespace RealmEngine.Core.Features.CharacterCreation.Services;
 /// </summary>
 public class CharacterInitializationService
 {
-    private readonly AbilityCatalogService _abilityCatalogService;
+    private readonly AbilityDataService _abilityCatalogService;
     private readonly SpellCastingService _spellCastingService;
     private readonly IMediator _mediator;
 
@@ -22,7 +22,7 @@ public class CharacterInitializationService
     /// <param name="spellCastingService">The spell casting service.</param>
     /// <param name="mediator">The mediator for sending commands.</param>
     public CharacterInitializationService(
-        AbilityCatalogService abilityCatalogService,
+        AbilityDataService abilityCatalogService,
         SpellCastingService spellCastingService,
         IMediator mediator)
     {

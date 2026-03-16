@@ -14,12 +14,12 @@ namespace RealmEngine.Core.Tests.Services;
 public class ShopEconomyServiceTests
 {
     private readonly ShopEconomyService _service;
-    private readonly ItemCatalogLoader _catalogLoader;
+    private readonly ItemDataService _catalogLoader;
 
     public ShopEconomyServiceTests()
     {
         var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
-        _catalogLoader = new ItemCatalogLoader(dbFactory.Object);
+        _catalogLoader = new ItemDataService(dbFactory.Object);
         _service = new ShopEconomyService(_catalogLoader);
     }
 

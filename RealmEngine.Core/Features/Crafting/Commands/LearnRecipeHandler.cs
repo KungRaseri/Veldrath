@@ -9,10 +9,10 @@ namespace RealmEngine.Core.Features.Crafting.Commands;
 /// </summary>
 public class LearnRecipeHandler : IRequestHandler<LearnRecipeCommand, LearnRecipeResult>
 {
-    private readonly RecipeCatalogLoader _recipeCatalogLoader;
+    private readonly RecipeDataService _recipeCatalogLoader;
 
     /// <summary>Initializes the handler.</summary>
-    public LearnRecipeHandler(RecipeCatalogLoader recipeCatalogLoader)
+    public LearnRecipeHandler(RecipeDataService recipeCatalogLoader)
     {
         _recipeCatalogLoader = recipeCatalogLoader;
     }

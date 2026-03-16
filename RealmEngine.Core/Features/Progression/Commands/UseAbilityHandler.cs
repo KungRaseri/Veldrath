@@ -15,7 +15,7 @@ namespace RealmEngine.Core.Features.Progression.Commands;
 /// </summary>
 public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityResult>
 {
-    private readonly AbilityCatalogService _abilityCatalog;
+    private readonly AbilityDataService _abilityCatalog;
     private readonly ILogger<UseAbilityHandler> _logger;
     private readonly IMediator? _mediator;
     private readonly Random _random = new();
@@ -27,7 +27,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
     /// <param name="logger">The logger.</param>
     /// <param name="mediator">The mediator for sending commands (optional for testing).</param>
     public UseAbilityHandler(
-        AbilityCatalogService abilityCatalog,
+        AbilityDataService abilityCatalog,
         ILogger<UseAbilityHandler>? logger = null,
         IMediator? mediator = null)
     {
