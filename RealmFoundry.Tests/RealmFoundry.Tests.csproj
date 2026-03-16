@@ -5,6 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" />
+    <PackageReference Include="Moq" />
     <ProjectReference Include="..\RealmFoundry\RealmFoundry.csproj" />
     <ProjectReference Include="..\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />
   </ItemGroup>

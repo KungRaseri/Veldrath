@@ -8,7 +8,7 @@ namespace RealmFoundry.Services;
 /// Base address is configured via <c>RealmUnbound:ServerUrl</c> at startup.
 /// Call <see cref="SetBearerToken"/> after login to authorise requests.
 /// </summary>
-public sealed class RealmFoundryApiClient(HttpClient http)
+public class RealmFoundryApiClient(HttpClient http)
 {
     public void SetBearerToken(string token) =>
         http.DefaultRequestHeaders.Authorization =
@@ -26,7 +26,7 @@ public sealed class RealmFoundryApiClient(HttpClient http)
 
     // ── Auth ──────────────────────────────────────────────────────────────
 
-    public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
+    public virtual async Task<AuthResponse?> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         var resp = await http.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = refreshToken }, ct);
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
