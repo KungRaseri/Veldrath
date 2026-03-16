@@ -3,6 +3,7 @@
 @using RealmUnbound.Contracts.Content
 @using System.Text.Json
 @inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
 @rendermode InteractiveServer
 
 <PageTitle>@(_schema?.DisplayLabel ?? ContentType) — RealmFoundry</PageTitle>
@@ -21,46 +22,56 @@ else
                 <a class="back-link" href="/content">← All Types</a>
                 <h2>@_schema.DisplayLabel</h2>
                 <p class="list-desc">@_schema.Description</p>
+                <div class="search-bar">
+                    <input placeholder="Search…"
+                           value="@_search"
+                           @oninput="OnSearchInput" />
+                </div>
             </div>
 
-            <div class="search-bar">
-                <input placeholder="Search…"
-                       value="@_search"
-                       @oninput="OnSearchInput" />
-            </div>
-
-            @if (_loading)
-            {
-                <p class="loading">Loading…</p>
-            }
-            else if (_items.Count == 0)
-            {
-                <p class="empty">No active content found.</p>
-            }
-            else
-            {
-                <ul class="item-list">
-                    @foreach (var item in _items)
-                    {
-                        var isSelected = item.Slug == Slug;
-                        <li class="@(isSelected ? "item-row selected" : "item-row")">
-                            <a href="/content/@ContentType/@item.Slug">
-                                <span class="item-name">@(item.DisplayName ?? item.Slug)</span>
-                                <span class="item-meta">@item.TypeKey · @item.RarityWeight rw</span>
-                            </a>
-                        </li>
-                    }
-                </ul>
-
-                @if (_totalCount > _pageSize)
+            <div class="list-scroll">
+                @if (_loading)
                 {
-                    <div class="pagination">
-                        <button disabled="@(_page <= 1)" @onclick="PrevPage">‹ Prev</button>
-                        <span>@_page / @TotalPages</span>
-                        <button disabled="@(_page >= TotalPages)" @onclick="NextPage">Next ›</button>
-                    </div>
+                    <p class="loading">Loading…</p>
                 }
-            }
+                else if (_items.Count == 0)
+                {
+                    <p class="empty">No items found.</p>
+                }
+                else
+                {
+                    <table class="content-list-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th class="col-rarity">Rarity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in _items)
+                            {
+                                var isSelected = item.Slug == Slug;
+                                <tr class="@(isSelected ? "selected" : "")"
+                                    @onclick="() => SelectItem(item.Slug)">
+                                    <td class="col-name">@(item.DisplayName ?? item.Slug)</td>
+                                    <td class="col-type">@item.TypeKey</td>
+                                    <td class="col-rarity">@item.RarityWeight</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    @if (_totalCount > _pageSize)
+                    {
+                        <div class="pagination">
+                            <button disabled="@(_page <= 1)" @onclick="PrevPage">‹ Prev</button>
+                            <span>@_page / @TotalPages</span>
+                            <button disabled="@(_page >= TotalPages)" @onclick="NextPage">Next ›</button>
+                        </div>
+                    }
+                }
+            </div>
         </aside>
 
         <!-- ── Right pane: detail ────────────────────────────────────────── -->
@@ -214,6 +225,9 @@ else
 
     private async Task PrevPage() { if (_page > 1) { _page--; await LoadListAsync(); } }
     private async Task NextPage() { if (_page < TotalPages) { _page++; await LoadListAsync(); } }
+
+    private void SelectItem(string slug) =>
+        Nav.NavigateTo($"/content/{ContentType}/{slug}");
 
     // Resolve a dot-separated field path from the payload JsonElement.
     private static string? GetFieldValue(JsonElement payload, string fieldName)

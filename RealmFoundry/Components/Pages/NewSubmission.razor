@@ -53,58 +53,73 @@ else
                         <legend>@group.Label</legend>
                         @foreach (var field in group.Fields)
                         {
-                            <div class="form-group">
-                                <label>
-                                    @field.Label
-                                    @if (field.Required) { <span class="required">*</span> }
-                                </label>
+                            @if (field.FieldType == ContentFieldType.Boolean)
+                            {
+                                <div class="form-group form-check">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox"
+                                               checked="@GetBool(field.Name)"
+                                               @onchange="e => SetBool(field.Name, (bool)(e.Value ?? false))" />
+                                        <span>
+                                            @field.Label
+                                            @if (field.Required) { <span class="required">*</span> }
+                                        </span>
+                                    </label>
+                                    @if (field.Hint is not null)
+                                    {
+                                        <p class="field-hint">@field.Hint</p>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="form-group">
+                                    <label>
+                                        @field.Label
+                                        @if (field.Required) { <span class="required">*</span> }
+                                    </label>
 
-                                @if (field.FieldType == ContentFieldType.Boolean)
-                                {
-                                    <input type="checkbox"
-                                           checked="@GetBool(field.Name)"
-                                           @onchange="e => SetBool(field.Name, (bool)(e.Value ?? false))" />
-                                }
-                                else if (field.FieldType == ContentFieldType.LongText)
-                                {
-                                    <textarea rows="4"
-                                              value="@GetString(field.Name)"
-                                              @oninput="e => SetString(field.Name, e.Value?.ToString())"
-                                              placeholder="@field.Hint"></textarea>
-                                }
-                                else if (field.FieldType == ContentFieldType.EnumString && field.EnumValues is not null)
-                                {
-                                    <select value="@GetString(field.Name)"
-                                            @onchange="e => SetString(field.Name, e.Value?.ToString())">
-                                        <option value="">— select —</option>
-                                        @foreach (var v in field.EnumValues.Where(v => v != ""))
-                                        {
-                                            <option value="@v">@v</option>
-                                        }
-                                    </select>
-                                }
-                                else if (field.FieldType is ContentFieldType.Integer or ContentFieldType.Decimal)
-                                {
-                                    <input type="number"
-                                           step="@(field.FieldType == ContentFieldType.Decimal ? "any" : "1")"
-                                           min="@field.Min" max="@field.Max"
-                                           value="@GetString(field.Name)"
-                                           @oninput="e => SetString(field.Name, e.Value?.ToString())"
-                                           placeholder="@field.Default" />
-                                }
-                                else
-                                {
-                                    <input type="text"
-                                           value="@GetString(field.Name)"
-                                           @oninput="e => SetString(field.Name, e.Value?.ToString())"
-                                           placeholder="@(field.FieldType == ContentFieldType.Slug ? "e.g. my-content-slug" : field.Hint ?? "")" />
-                                }
+                                    @if (field.FieldType == ContentFieldType.LongText)
+                                    {
+                                        <textarea rows="4"
+                                                  value="@GetString(field.Name)"
+                                                  @oninput="e => SetString(field.Name, e.Value?.ToString())"
+                                                  placeholder="@field.Hint"></textarea>
+                                    }
+                                    else if (field.FieldType == ContentFieldType.EnumString && field.EnumValues is not null)
+                                    {
+                                        <select value="@GetString(field.Name)"
+                                                @onchange="e => SetString(field.Name, e.Value?.ToString())">
+                                            <option value="">— select —</option>
+                                            @foreach (var v in field.EnumValues.Where(v => v != ""))
+                                            {
+                                                <option value="@v">@v</option>
+                                            }
+                                        </select>
+                                    }
+                                    else if (field.FieldType is ContentFieldType.Integer or ContentFieldType.Decimal)
+                                    {
+                                        <input type="number"
+                                               step="@(field.FieldType == ContentFieldType.Decimal ? "any" : "1")"
+                                               min="@field.Min" max="@field.Max"
+                                               value="@GetString(field.Name)"
+                                               @oninput="e => SetString(field.Name, e.Value?.ToString())"
+                                               placeholder="@field.Default" />
+                                    }
+                                    else
+                                    {
+                                        <input type="text"
+                                               value="@GetString(field.Name)"
+                                               @oninput="e => SetString(field.Name, e.Value?.ToString())"
+                                               placeholder="@(field.FieldType == ContentFieldType.Slug ? "e.g. my-content-slug" : field.Hint ?? "")" />
+                                    }
 
-                                @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
-                                {
-                                    <p class="field-hint">@field.Hint</p>
-                                }
-                            </div>
+                                    @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
+                                    {
+                                        <p class="field-hint">@field.Hint</p>
+                                    }
+                                </div>
+                            }
                         }
                     </fieldset>
                 }
@@ -126,6 +141,10 @@ else
 }
 
 @code {
+    // Pre-populate from /submissions/new?type=weapon&ref=iron-sword (linked from ContentDetail)
+    [SupplyParameterFromQuery(Name = "type")] public string? QueryType { get; set; }
+    [SupplyParameterFromQuery(Name = "ref")]  public string? QueryRef  { get; set; }
+
     private string  _contentType = "";
     private string  _title       = "";
     private string  _description = "";
@@ -136,6 +155,19 @@ else
 
     // Flat key → string value store for all schema fields
     private readonly Dictionary<string, string> _values = new();
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(QueryType) && string.IsNullOrEmpty(_contentType))
+        {
+            _contentType = QueryType;
+            _schema = ContentSchemaRegistry.Get(_contentType);
+
+            // Pre-populate slug from ?ref= so the submitter can base their work on an existing entity
+            if (!string.IsNullOrEmpty(QueryRef))
+                _values["slug"] = QueryRef + "-variant";
+        }
+    }
 
     private void OnTypeChanged()
     {

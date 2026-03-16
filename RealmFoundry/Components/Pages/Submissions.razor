@@ -1,4 +1,5 @@
 @page "/submissions"
+@using RealmUnbound.Contracts.Content
 @inject RealmFoundryApiClient Api
 @rendermode InteractiveServer
 
@@ -20,13 +21,10 @@
     </select>
     <select @bind="_typeFilter">
         <option value="">All types</option>
-        <option value="Item">Item</option>
-        <option value="Spell">Spell</option>
-        <option value="Ability">Ability</option>
-        <option value="Npc">NPC</option>
-        <option value="Quest">Quest</option>
-        <option value="Recipe">Recipe</option>
-        <option value="LootTable">Loot Table</option>
+        @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
+        {
+            <option value="@schema.ContentType">@schema.DisplayLabel</option>
+        }
     </select>
     <button class="btn" @onclick="SearchAsync">Search</button>
 </div>

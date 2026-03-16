@@ -1,4 +1,6 @@
 @page "/submissions/{Id:guid}"
+@using RealmUnbound.Contracts.Content
+@using System.Text.Json
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 @rendermode InteractiveServer
@@ -39,7 +41,34 @@ else
     }
 
     <h2>Payload</h2>
-    <pre class="payload">@_submission.Payload</pre>
+
+    @if (_schema is not null && _payloadElement.HasValue)
+    {
+        <div class="payload-compare @(_canonical is not null ? "split" : "single")">
+
+            <div class="payload-col">
+                <h3>Submission</h3>
+                @RenderPayload(_payloadElement.Value, _schema)
+            </div>
+
+            @if (_canonical is not null)
+            {
+                <div class="payload-col canonical">
+                    <h3>
+                        Canonical
+                        <a class="badge badge-blue" href="/content/@_submission.ContentType/@_canonical.Summary.Slug">
+                            @(_canonical.Summary.DisplayName ?? _canonical.Summary.Slug)
+                        </a>
+                    </h3>
+                    @RenderPayload(_canonical.Payload, _schema)
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <pre class="payload">@_submission.Payload</pre>
+    }
 
     @if (_submission.ReviewNotes is not null)
     {
@@ -70,10 +99,38 @@ else
     private string? _reviewMessage;
     private string? _reviewNotes;
 
+    // Schema-driven payload rendering
+    private ContentTypeSchema?  _schema;
+    private JsonElement?        _payloadElement;
+    private ContentDetailDto?   _canonical;
+
     protected override async Task OnInitializedAsync()
     {
         _submission = await Api.GetSubmissionAsync(Id);
-        _loading = false;
+        _loading    = false;
+
+        if (_submission is not null)
+        {
+            _schema = ContentSchemaRegistry.Get(_submission.ContentType);
+
+            if (!string.IsNullOrWhiteSpace(_submission.Payload))
+            {
+                try
+                {
+                    _payloadElement = JsonSerializer.Deserialize<JsonElement>(_submission.Payload);
+
+                    // Try to find the canonical entity matching the submitted slug (if any)
+                    if (_payloadElement.HasValue &&
+                        _payloadElement.Value.TryGetProperty("slug", out var slugEl))
+                    {
+                        var slug = slugEl.GetString();
+                        if (!string.IsNullOrEmpty(slug))
+                            _canonical = await Api.GetContentDetailAsync(_submission.ContentType, slug);
+                    }
+                }
+                catch { /* payload is not valid JSON — fall back to raw display */ }
+            }
+        }
     }
 
     private async Task VoteAsync(int value)
@@ -89,6 +146,85 @@ else
         var (result, error) = await Api.ReviewAsync(Id, new(approve, _reviewNotes));
         _reviewMessage = error ?? (approve ? "Submission approved." : "Submission rejected.");
         if (result is not null) _submission = result;
+    }
+
+    // Render a JsonElement payload according to the schema field groups.
+    private RenderFragment RenderPayload(JsonElement payload, ContentTypeSchema schema) => builder =>
+    {
+        var seq = 0;
+        foreach (var group in schema.Groups)
+        {
+            bool hasAny = group.Fields.Any(f =>
+            {
+                var v = ResolveFieldValue(payload, f.Name);
+                return v is not null && v != "";
+            });
+            if (!hasAny) continue;
+
+            builder.OpenElement(seq++, "section");
+            builder.AddAttribute(seq++, "class", "detail-group");
+
+            builder.OpenElement(seq++, "h4");
+            builder.AddContent(seq++, group.Label);
+            builder.CloseElement();
+
+            builder.OpenElement(seq++, "dl");
+            builder.AddAttribute(seq++, "class", "field-list");
+
+            foreach (var field in group.Fields)
+            {
+                var raw = ResolveFieldValue(payload, field.Name);
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+
+                builder.OpenElement(seq++, "dt");
+                builder.AddContent(seq++, field.Label);
+                builder.CloseElement();
+
+                builder.OpenElement(seq++, "dd");
+                if (field.FieldType == ContentFieldType.LongText)
+                {
+                    builder.OpenElement(seq++, "pre");
+                    builder.AddAttribute(seq++, "class", "json-block");
+                    builder.AddContent(seq++, raw);
+                    builder.CloseElement();
+                }
+                else if (field.FieldType == ContentFieldType.Boolean)
+                {
+                    builder.OpenElement(seq++, "span");
+                    builder.AddAttribute(seq++, "class",
+                        raw is "True" or "true" ? "bool-true" : "bool-false");
+                    builder.AddContent(seq++, raw is "True" or "true" ? "Yes" : "No");
+                    builder.CloseElement();
+                }
+                else
+                {
+                    builder.AddContent(seq++, raw);
+                }
+                builder.CloseElement(); // dd
+            }
+
+            builder.CloseElement(); // dl
+            builder.CloseElement(); // section
+        }
+    };
+
+    private static string? ResolveFieldValue(JsonElement payload, string fieldName)
+    {
+        var parts   = fieldName.Split('.', 2);
+        var current = payload;
+        foreach (var part in parts)
+        {
+            if (!current.TryGetProperty(part, out var next)) return null;
+            current = next;
+        }
+        return current.ValueKind switch
+        {
+            JsonValueKind.Null      => null,
+            JsonValueKind.Undefined => null,
+            JsonValueKind.Array     => current.GetRawText(),
+            JsonValueKind.Object    => current.GetRawText(),
+            _                       => current.ToString(),
+        };
     }
 
     private static string BadgeClass(string status) => status switch
