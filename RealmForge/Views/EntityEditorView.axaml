@@ -112,35 +112,221 @@
                                     <ItemsControl ItemsSource="{Binding Fields}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="vm:FieldRowViewModel">
-                                                <Grid ColumnDefinitions="160,*" Margin="0,4,0,0">
-                                                    <TextBlock Grid.Column="0"
-                                                               Text="{Binding Label}"
-                                                               Foreground="#bbb" FontSize="13"
-                                                               VerticalAlignment="Center" />
+                                                <StackPanel Margin="0,4,0,0">
+                                                    <Grid ColumnDefinitions="160,*">
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding Label}"
+                                                                   Foreground="#bbb" FontSize="13"
+                                                                   VerticalAlignment="Center" />
 
-                                                    <!-- Text field -->
-                                                    <TextBox Grid.Column="1"
-                                                             Text="{Binding StringValue}"
+                                                        <!-- Text field -->
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding StringValue}"
+                                                                 Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                 BorderBrush="#444" Padding="8,5" CornerRadius="4"
+                                                                 IsVisible="{Binding IsText}" />
+
+                                                        <!-- Numeric field — Min/Max come from ContentSchemaRegistry descriptor -->
+                                                        <NumericUpDown Grid.Column="1"
+                                                                       Value="{Binding NumberValue}"
+                                                                       Minimum="{Binding Min}"
+                                                                       Maximum="{Binding Max}"
+                                                                       Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                       BorderBrush="#444" Padding="6,3" CornerRadius="4"
+                                                                       IsVisible="{Binding IsNumber}" />
+
+                                                        <!-- Bool field -->
+                                                        <CheckBox Grid.Column="1"
+                                                                  IsChecked="{Binding BoolValue}"
+                                                                  Foreground="#bbb" FontSize="13"
+                                                                  IsVisible="{Binding IsBool}" />
+                                                    </Grid>
+                                                    <!-- Hint text from schema descriptor -->
+                                                    <TextBlock Text="{Binding Hint}"
+                                                               Foreground="#666" FontSize="11"
+                                                               Margin="164,2,0,0"
+                                                               IsVisible="{Binding Hint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- ── Junction Sub-Editors (LootEntries, RecipeIngredients, AbilityPools…) ── -->
+                <ItemsControl ItemsSource="{Binding JunctionEditors}"
+                              IsVisible="{Binding JunctionEditors, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:JunctionEditorViewModel">
+                            <Border Background="#252526" CornerRadius="6" Padding="20" Margin="0,0,0,0">
+                                <StackPanel Spacing="10">
+
+                                    <!-- Section header + Add Row button -->
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Title}"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#888" LetterSpacing="1" />
+                                        <Button Grid.Column="1" Content="+ Add Row"
+                                                Command="{Binding AddRowCommand}"
+                                                Background="#1a2f1a" Foreground="#4caf50"
+                                                BorderBrush="#2d5a2d" BorderThickness="1"
+                                                Padding="8,3" CornerRadius="3" FontSize="11" />
+                                    </Grid>
+
+                                    <!-- Column header row -->
+                                    <Grid ColumnDefinitions="*,90,70,55,55,55,36" Margin="0,2,0,0">
+                                        <TextBlock Grid.Column="0" Text="Ability Slug"
+                                                   IsVisible="{Binding ShowAbilitySlug}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="0" Text="Item Domain"
+                                                   IsVisible="{Binding ShowItemReference}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Text="Item Slug"
+                                                   IsVisible="{Binding ShowItemReference}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="2" Text="Use%"
+                                                   IsVisible="{Binding ShowUseChance}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="2" Text="Level"
+                                                   IsVisible="{Binding ShowLevelRequired}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="2" Text="Weight"
+                                                   IsVisible="{Binding ShowDropWeight}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="3" Text="Rank"
+                                                   IsVisible="{Binding ShowRank}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="3" Text="Min"
+                                                   IsVisible="{Binding ShowQuantityRange}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="3" Text="Qty"
+                                                   IsVisible="{Binding ShowQuantity}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="4" Text="Max"
+                                                   IsVisible="{Binding ShowQuantityRange}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="5" Text="Guar."
+                                                   IsVisible="{Binding ShowIsGuaranteed}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                        <TextBlock Grid.Column="5" Text="Opt."
+                                                   IsVisible="{Binding ShowIsOptional}"
+                                                   Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                                                   Margin="4,0,0,0" />
+                                    </Grid>
+
+                                    <!-- Data rows -->
+                                    <ItemsControl ItemsSource="{Binding Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:JunctionRowViewModel">
+                                                <Grid ColumnDefinitions="*,90,70,55,55,55,36" Margin="0,2">
+                                                    <!-- Col 0: ability slug or item domain (only one visible at a time) -->
+                                                    <TextBox Grid.Column="0"
+                                                             Text="{Binding AbilitySlug}"
+                                                             IsVisible="{Binding ShowAbilitySlug}"
+                                                             Watermark="ability-slug"
                                                              Background="#1e1e1e" Foreground="#e0e0e0"
-                                                             BorderBrush="#444" Padding="8,5" CornerRadius="4"
-                                                             IsVisible="{Binding IsText}" />
-
-                                                    <!-- Numeric field -->
-                                                    <NumericUpDown Grid.Column="1"
-                                                                   Value="{Binding NumberValue}"
+                                                             BorderBrush="#444" Padding="6,4" CornerRadius="3" FontSize="12" />
+                                                    <TextBox Grid.Column="0"
+                                                             Text="{Binding ItemDomain}"
+                                                             IsVisible="{Binding ShowItemReference}"
+                                                             Watermark="items / weapons"
+                                                             Background="#1e1e1e" Foreground="#e0e0e0"
+                                                             BorderBrush="#444" Padding="6,4" CornerRadius="3" FontSize="12" />
+                                                    <!-- Col 1: item slug -->
+                                                    <TextBox Grid.Column="1"
+                                                             Text="{Binding ItemSlug}"
+                                                             IsVisible="{Binding ShowItemReference}"
+                                                             Watermark="slug"
+                                                             Background="#1e1e1e" Foreground="#e0e0e0"
+                                                             BorderBrush="#444" Padding="6,4" CornerRadius="3" FontSize="12"
+                                                             Margin="4,0,0,0" />
+                                                    <!-- Col 2: UseChance / LevelRequired / DropWeight (one visible at a time) -->
+                                                    <NumericUpDown Grid.Column="2"
+                                                                   Value="{Binding UseChance}"
+                                                                   IsVisible="{Binding ShowUseChance}"
+                                                                   Minimum="0" Maximum="1" Increment="0.05" FormatString="F2"
                                                                    Background="#1e1e1e" Foreground="#e0e0e0"
-                                                                   BorderBrush="#444" Padding="6,3" CornerRadius="4"
-                                                                   IsVisible="{Binding IsNumber}" />
-
-                                                    <!-- Bool field -->
-                                                    <CheckBox Grid.Column="1"
-                                                              IsChecked="{Binding BoolValue}"
-                                                              Foreground="#bbb" FontSize="13"
-                                                              IsVisible="{Binding IsBool}" />
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <NumericUpDown Grid.Column="2"
+                                                                   Value="{Binding LevelRequired}"
+                                                                   IsVisible="{Binding ShowLevelRequired}"
+                                                                   Minimum="1" Maximum="100" Increment="1"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <NumericUpDown Grid.Column="2"
+                                                                   Value="{Binding DropWeight}"
+                                                                   IsVisible="{Binding ShowDropWeight}"
+                                                                   Minimum="1" Maximum="10000" Increment="1"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <!-- Col 3: Rank / QuantityMin / Quantity (one visible at a time) -->
+                                                    <NumericUpDown Grid.Column="3"
+                                                                   Value="{Binding Rank}"
+                                                                   IsVisible="{Binding ShowRank}"
+                                                                   Minimum="1" Maximum="20" Increment="1"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <NumericUpDown Grid.Column="3"
+                                                                   Value="{Binding QuantityMin}"
+                                                                   IsVisible="{Binding ShowQuantityRange}"
+                                                                   Minimum="0" Maximum="9999" Increment="1"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <NumericUpDown Grid.Column="3"
+                                                                   Value="{Binding Quantity}"
+                                                                   IsVisible="{Binding ShowQuantity}"
+                                                                   Minimum="1" Maximum="9999" Increment="1"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <!-- Col 4: QuantityMax -->
+                                                    <NumericUpDown Grid.Column="4"
+                                                                   Value="{Binding QuantityMax}"
+                                                                   IsVisible="{Binding ShowQuantityRange}"
+                                                                   Minimum="0" Maximum="9999" Increment="1"
+                                                                   Background="#1e1e1e" Foreground="#e0e0e0"
+                                                                   BorderBrush="#444" Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Margin="4,0,0,0" />
+                                                    <!-- Col 5: IsGuaranteed / IsOptional (one visible at a time) -->
+                                                    <CheckBox Grid.Column="5"
+                                                              IsChecked="{Binding IsGuaranteed}"
+                                                              IsVisible="{Binding ShowIsGuaranteed}"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              Margin="6,0,0,0" />
+                                                    <CheckBox Grid.Column="5"
+                                                              IsChecked="{Binding IsOptional}"
+                                                              IsVisible="{Binding ShowIsOptional}"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              Margin="6,0,0,0" />
+                                                    <!-- Col 6: Remove -->
+                                                    <Button Grid.Column="6"
+                                                            Content="✕"
+                                                            Command="{Binding RemoveCommand}"
+                                                            Background="Transparent" Foreground="#f85149"
+                                                            Padding="4,4" CornerRadius="3" FontSize="11"
+                                                            Margin="4,0,0,0" />
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+
                                 </StackPanel>
                             </Border>
                         </DataTemplate>

@@ -5,6 +5,7 @@ using System.Reflection;
 using ReactiveUI;
 using RealmEngine.Data.Entities;
 using RealmForge.Services;
+using RealmUnbound.Contracts.Content;
 using Serilog;
 
 namespace RealmForge.ViewModels;
@@ -43,6 +44,10 @@ public class EntityEditorViewModel : ReactiveObject
             .Subscribe(_ => IsDirty = true);
 
         FieldGroups = BuildFieldGroups(entity);
+
+        JunctionEditors = BuildJunctionEditors(entity);
+        if (JunctionEditors?.Count > 0)
+            _ = InitializeJunctionEditorsAsync();
 
         var canSave = this.WhenAnyValue(
             x => x.IsDirty, x => x.IsSaving,
@@ -114,7 +119,9 @@ public class EntityEditorViewModel : ReactiveObject
     // ── Type-specific field groups (Stats, Traits, Effects, …) ─────────
 
     public IReadOnlyList<FieldGroupViewModel> FieldGroups { get; private set; }
+    // ── Junction sub-editors (LootTable entries, RecipeIngredients, AbilityPools…) ──
 
+    public IReadOnlyList<JunctionEditorViewModel>? JunctionEditors { get; private set; }
     // ── Commands ────────────────────────────────────────────────────────
 
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
@@ -138,6 +145,10 @@ public class EntityEditorViewModel : ReactiveObject
             var success = await _service.SaveEntityAsync(_entity, TableName);
             if (success)
             {
+                if (JunctionEditors?.Count > 0)
+                    foreach (var editor in JunctionEditors)
+                        await SaveJunctionEditorAsync(editor);
+
                 IsDirty = false;
                 StatusMessage = "Saved.";
             }
@@ -174,6 +185,12 @@ public class EntityEditorViewModel : ReactiveObject
         FieldGroups = BuildFieldGroups(_entity);
         this.RaisePropertyChanged(nameof(FieldGroups));
 
+        // Reload junction editors
+        JunctionEditors = BuildJunctionEditors(_entity);
+        this.RaisePropertyChanged(nameof(JunctionEditors));
+        if (JunctionEditors?.Count > 0)
+            await InitializeJunctionEditorsAsync();
+
         IsDirty = false;
         StatusMessage = null;
     }
@@ -184,6 +201,10 @@ public class EntityEditorViewModel : ReactiveObject
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Select(p => p.Name)
             .ToHashSet();
+
+        // Try to find a schema for this entity type to use explicit labels + constraints.
+        _entityTypeToSchemaKey.TryGetValue(entity.GetType(), out var schemaKey);
+        var schema = schemaKey is not null ? ContentSchemaRegistry.Get(schemaKey) : null;
 
         var groups = new List<FieldGroupViewModel>();
 
@@ -200,15 +221,27 @@ public class EntityEditorViewModel : ReactiveObject
             if (groupProp.GetValue(entity) is null)
                 groupProp.SetValue(entity, nested);
 
+            // Match the schema's group by group property name ("Stats", "Traits", etc.)
+            var schemaGroup = schema?.Groups.FirstOrDefault(g =>
+                string.Equals(g.Label, groupProp.Name, StringComparison.OrdinalIgnoreCase));
+
             var fields = groupProp.PropertyType
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Select(p => new FieldRowViewModel(p, nested))
+                .Select(p =>
+                {
+                    // Build the dot-path this field would use in the schema (e.g. "stats.manaCost")
+                    var dotPath = $"{groupProp.Name.ToLowerInvariant()}.{char.ToLower(p.Name[0])}{p.Name[1..]}";
+                    var descriptor = schemaGroup?.Fields.FirstOrDefault(f =>
+                        string.Equals(f.Name, dotPath, StringComparison.OrdinalIgnoreCase));
+                    return new FieldRowViewModel(p, nested, descriptor);
+                })
                 .ToList();
 
             foreach (var field in fields)
                 field.FieldChanged += (_, _) => IsDirty = true;
 
-            groups.Add(new FieldGroupViewModel(FormatGroupName(groupProp.Name), fields));
+            var groupLabel = schemaGroup?.Label ?? FormatGroupName(groupProp.Name);
+            groups.Add(new FieldGroupViewModel(groupLabel, fields));
         }
 
         return groups;
@@ -221,5 +254,200 @@ public class EntityEditorViewModel : ReactiveObject
     private static string FormatGroupName(string name) =>
         System.Text.RegularExpressions.Regex
             .Replace(name, "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ");
+
+    // ── Entity type → ContentSchemaRegistry key map ─────────────────────────────────────────
+
+    private static readonly Dictionary<Type, string> _entityTypeToSchemaKey = new()
+    {
+        [typeof(Ability)]         = "ability",
+        [typeof(Species)]         = "species",
+        [typeof(ActorClass)]      = "class",
+        [typeof(ActorArchetype)]  = "archetype",
+        [typeof(ActorInstance)]   = "instance",
+        [typeof(Background)]      = "background",
+        [typeof(Skill)]           = "skill",
+        [typeof(Weapon)]          = "weapon",
+        [typeof(Armor)]           = "armor",
+        [typeof(Item)]            = "item",
+        [typeof(Material)]        = "material",
+        [typeof(MaterialProperty)]= "materialproperty",
+        [typeof(Enchantment)]     = "enchantment",
+        [typeof(Spell)]           = "spell",
+        [typeof(Quest)]           = "quest",
+        [typeof(Recipe)]          = "recipe",
+        [typeof(LootTable)]       = "loottable",
+        [typeof(Organization)]    = "organization",
+        [typeof(WorldLocation)]   = "worldlocation",
+        [typeof(Dialogue)]        = "dialogue",
+    };
+
+    // ── Junction editor infrastructure ───────────────────────────────────────────────────
+
+    private IReadOnlyList<JunctionEditorViewModel>? BuildJunctionEditors(ContentBase entity)
+    {
+        var editors = new List<JunctionEditorViewModel>();
+
+        if (entity is LootTable)
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.LootEntry,       "Loot Entries",       entity.Id));
+        if (entity is Recipe)
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.RecipeIngredient, "Ingredients",        entity.Id));
+        if (entity is Species)
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.AbilityPool,      "Innate Abilities",   entity.Id));
+        if (entity is ActorArchetype)
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.ArchetypePool,    "Ability Pool",       entity.Id));
+        if (entity is ActorClass)
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.ClassUnlock,      "Ability Unlocks",    entity.Id));
+        if (entity is ActorInstance)
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.AbilityPool,      "Additional Abilities", entity.Id));
+
+        if (editors.Count == 0) return null;
+
+        foreach (var ed in editors)
+            ed.DataChanged += (_, _) => IsDirty = true;
+
+        return editors;
+    }
+
+    private async Task InitializeJunctionEditorsAsync()
+    {
+        if (JunctionEditors is null) return;
+        foreach (var editor in JunctionEditors)
+        {
+            try   { await LoadJunctionDataAsync(editor); }
+            catch (Exception ex) { Log.Error(ex, "Failed to load junction data for {Type}", editor.EditorType); }
+        }
+    }
+
+    private async Task LoadJunctionDataAsync(JunctionEditorViewModel editor)
+    {
+        switch (editor.EditorType)
+        {
+            case JunctionEditorType.LootEntry:
+            {
+                var entries = await _service.LoadLootTableEntriesAsync(editor.OwnerId);
+                editor.LoadRows(entries.Select(e => new JunctionRowViewModel(JunctionEditorType.LootEntry)
+                {
+                    ItemDomain   = e.ItemDomain,
+                    ItemSlug     = e.ItemSlug,
+                    DropWeight   = e.DropWeight,
+                    QuantityMin  = e.QuantityMin,
+                    QuantityMax  = e.QuantityMax,
+                    IsGuaranteed = e.IsGuaranteed,
+                }));
+                break;
+            }
+            case JunctionEditorType.RecipeIngredient:
+            {
+                var rows = await _service.LoadRecipeIngredientsAsync(editor.OwnerId);
+                editor.LoadRows(rows.Select(i => new JunctionRowViewModel(JunctionEditorType.RecipeIngredient)
+                {
+                    ItemDomain = i.ItemDomain,
+                    ItemSlug   = i.ItemSlug,
+                    Quantity   = i.Quantity,
+                    IsOptional = i.IsOptional,
+                }));
+                break;
+            }
+            case JunctionEditorType.AbilityPool:
+            {
+                IReadOnlyList<Guid> ids;
+                if (_entity is Species)
+                    ids = [.. (await _service.LoadSpeciesAbilityPoolAsync(editor.OwnerId)).Select(p => p.AbilityId)];
+                else
+                    ids = [.. (await _service.LoadInstanceAbilityPoolAsync(editor.OwnerId)).Select(p => p.AbilityId)];
+
+                var slugs = await _service.GetAbilitySlugsAsync(ids);
+                editor.LoadRows(ids.Select(id => new JunctionRowViewModel(JunctionEditorType.AbilityPool)
+                {
+                    AbilitySlug = slugs.GetValueOrDefault(id, id.ToString()),
+                }));
+                break;
+            }
+            case JunctionEditorType.ArchetypePool:
+            {
+                var pools = await _service.LoadArchetypeAbilityPoolAsync(editor.OwnerId);
+                var ids   = pools.Select(p => p.AbilityId).Distinct().ToList();
+                var slugs = await _service.GetAbilitySlugsAsync(ids);
+                editor.LoadRows(pools.Select(p => new JunctionRowViewModel(JunctionEditorType.ArchetypePool)
+                {
+                    AbilitySlug = slugs.GetValueOrDefault(p.AbilityId, p.AbilityId.ToString()),
+                    UseChance   = (decimal)p.UseChance,
+                }));
+                break;
+            }
+            case JunctionEditorType.ClassUnlock:
+            {
+                var unlocks = await _service.LoadClassAbilityUnlocksAsync(editor.OwnerId);
+                var ids     = unlocks.Select(u => u.AbilityId).Distinct().ToList();
+                var slugs   = await _service.GetAbilitySlugsAsync(ids);
+                editor.LoadRows(unlocks.Select(u => new JunctionRowViewModel(JunctionEditorType.ClassUnlock)
+                {
+                    AbilitySlug   = slugs.GetValueOrDefault(u.AbilityId, u.AbilityId.ToString()),
+                    LevelRequired = u.LevelRequired,
+                    Rank          = u.Rank,
+                }));
+                break;
+            }
+        }
+    }
+
+    private async Task SaveJunctionEditorAsync(JunctionEditorViewModel editor)
+    {
+        switch (editor.EditorType)
+        {
+            case JunctionEditorType.LootEntry:
+                await _service.SaveLootTableEntriesAsync(editor.OwnerId,
+                    [.. editor.Rows
+                        .Where(r => !string.IsNullOrWhiteSpace(r.ItemSlug))
+                        .Select(r => new LootTableEntry
+                        {
+                            LootTableId  = editor.OwnerId,
+                            ItemDomain   = r.ItemDomain.Trim(),
+                            ItemSlug     = r.ItemSlug.Trim(),
+                            DropWeight   = (int)r.DropWeight,
+                            QuantityMin  = (int)r.QuantityMin,
+                            QuantityMax  = (int)r.QuantityMax,
+                            IsGuaranteed = r.IsGuaranteed,
+                        })]);
+                break;
+
+            case JunctionEditorType.RecipeIngredient:
+                await _service.SaveRecipeIngredientsAsync(editor.OwnerId,
+                    [.. editor.Rows
+                        .Where(r => !string.IsNullOrWhiteSpace(r.ItemSlug))
+                        .Select(r => new RecipeIngredient
+                        {
+                            RecipeId   = editor.OwnerId,
+                            ItemDomain = r.ItemDomain.Trim(),
+                            ItemSlug   = r.ItemSlug.Trim(),
+                            Quantity   = (int)r.Quantity,
+                            IsOptional = r.IsOptional,
+                        })]);
+                break;
+
+            case JunctionEditorType.AbilityPool:
+            {
+                List<string> slugs = [.. editor.Rows.Select(r => r.AbilitySlug.Trim()).Where(s => s.Length > 0)];
+                if (_entity is Species)
+                    await _service.SaveSpeciesAbilityPoolAsync(editor.OwnerId, slugs);
+                else
+                    await _service.SaveInstanceAbilityPoolAsync(editor.OwnerId, slugs);
+                break;
+            }
+            case JunctionEditorType.ArchetypePool:
+                await _service.SaveArchetypeAbilityPoolAsync(editor.OwnerId,
+                    [.. editor.Rows
+                        .Where(r => !string.IsNullOrWhiteSpace(r.AbilitySlug))
+                        .Select(r => (r.AbilitySlug.Trim(), (float)r.UseChance))]);
+                break;
+
+            case JunctionEditorType.ClassUnlock:
+                await _service.SaveClassAbilityUnlocksAsync(editor.OwnerId,
+                    [.. editor.Rows
+                        .Where(r => !string.IsNullOrWhiteSpace(r.AbilitySlug))
+                        .Select(r => (r.AbilitySlug.Trim(), (int)r.LevelRequired, (int)r.Rank))]);
+                break;
+        }
+    }
 }
 

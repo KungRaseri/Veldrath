@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ReactiveUI;
+using RealmUnbound.Contracts.Content;
 
 namespace RealmForge.ViewModels;
 
@@ -8,20 +9,23 @@ public enum FieldKind { Text, Number, Bool }
 
 /// <summary>
 /// A single editable field row produced by reflecting over an entity's nested JSONB object.
-/// The field writes back to the owner object in-place so the entity stays up-to-date.
+/// Accepts an optional <see cref="ContentFieldDescriptor"/> from <see cref="ContentSchemaRegistry"/>
+/// to supply explicit labels, numeric bounds, and hint text in place of reflection-inferred metadata.
 /// </summary>
 public partial class FieldRowViewModel : ReactiveObject
 {
     private readonly PropertyInfo _prop;
     private readonly object _owner;
+    private readonly ContentFieldDescriptor? _descriptor;
 
     public event EventHandler? FieldChanged;
 
-    public FieldRowViewModel(PropertyInfo prop, object owner)
+    public FieldRowViewModel(PropertyInfo prop, object owner, ContentFieldDescriptor? descriptor = null)
     {
-        _prop = prop;
-        _owner = owner;
-        Label = FormatLabel(prop.Name);
+        _prop       = prop;
+        _owner      = owner;
+        _descriptor = descriptor;
+        Label       = descriptor?.Label ?? FormatLabel(prop.Name);
 
         var underlying = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
         IsNullable = Nullable.GetUnderlyingType(prop.PropertyType) != null
@@ -31,9 +35,15 @@ public partial class FieldRowViewModel : ReactiveObject
              : FieldKind.Number;
     }
 
-    public string Label { get; }
-    public FieldKind Kind { get; }
-    public bool IsNullable { get; }
+    public string  Label      { get; }
+    public FieldKind Kind     { get; }
+    public bool IsNullable    { get; }
+
+    // ── Schema-driven metadata (falls back to safe defaults when no descriptor) ──
+    public decimal Min        => _descriptor?.Min is double lo ? (decimal)lo : decimal.MinValue;
+    public decimal Max        => _descriptor?.Max is double hi ? (decimal)hi : decimal.MaxValue;
+    public string? Hint       => _descriptor?.Hint;
+    public bool    IsRequired => _descriptor?.Required ?? false;
 
     public bool IsText   => Kind == FieldKind.Text;
     public bool IsNumber => Kind == FieldKind.Number;

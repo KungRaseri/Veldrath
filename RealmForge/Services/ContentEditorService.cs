@@ -327,5 +327,230 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             })
             .ToListAsync();
     }
+
+    // ── Junction load methods ────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<LootTableEntry>> LoadLootTableEntriesAsync(Guid tableId)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+            return await db.LootTableEntries.AsNoTracking()
+                .Where(e => e.LootTableId == tableId).ToListAsync();
+        }
+        catch (Exception ex) { logger.LogError(ex, "LoadLootTableEntries {Id}", tableId); return []; }
+    }
+
+    public async Task<IReadOnlyList<RecipeIngredient>> LoadRecipeIngredientsAsync(Guid recipeId)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+            return await db.RecipeIngredients.AsNoTracking()
+                .Where(e => e.RecipeId == recipeId).ToListAsync();
+        }
+        catch (Exception ex) { logger.LogError(ex, "LoadRecipeIngredients {Id}", recipeId); return []; }
+    }
+
+    public async Task<IReadOnlyList<SpeciesAbilityPool>> LoadSpeciesAbilityPoolAsync(Guid speciesId)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+            return await db.SpeciesAbilityPools.AsNoTracking()
+                .Where(e => e.SpeciesId == speciesId).ToListAsync();
+        }
+        catch (Exception ex) { logger.LogError(ex, "LoadSpeciesAbilityPool {Id}", speciesId); return []; }
+    }
+
+    public async Task<IReadOnlyList<InstanceAbilityPool>> LoadInstanceAbilityPoolAsync(Guid instanceId)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+            return await db.InstanceAbilityPools.AsNoTracking()
+                .Where(e => e.InstanceId == instanceId).ToListAsync();
+        }
+        catch (Exception ex) { logger.LogError(ex, "LoadInstanceAbilityPool {Id}", instanceId); return []; }
+    }
+
+    public async Task<IReadOnlyList<ArchetypeAbilityPool>> LoadArchetypeAbilityPoolAsync(Guid archetypeId)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+            return await db.ArchetypeAbilityPools.AsNoTracking()
+                .Where(e => e.ArchetypeId == archetypeId).ToListAsync();
+        }
+        catch (Exception ex) { logger.LogError(ex, "LoadArchetypeAbilityPool {Id}", archetypeId); return []; }
+    }
+
+    public async Task<IReadOnlyList<ClassAbilityUnlock>> LoadClassAbilityUnlocksAsync(Guid classId)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return [];
+            return await db.ClassAbilityUnlocks.AsNoTracking()
+                .Where(e => e.ClassId == classId).ToListAsync();
+        }
+        catch (Exception ex) { logger.LogError(ex, "LoadClassAbilityUnlocks {Id}", classId); return []; }
+    }
+
+    /// <summary>Returns a slug map for a batch of ability IDs — used to display slugs instead of raw GUIDs.</summary>
+    public async Task<IReadOnlyDictionary<Guid, string>> GetAbilitySlugsAsync(IEnumerable<Guid> abilityIds)
+    {
+        try
+        {
+            var ids = abilityIds.ToHashSet();
+            if (ids.Count == 0) return new Dictionary<Guid, string>();
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return new Dictionary<Guid, string>();
+            var pairs = await db.Abilities.AsNoTracking()
+                .Where(a => ids.Contains(a.Id))
+                .Select(a => new { a.Id, a.Slug })
+                .ToListAsync();
+            return pairs.ToDictionary(x => x.Id, x => x.Slug);
+        }
+        catch (Exception ex) { logger.LogError(ex, "GetAbilitySlugs"); return new Dictionary<Guid, string>(); }
+    }
+
+    // ── Junction save methods (replace-all per owner) ────────────────────────
+
+    public async Task<bool> SaveLootTableEntriesAsync(Guid tableId, IReadOnlyList<LootTableEntry> entries)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+            var existing = await db.LootTableEntries.Where(e => e.LootTableId == tableId).ToListAsync();
+            db.LootTableEntries.RemoveRange(existing);
+            db.LootTableEntries.AddRange(entries);
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex) { logger.LogError(ex, "SaveLootTableEntries {Id}", tableId); return false; }
+    }
+
+    public async Task<bool> SaveRecipeIngredientsAsync(Guid recipeId, IReadOnlyList<RecipeIngredient> rows)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+            var existing = await db.RecipeIngredients.Where(e => e.RecipeId == recipeId).ToListAsync();
+            db.RecipeIngredients.RemoveRange(existing);
+            db.RecipeIngredients.AddRange(rows);
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex) { logger.LogError(ex, "SaveRecipeIngredients {Id}", recipeId); return false; }
+    }
+
+    public async Task<bool> SaveSpeciesAbilityPoolAsync(Guid speciesId, IReadOnlyList<string> abilitySlugs)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+            var existing = await db.SpeciesAbilityPools.Where(e => e.SpeciesId == speciesId).ToListAsync();
+            db.SpeciesAbilityPools.RemoveRange(existing);
+            foreach (var slug in abilitySlugs)
+            {
+                var id = await FindAbilityIdAsync(db, slug);
+                if (id is not null)
+                    db.SpeciesAbilityPools.Add(new SpeciesAbilityPool { SpeciesId = speciesId, AbilityId = id.Value });
+            }
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex) { logger.LogError(ex, "SaveSpeciesAbilityPool {Id}", speciesId); return false; }
+    }
+
+    public async Task<bool> SaveInstanceAbilityPoolAsync(Guid instanceId, IReadOnlyList<string> abilitySlugs)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+            var existing = await db.InstanceAbilityPools.Where(e => e.InstanceId == instanceId).ToListAsync();
+            db.InstanceAbilityPools.RemoveRange(existing);
+            foreach (var slug in abilitySlugs)
+            {
+                var id = await FindAbilityIdAsync(db, slug);
+                if (id is not null)
+                    db.InstanceAbilityPools.Add(new InstanceAbilityPool { InstanceId = instanceId, AbilityId = id.Value });
+            }
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex) { logger.LogError(ex, "SaveInstanceAbilityPool {Id}", instanceId); return false; }
+    }
+
+    public async Task<bool> SaveArchetypeAbilityPoolAsync(
+        Guid archetypeId, IReadOnlyList<(string Slug, float UseChance)> rows)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+            var existing = await db.ArchetypeAbilityPools.Where(e => e.ArchetypeId == archetypeId).ToListAsync();
+            db.ArchetypeAbilityPools.RemoveRange(existing);
+            foreach (var (slug, useChance) in rows)
+            {
+                var id = await FindAbilityIdAsync(db, slug);
+                if (id is not null)
+                    db.ArchetypeAbilityPools.Add(new ArchetypeAbilityPool
+                        { ArchetypeId = archetypeId, AbilityId = id.Value, UseChance = useChance });
+            }
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex) { logger.LogError(ex, "SaveArchetypeAbilityPool {Id}", archetypeId); return false; }
+    }
+
+    public async Task<bool> SaveClassAbilityUnlocksAsync(
+        Guid classId, IReadOnlyList<(string Slug, int LevelRequired, int Rank)> rows)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetService<ContentDbContext>();
+            if (db is null) return false;
+            var existing = await db.ClassAbilityUnlocks.Where(e => e.ClassId == classId).ToListAsync();
+            db.ClassAbilityUnlocks.RemoveRange(existing);
+            foreach (var (slug, level, rank) in rows)
+            {
+                var id = await FindAbilityIdAsync(db, slug);
+                if (id is not null)
+                    db.ClassAbilityUnlocks.Add(new ClassAbilityUnlock
+                        { ClassId = classId, AbilityId = id.Value, LevelRequired = level, Rank = rank });
+            }
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex) { logger.LogError(ex, "SaveClassAbilityUnlocks {Id}", classId); return false; }
+    }
+
+    private static async Task<Guid?> FindAbilityIdAsync(ContentDbContext db, string slug) =>
+        (await db.Abilities.AsNoTracking().FirstOrDefaultAsync(a => a.Slug == slug))?.Id;
 }
+
 
