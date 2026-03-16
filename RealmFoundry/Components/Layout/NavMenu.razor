@@ -38,7 +38,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && AuthState.IsLoggedIn)
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        // Force a re-render immediately so the nav shows the correct login state
+        // regardless of whether the notification fetch below succeeds or fails.
+        StateHasChanged();
+        if (AuthState.IsLoggedIn)
             await LoadNotificationCountAsync();
     }
 
@@ -47,17 +52,25 @@
 
     private void Refresh() => InvokeAsync(async () =>
     {
+        // Always update the nav first, then try to load the notification count.
+        StateHasChanged();
         if (AuthState.IsLoggedIn)
             await LoadNotificationCountAsync();
         else
             _unreadCount = 0;
-        StateHasChanged();
     });
 
     private async Task LoadNotificationCountAsync()
     {
-        var notifications = await Api.GetNotificationsAsync();
-        _unreadCount = notifications.Count(n => !n.IsRead);
+        try
+        {
+            var notifications = await Api.GetNotificationsAsync();
+            _unreadCount = notifications.Count(n => !n.IsRead);
+        }
+        catch
+        {
+            _unreadCount = 0;
+        }
         StateHasChanged();
     }
 
