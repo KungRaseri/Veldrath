@@ -1,92 +1,102 @@
 @page "/auth/callback"
-@inject AuthStateService AuthState
-@inject NavigationManager Nav
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Text.Json
+@using System.Text.Encodings.Web
 
 <PageTitle>Signing in… — RealmFoundry</PageTitle>
 
-@if (_error is not null)
+@if (_payload is not null)
 {
-    <p class="error">Login failed: @_error. <a href="/login">Try again</a>.</p>
+    <p>Signing you in…</p>
+    @* Inline script runs immediately on page load — before blazor.web.js even initialises.
+       JavaScriptEncoder.Default renders <, >, &, ' as Unicode escapes so the JSON blob is
+       safe to embed inside a <script> tag without any risk of script injection. *@
+    <script>
+        (function () {
+            try {
+                var d = @((MarkupString)_payload);
+                sessionStorage.setItem('rf_access',       d.a);
+                sessionStorage.setItem('rf_refresh',      d.r);
+                sessionStorage.setItem('rf_username',     d.u);
+                sessionStorage.setItem('rf_account_id',   d.i);
+                sessionStorage.setItem('rf_is_curator',   d.c ? 'true' : 'false');
+                sessionStorage.setItem('rf_token_expiry', d.e);
+            } catch (_) { /* storage quota or unavailable */ }
+            window.location.replace('/');
+        })();
+    </script>
 }
 else
 {
-    <p>Signing you in…</p>
+    <p class="error">Login failed: @_error. <a href="/login">Try again</a>.</p>
 }
 
 @code {
-    private string? _error;
+    // SupplyParameterFromQuery works in static SSR — the router binds these
+    // directly from the OAuth redirect query string during the SSR pass.
+    [SupplyParameterFromQuery] private string? Jwt     { get; set; }
+    [SupplyParameterFromQuery] private string? Refresh { get; set; }
+    [SupplyParameterFromQuery] private string? Expires { get; set; }
 
-    // OnAfterRenderAsync(firstRender) is the correct place for ProtectedSessionStorage
-    // calls — it guarantees the JS bridge is ready. OnInitializedAsync can fire before
-    // the browser-side Blazor runtime has finished wiring up JS interop for storage.
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private string? _payload;
+    private string  _error = "Login failed.";
+
+    protected override void OnInitialized()
     {
-        if (!firstRender) return;
-
-        var uri   = Nav.ToAbsoluteUri(Nav.Uri);
-        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-
-        var jwt     = query.TryGetValue("jwt",     out var j) ? j.ToString() : null;
-        var refresh = query.TryGetValue("refresh", out var r) ? r.ToString() : null;
-        var expires = query.TryGetValue("expires", out var e) ? e.ToString() : null;
-
-        if (string.IsNullOrEmpty(jwt))
+        if (string.IsNullOrEmpty(Jwt))
         {
             _error = "No token received.";
-            StateHasChanged();
             return;
         }
 
-        var expiry = long.TryParse(expires, out var unixSeconds)
-            ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
-            : DateTimeOffset.UtcNow.AddMinutes(15);
-
-        var parts = jwt.Split('.');
+        var parts = Jwt.Split('.');
         if (parts.Length != 3)
         {
-            _error = "Invalid token.";
-            StateHasChanged();
+            _error = "Invalid token format.";
             return;
         }
 
-        Dictionary<string, System.Text.Json.JsonElement>? payload;
+        Dictionary<string, JsonElement>? claims;
         try
         {
-            var json = parts[1].Replace('-', '+').Replace('_', '/');
-            json  = json.PadRight(json.Length + (4 - json.Length % 4) % 4, '=');
-            var bytes = Convert.FromBase64String(json);
-            payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(bytes);
+            var b64   = parts[1].Replace('-', '+').Replace('_', '/');
+            b64       = b64.PadRight(b64.Length + (4 - b64.Length % 4) % 4, '=');
+            claims    = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(Convert.FromBase64String(b64));
         }
         catch
         {
-            _error = "Invalid token.";
-            StateHasChanged();
+            _error = "Could not read token payload.";
             return;
         }
 
-        var username = (payload?.TryGetValue("unique_name", out var un) == true ? un.GetString() : null)
-            ?? (payload?.TryGetValue("name",        out var n)  == true ? n.GetString()  : null)
-            ?? "unknown";
-        var sub = payload?.TryGetValue("sub", out var s) == true ? s.GetString() : null;
+        if (claims is null) { _error = "Empty token payload."; return; }
 
-        if (!Guid.TryParse(sub, out var accountId))
+        var username = (claims.TryGetValue("unique_name", out var un) ? un.GetString() : null)
+            ?? (claims.TryGetValue("name", out var n) ? n.GetString() : null)
+            ?? "unknown";
+
+        if (!claims.TryGetValue("sub", out var subEl) || !Guid.TryParse(subEl.GetString(), out var accountId))
         {
             _error = "Invalid account claim.";
-            StateHasChanged();
             return;
         }
 
-        var isCurator = payload?.TryGetValue("role", out var role) == true
-            && role.ValueKind == System.Text.Json.JsonValueKind.String
-            && role.GetString() == "Curator";
+        var isCurator = claims.TryGetValue("role", out var roleEl)
+            && roleEl.ValueKind == JsonValueKind.String
+            && roleEl.GetString() == "Curator";
 
-        await AuthState.SetTokensAsync(new RealmUnbound.Contracts.Auth.AuthResponse(
-            jwt, refresh ?? "", expiry, accountId, username, isCurator));
+        var expiry = long.TryParse(Expires, out var unix)
+            ? DateTimeOffset.FromUnixTimeSeconds(unix).ToString("O")
+            : DateTimeOffset.UtcNow.AddMinutes(15).ToString("O");
 
-        // forceLoad: true — full page reload so AuthInitializer.InitialiseAsync()
-        // restores auth state from ProtectedSessionStorage on the new circuit.
-        // This avoids relying on circuit continuity across Blazor Web App navigation.
-        Nav.NavigateTo("/", forceLoad: true);
+        // JavaScriptEncoder.Default escapes <, >, &, ' and " as \uXXXX — safe to embed in <script>.
+        _payload = JsonSerializer.Serialize(new
+        {
+            a = Jwt,
+            r = Refresh ?? "",
+            u = username,
+            i = accountId.ToString(),
+            c = isCurator,
+            e = expiry
+        }, new JsonSerializerOptions { Encoder = JavaScriptEncoder.Default });
     }
 }

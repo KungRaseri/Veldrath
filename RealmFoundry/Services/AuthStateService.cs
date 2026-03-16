@@ -1,15 +1,16 @@
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.JSInterop;
 using RealmUnbound.Contracts.Auth;
 
 namespace RealmFoundry.Services;
 
 /// <summary>
 /// Tracks the current user's authentication state across Blazor Server circuit lifetimes.
-/// Tokens are stored in <see cref="ProtectedSessionStorage"/> — encrypted, server-side,
-/// and scoped to the browser session so they survive page refreshes but not tab close.
+/// Tokens are stored in the browser's <c>sessionStorage</c> via <see cref="IJSRuntime"/>
+/// and restored on circuit startup by <see cref="InitialiseAsync"/>, called from
+/// <c>AuthInitializer</c> in the layout.
 /// </summary>
 public sealed class AuthStateService(
-    ProtectedSessionStorage storage,
+    IJSRuntime js,
     RealmFoundryApiClient apiClient)
 {
     private const string AccessTokenKey  = "rf_access";
@@ -31,33 +32,43 @@ public sealed class AuthStateService(
 
     public event Action? OnChange;
 
-    /// <summary>Called when the Blazor circuit initialises. Restores any saved token.</summary>
+    /// <summary>
+    /// Called when the Blazor circuit initialises. Restores auth state from sessionStorage.
+    /// Only call from <c>OnAfterRenderAsync(firstRender: true)</c> — JS interop is unavailable
+    /// during SSR prerendering.
+    /// </summary>
     public async Task InitialiseAsync()
     {
-        var result = await storage.GetAsync<string>(AccessTokenKey);
-        if (!result.Success || string.IsNullOrEmpty(result.Value))
-            return;
+        try
+        {
+            var jwt = await js.InvokeAsync<string?>("sessionStorage.getItem", AccessTokenKey);
+            if (string.IsNullOrEmpty(jwt)) return;
 
-        var username   = await storage.GetAsync<string>(UsernameKey);
-        var accountId  = await storage.GetAsync<string>(AccountIdKey);
-        var isCurator  = await storage.GetAsync<bool>(IsCuratorKey);
-        var expiryStr  = await storage.GetAsync<string>(TokenExpiryKey);
+            var username  = await js.InvokeAsync<string?>("sessionStorage.getItem", UsernameKey);
+            var accountId = await js.InvokeAsync<string?>("sessionStorage.getItem", AccountIdKey);
+            var isCurator = await js.InvokeAsync<string?>("sessionStorage.getItem", IsCuratorKey);
+            var expiryStr = await js.InvokeAsync<string?>("sessionStorage.getItem", TokenExpiryKey);
 
-        var expiry = expiryStr.Success && DateTimeOffset.TryParse(expiryStr.Value, out var dt) ? dt : (DateTimeOffset?)null;
+            var expiry      = DateTimeOffset.TryParse(expiryStr, out var dt) ? dt : (DateTimeOffset?)null;
+            Guid? accountGuid = Guid.TryParse(accountId, out var g) ? g : null;
 
-        Apply(result.Value, username.Value, accountId.Value is null ? null : Guid.Parse(accountId.Value!),
-              isCurator.Success && isCurator.Value, expiry);
+            Apply(jwt, username, accountGuid, isCurator is "true", expiry);
+        }
+        catch (JSException)
+        {
+            // JS runtime not yet available (e.g. called from prerender context). Stay logged-out.
+        }
     }
 
-    /// <summary>Stores a token pair received after OAuth login.</summary>
+    /// <summary>Stores a token pair received after OAuth login and applies it in-memory.</summary>
     public async Task SetTokensAsync(AuthResponse response)
     {
-        await storage.SetAsync(AccessTokenKey,  response.AccessToken);
-        await storage.SetAsync(RefreshTokenKey, response.RefreshToken);
-        await storage.SetAsync(UsernameKey,     response.Username);
-        await storage.SetAsync(AccountIdKey,    response.AccountId.ToString());
-        await storage.SetAsync(IsCuratorKey,    response.IsCurator);
-        await storage.SetAsync(TokenExpiryKey,  response.AccessTokenExpiry.ToString("O"));
+        await js.InvokeVoidAsync("sessionStorage.setItem", AccessTokenKey,  response.AccessToken);
+        await js.InvokeVoidAsync("sessionStorage.setItem", RefreshTokenKey, response.RefreshToken);
+        await js.InvokeVoidAsync("sessionStorage.setItem", UsernameKey,     response.Username);
+        await js.InvokeVoidAsync("sessionStorage.setItem", AccountIdKey,    response.AccountId.ToString());
+        await js.InvokeVoidAsync("sessionStorage.setItem", IsCuratorKey,    response.IsCurator.ToString().ToLowerInvariant());
+        await js.InvokeVoidAsync("sessionStorage.setItem", TokenExpiryKey,  response.AccessTokenExpiry.ToString("O"));
 
         Apply(response.AccessToken, response.Username, response.AccountId,
               response.IsCurator, response.AccessTokenExpiry);
@@ -66,10 +77,16 @@ public sealed class AuthStateService(
     /// <summary>Proactively refreshes the access token using the stored refresh token.</summary>
     public async Task<bool> TryRefreshAsync()
     {
-        var stored = await storage.GetAsync<string>(RefreshTokenKey);
-        if (!stored.Success || string.IsNullOrEmpty(stored.Value)) return false;
+        string? refreshToken;
+        try
+        {
+            refreshToken = await js.InvokeAsync<string?>("sessionStorage.getItem", RefreshTokenKey);
+        }
+        catch (JSException) { return false; }
 
-        var refreshed = await apiClient.RefreshTokenAsync(stored.Value);
+        if (string.IsNullOrEmpty(refreshToken)) return false;
+
+        var refreshed = await apiClient.RefreshTokenAsync(refreshToken);
         if (refreshed is null) return false;
 
         await SetTokensAsync(refreshed);
@@ -78,12 +95,16 @@ public sealed class AuthStateService(
 
     public async Task LogOutAsync()
     {
-        await storage.DeleteAsync(AccessTokenKey);
-        await storage.DeleteAsync(RefreshTokenKey);
-        await storage.DeleteAsync(UsernameKey);
-        await storage.DeleteAsync(AccountIdKey);
-        await storage.DeleteAsync(IsCuratorKey);
-        await storage.DeleteAsync(TokenExpiryKey);
+        try
+        {
+            await js.InvokeVoidAsync("sessionStorage.removeItem", AccessTokenKey);
+            await js.InvokeVoidAsync("sessionStorage.removeItem", RefreshTokenKey);
+            await js.InvokeVoidAsync("sessionStorage.removeItem", UsernameKey);
+            await js.InvokeVoidAsync("sessionStorage.removeItem", AccountIdKey);
+            await js.InvokeVoidAsync("sessionStorage.removeItem", IsCuratorKey);
+            await js.InvokeVoidAsync("sessionStorage.removeItem", TokenExpiryKey);
+        }
+        catch (JSException) { /* Best-effort cleanup */ }
 
         Username    = null;
         AccountId   = null;
@@ -103,3 +124,4 @@ public sealed class AuthStateService(
         OnChange?.Invoke();
     }
 }
+
