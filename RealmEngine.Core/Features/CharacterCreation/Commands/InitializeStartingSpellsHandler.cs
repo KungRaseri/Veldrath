@@ -1,46 +1,47 @@
 using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
+using RealmEngine.Shared.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
 /// <summary>
-/// Handles initializing starting spells for a new character.
+/// Handles <see cref="InitializeStartingSpellsCommand"/>.
+/// Reads level-1 <see cref="ClassSpellUnlock"/> rows via <see cref="ICharacterClassRepository"/>
+/// and dispatches a <see cref="LearnSpellCommand"/> for each one. Non-spellcaster
+/// classes have no level-1 spell unlocks and return success with zero spells learned.
 /// </summary>
 public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartingSpellsCommand, InitializeStartingSpellsResult>
 {
     private readonly IMediator _mediator;
+    private readonly ICharacterClassRepository _classRepository;
     private readonly ILogger<InitializeStartingSpellsHandler> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="InitializeStartingSpellsHandler"/> class.
-    /// </summary>
-    /// <param name="mediator">The mediator for sending commands.</param>
-    /// <param name="logger">The logger.</param>
-    public InitializeStartingSpellsHandler(IMediator mediator, ILogger<InitializeStartingSpellsHandler> logger)
+    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnSpellCommand"/>.</param>
+    /// <param name="classRepository">Repository that exposes <c>StartingSpellIds</c> from the DB.</param>
+    /// <param name="logger">Logger.</param>
+    public InitializeStartingSpellsHandler(
+        IMediator mediator,
+        ICharacterClassRepository classRepository,
+        ILogger<InitializeStartingSpellsHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _classRepository = classRepository ?? throw new ArgumentNullException(nameof(classRepository));
         _logger = logger;
     }
 
-    /// <summary>
-    /// Handles the initialize starting spells command and returns the result.
-    /// </summary>
-    /// <param name="request">The initialize starting spells command.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation, containing the initialization result.</returns>
+    /// <inheritdoc />
     public async Task<InitializeStartingSpellsResult> Handle(InitializeStartingSpellsCommand request, CancellationToken cancellationToken)
     {
         var spellsLearned = 0;
         var spellIds = new List<string>();
-        
-        // Get starting spells for class
-        var startingSpells = GetStartingSpellsForClass(request.ClassName);
-        
+
+        var characterClass = _classRepository.GetByName(request.ClassName);
+        var startingSpells = characterClass?.StartingSpellIds ?? [];
+
         if (startingSpells.Count == 0)
         {
-            // Not all classes are spellcasters
-            _logger.LogDebug("No starting spells for class {ClassName} (non-spellcaster)", request.ClassName);
+            _logger.LogDebug("No starting spells for class {ClassName} (non-spellcaster or none configured)", request.ClassName);
             return new InitializeStartingSpellsResult
             {
                 Success = true,
@@ -49,35 +50,32 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
             };
         }
 
-        // Learn each spell
         foreach (var spellId in startingSpells)
         {
             try
             {
-                var command = new LearnSpellCommand
+                var result = await _mediator.Send(new LearnSpellCommand
                 {
                     Character = request.Character,
                     SpellId = spellId
-                };
+                }, cancellationToken);
 
-                var result = await _mediator.Send(command, cancellationToken);
-                
                 if (result.Success)
                 {
                     spellsLearned++;
                     spellIds.Add(spellId);
-                    _logger.LogInformation("Character {CharacterName} learned starting spell: {SpellId}", 
+                    _logger.LogInformation("Character {CharacterName} learned starting spell: {SpellId}",
                         request.Character.Name, spellId);
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to learn starting spell {SpellId} for {CharacterName}: {Message}",
+                    _logger.LogWarning("Failed to teach starting spell {SpellId} to {CharacterName}: {Message}",
                         spellId, request.Character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error learning starting spell {SpellId} for {CharacterName}", 
+                _logger.LogError(ex, "Error teaching starting spell {SpellId} to {CharacterName}",
                     spellId, request.Character.Name);
             }
         }
@@ -90,33 +88,5 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
             Message = $"Learned {spellsLearned} starting spells"
         };
     }
-
-    /// <summary>
-    /// Get starting spells for a class based on class name.
-    /// Only spellcasting classes have starting spells.
-    /// </summary>
-    private List<string> GetStartingSpellsForClass(string className)
-    {
-        return className.ToLower() switch
-        {
-            "mage" => new List<string>
-            {
-                "magic-missile",
-                "ray-of-frost",
-                "shield"
-            },
-            "cleric" => new List<string>
-            {
-                "sacred-flame",
-                "cure-wounds",
-                "bless"
-            },
-            "paladin" => new List<string>
-            {
-                "sacred-flame",
-                "cure-wounds"
-            },
-            _ => new List<string>() // Warrior, Rogue, Ranger are not primary spellcasters
-        };
-    }
 }
+
