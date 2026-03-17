@@ -17,7 +17,7 @@ public class GetCharacterClassHandlerTests
     {
         var fighter = MakeClass("Fighter");
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetClassByName("Fighter")).Returns(fighter);
+        repo.Setup(r => r.GetByName("Fighter")).Returns(fighter);
 
         var result = await new GetCharacterClassHandler(repo.Object)
             .Handle(new GetCharacterClassQuery { ClassName = "Fighter" }, CancellationToken.None);
@@ -31,7 +31,7 @@ public class GetCharacterClassHandlerTests
     public async Task Handle_ReturnsNotFound_WhenClassMissing()
     {
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetClassByName(It.IsAny<string>())).Returns((CharacterClass?)null);
+        repo.Setup(r => r.GetByName(It.IsAny<string>())).Returns((CharacterClass?)null);
 
         var result = await new GetCharacterClassHandler(repo.Object)
             .Handle(new GetCharacterClassQuery { ClassName = "InvalidClass" }, CancellationToken.None);
@@ -48,7 +48,7 @@ public class GetCharacterClassHandlerTests
     {
         var characterClass = MakeClass(className, $"The {className} class");
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetClassByName(className)).Returns(characterClass);
+        repo.Setup(r => r.GetByName(className)).Returns(characterClass);
 
         var result = await new GetCharacterClassHandler(repo.Object)
             .Handle(new GetCharacterClassQuery { ClassName = className }, CancellationToken.None);
@@ -62,12 +62,12 @@ public class GetCharacterClassHandlerTests
     public async Task Handle_DelegatesToRepo_WithExactClassName()
     {
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetClassByName(It.IsAny<string>())).Returns((CharacterClass?)null);
+        repo.Setup(r => r.GetByName(It.IsAny<string>())).Returns((CharacterClass?)null);
 
         await new GetCharacterClassHandler(repo.Object)
             .Handle(new GetCharacterClassQuery { ClassName = "fighter" }, CancellationToken.None);
 
-        repo.Verify(r => r.GetClassByName("fighter"), Times.Once);
+        repo.Verify(r => r.GetByName("fighter"), Times.Once);
     }
 }
 

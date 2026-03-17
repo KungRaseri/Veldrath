@@ -19,7 +19,7 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
     public EfCoreSaveGameRepository(GameDbContext db) => _db = db;
 
     /// <inheritdoc/>
-    public void Save(SaveGame saveGame)
+    public void SaveGame(SaveGame saveGame)
     {
         var existing = _db.SaveGames.Find(saveGame.Id);
         var record = ToRecord(saveGame);
@@ -35,9 +35,6 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
 
         _db.SaveChanges();
     }
-
-    /// <inheritdoc/>
-    public void SaveGame(SaveGame saveGame) => Save(saveGame);
 
     /// <inheritdoc/>
     public SaveGame? LoadGame(int slot)
@@ -63,9 +60,6 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
     /// <inheritdoc/>
     public List<SaveGame> GetAll() =>
         _db.SaveGames.AsNoTracking().AsEnumerable().Select(FromRecord).ToList();
-
-    /// <inheritdoc/>
-    public List<SaveGame> GetAllSaves() => GetAll();
 
     /// <inheritdoc/>
     public List<SaveGame> GetByPlayerName(string playerName) =>
@@ -97,9 +91,6 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
 
     /// <inheritdoc/>
     public bool SaveExists(int slot) => _db.SaveGames.Any(s => s.SlotIndex == slot);
-
-    /// <inheritdoc/>
-    public void Dispose() { }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 

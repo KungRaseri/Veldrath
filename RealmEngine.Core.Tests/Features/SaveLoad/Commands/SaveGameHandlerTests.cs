@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.SaveLoad.Commands;
 using RealmEngine.Shared.Models;
@@ -29,7 +30,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Save_Game_Successfully()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character
         {
             Name = "TestPlayer",
@@ -58,7 +59,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Save_Game_With_Inventory()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character
         {
             Name = "TestPlayer",
@@ -91,7 +92,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Update_Existing_Save()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character
         {
             Name = "TestPlayer",
@@ -134,7 +135,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Persist_Player_Stats()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character
         {
             Name = "StatPlayer",
@@ -170,7 +171,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Return_Success_Message()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character { Name = "TestPlayer", Level = 1, Health = 100, MaxHealth = 100 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Normal);
         var command = new SaveGameCommand
@@ -191,7 +192,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Handle_Multiple_Saves()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
 
         // Create first save
         var player1 = new Character { Name = "Player1", Level = 1, Health = 100, MaxHealth = 100 };
@@ -227,7 +228,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Save_With_Different_Difficulty_Settings()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character { Name = "HardcorePlayer", Level = 1, Health = 50, MaxHealth = 50 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Expert);
         var command = new SaveGameCommand
@@ -251,7 +252,7 @@ public class SaveGameHandlerTests : IDisposable
     public async Task Handle_Should_Return_Same_SaveId_On_Update()
     {
         // Arrange
-        var handler = new SaveGameHandler(_saveGameService);
+        var handler = new SaveGameHandler(_saveGameService, NullLogger<SaveGameHandler>.Instance);
         var player = new Character { Name = "TestPlayer", Level = 1, Health = 100, MaxHealth = 100 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Normal);
         var originalId = saveGame.Id;

@@ -121,7 +121,7 @@ public class SaveGameService : ISaveGameService, IDisposable
             );
 
             saveGame.SaveDate = DateTime.Now;
-            _repository.Save(saveGame);
+            _repository.SaveGame(saveGame);
             _currentSave = saveGame;
 
             Log.Information("Game saved for player {PlayerName} (Level {Level}, {QuestCount} active quests, {PlayTime}m playtime)",
@@ -622,8 +622,5 @@ public class SaveGameService : ISaveGameService, IDisposable
     /// <summary>
     /// Disposes of managed resources.
     /// </summary>
-    public void Dispose()
-    {
-        _repository?.Dispose();
-    }
+    public void Dispose() { }
 }

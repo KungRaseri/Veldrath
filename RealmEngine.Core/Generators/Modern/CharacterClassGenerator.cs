@@ -14,7 +14,7 @@ public class CharacterClassGenerator(ICharacterClassRepository repository, ILogg
     {
         try
         {
-            return await Task.FromResult(repository.GetAllClasses());
+            return await Task.FromResult(repository.GetAll());
         }
         catch (Exception ex)
         {
@@ -28,7 +28,7 @@ public class CharacterClassGenerator(ICharacterClassRepository repository, ILogg
     {
         try
         {
-            return await Task.FromResult(repository.GetClassByName(name));
+            return await Task.FromResult(repository.GetByName(name));
         }
         catch (Exception ex)
         {

@@ -32,20 +32,20 @@ public class GetCharacterClassesHandlerTests
         };
 
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetAllClasses()).Returns(classes);
+        repo.Setup(r => r.GetAll()).Returns(classes);
 
         var result = await new GetCharacterClassesHandler(repo.Object)
             .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
 
         result.Classes.Should().BeEquivalentTo(classes);
-        repo.Verify(r => r.GetAllClasses(), Times.Once);
+        repo.Verify(r => r.GetAll(), Times.Once);
     }
 
     [Fact]
     public async Task Handle_ReturnsEmptyList_WhenRepoIsEmpty()
     {
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetAllClasses()).Returns([]);
+        repo.Setup(r => r.GetAll()).Returns([]);
 
         var result = await new GetCharacterClassesHandler(repo.Object)
             .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
@@ -60,7 +60,7 @@ public class GetCharacterClassesHandlerTests
     {
         var paladin = MakeClass("Paladin", isSubclass: true, parentClassId: "warrior:Fighter");
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetAllClasses()).Returns([paladin]);
+        repo.Setup(r => r.GetAll()).Returns([paladin]);
 
         var result = await new GetCharacterClassesHandler(repo.Object)
             .Handle(new GetCharacterClassesQuery(), CancellationToken.None);
@@ -79,7 +79,7 @@ public class GetCharacterClassesHandlerTests
             MakeClass("Wizard"),
         };
         var repo = new Mock<ICharacterClassRepository>();
-        repo.Setup(r => r.GetAllClasses()).Returns(classes);
+        repo.Setup(r => r.GetAll()).Returns(classes);
 
         var result = await new GetCharacterClassesHandler(repo.Object)
             .Handle(new GetCharacterClassesQuery(), CancellationToken.None);

@@ -1,24 +1,14 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.SaveLoad.Commands;
 
 /// <summary>
 /// Handles the SaveGame command.
 /// </summary>
-public class SaveGameHandler : IRequestHandler<SaveGameCommand, SaveGameResult>
+public class SaveGameHandler(ISaveGameService saveGameService, ILogger<SaveGameHandler> logger)
+    : IRequestHandler<SaveGameCommand, SaveGameResult>
 {
-    private readonly SaveGameService _saveGameService;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SaveGameHandler"/> class.
-    /// </summary>
-    /// <param name="saveGameService">The save game service.</param>
-    public SaveGameHandler(SaveGameService saveGameService)
-    {
-        _saveGameService = saveGameService;
-    }
-
     /// <summary>
     /// Handles the SaveGameCommand and returns the result.
     /// </summary>
@@ -29,9 +19,9 @@ public class SaveGameHandler : IRequestHandler<SaveGameCommand, SaveGameResult>
     {
         try
         {
-            _saveGameService.SaveGame(request.Player, request.Inventory, request.SaveId);
+            saveGameService.SaveGame(request.Player, request.Inventory, request.SaveId);
 
-            Log.Information("Game saved for player {PlayerName}", request.Player.Name);
+            logger.LogInformation("Game saved for player {PlayerName}", request.Player.Name);
 
             return Task.FromResult(new SaveGameResult
             {
@@ -42,7 +32,7 @@ public class SaveGameHandler : IRequestHandler<SaveGameCommand, SaveGameResult>
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to save game for player {PlayerName}", request.Player.Name);
+            logger.LogError(ex, "Failed to save game for player {PlayerName}", request.Player.Name);
 
             return Task.FromResult(new SaveGameResult
             {

@@ -5,7 +5,7 @@ namespace RealmEngine.Shared.Abstractions;
 /// <summary>
 /// Repository interface for managing Hall of Fame entries.
 /// </summary>
-public interface IHallOfFameRepository : IDisposable
+public interface IHallOfFameRepository
 {
     /// <summary>Adds a new entry to the Hall of Fame.</summary>
     /// <param name="entry">The Hall of Fame entry to add.</param>

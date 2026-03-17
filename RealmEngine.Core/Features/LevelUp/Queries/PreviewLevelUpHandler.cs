@@ -135,7 +135,7 @@ public class PreviewLevelUpHandler : IRequestHandler<PreviewLevelUpQuery, Previe
 
         try
         {
-            var characterClass = _classRepository.GetClassByName(className);
+            var characterClass = _classRepository.GetByName(className);
             if (characterClass == null)
             {
                 _logger.LogWarning("Class {ClassName} not found in repository", className);

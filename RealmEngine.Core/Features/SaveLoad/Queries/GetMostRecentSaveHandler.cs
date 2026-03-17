@@ -7,13 +7,13 @@ namespace RealmEngine.Core.Features.SaveLoad.Queries;
 /// </summary>
 public class GetMostRecentSaveHandler : IRequestHandler<GetMostRecentSaveQuery, GetMostRecentSaveResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetMostRecentSaveHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public GetMostRecentSaveHandler(SaveGameService saveGameService)
+    public GetMostRecentSaveHandler(ISaveGameService saveGameService)
     {
         _saveGameService = saveGameService;
     }

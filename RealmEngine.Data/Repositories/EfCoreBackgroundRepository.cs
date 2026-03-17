@@ -16,6 +16,7 @@ public class EfCoreBackgroundRepository(ContentDbContext db, ILogger<EfCoreBackg
     public async Task<List<Background>> GetAllBackgroundsAsync()
     {
         var entities = await db.Backgrounds
+            .AsNoTracking()
             .Where(b => b.IsActive)
             .ToListAsync();
 
@@ -32,6 +33,7 @@ public class EfCoreBackgroundRepository(ContentDbContext db, ILogger<EfCoreBackg
             : backgroundId;
 
         var entity = await db.Backgrounds
+            .AsNoTracking()
             .Where(b => b.IsActive && b.Slug == slug)
             .FirstOrDefaultAsync();
 

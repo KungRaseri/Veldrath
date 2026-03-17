@@ -43,57 +43,42 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
     }
 
     /// <inheritdoc />
-    public List<CharacterClass> GetAllClasses() => GetCachedAsync().GetAwaiter().GetResult();
-
-    /// <inheritdoc />
-    public List<CharacterClass> GetAll() => GetAllClasses();
+    public List<CharacterClass> GetAll() => GetCachedAsync().GetAwaiter().GetResult();
 
     /// <inheritdoc />
     public List<CharacterClass> GetClassesByType(string classType) =>
-        GetAllClasses()
+        GetAll()
             .Where(c => c.Id.StartsWith($"{classType}:", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
     /// <inheritdoc />
     public List<CharacterClass> GetBaseClasses() =>
-        GetAllClasses().Where(c => !c.IsSubclass).ToList();
+        GetAll().Where(c => !c.IsSubclass).ToList();
 
     /// <inheritdoc />
     public List<CharacterClass> GetSubclasses() =>
-        GetAllClasses().Where(c => c.IsSubclass).ToList();
+        GetAll().Where(c => c.IsSubclass).ToList();
 
     /// <inheritdoc />
     public List<CharacterClass> GetSubclassesForParent(string parentClassId) =>
-        GetAllClasses()
+        GetAll()
             .Where(c => c.IsSubclass &&
                         c.ParentClassId != null &&
                         c.ParentClassId.Equals(parentClassId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
     /// <inheritdoc />
-    public CharacterClass? GetClassByName(string name) =>
-        GetAllClasses().FirstOrDefault(c =>
+    public CharacterClass? GetByName(string name) =>
+        GetAll().FirstOrDefault(c =>
             c.Name.Equals(name, StringComparison.OrdinalIgnoreCase) ||
             c.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     /// <inheritdoc />
     public CharacterClass? GetById(string id)
     {
-        var byId = GetAllClasses().FirstOrDefault(c => c.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        var byId = GetAll().FirstOrDefault(c => c.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
         return byId ?? GetByName(id);
     }
-
-    /// <inheritdoc />
-    public CharacterClass? GetByName(string name) => GetClassByName(name);
-
-    /// <inheritdoc />
-    public void Add(CharacterClass entity) => throw new NotSupportedException("Character classes are predefined");
-
-    /// <inheritdoc />
-    public void Update(CharacterClass entity) => throw new NotSupportedException("Character classes are predefined");
-
-    /// <inheritdoc />
-    public void Delete(string id) => throw new NotSupportedException("Character classes are predefined");
 
     /// <inheritdoc />
     public void Dispose()

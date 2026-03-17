@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 namespace RealmEngine.Core.Behaviors;
@@ -7,18 +7,15 @@ namespace RealmEngine.Core.Behaviors;
 /// <summary>
 /// Logs warnings for slow commands/queries (>500ms).
 /// </summary>
-public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public class PerformanceBehavior<TRequest, TResponse>(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
+    : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     private const int SlowThresholdMs = 500;
 
     /// <summary>
-    /// Handles the request and logs a warning if execution exceeds the slow threshold (500ms).
+    /// Handles the request and logs a warning if execution exceeds the slow threshold.
     /// </summary>
-    /// <param name="request">The request to process.</param>
-    /// <param name="next">The next behavior in the pipeline.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The response from the request handler.</returns>
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -30,9 +27,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 
         if (stopwatch.ElapsedMilliseconds > SlowThresholdMs)
         {
-            var requestName = typeof(TRequest).Name;
-            Log.Warning("Slow request detected: {RequestName} took {ElapsedMs}ms",
-                requestName, stopwatch.ElapsedMilliseconds);
+            logger.LogWarning("Slow request detected: {RequestName} took {ElapsedMs}ms",
+                typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
         }
 
         return response;

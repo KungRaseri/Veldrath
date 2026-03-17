@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.SaveLoad.Commands;
 using RealmEngine.Shared.Models;
@@ -31,7 +32,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Delete_Existing_Save()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
         var player = new Character { Name = "DeleteMe", Level = 5, Health = 100, MaxHealth = 100 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Normal);
         _saveGameService.SaveGame(player, new List<Item>(), saveGame.Id);
@@ -50,7 +51,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Return_Failure_When_Save_Not_Found()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
         var command = new DeleteSaveCommand { SaveId = "non-existent-save-id" };
 
         // Act
@@ -65,7 +66,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Remove_Save_From_Database()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
         var player = new Character { Name = "TestPlayer", Level = 1, Health = 100, MaxHealth = 100 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Normal);
         _saveGameService.SaveGame(player, new List<Item>(), saveGame.Id);
@@ -86,7 +87,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Return_Success_Message()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
         var player = new Character { Name = "TestPlayer", Level = 1, Health = 100, MaxHealth = 100 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Normal);
         _saveGameService.SaveGame(player, new List<Item>(), saveGame.Id);
@@ -104,7 +105,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Delete_Only_Specified_Save()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
 
         // Create two saves
         var player1 = new Character { Name = "Player1", Level = 1, Health = 100, MaxHealth = 100 };
@@ -133,7 +134,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Handle_Empty_SaveId()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
         var command = new DeleteSaveCommand { SaveId = "" };
 
         // Act
@@ -147,7 +148,7 @@ public class DeleteSaveHandlerTests : IDisposable
     public async Task Handle_Should_Handle_Null_SaveId()
     {
         // Arrange
-        var handler = new DeleteSaveHandler(_saveGameService);
+        var handler = new DeleteSaveHandler(_saveGameService, NullLogger<DeleteSaveHandler>.Instance);
         var command = new DeleteSaveCommand { SaveId = null! };
 
         // Act

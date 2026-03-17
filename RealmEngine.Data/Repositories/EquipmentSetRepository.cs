@@ -148,16 +148,4 @@ public class EquipmentSetRepository : IEquipmentSetRepository
     
     /// <inheritdoc />
     public List<EquipmentSet> GetAll() => GetAllSets();
-    
-    /// <inheritdoc />
-    public void Add(EquipmentSet entity) => throw new NotSupportedException("Equipment sets are predefined");
-    
-    /// <inheritdoc />
-    public void Update(EquipmentSet entity) => throw new NotSupportedException("Equipment sets are predefined");
-    
-    /// <inheritdoc />
-    public void Delete(string id) => throw new NotSupportedException("Equipment sets are predefined");
-    
-    /// <inheritdoc />
-    public void Dispose() { } // No resources to dispose
 }

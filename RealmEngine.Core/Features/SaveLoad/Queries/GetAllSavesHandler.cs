@@ -7,13 +7,13 @@ namespace RealmEngine.Core.Features.SaveLoad.Queries;
 /// </summary>
 public class GetAllSavesHandler : IRequestHandler<GetAllSavesQuery, GetAllSavesResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetAllSavesHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public GetAllSavesHandler(SaveGameService saveGameService)
+    public GetAllSavesHandler(ISaveGameService saveGameService)
     {
         _saveGameService = saveGameService;
     }

@@ -27,7 +27,7 @@ public class GetCharacterClassHandler : IRequestHandler<GetCharacterClassQuery, 
     /// <returns>A task representing the asynchronous operation, containing the character class result.</returns>
     public Task<GetCharacterClassResult> Handle(GetCharacterClassQuery request, CancellationToken cancellationToken)
     {
-        var characterClass = _repository.GetClassByName(request.ClassName);
+        var characterClass = _repository.GetByName(request.ClassName);
 
         return Task.FromResult(new GetCharacterClassResult
         {

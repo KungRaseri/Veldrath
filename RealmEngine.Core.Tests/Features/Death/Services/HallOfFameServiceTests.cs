@@ -23,7 +23,6 @@ public class HallOfFameRepositoryTests : IDisposable
 
     public void Dispose()
     {
-        _HallOfFameRepository?.Dispose();
     }
 
     #region AddEntry Tests
