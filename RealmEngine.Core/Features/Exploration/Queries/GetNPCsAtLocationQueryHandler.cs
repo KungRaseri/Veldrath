@@ -44,9 +44,10 @@ public class GetNPCsAtLocationQueryHandler : IRequestHandler<GetNPCsAtLocationQu
 
             var locationName = request.LocationName ?? "Current Location"; // Note: SaveGame.DiscoveredLocations exists for tracking
 
-            // Get all NPCs at the specified location
-            // Note: For now, returning all known NPCs. In the future, filter by location.
+            // Filter NPCs by location when a location is specified
             var npcsAtLocation = saveGame.KnownNPCs
+                .Where(npc => request.LocationName == null
+                    || npc.Location.Equals(request.LocationName, StringComparison.OrdinalIgnoreCase))
                 .Select(npc => new NPCInfo(
                     Id: npc.Id,
                     Name: npc.Name,

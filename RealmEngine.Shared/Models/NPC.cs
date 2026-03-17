@@ -292,6 +292,13 @@ public class NPC : ITraitable
     public Dictionary<string, TraitValue> Traits { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the current location identifier for this NPC.
+    /// Used to filter NPCs by location when querying who is present at a given place.
+    /// Empty string means the NPC's location is unspecified.
+    /// </summary>
+    public string Location { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets the value of a specific prefix component by token name.
     /// </summary>
     /// <param name="token">The token name to search for (e.g., "title_prefix").</param>
