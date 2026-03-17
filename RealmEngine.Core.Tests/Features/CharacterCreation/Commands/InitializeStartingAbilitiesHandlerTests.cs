@@ -3,6 +3,7 @@ using MediatR;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.Progression.Commands;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -14,6 +15,14 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 /// </summary>
 public class InitializeStartingAbilitiesHandlerTests
 {
+    private static Mock<ICharacterClassRepository> BuildClassRepo(string className, List<string> abilityIds)
+    {
+        var mock = new Mock<ICharacterClassRepository>();
+        mock.Setup(r => r.GetByName(className))
+            .Returns(new CharacterClass { Name = className, StartingAbilityIds = abilityIds });
+        return mock;
+    }
+
     [Theory]
     [InlineData("Warrior", 3)]
     [InlineData("Rogue", 3)]
@@ -31,7 +40,9 @@ public class InitializeStartingAbilitiesHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnAbilityCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnAbilityResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
+        var abilityIds = Enumerable.Range(1, expectedCount).Select(i => $"ability-{i}").ToList();
+        var classRepo = BuildClassRepo(className, abilityIds);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = className };
         var command = new InitializeStartingAbilitiesCommand
         {
@@ -59,7 +70,9 @@ public class InitializeStartingAbilitiesHandlerTests
     {
         // Arrange
         var mockMediator = new Mock<IMediator>();
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
+        var classRepo = new Mock<ICharacterClassRepository>();
+        classRepo.Setup(r => r.GetByName(It.IsAny<string>())).Returns((CharacterClass?)null);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = "UnknownClass" };
         var command = new InitializeStartingAbilitiesCommand
         {
@@ -86,7 +99,14 @@ public class InitializeStartingAbilitiesHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnAbilityCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnAbilityResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
+        var warriorAbilities = new List<string>
+        {
+            "active/offensive:shield-bash",
+            "active/support:second-wind",
+            "active/support:battle-cry"
+        };
+        var classRepo = BuildClassRepo("Warrior", warriorAbilities);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestWarrior", ClassName = "Warrior" };
         var command = new InitializeStartingAbilitiesCommand
         {
@@ -123,7 +143,8 @@ public class InitializeStartingAbilitiesHandlerTests
                 };
             });
         
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
+        var classRepo = BuildClassRepo("Warrior", ["ability-1", "ability-2", "ability-3"]);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = "Warrior" };
         var command = new InitializeStartingAbilitiesCommand
         {

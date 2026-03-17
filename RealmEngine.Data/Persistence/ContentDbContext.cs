@@ -71,6 +71,10 @@ public class ContentDbContext : DbContext
     public DbSet<InstanceAbilityPool> InstanceAbilityPools => Set<InstanceAbilityPool>();
     /// <summary>Many-to-many: actor classes ↔ ability unlocks.</summary>
     public DbSet<ClassAbilityUnlock> ClassAbilityUnlocks => Set<ClassAbilityUnlock>();
+    /// <summary>Many-to-many: actor classes ↔ spell unlocks.</summary>
+    public DbSet<ClassSpellUnlock> ClassSpellUnlocks => Set<ClassSpellUnlock>();
+    /// <summary>Equipment set definitions.</summary>
+    public DbSet<EquipmentSetEntry> EquipmentSets => Set<EquipmentSetEntry>();
     /// <summary>Loot table line items.</summary>
     public DbSet<LootTableEntry> LootTableEntries => Set<LootTableEntry>();
     /// <summary>Recipe ingredient lines.</summary>

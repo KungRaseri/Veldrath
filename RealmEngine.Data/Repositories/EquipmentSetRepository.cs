@@ -4,9 +4,11 @@ using RealmEngine.Shared.Abstractions;
 namespace RealmEngine.Data.Repositories;
 
 /// <summary>
-/// Repository of predefined equipment sets.
+/// In-memory/hardcoded implementation of <see cref="IEquipmentSetRepository"/>.
+/// Used in the InMemory (no-database) DI path. Contains a fixed set of equipment sets
+/// for development and testing until DB-seeded data is available.
 /// </summary>
-public class EquipmentSetRepository : IEquipmentSetRepository
+public class InMemoryEquipmentSetRepository : IEquipmentSetRepository
 {
     /// <summary>
     /// Gets all available equipment sets.

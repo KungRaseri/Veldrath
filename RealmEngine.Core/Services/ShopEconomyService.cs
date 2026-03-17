@@ -283,7 +283,7 @@ public class ShopEconomyService
     /// <summary>
     /// Refresh dynamic inventory items (daily).
     /// </summary>
-    private void RefreshDynamicInventory(NPC merchant, ShopInventory inventory)
+    public void RefreshDynamicInventory(NPC merchant, ShopInventory inventory)
     {
         // Clear existing dynamic items
         inventory.DynamicItems.Clear();

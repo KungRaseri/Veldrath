@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.SaveLoad;
 
 namespace RealmEngine.Core.Features.Socketing.Queries;
 
@@ -14,10 +15,12 @@ public class GetSocketCostHandler : IRequestHandler<GetSocketCostQuery, SocketCo
     private const int BaseUnlockCost = 100;
 
     private readonly ILogger<GetSocketCostHandler> _logger;
+    private readonly ISaveGameService _saveGameService;
 
-    public GetSocketCostHandler(ILogger<GetSocketCostHandler> logger)
+    public GetSocketCostHandler(ILogger<GetSocketCostHandler> logger, ISaveGameService saveGameService)
     {
         _logger = logger;
+        _saveGameService = saveGameService;
     }
 
     /// <summary>
@@ -83,9 +86,10 @@ public class GetSocketCostHandler : IRequestHandler<GetSocketCostQuery, SocketCo
                 ? $"Base: {result.BaseCost}g, Final: {result.GoldCost}g (with modifiers)"
                 : $"{result.GoldCost}g";
 
-            // Check affordability (would check actual player gold in production)
-            result.CanAfford = true; // Default - UI would override with actual player gold check
-            result.PlayerGold = 0; // Would be populated from game state
+            // Check affordability against the player's current gold
+            var saveGame = _saveGameService.GetCurrentSave();
+            result.PlayerGold = saveGame?.Character?.Gold ?? 0;
+            result.CanAfford = result.PlayerGold >= result.GoldCost;
 
             _logger.LogDebug("Socket cost calculated: {CostType} at index {Index} = {Cost}g",
                 request.CostType, request.SocketIndex, result.GoldCost);

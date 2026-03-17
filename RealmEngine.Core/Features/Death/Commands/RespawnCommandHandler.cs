@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Features.SaveLoad;
 
 namespace RealmEngine.Core.Features.Death.Commands;
 
@@ -13,6 +14,7 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
 {
     private readonly GameStateService _gameState;
     private readonly DeathService _deathService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<RespawnCommandHandler> _logger;
 
     /// <summary>
@@ -20,11 +22,17 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
     /// </summary>
     /// <param name="gameState">The game state service.</param>
     /// <param name="deathService">The death service.</param>
+    /// <param name="saveGameService">The save game service.</param>
     /// <param name="logger">The logger.</param>
-    public RespawnCommandHandler(GameStateService gameState, DeathService deathService, ILogger<RespawnCommandHandler> logger)
+    public RespawnCommandHandler(
+        GameStateService gameState,
+        DeathService deathService,
+        ISaveGameService saveGameService,
+        ILogger<RespawnCommandHandler> logger)
     {
         _gameState = gameState;
         _deathService = deathService;
+        _saveGameService = saveGameService;
         _logger = logger;
     }
 
@@ -39,7 +47,7 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
         try
         {
             var player = request.Player;
-            
+
             if (player == null)
             {
                 return Task.FromResult(new RespawnResult
@@ -49,6 +57,18 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
                 });
             }
 
+            var saveGame = _saveGameService.GetCurrentSave();
+            if (saveGame != null)
+            {
+                // Apply death penalties — drop items at death location before respawning
+                var deathLocation = !string.IsNullOrEmpty(saveGame.LastDeathLocation)
+                    ? saveGame.LastDeathLocation
+                    : _gameState.CurrentLocation;
+
+                var difficulty = _saveGameService.GetDifficultySettings();
+                _deathService.HandleItemDropping(player, saveGame, deathLocation, difficulty);
+            }
+
             // Restore health and mana to maximum
             player.Health = player.MaxHealth;
             player.Mana = player.MaxMana;
@@ -56,6 +76,11 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
             // Set respawn location
             var respawnLocation = request.RespawnLocation ?? "Hub Town";
             _gameState.UpdateLocation(respawnLocation);
+
+            if (saveGame != null)
+            {
+                _saveGameService.SaveGame(saveGame);
+            }
 
             _logger.LogInformation("Player {PlayerName} respawned at {Location} with {Health}/{MaxHealth} HP",
                 player.Name, respawnLocation, player.Health, player.MaxHealth);

@@ -158,6 +158,14 @@ public class Item : ITraitable
     public string? ArmorType { get; set; }
 
     /// <summary>
+    /// Gets or sets the content catalog category key (TypeKey from the DB entity).
+    /// For weapons this is the weapon category (e.g. "heavy-blades", "bows", "staves").
+    /// For armor this is the armor type (e.g. "light", "heavy", "shield").
+    /// Used by proficiency-filtering logic that must match category keys without DB access.
+    /// </summary>
+    public string? TypeKey { get; set; }
+
+    /// <summary>
     /// Gets or sets the effect type for consumable items.
     /// Examples: "heal", "buff", "heal_overtime", "cure_poison", "restore", "stat_boost"
     /// </summary>

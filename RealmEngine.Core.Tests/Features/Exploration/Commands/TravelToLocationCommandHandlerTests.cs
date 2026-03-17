@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Exploration.Commands;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -14,6 +15,7 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 public class TravelToLocationCommandHandlerTests
 {
     private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<ISaveGameService> _mockSaveGameService;
     private readonly TravelToLocationCommandHandler _handler;
 
     public TravelToLocationCommandHandlerTests()
@@ -25,8 +27,14 @@ public class TravelToLocationCommandHandlerTests
         // Mock UpdateLocation to properly update the property
         _mockGameState.Setup(s => s.UpdateLocation(It.IsAny<string>()))
             .Callback<string>(location => _mockGameState.Object.CurrentLocation = location);
-        
-        _handler = new TravelToLocationCommandHandler(_mockGameState.Object, NullLogger<TravelToLocationCommandHandler>.Instance);
+
+        _mockSaveGameService = new Mock<ISaveGameService>();
+        _mockSaveGameService.Setup(s => s.GetCurrentSave()).Returns((RealmEngine.Shared.Models.SaveGame?)null);
+
+        _handler = new TravelToLocationCommandHandler(
+            _mockGameState.Object,
+            _mockSaveGameService.Object,
+            NullLogger<TravelToLocationCommandHandler>.Instance);
     }
 
     [Fact]

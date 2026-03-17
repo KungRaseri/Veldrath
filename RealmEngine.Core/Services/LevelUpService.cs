@@ -1,3 +1,4 @@
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Services;
@@ -5,10 +6,17 @@ namespace RealmEngine.Core.Services;
 /// <summary>
 /// Service for level-up calculations and progression logic.
 /// Contains domain logic for character advancement, skill availability, and stat calculations.
-/// NO UI CODE - All presentation handled by Godot.
 /// </summary>
 public class LevelUpService
 {
+    private readonly ISkillRepository _skillRepository;
+
+    /// <param name="skillRepository">Skill catalog repository.</param>
+    public LevelUpService(ISkillRepository skillRepository)
+    {
+        _skillRepository = skillRepository ?? throw new ArgumentNullException(nameof(skillRepository));
+    }
+
     /// <summary>
     /// Calculate the experience required to reach a specific level.
     /// Formula: Level * 100
@@ -143,110 +151,40 @@ public class LevelUpService
     }
 
     /// <summary>
-    /// Get all skills available for a character based on level and class.
-    /// Returns skills the character can learn or improve.
+    /// Get all skills available for a character to learn or improve.
+    /// Skills from the catalog are included unless the character has already reached maximum rank.
     /// </summary>
-    public List<Skill> GetAvailableSkills(Character character)
+    public async Task<List<Skill>> GetAvailableSkillsAsync(Character character)
     {
-        var allSkills = GetAllSkills();
+        var catalogSkills = await _skillRepository.GetAllAsync();
 
-        return allSkills
-            .Where(s => s.RequiredLevel <= character.Level)
-            .Where(s =>
+        return catalogSkills
+            .Where(sd =>
             {
-                // If not learned yet, it's available
-                if (!character.Skills.ContainsKey(s.Name))
+                if (!character.Skills.TryGetValue(sd.SkillId, out var learned))
                     return true;
 
-                // If learned but not maxed, it's available
-                var learned = character.Skills[s.Name];
-                return learned.CurrentRank < s.MaxRank;
+                return learned.CurrentRank < sd.MaxRank;
+            })
+            .Select(sd => new Skill
+            {
+                Name = sd.DisplayName,
+                Description = sd.Description,
+                RequiredLevel = 1,
+                MaxRank = sd.MaxRank,
+                Type = MapCategory(sd.Category),
             })
             .ToList();
     }
 
-    /// <summary>
-    /// Get all skills in the game.
-    /// TODO: Move to JSON data files and load via IDataService
-    /// </summary>
-    private List<Skill> GetAllSkills()
+    private static SkillType MapCategory(string category) => category.ToLowerInvariant() switch
     {
-        return new List<Skill>
-        {
-            new Skill
-            {
-                Name = "Power Attack",
-                Description = "+10% melee damage per rank",
-                RequiredLevel = 2,
-                MaxRank = 5,
-                Type = SkillType.Combat,
-                Effect = "Increases physical damage"
-            },
-            new Skill
-            {
-                Name = "Critical Strike",
-                Description = "+2% critical chance per rank",
-                RequiredLevel = 3,
-                MaxRank = 5,
-                Type = SkillType.Combat,
-                Effect = "Increases critical hit chance"
-            },
-            new Skill
-            {
-                Name = "Iron Skin",
-                Description = "+5% physical defense per rank",
-                RequiredLevel = 2,
-                MaxRank = 5,
-                Type = SkillType.Defense,
-                Effect = "Reduces physical damage taken"
-            },
-            new Skill
-            {
-                Name = "Arcane Knowledge",
-                Description = "+10% magic damage per rank",
-                RequiredLevel = 3,
-                MaxRank = 5,
-                Type = SkillType.Magic,
-                Effect = "Increases magical damage"
-            },
-            new Skill
-            {
-                Name = "Quick Reflexes",
-                Description = "+3% dodge chance per rank",
-                RequiredLevel = 4,
-                MaxRank = 5,
-                Type = SkillType.Defense,
-                Effect = "Increases dodge chance"
-            },
-            new Skill
-            {
-                Name = "Treasure Hunter",
-                Description = "+10% rare item find per rank",
-                RequiredLevel = 5,
-                MaxRank = 3,
-                Type = SkillType.Utility,
-                Effect = "Increases chance to find rare items"
-            },
-            new Skill
-            {
-                Name = "Regeneration",
-                Description = "+2 HP regen per turn per rank",
-                RequiredLevel = 6,
-                MaxRank = 3,
-                Type = SkillType.Passive,
-                Effect = "Slowly regenerates health"
-            },
-            new Skill
-            {
-                Name = "Mana Efficiency",
-                Description = "+10% mana pool per rank",
-                RequiredLevel = 4,
-                MaxRank = 5,
-                Type = SkillType.Magic,
-                Effect = "Increases maximum mana"
-            }
-        };
-    }
+        "combat"      => SkillType.Combat,
+        "defense"     => SkillType.Defense,
+        "magic"       => SkillType.Magic,
+        "passive"     => SkillType.Passive,
+        _             => SkillType.Utility,
+    };
 
     /// <summary>
     /// Calculate how many levels a character can gain with their current experience.

@@ -19,6 +19,8 @@ public class ActorClass : ContentBase
 
     /// <summary>Abilities unlocked as the actor levels in this class.</summary>
     public ICollection<ClassAbilityUnlock> AbilityUnlocks { get; set; } = [];
+    /// <summary>Spells unlocked as the actor levels in this class.</summary>
+    public ICollection<ClassSpellUnlock> SpellUnlocks { get; set; } = [];
     /// <summary>Archetypes that use this class.</summary>
     public ICollection<ActorArchetype> Archetypes { get; set; } = [];
 }

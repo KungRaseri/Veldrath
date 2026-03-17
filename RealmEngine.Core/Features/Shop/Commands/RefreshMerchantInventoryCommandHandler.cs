@@ -96,9 +96,8 @@ public class RefreshMerchantInventoryCommandHandler : IRequestHandler<RefreshMer
             int itemsAdded = 0;
             if (shopInventoryType == "dynamic-only" || shopInventoryType == "hybrid")
             {
-                // Could add logic here to generate new dynamic items
-                // For now, we'll just mark that the system is ready for it
-                itemsAdded = 0;
+                _shopService.RefreshDynamicInventory(merchant, inventory);
+                itemsAdded = inventory.DynamicItems.Count;
             }
 
             var itemsRemoved = initialDynamicCount - inventory.DynamicItems.Count;
