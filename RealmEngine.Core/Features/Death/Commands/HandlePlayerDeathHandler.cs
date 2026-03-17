@@ -12,23 +12,27 @@ namespace RealmEngine.Core.Features.Death.Commands;
 public class HandlePlayerDeathHandler : IRequestHandler<HandlePlayerDeathCommand, HandlePlayerDeathResult>
 {
     private readonly DeathService _deathService;
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly IHallOfFameRepository _hallOfFameService;
+    private readonly ILogger<HandlePlayerDeathHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HandlePlayerDeathHandler"/> class.
     /// </summary>
     /// <param name="deathService">The death service.</param>
     /// <param name="saveGameService">The save game service.</param>
-    /// <param name="IHallOfFameRepository">The hall of fame repository.</param>
+    /// <param name="hallOfFameRepository">The hall of fame repository.</param>
+    /// <param name="logger">The logger.</param>
     public HandlePlayerDeathHandler(
         DeathService deathService,
-        SaveGameService saveGameService,
-        IHallOfFameRepository IHallOfFameRepository)
+        ISaveGameService saveGameService,
+        IHallOfFameRepository hallOfFameRepository,
+        ILogger<HandlePlayerDeathHandler> logger)
     {
         _deathService = deathService;
         _saveGameService = saveGameService;
-        _hallOfFameService = IHallOfFameRepository;
+        _hallOfFameService = hallOfFameRepository;
+        _logger = logger;
     }
 
     /// <summary>

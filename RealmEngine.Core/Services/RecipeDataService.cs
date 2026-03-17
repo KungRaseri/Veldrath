@@ -7,12 +7,14 @@ namespace RealmEngine.Core.Services;
 public class RecipeDataService
 {
     private readonly IRecipeRepository _repository;
+    private readonly ILogger<RecipeDataService> _logger;
     private readonly Dictionary<string, List<Recipe>> _cache = new();
     private List<Recipe>? _allRecipesCache;
 
-    public RecipeDataService(IRecipeRepository repository)
+    public RecipeDataService(IRecipeRepository repository, ILogger<RecipeDataService> logger)
     {
         _repository = repository;
+        _logger = logger;
     }
 
     public List<Recipe> LoadAllRecipes()

@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Combat.Commands.UseCombatItem;
 public class UseCombatItemHandler : IRequestHandler<UseCombatItemCommand, UseCombatItemResult>
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<UseCombatItemHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UseCombatItemHandler"/> class.
     /// </summary>
     /// <param name="mediator">The mediator for publishing events.</param>
-    public UseCombatItemHandler(IMediator mediator)
+    /// <param name="logger">The logger.</param>
+    public UseCombatItemHandler(IMediator mediator, ILogger<UseCombatItemHandler> logger)
     {
         _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>

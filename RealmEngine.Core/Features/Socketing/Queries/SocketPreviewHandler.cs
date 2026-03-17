@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Socketing.Queries;
 public class SocketPreviewHandler : IRequestHandler<SocketPreviewQuery, SocketPreviewResult>
 {
     private readonly SocketService _socketService;
+    private readonly ILogger<SocketPreviewHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SocketPreviewHandler"/> class.
     /// </summary>
     /// <param name="socketService">The socket service for validation logic.</param>
-    public SocketPreviewHandler(SocketService socketService)
+    /// <param name="logger">The logger.</param>
+    public SocketPreviewHandler(SocketService socketService, ILogger<SocketPreviewHandler> logger)
     {
         _socketService = socketService ?? throw new ArgumentNullException(nameof(socketService));
+        _logger = logger;
     }
 
     /// <summary>

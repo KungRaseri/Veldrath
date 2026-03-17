@@ -12,14 +12,17 @@ namespace RealmEngine.Core.Features.Exploration;
 public class GameplayService
 {
     private readonly SaveGameService _saveGameService;
+    private readonly ILogger<GameplayService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameplayService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public GameplayService(SaveGameService saveGameService)
+    /// <param name="logger">The logger.</param>
+    public GameplayService(SaveGameService saveGameService, ILogger<GameplayService> logger)
     {
         _saveGameService = saveGameService;
+        _logger = logger;
     }
 
     /// <summary>

@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Socketing.Commands;
 public class SocketItemHandler : IRequestHandler<SocketItemCommand, SocketItemResult>
 {
     private readonly IPublisher _publisher;
+    private readonly ILogger<SocketItemHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SocketItemHandler"/> class.
     /// </summary>
     /// <param name="publisher">The MediatR publisher for raising socket events.</param>
-    public SocketItemHandler(IPublisher publisher)
+    /// <param name="logger">The logger.</param>
+    public SocketItemHandler(IPublisher publisher, ILogger<SocketItemHandler> logger)
     {
         _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
+        _logger = logger;
     }
 
     /// <summary>

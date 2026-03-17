@@ -11,11 +11,13 @@ namespace RealmEngine.Core.Features.Reputation.Services;
 public class FactionDataService
 {
     private readonly IDbContextFactory<ContentDbContext> _dbFactory;
+    private readonly ILogger<FactionDataService> _logger;
     private List<Faction>? _cachedFactions;
 
-    public FactionDataService(IDbContextFactory<ContentDbContext> dbFactory)
+    public FactionDataService(IDbContextFactory<ContentDbContext> dbFactory, ILogger<FactionDataService> logger)
     {
         _dbFactory = dbFactory;
+        _logger = logger;
     }
 
     public List<Faction> LoadFactions()

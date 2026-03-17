@@ -9,14 +9,17 @@ namespace RealmEngine.Core.Features.Exploration.Queries;
 public class GetKnownLocationsQueryHandler : IRequestHandler<GetKnownLocationsQuery, GetKnownLocationsResult>
 {
     private readonly ExplorationService _explorationService;
+    private readonly ILogger<GetKnownLocationsQueryHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetKnownLocationsQueryHandler"/> class.
     /// </summary>
     /// <param name="explorationService">The exploration service.</param>
-    public GetKnownLocationsQueryHandler(ExplorationService explorationService)
+    /// <param name="logger">The logger.</param>
+    public GetKnownLocationsQueryHandler(ExplorationService explorationService, ILogger<GetKnownLocationsQueryHandler> logger)
     {
         _explorationService = explorationService;
+        _logger = logger;
     }
 
     /// <summary>

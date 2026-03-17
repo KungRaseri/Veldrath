@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Socketing.Commands;
 public class SocketMultipleItemsHandler : IRequestHandler<SocketMultipleItemsCommand, SocketMultipleItemsResult>
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<SocketMultipleItemsHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SocketMultipleItemsHandler"/> class.
     /// </summary>
     /// <param name="mediator">The MediatR mediator for sending individual socket commands.</param>
-    public SocketMultipleItemsHandler(IMediator mediator)
+    /// <param name="logger">The logger.</param>
+    public SocketMultipleItemsHandler(IMediator mediator, ILogger<SocketMultipleItemsHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger;
     }
 
     /// <summary>

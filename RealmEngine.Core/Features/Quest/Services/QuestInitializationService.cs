@@ -9,14 +9,17 @@ namespace RealmEngine.Core.Features.Quests.Services;
 public class QuestInitializationService
 {
     private readonly MainQuestService _mainQuestService;
+    private readonly ILogger<QuestInitializationService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QuestInitializationService"/> class.
     /// </summary>
     /// <param name="mainQuestService">The main quest service.</param>
-    public QuestInitializationService(MainQuestService mainQuestService)
+    /// <param name="logger">The logger.</param>
+    public QuestInitializationService(MainQuestService mainQuestService, ILogger<QuestInitializationService> logger)
     {
         _mainQuestService = mainQuestService;
+        _logger = logger;
     }
 
     /// <summary>

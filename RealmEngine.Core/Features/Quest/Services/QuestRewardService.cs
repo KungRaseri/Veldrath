@@ -9,15 +9,18 @@ namespace RealmEngine.Core.Features.Quests.Services;
 /// </summary>
 public class QuestRewardService
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
+    private readonly ILogger<QuestRewardService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QuestRewardService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public QuestRewardService(SaveGameService saveGameService)
+    /// <param name="logger">The logger.</param>
+    public QuestRewardService(ISaveGameService saveGameService, ILogger<QuestRewardService> logger)
     {
         _saveGameService = saveGameService;
+        _logger = logger;
     }
 
     /// <summary>

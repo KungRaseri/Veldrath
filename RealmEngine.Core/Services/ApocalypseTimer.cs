@@ -21,11 +21,14 @@ public class ApocalypseTimer : IApocalypseTimer
     private bool _hasShownThirtyMinWarning = false;
     private bool _hasShownTenMinWarning = false;
 
+private readonly ILogger<ApocalypseTimer> _logger;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ApocalypseTimer"/> class.
     /// </summary>
-    public ApocalypseTimer()
+    public ApocalypseTimer(ILogger<ApocalypseTimer> logger)
     {
+        _logger = logger;
     }
 
     /// <summary>

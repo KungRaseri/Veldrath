@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Services;
 public class ReactiveAbilityService
 {
     private readonly AbilityDataService? _abilityCatalogService;
+    private readonly ILogger<ReactiveAbilityService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReactiveAbilityService"/> class.
     /// </summary>
+    /// <param name="logger">The logger.</param>
     /// <param name="abilityCatalogService">The ability catalog service.</param>
-    public ReactiveAbilityService(AbilityDataService? abilityCatalogService = null)
+    public ReactiveAbilityService(ILogger<ReactiveAbilityService> logger, AbilityDataService? abilityCatalogService = null)
     {
         _abilityCatalogService = abilityCatalogService;
+        _logger = logger;
     }
 
     /// <summary>

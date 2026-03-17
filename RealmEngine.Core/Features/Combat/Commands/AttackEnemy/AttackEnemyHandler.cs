@@ -13,7 +13,8 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
 {
     private readonly CombatService _combatService;
     private readonly IMediator _mediator;
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
+    private readonly ILogger<AttackEnemyHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AttackEnemyHandler"/> class.
@@ -21,11 +22,13 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
     /// <param name="combatService">The combat service.</param>
     /// <param name="mediator">The mediator for publishing events.</param>
     /// <param name="saveGameService">The save game service.</param>
-    public AttackEnemyHandler(CombatService combatService, IMediator mediator, SaveGameService saveGameService)
+    /// <param name="logger">The logger.</param>
+    public AttackEnemyHandler(CombatService combatService, IMediator mediator, ISaveGameService saveGameService, ILogger<AttackEnemyHandler> logger)
     {
         _combatService = combatService;
         _mediator = mediator;
         _saveGameService = saveGameService;
+        _logger = logger;
     }
 
     /// <summary>

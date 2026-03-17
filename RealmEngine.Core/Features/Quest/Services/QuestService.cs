@@ -12,6 +12,7 @@ public class QuestService
     private readonly ISaveGameService _saveGameService;
     private readonly MainQuestService _mainQuestService;
     private readonly QuestInitializationService _initService;
+    private readonly ILogger<QuestService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QuestService"/> class.
@@ -19,14 +20,17 @@ public class QuestService
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="mainQuestService">The main quest service.</param>
     /// <param name="initService">The quest initialization service.</param>
+    /// <param name="logger">The logger.</param>
     public QuestService(
         ISaveGameService saveGameService, 
         MainQuestService mainQuestService,
-        QuestInitializationService initService)
+        QuestInitializationService initService,
+        ILogger<QuestService> logger)
     {
         _saveGameService = saveGameService;
         _mainQuestService = mainQuestService;
         _initService = initService;
+        _logger = logger;
     }
 
     /// <summary>

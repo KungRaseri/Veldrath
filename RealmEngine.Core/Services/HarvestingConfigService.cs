@@ -11,11 +11,13 @@ namespace RealmEngine.Core.Services;
 public class HarvestingConfigService
 {
     private readonly GameConfigService _configService;
+    private readonly ILogger<HarvestingConfigService> _logger;
     private HarvestingConfig? _cachedConfig;
 
-    public HarvestingConfigService(GameConfigService configService)
+    public HarvestingConfigService(GameConfigService configService, ILogger<HarvestingConfigService> logger)
     {
         _configService = configService;
+        _logger = logger;
     }
 
     /// <summary>

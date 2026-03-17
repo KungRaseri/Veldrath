@@ -12,14 +12,17 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class TravelToLocationCommandHandler : IRequestHandler<TravelToLocationCommand, TravelToLocationResult>
 {
     private readonly GameStateService _gameState;
+    private readonly ILogger<TravelToLocationCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TravelToLocationCommandHandler"/> class.
     /// </summary>
     /// <param name="gameState">The game state service.</param>
-    public TravelToLocationCommandHandler(GameStateService gameState)
+    /// <param name="logger">The logger.</param>
+    public TravelToLocationCommandHandler(GameStateService gameState, ILogger<TravelToLocationCommandHandler> logger)
     {
         _gameState = gameState;
+        _logger = logger;
     }
 
     /// <summary>
