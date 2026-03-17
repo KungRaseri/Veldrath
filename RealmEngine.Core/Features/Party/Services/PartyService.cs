@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Party.Services;
 /// </summary>
 public class PartyService
 {
+    private readonly ILogger<PartyService> _logger;
+
+    public PartyService(ILogger<PartyService> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Creates a new party with the player as leader.
     /// </summary>

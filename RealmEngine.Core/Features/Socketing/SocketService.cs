@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Socketing;
 /// </summary>
 public class SocketService
 {
+    private readonly ILogger<SocketService> _logger;
+
+    public SocketService(ILogger<SocketService> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Validates whether a socketable item can be placed in a specific socket.
     /// </summary>

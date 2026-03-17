@@ -9,6 +9,13 @@ namespace RealmEngine.Core.Features.Inventory.Commands;
 /// </summary>
 public class UnequipItemHandler : IRequestHandler<UnequipItemCommand, UnequipItemResult>
 {
+    private readonly ILogger<UnequipItemHandler> _logger;
+
+    public UnequipItemHandler(ILogger<UnequipItemHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the unequip item command and unequips the item from the specified slot.
     /// </summary>

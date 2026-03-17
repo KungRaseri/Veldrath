@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Inventory.Commands;
 /// </summary>
 public class SortInventoryHandler : IRequestHandler<SortInventoryCommand, SortInventoryResult>
 {
+    private readonly ILogger<SortInventoryHandler> _logger;
+
+    public SortInventoryHandler(ILogger<SortInventoryHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the sort inventory command and sorts the inventory by the specified criteria.
     /// </summary>

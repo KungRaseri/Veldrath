@@ -9,6 +9,13 @@ namespace RealmEngine.Core.Features.Inventory.Commands;
 /// </summary>
 public class EquipItemHandler : IRequestHandler<EquipItemCommand, EquipItemResult>
 {
+    private readonly ILogger<EquipItemHandler> _logger;
+
+    public EquipItemHandler(ILogger<EquipItemHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the equip item command and equips the specified item.
     /// </summary>

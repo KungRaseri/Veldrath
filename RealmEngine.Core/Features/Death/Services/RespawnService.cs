@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Death.Services;
 /// </summary>
 public class RespawnService
 {
+    private readonly ILogger<RespawnService> _logger;
+
+    public RespawnService(ILogger<RespawnService> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Calculate the appropriate respawn location based on player progression.
     /// </summary>

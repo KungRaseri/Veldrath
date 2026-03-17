@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Reputation.Services;
 /// </summary>
 public class ReputationService
 {
+    private readonly ILogger<ReputationService> _logger;
+
+    public ReputationService(ILogger<ReputationService> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Gets or creates a reputation standing for the specified faction.
     /// </summary>

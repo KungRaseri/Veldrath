@@ -9,6 +9,13 @@ namespace RealmEngine.Core.Features.Party.Services;
 public class PartyAIService
 {
     private readonly Random _random = new();
+    private readonly ILogger<PartyAIService> _logger;
+
+    public PartyAIService(ILogger<PartyAIService> logger)
+    {
+        _logger = logger;
+    }
+
 
     /// <summary>
     /// Determines the best action for a party member based on their role and behavior.
