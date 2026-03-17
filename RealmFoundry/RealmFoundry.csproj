@@ -3,7 +3,6 @@
   <PropertyGroup>
     <RootNamespace>RealmFoundry</RootNamespace>
     <ApplicationTitle>RealmFoundry</ApplicationTitle>
-    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

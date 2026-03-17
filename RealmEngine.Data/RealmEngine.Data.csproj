@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <RootNamespace>RealmEngine.Data</RootNamespace>
-    <!-- Enforce XML documentation for public APIs (CS1591) -->
-    <NoWarn></NoWarn>
     <ContentTargetFolders>content</ContentTargetFolders>
     <!-- NuGet Package Metadata -->
     <PackageId>RealmEngine.Data</PackageId>
