@@ -27,10 +27,6 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
         _deathService = deathService;
         _logger = logger;
     }
-    {
-        _gameState = gameState;
-        _deathService = deathService;
-    }
 
     /// <summary>
     /// Handles the respawn command.

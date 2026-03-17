@@ -11,14 +11,17 @@ namespace RealmEngine.Core.Features.ItemGeneration.Commands;
 public class GenerateEnemyCommandHandler : IRequestHandler<GenerateEnemyCommand, GenerateEnemyResult>
 {
     private readonly EnemyGenerator _enemyGenerator;
+    private readonly ILogger<GenerateEnemyCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenerateEnemyCommandHandler"/> class.
     /// </summary>
     /// <param name="enemyGenerator">The enemy generator.</param>
-    public GenerateEnemyCommandHandler(EnemyGenerator enemyGenerator)
+    /// <param name="logger">The logger.</param>
+    public GenerateEnemyCommandHandler(EnemyGenerator enemyGenerator, ILogger<GenerateEnemyCommandHandler> logger)
     {
         _enemyGenerator = enemyGenerator;
+        _logger = logger;
     }
 
     /// <summary>

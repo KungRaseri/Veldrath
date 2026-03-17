@@ -37,17 +37,21 @@ public record DismissPartyMemberResult
 /// </summary>
 public class DismissPartyMemberHandler : IRequestHandler<DismissPartyMemberCommand, DismissPartyMemberResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly PartyService _partyService;
+    private readonly ILogger<DismissPartyMemberHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DismissPartyMemberHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public DismissPartyMemberHandler(SaveGameService saveGameService)
+    /// <param name="partyService">The party service.</param>
+    /// <param name="logger">The logger.</param>
+    public DismissPartyMemberHandler(ISaveGameService saveGameService, PartyService partyService, ILogger<DismissPartyMemberHandler> logger)
     {
         _saveGameService = saveGameService;
-        _partyService = new PartyService();
+        _partyService = partyService;
+        _logger = logger;
     }
 
     /// <summary>

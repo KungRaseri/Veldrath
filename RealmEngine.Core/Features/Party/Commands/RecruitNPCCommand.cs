@@ -42,17 +42,21 @@ public record RecruitNPCResult
 /// </summary>
 public class RecruitNPCHandler : IRequestHandler<RecruitNPCCommand, RecruitNPCResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly PartyService _partyService;
+    private readonly ILogger<RecruitNPCHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecruitNPCHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public RecruitNPCHandler(SaveGameService saveGameService)
+    /// <param name="partyService">The party service.</param>
+    /// <param name="logger">The logger.</param>
+    public RecruitNPCHandler(ISaveGameService saveGameService, PartyService partyService, ILogger<RecruitNPCHandler> logger)
     {
         _saveGameService = saveGameService;
-        _partyService = new PartyService();
+        _partyService = partyService;
+        _logger = logger;
     }
 
     /// <summary>

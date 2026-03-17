@@ -11,14 +11,17 @@ namespace RealmEngine.Core.Features.ItemGeneration.Commands;
 public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, GenerateItemResult>
 {
     private readonly ItemGenerator _itemGenerator;
+    private readonly ILogger<GenerateItemCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenerateItemCommandHandler"/> class.
     /// </summary>
     /// <param name="itemGenerator">The item generator.</param>
-    public GenerateItemCommandHandler(ItemGenerator itemGenerator)
+    /// <param name="logger">The logger.</param>
+    public GenerateItemCommandHandler(ItemGenerator itemGenerator, ILogger<GenerateItemCommandHandler> logger)
     {
         _itemGenerator = itemGenerator;
+        _logger = logger;
     }
 
     /// <summary>

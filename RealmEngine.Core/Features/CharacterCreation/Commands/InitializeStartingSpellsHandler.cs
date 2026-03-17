@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartingSpellsCommand, InitializeStartingSpellsResult>
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<InitializeStartingSpellsHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InitializeStartingSpellsHandler"/> class.
     /// </summary>
     /// <param name="mediator">The mediator for sending commands.</param>
-    public InitializeStartingSpellsHandler(IMediator mediator)
+    /// <param name="logger">The logger.</param>
+    public InitializeStartingSpellsHandler(IMediator mediator, ILogger<InitializeStartingSpellsHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger;
     }
 
     /// <summary>

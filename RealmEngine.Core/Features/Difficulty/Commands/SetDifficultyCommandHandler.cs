@@ -14,18 +14,22 @@ public class SetDifficultyCommandHandler : IRequestHandler<SetDifficultyCommand,
 {
     private readonly ISaveGameService _saveGameService;
     private readonly IApocalypseTimer? _apocalypseTimer;
+    private readonly ILogger<SetDifficultyCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetDifficultyCommandHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
+    /// <param name="logger">The logger.</param>
     /// <param name="apocalypseTimer">Optional apocalypse timer service.</param>
     public SetDifficultyCommandHandler(
         ISaveGameService saveGameService,
+        ILogger<SetDifficultyCommandHandler> logger,
         IApocalypseTimer? apocalypseTimer = null)
     {
         _saveGameService = saveGameService;
         _apocalypseTimer = apocalypseTimer;
+        _logger = logger;
     }
 
     /// <summary>
