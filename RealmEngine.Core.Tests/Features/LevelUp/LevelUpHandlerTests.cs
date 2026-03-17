@@ -18,7 +18,7 @@ public class GainExperienceHandlerTests
         mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(save);
         var handler = new GainExperienceHandler(
             mockSaveSvc.Object,
-            new LevelUpService(),
+            new LevelUpService(Mock.Of<ISkillRepository>()),
             NullLogger<GainExperienceHandler>.Instance,
             Mock.Of<MediatR.IMediator>());
         return (handler, mockSaveSvc);
@@ -111,7 +111,7 @@ public class LevelUpHandlerTests
         mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(save);
         return new LevelUpHandler(
             mockSaveSvc.Object,
-            new LevelUpService(),
+            new LevelUpService(Mock.Of<ISkillRepository>()),
             Mock.Of<ICharacterClassRepository>(),
             NullLogger<LevelUpHandler>.Instance,
             Mock.Of<MediatR.IMediator>());
@@ -275,7 +275,7 @@ public class GetCharacterProgressionHandlerTests
     {
         var mockSaveSvc = new Mock<ISaveGameService>();
         mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(save);
-        return new GetCharacterProgressionHandler(mockSaveSvc.Object, new LevelUpService(), NullLogger<GetCharacterProgressionHandler>.Instance);
+        return new GetCharacterProgressionHandler(mockSaveSvc.Object, new LevelUpService(Mock.Of<ISkillRepository>()), NullLogger<GetCharacterProgressionHandler>.Instance);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class GetNextLevelRequirementHandlerTests
     {
         var mockSaveSvc = new Mock<ISaveGameService>();
         mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(save);
-        return new GetNextLevelRequirementHandler(mockSaveSvc.Object, new LevelUpService(), NullLogger<GetNextLevelRequirementHandler>.Instance);
+        return new GetNextLevelRequirementHandler(mockSaveSvc.Object, new LevelUpService(Mock.Of<ISkillRepository>()), NullLogger<GetNextLevelRequirementHandler>.Instance);
     }
 
     [Fact]

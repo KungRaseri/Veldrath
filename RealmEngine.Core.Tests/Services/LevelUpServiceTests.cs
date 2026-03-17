@@ -1,5 +1,7 @@
 using FluentAssertions;
+using Moq;
 using RealmEngine.Core.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Services;
@@ -11,11 +13,17 @@ namespace RealmEngine.Core.Tests.Services;
 public class LevelUpServiceTests
 {
     private readonly LevelUpService _service;
+    private readonly Mock<ISkillRepository> _skillRepoMock;
 
     public LevelUpServiceTests()
     {
-        _service = new LevelUpService();
+        _skillRepoMock = new Mock<ISkillRepository>();
+        _skillRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
+        _service = new LevelUpService(_skillRepoMock.Object);
     }
+
+    private static SkillDefinition MakeSkill(string id, string name, int maxRank, string category = "combat") =>
+        new() { SkillId = id, Name = id, DisplayName = name, Description = "", Category = category, MaxRank = maxRank };
 
     [Theory]
     [InlineData(1, 100)]
@@ -179,45 +187,73 @@ public class LevelUpServiceTests
     }
 
     [Fact]
-    public void GetAvailableSkills_Should_Filter_By_Level()
+    public async Task GetAvailableSkillsAsync_Should_Return_All_Catalog_Skills_For_Character()
     {
         // Arrange
+        _skillRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync([
+            MakeSkill("power-attack", "Power Attack", 5),
+            MakeSkill("iron-skin",    "Iron Skin",    5, "defense"),
+            MakeSkill("arcane-mind",  "Arcane Mind",  5, "magic"),
+        ]);
         var character = new Character
         {
-            Level = 3,
+            Level = 1,
             Skills = new Dictionary<string, CharacterSkill>()
         };
 
         // Act
-        var skills = _service.GetAvailableSkills(character);
+        var skills = await _service.GetAvailableSkillsAsync(character);
 
-        // Assert
-        skills.Should().NotBeEmpty();
-        skills.All(s => s.RequiredLevel <= 3).Should().BeTrue();
+        // Assert — all catalog skills are returned when none are learned
+        skills.Should().HaveCount(3);
     }
 
     [Fact]
-    public void GetAvailableSkills_Should_Exclude_Maxed_Skills()
+    public async Task GetAvailableSkillsAsync_Should_Exclude_Maxed_Skills()
     {
         // Arrange
+        _skillRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync([
+            MakeSkill("power-attack", "Power Attack", 5),
+            MakeSkill("iron-skin",    "Iron Skin",    5, "defense"),
+        ]);
         var character = new Character
         {
             Level = 10,
             Skills = new Dictionary<string, CharacterSkill>
             {
-                ["Power Attack"] = new CharacterSkill
-                {
-                    SkillId = "Power Attack",
-                    CurrentRank = 5 // Max rank
-                }
+                ["power-attack"] = new CharacterSkill { SkillId = "power-attack", CurrentRank = 5 }
             }
         };
 
         // Act
-        var skills = _service.GetAvailableSkills(character);
+        var skills = await _service.GetAvailableSkillsAsync(character);
 
-        // Assert
+        // Assert — maxed skill excluded, un-learned skill included
+        skills.Should().ContainSingle(s => s.Name == "Iron Skin");
         skills.Should().NotContain(s => s.Name == "Power Attack");
+    }
+
+    [Fact]
+    public async Task GetAvailableSkillsAsync_Should_Include_Partially_Ranked_Skills()
+    {
+        // Arrange
+        _skillRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync([
+            MakeSkill("power-attack", "Power Attack", 5),
+        ]);
+        var character = new Character
+        {
+            Level = 10,
+            Skills = new Dictionary<string, CharacterSkill>
+            {
+                ["power-attack"] = new CharacterSkill { SkillId = "power-attack", CurrentRank = 3 }
+            }
+        };
+
+        // Act
+        var skills = await _service.GetAvailableSkillsAsync(character);
+
+        // Assert — still rankable, so included
+        skills.Should().ContainSingle(s => s.Name == "Power Attack");
     }
 
     [Fact]
