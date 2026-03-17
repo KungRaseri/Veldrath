@@ -3,7 +3,6 @@
   <PropertyGroup>
     <RootNamespace>RealmUnbound.Server</RootNamespace>
     <AssemblyName>RealmUnbound.Server</AssemblyName>
-    <NoWarn>CS1591</NoWarn>
     <UserSecretsId>realmunbound-server</UserSecretsId>
   </PropertyGroup>
 

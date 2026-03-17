@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>RealmEngine.Shared</RootNamespace>
-    <!-- Enforce XML documentation for public APIs (CS1591) -->
-    <NoWarn></NoWarn>
+
     <!-- NuGet Package Metadata -->
     <PackageId>RealmEngine.Shared</PackageId>
     <Title>Game Shared Library</Title>

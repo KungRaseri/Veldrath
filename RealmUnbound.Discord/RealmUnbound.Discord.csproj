@@ -3,7 +3,6 @@
   <PropertyGroup>
     <RootNamespace>RealmUnbound.Discord</RootNamespace>
     <AssemblyName>RealmUnbound.Discord</AssemblyName>
-    <NoWarn>CS1591</NoWarn>
     <UserSecretsId>79f4fc61-be8b-46e6-9d87-36977201e042</UserSecretsId>
   </PropertyGroup>
 
