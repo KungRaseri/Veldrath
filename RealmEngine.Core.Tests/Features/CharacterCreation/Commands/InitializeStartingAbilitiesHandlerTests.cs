@@ -4,6 +4,7 @@ using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Shared.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 

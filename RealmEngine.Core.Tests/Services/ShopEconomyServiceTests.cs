@@ -4,6 +4,7 @@ using Moq;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Services;
 
@@ -19,7 +20,7 @@ public class ShopEconomyServiceTests
     public ShopEconomyServiceTests()
     {
         var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
-        _catalogLoader = new ItemDataService(dbFactory.Object);
+        _catalogLoader = new ItemDataService(dbFactory.Object, NullLogger<ItemDataService>.Instance);
         _service = new ShopEconomyService(_catalogLoader, NullLogger<ShopEconomyService>.Instance);
     }
 

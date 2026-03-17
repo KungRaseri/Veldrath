@@ -3,6 +3,7 @@ using Moq;
 using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Features.Exploration.Queries;
 using RealmEngine.Shared.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 

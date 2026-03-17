@@ -3,6 +3,7 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Victory.Services;
 using RealmEngine.Shared.Models;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Victory.Services;
 

@@ -8,6 +8,7 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Death.Commands;
 

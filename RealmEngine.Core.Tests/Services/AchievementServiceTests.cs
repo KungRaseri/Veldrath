@@ -5,6 +5,7 @@ using RealmEngine.Shared.Models;
 using Moq;
 using FluentAssertions;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Services;
 
