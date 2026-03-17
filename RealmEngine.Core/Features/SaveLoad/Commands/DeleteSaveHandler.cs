@@ -1,23 +1,14 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.SaveLoad.Commands;
 
 /// <summary>
 /// Handles the DeleteSave command.
 /// </summary>
-public class DeleteSaveHandler : IRequestHandler<DeleteSaveCommand, DeleteSaveResult>
+public class DeleteSaveHandler(ISaveGameService saveGameService, ILogger<DeleteSaveHandler> logger)
+    : IRequestHandler<DeleteSaveCommand, DeleteSaveResult>
 {
-    private readonly SaveGameService _saveGameService;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeleteSaveHandler"/> class.
-    /// </summary>
-    /// <param name="saveGameService">The save game service.</param>
-    public DeleteSaveHandler(SaveGameService saveGameService)
-    {
-        _saveGameService = saveGameService;
-    }
 
     /// <summary>
     /// Handles the DeleteSaveCommand and returns the result.
@@ -29,7 +20,7 @@ public class DeleteSaveHandler : IRequestHandler<DeleteSaveCommand, DeleteSaveRe
     {
         try
         {
-            var success = _saveGameService.DeleteSave(request.SaveId);
+            var success = saveGameService.DeleteSave(request.SaveId);
 
             if (!success)
             {
@@ -40,7 +31,7 @@ public class DeleteSaveHandler : IRequestHandler<DeleteSaveCommand, DeleteSaveRe
                 });
             }
 
-            Log.Information("Save game deleted: {SaveId}", request.SaveId);
+            logger.LogInformation("Save game deleted: {SaveId}", request.SaveId);
 
             return Task.FromResult(new DeleteSaveResult
             {
@@ -50,7 +41,7 @@ public class DeleteSaveHandler : IRequestHandler<DeleteSaveCommand, DeleteSaveRe
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to delete save game {SaveId}", request.SaveId);
+            logger.LogError(ex, "Failed to delete save game {SaveId}", request.SaveId);
 
             return Task.FromResult(new DeleteSaveResult
             {

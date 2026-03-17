@@ -25,7 +25,4 @@ public class InMemoryHallOfFameRepository : IHallOfFameRepository
     /// <inheritdoc/>
     public List<HallOfFameEntry> GetTopHeroes(int count = 10) =>
         _entries.OrderByDescending(e => e.FameScore).Take(count).ToList();
-
-    /// <inheritdoc/>
-    public void Dispose() { }
 }

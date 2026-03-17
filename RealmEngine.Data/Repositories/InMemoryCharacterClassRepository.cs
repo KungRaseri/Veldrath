@@ -9,9 +9,6 @@ namespace RealmEngine.Data.Repositories;
 public class InMemoryCharacterClassRepository : ICharacterClassRepository
 {
     /// <inheritdoc />
-    public List<CharacterClass> GetAllClasses() => [];
-
-    /// <inheritdoc />
     public List<CharacterClass> GetAll() => [];
 
     /// <inheritdoc />
@@ -27,23 +24,9 @@ public class InMemoryCharacterClassRepository : ICharacterClassRepository
     public List<CharacterClass> GetSubclassesForParent(string parentClassId) => [];
 
     /// <inheritdoc />
-    public CharacterClass? GetClassByName(string name) => null;
-
-    /// <inheritdoc />
     public CharacterClass? GetById(string id) => null;
 
     /// <inheritdoc />
     public CharacterClass? GetByName(string name) => null;
 
-    /// <inheritdoc />
-    public void Add(CharacterClass entity) => throw new NotSupportedException("In-memory repository does not support mutations");
-
-    /// <inheritdoc />
-    public void Update(CharacterClass entity) => throw new NotSupportedException("In-memory repository does not support mutations");
-
-    /// <inheritdoc />
-    public void Delete(string id) => throw new NotSupportedException("In-memory repository does not support mutations");
-
-    /// <inheritdoc />
-    public void Dispose() { }
 }

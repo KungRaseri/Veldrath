@@ -1,8 +1,6 @@
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Shared.Models;
-using Serilog;
-
-using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.SaveLoad;
 
 /// <summary>
@@ -11,18 +9,21 @@ namespace RealmEngine.Core.Features.SaveLoad;
 /// </summary>
 public class LoadGameService
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly IApocalypseTimer _apocalypseTimer;
+    private readonly ILogger<LoadGameService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoadGameService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="apocalypseTimer">The apocalypse timer.</param>
-    public LoadGameService(SaveGameService saveGameService, IApocalypseTimer apocalypseTimer)
+    /// <param name="logger">The logger.</param>
+    public LoadGameService(ISaveGameService saveGameService, IApocalypseTimer apocalypseTimer, ILogger<LoadGameService> logger)
     {
         _saveGameService = saveGameService;
         _apocalypseTimer = apocalypseTimer;
+        _logger = logger;
     }
 
     /// <summary>
@@ -46,7 +47,7 @@ public class LoadGameService
                 };
             }
 
-            Log.Information("Game loaded for player {PlayerName}", save.Character.Name);
+            _logger.LogInformation("Game loaded for player {PlayerName}", save.Character.Name);
 
             // Restore apocalypse timer if applicable
             bool timeExpired = false;
@@ -60,12 +61,12 @@ public class LoadGameService
                 if (_apocalypseTimer.IsExpired())
                 {
                     timeExpired = true;
-                    Log.Warning("Apocalypse time expired for player {PlayerName}", save.Character.Name);
+                    _logger.LogWarning("Apocalypse time expired for player {PlayerName}", save.Character.Name);
                 }
                 else
                 {
                     remainingMinutes = _apocalypseTimer.GetRemainingMinutes();
-                    Log.Information("Apocalypse timer restored: {Minutes} minutes remaining", remainingMinutes);
+                    _logger.LogInformation("Apocalypse timer restored: {Minutes} minutes remaining", remainingMinutes);
                 }
             }
 
@@ -80,7 +81,7 @@ public class LoadGameService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to load game with ID {SaveId}", saveId);
+            _logger.LogError(ex, "Failed to load game with ID {SaveId}", saveId);
             return new LoadGameResult
             {
                 Success = false,

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.SaveLoad.Commands;
 using RealmEngine.Shared.Models;
@@ -31,7 +32,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Load_Existing_Save_Game()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var player = new Character
         {
             Name = "LoadTestPlayer",
@@ -59,7 +60,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Return_Failure_When_Save_Not_Found()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var command = new LoadGameCommand { SaveId = "non-existent-id" };
 
         // Act
@@ -75,7 +76,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Load_Player_Stats_Correctly()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var player = new Character
         {
             Name = "StatsPlayer",
@@ -114,7 +115,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Load_Inventory_Items()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var player = new Character { Name = "InventoryPlayer", Level = 5, Health = 100, MaxHealth = 100 };
         var items = new List<Item>
         {
@@ -142,7 +143,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Return_Success_Message_With_Player_Name()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var player = new Character { Name = "MessageTestPlayer", Level = 1, Health = 100, MaxHealth = 100 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Normal);
         _saveGameService.SaveGame(player, new List<Item>(), saveGame.Id);
@@ -161,7 +162,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Load_Difficulty_Settings()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var player = new Character { Name = "ExpertPlayer", Level = 10, Health = 150, MaxHealth = 150 };
         var saveGame = _saveGameService.CreateNewGame(player, DifficultySettings.Expert);
         _saveGameService.SaveGame(player, new List<Item>(), saveGame.Id);
@@ -181,7 +182,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Load_Game_With_Equipped_Items()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var weapon = new Item { Name = "Legendary Sword", Type = ItemType.Weapon };
         var chest = new Item { Name = "Dragon Scale Chest", Type = ItemType.Chest };
 
@@ -214,7 +215,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Load_Different_Character_Classes()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var mage = new Character
         {
             Name = "MagePlayer",
@@ -245,7 +246,7 @@ public class LoadGameHandlerTests : IDisposable
     public async Task Handle_Should_Preserve_Character_Experience()
     {
         // Arrange
-        var handler = new LoadGameHandler(_saveGameService);
+        var handler = new LoadGameHandler(_saveGameService, NullLogger<LoadGameHandler>.Instance);
         var player = new Character
         {
             Name = "XPPlayer",

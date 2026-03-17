@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using MediatR;
 using RealmEngine.Core.Abstractions;
@@ -28,7 +29,7 @@ public class ExploreLocationCommandHandlerTests
         _mockGameState.SetupGet(s => s.Player).Returns(_player);
         _mockGameState.SetupGet(s => s.CurrentLocation).Returns("Forest");
 
-        _handler = new ExploreLocationCommandHandler(_mockMediator.Object, _mockGameState.Object);
+        _handler = new ExploreLocationCommandHandler(_mockMediator.Object, _mockGameState.Object, NullLogger<ExploreLocationCommandHandler>.Instance);
     }
 
     [Fact]

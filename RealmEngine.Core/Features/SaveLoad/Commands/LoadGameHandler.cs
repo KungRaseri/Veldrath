@@ -1,23 +1,14 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.SaveLoad.Commands;
 
 /// <summary>
 /// Handles the LoadGame command.
 /// </summary>
-public class LoadGameHandler : IRequestHandler<LoadGameCommand, LoadGameResult>
+public class LoadGameHandler(ISaveGameService saveGameService, ILogger<LoadGameHandler> logger)
+    : IRequestHandler<LoadGameCommand, LoadGameResult>
 {
-    private readonly SaveGameService _saveGameService;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LoadGameHandler"/> class.
-    /// </summary>
-    /// <param name="saveGameService">The save game service.</param>
-    public LoadGameHandler(SaveGameService saveGameService)
-    {
-        _saveGameService = saveGameService;
-    }
 
     /// <summary>
     /// Handles the LoadGameCommand and returns the result.
@@ -29,7 +20,7 @@ public class LoadGameHandler : IRequestHandler<LoadGameCommand, LoadGameResult>
     {
         try
         {
-            var saveGame = _saveGameService.LoadGame(request.SaveId);
+            var saveGame = saveGameService.LoadGame(request.SaveId);
 
             if (saveGame == null)
             {
@@ -41,7 +32,7 @@ public class LoadGameHandler : IRequestHandler<LoadGameCommand, LoadGameResult>
                 });
             }
 
-            Log.Information("Game loaded for player {PlayerName}", saveGame.Character.Name);
+            logger.LogInformation("Game loaded for player {PlayerName}", saveGame.Character.Name);
 
             return Task.FromResult(new LoadGameResult
             {
@@ -52,7 +43,7 @@ public class LoadGameHandler : IRequestHandler<LoadGameCommand, LoadGameResult>
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to load game {SaveId}", request.SaveId);
+            logger.LogError(ex, "Failed to load game {SaveId}", request.SaveId);
 
             return Task.FromResult(new LoadGameResult
             {

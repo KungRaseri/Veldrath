@@ -4,6 +4,7 @@ using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
 using Moq;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Services;
@@ -21,7 +22,8 @@ public class LoadGameServiceTests
         _mockApocalypseTimer = new Mock<IApocalypseTimer>();
         _service = new LoadGameService(
             _mockSaveGameService.Object,
-            _mockApocalypseTimer.Object);
+            _mockApocalypseTimer.Object,
+            NullLogger<LoadGameService>.Instance);
     }
 
     [Fact]

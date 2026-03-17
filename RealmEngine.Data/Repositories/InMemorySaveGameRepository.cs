@@ -12,13 +12,7 @@ public class InMemorySaveGameRepository : ISaveGameRepository
     private readonly Dictionary<string, SaveGame> _store = new();
 
     /// <inheritdoc/>
-    public void Save(SaveGame saveGame)
-    {
-        _store[saveGame.Id] = saveGame;
-    }
-
-    /// <inheritdoc/>
-    public void SaveGame(SaveGame saveGame) => Save(saveGame);
+    public void SaveGame(SaveGame saveGame) => _store[saveGame.Id] = saveGame;
 
     /// <inheritdoc/>
     public SaveGame? LoadGame(int slot) =>
@@ -34,9 +28,6 @@ public class InMemorySaveGameRepository : ISaveGameRepository
 
     /// <inheritdoc/>
     public List<SaveGame> GetAll() => _store.Values.ToList();
-
-    /// <inheritdoc/>
-    public List<SaveGame> GetAllSaves() => GetAll();
 
     /// <inheritdoc/>
     public List<SaveGame> GetByPlayerName(string playerName) =>
@@ -55,6 +46,4 @@ public class InMemorySaveGameRepository : ISaveGameRepository
     /// <inheritdoc/>
     public bool SaveExists(int slot) => _store.ContainsKey(slot.ToString());
 
-    /// <inheritdoc/>
-    public void Dispose() { }
 }
