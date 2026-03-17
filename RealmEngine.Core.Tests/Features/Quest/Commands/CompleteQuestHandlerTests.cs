@@ -5,6 +5,7 @@ using RealmEngine.Core.Features.Quests.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 using QuestModel = RealmEngine.Shared.Models.Quest;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Quest.Commands;
 
@@ -16,14 +17,14 @@ public class CompleteQuestHandlerTests
 {
     private readonly Mock<QuestService> _mockQuestService;
     private readonly Mock<QuestRewardService> _mockRewardService;
-    private readonly Mock<SaveGameService> _mockSaveGameService;
+    private readonly Mock<ISaveGameService> _mockSaveGameService;
     private readonly CompleteQuestHandler _handler;
 
     public CompleteQuestHandlerTests()
     {
-        _mockQuestService = new Mock<QuestService>(MockBehavior.Strict, null!, null!, null!);
-        _mockRewardService = new Mock<QuestRewardService>(MockBehavior.Strict, null!);
-        _mockSaveGameService = new Mock<SaveGameService>();
+        _mockQuestService = new Mock<QuestService>(MockBehavior.Strict, null!, null!, null!, NullLogger<QuestService>.Instance);
+        _mockRewardService = new Mock<QuestRewardService>(MockBehavior.Strict, (ISaveGameService)null!, NullLogger<QuestRewardService>.Instance);
+        _mockSaveGameService = new Mock<ISaveGameService>();
         _handler = new CompleteQuestHandler(_mockQuestService.Object, _mockRewardService.Object, _mockSaveGameService.Object);
     }
 

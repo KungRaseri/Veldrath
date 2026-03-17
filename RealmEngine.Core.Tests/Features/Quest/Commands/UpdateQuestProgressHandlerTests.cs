@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
@@ -16,7 +17,7 @@ public class UpdateQuestProgressHandlerTests
 
     public UpdateQuestProgressHandlerTests()
     {
-        _mockProgressService = new Mock<QuestProgressService>(MockBehavior.Strict, null!);
+        _mockProgressService = new Mock<QuestProgressService>(MockBehavior.Strict, null!, NullLogger<QuestProgressService>.Instance);
         _handler = new UpdateQuestProgressHandler(_mockProgressService.Object);
     }
 

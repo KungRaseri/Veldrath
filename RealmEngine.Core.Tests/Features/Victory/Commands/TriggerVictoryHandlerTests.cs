@@ -3,6 +3,7 @@ using Moq;
 using RealmEngine.Core.Features.Victory.Commands;
 using RealmEngine.Core.Features.Victory.Services;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Victory.Commands;
 
@@ -12,7 +13,7 @@ public class TriggerVictoryHandlerTests
     public async Task Handle_Should_Return_Success_With_Statistics_When_Victory_Achieved()
     {
         // Arrange
-        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!);
+        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!, NullLogger<VictoryService>.Instance);
 
         var expectedStatistics = new VictoryStatistics(
             PlayerName: "Legendary Hero",
@@ -58,7 +59,7 @@ public class TriggerVictoryHandlerTests
     public async Task Handle_Should_Return_Failure_When_No_Statistics_Available()
     {
         // Arrange
-        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!);
+        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!, NullLogger<VictoryService>.Instance);
 
         mockVictoryService.Setup(x => x.CalculateVictoryStatisticsAsync())
             .ReturnsAsync((VictoryStatistics?)null);
@@ -79,7 +80,7 @@ public class TriggerVictoryHandlerTests
     public async Task Handle_Should_Call_CalculateVictoryStatisticsAsync()
     {
         // Arrange
-        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!);
+        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!, NullLogger<VictoryService>.Instance);
 
         var statistics = new VictoryStatistics(
             PlayerName: "Hero",
@@ -113,7 +114,7 @@ public class TriggerVictoryHandlerTests
     public async Task Handle_Should_Call_MarkGameCompleteAsync_When_Statistics_Available()
     {
         // Arrange
-        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!);
+        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!, NullLogger<VictoryService>.Instance);
 
         var statistics = new VictoryStatistics(
             PlayerName: "Champion",
@@ -147,7 +148,7 @@ public class TriggerVictoryHandlerTests
     public async Task Handle_Should_Not_Call_MarkGameCompleteAsync_When_No_Statistics()
     {
         // Arrange
-        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!);
+        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!, NullLogger<VictoryService>.Instance);
 
         mockVictoryService.Setup(x => x.CalculateVictoryStatisticsAsync())
             .ReturnsAsync((VictoryStatistics?)null);
@@ -171,7 +172,7 @@ public class TriggerVictoryHandlerTests
         string difficulty, int deathCount, int enemiesDefeated, int questsCompleted, int goldEarned)
     {
         // Arrange
-        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!);
+        var mockVictoryService = new Mock<VictoryService>(MockBehavior.Strict, (object)null!, NullLogger<VictoryService>.Instance);
 
         var statistics = new VictoryStatistics(
             PlayerName: "TestHero",
