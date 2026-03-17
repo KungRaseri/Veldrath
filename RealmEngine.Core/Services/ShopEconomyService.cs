@@ -17,6 +17,7 @@ public class ShopEconomyService
     private readonly Dictionary<string, ShopInventory> _shopInventories = new();
     private DateTime _lastRefreshDate = DateTime.UtcNow.Date;
     private readonly ItemDataService _catalogLoader;
+    private readonly ILogger<ShopEconomyService> _logger;
     private readonly Random _random = new();
     private readonly BudgetHelperService? _budgetHelper;
     private readonly ItemGenerator? _itemGenerator;
@@ -25,14 +26,17 @@ public class ShopEconomyService
     /// Initializes a new instance of the ShopEconomyService class.
     /// </summary>
     /// <param name="catalogLoader">The item catalog loader.</param>
+    /// <param name="logger">The logger.</param>
     /// <param name="budgetHelper">Optional budget helper for procedural inventory generation.</param>
     /// <param name="itemGenerator">Optional item generator for procedural inventory.</param>
     public ShopEconomyService(
         ItemDataService catalogLoader,
+        ILogger<ShopEconomyService> logger,
         BudgetHelperService? budgetHelper = null,
         ItemGenerator? itemGenerator = null)
     {
         _catalogLoader = catalogLoader;
+        _logger = logger;
         _budgetHelper = budgetHelper;
         _itemGenerator = itemGenerator;
     }

@@ -12,14 +12,17 @@ namespace RealmEngine.Core.Features.Crafting.Commands;
 public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecipeResult>
 {
     private readonly CraftingService _craftingService;
+    private readonly ILogger<CraftRecipeHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CraftRecipeHandler"/> class.
     /// </summary>
     /// <param name="craftingService">The crafting service.</param>
-    public CraftRecipeHandler(CraftingService craftingService)
+    /// <param name="logger">The logger.</param>
+    public CraftRecipeHandler(CraftingService craftingService, ILogger<CraftRecipeHandler> logger)
     {
         _craftingService = craftingService ?? throw new ArgumentNullException(nameof(craftingService));
+        _logger = logger;
     }
 
     /// <summary>

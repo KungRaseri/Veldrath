@@ -10,15 +10,18 @@ namespace RealmEngine.Core.Features.Inventory;
 public class InventoryService
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<InventoryService> _logger;
     private readonly List<Item> _inventory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InventoryService"/> class.
     /// </summary>
     /// <param name="mediator">The mediator.</param>
-    public InventoryService(IMediator mediator)
+    /// <param name="logger">The logger.</param>
+    public InventoryService(IMediator mediator, ILogger<InventoryService> logger)
     {
         _mediator = mediator;
+        _logger = logger;
         _inventory = new List<Item>();
     }
 
@@ -27,9 +30,11 @@ public class InventoryService
     /// </summary>
     /// <param name="mediator">The mediator.</param>
     /// <param name="existingInventory">The existing inventory items.</param>
-    public InventoryService(IMediator mediator, List<Item> existingInventory)
+    /// <param name="logger">The logger.</param>
+    public InventoryService(IMediator mediator, List<Item> existingInventory, ILogger<InventoryService> logger)
     {
         _mediator = mediator;
+        _logger = logger;
         _inventory = existingInventory ?? new List<Item>();
     }
 

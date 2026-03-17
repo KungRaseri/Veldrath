@@ -13,13 +13,20 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
 {
     private readonly GameStateService _gameState;
     private readonly DeathService _deathService;
+    private readonly ILogger<RespawnCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RespawnCommandHandler"/> class.
     /// </summary>
     /// <param name="gameState">The game state service.</param>
     /// <param name="deathService">The death service.</param>
-    public RespawnCommandHandler(GameStateService gameState, DeathService deathService)
+    /// <param name="logger">The logger.</param>
+    public RespawnCommandHandler(GameStateService gameState, DeathService deathService, ILogger<RespawnCommandHandler> logger)
+    {
+        _gameState = gameState;
+        _deathService = deathService;
+        _logger = logger;
+    }
     {
         _gameState = gameState;
         _deathService = deathService;

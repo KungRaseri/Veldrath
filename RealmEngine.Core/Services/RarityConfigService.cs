@@ -11,11 +11,13 @@ namespace RealmEngine.Core.Services;
 public class RarityConfigService
 {
     private readonly GameConfigService _configService;
+    private readonly ILogger<RarityConfigService> _logger;
     private RarityConfig? _cachedConfig;
 
-    public RarityConfigService(GameConfigService configService)
+    public RarityConfigService(GameConfigService configService, ILogger<RarityConfigService> logger)
     {
         _configService = configService;
+        _logger = logger;
     }
 
     /// <summary>

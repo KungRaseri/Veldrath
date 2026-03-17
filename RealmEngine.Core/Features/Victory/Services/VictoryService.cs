@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Victory.Services;
 public class VictoryService
 {
     private readonly ISaveGameService _saveGameService;
+    private readonly ILogger<VictoryService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VictoryService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public VictoryService(ISaveGameService saveGameService)
+    /// <param name="logger">The logger.</param>
+    public VictoryService(ISaveGameService saveGameService, ILogger<VictoryService> logger)
     {
         _saveGameService = saveGameService;
+        _logger = logger;
     }
 
     /// <summary>

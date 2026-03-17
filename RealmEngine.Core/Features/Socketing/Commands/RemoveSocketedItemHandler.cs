@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Socketing.Commands;
 public class RemoveSocketedItemHandler : IRequestHandler<RemoveSocketedItemCommand, RemoveSocketedItemResult>
 {
     private readonly IPublisher _publisher;
+    private readonly ILogger<RemoveSocketedItemHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoveSocketedItemHandler"/> class.
     /// </summary>
     /// <param name="publisher">The MediatR publisher for raising socket events.</param>
-    public RemoveSocketedItemHandler(IPublisher publisher)
+    /// <param name="logger">The logger.</param>
+    public RemoveSocketedItemHandler(IPublisher publisher, ILogger<RemoveSocketedItemHandler> logger)
     {
         _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
+        _logger = logger;
     }
 
     /// <summary>

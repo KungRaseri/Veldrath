@@ -19,8 +19,9 @@ namespace RealmEngine.Core.Features.Combat;
 public class CombatService
 {
     private readonly Random _random = new();
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly IMediator _mediator;
+    private readonly ILogger<CombatService> _logger;
     private readonly ReactiveAbilityService _reactiveAbilityService;
     private readonly EnemyAbilityAIService _enemyAbilityAI;
     private readonly EnemySpellCastingService _enemySpellCastingAI;
@@ -30,15 +31,17 @@ public class CombatService
     /// Initialize the combat service with required dependencies.
     /// </summary>
     public CombatService(
-        SaveGameService saveGameService,
+        ISaveGameService saveGameService,
         IMediator mediator,
         AbilityDataService abilityCatalogService,
         SpellDataService spellCatalogService,
+        ILogger<CombatService> logger,
         ItemGenerator? itemGenerator = null)
     {
         _saveGameService = saveGameService;
         _mediator = mediator;
-        _reactiveAbilityService = new ReactiveAbilityService(abilityCatalogService);
+        _logger = logger;
+        _reactiveAbilityService = new ReactiveAbilityService(logger, abilityCatalogService);
         _enemyAbilityAI = new EnemyAbilityAIService(abilityCatalogService);
         _enemySpellCastingAI = new EnemySpellCastingService(spellCatalogService);
         _itemGenerator = itemGenerator;

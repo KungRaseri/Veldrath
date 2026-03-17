@@ -11,11 +11,13 @@ namespace RealmEngine.Core.Services;
 public class CharacterGrowthService
 {
     private readonly GameConfigService _configService;
+    private readonly ILogger<CharacterGrowthService> _logger;
     private GrowthStatsConfig? _config;
 
-    public CharacterGrowthService(GameConfigService configService)
+    public CharacterGrowthService(GameConfigService configService, ILogger<CharacterGrowthService> logger)
     {
         _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+        _logger = logger;
     }
 
     private GrowthStatsConfig LoadConfig()

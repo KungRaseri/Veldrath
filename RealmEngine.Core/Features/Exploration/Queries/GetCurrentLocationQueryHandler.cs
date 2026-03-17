@@ -10,14 +10,17 @@ namespace RealmEngine.Core.Features.Exploration.Queries;
 public class GetCurrentLocationQueryHandler : IRequestHandler<GetCurrentLocationQuery, GetCurrentLocationResult>
 {
     private readonly GameStateService _gameState;
+    private readonly ILogger<GetCurrentLocationQueryHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetCurrentLocationQueryHandler"/> class.
     /// </summary>
     /// <param name="gameState">The game state service.</param>
-    public GetCurrentLocationQueryHandler(GameStateService gameState)
+    /// <param name="logger">The logger.</param>
+    public GetCurrentLocationQueryHandler(GameStateService gameState, ILogger<GetCurrentLocationQueryHandler> logger)
     {
         _gameState = gameState;
+        _logger = logger;
     }
 
     /// <summary>

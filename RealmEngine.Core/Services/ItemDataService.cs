@@ -9,11 +9,13 @@ namespace RealmEngine.Core.Services;
 public class ItemDataService
 {
     private readonly IDbContextFactory<ContentDbContext> _dbFactory;
+    private readonly ILogger<ItemDataService> _logger;
     private readonly Dictionary<string, List<ItemTemplate>> _cache = new();
 
-    public ItemDataService(IDbContextFactory<ContentDbContext> dbFactory)
+    public ItemDataService(IDbContextFactory<ContentDbContext> dbFactory, ILogger<ItemDataService> logger)
     {
         _dbFactory = dbFactory;
+        _logger = logger;
     }
 
     public List<ItemTemplate> LoadCatalog(string category, ItemRarity? rarityFilter = null)

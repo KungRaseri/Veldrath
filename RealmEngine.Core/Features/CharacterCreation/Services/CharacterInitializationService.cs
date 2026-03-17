@@ -14,6 +14,7 @@ public class CharacterInitializationService
     private readonly AbilityDataService _abilityCatalogService;
     private readonly SpellCastingService _spellCastingService;
     private readonly IMediator _mediator;
+    private readonly ILogger<CharacterInitializationService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharacterInitializationService"/> class.
@@ -21,14 +22,17 @@ public class CharacterInitializationService
     /// <param name="abilityCatalogService">The ability catalog service.</param>
     /// <param name="spellCastingService">The spell casting service.</param>
     /// <param name="mediator">The mediator for sending commands.</param>
+    /// <param name="logger">The logger.</param>
     public CharacterInitializationService(
         AbilityDataService abilityCatalogService,
         SpellCastingService spellCastingService,
-        IMediator mediator)
+        IMediator mediator,
+        ILogger<CharacterInitializationService> logger)
     {
         _abilityCatalogService = abilityCatalogService ?? throw new ArgumentNullException(nameof(abilityCatalogService));
         _spellCastingService = spellCastingService ?? throw new ArgumentNullException(nameof(spellCastingService));
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger;
     }
 
     /// <summary>

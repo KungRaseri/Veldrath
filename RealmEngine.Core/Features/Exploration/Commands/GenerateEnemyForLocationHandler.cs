@@ -16,6 +16,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
     private readonly ExplorationService _explorationService;
     private readonly LocationGenerator _locationGenerator;
     private readonly EnemyGenerator _enemyGenerator;
+    private readonly ILogger<GenerateEnemyForLocationHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenerateEnemyForLocationHandler"/> class.
@@ -24,12 +25,14 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
         GameStateService gameState,
         ExplorationService explorationService,
         LocationGenerator locationGenerator,
-        EnemyGenerator enemyGenerator)
+        EnemyGenerator enemyGenerator,
+        ILogger<GenerateEnemyForLocationHandler> logger)
     {
         _gameState = gameState;
         _explorationService = explorationService;
         _locationGenerator = locationGenerator;
         _enemyGenerator = enemyGenerator;
+        _logger = logger;
     }
 
     /// <summary>
