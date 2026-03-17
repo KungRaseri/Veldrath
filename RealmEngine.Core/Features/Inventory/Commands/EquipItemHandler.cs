@@ -1,6 +1,6 @@
 using RealmEngine.Shared.Models;
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -91,7 +91,7 @@ public class EquipItemHandler : IRequestHandler<EquipItemCommand, EquipItemResul
             player.Inventory.Add(unequipped);
         }
 
-        Log.Information("Player {PlayerName} equipped {ItemName}",
+        _logger.LogInformation("Player {PlayerName} equipped {ItemName}",
             player.Name, item.Name);
 
         return Task.FromResult(new EquipItemResult

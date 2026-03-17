@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
 
 namespace RealmEngine.Core.Features.ItemGeneration.Commands;
@@ -62,7 +62,7 @@ public class GenerateEnemyCommandHandler : IRequestHandler<GenerateEnemyCommand,
                 enemy.Health = enemy.MaxHealth;
             }
 
-            Log.Debug("Generated enemy: {EnemyName} (Level {Level}) from category {Category}", 
+            _logger.LogDebug("Generated enemy: {EnemyName} (Level {Level}) from category {Category}", 
                 enemy.Name, enemy.Level, request.Category);
 
             return new GenerateEnemyResult
@@ -73,7 +73,7 @@ public class GenerateEnemyCommandHandler : IRequestHandler<GenerateEnemyCommand,
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error generating enemy from category {Category}", request.Category);
+            _logger.LogError(ex, "Error generating enemy from category {Category}", request.Category);
             return new GenerateEnemyResult
             {
                 Success = false,

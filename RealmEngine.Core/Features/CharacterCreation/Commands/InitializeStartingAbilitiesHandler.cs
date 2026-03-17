@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
@@ -36,7 +36,7 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
         
         if (startingAbilities.Count == 0)
         {
-            Log.Warning("No starting abilities defined for class {ClassName}", request.ClassName);
+            _logger.LogWarning("No starting abilities defined for class {ClassName}", request.ClassName);
             return new InitializeStartingAbilitiesResult
             {
                 Success = true,
@@ -62,18 +62,18 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
                 {
                     abilitiesLearned++;
                     abilityIds.Add(abilityId);
-                    Log.Information("Character {CharacterName} learned starting ability: {AbilityId}", 
+                    _logger.LogInformation("Character {CharacterName} learned starting ability: {AbilityId}", 
                         request.Character.Name, abilityId);
                 }
                 else
                 {
-                    Log.Warning("Failed to learn starting ability {AbilityId} for {CharacterName}: {Message}",
+                    _logger.LogWarning("Failed to learn starting ability {AbilityId} for {CharacterName}: {Message}",
                         abilityId, request.Character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error learning starting ability {AbilityId} for {CharacterName}", 
+                _logger.LogError(ex, "Error learning starting ability {AbilityId} for {CharacterName}", 
                     abilityId, request.Character.Name);
             }
         }

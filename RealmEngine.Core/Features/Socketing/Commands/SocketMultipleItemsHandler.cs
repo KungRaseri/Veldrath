@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Commands;
 
@@ -36,7 +36,7 @@ public class SocketMultipleItemsHandler : IRequestHandler<SocketMultipleItemsCom
 
         try
         {
-            Log.Information("Starting batch socket operation for {ItemId} with {Count} operations",
+            _logger.LogInformation("Starting batch socket operation for {ItemId} with {Count} operations",
                 request.EquipmentItemId, request.Operations.Count);
 
             // Process each operation
@@ -94,14 +94,14 @@ public class SocketMultipleItemsHandler : IRequestHandler<SocketMultipleItemsCom
                 ? $"Successfully socketed {result.SuccessCount} items"
                 : $"Batch operation completed with {result.SuccessCount} successes and {result.FailureCount} failures";
 
-            Log.Information("Batch socket operation completed: {Success}/{Total} successful",
+            _logger.LogInformation("Batch socket operation completed: {Success}/{Total} successful",
                 result.SuccessCount, request.Operations.Count);
 
             return result;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error during batch socket operation");
+            _logger.LogError(ex, "Error during batch socket operation");
             result.Success = false;
             result.Message = $"Batch operation failed: {ex.Message}";
             return result;

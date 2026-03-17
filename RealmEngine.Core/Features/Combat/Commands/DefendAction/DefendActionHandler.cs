@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Combat.Commands.DefendAction;
 
@@ -24,7 +24,7 @@ public class DefendActionHandler : IRequestHandler<DefendActionCommand, DefendAc
 
         combatLog?.AddEntry($"{player.Name} takes a defensive stance! (Defense +{defenseBonus})");
         
-        Log.Information("Player {PlayerName} defended (bonus: {DefenseBonus})", 
+        _logger.LogInformation("Player {PlayerName} defended (bonus: {DefenseBonus})", 
             player.Name, defenseBonus);
 
         return Task.FromResult(new DefendActionResult

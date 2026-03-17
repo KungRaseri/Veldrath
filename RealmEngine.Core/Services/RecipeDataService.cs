@@ -1,6 +1,6 @@
-﻿using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -23,12 +23,12 @@ public class RecipeDataService
         try
         {
             _allRecipesCache = _repository.GetAllAsync().GetAwaiter().GetResult();
-            Log.Information("Loaded {Count} recipes from repository", _allRecipesCache.Count);
+            _logger.LogInformation("Loaded {Count} recipes from repository", _allRecipesCache.Count);
             return _allRecipesCache;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading recipes from repository");
+            _logger.LogError(ex, "Error loading recipes from repository");
             return [];
         }
     }

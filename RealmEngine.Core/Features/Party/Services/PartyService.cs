@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Party.Services;
 
@@ -47,7 +47,7 @@ public class PartyService
         // Add to party
         party.AddMember(member);
         
-        Log.Information("NPC {Name} recruited to party (Role: {Role})", npc.Name, member.Role);
+        _logger.LogInformation("NPC {Name} recruited to party (Role: {Role})", npc.Name, member.Role);
         return true;
     }
 
@@ -66,7 +66,7 @@ public class PartyService
         }
 
         party.RemoveMember(memberId);
-        Log.Information("Party member {Name} dismissed from party", member.Name);
+        _logger.LogInformation("Party member {Name} dismissed from party", member.Name);
         return true;
     }
 
@@ -84,7 +84,7 @@ public class PartyService
             member.Mana = member.MaxMana;
         }
 
-        Log.Information("Party fully healed and restored");
+        _logger.LogInformation("Party fully healed and restored");
     }
 
     /// <summary>
@@ -105,11 +105,11 @@ public class PartyService
         {
             if (member.GainExperience(xpPerMember))
             {
-                Log.Information("Party member {Name} leveled up to {Level}!", member.Name, member.Level);
+                _logger.LogInformation("Party member {Name} leveled up to {Level}!", member.Name, member.Level);
             }
         }
 
-        Log.Information("Distributed {Xp} XP to {Count} party members", xpPerMember, aliveCount);
+        _logger.LogInformation("Distributed {Xp} XP to {Count} party members", xpPerMember, aliveCount);
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public class PartyService
     public void DistributeGold(Shared.Models.Party party, int totalGold)
     {
         party.Leader.Gold += totalGold;
-        Log.Information("Party leader received {Gold} gold", totalGold);
+        _logger.LogInformation("Party leader received {Gold} gold", totalGold);
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ public class PartyService
         if (item.Type == ItemType.Weapon)
         {
             member.EquippedWeapon = item;
-            Log.Information("Party member {Name} equipped weapon {Item}", member.Name, item.Name);
+            _logger.LogInformation("Party member {Name} equipped weapon {Item}", member.Name, item.Name);
             return true;
         }
         else if (item.Type == ItemType.Chest || item.Type == ItemType.Helmet || 
@@ -247,7 +247,7 @@ public class PartyService
                  item.Type == ItemType.Gloves || item.Type == ItemType.Belt)
         {
             member.EquippedArmor = item;
-            Log.Information("Party member {Name} equipped armor {Item}", member.Name, item.Name);
+            _logger.LogInformation("Party member {Name} equipped armor {Item}", member.Name, item.Name);
             return true;
         }
 
@@ -261,6 +261,6 @@ public class PartyService
     public void GiveItem(PartyMember member, Item item)
     {
         member.Inventory.Add(item);
-        Log.Information("Gave {Item} to party member {Name}", item.Name, member.Name);
+        _logger.LogInformation("Gave {Item} to party member {Name}", item.Name, member.Name);
     }
 }

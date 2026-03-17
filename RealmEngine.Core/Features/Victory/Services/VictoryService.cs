@@ -1,6 +1,6 @@
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Victory.Commands;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Victory.Services;
 
@@ -43,7 +43,7 @@ public class VictoryService
             saveGame.TotalGoldEarned
         );
 
-        Log.Information("Victory statistics calculated for {PlayerName}", saveGame.Character.Name);
+        _logger.LogInformation("Victory statistics calculated for {PlayerName}", saveGame.Character.Name);
 
         return await Task.FromResult(statistics);
     }
@@ -64,7 +64,7 @@ public class VictoryService
 
         _saveGameService.SaveGame(saveGame);
 
-        Log.Information("Game marked as completed for {PlayerName}", saveGame.Character.Name);
+        _logger.LogInformation("Game marked as completed for {PlayerName}", saveGame.Character.Name);
 
         await Task.CompletedTask;
     }

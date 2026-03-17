@@ -1,7 +1,7 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.SaveLoad;
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Quests.Commands;
 
 namespace RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
@@ -82,7 +82,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
             await CheckAndCompleteReadyQuests(cancellationToken);
         }
 
-        Log.Information("Player {PlayerName} attacked {EnemyName} for {Damage} damage (critical: {IsCritical})",
+        _logger.LogInformation("Player {PlayerName} attacked {EnemyName} for {Damage} damage (critical: {IsCritical})",
             player.Name, enemy.Name, damage, isCritical);
 
         return new AttackEnemyResult
@@ -144,12 +144,12 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
 
                     if (progressResult.ObjectiveCompleted)
                     {
-                        Log.Information("Quest objective completed: {QuestId}/{ObjectiveId}", quest.Id, objectiveId);
+                        _logger.LogInformation("Quest objective completed: {QuestId}/{ObjectiveId}", quest.Id, objectiveId);
                     }
 
                     if (progressResult.QuestCompleted)
                     {
-                        Log.Information("Quest ready for completion: {QuestId}", quest.Id);
+                        _logger.LogInformation("Quest ready for completion: {QuestId}", quest.Id);
                     }
                 }
             }
@@ -183,7 +183,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
 
             if (result.Success)
             {
-                Log.Information("Quest auto-completed: {QuestTitle} - Rewards: {XP} XP, {Gold} gold",
+                _logger.LogInformation("Quest auto-completed: {QuestTitle} - Rewards: {XP} XP, {Gold} gold",
                     quest.Title, result.Rewards?.Xp ?? 0, result.Rewards?.Gold ?? 0);
             }
         }

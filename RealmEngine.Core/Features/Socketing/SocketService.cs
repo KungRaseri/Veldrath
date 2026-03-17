@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing;
 
@@ -72,7 +72,7 @@ public class SocketService
         }
         
         socket.Content = socketableItem;
-        Log.Information("Socketed {ItemName} into {SocketType} socket", socketableItem.Name, socket.Type);
+        _logger.LogInformation("Socketed {ItemName} into {SocketType} socket", socketableItem.Name, socket.Type);
         
         return new SocketOperationResult
         {
@@ -112,7 +112,7 @@ public class SocketService
         
         var removedItem = socket.Content;
         socket.Content = null;
-        Log.Information("Removed {ItemName} from {SocketType} socket", removedItem.Name, socket.Type);
+        _logger.LogInformation("Removed {ItemName} from {SocketType} socket", removedItem.Name, socket.Type);
         
         return new SocketRemovalResult
         {

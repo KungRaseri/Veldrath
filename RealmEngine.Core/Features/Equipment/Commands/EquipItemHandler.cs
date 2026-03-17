@@ -1,7 +1,7 @@
 using MediatR;
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Equipment.Commands;
 

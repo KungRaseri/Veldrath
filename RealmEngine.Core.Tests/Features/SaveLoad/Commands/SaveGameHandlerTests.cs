@@ -23,7 +23,7 @@ public class SaveGameHandlerTests : IDisposable
     {
         _mockGameUI = new Mock<IGameUI>();
         var mockApocalypseTimer = new Mock<IApocalypseTimer>();
-        _saveGameService = new SaveGameService(new InMemorySaveGameRepository(), mockApocalypseTimer.Object);
+        _saveGameService = new SaveGameService(new InMemorySaveGameRepository(), mockApocalypseTimer.Object, NullLogger<SaveGameService>.Instance);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using QuestModel = RealmEngine.Shared.Models.Quest;
 using RealmEngine.Shared.Models;
-using Serilog;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Abstractions;
@@ -15,6 +16,7 @@ public class SaveGameService : ISaveGameService, IDisposable
     private readonly ISaveGameRepository _repository;
     private readonly IApocalypseTimer _apocalypseTimer;
     private DateTime _gameStartTime;
+    private readonly ILogger<SaveGameService> _logger;
     private SaveGame? _currentSave;
 
     /// <summary>
@@ -22,10 +24,11 @@ public class SaveGameService : ISaveGameService, IDisposable
     /// </summary>
     /// <param name="repository">The save game repository.</param>
     /// <param name="apocalypseTimer">The apocalypse timer.</param>
-    public SaveGameService(ISaveGameRepository repository, IApocalypseTimer apocalypseTimer)
+    public SaveGameService(ISaveGameRepository repository, IApocalypseTimer apocalypseTimer, ILogger<SaveGameService> logger)
     {
         _repository = repository;
         _apocalypseTimer = apocalypseTimer;
+        _logger = logger;
         _gameStartTime = DateTime.Now;
     }
 
@@ -36,6 +39,7 @@ public class SaveGameService : ISaveGameService, IDisposable
     {
         _repository = null!;
         _apocalypseTimer = null!;
+        _logger = NullLogger<SaveGameService>.Instance;
         _gameStartTime = DateTime.Now;
     }
 
@@ -60,7 +64,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         };
 
         _gameStartTime = DateTime.Now;
-        Log.Information("New game created for player {PlayerName} (Difficulty: {Difficulty}, Ironman: {Ironman}, Permadeath: {Permadeath}, Apocalypse: {Apocalypse})",
+        _logger.LogInformation("New game created for player {PlayerName} (Difficulty: {Difficulty}, Ironman: {Ironman}, Permadeath: {Permadeath}, Apocalypse: {Apocalypse})",
             player.Name, difficulty.Name, difficulty.AutoSaveOnly, difficulty.IsPermadeath, difficulty.IsApocalypse);
 
         return _currentSave;
@@ -124,12 +128,12 @@ public class SaveGameService : ISaveGameService, IDisposable
             _repository.SaveGame(saveGame);
             _currentSave = saveGame;
 
-            Log.Information("Game saved for player {PlayerName} (Level {Level}, {QuestCount} active quests, {PlayTime}m playtime)",
+            _logger.LogInformation("Game saved for player {PlayerName} (Level {Level}, {QuestCount} active quests, {PlayTime}m playtime)",
                 saveGame.PlayerName, saveGame.Character.Level, saveGame.ActiveQuests.Count, saveGame.PlayTimeMinutes);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to save game for player {PlayerName}", saveGame.PlayerName);
+            _logger.LogError(ex, "Failed to save game for player {PlayerName}", saveGame.PlayerName);
             throw;
         }
     }
@@ -174,14 +178,14 @@ public class SaveGameService : ISaveGameService, IDisposable
                 _currentSave = save;
                 _gameStartTime = DateTime.Now.AddMinutes(-save.PlayTimeMinutes);
 
-                Log.Information("Game loaded for player {PlayerName} (Level {Level}, {CompletionPercent:F1}% complete)",
+                _logger.LogInformation("Game loaded for player {PlayerName} (Level {Level}, {CompletionPercent:F1}% complete)",
                     save.PlayerName, save.Character.Level, save.GetCompletionPercentage());
             }
             return save;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to load game with ID {SaveId}", saveId);
+            _logger.LogError(ex, "Failed to load game with ID {SaveId}", saveId);
             throw;
         }
     }
@@ -199,7 +203,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to retrieve save games");
+            _logger.LogError(ex, "Failed to retrieve save games");
             throw;
         }
     }
@@ -214,7 +218,7 @@ public class SaveGameService : ISaveGameService, IDisposable
             var result = _repository.Delete(saveId);
             if (result)
             {
-                Log.Information("Save game deleted (ID: {SaveId})", saveId);
+                _logger.LogInformation("Save game deleted (ID: {SaveId})", saveId);
                 if (_currentSave?.Id == saveId)
                 {
                     _currentSave = null;
@@ -224,7 +228,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to delete save with ID {SaveId}", saveId);
+            _logger.LogError(ex, "Failed to delete save with ID {SaveId}", saveId);
             throw;
         }
     }
@@ -240,7 +244,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to retrieve most recent save");
+            _logger.LogError(ex, "Failed to retrieve most recent save");
             throw;
         }
     }
@@ -256,7 +260,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to check for existing saves");
+            _logger.LogError(ex, "Failed to check for existing saves");
             return false;
         }
     }
@@ -269,11 +273,11 @@ public class SaveGameService : ISaveGameService, IDisposable
         try
         {
             SaveGame(saveGame);
-            Log.Information("Auto-save completed for player {PlayerName}", saveGame.PlayerName);
+            _logger.LogInformation("Auto-save completed for player {PlayerName}", saveGame.PlayerName);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Auto-save failed for player {PlayerName}", saveGame.PlayerName);
+            _logger.LogError(ex, "Auto-save failed for player {PlayerName}", saveGame.PlayerName);
             // Don't throw on auto-save failure, just log it
         }
     }
@@ -304,7 +308,7 @@ public class SaveGameService : ISaveGameService, IDisposable
     {
         if (_currentSave == null)
         {
-            Log.Warning("Attempted to record death with no active save game");
+            _logger.LogWarning("Attempted to record death with no active save game");
             return;
         }
 
@@ -316,14 +320,14 @@ public class SaveGameService : ISaveGameService, IDisposable
             _currentSave.GameFlags["deaths"] = true;
         }
 
-        Log.Warning("Player death #{Count} at {Location} by {Killer}",
+        _logger.LogWarning("Player death #{Count} at {Location} by {Killer}",
             _currentSave.DeathCount, location, killedBy);
 
         // Auto-save in Ironman mode
         if (_currentSave.IronmanMode)
         {
             SaveGame(_currentSave);
-            Log.Information("Ironman auto-save triggered by death");
+            _logger.LogInformation("Ironman auto-save triggered by death");
         }
     }
 
@@ -337,7 +341,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         if (_currentSave != null && !_currentSave.AvailableQuests.Any(q => q.Id == quest.Id))
         {
             _currentSave.AvailableQuests.Add(quest);
-            Log.Information("QuestModel '{QuestTitle}' added to available quests", quest.Title);
+            _logger.LogInformation("QuestModel '{QuestTitle}' added to available quests", quest.Title);
         }
     }
 
@@ -355,7 +359,7 @@ public class SaveGameService : ISaveGameService, IDisposable
             quest.IsActive = true;
             quest.StartTime = DateTime.Now;
             _currentSave.ActiveQuests.Add(quest);
-            Log.Information("QuestModel '{QuestTitle}' accepted and started", quest.Title);
+            _logger.LogInformation("QuestModel '{QuestTitle}' accepted and started", quest.Title);
         }
     }
 
@@ -374,7 +378,7 @@ public class SaveGameService : ISaveGameService, IDisposable
             quest.IsActive = false;
             _currentSave.CompletedQuests.Add(quest);
             _currentSave.QuestsCompleted++;
-            Log.Information("QuestModel '{QuestTitle}' completed!", quest.Title);
+            _logger.LogInformation("QuestModel '{QuestTitle}' completed!", quest.Title);
 
             // Award bonus time in Apocalypse mode
             if (_currentSave.ApocalypseMode)
@@ -410,7 +414,7 @@ public class SaveGameService : ISaveGameService, IDisposable
             quest.IsActive = false;
             _currentSave.FailedQuests.Add(quest);
             _currentSave.QuestsFailed++;
-            Log.Warning("QuestModel '{QuestTitle}' failed: {Reason}", quest.Title, reason);
+            _logger.LogWarning("QuestModel '{QuestTitle}' failed: {Reason}", quest.Title, reason);
         }
     }
 
@@ -445,7 +449,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         {
             _currentSave.KnownNPCs.Add(npc);
             _currentSave.NPCRelationships[npc.Id] = 0; // Neutral starting relationship
-            Log.Information("Met NPC: {NpcName} ({Occupation})", npc.Name, npc.Occupation);
+            _logger.LogInformation("Met NPC: {NpcName} ({Occupation})", npc.Name, npc.Occupation);
         }
     }
 
@@ -463,7 +467,7 @@ public class SaveGameService : ISaveGameService, IDisposable
                 -100,
                 100
             );
-            Log.Debug("NPC relationship changed: {NpcId} {Change:+0;-0}", npcId, change);
+            _logger.LogDebug("NPC relationship changed: {NpcId} {Change:+0;-0}", npcId, change);
         }
     }
 
@@ -478,7 +482,7 @@ public class SaveGameService : ISaveGameService, IDisposable
             && !_currentSave.VisitedLocations.Contains(locationName))
         {
             _currentSave.DiscoveredLocations.Add(locationName);
-            Log.Information("Location discovered: {LocationName}", locationName);
+            _logger.LogInformation("Location discovered: {LocationName}", locationName);
         }
     }
 
@@ -493,7 +497,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         {
             _currentSave.VisitedLocations.Add(locationName);
             _currentSave.DiscoveredLocations.Remove(locationName); // Move from discovered to visited
-            Log.Information("Location visited: {LocationName}", locationName);
+            _logger.LogInformation("Location visited: {LocationName}", locationName);
         }
     }
 
@@ -523,7 +527,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         if (enemy.Traits.ContainsKey("legendary") && enemy.Traits["legendary"].AsBool())
         {
             _currentSave.LegendaryEnemiesDefeated.Add(enemy);
-            Log.Information("Legendary enemy defeated: {EnemyName} (Level {Level})", enemy.Name, enemy.Level);
+            _logger.LogInformation("Legendary enemy defeated: {EnemyName} (Level {Level})", enemy.Name, enemy.Level);
         }
     }
 
@@ -559,12 +563,12 @@ public class SaveGameService : ISaveGameService, IDisposable
         if (_currentSave != null)
         {
             _currentSave.DeathCount++;
-            Log.Warning("Player death recorded. Total deaths: {DeathCount}", _currentSave.DeathCount);
+            _logger.LogWarning("Player death recorded. Total deaths: {DeathCount}", _currentSave.DeathCount);
 
             // Auto-delete save in Ironman mode
             if (_currentSave.IronmanMode)
             {
-                Log.Warning("Ironman mode: Save will be deleted");
+                _logger.LogWarning("Ironman mode: Save will be deleted");
                 DeleteSave(_currentSave.Id);
             }
         }
@@ -578,7 +582,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         if (_currentSave != null && !_currentSave.UnlockedAchievements.Contains(achievementId))
         {
             _currentSave.UnlockedAchievements.Add(achievementId);
-            Log.Information("Achievement unlocked: {AchievementId}", achievementId);
+            _logger.LogInformation("Achievement unlocked: {AchievementId}", achievementId);
         }
     }
 
@@ -590,7 +594,7 @@ public class SaveGameService : ISaveGameService, IDisposable
         if (_currentSave != null)
         {
             _currentSave.GameFlags[flagName] = value;
-            Log.Debug("Game flag set: {FlagName} = {Value}", flagName, value);
+            _logger.LogDebug("Game flag set: {FlagName} = {Value}", flagName, value);
         }
     }
 

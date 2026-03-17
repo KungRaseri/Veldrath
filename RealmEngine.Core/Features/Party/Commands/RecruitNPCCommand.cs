@@ -1,7 +1,7 @@
 using MediatR;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Party.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Party.Commands;
 
@@ -77,7 +77,7 @@ public class RecruitNPCHandler : IRequestHandler<RecruitNPCCommand, RecruitNPCRe
         var npc = saveGame.KnownNPCs.FirstOrDefault(n => n.Id == request.NpcId);
         if (npc == null)
         {
-            Log.Warning("Failed to recruit NPC: NPC {NpcId} not found", request.NpcId);
+            _logger.LogWarning("Failed to recruit NPC: NPC {NpcId} not found", request.NpcId);
             return Task.FromResult(new RecruitNPCResult
             {
                 Success = false,
@@ -88,7 +88,7 @@ public class RecruitNPCHandler : IRequestHandler<RecruitNPCCommand, RecruitNPCRe
         // Check if NPC is friendly
         if (!npc.IsFriendly)
         {
-            Log.Warning("Failed to recruit NPC: {Name} is not friendly", npc.Name);
+            _logger.LogWarning("Failed to recruit NPC: {Name} is not friendly", npc.Name);
             return Task.FromResult(new RecruitNPCResult
             {
                 Success = false,
@@ -100,7 +100,7 @@ public class RecruitNPCHandler : IRequestHandler<RecruitNPCCommand, RecruitNPCRe
         if (saveGame.Party == null)
         {
             saveGame.Party = _partyService.CreateParty(saveGame.Character);
-            Log.Information("Created new party for player {Name}", saveGame.Character.Name);
+            _logger.LogInformation("Created new party for player {Name}", saveGame.Character.Name);
         }
 
         // Recruit NPC
@@ -108,7 +108,7 @@ public class RecruitNPCHandler : IRequestHandler<RecruitNPCCommand, RecruitNPCRe
 
         if (!success)
         {
-            Log.Warning("Failed to recruit NPC: {Message}", errorMessage);
+            _logger.LogWarning("Failed to recruit NPC: {Message}", errorMessage);
             return Task.FromResult(new RecruitNPCResult
             {
                 Success = false,
@@ -122,7 +122,7 @@ public class RecruitNPCHandler : IRequestHandler<RecruitNPCCommand, RecruitNPCRe
         // Save
         _saveGameService.SaveGame(saveGame);
 
-        Log.Information("Successfully recruited {Name} to party (Role: {Role})", npc.Name, member.Role);
+        _logger.LogInformation("Successfully recruited {Name} to party (Role: {Role})", npc.Name, member.Role);
 
         return Task.FromResult(new RecruitNPCResult
         {

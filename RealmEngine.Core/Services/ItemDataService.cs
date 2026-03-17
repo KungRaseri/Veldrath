@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -28,12 +28,12 @@ public class ItemDataService
             using var db = _dbFactory.CreateDbContext();
             var items = QueryCategory(db, category, rarityFilter);
             _cache[cacheKey] = items;
-            Log.Information("Loaded {Count} items from {Category} catalog", items.Count, category);
+            _logger.LogInformation("Loaded {Count} items from {Category} catalog", items.Count, category);
             return items;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading catalog {Category}", category);
+            _logger.LogError(ex, "Error loading catalog {Category}", category);
             return [];
         }
     }

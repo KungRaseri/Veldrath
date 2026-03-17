@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Shared.Models;
@@ -68,11 +68,11 @@ public class SetDifficultyCommandHandler : IRequestHandler<SetDifficultyCommand,
             if (difficulty.IsApocalypse && _apocalypseTimer != null)
             {
                 _apocalypseTimer.Start();
-                Log.Information("Apocalypse mode started with {Minutes} minute time limit", 
+                _logger.LogInformation("Apocalypse mode started with {Minutes} minute time limit", 
                     difficulty.ApocalypseTimeLimitMinutes);
             }
 
-            Log.Information("Difficulty set to {Difficulty} for player {Player}", 
+            _logger.LogInformation("Difficulty set to {Difficulty} for player {Player}", 
                 difficulty.Name, saveGame.PlayerName);
 
             return Task.FromResult(new SetDifficultyResult
@@ -87,7 +87,7 @@ public class SetDifficultyCommandHandler : IRequestHandler<SetDifficultyCommand,
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error setting difficulty to {Difficulty}", request.DifficultyName);
+            _logger.LogError(ex, "Error setting difficulty to {Difficulty}", request.DifficultyName);
             return Task.FromResult(new SetDifficultyResult
             {
                 Success = false,

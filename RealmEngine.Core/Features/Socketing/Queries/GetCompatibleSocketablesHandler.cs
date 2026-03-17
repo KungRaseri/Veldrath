@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Queries;
 
@@ -28,7 +28,7 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
             // Note: In production, this would query the player's inventory or available socketables
             // For now, we return an empty list with proper structure
             
-            Log.Information("Querying compatible socketables for socket type {SocketType}", request.SocketType);
+            _logger.LogInformation("Querying compatible socketables for socket type {SocketType}", request.SocketType);
 
             // Example filtering logic (would query actual inventory in production):
             // 1. Filter by socket type compatibility
@@ -57,14 +57,14 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
             // AI-suggested items based on player stats/level (future enhancement)
             result.SuggestedItems = new List<SocketableItemDto>();
 
-            Log.Debug("Found {Count} compatible socketables for {SocketType}",
+            _logger.LogDebug("Found {Count} compatible socketables for {SocketType}",
                 result.TotalCount, request.SocketType);
 
             return Task.FromResult(result);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error querying compatible socketables");
+            _logger.LogError(ex, "Error querying compatible socketables");
             result.Success = false;
             return Task.FromResult(result);
         }

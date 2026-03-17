@@ -1,7 +1,7 @@
 using RealmEngine.Core.Abstractions;
 
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.Exploration.Commands;
@@ -44,13 +44,13 @@ public class TravelToLocationCommandHandler : IRequestHandler<TravelToLocationCo
 
             _gameState.UpdateLocation(request.Destination);
 
-            Log.Information("Player traveled to {Location}", _gameState.CurrentLocation);
+            _logger.LogInformation("Player traveled to {Location}", _gameState.CurrentLocation);
 
             return Task.FromResult(new TravelToLocationResult(true, NewLocation: _gameState.CurrentLocation));
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error traveling to location {Destination}", request.Destination);
+            _logger.LogError(ex, "Error traveling to location {Destination}", request.Destination);
             return Task.FromResult(new TravelToLocationResult(false, ErrorMessage: ex.Message));
         }
     }

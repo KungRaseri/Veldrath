@@ -3,7 +3,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Party.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Party.Commands;
 

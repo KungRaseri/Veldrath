@@ -1,5 +1,5 @@
 using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Abstractions;using Serilog;
+using RealmEngine.Core.Abstractions;using Microsoft.Extensions.Logging;
 
 using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Features.Achievements.Services;
@@ -59,7 +59,7 @@ public class AchievementService
         _saveGameService.SaveGame(saveGame);
 
         // Note: UI notification handled by Godot via achievement return value
-        Log.Information("Achievement unlocked: {AchievementId} - {Title}", achievementId, achievement.Title);
+        _logger.LogInformation("Achievement unlocked: {AchievementId} - {Title}", achievementId, achievement.Title);
 
         return await Task.FromResult(achievement);
     }

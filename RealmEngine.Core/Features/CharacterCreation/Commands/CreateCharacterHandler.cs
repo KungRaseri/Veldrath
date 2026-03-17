@@ -3,7 +3,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.Equipment.Queries;
 using RealmEngine.Core.Features.Exploration.Queries;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
@@ -39,7 +39,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             // Create the character with base stats from class
             var character = CreateCharacterFromClass(request.CharacterName, request.CharacterClass);
             
-            Log.Information("Created new character: {CharacterName} ({ClassName})", 
+            _logger.LogInformation("Created new character: {CharacterName} ({ClassName})", 
                 request.CharacterName, request.CharacterClass.Name);
 
             // Apply background bonuses if provided
@@ -60,7 +60,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             
             if (!abilitiesResult.Success)
             {
-                Log.Warning("Failed to initialize starting abilities for {CharacterName}: {Message}",
+                _logger.LogWarning("Failed to initialize starting abilities for {CharacterName}: {Message}",
                     request.CharacterName, abilitiesResult.Message);
             }
 
@@ -75,7 +75,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             
             if (!spellsResult.Success)
             {
-                Log.Warning("Failed to initialize starting spells for {CharacterName}: {Message}",
+                _logger.LogWarning("Failed to initialize starting spells for {CharacterName}: {Message}",
                     request.CharacterName, spellsResult.Message);
             }
 
@@ -95,7 +95,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 location = await AssignStartingLocation(character, request.StartingLocationId, cancellationToken);
             }
 
-            Log.Information("Character creation complete: {CharacterName} with {AbilityCount} abilities, {SpellCount} spells, {EquipmentCount} equipment items",
+            _logger.LogInformation("Character creation complete: {CharacterName} with {AbilityCount} abilities, {SpellCount} spells, {EquipmentCount} equipment items",
                 request.CharacterName, abilitiesResult.AbilitiesLearned, spellsResult.SpellsLearned, equipment.Count);
 
             return new CreateCharacterResult
@@ -112,7 +112,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating character {CharacterName}", request.CharacterName);
+            _logger.LogError(ex, "Error creating character {CharacterName}", request.CharacterName);
             return new CreateCharacterResult
             {
                 Character = null,
@@ -169,14 +169,14 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             var background = await _backgroundRepository.GetBackgroundByIdAsync(backgroundId);
             if (background == null)
             {
-                Log.Warning("Background not found: {BackgroundId}", backgroundId);
+                _logger.LogWarning("Background not found: {BackgroundId}", backgroundId);
                 return null;
             }
 
             background.ApplyBonuses(character);
             character.BackgroundId = background.GetBackgroundId();
             
-            Log.Information("Applied background {BackgroundName} to {CharacterName} ({PrimaryAttr}+{PrimaryBonus}, {SecondaryAttr}+{SecondaryBonus})",
+            _logger.LogInformation("Applied background {BackgroundName} to {CharacterName} ({PrimaryAttr}+{PrimaryBonus}, {SecondaryAttr}+{SecondaryBonus})",
                 background.Name, character.Name, 
                 background.PrimaryAttribute, background.PrimaryBonus,
                 background.SecondaryAttribute, background.SecondaryBonus);
@@ -185,7 +185,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error applying background {BackgroundId} to {CharacterName}", backgroundId, character.Name);
+            _logger.LogError(ex, "Error applying background {BackgroundId} to {CharacterName}", backgroundId, character.Name);
             return null;
         }
     }
@@ -220,7 +220,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             if (!equipmentResult.Success || equipmentResult.Weapons.Count == 0)
             {
-                Log.Warning("No equipment found for class {ClassName}", className);
+                _logger.LogWarning("No equipment found for class {ClassName}", className);
                 return selectedEquipment;
             }
 
@@ -234,7 +234,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             character.EquippedMainHand = weapon;
             character.Inventory.Add(weapon);
             selectedEquipment.Add(weapon);
-            Log.Information("Equipped weapon: {WeaponName} ({WeaponType})", weapon.Name, weapon.WeaponType);
+            _logger.LogInformation("Equipped weapon: {WeaponName} ({WeaponType})", weapon.Name, weapon.WeaponType);
 
             // Select armor if available (prefer specified type if provided)
             if (equipmentResult.Armor.Count > 0)
@@ -249,7 +249,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 EquipArmorToSlot(character, armor);
                 character.Inventory.Add(armor);
                 selectedEquipment.Add(armor);
-                Log.Information("Equipped armor: {ArmorName} ({ArmorType})", armor.Name, armor.ArmorType);
+                _logger.LogInformation("Equipped armor: {ArmorName} ({ArmorType})", armor.Name, armor.ArmorType);
             }
 
             // Optionally equip a shield if requested
@@ -263,7 +263,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                     character.EquippedOffHand = shield;
                     character.Inventory.Add(shield);
                     selectedEquipment.Add(shield);
-                    Log.Information("Equipped shield: {ShieldName}", shield.Name);
+                    _logger.LogInformation("Equipped shield: {ShieldName}", shield.Name);
                 }
             }
 
@@ -271,7 +271,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error selecting starting equipment for {CharacterName}", character.Name);
+            _logger.LogError(ex, "Error selecting starting equipment for {CharacterName}", character.Name);
             return selectedEquipment;
         }
     }
@@ -297,21 +297,21 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             if (location == null)
             {
-                Log.Warning("Starting location not found: {LocationId}", locationId);
+                _logger.LogWarning("Starting location not found: {LocationId}", locationId);
                 return null;
             }
 
             character.CurrentLocationId = location.Id;
             character.CurrentZone = location.Name;
             
-            Log.Information("Assigned starting location to {CharacterName}: {LocationName}", 
+            _logger.LogInformation("Assigned starting location to {CharacterName}: {LocationName}", 
                 character.Name, location.Name);
 
             return location;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error assigning starting location {LocationId} to {CharacterName}", 
+            _logger.LogError(ex, "Error assigning starting location {LocationId} to {CharacterName}", 
                 locationId, character.Name);
             return null;
         }

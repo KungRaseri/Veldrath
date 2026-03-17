@@ -2,7 +2,7 @@ using MediatR;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Reputation.Services;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Reputation.Commands;
 
@@ -125,7 +125,7 @@ public class LoseReputationHandler : IRequestHandler<LoseReputationCommand, Lose
             ? $"Your reputation with the faction has decreased to {newLevel}{reasonText}!"
             : $"You lost {request.Amount} reputation with the faction{reasonText}.";
 
-        Log.Warning("Player lost {Amount} reputation with {FactionId}: {OldLevel} -> {NewLevel}",
+        _logger.LogWarning("Player lost {Amount} reputation with {FactionId}: {OldLevel} -> {NewLevel}",
             request.Amount, request.FactionId, oldLevel, newLevel);
 
         return Task.FromResult(new LoseReputationResult

@@ -39,7 +39,7 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
     /// <inheritdoc/>
     public SaveGame? LoadGame(int slot)
     {
-        var record = _db.SaveGames.FirstOrDefault(s => s.SlotIndex == slot);
+        var record = _db.SaveGames.AsNoTracking().FirstOrDefault(s => s.SlotIndex == slot);
         return record is null ? null : FromRecord(record);
     }
 
@@ -53,7 +53,7 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
     /// <inheritdoc/>
     public SaveGame? GetMostRecent()
     {
-        var record = _db.SaveGames.OrderByDescending(s => s.SaveDate).FirstOrDefault();
+        var record = _db.SaveGames.AsNoTracking().OrderByDescending(s => s.SaveDate).FirstOrDefault();
         return record is null ? null : FromRecord(record);
     }
 

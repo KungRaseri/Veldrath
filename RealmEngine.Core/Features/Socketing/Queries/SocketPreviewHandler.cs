@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Queries;
 
@@ -85,7 +85,7 @@ public class SocketPreviewHandler : IRequestHandler<SocketPreviewQuery, SocketPr
                 //     result.Warnings.Add("This is a universal socket - can accept any socketable type");
                 // }
 
-                Log.Debug("Socket preview for {ItemName} at index {Index}: {CanSocket}",
+                _logger.LogDebug("Socket preview for {ItemName} at index {Index}: {CanSocket}",
                     request.SocketableItem.Name, request.SocketIndex, result.CanSocket);
             }
 
@@ -93,7 +93,7 @@ public class SocketPreviewHandler : IRequestHandler<SocketPreviewQuery, SocketPr
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error during socket preview");
+            _logger.LogError(ex, "Error during socket preview");
             result.CanSocket = false;
             result.Message = $"Preview failed: {ex.Message}";
             return Task.FromResult(result);

@@ -1,7 +1,7 @@
 using MediatR;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Crafting.Commands;
 
@@ -35,7 +35,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
             // Validate that the character can craft this recipe
             if (!_craftingService.CanCraftRecipe(request.Character, request.Recipe, out var failureReason))
             {
-                Log.Warning("Crafting failed for {CharacterName}: {Reason}", 
+                _logger.LogWarning("Crafting failed for {CharacterName}: {Reason}", 
                     request.Character.Name, failureReason);
                 
                 return new CraftRecipeResult
@@ -60,7 +60,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
             // Calculate item quality
             var quality = _craftingService.CalculateQuality(request.Character, request.Recipe);
             
-            Log.Information("Crafting {RecipeName} for {CharacterName} with quality {Quality}", 
+            _logger.LogInformation("Crafting {RecipeName} for {CharacterName} with quality {Quality}", 
                 request.Recipe.Name, request.Character.Name, quality);
 
             // Consume materials
@@ -77,7 +77,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
             var skillName = GetCraftingSkillForStation(request.Recipe.RequiredStation);
             var xpGained = AwardSkillXp(request.Character, skillName, request.Recipe.ExperienceGained);
 
-            Log.Information("Successfully crafted {ItemName} (quality {Quality}) for {CharacterName}. {SkillName} +{XpGained} XP",
+            _logger.LogInformation("Successfully crafted {ItemName} (quality {Quality}) for {CharacterName}. {SkillName} +{XpGained} XP",
                 craftedItem.Name, quality, request.Character.Name, skillName, xpGained);
 
             return await Task.FromResult(new CraftRecipeResult
@@ -92,7 +92,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error crafting recipe {RecipeName} for {CharacterName}", 
+            _logger.LogError(ex, "Error crafting recipe {RecipeName} for {CharacterName}", 
                 request.Recipe.Name, request.Character.Name);
             
             return new CraftRecipeResult
@@ -261,7 +261,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
 
         if (levelUps > 0)
         {
-            Log.Information("{CharacterName} gained {LevelUps} {SkillName} level(s)! Now level {NewLevel}",
+            _logger.LogInformation("{CharacterName} gained {LevelUps} {SkillName} level(s)! Now level {NewLevel}",
                 character.Name, levelUps, skillName, skill.CurrentRank);
         }
 

@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Reputation.Services;
 
@@ -29,7 +29,7 @@ public class ReputationService
         };
 
         saveGame.FactionReputations[factionId] = newStanding;
-        Log.Information("Created new reputation standing with faction {FactionId} at Neutral", factionId);
+        _logger.LogInformation("Created new reputation standing with faction {FactionId} at Neutral", factionId);
 
         return newStanding;
     }
@@ -52,7 +52,7 @@ public class ReputationService
 
         if (newLevel != previousLevel)
         {
-            Log.Information("Reputation with {FactionId} changed from {OldLevel} to {NewLevel}",
+            _logger.LogInformation("Reputation with {FactionId} changed from {OldLevel} to {NewLevel}",
                 factionId, previousLevel, newLevel);
         }
 
@@ -77,7 +77,7 @@ public class ReputationService
 
         if (newLevel != previousLevel)
         {
-            Log.Warning("Reputation with {FactionId} decreased from {OldLevel} to {NewLevel}",
+            _logger.LogWarning("Reputation with {FactionId} decreased from {OldLevel} to {NewLevel}",
                 factionId, previousLevel, newLevel);
         }
 

@@ -1,6 +1,6 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.Progression.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -54,7 +54,7 @@ public class ReactiveAbilityService
                     continue;
 
                 // Trigger the ability
-                Log.Information("Reactive ability triggered: {AbilityName} ({Trigger})", ability.DisplayName, trigger);
+                _logger.LogInformation("Reactive ability triggered: {AbilityName} ({Trigger})", ability.DisplayName, trigger);
                 combatLog?.AddEntry($"[cyan]{ability.DisplayName}[/] activated! ({ability.Description})");
 
                 // Apply cooldown

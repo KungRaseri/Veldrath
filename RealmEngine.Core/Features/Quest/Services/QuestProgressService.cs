@@ -1,5 +1,5 @@
 using RealmEngine.Core.Features.SaveLoad;
-using Serilog;
+using Microsoft.Extensions.Logging;
 namespace RealmEngine.Core.Features.Quests.Services;
 
 /// <summary>
@@ -51,7 +51,7 @@ public class QuestProgressService
 
         _saveGameService.SaveGame(saveGame);
 
-        Log.Debug("Quest progress updated: {QuestId}/{ObjectiveId} = {Current}/{Required}",
+        _logger.LogDebug("Quest progress updated: {QuestId}/{ObjectiveId} = {Current}/{Required}",
             questId, objectiveId, quest.ObjectiveProgress[objectiveId], required);
 
         return await Task.FromResult((true, objectiveCompleted, questCompleted));

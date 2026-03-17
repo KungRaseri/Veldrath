@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -34,7 +34,7 @@ public class SortInventoryHandler : IRequestHandler<SortInventoryCommand, SortIn
             player.Inventory.Add(item);
         }
 
-        Log.Information("Player {PlayerName} sorted inventory by {SortCriteria}",
+        _logger.LogInformation("Player {PlayerName} sorted inventory by {SortCriteria}",
             player.Name, sortBy);
 
         return Task.FromResult(new SortInventoryResult

@@ -1,7 +1,7 @@
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.SaveLoad;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Exploration;
 
@@ -40,7 +40,7 @@ public class GameplayService
         player.Health = player.MaxHealth;
         player.Mana = player.MaxMana;
 
-        Log.Information("Player {PlayerName} rested. HP: +{HP}, Mana: +{Mana}",
+        _logger.LogInformation("Player {PlayerName} rested. HP: +{HP}, Mana: +{Mana}",
             player.Name, healthRecovered, manaRecovered);
 
         return new RestResult
@@ -68,13 +68,13 @@ public class GameplayService
         try
         {
             _saveGameService.SaveGame(player, inventory, currentSaveId);
-            Log.Information("Game saved for player {PlayerName}", player.Name);
+            _logger.LogInformation("Game saved for player {PlayerName}", player.Name);
             
             return new SaveResult { Success = true };
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to save game for {PlayerName}", player.Name);
+            _logger.LogError(ex, "Failed to save game for {PlayerName}", player.Name);
             return new SaveResult { Success = false, ErrorMessage = ex.Message };
         }
     }

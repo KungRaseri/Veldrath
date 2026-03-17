@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -24,7 +24,7 @@ public class DropItemHandler : IRequestHandler<DropItemCommand, DropItemResult>
 
         if (removed)
         {
-            Log.Information("Player {PlayerName} dropped {ItemName}",
+            _logger.LogInformation("Player {PlayerName} dropped {ItemName}",
                 player.Name, item.Name);
 
             return Task.FromResult(new DropItemResult

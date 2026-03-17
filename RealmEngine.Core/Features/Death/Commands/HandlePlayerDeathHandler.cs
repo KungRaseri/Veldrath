@@ -2,7 +2,7 @@ using RealmEngine.Core.Abstractions;using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Abstractions;
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Death.Commands;
 
@@ -46,7 +46,7 @@ public class HandlePlayerDeathHandler : IRequestHandler<HandlePlayerDeathCommand
 
         if (saveGame == null)
         {
-            Log.Error("No active save game found during death handling");
+            _logger.LogError("No active save game found during death handling");
             return new HandlePlayerDeathResult
             {
                 IsPermadeath = false,
@@ -56,7 +56,7 @@ public class HandlePlayerDeathHandler : IRequestHandler<HandlePlayerDeathCommand
 
         var difficulty = _saveGameService.GetDifficultySettings();
 
-        Log.Warning("Player death at {Location}. Difficulty: {Difficulty}, Death count: {DeathCount}",
+        _logger.LogWarning("Player death at {Location}. Difficulty: {Difficulty}, Death count: {DeathCount}",
             location, difficulty.Name, saveGame.DeathCount + 1);
 
         // Record death in save

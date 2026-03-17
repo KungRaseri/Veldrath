@@ -25,7 +25,7 @@ public class DeleteSaveHandlerTests : IDisposable
         _mockConsoleUI = new Mock<IGameUI>();
         _mockApocalypseTimer = new Mock<IApocalypseTimer>();
         var repository = new InMemorySaveGameRepository();
-        _saveGameService = new SaveGameService(repository, _mockApocalypseTimer.Object);
+        _saveGameService = new SaveGameService(repository, _mockApocalypseTimer.Object, NullLogger<SaveGameService>.Instance);
     }
 
     [Fact]
