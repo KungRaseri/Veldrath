@@ -12,9 +12,11 @@ namespace RealmEngine.Data.Services;
 /// SaveGameId scoping is not yet threaded through the interface; uses an empty string so
 /// uniqueness is maintained per (characterName, itemRef) globally until save-game context is wired.
 /// </summary>
-public class EfCoreInventoryService(GameDbContext db, ILogger<EfCoreInventoryService> logger) : IInventoryService
+public class EfCoreInventoryService(
+    GameDbContext db,
+    ISaveGameContext saveGameContext,
+    ILogger<EfCoreInventoryService> logger) : IInventoryService
 {
-    private const string DefaultSaveGameId = "";
 
     /// <inheritdoc />
     public async Task<bool> AddItemsAsync(string characterName, List<ItemDrop> items)
@@ -28,17 +30,18 @@ public class EfCoreInventoryService(GameDbContext db, ILogger<EfCoreInventorySer
     /// <inheritdoc />
     public async Task<bool> AddItemAsync(string characterName, string itemRef, int quantity)
     {
+        var saveGameId = saveGameContext.SaveGameId;
         try
         {
             var record = await db.InventoryRecords
-                .FirstOrDefaultAsync(r => r.SaveGameId == DefaultSaveGameId
+                .FirstOrDefaultAsync(r => r.SaveGameId == saveGameId
                                        && r.CharacterName == characterName
                                        && r.ItemRef == itemRef);
             if (record is null)
             {
                 db.InventoryRecords.Add(new InventoryRecord
                 {
-                    SaveGameId = DefaultSaveGameId,
+                    SaveGameId = saveGameId,
                     CharacterName = characterName,
                     ItemRef = itemRef,
                     Quantity = quantity,
@@ -66,16 +69,18 @@ public class EfCoreInventoryService(GameDbContext db, ILogger<EfCoreInventorySer
     public async Task<bool> HasInventorySpaceAsync(string characterName, int itemCount)
     {
         const int maxSlots = 100;
+        var saveGameId = saveGameContext.SaveGameId;
         var currentSlots = await db.InventoryRecords
-            .CountAsync(r => r.SaveGameId == DefaultSaveGameId && r.CharacterName == characterName);
+            .CountAsync(r => r.SaveGameId == saveGameId && r.CharacterName == characterName);
         return currentSlots + itemCount <= maxSlots;
     }
 
     /// <inheritdoc />
     public async Task<int> GetItemCountAsync(string characterName, string itemRef)
     {
+        var saveGameId = saveGameContext.SaveGameId;
         var record = await db.InventoryRecords.AsNoTracking()
-            .FirstOrDefaultAsync(r => r.SaveGameId == DefaultSaveGameId
+            .FirstOrDefaultAsync(r => r.SaveGameId == saveGameId
                                    && r.CharacterName == characterName
                                    && r.ItemRef == itemRef);
         return record?.Quantity ?? 0;
@@ -84,10 +89,11 @@ public class EfCoreInventoryService(GameDbContext db, ILogger<EfCoreInventorySer
     /// <inheritdoc />
     public async Task<bool> RemoveItemAsync(string characterName, string itemRef, int quantity)
     {
+        var saveGameId = saveGameContext.SaveGameId;
         try
         {
             var record = await db.InventoryRecords
-                .FirstOrDefaultAsync(r => r.SaveGameId == DefaultSaveGameId
+                .FirstOrDefaultAsync(r => r.SaveGameId == saveGameId
                                        && r.CharacterName == characterName
                                        && r.ItemRef == itemRef);
 

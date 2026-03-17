@@ -379,6 +379,27 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("ClassAbilityUnlocks");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ClassSpellUnlock", b =>
+                {
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SpellId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("LevelRequired")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ClassId", "SpellId");
+
+                    b.HasIndex("SpellId");
+
+                    b.ToTable("ClassSpellUnlocks");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.ContentRegistry", b =>
                 {
                     b.Property<string>("Domain")
@@ -498,6 +519,53 @@ namespace RealmEngine.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Enchantments");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.EquipmentSetEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TypeKey");
+
+                    b.HasIndex("TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("EquipmentSets");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.GameConfig", b =>
@@ -1827,6 +1895,25 @@ namespace RealmEngine.Data.Migrations
                     b.Navigation("Class");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ClassSpellUnlock", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.ActorClass", "Class")
+                        .WithMany("SpellUnlocks")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmEngine.Data.Entities.Spell", "Spell")
+                        .WithMany()
+                        .HasForeignKey("SpellId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Spell");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.Dialogue", b =>
                 {
                     b.OwnsOne("RealmEngine.Data.Entities.DialogueStats", "Stats", b1 =>
@@ -1943,6 +2030,65 @@ namespace RealmEngine.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Traits")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.EquipmentSetEntry", b =>
+                {
+                    b.OwnsOne("RealmEngine.Data.Entities.EquipmentSetData", "Data", b1 =>
+                        {
+                            b1.Property<Guid>("EquipmentSetEntryId");
+
+                            b1.PrimitiveCollection<string>("ItemSlugs")
+                                .IsRequired();
+
+                            b1.HasKey("EquipmentSetEntryId");
+
+                            b1.ToTable("EquipmentSets");
+
+                            b1.ToJson("Data");
+
+                            b1.WithOwner()
+                                .HasForeignKey("EquipmentSetEntryId");
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.EquipmentSetBonus", "Bonuses", b2 =>
+                                {
+                                    b2.Property<Guid>("EquipmentSetDataEquipmentSetEntryId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<int>("BonusCharisma");
+
+                                    b2.Property<int>("BonusConstitution");
+
+                                    b2.Property<int>("BonusDexterity");
+
+                                    b2.Property<int>("BonusIntelligence");
+
+                                    b2.Property<int>("BonusStrength");
+
+                                    b2.Property<int>("BonusWisdom");
+
+                                    b2.Property<string>("Description")
+                                        .IsRequired();
+
+                                    b2.Property<int>("PiecesRequired");
+
+                                    b2.Property<string>("SpecialEffect");
+
+                                    b2.HasKey("EquipmentSetDataEquipmentSetEntryId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("EquipmentSets");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("EquipmentSetDataEquipmentSetEntryId");
+                                });
+
+                            b1.Navigation("Bonuses");
+                        });
+
+                    b.Navigation("Data")
                         .IsRequired();
                 });
 
@@ -2812,6 +2958,8 @@ namespace RealmEngine.Data.Migrations
                     b.Navigation("AbilityUnlocks");
 
                     b.Navigation("Archetypes");
+
+                    b.Navigation("SpellUnlocks");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.ActorInstance", b =>
