@@ -64,14 +64,14 @@ public class EncounterNPCCommandHandler : IRequestHandler<EncounterNPCCommand, E
                 availableActions.Insert(1, "Trade");
             }
 
-            // Check for quest giver trait (future)
-            if (npc.Traits.ContainsKey("isQuestGiver"))
+            // Check for quest giver trait
+            if (npc.Traits.ContainsKey("isQuestGiver") && npc.Traits["isQuestGiver"].AsBool())
             {
                 availableActions.Insert(1, "Quest");
             }
 
-            // Check for trainer trait (future)
-            if (npc.Traits.ContainsKey("isTrainer"))
+            // Check for trainer trait
+            if (npc.Traits.ContainsKey("isTrainer") && npc.Traits["isTrainer"].AsBool())
             {
                 availableActions.Insert(1, "Train");
             }
