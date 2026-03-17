@@ -1,5 +1,5 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -93,15 +93,16 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
     public bool SaveExists(int slot) => _db.SaveGames.Any(s => s.SlotIndex == slot);
 
     // ── helpers ──────────────────────────────────────────────────────────────
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static SaveGameRecord ToRecord(SaveGame sg) => new()
     {
         Id         = sg.Id,
         PlayerName = sg.PlayerName,
         SaveDate   = sg.SaveDate,
-        DataJson   = JsonConvert.SerializeObject(sg),
+        DataJson   = JsonSerializer.Serialize(sg),
     };
 
     private static SaveGame FromRecord(SaveGameRecord r) =>
-        JsonConvert.DeserializeObject<SaveGame>(r.DataJson) ?? new SaveGame { Id = r.Id };
+        JsonSerializer.Deserialize<SaveGame>(r.DataJson, _jsonOptions) ?? new SaveGame { Id = r.Id };
 }
