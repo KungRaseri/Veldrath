@@ -1,6 +1,6 @@
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Quests.Services;
 
@@ -29,21 +29,21 @@ public class QuestRewardService
         if (quest.XpReward > 0)
         {
             character.Experience += quest.XpReward;
-            Log.Information("Quest reward: {XP} experience awarded", quest.XpReward);
+            _logger.LogInformation("Quest reward: {XP} experience awarded", quest.XpReward);
         }
 
         // Award gold
         if (quest.GoldReward > 0)
         {
             character.Gold += quest.GoldReward;
-            Log.Information("Quest reward: {Gold} gold awarded", quest.GoldReward);
+            _logger.LogInformation("Quest reward: {Gold} gold awarded", quest.GoldReward);
         }
 
         // Award apocalypse bonus time
         if (quest.ApocalypseBonusMinutes > 0 && saveGame.ApocalypseMode)
         {
             saveGame.ApocalypseBonusMinutes += quest.ApocalypseBonusMinutes;
-            Log.Information("Quest reward: {Minutes} minutes added to Apocalypse timer", quest.ApocalypseBonusMinutes);
+            _logger.LogInformation("Quest reward: {Minutes} minutes added to Apocalypse timer", quest.ApocalypseBonusMinutes);
         }
 
         // Award items (note: item references are in v4.1 format like "@items/weapons/swords:iron-longsword")
@@ -52,7 +52,7 @@ public class QuestRewardService
         {
             foreach (var itemRef in quest.ItemRewardIds)
             {
-                Log.Information("Quest reward: Item reference '{ItemRef}' granted", itemRef);
+                _logger.LogInformation("Quest reward: Item reference '{ItemRef}' granted", itemRef);
                 // Note: Actual item generation from references requires ItemGenerator integration
                 // For now, add a placeholder item to indicate quest reward was granted
                 character.Inventory.Add(new Item

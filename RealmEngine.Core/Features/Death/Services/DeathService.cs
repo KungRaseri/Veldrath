@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Death;
 
@@ -33,7 +33,7 @@ public class DeathService
             droppedItems.AddRange(player.Inventory);
             player.Inventory.Clear();
 
-            Log.Information("Dropped all {Count} items at {Location}", droppedItems.Count, location);
+            _logger.LogInformation("Dropped all {Count} items at {Location}", droppedItems.Count, location);
         }
         // Drop random items
         else
@@ -51,7 +51,7 @@ public class DeathService
                 player.Inventory.RemoveAt(randomIndex);
             }
 
-            Log.Information("Dropped {Count} random items at {Location}", droppedItems.Count, location);
+            _logger.LogInformation("Dropped {Count} random items at {Location}", droppedItems.Count, location);
         }
 
         // Store dropped items in save game

@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Queries;
 
@@ -80,14 +80,14 @@ public class GetSocketCostHandler : IRequestHandler<GetSocketCostQuery, SocketCo
             result.CanAfford = true; // Default - UI would override with actual player gold check
             result.PlayerGold = 0; // Would be populated from game state
 
-            Log.Debug("Socket cost calculated: {CostType} at index {Index} = {Cost}g",
+            _logger.LogDebug("Socket cost calculated: {CostType} at index {Index} = {Cost}g",
                 request.CostType, request.SocketIndex, result.GoldCost);
 
             return Task.FromResult(result);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error calculating socket cost");
+            _logger.LogError(ex, "Error calculating socket cost");
             result.Success = false;
             result.CostDescription = $"Cost calculation failed: {ex.Message}";
             return Task.FromResult(result);

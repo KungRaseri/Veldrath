@@ -2,7 +2,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Data.Services;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Core.Generators.Modern;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -54,7 +54,7 @@ public class ShopEconomyService
         if (!_shopInventories.ContainsKey(npcId))
         {
             _shopInventories[npcId] = CreateInitialInventory(npc);
-            Log.Information("Created initial inventory for merchant {MerchantName}", npc.Name);
+            _logger.LogInformation("Created initial inventory for merchant {MerchantName}", npc.Name);
         }
 
         // Check if daily refresh is needed
@@ -146,7 +146,7 @@ public class ShopEconomyService
 
         if (!acceptsPlayerItems)
         {
-            Log.Warning("Merchant {MerchantName} does not accept player items", merchant.Name);
+            _logger.LogWarning("Merchant {MerchantName} does not accept player items", merchant.Name);
             return false;
         }
 
@@ -156,7 +156,7 @@ public class ShopEconomyService
         // Check merchant gold
         if (merchant.Gold < pricePaid)
         {
-            Log.Warning("Merchant {MerchantName} cannot afford item (has {Gold}, needs {Price})",
+            _logger.LogWarning("Merchant {MerchantName} cannot afford item (has {Gold}, needs {Price})",
                 merchant.Name, merchant.Gold, pricePaid);
             return false;
         }
@@ -175,7 +175,7 @@ public class ShopEconomyService
         // Deduct gold from merchant
         merchant.Gold -= pricePaid;
 
-        Log.Information("Merchant {MerchantName} bought {ItemName} from player for {Price}g",
+        _logger.LogInformation("Merchant {MerchantName} bought {ItemName} from player for {Price}g",
             merchant.Name, item.Name, pricePaid);
 
         return true;
@@ -199,7 +199,7 @@ public class ShopEconomyService
         if (coreItem != null)
         {
             // Core items have unlimited quantity
-            Log.Information("Merchant {MerchantName} sold core item {ItemName} to player for {Price}g",
+            _logger.LogInformation("Merchant {MerchantName} sold core item {ItemName} to player for {Price}g",
                 merchant.Name, item.Name, priceCharged);
             return true;
         }
@@ -209,7 +209,7 @@ public class ShopEconomyService
         if (dynamicItem != null)
         {
             inventory.DynamicItems.Remove(dynamicItem);
-            Log.Information("Merchant {MerchantName} sold dynamic item {ItemName} to player for {Price}g",
+            _logger.LogInformation("Merchant {MerchantName} sold dynamic item {ItemName} to player for {Price}g",
                 merchant.Name, item.Name, priceCharged);
             return true;
         }
@@ -220,12 +220,12 @@ public class ShopEconomyService
         {
             priceCharged = playerItem.ResellPrice;
             inventory.PlayerSoldItems.Remove(playerItem);
-            Log.Information("Merchant {MerchantName} sold player item {ItemName} to player for {Price}g",
+            _logger.LogInformation("Merchant {MerchantName} sold player item {ItemName} to player for {Price}g",
                 merchant.Name, item.Name, priceCharged);
             return true;
         }
 
-        Log.Warning("Item {ItemName} not found in merchant {MerchantName} inventory",
+        _logger.LogWarning("Item {ItemName} not found in merchant {MerchantName} inventory",
             item.Name, merchant.Name);
         return false;
     }
@@ -248,7 +248,7 @@ public class ShopEconomyService
             // Apply decay to player-sold items
             ApplyPlayerItemDecay(inventory);
 
-            Log.Information("Refreshed inventory for merchant {MerchantName}", merchant.Name);
+            _logger.LogInformation("Refreshed inventory for merchant {MerchantName}", merchant.Name);
         }
     }
 
@@ -270,7 +270,7 @@ public class ShopEconomyService
         
         inventory.CoreItems = GenerateCoreInventory(shopType, coreItemCount);
         
-        Log.Information("Created initial inventory for {MerchantName} ({ShopType}) with {CoreCount} core items",
+        _logger.LogInformation("Created initial inventory for {MerchantName} ({ShopType}) with {CoreCount} core items",
             npc.Name, shopType, inventory.CoreItems.Count);
 
         return inventory;
@@ -292,7 +292,7 @@ public class ShopEconomyService
 
         inventory.LastRefresh = DateTime.UtcNow.Date;
         
-        Log.Information("Refreshed dynamic inventory for {MerchantName} with {DynamicCount} items",
+        _logger.LogInformation("Refreshed dynamic inventory for {MerchantName} with {DynamicCount} items",
             merchant.Name, inventory.DynamicItems.Count);
     }
 
@@ -318,7 +318,7 @@ public class ShopEconomyService
             if (playerItem.DaysRemaining == 0)
             {
                 itemsToRemove.Add(playerItem);
-                Log.Information("Player item {ItemName} expired from inventory", playerItem.Item.Name);
+                _logger.LogInformation("Player item {ItemName} expired from inventory", playerItem.Item.Name);
             }
         }
 
@@ -497,7 +497,7 @@ public class ShopEconomyService
         
         if (templates.Count == 0)
         {
-            Log.Warning("No item templates available for selection");
+            _logger.LogWarning("No item templates available for selection");
             return selectedItems;
         }
 

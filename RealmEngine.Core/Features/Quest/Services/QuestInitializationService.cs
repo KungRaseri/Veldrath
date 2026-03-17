@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Quests.Services;
 
@@ -32,11 +32,11 @@ public class QuestInitializationService
             // Add to available quests (player can accept it when ready)
             saveGame.AvailableQuests.Add(firstQuest);
             
-            Log.Information("Initialized starting quest: {QuestTitle}", firstQuest.Title);
+            _logger.LogInformation("Initialized starting quest: {QuestTitle}", firstQuest.Title);
         }
         else
         {
-            Log.Warning("Failed to load starting quest 'main_01_awakening'");
+            _logger.LogWarning("Failed to load starting quest 'main_01_awakening'");
         }
     }
 
@@ -68,7 +68,7 @@ public class QuestInitializationService
                 if (allPrerequisitesMet)
                 {
                     saveGame.AvailableQuests.Add(quest);
-                    Log.Information("Unlocked new quest: {QuestTitle} (prerequisite {PrereqId} completed)",
+                    _logger.LogInformation("Unlocked new quest: {QuestTitle} (prerequisite {PrereqId} completed)",
                         quest.Title, completedQuestId);
                 }
             }

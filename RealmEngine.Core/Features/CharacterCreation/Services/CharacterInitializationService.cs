@@ -2,7 +2,7 @@ using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Services;
 
@@ -46,7 +46,7 @@ public class CharacterInitializationService
         
         if (startingAbilityIds.Count == 0)
         {
-            Log.Warning("No starting abilities defined for class {ClassName}", character.ClassName);
+            _logger.LogWarning("No starting abilities defined for class {ClassName}", character.ClassName);
             return 0;
         }
 
@@ -66,18 +66,18 @@ public class CharacterInitializationService
                 if (result.Success)
                 {
                     abilitiesLearned++;
-                    Log.Information("Character {CharacterName} learned starting ability: {AbilityId}", 
+                    _logger.LogInformation("Character {CharacterName} learned starting ability: {AbilityId}", 
                         character.Name, abilityId);
                 }
                 else
                 {
-                    Log.Warning("Failed to learn starting ability {AbilityId} for {CharacterName}: {Message}",
+                    _logger.LogWarning("Failed to learn starting ability {AbilityId} for {CharacterName}: {Message}",
                         abilityId, character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error learning starting ability {AbilityId} for {CharacterName}", 
+                _logger.LogError(ex, "Error learning starting ability {AbilityId} for {CharacterName}", 
                     abilityId, character.Name);
             }
         }
@@ -101,7 +101,7 @@ public class CharacterInitializationService
         if (startingSpellIds.Count == 0)
         {
             // Not all classes are spellcasters
-            Log.Debug("No starting spells for class {ClassName} (non-spellcaster)", character.ClassName);
+            _logger.LogDebug("No starting spells for class {ClassName} (non-spellcaster)", character.ClassName);
             return 0;
         }
 
@@ -121,18 +121,18 @@ public class CharacterInitializationService
                 if (result.Success)
                 {
                     spellsLearned++;
-                    Log.Information("Character {CharacterName} learned starting spell: {SpellId}", 
+                    _logger.LogInformation("Character {CharacterName} learned starting spell: {SpellId}", 
                         character.Name, spellId);
                 }
                 else
                 {
-                    Log.Warning("Failed to learn starting spell {SpellId} for {CharacterName}: {Message}",
+                    _logger.LogWarning("Failed to learn starting spell {SpellId} for {CharacterName}: {Message}",
                         spellId, character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error learning starting spell {SpellId} for {CharacterName}", 
+                _logger.LogError(ex, "Error learning starting spell {SpellId} for {CharacterName}", 
                     spellId, character.Name);
             }
         }

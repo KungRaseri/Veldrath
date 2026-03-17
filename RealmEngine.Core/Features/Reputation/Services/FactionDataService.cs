@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Reputation.Services;
 
@@ -41,12 +41,12 @@ public class FactionDataService
                 EnemyFactionIds = [],
             }).ToList();
 
-            Log.Information("Loaded {Count} factions from database", _cachedFactions.Count);
+            _logger.LogInformation("Loaded {Count} factions from database", _cachedFactions.Count);
             return _cachedFactions;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to load factions from database");
+            _logger.LogError(ex, "Failed to load factions from database");
             return [];
         }
     }

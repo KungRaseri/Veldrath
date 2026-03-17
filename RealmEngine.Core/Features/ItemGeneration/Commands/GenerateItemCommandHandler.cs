@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
 
 namespace RealmEngine.Core.Features.ItemGeneration.Commands;
@@ -54,7 +54,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
                     };
                 }
 
-                Log.Debug("Generated budget item: {ItemName} (Budget: {Budget})", 
+                _logger.LogDebug("Generated budget item: {ItemName} (Budget: {Budget})", 
                     item.Name, request.BudgetRequest.ItemCategory);
 
                 return new GenerateItemResult
@@ -78,7 +78,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
 
             var generatedItem = items[0];
             
-            Log.Debug("Generated item: {ItemName} from category {Category}", 
+            _logger.LogDebug("Generated item: {ItemName} from category {Category}", 
                 generatedItem.Name, request.Category);
 
             return new GenerateItemResult
@@ -89,7 +89,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error generating item from category {Category}", request.Category);
+            _logger.LogError(ex, "Error generating item from category {Category}", request.Category);
             return new GenerateItemResult
             {
                 Success = false,

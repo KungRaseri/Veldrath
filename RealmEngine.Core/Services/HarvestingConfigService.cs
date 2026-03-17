@@ -1,7 +1,7 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using RealmEngine.Data.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -32,7 +32,7 @@ public class HarvestingConfigService
 
         if (json == null)
         {
-            Log.Warning("Harvesting config not found in database, using defaults");
+            _logger.LogWarning("Harvesting config not found in database, using defaults");
             return GetDefaultConfig();
         }
 
@@ -40,12 +40,12 @@ public class HarvestingConfigService
         {
             var doc = JsonSerializer.Deserialize<HarvestingConfigDoc>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             _cachedConfig = MapToConfig(doc);
-            Log.Information("Loaded harvesting configuration from file");
+            _logger.LogInformation("Loaded harvesting configuration from file");
             return _cachedConfig;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading harvesting config, using defaults");
+            _logger.LogError(ex, "Error loading harvesting config, using defaults");
             return GetDefaultConfig();
         }
     }

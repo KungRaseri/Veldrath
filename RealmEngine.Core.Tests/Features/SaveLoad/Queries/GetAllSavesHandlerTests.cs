@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.SaveLoad.Queries;
 using RealmEngine.Shared.Models;
@@ -23,7 +24,7 @@ public class GetAllSavesHandlerTests : IDisposable
     {
         _mockConsoleUI = new Mock<IGameUI>();
         _mockApocalypseTimer = new Mock<IApocalypseTimer>();
-        _saveGameService = new SaveGameService(new InMemorySaveGameRepository(), _mockApocalypseTimer.Object);
+        _saveGameService = new SaveGameService(new InMemorySaveGameRepository(), _mockApocalypseTimer.Object, NullLogger<SaveGameService>.Instance);
     }
 
     [Fact]

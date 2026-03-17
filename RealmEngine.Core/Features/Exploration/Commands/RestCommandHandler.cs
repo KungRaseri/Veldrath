@@ -1,7 +1,7 @@
 using RealmEngine.Core.Abstractions;
 
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.Exploration.Commands;
@@ -45,7 +45,7 @@ public class RestCommandHandler : IRequestHandler<RestCommand, RestResult>
             player.Health = player.MaxHealth;
             player.Mana = player.MaxMana;
 
-            Log.Information("Player {PlayerName} rested", player.Name);
+            _logger.LogInformation("Player {PlayerName} rested", player.Name);
 
             return Task.FromResult(new RestResult(
                 Success: true,
@@ -55,7 +55,7 @@ public class RestCommandHandler : IRequestHandler<RestCommand, RestResult>
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error during rest");
+            _logger.LogError(ex, "Error during rest");
             return Task.FromResult(new RestResult(false, ErrorMessage: ex.Message));
         }
     }

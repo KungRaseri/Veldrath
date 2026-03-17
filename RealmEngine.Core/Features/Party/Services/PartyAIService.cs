@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Party.Services;
 
@@ -150,7 +150,7 @@ public class PartyAIService
         if (action.HealTarget == "Leader")
         {
             leader.Health = Math.Min(leader.Health + action.HealAmount, leader.MaxHealth);
-            Log.Information("Leader {Name} healed for {Amount} HP", leader.Name, action.HealAmount);
+            _logger.LogInformation("Leader {Name} healed for {Amount} HP", leader.Name, action.HealAmount);
         }
         else
         {
@@ -158,7 +158,7 @@ public class PartyAIService
             if (ally != null)
             {
                 ally.Heal(action.HealAmount);
-                Log.Information("Ally {Name} healed for {Amount} HP", ally.Name, action.HealAmount);
+                _logger.LogInformation("Ally {Name} healed for {Amount} HP", ally.Name, action.HealAmount);
             }
         }
     }

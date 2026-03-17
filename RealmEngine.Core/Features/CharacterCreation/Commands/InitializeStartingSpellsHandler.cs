@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
@@ -37,7 +37,7 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
         if (startingSpells.Count == 0)
         {
             // Not all classes are spellcasters
-            Log.Debug("No starting spells for class {ClassName} (non-spellcaster)", request.ClassName);
+            _logger.LogDebug("No starting spells for class {ClassName} (non-spellcaster)", request.ClassName);
             return new InitializeStartingSpellsResult
             {
                 Success = true,
@@ -63,18 +63,18 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
                 {
                     spellsLearned++;
                     spellIds.Add(spellId);
-                    Log.Information("Character {CharacterName} learned starting spell: {SpellId}", 
+                    _logger.LogInformation("Character {CharacterName} learned starting spell: {SpellId}", 
                         request.Character.Name, spellId);
                 }
                 else
                 {
-                    Log.Warning("Failed to learn starting spell {SpellId} for {CharacterName}: {Message}",
+                    _logger.LogWarning("Failed to learn starting spell {SpellId} for {CharacterName}: {Message}",
                         spellId, request.Character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error learning starting spell {SpellId} for {CharacterName}", 
+                _logger.LogError(ex, "Error learning starting spell {SpellId} for {CharacterName}", 
                     spellId, request.Character.Name);
             }
         }

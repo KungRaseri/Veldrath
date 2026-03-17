@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Queries;
 
@@ -22,7 +22,7 @@ public class GetSocketInfoHandler : IRequestHandler<GetSocketInfoQuery, SocketIn
             // This is a query-only handler demonstrating the socket inspection system
             // Integration with item management would happen at UI/command layer
             
-            Log.Information("Querying socket info for equipment {EquipmentId}", request.EquipmentItemId);
+            _logger.LogInformation("Querying socket info for equipment {EquipmentId}", request.EquipmentItemId);
             
             return Task.FromResult(new SocketInfoResult
             {
@@ -35,7 +35,7 @@ public class GetSocketInfoHandler : IRequestHandler<GetSocketInfoQuery, SocketIn
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error getting socket info");
+            _logger.LogError(ex, "Error getting socket info");
             return Task.FromResult(new SocketInfoResult
             {
                 Success = false,

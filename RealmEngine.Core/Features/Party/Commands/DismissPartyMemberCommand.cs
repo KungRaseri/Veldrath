@@ -1,7 +1,7 @@
 using MediatR;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Party.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Party.Commands;
 
@@ -71,7 +71,7 @@ public class DismissPartyMemberHandler : IRequestHandler<DismissPartyMemberComma
         // Check if party exists
         if (saveGame.Party == null)
         {
-            Log.Warning("Failed to dismiss party member: No party exists");
+            _logger.LogWarning("Failed to dismiss party member: No party exists");
             return Task.FromResult(new DismissPartyMemberResult
             {
                 Success = false,
@@ -84,7 +84,7 @@ public class DismissPartyMemberHandler : IRequestHandler<DismissPartyMemberComma
 
         if (!success)
         {
-            Log.Warning("Failed to dismiss party member: {Message}", errorMessage);
+            _logger.LogWarning("Failed to dismiss party member: {Message}", errorMessage);
             return Task.FromResult(new DismissPartyMemberResult
             {
                 Success = false,
@@ -95,7 +95,7 @@ public class DismissPartyMemberHandler : IRequestHandler<DismissPartyMemberComma
         // Save
         _saveGameService.SaveGame(saveGame);
 
-        Log.Information("Successfully dismissed party member");
+        _logger.LogInformation("Successfully dismissed party member");
 
         return Task.FromResult(new DismissPartyMemberResult
         {

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Services;
@@ -28,7 +28,7 @@ public class CharacterGrowthService
             var rawJson = _configService.GetData("growth-stats");
             if (rawJson == null)
             {
-                Log.Warning("growth-stats not found in database, using defaults");
+                _logger.LogWarning("growth-stats not found in database, using defaults");
                 _config = GetDefaultConfig();
                 return _config;
             }
@@ -45,13 +45,13 @@ public class CharacterGrowthService
                 RespecSystem = MapRespecSystem(doc?.RespecSystem)
             };
 
-            Log.Information("✅ Loaded growth stats config (version {Version}) with {Count} class multipliers",
+            _logger.LogInformation("✅ Loaded growth stats config (version {Version}) with {Count} class multipliers",
                 _config.Version, _config.ClassGrowthMultipliers.Count);
             return _config;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to load growth-stats.json, using defaults");
+            _logger.LogError(ex, "Failed to load growth-stats.json, using defaults");
             _config = GetDefaultConfig();
             return _config;
         }
@@ -82,7 +82,7 @@ public class CharacterGrowthService
         
         if (!config.DerivedStats.TryGetValue(statName.ToLowerInvariant(), out var derivedStat))
         {
-            Log.Warning("Unknown derived stat: {StatName}", statName);
+            _logger.LogWarning("Unknown derived stat: {StatName}", statName);
             return baseValue;
         }
 
@@ -157,7 +157,7 @@ public class CharacterGrowthService
     public void ClearCache()
     {
         _config = null;
-        Log.Debug("Growth stats config cache cleared");
+        _logger.LogDebug("Growth stats config cache cleared");
     }
 
     #region Private Parsing Methods

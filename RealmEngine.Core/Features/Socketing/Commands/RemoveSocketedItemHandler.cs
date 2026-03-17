@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Commands;
 
@@ -55,7 +55,7 @@ public class RemoveSocketedItemHandler : IRequestHandler<RemoveSocketedItemComma
             }
             
             // Success case - socketable item would be returned to inventory
-            Log.Information("Removing socketed item from equipment {EquipmentId} at socket {Index} for {Gold} gold",
+            _logger.LogInformation("Removing socketed item from equipment {EquipmentId} at socket {Index} for {Gold} gold",
                 request.EquipmentItemId, request.SocketIndex, request.GoldCost);
             
             var result = new RemoveSocketedItemResult
@@ -83,7 +83,7 @@ public class RemoveSocketedItemHandler : IRequestHandler<RemoveSocketedItemComma
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error removing socketed item");
+            _logger.LogError(ex, "Error removing socketed item");
             return new RemoveSocketedItemResult
             {
                 Success = false,

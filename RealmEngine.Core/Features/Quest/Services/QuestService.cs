@@ -1,5 +1,5 @@
 using RealmEngine.Core.Features.SaveLoad;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Features.Quests.Services;
@@ -66,7 +66,7 @@ public class QuestService
 
         _saveGameService.SaveGame(saveGame);
 
-        Log.Information("Quest started: {QuestId} - {QuestTitle}", questId, quest.Title);
+        _logger.LogInformation("Quest started: {QuestId} - {QuestTitle}", questId, quest.Title);
 
         return await Task.FromResult((true, quest, string.Empty));
     }
@@ -103,7 +103,7 @@ public class QuestService
 
         _saveGameService.SaveGame(saveGame);
 
-        Log.Information("Quest completed: {QuestId} - {QuestTitle}", questId, quest.Title);
+        _logger.LogInformation("Quest completed: {QuestId} - {QuestTitle}", questId, quest.Title);
 
         // Unlock next quests in the chain
         await _initService.UnlockNextQuestsAsync(saveGame, questId);

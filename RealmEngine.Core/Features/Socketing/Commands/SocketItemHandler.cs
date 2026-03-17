@@ -1,6 +1,6 @@
 using MediatR;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Socketing.Commands;
 
@@ -56,7 +56,7 @@ public class SocketItemHandler : IRequestHandler<SocketItemCommand, SocketItemRe
             }
             
             // Success case - traits would be applied to the equipment item
-            Log.Information("Socketing {ItemName} into equipment {EquipmentId} at socket {Index}",
+            _logger.LogInformation("Socketing {ItemName} into equipment {EquipmentId} at socket {Index}",
                 socketableItem.Name, request.EquipmentItemId, request.SocketIndex);
             
             var result = new SocketItemResult
@@ -80,7 +80,7 @@ public class SocketItemHandler : IRequestHandler<SocketItemCommand, SocketItemRe
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error socketing item");
+            _logger.LogError(ex, "Error socketing item");
             return new SocketItemResult
             {
                 Success = false,

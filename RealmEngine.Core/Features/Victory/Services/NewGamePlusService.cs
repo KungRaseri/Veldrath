@@ -1,6 +1,6 @@
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Victory.Services;
 
@@ -68,7 +68,7 @@ public class NewGamePlusService
 
         _saveGameService.SaveGame(ngPlusSave);
 
-        Log.Information("New Game+ started for {PlayerName}", completedSave.Character.Name);
+        _logger.LogInformation("New Game+ started for {PlayerName}", completedSave.Character.Name);
 
         return await Task.FromResult((true, ngPlusSave));
     }

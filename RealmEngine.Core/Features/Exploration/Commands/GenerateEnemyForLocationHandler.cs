@@ -2,7 +2,7 @@ using MediatR;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.Exploration;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
@@ -56,7 +56,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
             if (currentLocation == null)
             {
                 // Fallback: Generate a generic location
-                Log.Warning("Location {LocationName} not found, generating generic enemy", locationName);
+                _logger.LogWarning("Location {LocationName} not found, generating generic enemy", locationName);
                 var fallbackEnemy = await GenerateFallbackEnemyAsync();
                 return fallbackEnemy != null
                     ? new GenerateEnemyForLocationResult(true, Enemy: fallbackEnemy)
@@ -70,7 +70,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
 
             if (enemy == null)
             {
-                Log.Warning("Failed to generate enemy for location {LocationName}, using fallback", locationName);
+                _logger.LogWarning("Failed to generate enemy for location {LocationName}, using fallback", locationName);
                 enemy = await GenerateFallbackEnemyAsync();
             }
 
@@ -80,7 +80,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error generating enemy for location");
+            _logger.LogError(ex, "Error generating enemy for location");
             return new GenerateEnemyForLocationResult(false, ErrorMessage: ex.Message);
         }
     }
@@ -116,7 +116,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error generating fallback enemy");
+            _logger.LogError(ex, "Error generating fallback enemy");
             return null;
         }
     }

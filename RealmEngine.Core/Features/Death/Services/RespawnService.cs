@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Death.Services;
 
@@ -37,7 +37,7 @@ public class RespawnService
             }
         }
 
-        Log.Debug("Player died at {DeathLocation}, respawning at {RespawnLocation}",
+        _logger.LogDebug("Player died at {DeathLocation}, respawning at {RespawnLocation}",
             deathLocation, respawnLocation);
 
         return respawnLocation;

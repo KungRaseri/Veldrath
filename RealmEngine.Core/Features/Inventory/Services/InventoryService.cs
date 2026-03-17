@@ -1,6 +1,6 @@
 using RealmEngine.Shared.Models;
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Inventory;
 
@@ -51,7 +51,7 @@ public class InventoryService
     {
         if (item == null)
         {
-            Log.Warning("Attempted to add null item to inventory");
+            _logger.LogWarning("Attempted to add null item to inventory");
             return false;
         }
 
@@ -63,7 +63,7 @@ public class InventoryService
             {
                 existingStack.AddQuantity(item.Quantity);
                 await _mediator.Publish(new ItemAcquired(playerName, item.Name));
-                Log.Information("Item stacked in inventory: {ItemName} x{Quantity} (Total: {Total})", 
+                _logger.LogInformation("Item stacked in inventory: {ItemName} x{Quantity} (Total: {Total})", 
                     item.Name, item.Quantity, existingStack.Quantity);
                 return true;
             }
@@ -72,7 +72,7 @@ public class InventoryService
         // Add as new item if not stackable or no existing stack found
         _inventory.Add(item);
         await _mediator.Publish(new ItemAcquired(playerName, item.Name));
-        Log.Information("Item added to inventory: {ItemName} ({ItemType}) x{Quantity}", 
+        _logger.LogInformation("Item added to inventory: {ItemName} ({ItemType}) x{Quantity}", 
             item.Name, item.Type, item.Quantity);
         return true;
     }
@@ -85,12 +85,12 @@ public class InventoryService
         var item = _inventory.FirstOrDefault(i => i.Id == itemId);
         if (item == null)
         {
-            Log.Warning("Attempted to remove non-existent item: {ItemId}", itemId);
+            _logger.LogWarning("Attempted to remove non-existent item: {ItemId}", itemId);
             return false;
         }
 
         _inventory.Remove(item);
-        Log.Information("Item removed from inventory: {ItemName}", item.Name);
+        _logger.LogInformation("Item removed from inventory: {ItemName}", item.Name);
         return true;
     }
 
@@ -101,12 +101,12 @@ public class InventoryService
     {
         if (item == null || !_inventory.Contains(item))
         {
-            Log.Warning("Attempted to remove non-existent item");
+            _logger.LogWarning("Attempted to remove non-existent item");
             return false;
         }
 
         _inventory.Remove(item);
-        Log.Information("Item removed from inventory: {ItemName}", item.Name);
+        _logger.LogInformation("Item removed from inventory: {ItemName}", item.Name);
         return true;
     }
 
@@ -141,19 +141,19 @@ public class InventoryService
     {
         if (item == null || character == null)
         {
-            Log.Warning("Invalid item or character for UseItem");
+            _logger.LogWarning("Invalid item or character for UseItem");
             return Task.FromResult(false);
         }
 
         if (!_inventory.Contains(item))
         {
-            Log.Warning("Attempted to use item not in inventory: {ItemName}", item.Name);
+            _logger.LogWarning("Attempted to use item not in inventory: {ItemName}", item.Name);
             return Task.FromResult(false);
         }
 
         if (item.Type != ItemType.Consumable)
         {
-            Log.Warning("Attempted to use non-consumable item: {ItemName} ({ItemType})", item.Name, item.Type);
+            _logger.LogWarning("Attempted to use non-consumable item: {ItemName} ({ItemType})", item.Name, item.Type);
             return Task.FromResult(false);
         }
 
@@ -163,7 +163,7 @@ public class InventoryService
 
         // Remove consumable after use
         _inventory.Remove(item);
-        Log.Information("Player {PlayerName} used item: {ItemName}", playerName, item.Name);
+        _logger.LogInformation("Player {PlayerName} used item: {ItemName}", playerName, item.Name);
 
         return Task.FromResult(true);
     }
@@ -189,7 +189,7 @@ public class InventoryService
             };
 
             character.Mana = Math.Min(character.Mana + manaAmount, character.MaxMana);
-            Log.Debug("Restored {ManaAmount} mana", manaAmount);
+            _logger.LogDebug("Restored {ManaAmount} mana", manaAmount);
         }
         // Health potions
         else if (itemNameLower.Contains("health") || itemNameLower.Contains("potion") || itemNameLower.Contains("healing"))
@@ -205,13 +205,13 @@ public class InventoryService
             };
 
             character.Health = Math.Min(character.Health + healAmount, character.MaxHealth);
-            Log.Debug("Healed {HealAmount} HP", healAmount);
+            _logger.LogDebug("Healed {HealAmount} HP", healAmount);
         }
         // Default: small health boost
         else
         {
             character.Health = Math.Min(character.Health + 10, character.MaxHealth);
-            Log.Debug("Applied default consumable effect: +10 HP");
+            _logger.LogDebug("Applied default consumable effect: +10 HP");
         }
     }
 
@@ -237,7 +237,7 @@ public class InventoryService
     public void Clear()
     {
         _inventory.Clear();
-        Log.Information("Inventory cleared");
+        _logger.LogInformation("Inventory cleared");
     }
 
     /// <summary>

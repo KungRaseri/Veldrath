@@ -1,6 +1,6 @@
 using RealmEngine.Shared.Models;
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Combat.Commands.UseCombatItem;
 
@@ -64,7 +64,7 @@ public class UseCombatItemHandler : IRequestHandler<UseCombatItemCommand, UseCom
         // Publish item used event
         await _mediator.Publish(new ItemAcquired(player.Name, item.Name), cancellationToken);
 
-        Log.Information("Player {PlayerName} used {ItemName} in combat (healed: {Healing})",
+        _logger.LogInformation("Player {PlayerName} used {ItemName} in combat (healed: {Healing})",
             player.Name, item.Name, actualHealing);
 
         return new UseCombatItemResult

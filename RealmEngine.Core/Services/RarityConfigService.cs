@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using RealmEngine.Data.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -32,7 +32,7 @@ public class RarityConfigService
 
         if (rawJson == null)
         {
-            Log.Warning("Rarity config not found in database, using defaults");
+            _logger.LogWarning("Rarity config not found in database, using defaults");
             return GetDefaultConfig();
         }
 
@@ -49,12 +49,12 @@ public class RarityConfigService
             }).ToList() ?? [];
 
             _cachedConfig = new RarityConfig { Tiers = tiers };
-            Log.Information("Loaded {Count} rarity tiers from configuration", tiers.Count);
+            _logger.LogInformation("Loaded {Count} rarity tiers from configuration", tiers.Count);
             return _cachedConfig;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading rarity config, using defaults");
+            _logger.LogError(ex, "Error loading rarity config, using defaults");
             return GetDefaultConfig();
         }
     }

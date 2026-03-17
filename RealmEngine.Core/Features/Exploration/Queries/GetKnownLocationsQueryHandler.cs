@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Exploration.Queries;
 
@@ -35,7 +35,7 @@ public class GetKnownLocationsQueryHandler : IRequestHandler<GetKnownLocationsQu
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error getting known locations");
+            _logger.LogError(ex, "Error getting known locations");
             return new GetKnownLocationsResult(false, ErrorMessage: ex.Message);
         }
     }

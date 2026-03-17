@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.Exploration.Queries;
@@ -35,7 +35,7 @@ public class GetCurrentLocationQueryHandler : IRequestHandler<GetCurrentLocation
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error getting current location");
+            _logger.LogError(ex, "Error getting current location");
             return Task.FromResult(new GetCurrentLocationResult(false, ErrorMessage: ex.Message));
         }
     }

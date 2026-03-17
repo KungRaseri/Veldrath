@@ -1,6 +1,6 @@
 using RealmEngine.Core.Abstractions;
 
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -39,7 +39,7 @@ public class ApocalypseTimer : IApocalypseTimer
         _hasShownThirtyMinWarning = false;
         _hasShownTenMinWarning = false;
 
-        Log.Information("Apocalypse timer started. {TotalMinutes} minutes until world end.", _totalMinutes);
+        _logger.LogInformation("Apocalypse timer started. {TotalMinutes} minutes until world end.", _totalMinutes);
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public class ApocalypseTimer : IApocalypseTimer
         _bonusMinutes = bonusMinutes;
         _isPaused = false;
 
-        Log.Information("Apocalypse timer restored from save. Started at: {StartTime}, Bonus: {BonusMinutes}",
+        _logger.LogInformation("Apocalypse timer restored from save. Started at: {StartTime}, Bonus: {BonusMinutes}",
             startTime, bonusMinutes);
     }
 
@@ -66,7 +66,7 @@ public class ApocalypseTimer : IApocalypseTimer
         {
             _isPaused = true;
             _pauseStartTime = DateTime.Now;
-            Log.Debug("Apocalypse timer paused");
+            _logger.LogDebug("Apocalypse timer paused");
         }
     }
 
@@ -80,7 +80,7 @@ public class ApocalypseTimer : IApocalypseTimer
             _pausedDuration += DateTime.Now - _pauseStartTime.Value;
             _isPaused = false;
             _pauseStartTime = null;
-            Log.Debug("Apocalypse timer resumed. Total paused time: {PausedMinutes} minutes",
+            _logger.LogDebug("Apocalypse timer resumed. Total paused time: {PausedMinutes} minutes",
                 _pausedDuration.TotalMinutes);
         }
     }
@@ -123,7 +123,7 @@ public class ApocalypseTimer : IApocalypseTimer
         _bonusMinutes += minutes;
         var remaining = GetRemainingMinutes();
 
-        Log.Information("Bonus time awarded: {Minutes} minutes. Reason: {Reason}. Remaining: {Remaining}",
+        _logger.LogInformation("Bonus time awarded: {Minutes} minutes. Reason: {Reason}. Remaining: {Remaining}",
             minutes, reason, remaining);
 
         return new BonusTimeResult
@@ -179,7 +179,7 @@ public class ApocalypseTimer : IApocalypseTimer
         if (remaining <= 60 && !_hasShownOneHourWarning)
         {
             _hasShownOneHourWarning = true;
-            Log.Warning("Apocalypse timer warning: 1 HOUR REMAINING!");
+            _logger.LogWarning("Apocalypse timer warning: 1 HOUR REMAINING!");
             return new TimeWarningResult
             {
                 Title = "1 HOUR REMAINING!",
@@ -191,7 +191,7 @@ public class ApocalypseTimer : IApocalypseTimer
         else if (remaining <= 30 && !_hasShownThirtyMinWarning)
         {
             _hasShownThirtyMinWarning = true;
-            Log.Warning("Apocalypse timer warning: 30 MINUTES REMAINING!");
+            _logger.LogWarning("Apocalypse timer warning: 30 MINUTES REMAINING!");
             return new TimeWarningResult
             {
                 Title = "30 MINUTES REMAINING!",
@@ -203,7 +203,7 @@ public class ApocalypseTimer : IApocalypseTimer
         else if (remaining <= 10 && !_hasShownTenMinWarning)
         {
             _hasShownTenMinWarning = true;
-            Log.Warning("Apocalypse timer warning: 10 MINUTES REMAINING!");
+            _logger.LogWarning("Apocalypse timer warning: 10 MINUTES REMAINING!");
             return new TimeWarningResult
             {
                 Title = "10 MINUTES REMAINING!",

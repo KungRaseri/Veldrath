@@ -1,6 +1,6 @@
 using RealmEngine.Shared.Models;
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -82,7 +82,7 @@ public class UnequipItemHandler : IRequestHandler<UnequipItemCommand, UnequipIte
         // Add to inventory
         player.Inventory.Add(unequipped);
 
-        Log.Information("Player {PlayerName} unequipped {ItemName}",
+        _logger.LogInformation("Player {PlayerName} unequipped {ItemName}",
             player.Name, unequipped.Name);
 
         return Task.FromResult(new UnequipItemResult

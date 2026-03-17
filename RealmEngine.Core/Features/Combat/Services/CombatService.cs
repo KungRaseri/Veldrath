@@ -1,7 +1,7 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Utilities;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Core.Services;
@@ -68,7 +68,7 @@ public class CombatService
         enemy.MaxHealth = (int)(enemy.MaxHealth * difficulty.EnemyHealthMultiplier);
         enemy.Health = enemy.MaxHealth;
 
-        Log.Information("Enemy {Name} initialized with {Health} HP (difficulty: {Difficulty}, multiplier: {Multiplier})",
+        _logger.LogInformation("Enemy {Name} initialized with {Health} HP (difficulty: {Difficulty}, multiplier: {Multiplier})",
             enemy.Name, enemy.Health, difficulty.Name, difficulty.EnemyHealthMultiplier);
     }
 
@@ -431,7 +431,7 @@ public class CombatService
         var ability = enemy.Abilities.FirstOrDefault(a => a.Id == chosenAbilityId);
         if (ability == null)
         {
-            Log.Warning($"Enemy {enemy.Name} tried to use ability {chosenAbilityId} but it was not found");
+            _logger.LogWarning($"Enemy {enemy.Name} tried to use ability {chosenAbilityId} but it was not found");
             return null;
         }
 
@@ -492,7 +492,7 @@ public class CombatService
                 break;
         }
 
-        Log.Information($"Enemy {enemy.Name} used ability {ability.Name} (Type: {ability.Type})");
+        _logger.LogInformation($"Enemy {enemy.Name} used ability {ability.Name} (Type: {ability.Type})");
         return result;
     }
 
@@ -515,7 +515,7 @@ public class CombatService
 
         if (spell == null)
         {
-            Log.Warning($"Enemy {enemy.Name} tried to cast unknown spell {chosenSpellId}");
+            _logger.LogWarning($"Enemy {enemy.Name} tried to cast unknown spell {chosenSpellId}");
             return null;
         }
 
@@ -591,7 +591,7 @@ public class CombatService
             enemy.SpellCooldowns[spell.SpellId] = spell.Cooldown;
         }
 
-        Log.Information($"Enemy {enemy.Name} cast spell {spell.DisplayName} (Type: {spell.EffectType}, Mana: {manaCost})");
+        _logger.LogInformation($"Enemy {enemy.Name} cast spell {spell.DisplayName} (Type: {spell.EffectType}, Mana: {manaCost})");
         return result;
     }
 
@@ -1283,13 +1283,13 @@ public class CombatService
                 if (result.ObjectiveCompleted)
                 {
                     outcome.QuestObjectivesCompleted.Add($"{quest.Title}: {enemyIdObjective}");
-                    Log.Information("Quest objective completed: {QuestId}/{ObjectiveId}", quest.Id, enemyIdObjective);
+                    _logger.LogInformation("Quest objective completed: {QuestId}/{ObjectiveId}", quest.Id, enemyIdObjective);
                 }
 
                 if (result.QuestCompleted)
                 {
                     outcome.QuestsCompleted.Add(quest.Title);
-                    Log.Information("Quest completed: {QuestId}", quest.Id);
+                    _logger.LogInformation("Quest completed: {QuestId}", quest.Id);
                 }
             }
 
@@ -1304,13 +1304,13 @@ public class CombatService
                 if (result.ObjectiveCompleted)
                 {
                     outcome.QuestObjectivesCompleted.Add($"{quest.Title}: {enemyTypeObjective}");
-                    Log.Information("Quest objective completed: {QuestId}/{ObjectiveId}", quest.Id, enemyTypeObjective);
+                    _logger.LogInformation("Quest objective completed: {QuestId}/{ObjectiveId}", quest.Id, enemyTypeObjective);
                 }
 
                 if (result.QuestCompleted)
                 {
                     outcome.QuestsCompleted.Add(quest.Title);
-                    Log.Information("Quest completed: {QuestId}", quest.Id);
+                    _logger.LogInformation("Quest completed: {QuestId}", quest.Id);
                 }
             }
         }

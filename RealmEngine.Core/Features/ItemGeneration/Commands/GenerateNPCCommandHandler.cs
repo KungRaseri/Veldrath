@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
 
 namespace RealmEngine.Core.Features.ItemGeneration.Commands;
@@ -53,7 +53,7 @@ public class GenerateNPCCommandHandler : IRequestHandler<GenerateNPCCommand, Gen
 
             var npc = npcs[0];
 
-            Log.Debug("Generated NPC: {NPCName} from category {Category}", 
+            _logger.LogDebug("Generated NPC: {NPCName} from category {Category}", 
                 npc.Name, request.Category);
 
             return new GenerateNPCResult
@@ -64,7 +64,7 @@ public class GenerateNPCCommandHandler : IRequestHandler<GenerateNPCCommand, Gen
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error generating NPC from category {Category}", request.Category);
+            _logger.LogError(ex, "Error generating NPC from category {Category}", request.Category);
             return new GenerateNPCResult
             {
                 Success = false,

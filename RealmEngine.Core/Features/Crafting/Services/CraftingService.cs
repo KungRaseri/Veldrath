@@ -2,7 +2,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Core.Generators.Modern;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using Serilog.Core;
 
 namespace RealmEngine.Core.Features.Crafting.Services;
@@ -237,7 +237,7 @@ public class CraftingService
                 _ => "failure"
             };
             
-            Log.Information("Crafting {Severity} for {Character} (roll={Roll} vs {Chance}%), producing quality {Quality}", 
+            _logger.LogInformation("Crafting {Severity} for {Character} (roll={Roll} vs {Chance}%), producing quality {Quality}", 
                 severityText, character.Name, successRoll, successChance, qualityBonus);
         }
 
@@ -260,7 +260,7 @@ public class CraftingService
                     if (refundQuantity > 0)
                     {
                         refundedMaterials.Add((material.ItemReference, refundQuantity));
-                        Log.Information("Critical failure: Refunded {Quantity}x {Material} ({Percent}%)", 
+                        _logger.LogInformation("Critical failure: Refunded {Quantity}x {Material} ({Percent}%)", 
                             refundQuantity, material.ItemReference, materialRefundPercent);
                     }
                 }

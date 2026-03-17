@@ -1,5 +1,5 @@
 using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Services;
 
@@ -54,7 +54,7 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
             var respawnLocation = request.RespawnLocation ?? "Hub Town";
             _gameState.UpdateLocation(respawnLocation);
 
-            Log.Information("Player {PlayerName} respawned at {Location} with {Health}/{MaxHealth} HP",
+            _logger.LogInformation("Player {PlayerName} respawned at {Location} with {Health}/{MaxHealth} HP",
                 player.Name, respawnLocation, player.Health, player.MaxHealth);
 
             return Task.FromResult(new RespawnResult
@@ -67,7 +67,7 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error respawning player");
+            _logger.LogError(ex, "Error respawning player");
             return Task.FromResult(new RespawnResult
             {
                 Success = false,
