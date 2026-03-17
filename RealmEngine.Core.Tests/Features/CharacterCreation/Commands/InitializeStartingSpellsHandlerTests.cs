@@ -3,6 +3,7 @@ using MediatR;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.Progression.Commands;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -14,6 +15,14 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 /// </summary>
 public class InitializeStartingSpellsHandlerTests
 {
+    private static Mock<ICharacterClassRepository> BuildClassRepo(string className, List<string> spellIds)
+    {
+        var mock = new Mock<ICharacterClassRepository>();
+        mock.Setup(r => r.GetByName(className))
+            .Returns(new CharacterClass { Name = className, StartingSpellIds = spellIds });
+        return mock;
+    }
+
     [Theory]
     [InlineData("Mage", 3)]
     [InlineData("Cleric", 3)]
@@ -30,7 +39,9 @@ public class InitializeStartingSpellsHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnSpellResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
+        var spellIds = Enumerable.Range(1, expectedCount).Select(i => $"spell-{i}").ToList();
+        var classRepo = BuildClassRepo(className, spellIds);
+        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = className };
         var command = new InitializeStartingSpellsCommand
         {
@@ -62,7 +73,14 @@ public class InitializeStartingSpellsHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnSpellResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
+        var mageSpells = new List<string>
+        {
+            "@spells/arcane/offensive:magic-missile",
+            "@spells/arcane/offensive:fire-bolt",
+            "@spells/arcane/defensive:shield"
+        };
+        var classRepo = BuildClassRepo("Mage", mageSpells);
+        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
         var character = new Character { Name = "TestMage", ClassName = "Mage" };
         var command = new InitializeStartingSpellsCommand
         {
@@ -74,9 +92,9 @@ public class InitializeStartingSpellsHandlerTests
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.SpellIds.Should().Contain("magic-missile");
-        result.SpellIds.Should().Contain("ray-of-frost");
-        result.SpellIds.Should().Contain("shield");
+        result.SpellIds.Should().Contain("@spells/arcane/offensive:magic-missile");
+        result.SpellIds.Should().Contain("@spells/arcane/offensive:fire-bolt");
+        result.SpellIds.Should().Contain("@spells/arcane/defensive:shield");
     }
 
     [Fact]
@@ -84,7 +102,8 @@ public class InitializeStartingSpellsHandlerTests
     {
         // Arrange
         var mockMediator = new Mock<IMediator>();
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
+        var classRepo = BuildClassRepo("Warrior", []);
+        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
         var character = new Character { Name = "TestWarrior", ClassName = "Warrior" };
         var command = new InitializeStartingSpellsCommand
         {

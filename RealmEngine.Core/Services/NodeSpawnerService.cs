@@ -1,32 +1,32 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using RealmEngine.Data.Persistence;
+﻿using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
 
 namespace RealmEngine.Core.Services;
 
 /// <summary>
 /// Service responsible for spawning harvestable resource nodes in game locations based on biome and density rules.
+/// Material data is sourced via <see cref="IMaterialRepository"/> — no direct DB context dependency.
 /// </summary>
 public class NodeSpawnerService
 {
     private readonly ILogger<NodeSpawnerService> _logger;
-    private readonly IDbContextFactory<ContentDbContext> _dbFactory;
+    private readonly IMaterialRepository _materialRepository;
     private readonly Random _random;
 
     public NodeSpawnerService(
         ILogger<NodeSpawnerService> logger,
-        IDbContextFactory<ContentDbContext> dbFactory)
+        IMaterialRepository materialRepository)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
+        _materialRepository = materialRepository ?? throw new ArgumentNullException(nameof(materialRepository));
         _random = new Random();
     }
 
     /// <summary>
     /// Spawns resource nodes in a location based on biome and density settings.
     /// </summary>
-    public List<HarvestableNode> SpawnNodes(string locationId, string biome, string density = "medium")
+    public async Task<List<HarvestableNode>> SpawnNodesAsync(string locationId, string biome, string density = "medium")
     {
         if (string.IsNullOrWhiteSpace(locationId))
             throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
@@ -37,7 +37,7 @@ public class NodeSpawnerService
         _logger.LogInformation("Spawning nodes for location {LocationId}, biome: {Biome}, density: {Density}",
             locationId, biome, density);
 
-        var availableNodes = LoadNodesByBiome(biome);
+        var availableNodes = await LoadNodesByBiomeAsync(biome);
 
         if (availableNodes.Count == 0)
         {
@@ -100,28 +100,25 @@ public class NodeSpawnerService
     /// <summary>
     /// Derives HarvestableNodeReference list from material catalog filtered by biome.
     /// </summary>
-    private List<HarvestableNodeReference> LoadNodesByBiome(string biome)
+    private async Task<List<HarvestableNodeReference>> LoadNodesByBiomeAsync(string biome)
     {
         try
         {
             if (!BiomeMaterialFamilies.TryGetValue(biome, out var families))
                 families = ["wood", "stone"];
 
-            using var db = _dbFactory.CreateDbContext();
-            var materials = db.Materials
-                .Where(m => m.IsActive && families.Contains(m.MaterialFamily))
-                .ToList();
+            var materials = await _materialRepository.GetByFamiliesAsync(families);
 
             return materials.Select(m => new HarvestableNodeReference
             {
                 NodeType = m.Slug,
-                Name = m.DisplayName ?? m.Slug,
-                Tier = GetTierFromRarity(m.RarityWeight),
+                Name = m.DisplayName,
+                Tier = GetTierFromRarity((int)m.RarityWeight),
                 Health = 100,
                 BaseYield = 1,
                 LootTable = string.Empty,
                 Biomes = [biome],
-                RarityWeight = m.RarityWeight,
+                RarityWeight = (int)m.RarityWeight,
             }).ToList();
         }
         catch (Exception ex)

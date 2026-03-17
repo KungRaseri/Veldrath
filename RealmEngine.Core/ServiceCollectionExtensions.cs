@@ -85,7 +85,6 @@ public static class ServiceCollectionExtensions
         // Register game logic services
         services.AddScoped<LootTableService>();
         services.AddScoped<CharacterGrowthService>();
-        services.AddScoped<InMemoryInventoryService>();
         services.AddScoped<ShopEconomyService>();
         services.AddScoped<LevelUpService>();
         services.AddScoped<GameStateService>();
@@ -142,7 +141,6 @@ public static class ServiceCollectionExtensions
         // Register interfaces to implementations
         services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
         services.AddScoped<ISaveGameService, SaveGameService>();
-        services.AddScoped<IInventoryService, InMemoryInventoryService>();
         services.AddScoped<IPassiveBonusCalculator, PassiveBonusCalculator>();
         
         // Register repositories (interfaces defined in Shared, implementations in Data)
@@ -169,6 +167,11 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
             services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
             services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
+            services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
+            services.AddScoped<IWeaponRepository, EfCoreWeaponRepository>();
+            services.AddScoped<IArmorRepository, EfCoreArmorRepository>();
+            services.AddScoped<IEquipmentSetRepository, EfCoreEquipmentSetRepository>();
+            services.AddScoped<IInventoryService, EfCoreInventoryService>();
         }
         else if (!persistenceOptions.IsExternal)
         {
@@ -191,10 +194,14 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ISpellRepository, InMemorySpellRepository>();
             services.AddScoped<ISkillRepository, InMemorySkillRepository>();
             services.AddScoped<INamePatternRepository, InMemoryNamePatternRepository>();
+            services.AddScoped<IMaterialRepository, InMemoryMaterialRepository>();
+            services.AddScoped<IWeaponRepository, InMemoryWeaponRepository>();
+            services.AddScoped<IArmorRepository, InMemoryArmorRepository>();
+            services.AddScoped<IEquipmentSetRepository, InMemoryEquipmentSetRepository>();
+            services.AddScoped<IInventoryService, InMemoryInventoryService>();
         }
         // External: host is responsible for registering ALL repo interfaces.
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();
-        services.AddScoped<IEquipmentSetRepository, EquipmentSetRepository>();
         
         // Register feature services (concrete implementations)
         services.AddScoped<SaveGameService>();
