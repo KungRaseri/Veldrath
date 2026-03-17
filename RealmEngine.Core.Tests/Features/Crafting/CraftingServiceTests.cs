@@ -3,6 +3,7 @@ using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Crafting;
 
@@ -13,7 +14,7 @@ public class CraftingServiceTests
 
     public CraftingServiceTests()
     {
-        _recipeCatalogLoader = new RecipeDataService(new InMemoryRecipeRepository());
+        _recipeCatalogLoader = new RecipeDataService(new InMemoryRecipeRepository(), NullLogger<RecipeDataService>.Instance);
         _craftingService = new CraftingService(_recipeCatalogLoader, NullLogger<CraftingService>.Instance);
     }
 

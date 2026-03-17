@@ -5,6 +5,7 @@ using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
 using RealmEngine.Core.Features.SaveLoad;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Combat.Commands;
 

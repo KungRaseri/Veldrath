@@ -2,6 +2,7 @@ using FluentAssertions;
 using RealmEngine.Core.Features.Reputation.Services;
 using RealmEngine.Shared.Models;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Reputation;
 

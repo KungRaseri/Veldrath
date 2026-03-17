@@ -1,6 +1,7 @@
 using FluentAssertions;
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.Party.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Party;
 

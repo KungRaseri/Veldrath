@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.Combat.Commands.DefendAction;
 using RealmEngine.Shared.Models;
 
@@ -10,7 +11,7 @@ namespace RealmEngine.Core.Tests.Features.Combat.Commands;
 /// </summary>
 public class DefendActionHandlerTests
 {
-    private readonly DefendActionHandler _handler = new();
+    private readonly DefendActionHandler _handler = new(NullLogger<DefendActionHandler>.Instance);
 
     [Fact]
     public async Task Handle_Should_Return_DefenseBonus_Based_On_Constitution()

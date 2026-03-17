@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using RealmEngine.Core.Features.Exploration.Queries;
 using RealmEngine.Core.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 

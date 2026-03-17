@@ -3,6 +3,7 @@ using RealmEngine.Core.Features.Combat.Commands.UseCombatItem;
 using RealmEngine.Shared.Models;
 using MediatR;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Combat.Commands;
 
