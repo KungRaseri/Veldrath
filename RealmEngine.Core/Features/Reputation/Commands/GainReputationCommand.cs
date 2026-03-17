@@ -68,16 +68,18 @@ public record GainReputationResult
 /// </summary>
 public class GainReputationHandler : IRequestHandler<GainReputationCommand, GainReputationResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ReputationService _reputationService;
+    private readonly ILogger<GainReputationHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GainReputationHandler"/> class.
     /// </summary>
-    public GainReputationHandler(SaveGameService saveGameService, ReputationService reputationService)
+    public GainReputationHandler(ISaveGameService saveGameService, ReputationService reputationService, ILogger<GainReputationHandler> logger)
     {
         _saveGameService = saveGameService;
         _reputationService = reputationService;
+        _logger = logger;
     }
 
     /// <summary>

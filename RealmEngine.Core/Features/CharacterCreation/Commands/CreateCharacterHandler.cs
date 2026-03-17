@@ -14,16 +14,19 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 {
     private readonly IMediator _mediator;
     private readonly IBackgroundRepository _backgroundRepository;
+    private readonly ILogger<CreateCharacterHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateCharacterHandler"/> class.
     /// </summary>
     /// <param name="mediator">The mediator for sending commands.</param>
     /// <param name="backgroundRepository">The repository for loading backgrounds.</param>
-    public CreateCharacterHandler(IMediator mediator, IBackgroundRepository backgroundRepository)
+    /// <param name="logger">The logger.</param>
+    public CreateCharacterHandler(IMediator mediator, IBackgroundRepository backgroundRepository, ILogger<CreateCharacterHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _backgroundRepository = backgroundRepository ?? throw new ArgumentNullException(nameof(backgroundRepository));
+        _logger = logger;
     }
 
     /// <summary>

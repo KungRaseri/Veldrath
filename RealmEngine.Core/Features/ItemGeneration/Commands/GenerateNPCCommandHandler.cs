@@ -11,14 +11,17 @@ namespace RealmEngine.Core.Features.ItemGeneration.Commands;
 public class GenerateNPCCommandHandler : IRequestHandler<GenerateNPCCommand, GenerateNPCResult>
 {
     private readonly NpcGenerator _npcGenerator;
+    private readonly ILogger<GenerateNPCCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenerateNPCCommandHandler"/> class.
     /// </summary>
     /// <param name="npcGenerator">The NPC generator.</param>
-    public GenerateNPCCommandHandler(NpcGenerator npcGenerator)
+    /// <param name="logger">The logger.</param>
+    public GenerateNPCCommandHandler(NpcGenerator npcGenerator, ILogger<GenerateNPCCommandHandler> logger)
     {
         _npcGenerator = npcGenerator;
+        _logger = logger;
     }
 
     /// <summary>

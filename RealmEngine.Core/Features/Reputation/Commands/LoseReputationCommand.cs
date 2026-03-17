@@ -68,16 +68,18 @@ public record LoseReputationResult
 /// </summary>
 public class LoseReputationHandler : IRequestHandler<LoseReputationCommand, LoseReputationResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ReputationService _reputationService;
+    private readonly ILogger<LoseReputationHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoseReputationHandler"/> class.
     /// </summary>
-    public LoseReputationHandler(SaveGameService saveGameService, ReputationService reputationService)
+    public LoseReputationHandler(ISaveGameService saveGameService, ReputationService reputationService, ILogger<LoseReputationHandler> logger)
     {
         _saveGameService = saveGameService;
         _reputationService = reputationService;
+        _logger = logger;
     }
 
     /// <summary>

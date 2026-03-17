@@ -10,17 +10,20 @@ namespace RealmEngine.Core.Features.Achievements.Services;
 /// </summary>
 public class AchievementService
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly List<Achievement> _allAchievements;
+    private readonly ILogger<AchievementService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AchievementService"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public AchievementService(SaveGameService saveGameService)
+    /// <param name="logger">The logger.</param>
+    public AchievementService(ISaveGameService saveGameService, ILogger<AchievementService> logger)
     {
         _saveGameService = saveGameService;
         _allAchievements = InitializeAchievements();
+        _logger = logger;
     }
 
     /// <summary>
@@ -30,6 +33,7 @@ public class AchievementService
     {
         _saveGameService = null!;
         _allAchievements = new List<Achievement>();
+        _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AchievementService>.Instance;
     }
 
     /// <summary>

@@ -3,7 +3,6 @@ using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Core.Generators.Modern;
 using Microsoft.Extensions.Logging;
-using Serilog.Core;
 
 namespace RealmEngine.Core.Features.Crafting.Services;
 
@@ -17,20 +16,23 @@ public class CraftingService
     private readonly BudgetHelperService? _budgetHelper;
     private readonly ItemGenerator? _itemGenerator;
     private readonly Random _random = new();
-    private static readonly ILogger _logger = Log.ForContext<CraftingService>();
+    private readonly ILogger<CraftingService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CraftingService"/> class.
     /// </summary>
     /// <param name="recipeCatalogLoader">The recipe catalog loader.</param>
+    /// <param name="logger">The logger.</param>
     /// <param name="budgetHelper">Optional budget helper for quality calculations.</param>
     /// <param name="itemGenerator">Optional item generator for procedural crafted items.</param>
     public CraftingService(
         RecipeDataService recipeCatalogLoader,
+        ILogger<CraftingService> logger,
         BudgetHelperService? budgetHelper = null,
         ItemGenerator? itemGenerator = null)
     {
         _recipeCatalogLoader = recipeCatalogLoader ?? throw new ArgumentNullException(nameof(recipeCatalogLoader));
+        _logger = logger;
         _budgetHelper = budgetHelper;
         _itemGenerator = itemGenerator;
     }
@@ -332,7 +334,7 @@ public class CraftingService
         {
             try
             {
-                _logger.Debug("Using ItemGenerator for crafted item: {Ref}", recipe.OutputItemReference);
+                _logger.LogDebug("Using ItemGenerator for crafted item: {Ref}", recipe.OutputItemReference);
 
                 // Parse reference format: @items/weapons/swords:iron-longsword
                 var parts = recipe.OutputItemReference.TrimStart('@').Split(':');
@@ -349,18 +351,18 @@ public class CraftingService
                         // Override rarity with crafted quality
                         item.Rarity = rarity;
 
-                        _logger.Information("Generated procedural crafted item: {Name} ({Rarity})",
+                        _logger.LogInformation("Generated procedural crafted item: {Name} ({Rarity})",
                             item.Name, item.Rarity);
                         return item;
                     }
                 }
 
-                _logger.Warning("Could not parse item reference {Ref}, falling back to basic item",
+                _logger.LogWarning("Could not parse item reference {Ref}, falling back to basic item",
                     recipe.OutputItemReference);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Error generating item from reference {Ref}, falling back to basic item",
+                _logger.LogError(ex, "Error generating item from reference {Ref}, falling back to basic item",
                     recipe.OutputItemReference);
             }
         }
