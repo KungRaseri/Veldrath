@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Entities;
 using RealmEngine.Shared.Models;
@@ -75,7 +74,7 @@ public class BudgetItemGenerationService
 
             // Step 4: Select material
             var materialTypes = GetMaterialTypesForItem(baseItem, request.ItemCategory);
-            JToken? material = null;
+            Material? material = null;
             int materialCost = 0;
 
             if (materialTypes.Count > 0)
@@ -92,8 +91,11 @@ public class BudgetItemGenerationService
                     material = await GetFallbackMaterialAsync(materialTypes[0]);
                 }
 
-                materialCost = _budgetCalculator.CalculateMaterialCost(material);
-                _logger.LogDebug("Material selected: {Name} (cost={Cost})", GetTokenString(material, "name"), materialCost);
+                if (material is not null)
+                {
+                    materialCost = _budgetCalculator.CalculateMaterialCost(material);
+                    _logger.LogDebug("Material selected: {Name} (cost={Cost})", material.DisplayName ?? material.Slug, materialCost);
+                }
             }
 
             // Step 5: Remaining budget for enhancements
@@ -136,15 +138,13 @@ public class BudgetItemGenerationService
                 SpentBudget = totalSpent,
                 Material = material,
                 MaterialCost = materialCost,
-                Quality = qualityComponent is null ? null
-                    : JToken.FromObject(new { value = qualityComponent.Value, rarityWeight = qualityComponent.RarityWeight, budgetModifier = qualityComponent.BudgetModifier }),
+                Quality = qualityComponent,
                 QualityModifier = qualityModifier,
-                BaseItem = JToken.FromObject(new { name = baseItem.Name, slug = baseItem.Slug, rarityWeight = baseItem.RarityWeight }),
+                BaseItem = baseItem,
                 BaseItemCost = baseItemCost,
                 Pattern = patternTemplate,
                 PatternCost = patternCost,
-                Components = components.Select(c =>
-                    JToken.FromObject(new { value = c.Component.Value, rarityWeight = c.Component.RarityWeight })).ToList(),
+                Components = components.Select(c => c.Component).ToList(),
                 ComponentCosts = components
                     .GroupBy(c => c.Component.Value)
                     .ToDictionary(g => g.Key, g => g.First().Cost),
@@ -166,11 +166,8 @@ public class BudgetItemGenerationService
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private async Task<JToken> GetFallbackMaterialAsync(string materialType)
-    {
-        var material = await _materialPoolService.SelectMaterialAsync(materialType, int.MaxValue);
-        return material ?? JToken.FromObject(new { name = "Iron", rarityWeight = 100, description = "Basic material" });
-    }
+    private Task<Material?> GetFallbackMaterialAsync(string materialType)
+        => _materialPoolService.SelectMaterialAsync(materialType, int.MaxValue);
 
     private List<string> GetMaterialTypesForItem(ItemTemplate item, string category)
     {
@@ -315,11 +312,11 @@ public class BudgetItemGenerationService
             MaterialBudget = 5,
             ComponentBudget = 5,
             SpentBudget = 10,
-            Material = JToken.FromObject(new { name = "Iron", rarityWeight = 100 }),
+            Material = null,
             MaterialCost = 5,
             Quality = null,
             QualityModifier = 0,
-            BaseItem = JToken.FromObject(new { name = "Sword", slug = "sword", rarityWeight = 50 }),
+            BaseItem = new ItemTemplate { Name = "Sword", Slug = "sword", RarityWeight = 50, Category = request.ItemCategory },
             BaseItemCost = 5,
             Pattern = "{base}",
             PatternCost = 0,
@@ -342,9 +339,6 @@ public class BudgetItemGenerationService
         }
         return tokens;
     }
-
-    private static string GetTokenString(JToken token, string key)
-        => token[key]?.Value<string>() ?? string.Empty;
 
     private static int GetMaxComponentsByRarity(string rarityTier, string componentType) =>
         rarityTier.ToLowerInvariant() switch
@@ -389,15 +383,15 @@ public class BudgetItemResult
     public int MaterialBudget { get; set; }
     public int ComponentBudget { get; set; }
     public int SpentBudget { get; set; }
-    public JToken? Material { get; set; }
+    public Material? Material { get; set; }
     public int MaterialCost { get; set; }
-    public JToken? Quality { get; set; }
+    public EntityNameComponent? Quality { get; set; }
     public double QualityModifier { get; set; }
-    public JToken? BaseItem { get; set; }
+    public ItemTemplate? BaseItem { get; set; }
     public int BaseItemCost { get; set; }
     public string Pattern { get; set; } = string.Empty;
     public int PatternCost { get; set; }
-    public List<JToken> Components { get; set; } = [];
+    public List<EntityNameComponent> Components { get; set; } = [];
     public Dictionary<string, int> ComponentCosts { get; set; } = [];
     public Dictionary<SocketType, List<Socket>> Sockets { get; set; } = [];
 }

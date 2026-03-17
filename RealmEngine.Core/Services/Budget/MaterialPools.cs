@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace RealmEngine.Core.Services.Budget;
 
@@ -9,11 +9,11 @@ namespace RealmEngine.Core.Services.Budget;
 public class MaterialPools
 {
     /// <summary>Gets or sets the material pools metadata.</summary>
-    [JsonProperty("metadata")]
+    [JsonPropertyName("metadata")]
     public MaterialPoolMetadata? Metadata { get; set; }
 
     /// <summary>Gets or sets the dictionary of material pools by pool name.</summary>
-    [JsonProperty("pools")]
+    [JsonPropertyName("pools")]
     public Dictionary<string, MaterialPool> Pools { get; set; } = new();
 }
 
@@ -23,19 +23,19 @@ public class MaterialPools
 public class MaterialPoolMetadata
 {
     /// <summary>Gets or sets the configuration description.</summary>
-    [JsonProperty("description")]
+    [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the configuration version.</summary>
-    [JsonProperty("version")]
+    [JsonPropertyName("version")]
     public string Version { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the last updated timestamp.</summary>
-    [JsonProperty("lastUpdated")]
+    [JsonPropertyName("lastUpdated")]
     public string LastUpdated { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the configuration type.</summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type { get; set; } = string.Empty;
 }
 
@@ -46,31 +46,31 @@ public class MaterialPoolMetadata
 public class MaterialPool
 {
     /// <summary>Gets or sets the pool description.</summary>
-    [JsonProperty("description")]
+    [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the metal materials with their selection properties (LEGACY).</summary>
-    [JsonProperty("metals")]
+    [JsonPropertyName("metals")]
     public Dictionary<string, MaterialPoolEntry>? Metals { get; set; }
 
     /// <summary>Gets or sets common tier materials.</summary>
-    [JsonProperty("common")]
+    [JsonPropertyName("common")]
     public List<MaterialReference>? Common { get; set; }
 
     /// <summary>Gets or sets uncommon tier materials.</summary>
-    [JsonProperty("uncommon")]
+    [JsonPropertyName("uncommon")]
     public List<MaterialReference>? Uncommon { get; set; }
 
     /// <summary>Gets or sets rare tier materials.</summary>
-    [JsonProperty("rare")]
+    [JsonPropertyName("rare")]
     public List<MaterialReference>? Rare { get; set; }
 
     /// <summary>Gets or sets epic tier materials.</summary>
-    [JsonProperty("epic")]
+    [JsonPropertyName("epic")]
     public List<MaterialReference>? Epic { get; set; }
 
     /// <summary>Gets or sets legendary tier materials.</summary>
-    [JsonProperty("legendary")]
+    [JsonPropertyName("legendary")]
     public List<MaterialReference>? Legendary { get; set; }
 
     /// <summary>
@@ -110,11 +110,11 @@ public class MaterialPool
 public class MaterialReference
 {
     /// <summary>Gets or sets the reference to the material item.</summary>
-    [JsonProperty("itemRef")]
+    [JsonPropertyName("itemRef")]
     public string ItemRef { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the rarity weight for weighted random selection.</summary>
-    [JsonProperty("rarityWeight")]
+    [JsonPropertyName("rarityWeight")]
     public int RarityWeight { get; set; }
 }
 
@@ -124,10 +124,10 @@ public class MaterialReference
 public class MaterialPoolEntry
 {
     /// <summary>Gets or sets the rarity weight for weighted random selection.</summary>
-    [JsonProperty("rarityWeight")]
+    [JsonPropertyName("rarityWeight")]
     public int RarityWeight { get; set; }
 
     /// <summary>Gets or sets the optional level requirement range [min, max].</summary>
-    [JsonProperty("levelRequirementRange")]
+    [JsonPropertyName("levelRequirementRange")]
     public int[]? LevelRequirementRange { get; set; }
 }

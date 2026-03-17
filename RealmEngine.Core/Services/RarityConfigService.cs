@@ -1,4 +1,5 @@
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using RealmEngine.Data.Services;
 using Serilog;
 
@@ -27,7 +28,7 @@ public class RarityConfigService
             return _cachedConfig;
         }
 
-var rawJson = _configService.GetData("rarity");
+        var rawJson = _configService.GetData("rarity");
 
         if (rawJson == null)
         {
@@ -37,32 +38,15 @@ var rawJson = _configService.GetData("rarity");
 
         try
         {
-            var tiers = new List<RarityTierDefinition>();
-            var parsed = JObject.Parse(rawJson);
-            var tiersArray = parsed["tiers"] as JArray;
-
-            if (tiersArray != null)
+            var doc = JsonSerializer.Deserialize<RarityConfigDoc>(rawJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var tiers = doc?.Tiers?.Select(t => new RarityTierDefinition
             {
-                foreach (var tierToken in tiersArray)
-                {
-                    var name = tierToken["name"]?.ToString() ?? "Unknown";
-                    var range = tierToken["rarityWeightRange"] as JObject;
-                    var color = tierToken["color"]?.ToString() ?? "#FFFFFF";
-                    var dropChance = tierToken["dropChance"]?.Value<double>() ?? 0.0;
-
-                    if (range != null)
-                    {
-                        tiers.Add(new RarityTierDefinition
-                        {
-                            Name = name,
-                            MinWeight = range["min"]?.Value<int>() ?? 0,
-                            MaxWeight = range["max"]?.Value<int>() ?? 100,
-                            Color = color,
-                            DropChance = dropChance
-                        });
-                    }
-                }
-            }
+                Name       = t.Name,
+                MinWeight  = t.RarityWeightRange?.Min ?? 0,
+                MaxWeight  = t.RarityWeightRange?.Max ?? 100,
+                Color      = t.Color,
+                DropChance = t.DropChance
+            }).ToList() ?? [];
 
             _cachedConfig = new RarityConfig { Tiers = tiers };
             Log.Information("Loaded {Count} rarity tiers from configuration", tiers.Count);
@@ -124,6 +108,16 @@ var rawJson = _configService.GetData("rarity");
             }
         };
     }
+
+    private sealed record RarityConfigDoc([property: JsonPropertyName("tiers")] List<RarityTierDoc>? Tiers);
+    private sealed record RarityTierDoc(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("rarityWeightRange")] RarityRangeDoc? RarityWeightRange,
+        [property: JsonPropertyName("color")] string Color,
+        [property: JsonPropertyName("dropChance")] double DropChance);
+    private sealed record RarityRangeDoc(
+        [property: JsonPropertyName("min")] int Min,
+        [property: JsonPropertyName("max")] int Max);
 }
 
 /// <summary>

@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace RealmEngine.Core.Services.Budget;
 
@@ -9,11 +9,11 @@ namespace RealmEngine.Core.Services.Budget;
 public class EnemyTypes
 {
     /// <summary>Gets or sets the enemy types metadata.</summary>
-    [JsonProperty("metadata")]
+    [JsonPropertyName("metadata")]
     public EnemyTypeMetadata? Metadata { get; set; }
 
     /// <summary>Gets or sets the dictionary of enemy type configurations.</summary>
-    [JsonProperty("types")]
+    [JsonPropertyName("types")]
     public Dictionary<string, EnemyTypeConfig> Types { get; set; } = new();
 }
 
@@ -23,19 +23,19 @@ public class EnemyTypes
 public class EnemyTypeMetadata
 {
     /// <summary>Gets or sets the configuration description.</summary>
-    [JsonProperty("description")]
+    [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the configuration version.</summary>
-    [JsonProperty("version")]
+    [JsonPropertyName("version")]
     public string Version { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the last updated timestamp.</summary>
-    [JsonProperty("lastUpdated")]
+    [JsonPropertyName("lastUpdated")]
     public string LastUpdated { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the configuration type.</summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type { get; set; } = string.Empty;
 }
 
@@ -45,14 +45,14 @@ public class EnemyTypeMetadata
 public class EnemyTypeConfig
 {
     /// <summary>Gets or sets the budget multiplier for this enemy type.</summary>
-    [JsonProperty("budgetMultiplier")]
+    [JsonPropertyName("budgetMultiplier")]
     public double BudgetMultiplier { get; set; } = 1.0;
 
     /// <summary>Gets or sets the optional material percentage override.</summary>
-    [JsonProperty("materialPercentage")]
+    [JsonPropertyName("materialPercentage")]
     public double? MaterialPercentage { get; set; }
 
     /// <summary>Gets or sets the description of this enemy type.</summary>
-    [JsonProperty("description")]
+    [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 }

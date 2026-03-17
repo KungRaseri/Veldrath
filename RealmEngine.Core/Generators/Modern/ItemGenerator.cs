@@ -85,7 +85,7 @@ public class ItemGenerator(
     private static Item? BudgetResultToItem(BudgetItemResult? result)
     {
         if (result == null) return null;
-        var materialName = result.Material?["name"]?.ToString();
+        var materialName = result.Material?.DisplayName ?? result.Material?.Slug;
         var name = string.IsNullOrWhiteSpace(result.Pattern)
             ? (materialName ?? "Generated Item")
             : result.Pattern;

@@ -1,5 +1,5 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Services.Budget;
@@ -10,6 +10,8 @@ namespace RealmEngine.Core.Services.Budget;
 /// </summary>
 public class BudgetConfigFactory(GameConfigService configService, ILogger<BudgetConfigFactory> logger)
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     public BudgetConfig        GetBudgetConfig()    => Load<BudgetConfig>("budget-config");
     public MaterialPools       GetMaterialPools()   => Load<MaterialPools>("material-pools");
     public EnemyTypes          GetEnemyTypes()      => Load<EnemyTypes>("enemy-types");
@@ -26,7 +28,7 @@ public class BudgetConfigFactory(GameConfigService configService, ILogger<Budget
         }
         try
         {
-            return JsonConvert.DeserializeObject<T>(json) ?? new T();
+            return JsonSerializer.Deserialize<T>(json, _jsonOptions) ?? new T();
         }
         catch (Exception ex)
         {

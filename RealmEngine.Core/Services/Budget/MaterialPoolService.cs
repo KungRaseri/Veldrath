@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 
@@ -44,9 +43,9 @@ public class MaterialPoolService
     /// <summary>
     /// Selects a material from the specified material type pool within the budget.
     /// Material type should be: metals, fabrics, leathers, woods, gems, bones, scales, chitin, or crystals.
-    /// Returns a material JToken on success, null on failure.
+    /// Returns a Material entity on success, null on failure.
     /// </summary>
-    public async Task<JToken?> SelectMaterialAsync(string materialType, int availableBudget)
+    public async Task<Material?> SelectMaterialAsync(string materialType, int availableBudget)
     {
         try
         {
@@ -58,8 +57,8 @@ public class MaterialPoolService
             }
 
             // Resolve all materials in pool and filter by budget
-            var allMaterials = new List<(JToken Material, int Cost, int Weight)>();
-            var affordableMaterials = new List<(JToken Material, int Cost, int Weight)>();
+            var allMaterials = new List<(Material Material, int Cost, int Weight)>();
+            var affordableMaterials = new List<(Material Material, int Cost, int Weight)>();
 
             // Support both old (Metals dictionary) and new (rarity tier) structures
             var materialRefs = new List<(string Ref, int Weight)>();
@@ -93,9 +92,8 @@ public class MaterialPoolService
                     continue;
                 }
 
-                var resolved = MaterialToJToken(material);
-                var cost = _budgetCalculator.CalculateMaterialCost(resolved);
-                var materialEntry = (resolved, cost, weight);
+                var cost = _budgetCalculator.CalculateMaterialCost(material);
+                var materialEntry = (material, cost, weight);
                 allMaterials.Add(materialEntry);
 
                 if (_budgetCalculator.CanAfford(availableBudget, cost))
@@ -115,7 +113,7 @@ public class MaterialPoolService
                 
                 var cheapest = allMaterials.OrderBy(m => m.Cost).First();
                 _logger.LogInformation("Budget {Budget} too low for {MaterialType}, using cheapest material {MaterialName} (cost={Cost})", 
-                    availableBudget, materialType, GetStringProperty(cheapest.Material, "name"), cheapest.Cost);
+                    availableBudget, materialType, cheapest.Material.DisplayName ?? cheapest.Material.Slug, cheapest.Cost);
                 return cheapest.Material;
             }
 
@@ -154,7 +152,7 @@ public class MaterialPoolService
         return 1.0;
     }
 
-    private (JToken Material, int Cost, int Weight) SelectWeightedRandom(List<(JToken Material, int Cost, int Weight)> items)
+    private static (Material Material, int Cost, int Weight) SelectWeightedRandom(List<(Material Material, int Cost, int Weight)> items)
     {
         var totalWeight = items.Sum(i => i.Weight);
         var randomValue = _random.Next(totalWeight);
@@ -173,26 +171,6 @@ public class MaterialPoolService
         return items.Last();
     }
     
-    private static string GetStringProperty(JToken token, string propertyName, string defaultValue = "")
-    {
-        try
-        {
-            return token[propertyName]?.Value<string>() ?? defaultValue;
-        }
-        catch
-        {
-            return defaultValue;
-        }
-    }
-
-    private static JToken MaterialToJToken(Material m) =>
-        new JObject
-        {
-            ["name"] = m.DisplayName ?? m.Slug,
-            ["rarityWeight"] = m.RarityWeight,
-            ["costScale"] = (double)m.CostScale
-        };
-
     private static string ExtractSlug(string materialRef) =>
         materialRef.Contains(':') ? materialRef.Split(':')[^1] : materialRef;
 }
