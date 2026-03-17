@@ -12,6 +12,11 @@ public class DropItemHandler : IRequestHandler<DropItemCommand, DropItemResult>
     private readonly ISaveGameService _saveGameService;
     private readonly ILogger<DropItemHandler> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DropItemHandler"/> class.
+    /// </summary>
+    /// <param name="saveGameService">The save game service.</param>
+    /// <param name="logger">The logger.</param>
     public DropItemHandler(ISaveGameService saveGameService, ILogger<DropItemHandler> logger)
     {
         _saveGameService = saveGameService;

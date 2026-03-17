@@ -34,9 +34,9 @@
 
   <!-- NuGet ownership metadata — applies to all projects; harmless for non-packable ones -->
   <PropertyGroup>
-    <Authors>Console Game Team</Authors>
-    <Company>Console Game</Company>
-    <Product>Console Game Engine</Product>
+    <Authors>KungRaseri</Authors>
+    <Company>RealmEngine Community</Company>
+    <Product>RealmEngine</Product>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
