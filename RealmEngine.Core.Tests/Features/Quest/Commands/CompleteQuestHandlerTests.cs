@@ -3,6 +3,7 @@ using Moq;
 using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Shared.Models;
 using QuestModel = RealmEngine.Shared.Models.Quest;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -23,7 +24,7 @@ public class CompleteQuestHandlerTests
     public CompleteQuestHandlerTests()
     {
         _mockQuestService = new Mock<QuestService>(MockBehavior.Strict, null!, null!, null!, NullLogger<QuestService>.Instance);
-        _mockRewardService = new Mock<QuestRewardService>(MockBehavior.Strict, (ISaveGameService)null!, NullLogger<QuestRewardService>.Instance);
+        _mockRewardService = new Mock<QuestRewardService>(MockBehavior.Strict, (ISaveGameService)null!, (ItemGenerator?)null, NullLogger<QuestRewardService>.Instance);
         _mockSaveGameService = new Mock<ISaveGameService>();
         _handler = new CompleteQuestHandler(_mockQuestService.Object, _mockRewardService.Object, _mockSaveGameService.Object);
     }
@@ -55,7 +56,8 @@ public class CompleteQuestHandlerTests
             .Returns(saveGame);
 
         _mockRewardService
-            .Setup(s => s.DistributeRewards(quest, saveGame.Character, saveGame))
+            .Setup(s => s.DistributeRewardsAsync(quest, saveGame.Character, saveGame))
+            .Returns(Task.CompletedTask)
             .Verifiable();
 
         // Act

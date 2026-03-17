@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using RealmEngine.Core.Features.Harvesting;
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
@@ -407,7 +408,8 @@ public class HarvestingIntegrationTests
             lootTableService,
             _nodeRepository,
             _inventoryService,
-            skillProgressionService
+            skillProgressionService,
+            Mock.Of<ISaveGameService>()
         );
     }
 }

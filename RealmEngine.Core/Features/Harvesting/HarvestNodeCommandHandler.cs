@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Core.Features.Progression.Services;
@@ -23,6 +24,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
     private readonly INodeRepository _nodeRepository;
     private readonly IInventoryService _inventoryService;
     private readonly SkillProgressionService _skillProgressionService;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the HarvestNodeCommandHandler class.
@@ -35,6 +37,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
     /// <param name="nodeRepository">Repository for node persistence.</param>
     /// <param name="inventoryService">Service for inventory management.</param>
     /// <param name="skillProgressionService">Service for skill XP progression.</param>
+    /// <param name="saveGameService">Service for loading and persisting save game state.</param>
     public HarvestNodeCommandHandler(
         ILogger<HarvestNodeCommandHandler> logger,
         HarvestCalculatorService calculator,
@@ -43,7 +46,8 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
         LootTableService lootTableService,
         INodeRepository nodeRepository,
         IInventoryService inventoryService,
-        SkillProgressionService skillProgressionService)
+        SkillProgressionService skillProgressionService,
+        ISaveGameService saveGameService)
     {
         _logger = logger;
         _calculator = calculator;
@@ -53,6 +57,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
         _nodeRepository = nodeRepository;
         _inventoryService = inventoryService;
         _skillProgressionService = skillProgressionService;
+        _saveGameService = saveGameService;
     }
 
     /// <inheritdoc />
@@ -110,14 +115,15 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
                 };
             }
 
-            // Get character from request - note: In production, this should load from repository
-            // For now, we use the skill rank from character's skills (harvesting-related skill)
-            var skillRank = request.SkillRankOverride ?? 0;
-            
-            // Note: Full implementation would load character and check specific skill (e.g., "mining", "herbalism")
-            // var character = await _characterRepository.GetCharacterByNameAsync(request.CharacterName);
-            // var harvestingSkill = GetHarvestingSkillForNode(node.NodeType);
-            // skillRank = character.Skills.GetValueOrDefault(harvestingSkill)?.CurrentRank ?? 0;
+            // Load character from save game to get actual skill rank
+            var saveGame = _saveGameService.GetCurrentSave();
+            var character = saveGame?.Character?.Name == request.CharacterName
+                ? saveGame.Character
+                : null;
+
+            var harvestingSkill = DetermineHarvestingSkill(node.NodeType);
+            var characterSkillRank = character?.Skills.GetValueOrDefault(harvestingSkill)?.CurrentRank ?? 0;
+            var skillRank = request.SkillRankOverride ?? characterSkillRank;
 
             // Roll for critical harvest
             var isCritical = _criticalService.RollCritical(skillRank, toolTier, node.IsRichNode);
@@ -149,26 +155,18 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
             await _inventoryService.AddItemsAsync(request.CharacterName, materials);
 
             // Award skill XP to character
-            // Note: In production, load full Character object from repository
-            // For now, this demonstrates the integration point
             try
             {
-                // Create minimal character for XP award (production would load from DB)
-                var character = new Character
+                if (character != null)
                 {
-                    Name = request.CharacterName,
-                    Skills = new Dictionary<string, CharacterSkill>()
-                };
-                
-                // Determine which skill to award XP to based on node type
-                var skillId = DetermineHarvestingSkill(node.NodeType);
-                
-                _skillProgressionService.AwardSkillXP(character, skillId, xpGain, "harvesting");
-                
-                _logger.LogDebug("Awarded {XP} XP to {Skill} for {Character}", xpGain, skillId, request.CharacterName);
-                
-                // Note: In production, save updated character to repository here
-                // await _characterRepository.SaveCharacterAsync(character);
+                    _skillProgressionService.AwardSkillXP(character, harvestingSkill, xpGain, "harvesting");
+                    _saveGameService.SaveGame(saveGame!);
+                    _logger.LogDebug("Awarded {XP} XP to {Skill} for {Character}", xpGain, harvestingSkill, request.CharacterName);
+                }
+                else
+                {
+                    _logger.LogWarning("Could not find character '{CharacterName}' in active save; XP not awarded", request.CharacterName);
+                }
             }
             catch (Exception ex)
             {
@@ -179,21 +177,9 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
             // Apply tool durability loss
             if (!toolValidation.HasNoTool && !string.IsNullOrEmpty(request.EquippedToolRef))
             {
-                try
-                {
-                    // Note: IInventoryService should have a method to reduce item durability
-                    // For now, this demonstrates the integration point
-                    _logger.LogDebug("Tool {Tool} lost {Durability} durability for {Character}", 
-                        request.EquippedToolRef, durabilityLoss, request.CharacterName);
-                    
-                    // Production implementation:
-                    // await _inventoryService.ReduceItemDurabilityAsync(request.CharacterName, request.EquippedToolRef, durabilityLoss);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to apply tool durability loss for {Character}", request.CharacterName);
-                    // Non-critical: Continue with harvest result
-                }
+                _logger.LogDebug("Tool {Tool} lost {Durability} durability for {Character}",
+                    request.EquippedToolRef, durabilityLoss, request.CharacterName);
+                // TODO: Reduce tool durability via IInventoryService once the method is added
             }
 
             var result = new HarvestResult
