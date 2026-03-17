@@ -9,6 +9,7 @@ using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
+using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
 using Xunit;
@@ -22,7 +23,7 @@ namespace RealmEngine.Core.Tests.Features.Harvesting;
 public class HarvestingIntegrationTests
 {
     private readonly InMemoryNodeRepository _nodeRepository;
-    private readonly RealmEngine.Core.Services.InMemoryInventoryService _inventoryService;
+    private readonly InMemoryInventoryService _inventoryService;
     private readonly HarvestingConfig _config;
     
     public HarvestingIntegrationTests()
@@ -111,8 +112,8 @@ public class HarvestingIntegrationTests
         _nodeRepository = new InMemoryNodeRepository(
             loggerFactory.CreateLogger<InMemoryNodeRepository>()
         );
-        _inventoryService = new RealmEngine.Core.Services.InMemoryInventoryService(
-            loggerFactory.CreateLogger<RealmEngine.Core.Services.InMemoryInventoryService>()
+        _inventoryService = new InMemoryInventoryService(
+            loggerFactory.CreateLogger<InMemoryInventoryService>()
         );
     }
     
