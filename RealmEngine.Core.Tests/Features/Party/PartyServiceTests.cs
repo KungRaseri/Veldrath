@@ -14,7 +14,7 @@ public class PartyServiceTests
 
     public PartyServiceTests()
     {
-        _partyService = new PartyService();
+        _partyService = new PartyService(NullLogger<PartyService>.Instance);
     }
 
     [Fact]

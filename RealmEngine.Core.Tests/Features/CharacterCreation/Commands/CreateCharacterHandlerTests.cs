@@ -21,7 +21,7 @@ public class CreateCharacterHandlerTests
     {
         _mediatorMock = new Mock<IMediator>();
         _backgroundRepositoryMock = new Mock<IBackgroundRepository>();
-        _handler = new CreateCharacterHandler(_mediatorMock.Object, _backgroundRepositoryMock.Object);
+        _handler = new CreateCharacterHandler(_mediatorMock.Object, _backgroundRepositoryMock.Object, NullLogger<CreateCharacterHandler>.Instance);
     }
 
     [Fact]

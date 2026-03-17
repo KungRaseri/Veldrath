@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.Inventory;
+using Microsoft.Extensions.Logging.Abstractions;
 using MediatR;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ public class InventoryServiceTests
     public async Task AddItemAsync_Should_Add_Item_To_Inventory()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var item = new Item { Name = "Sword", Type = ItemType.Weapon };
 
         // Act
@@ -40,7 +41,7 @@ public class InventoryServiceTests
     public async Task AddItemAsync_Should_Publish_ItemAcquired_Event()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var item = new Item { Name = "Potion", Type = ItemType.Consumable };
 
         // Act
@@ -56,7 +57,7 @@ public class InventoryServiceTests
     public async Task AddItemAsync_Should_Return_False_For_Null_Item()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
 
         // Act
         var result = await service.AddItemAsync(null!, "Hero");
@@ -70,7 +71,7 @@ public class InventoryServiceTests
     public async Task RemoveItem_Should_Remove_Item_By_Id()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var item = new Item { Id = "item-123", Name = "Sword", Type = ItemType.Weapon };
         await service.AddItemAsync(item, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
 
@@ -86,7 +87,7 @@ public class InventoryServiceTests
     public async Task RemoveItem_Should_Return_False_For_Nonexistent_Id()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
 
         // Act
         var result = service.RemoveItem("nonexistent-id");
@@ -99,7 +100,7 @@ public class InventoryServiceTests
     public async Task RemoveItem_Should_Remove_Item_By_Reference()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var item = new Item { Name = "Helmet", Type = ItemType.Helmet };
         await service.AddItemAsync(item, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
 
@@ -115,7 +116,7 @@ public class InventoryServiceTests
     public async Task RemoveItem_Should_Return_False_For_Null_Item()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
 
         // Act
         var result = service.RemoveItem((Item)null!);
@@ -128,7 +129,7 @@ public class InventoryServiceTests
     public async Task GetItemsByType_Should_Filter_By_Type()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var weapon1 = new Item { Name = "Sword", Type = ItemType.Weapon };
         var weapon2 = new Item { Name = "Axe", Type = ItemType.Weapon };
         var armor = new Item { Name = "Shield", Type = ItemType.Shield };
@@ -150,7 +151,7 @@ public class InventoryServiceTests
     public async Task GetItemsByRarity_Should_Filter_By_Rarity()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var common = new Item { Name = "Iron Sword", Rarity = ItemRarity.Common };
         var rare = new Item { Name = "Excalibur", Rarity = ItemRarity.Rare };
         var legendary = new Item { Name = "Dragon Blade", Rarity = ItemRarity.Legendary };
@@ -170,7 +171,7 @@ public class InventoryServiceTests
     public async Task FindItemById_Should_Return_Item_When_Found()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var item = new Item { Id = "unique-123", Name = "Magic Ring" };
         await service.AddItemAsync(item, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
 
@@ -186,7 +187,7 @@ public class InventoryServiceTests
     public void FindItemById_Should_Return_Null_When_Not_Found()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
 
         // Act
         var found = service.FindItemById("nonexistent");
@@ -199,7 +200,7 @@ public class InventoryServiceTests
     public async Task UseItemAsync_Should_Apply_Consumable_Effects()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var character = new Character { Name = "Hero", Health = 50, MaxHealth = 100 };
         var potion = new Item { Name = "Health Potion", Type = ItemType.Consumable };
         await service.AddItemAsync(potion, "Hero");
@@ -217,7 +218,7 @@ public class InventoryServiceTests
     public async Task UseItemAsync_Should_Return_False_For_Non_Consumable()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var character = new Character { Name = "Hero", Health = 50, MaxHealth = 100 };
         var weapon = new Item { Name = "Sword", Type = ItemType.Weapon };
         await service.AddItemAsync(weapon, "Hero");
@@ -234,7 +235,7 @@ public class InventoryServiceTests
     public async Task UseItemAsync_Should_Return_False_For_Item_Not_In_Inventory()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var character = new Character { Name = "Hero", Health = 50, MaxHealth = 100 };
         var potion = new Item { Name = "Potion", Type = ItemType.Consumable };
 
@@ -249,7 +250,7 @@ public class InventoryServiceTests
     public async Task HasItemOfType_Should_Return_True_When_Type_Exists()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         var weapon = new Item { Name = "Sword", Type = ItemType.Weapon };
         await service.AddItemAsync(weapon, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
 
@@ -264,7 +265,7 @@ public class InventoryServiceTests
     public void HasItemOfType_Should_Return_False_When_Type_Not_Exists()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
 
         // Act
         var result = service.HasItemOfType(ItemType.Consumable);
@@ -277,7 +278,7 @@ public class InventoryServiceTests
     public async Task Clear_Should_Remove_All_Items()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         await service.AddItemAsync(new Item { Name = "Item1" }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Item2" }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Item3" }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
@@ -294,7 +295,7 @@ public class InventoryServiceTests
     public async Task SortByName_Should_Order_Items_Alphabetically()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         await service.AddItemAsync(new Item { Name = "Zebra Sword" }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Alpha Shield" }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Beta Potion" }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
@@ -313,7 +314,7 @@ public class InventoryServiceTests
     public async Task SortByRarity_Should_Order_Items_By_Rarity()
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         await service.AddItemAsync(new Item { Name = "Common", Rarity = ItemRarity.Common }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Legendary", Rarity = ItemRarity.Legendary }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Rare", Rarity = ItemRarity.Rare }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
@@ -339,7 +340,7 @@ public class InventoryServiceTests
         };
 
         // Act
-        var service = new InventoryService(_mockMediator.Object, existingItems);
+        var service = new InventoryService(_mockMediator.Object, existingItems, NullLogger<InventoryService>.Instance);
 
         // Assert
         service.Count.Should().Be(2);
@@ -354,7 +355,7 @@ public class InventoryServiceTests
     public async Task GetItemsByType_Should_Return_Correct_Count(ItemType type, int expectedCount)
     {
         // Arrange
-        var service = new InventoryService(_mockMediator.Object);
+        var service = new InventoryService(_mockMediator.Object, NullLogger<InventoryService>.Instance);
         await service.AddItemAsync(new Item { Name = "Sword", Type = ItemType.Weapon }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Axe", Type = ItemType.Weapon }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));
         await service.AddItemAsync(new Item { Name = "Shield", Type = ItemType.Shield }, "Hero").WaitAsync(TimeSpan.FromMilliseconds(500));

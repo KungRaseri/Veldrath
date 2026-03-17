@@ -14,7 +14,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Remove_Item_From_Inventory()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var item = new Item { Name = "Health Potion", Type = ItemType.Consumable };
         var player = new Character
         {
@@ -35,7 +35,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Return_Success_Message()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var item = new Item { Name = "Iron Sword", Type = ItemType.Weapon };
         var player = new Character
         {
@@ -55,7 +55,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Fail_When_Item_Not_In_Inventory()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var item = new Item { Name = "Missing Item", Type = ItemType.Consumable };
         var player = new Character
         {
@@ -76,7 +76,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Only_Remove_Specified_Item()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var item1 = new Item { Name = "Health Potion", Type = ItemType.Consumable };
         var item2 = new Item { Name = "Mana Potion", Type = ItemType.Consumable };
         var item3 = new Item { Name = "Iron Sword", Type = ItemType.Weapon };
@@ -102,7 +102,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Work_With_Empty_Inventory()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var item = new Item { Name = "Test Item", Type = ItemType.Consumable };
         var player = new Character
         {
@@ -123,7 +123,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Work_With_Quest_Items()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var questItem = new Item { Name = "Ancient Key", Type = ItemType.QuestItem };
         var player = new Character
         {
@@ -144,7 +144,7 @@ public class DropItemHandlerTests
     public async Task Handle_Should_Work_With_Equipment()
     {
         // Arrange
-        var handler = new DropItemHandler();
+        var handler = new DropItemHandler(NullLogger<DropItemHandler>.Instance);
         var weapon = new Item { Name = "Legendary Blade", Type = ItemType.Weapon, Rarity = ItemRarity.Legendary };
         var player = new Character
         {

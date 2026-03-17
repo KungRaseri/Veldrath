@@ -29,7 +29,7 @@ public class InitializeStartingSpellsHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnSpellResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object);
+        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = className };
         var command = new InitializeStartingSpellsCommand
         {
@@ -61,7 +61,7 @@ public class InitializeStartingSpellsHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnSpellResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object);
+        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
         var character = new Character { Name = "TestMage", ClassName = "Mage" };
         var command = new InitializeStartingSpellsCommand
         {
@@ -83,7 +83,7 @@ public class InitializeStartingSpellsHandlerTests
     {
         // Arrange
         var mockMediator = new Mock<IMediator>();
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object);
+        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
         var character = new Character { Name = "TestWarrior", ClassName = "Warrior" };
         var command = new InitializeStartingSpellsCommand
         {

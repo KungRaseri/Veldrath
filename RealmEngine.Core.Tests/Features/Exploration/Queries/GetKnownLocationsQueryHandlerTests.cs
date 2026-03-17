@@ -18,7 +18,7 @@ public class GetKnownLocationsQueryHandlerTests
     public GetKnownLocationsQueryHandlerTests()
     {
         _mockExplorationService = new Mock<ExplorationService>();
-        _handler = new GetKnownLocationsQueryHandler(_mockExplorationService.Object);
+        _handler = new GetKnownLocationsQueryHandler(_mockExplorationService.Object, NullLogger<GetKnownLocationsQueryHandler>.Instance);
     }
 
     [Fact]

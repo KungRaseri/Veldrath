@@ -17,7 +17,7 @@ public class GetCurrentLocationQueryHandlerTests
     public GetCurrentLocationQueryHandlerTests()
     {
         _mockGameState = new Mock<GameStateService>();
-        _handler = new GetCurrentLocationQueryHandler(_mockGameState.Object);
+        _handler = new GetCurrentLocationQueryHandler(_mockGameState.Object, NullLogger<GetCurrentLocationQueryHandler>.Instance);
     }
 
     [Fact]

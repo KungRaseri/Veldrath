@@ -20,7 +20,7 @@ public class ShopEconomyServiceTests
     {
         var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
         _catalogLoader = new ItemDataService(dbFactory.Object);
-        _service = new ShopEconomyService(_catalogLoader);
+        _service = new ShopEconomyService(_catalogLoader, NullLogger<ShopEconomyService>.Instance);
     }
 
     [Fact]

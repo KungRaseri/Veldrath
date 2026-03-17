@@ -14,7 +14,7 @@ public class DeathServiceTests
 
     public DeathServiceTests()
     {
-        _deathService = new DeathService();
+        _deathService = new DeathService(NullLogger<DeathService>.Instance);
     }
 
     [Fact]

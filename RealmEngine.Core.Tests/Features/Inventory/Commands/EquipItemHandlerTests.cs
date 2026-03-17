@@ -14,7 +14,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Weapon_To_MainHand()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var weapon = new Item { Name = "Iron Sword", Type = ItemType.Weapon };
         var player = new Character
         {
@@ -36,7 +36,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Fail_When_Equipping_Consumable()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var potion = new Item { Name = "Health Potion", Type = ItemType.Consumable };
         var player = new Character
         {
@@ -58,7 +58,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Fail_When_Equipping_QuestItem()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var questItem = new Item { Name = "Ancient Key", Type = ItemType.QuestItem };
         var player = new Character
         {
@@ -79,7 +79,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Unequip_Previous_Weapon()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var oldWeapon = new Item { Name = "Rusty Sword", Type = ItemType.Weapon };
         var newWeapon = new Item { Name = "Steel Sword", Type = ItemType.Weapon };
         var player = new Character
@@ -105,7 +105,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Shield_To_OffHand()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var shield = new Item { Name = "Iron Shield", Type = ItemType.Shield };
         var player = new Character
         {
@@ -126,7 +126,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Helmet()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var helmet = new Item { Name = "Iron Helmet", Type = ItemType.Helmet };
         var player = new Character
         {
@@ -147,7 +147,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Chest()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var chest = new Item { Name = "Iron Chest", Type = ItemType.Chest };
         var player = new Character
         {
@@ -168,7 +168,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Legs()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var legs = new Item { Name = "Iron Legs", Type = ItemType.Legs };
         var player = new Character
         {
@@ -189,7 +189,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Boots()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var boots = new Item { Name = "Iron Boots", Type = ItemType.Boots };
         var player = new Character
         {
@@ -210,7 +210,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Necklace()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var necklace = new Item { Name = "Gold Necklace", Type = ItemType.Necklace };
         var player = new Character
         {
@@ -231,7 +231,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_First_Ring_To_Ring1()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var ring = new Item { Name = "Gold Ring", Type = ItemType.Ring };
         var player = new Character
         {
@@ -253,7 +253,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_Second_Ring_To_Ring2()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var ring1 = new Item { Name = "Silver Ring", Type = ItemType.Ring };
         var ring2 = new Item { Name = "Gold Ring", Type = ItemType.Ring };
         var player = new Character
@@ -278,7 +278,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Unequip_Ring1_When_Both_Rings_Equipped()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var ring1 = new Item { Name = "Silver Ring", Type = ItemType.Ring };
         var ring2 = new Item { Name = "Gold Ring", Type = ItemType.Ring };
         var ring3 = new Item { Name = "Diamond Ring", Type = ItemType.Ring };
@@ -306,7 +306,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Return_Success_Message_With_Item_Name()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var weapon = new Item { Name = "Legendary Blade", Type = ItemType.Weapon };
         var player = new Character
         {
@@ -326,7 +326,7 @@ public class EquipItemHandlerTests
     public async Task Handle_Should_Equip_OffHand_Item()
     {
         // Arrange
-        var handler = new EquipItemHandler();
+        var handler = new EquipItemHandler(NullLogger<EquipItemHandler>.Instance);
         var offHand = new Item { Name = "Tome", Type = ItemType.OffHand };
         var player = new Character
         {

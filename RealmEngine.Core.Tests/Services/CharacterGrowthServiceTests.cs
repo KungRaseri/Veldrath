@@ -16,7 +16,7 @@ public class CharacterGrowthServiceTests
     public CharacterGrowthServiceTests()
     {
         // NullGameConfigService always returns null -> service falls back to built-in defaults.
-        _service = new CharacterGrowthService(new NullGameConfigService());
+        _service = new CharacterGrowthService(new NullGameConfigService(), NullLogger<CharacterGrowthService>.Instance);
     }
 
     [Fact]

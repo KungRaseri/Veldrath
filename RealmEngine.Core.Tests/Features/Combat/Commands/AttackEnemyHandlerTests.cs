@@ -24,7 +24,7 @@ public class AttackEnemyHandlerTests
         _mockCombatService = new Mock<CombatService>();
         _mockMediator = new Mock<IMediator>();
         _mockSaveGameService = new Mock<SaveGameService>();
-        _handler = new AttackEnemyHandler(_mockCombatService.Object, _mockMediator.Object, _mockSaveGameService.Object);
+        _handler = new AttackEnemyHandler(_mockCombatService.Object, _mockMediator.Object, _mockSaveGameService.Object, NullLogger<AttackEnemyHandler>.Instance);
     }
 
     [Fact]

@@ -19,7 +19,7 @@ public class RestCommandHandlerTests
     public RestCommandHandlerTests()
     {
         _mockGameState = new Mock<GameStateService>();
-        _handler = new RestCommandHandler(_mockGameState.Object);
+        _handler = new RestCommandHandler(_mockGameState.Object, NullLogger<RestCommandHandler>.Instance);
     }
 
     [Fact]
