@@ -155,7 +155,7 @@ public class MaterialPoolService
     private static (Material Material, int Cost, int Weight) SelectWeightedRandom(List<(Material Material, int Cost, int Weight)> items)
     {
         var totalWeight = items.Sum(i => i.Weight);
-        var randomValue = _random.Next(totalWeight);
+        var randomValue = Random.Shared.Next(totalWeight);
         var cumulative = 0;
 
         foreach (var item in items)

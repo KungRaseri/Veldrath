@@ -1,4 +1,5 @@
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Serilog;
 using RealmEngine.Data.Services;
 
@@ -32,16 +33,16 @@ public class CharacterGrowthService
                 return _config;
             }
 
-            var json = JObject.Parse(rawJson);
+            var doc = JsonSerializer.Deserialize<GrowthStatsDoc>(rawJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             _config = new GrowthStatsConfig
             {
-                Version = json["metadata"]?["version"]?.Value<string>() ?? "4.0",
-                DerivedStats = ParseDerivedStats(json["derivedStats"] as JObject),
-                StatCaps = ParseStatCaps(json["statCaps"] as JObject),
-                ClassGrowthMultipliers = ParseClassGrowthMultipliers(json["classGrowthMultipliers"] as JObject),
-                StatPointAllocation = ParseStatPointAllocation(json["statPointAllocation"] as JObject),
-                RespecSystem = ParseRespecSystem(json["respecSystem"] as JObject)
+                Version = doc?.Metadata?.Version ?? "4.0",
+                DerivedStats = MapDerivedStats(doc?.DerivedStats),
+                StatCaps = MapStatCaps(doc?.StatCaps),
+                ClassGrowthMultipliers = MapClassGrowthMultipliers(doc?.ClassGrowthMultipliers),
+                StatPointAllocation = MapStatPointAllocation(doc?.StatPointAllocation),
+                RespecSystem = MapRespecSystem(doc?.RespecSystem)
             };
 
             Log.Information("✅ Loaded growth stats config (version {Version}) with {Count} class multipliers",
@@ -161,131 +162,108 @@ public class CharacterGrowthService
 
     #region Private Parsing Methods
 
-    private Dictionary<string, DerivedStat> ParseDerivedStats(JObject? json)
-    {
-        var result = new Dictionary<string, DerivedStat>();
-        if (json == null)
-            return result;
+    private static Dictionary<string, DerivedStat> MapDerivedStats(Dictionary<string, DerivedStatDoc>? doc) =>
+        doc?.ToDictionary(kvp => kvp.Key, kvp => new DerivedStat { Formula = kvp.Value.Formula ?? "", Description = kvp.Value.Description ?? "" })
+        ?? [];
 
-        foreach (var prop in json.Properties())
+    private static StatCaps MapStatCaps(StatCapsDoc? doc) =>
+        doc == null ? GetDefaultStatCaps() : new StatCaps
         {
-            var statJson = prop.Value as JObject;
-            if (statJson != null)
-            {
-                result[prop.Name] = new DerivedStat
-                {
-                    Formula = statJson["formula"]?.Value<string>() ?? "",
-                    Description = statJson["description"]?.Value<string>() ?? ""
-                };
-            }
-        }
-
-        return result;
-    }
-
-    private StatCaps ParseStatCaps(JObject? json)
-    {
-        if (json == null)
-            return GetDefaultStatCaps();
-
-        return new StatCaps
-        {
-            SoftCaps = ParseCapTier(json["softCaps"] as JObject, 0.5),
-            HardCaps = ParseCapTier(json["hardCaps"] as JObject, 1.0)
+            SoftCaps = MapCapTier(doc.SoftCaps, 0.5),
+            HardCaps = MapCapTier(doc.HardCaps, 1.0)
         };
-    }
 
-    private CapTier ParseCapTier(JObject? json, double defaultDiminishing)
+    private static CapTier MapCapTier(CapTierDoc? doc, double defaultDiminishing)
     {
-        if (json == null)
-            return new CapTier { Description = "", StatLimits = new Dictionary<string, int>(), DiminishingFactor = defaultDiminishing };
+        if (doc == null)
+            return new CapTier { Description = "", StatLimits = [], DiminishingFactor = defaultDiminishing };
 
         var statLimits = new Dictionary<string, int>();
-        foreach (var prop in json.Properties())
+        if (doc.Extra != null)
         {
-            if (prop.Name == "description" || prop.Name == "diminishingFactor")
-                continue;
-
-            if (prop.Value.Type == JTokenType.Integer)
+            foreach (var (key, value) in doc.Extra)
             {
-                statLimits[prop.Name] = prop.Value.Value<int>();
+                if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var intVal))
+                    statLimits[key] = intVal;
             }
         }
 
         return new CapTier
         {
-            Description = json["description"]?.Value<string>() ?? "",
+            Description = doc.Description ?? "",
             StatLimits = statLimits,
-            DiminishingFactor = json["diminishingFactor"]?.Value<double>() ?? defaultDiminishing
+            DiminishingFactor = doc.DiminishingFactor ?? defaultDiminishing
         };
     }
 
-    private List<ClassGrowthMultiplier> ParseClassGrowthMultipliers(JObject? json)
-    {
-        var result = new List<ClassGrowthMultiplier>();
-        if (json == null)
-            return result;
+    private static List<ClassGrowthMultiplier> MapClassGrowthMultipliers(ClassGrowthMultipliersDoc? doc) =>
+        doc?.Growth?
+            .Where(item => !string.IsNullOrEmpty(item.ClassRef))
+            .Select(item => new ClassGrowthMultiplier { ClassRef = item.ClassRef!, Multipliers = item.Multipliers ?? [] })
+            .ToList() ?? [];
 
-        var growthArray = json["growth"] as JArray;
-        if (growthArray == null)
-            return result;
-
-        foreach (var item in growthArray)
-        {
-            var itemObj = item as JObject;
-            if (itemObj == null)
-                continue;
-
-            var classRef = itemObj["classRef"]?.Value<string>();
-            if (string.IsNullOrEmpty(classRef))
-                continue;
-
-            var multipliersObj = itemObj["multipliers"] as JObject;
-            if (multipliersObj == null)
-                continue;
-
-            var multipliers = new Dictionary<string, double>();
-            foreach (var prop in multipliersObj.Properties())
+    private static StatPointAllocation MapStatPointAllocation(StatPointAllocationDoc? doc) =>
+        doc == null
+            ? new StatPointAllocation { PointsPerLevel = 5, MinimumPerStat = 1, MaximumPerStat = 3 }
+            : new StatPointAllocation
             {
-                multipliers[prop.Name] = prop.Value.Value<double>();
-            }
+                PointsPerLevel = doc.PointsPerLevel ?? 5,
+                Description = doc.Description,
+                MinimumPerStat = doc.MinimumPerStat ?? 1,
+                MaximumPerStat = doc.MaximumPerStat ?? 3
+            };
 
-            result.Add(new ClassGrowthMultiplier
-            {
-                ClassRef = classRef,
-                Multipliers = multipliers
-            });
-        }
+    private static RespecSystem MapRespecSystem(RespecSystemDoc? doc) =>
+        doc == null
+            ? new RespecSystem { Enabled = true, CostFormula = "level * 100" }
+            : new RespecSystem { Enabled = doc.Enabled ?? true, CostFormula = doc.CostFormula ?? "level * 100", Description = doc.Description };
 
-        return result;
-    }
+    private sealed record GrowthStatsDoc(
+        [property: JsonPropertyName("metadata")] MetadataDoc? Metadata,
+        [property: JsonPropertyName("derivedStats")] Dictionary<string, DerivedStatDoc>? DerivedStats,
+        [property: JsonPropertyName("statCaps")] StatCapsDoc? StatCaps,
+        [property: JsonPropertyName("classGrowthMultipliers")] ClassGrowthMultipliersDoc? ClassGrowthMultipliers,
+        [property: JsonPropertyName("statPointAllocation")] StatPointAllocationDoc? StatPointAllocation,
+        [property: JsonPropertyName("respecSystem")] RespecSystemDoc? RespecSystem);
 
-    private StatPointAllocation ParseStatPointAllocation(JObject? json)
+    private sealed record MetadataDoc([property: JsonPropertyName("version")] string? Version);
+
+    private sealed record DerivedStatDoc(
+        [property: JsonPropertyName("formula")] string? Formula,
+        [property: JsonPropertyName("description")] string? Description);
+
+    private sealed record StatCapsDoc(
+        [property: JsonPropertyName("softCaps")] CapTierDoc? SoftCaps,
+        [property: JsonPropertyName("hardCaps")] CapTierDoc? HardCaps);
+
+    private sealed class CapTierDoc
     {
-        if (json == null)
-            return new StatPointAllocation { PointsPerLevel = 5, MinimumPerStat = 1, MaximumPerStat = 3 };
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
 
-        return new StatPointAllocation
-        {
-            PointsPerLevel = json["pointsPerLevel"]?.Value<int>() ?? 5,
-            Description = json["description"]?.Value<string>() ?? "",
-            MinimumPerStat = json["minimumPerStat"]?.Value<int>() ?? 1,
-            MaximumPerStat = json["maximumPerStat"]?.Value<int>() ?? 3
-        };
+        [JsonPropertyName("diminishingFactor")]
+        public double? DiminishingFactor { get; set; }
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? Extra { get; set; }
     }
 
-    private RespecSystem ParseRespecSystem(JObject? json)
-    {
-        if (json == null)
-            return new RespecSystem { Enabled = true, CostFormula = "level * 100" };
+    private sealed record ClassGrowthMultipliersDoc([property: JsonPropertyName("growth")] List<ClassGrowthItemDoc>? Growth);
 
-        return new RespecSystem
-        {
-            Enabled = json["enabled"]?.Value<bool>() ?? true,
-            CostFormula = json["costFormula"]?.Value<string>() ?? "level * 100",
-            Description = json["description"]?.Value<string>() ?? ""
-        };
-    }
+    private sealed record ClassGrowthItemDoc(
+        [property: JsonPropertyName("classRef")] string? ClassRef,
+        [property: JsonPropertyName("multipliers")] Dictionary<string, double>? Multipliers);
+
+    private sealed record StatPointAllocationDoc(
+        [property: JsonPropertyName("pointsPerLevel")] int? PointsPerLevel,
+        [property: JsonPropertyName("description")] string? Description,
+        [property: JsonPropertyName("minimumPerStat")] int? MinimumPerStat,
+        [property: JsonPropertyName("maximumPerStat")] int? MaximumPerStat);
+
+    private sealed record RespecSystemDoc(
+        [property: JsonPropertyName("enabled")] bool? Enabled,
+        [property: JsonPropertyName("costFormula")] string? CostFormula,
+        [property: JsonPropertyName("description")] string? Description);
 
     #endregion
 
@@ -308,7 +286,7 @@ public class CharacterGrowthService
         };
     }
 
-    private StatCaps GetDefaultStatCaps()
+    private static StatCaps GetDefaultStatCaps()
     {
         return new StatCaps
         {

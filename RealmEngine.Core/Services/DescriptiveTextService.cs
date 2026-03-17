@@ -1,4 +1,5 @@
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using RealmEngine.Data.Services;
 using Serilog;
 
@@ -214,110 +215,74 @@ public class DescriptiveTextService
         return $"A {string.Join(" ", parts)}";
     }
 
-    private JObject? _data;
+    private DescriptiveTextData? _data;
 
-    private JObject LoadData()
+    private DescriptiveTextData LoadData()
     {
         if (_data != null) return _data;
         var raw = _configService.GetData("descriptive-text");
-        _data = raw != null ? JObject.Parse(raw) : new JObject();
-        return _data;
+        _data = raw != null
+            ? JsonSerializer.Deserialize<DescriptiveTextData>(raw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            : new DescriptiveTextData(null, null, null, null, null, null, null, null);
+        return _data!;
     }
 
     private void EnsureAdjectivesLoaded()
     {
         if (_adjectives != null) return;
-
-        _adjectives = new Dictionary<string, List<string>>();
-        var components = LoadData()["components"] as JObject;
-
-        if (components != null)
-        {
-            foreach (var prop in components.Properties())
-            {
-                var list = prop.Value.ToObject<List<string>>();
-                if (list != null)
-                    _adjectives[prop.Name] = list;
-            }
-        }
+        _adjectives = LoadData().Components ?? [];
     }
 
     private void EnsureColorsLoaded()
     {
         if (_colors != null) return;
-
-        _colors = new Dictionary<string, List<string>>();
         var data = LoadData();
-        var colorSection = data["colors"] as JObject ?? data["components"] as JObject;
-
-        if (colorSection != null)
-        {
-            foreach (var prop in colorSection.Properties())
-            {
-                var list = prop.Value.ToObject<List<string>>();
-                if (list != null)
-                    _colors[prop.Name] = list;
-            }
-        }
+        _colors = data.Colors ?? data.Components ?? [];
     }
 
     private void EnsureSmellsLoaded()
     {
         if (_smells != null) return;
-        _smells = LoadData()["smells"]?.ToObject<List<string>>() ?? [];
+        _smells = LoadData().Smells ?? [];
     }
 
     private void EnsureSoundsLoaded()
     {
         if (_sounds != null) return;
-        _sounds = LoadData()["sounds"]?.ToObject<List<string>>() ?? [];
+        _sounds = LoadData().Sounds ?? [];
     }
 
     private void EnsureTexturesLoaded()
     {
         if (_textures != null) return;
-        _textures = LoadData()["textures"]?.ToObject<List<string>>() ?? [];
+        _textures = LoadData().Textures ?? [];
     }
 
     private void EnsureVerbsLoaded()
     {
         if (_verbs != null) return;
-        _verbs = LoadData()["verbs"]?.ToObject<List<string>>() ?? [];
+        _verbs = LoadData().Verbs ?? [];
     }
 
     private void EnsureWeatherLoaded()
     {
         if (_weather != null) return;
-
-        _weather = new Dictionary<string, List<string>>();
-        var conditions = LoadData()["weather_conditions"] as JObject;
-
-        if (conditions != null)
-        {
-            foreach (var prop in conditions.Properties())
-            {
-                var list = prop.Value.ToObject<List<string>>();
-                if (list != null)
-                    _weather[prop.Name] = list;
-            }
-        }
+        _weather = LoadData().WeatherConditions ?? [];
     }
 
     private void EnsureTimeOfDayLoaded()
     {
         if (_timeOfDay != null) return;
-
-        _timeOfDay = new Dictionary<string, List<string>>();
-        var periods = LoadData()["time_periods"] as JObject;
-
-        if (periods != null)
-        {
-            foreach (var prop in periods.Properties())
-            {
-                var list = prop.Value.ToObject<List<string>>();
-                if (list != null)
-                    _timeOfDay[prop.Name] = list;
-            }
-        }
+        _timeOfDay = LoadData().TimePeriods ?? [];
     }
+
+    private sealed record DescriptiveTextData(
+        [property: JsonPropertyName("components")] Dictionary<string, List<string>>? Components,
+        [property: JsonPropertyName("colors")] Dictionary<string, List<string>>? Colors,
+        [property: JsonPropertyName("smells")] List<string>? Smells,
+        [property: JsonPropertyName("sounds")] List<string>? Sounds,
+        [property: JsonPropertyName("textures")] List<string>? Textures,
+        [property: JsonPropertyName("verbs")] List<string>? Verbs,
+        [property: JsonPropertyName("weather_conditions")] Dictionary<string, List<string>>? WeatherConditions,
+        [property: JsonPropertyName("time_periods")] Dictionary<string, List<string>>? TimePeriods);
 }
