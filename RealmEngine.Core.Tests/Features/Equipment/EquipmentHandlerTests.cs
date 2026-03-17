@@ -1,9 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Equipment.Commands;
 using RealmEngine.Core.Features.Equipment.Queries;
-using RealmEngine.Data.Persistence;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
@@ -12,42 +11,62 @@ namespace RealmEngine.Core.Tests.Features.Equipment;
 [Trait("Category", "Feature")]
 public class EquipItemHandlerTests
 {
+    private static EquipItemHandler CreateHandler(ISaveGameService? saveGameService = null) =>
+        new(saveGameService ?? Mock.Of<ISaveGameService>(), NullLogger<EquipItemHandler>.Instance);
+
     [Fact]
-    public async Task Handle_ReturnsFailure_WithSaveSystemIntegrationMessage()
+    public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
-        var handler = new EquipItemHandler();
-        var result = await handler.Handle(new EquipItemCommand("char-01", "sword-01", EquipmentSlot.MainHand), default);
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
+
+        var result = await CreateHandler(mockSaveSvc.Object).Handle(
+            new EquipItemCommand("char-01", "sword-01", EquipmentSlot.MainHand), default);
 
         result.Success.Should().BeFalse();
         result.Message.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Handle_ReturnsFailure_WhenItemNotInInventory()
+    {
+        var save = new SaveGame { Character = new Character { Name = "Hero" } };
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(save);
+
+        var result = await CreateHandler(mockSaveSvc.Object).Handle(
+            new EquipItemCommand("char-01", "nonexistent-sword", EquipmentSlot.MainHand), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("nonexistent-sword");
     }
 }
 
 [Trait("Category", "Feature")]
 public class GetEquipmentForClassHandlerTests
 {
-    private static ContentDbContext CreateInMemoryDb()
-    {
-        var opts = new DbContextOptionsBuilder<ContentDbContext>()
-            .UseInMemoryDatabase($"equipment-test-{Guid.NewGuid()}")
-            .Options;
-        return new ContentDbContext(opts);
-    }
-
     private static GetEquipmentForClassHandler CreateHandler(
         CharacterClass? returnedClass,
-        ContentDbContext? db = null)
+        IWeaponRepository? weaponRepo = null,
+        IArmorRepository? armorRepo = null)
     {
         var mockClassRepo = new Mock<ICharacterClassRepository>();
         mockClassRepo.Setup(r => r.GetById(It.IsAny<string>())).Returns(returnedClass);
 
-        var mockDbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
-        if (db is not null)
-            mockDbFactory.Setup(f => f.CreateDbContext()).Returns(db);
+        var mockWeaponRepo = weaponRepo is not null
+            ? Mock.Get(weaponRepo)
+            : new Mock<IWeaponRepository>();
+        mockWeaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
+
+        var mockArmorRepo = armorRepo is not null
+            ? Mock.Get(armorRepo)
+            : new Mock<IArmorRepository>();
+        mockArmorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
 
         return new GetEquipmentForClassHandler(
             mockClassRepo.Object,
-            mockDbFactory.Object,
+            mockWeaponRepo.Object,
+            mockArmorRepo.Object,
             NullLogger<GetEquipmentForClassHandler>.Instance);
     }
 
@@ -63,7 +82,7 @@ public class GetEquipmentForClassHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ReturnsSuccess_WithEmptyLists_WhenDbHasNoItems()
+    public async Task Handle_ReturnsSuccess_WithEmptyLists_WhenRepositoriesEmpty()
     {
         var charClass = new CharacterClass
         {
@@ -73,8 +92,7 @@ public class GetEquipmentForClassHandlerTests
             WeaponProficiency = ["swords", "axes"],
             ArmorProficiency = ["heavy"]
         };
-        using var db = CreateInMemoryDb();
-        var handler = CreateHandler(charClass, db);
+        var handler = CreateHandler(charClass);
 
         var result = await handler.Handle(new GetEquipmentForClassQuery { ClassId = "warrior:fighter" }, default);
 
