@@ -3,6 +3,7 @@ using RealmEngine.Core.Abstractions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
@@ -12,16 +13,22 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class TravelToLocationCommandHandler : IRequestHandler<TravelToLocationCommand, TravelToLocationResult>
 {
     private readonly GameStateService _gameState;
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<TravelToLocationCommandHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TravelToLocationCommandHandler"/> class.
     /// </summary>
     /// <param name="gameState">The game state service.</param>
+    /// <param name="saveGameService">The save game service.</param>
     /// <param name="logger">The logger.</param>
-    public TravelToLocationCommandHandler(GameStateService gameState, ILogger<TravelToLocationCommandHandler> logger)
+    public TravelToLocationCommandHandler(
+        GameStateService gameState,
+        ISaveGameService saveGameService,
+        ILogger<TravelToLocationCommandHandler> logger)
     {
         _gameState = gameState;
+        _saveGameService = saveGameService;
         _logger = logger;
     }
 
@@ -46,6 +53,14 @@ public class TravelToLocationCommandHandler : IRequestHandler<TravelToLocationCo
             }
 
             _gameState.UpdateLocation(request.Destination);
+
+            var saveGame = _saveGameService.GetCurrentSave();
+            if (saveGame != null)
+            {
+                // Move from discovered (heard of but not visited) to visited
+                saveGame.DiscoveredLocations.Remove(request.Destination);
+                _saveGameService.SaveGame(saveGame);
+            }
 
             _logger.LogInformation("Player traveled to {Location}", _gameState.CurrentLocation);
 
