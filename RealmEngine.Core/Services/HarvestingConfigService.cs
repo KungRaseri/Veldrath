@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using RealmEngine.Data.Services;
 using Serilog;
 
@@ -27,7 +28,7 @@ public class HarvestingConfigService
             return _cachedConfig;
         }
 
-var json = _configService.GetData("harvesting-config");
+        var json = _configService.GetData("harvesting-config");
 
         if (json == null)
         {
@@ -37,101 +38,8 @@ var json = _configService.GetData("harvesting-config");
 
         try
         {
-            var config = new HarvestingConfig();
-            var jobj = JObject.Parse(json);
-
-            // Node Health
-            var nodeHealth = jobj["nodeHealth"] as JObject;
-            if (nodeHealth != null)
-            {
-                config.BaseDepletion = nodeHealth["baseDepletion"]?.Value<int>() ?? 20;
-                config.HealthyThreshold = nodeHealth["healthThresholds"]?["healthy"]?.Value<double>() ?? 0.8;
-                config.DepletedThreshold = nodeHealth["healthThresholds"]?["depleted"]?.Value<double>() ?? 0.4;
-                config.ExhaustedThreshold = nodeHealth["healthThresholds"]?["exhausted"]?.Value<double>() ?? 0.1;
-                config.RespawnRate = nodeHealth["respawnRate"]?.Value<int>() ?? 1;
-            }
-
-            // Yield Calculation
-            var yieldCalc = jobj["yieldCalculation"] as JObject;
-            if (yieldCalc != null)
-            {
-                config.SkillScaling = yieldCalc["skillScaling"]?.Value<double>() ?? 0.003;
-                config.ToolBonusPerTier = yieldCalc["toolBonusPerTier"]?.Value<double>() ?? 0.1;
-                config.MaxToolBonus = yieldCalc["maxToolBonus"]?.Value<double>() ?? 0.3;
-                config.CriticalMultiplier = yieldCalc["criticalMultiplier"]?.Value<double>() ?? 2.0;
-                config.ExhaustedPenalty = yieldCalc["exhaustedPenalty"]?.Value<double>() ?? 0.5;
-            }
-
-            // Critical Harvest
-            var criticalHarvest = jobj["criticalHarvest"] as JObject;
-            if (criticalHarvest != null)
-            {
-                config.CriticalBaseChance = criticalHarvest["baseChance"]?.Value<double>() ?? 0.05;
-                config.CriticalSkillScaling = criticalHarvest["skillScaling"]?.Value<double>() ?? 0.0005;
-                config.CriticalToolBonusPerTier = criticalHarvest["toolBonusPerTier"]?.Value<double>() ?? 0.01;
-                config.RichNodeBonus = criticalHarvest["richNodeBonus"]?.Value<double>() ?? 0.05;
-                config.BonusMaterialChance = criticalHarvest["bonusMaterialChance"]?.Value<double>() ?? 0.25;
-                config.RareDropChance = criticalHarvest["rareDropChance"]?.Value<double>() ?? 0.1;
-                config.CriticalDurabilityReduction = criticalHarvest["durabilityReduction"]?.Value<double>() ?? 0.5;
-                config.CriticalXPBonus = criticalHarvest["xpBonus"]?.Value<double>() ?? 1.5;
-            }
-
-            // Tool Requirements
-            var toolReqs = jobj["toolRequirements"] as JObject;
-            if (toolReqs != null)
-            {
-                config.EnforceMinimumTool = toolReqs["enforceMinimum"]?.Value<bool>() ?? true;
-                config.NoToolPenalty = toolReqs["noToolPenalty"]?.Value<double>() ?? 0.5;
-                config.NoToolDepletionMultiplier = toolReqs["noToolDepletionMultiplier"]?.Value<double>() ?? 2.0;
-                config.AllowNoToolForCommon = toolReqs["allowNoToolForCommon"]?.Value<bool>() ?? true;
-            }
-
-            // Skill XP
-            var skillXP = jobj["skillXP"] as JObject;
-            if (skillXP != null)
-            {
-                config.BaseXP = skillXP["baseXP"]?.Value<int>() ?? 10;
-                config.ToolQualityBonus = skillXP["toolQualityBonus"]?.Value<double>() ?? 0.1;
-                
-                var tierMultipliers = skillXP["tierMultipliers"] as JObject;
-                if (tierMultipliers != null)
-                {
-                    config.TierXPMultipliers["common"] = tierMultipliers["common"]?.Value<double>() ?? 1.0;
-                    config.TierXPMultipliers["uncommon"] = tierMultipliers["uncommon"]?.Value<double>() ?? 2.0;
-                    config.TierXPMultipliers["rare"] = tierMultipliers["rare"]?.Value<double>() ?? 3.0;
-                    config.TierXPMultipliers["epic"] = tierMultipliers["epic"]?.Value<double>() ?? 4.0;
-                    config.TierXPMultipliers["legendary"] = tierMultipliers["legendary"]?.Value<double>() ?? 5.0;
-                }
-            }
-
-            // Durability Loss
-            var durability = jobj["durabilityLoss"] as JObject;
-            if (durability != null)
-            {
-                config.BaseDurabilityLoss = durability["baseLoss"]?.Value<int>() ?? 1;
-                
-                var nodeResistance = durability["nodeResistance"] as JObject;
-                if (nodeResistance != null)
-                {
-                    config.NodeResistance["common"] = nodeResistance["common"]?.Value<double>() ?? 1.0;
-                    config.NodeResistance["uncommon"] = nodeResistance["uncommon"]?.Value<double>() ?? 1.2;
-                    config.NodeResistance["rare"] = nodeResistance["rare"]?.Value<double>() ?? 1.5;
-                    config.NodeResistance["epic"] = nodeResistance["epic"]?.Value<double>() ?? 1.8;
-                    config.NodeResistance["legendary"] = nodeResistance["legendary"]?.Value<double>() ?? 2.0;
-                }
-                
-                var toolHardness = durability["toolHardness"] as JObject;
-                if (toolHardness != null)
-                {
-                    config.ToolHardness["tier1"] = toolHardness["tier1"]?.Value<double>() ?? 0.5;
-                    config.ToolHardness["tier2"] = toolHardness["tier2"]?.Value<double>() ?? 0.7;
-                    config.ToolHardness["tier3"] = toolHardness["tier3"]?.Value<double>() ?? 1.0;
-                    config.ToolHardness["tier4"] = toolHardness["tier4"]?.Value<double>() ?? 1.5;
-                    config.ToolHardness["tier5"] = toolHardness["tier5"]?.Value<double>() ?? 2.0;
-                }
-            }
-
-            _cachedConfig = config;
+            var doc = JsonSerializer.Deserialize<HarvestingConfigDoc>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            _cachedConfig = MapToConfig(doc);
             Log.Information("Loaded harvesting configuration from file");
             return _cachedConfig;
         }
@@ -150,9 +58,123 @@ var json = _configService.GetData("harvesting-config");
         _cachedConfig = null;
     }
 
-    private static HarvestingConfig GetDefaultConfig()
+    private static HarvestingConfig GetDefaultConfig() => new();
+
+    private sealed record HarvestingConfigDoc(
+        [property: JsonPropertyName("nodeHealth")] NodeHealthDoc? NodeHealth,
+        [property: JsonPropertyName("yieldCalculation")] YieldCalcDoc? YieldCalculation,
+        [property: JsonPropertyName("criticalHarvest")] CriticalHarvestDoc? CriticalHarvest,
+        [property: JsonPropertyName("toolRequirements")] ToolReqsDoc? ToolRequirements,
+        [property: JsonPropertyName("skillXP")] SkillXpDoc? SkillXP,
+        [property: JsonPropertyName("durabilityLoss")] DurabilityLossDoc? DurabilityLoss);
+
+    private sealed record NodeHealthDoc(
+        [property: JsonPropertyName("baseDepletion")] int BaseDepletion,
+        [property: JsonPropertyName("healthThresholds")] HealthThresholdsDoc? HealthThresholds,
+        [property: JsonPropertyName("respawnRate")] int RespawnRate);
+
+    private sealed record HealthThresholdsDoc(
+        [property: JsonPropertyName("healthy")] double Healthy,
+        [property: JsonPropertyName("depleted")] double Depleted,
+        [property: JsonPropertyName("exhausted")] double Exhausted);
+
+    private sealed record YieldCalcDoc(
+        [property: JsonPropertyName("skillScaling")] double SkillScaling,
+        [property: JsonPropertyName("toolBonusPerTier")] double ToolBonusPerTier,
+        [property: JsonPropertyName("maxToolBonus")] double MaxToolBonus,
+        [property: JsonPropertyName("criticalMultiplier")] double CriticalMultiplier,
+        [property: JsonPropertyName("exhaustedPenalty")] double ExhaustedPenalty);
+
+    private sealed record CriticalHarvestDoc(
+        [property: JsonPropertyName("baseChance")] double BaseChance,
+        [property: JsonPropertyName("skillScaling")] double SkillScaling,
+        [property: JsonPropertyName("toolBonusPerTier")] double ToolBonusPerTier,
+        [property: JsonPropertyName("richNodeBonus")] double RichNodeBonus,
+        [property: JsonPropertyName("bonusMaterialChance")] double BonusMaterialChance,
+        [property: JsonPropertyName("rareDropChance")] double RareDropChance,
+        [property: JsonPropertyName("durabilityReduction")] double DurabilityReduction,
+        [property: JsonPropertyName("xpBonus")] double XpBonus);
+
+    private sealed record ToolReqsDoc(
+        [property: JsonPropertyName("enforceMinimum")] bool EnforceMinimum,
+        [property: JsonPropertyName("noToolPenalty")] double NoToolPenalty,
+        [property: JsonPropertyName("noToolDepletionMultiplier")] double NoToolDepletionMultiplier,
+        [property: JsonPropertyName("allowNoToolForCommon")] bool AllowNoToolForCommon);
+
+    private sealed record SkillXpDoc(
+        [property: JsonPropertyName("baseXP")] int BaseXP,
+        [property: JsonPropertyName("toolQualityBonus")] double ToolQualityBonus,
+        [property: JsonPropertyName("tierMultipliers")] Dictionary<string, double>? TierMultipliers);
+
+    private sealed record DurabilityLossDoc(
+        [property: JsonPropertyName("baseLoss")] int BaseLoss,
+        [property: JsonPropertyName("nodeResistance")] Dictionary<string, double>? NodeResistance,
+        [property: JsonPropertyName("toolHardness")] Dictionary<string, double>? ToolHardness);
+
+    private static HarvestingConfig MapToConfig(HarvestingConfigDoc? doc)
     {
-        return new HarvestingConfig();
+        var config = new HarvestingConfig();
+        if (doc == null) return config;
+
+        if (doc.NodeHealth is { } nh)
+        {
+            config.BaseDepletion = nh.BaseDepletion;
+            config.RespawnRate = nh.RespawnRate;
+            if (nh.HealthThresholds is { } ht)
+            {
+                config.HealthyThreshold = ht.Healthy;
+                config.DepletedThreshold = ht.Depleted;
+                config.ExhaustedThreshold = ht.Exhausted;
+            }
+        }
+
+        if (doc.YieldCalculation is { } yc)
+        {
+            config.SkillScaling = yc.SkillScaling;
+            config.ToolBonusPerTier = yc.ToolBonusPerTier;
+            config.MaxToolBonus = yc.MaxToolBonus;
+            config.CriticalMultiplier = yc.CriticalMultiplier;
+            config.ExhaustedPenalty = yc.ExhaustedPenalty;
+        }
+
+        if (doc.CriticalHarvest is { } ch)
+        {
+            config.CriticalBaseChance = ch.BaseChance;
+            config.CriticalSkillScaling = ch.SkillScaling;
+            config.CriticalToolBonusPerTier = ch.ToolBonusPerTier;
+            config.RichNodeBonus = ch.RichNodeBonus;
+            config.BonusMaterialChance = ch.BonusMaterialChance;
+            config.RareDropChance = ch.RareDropChance;
+            config.CriticalDurabilityReduction = ch.DurabilityReduction;
+            config.CriticalXPBonus = ch.XpBonus;
+        }
+
+        if (doc.ToolRequirements is { } tr)
+        {
+            config.EnforceMinimumTool = tr.EnforceMinimum;
+            config.NoToolPenalty = tr.NoToolPenalty;
+            config.NoToolDepletionMultiplier = tr.NoToolDepletionMultiplier;
+            config.AllowNoToolForCommon = tr.AllowNoToolForCommon;
+        }
+
+        if (doc.SkillXP is { } sx)
+        {
+            config.BaseXP = sx.BaseXP;
+            config.ToolQualityBonus = sx.ToolQualityBonus;
+            if (sx.TierMultipliers is { } tm)
+                config.TierXPMultipliers = tm;
+        }
+
+        if (doc.DurabilityLoss is { } dl)
+        {
+            config.BaseDurabilityLoss = dl.BaseLoss;
+            if (dl.NodeResistance is { } nr)
+                config.NodeResistance = nr;
+            if (dl.ToolHardness is { } th)
+                config.ToolHardness = th;
+        }
+
+        return config;
     }
 }
 
