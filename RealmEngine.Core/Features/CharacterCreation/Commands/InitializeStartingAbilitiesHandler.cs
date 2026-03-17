@@ -1,45 +1,46 @@
 using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
+using RealmEngine.Shared.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
 /// <summary>
-/// Handles initializing starting abilities for a new character.
+/// Handles <see cref="InitializeStartingAbilitiesCommand"/>.
+/// Reads level-1 <see cref="ClassAbilityUnlock"/> rows via <see cref="ICharacterClassRepository"/>
+/// and dispatches a <see cref="LearnAbilityCommand"/> for each one.
 /// </summary>
 public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStartingAbilitiesCommand, InitializeStartingAbilitiesResult>
 {
     private readonly IMediator _mediator;
+    private readonly ICharacterClassRepository _classRepository;
     private readonly ILogger<InitializeStartingAbilitiesHandler> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="InitializeStartingAbilitiesHandler"/> class.
-    /// </summary>
-    /// <param name="mediator">The mediator for sending commands.</param>
-    /// <param name="logger">The logger.</param>
-    public InitializeStartingAbilitiesHandler(IMediator mediator, ILogger<InitializeStartingAbilitiesHandler> logger)
+    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnAbilityCommand"/>.</param>
+    /// <param name="classRepository">Repository that exposes <c>StartingAbilityIds</c> from the DB.</param>
+    /// <param name="logger">Logger.</param>
+    public InitializeStartingAbilitiesHandler(
+        IMediator mediator,
+        ICharacterClassRepository classRepository,
+        ILogger<InitializeStartingAbilitiesHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _classRepository = classRepository ?? throw new ArgumentNullException(nameof(classRepository));
         _logger = logger;
     }
 
-    /// <summary>
-    /// Handles the initialize starting abilities command and returns the result.
-    /// </summary>
-    /// <param name="request">The initialize starting abilities command.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation, containing the initialization result.</returns>
+    /// <inheritdoc />
     public async Task<InitializeStartingAbilitiesResult> Handle(InitializeStartingAbilitiesCommand request, CancellationToken cancellationToken)
     {
         var abilitiesLearned = 0;
         var abilityIds = new List<string>();
-        
-        // Get starting abilities for class
-        var startingAbilities = GetStartingAbilitiesForClass(request.ClassName);
-        
+
+        var characterClass = _classRepository.GetByName(request.ClassName);
+        var startingAbilities = characterClass?.StartingAbilityIds ?? [];
+
         if (startingAbilities.Count == 0)
         {
-            _logger.LogWarning("No starting abilities defined for class {ClassName}", request.ClassName);
+            _logger.LogWarning("No starting abilities found for class {ClassName}", request.ClassName);
             return new InitializeStartingAbilitiesResult
             {
                 Success = true,
@@ -48,35 +49,32 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
             };
         }
 
-        // Learn each ability
         foreach (var abilityId in startingAbilities)
         {
             try
             {
-                var command = new LearnAbilityCommand
+                var result = await _mediator.Send(new LearnAbilityCommand
                 {
                     Character = request.Character,
                     AbilityId = abilityId
-                };
+                }, cancellationToken);
 
-                var result = await _mediator.Send(command, cancellationToken);
-                
                 if (result.Success)
                 {
                     abilitiesLearned++;
                     abilityIds.Add(abilityId);
-                    _logger.LogInformation("Character {CharacterName} learned starting ability: {AbilityId}", 
+                    _logger.LogInformation("Character {CharacterName} learned starting ability: {AbilityId}",
                         request.Character.Name, abilityId);
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to learn starting ability {AbilityId} for {CharacterName}: {Message}",
+                    _logger.LogWarning("Failed to teach starting ability {AbilityId} to {CharacterName}: {Message}",
                         abilityId, request.Character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error learning starting ability {AbilityId} for {CharacterName}", 
+                _logger.LogError(ex, "Error teaching starting ability {AbilityId} to {CharacterName}",
                     abilityId, request.Character.Name);
             }
         }
@@ -87,52 +85,6 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
             AbilitiesLearned = abilitiesLearned,
             AbilityIds = abilityIds,
             Message = $"Learned {abilitiesLearned} starting abilities"
-        };
-    }
-
-    /// <summary>
-    /// Get starting abilities for a class based on class name.
-    /// Maps class names to their starting ability IDs.
-    /// </summary>
-    private List<string> GetStartingAbilitiesForClass(string className)
-    {
-        return className.ToLower() switch
-        {
-            "warrior" => new List<string>
-            {
-                "active/offensive:shield-bash",
-                "active/support:second-wind",
-                "active/support:battle-cry"
-            },
-            "rogue" => new List<string>
-            {
-                "active/offensive:backstab",
-                "active/defensive:evasion",
-                "active/mobility:shadow-step"
-            },
-            "mage" => new List<string>
-            {
-                "active/offensive:magic-missile",
-                "active/offensive:fireball",
-                "active/defensive:arcane-shield"
-            },
-            "cleric" => new List<string>
-            {
-                "active/offensive:smite",
-                "active/support:heal",
-                "active/defensive:divine-shield"
-            },
-            "ranger" => new List<string>
-            {
-                "active/support:hunters-mark",
-                "active/utility:trap"
-            },
-            "paladin" => new List<string>
-            {
-                "active/support:lay-on-hands",
-                "active/defensive:divine-shield"
-            },
-            _ => new List<string>()
         };
     }
 }
