@@ -59,7 +59,7 @@ public class CompleteQuestHandler : IRequestHandler<CompleteQuestCommand, Comple
             if (saveGame != null)
             {
                 // Distribute rewards to the player
-                _rewardService.DistributeRewards(result.Quest!, saveGame.Character, saveGame);
+                await _rewardService.DistributeRewardsAsync(result.Quest!, saveGame.Character, saveGame);
             }
 
             var rewards = new QuestRewards(

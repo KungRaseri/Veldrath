@@ -68,6 +68,38 @@ var result = await mediator.Send(new SomeGameCommand { ... });
 | ASP.NET Core + SignalR | .NET 10 | RealmUnbound.Server |
 | xUnit + FluentAssertions | 2.9.3 + 8.8.0 | Testing |
 | Avalonia.Headless.XUnit | 11.2.3 | Headless UI testing |
+## XML Documentation (CS1591) — Hard Rule
+
+**Every publicly visible type and member in every non-test project must have an XML doc comment (`<summary>` at minimum). This is a compile-time error, not a warning.**
+
+### How enforcement works
+
+`Directory.Build.targets` sets `<GenerateDocumentationFile>true</GenerateDocumentationFile>` and `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` for all projects where `$(IsTestProject) != 'true'`. This makes CS1591 (missing XML comment) a hard build error across the entire solution.
+
+### Rules that must never be broken
+
+- **Never add `<NoWarn>CS1591</NoWarn>` (or any CS1591 suppression) to any `.csproj` file.** Doing so silently hides undocumented public API and defeats the enforcement entirely.
+- **Never add `<NoWarn>` entries to `Directory.Build.props` or `Directory.Build.targets` that suppress CS1591.**
+- If you add or modify a public type, method, property, constructor, or interface member, you **must** add the corresponding XML doc comment in the same change — do not defer it.
+- If the build fails with CS1591 errors, fix the missing doc comments; do not suppress the error.
+
+### Where doc enforcement lives
+
+The **only** correct place for doc enforcement is `Directory.Build.targets` (post-project evaluation, so `$(IsTestProject)` is already set). Do not add enforcement logic to `Directory.Build.props` (pre-project, `IsTestProject` is not yet populated).
+
+### Doc comment format
+
+```csharp
+/// <summary>Brief description of what this does.</summary>
+/// <param name="foo">What foo represents.</param>
+/// <returns>What the return value means.</returns>
+public SomeType DoSomething(string foo) { ... }
+```
+
+Constructors require at minimum a `<summary>` line: `/// <summary>Initializes a new instance of <see cref="ClassName"/>.</summary>`
+
+---
+
 ## Coding Conventions
 
 - `nullable enable` and `ImplicitUsings enable` globally via `Directory.Build.props`

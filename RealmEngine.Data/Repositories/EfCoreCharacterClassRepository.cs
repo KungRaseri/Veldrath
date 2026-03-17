@@ -30,6 +30,8 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
                 .Where(c => c.IsActive)
                 .Include(c => c.AbilityUnlocks)
                     .ThenInclude(u => u.Ability)
+                .Include(c => c.SpellUnlocks)
+                    .ThenInclude(u => u.Spell)
                 .ToListAsync();
 
             _cache = entities.Select(MapToModel).ToList();
@@ -111,6 +113,10 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
         StartingAbilityIds = entity.AbilityUnlocks
             .Where(u => u.LevelRequired == 1 && u.Ability is not null)
             .Select(u => $"@abilities/{u.Ability!.TypeKey}:{u.Ability.Slug}")
+            .ToList(),
+        StartingSpellIds = entity.SpellUnlocks
+            .Where(u => u.LevelRequired == 1 && u.Spell is not null)
+            .Select(u => $"@spells/{u.Spell!.TypeKey}:{u.Spell.Slug}")
             .ToList(),
         StartingEquipmentIds = [],
         Traits = new Dictionary<string, object>

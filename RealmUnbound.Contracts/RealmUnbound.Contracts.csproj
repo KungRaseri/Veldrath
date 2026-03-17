@@ -3,7 +3,6 @@
   <PropertyGroup>
     <RootNamespace>RealmUnbound.Contracts</RootNamespace>
     <AssemblyName>RealmUnbound.Contracts</AssemblyName>
-    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
 
 </Project>

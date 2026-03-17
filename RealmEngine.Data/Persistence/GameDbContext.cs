@@ -18,6 +18,9 @@ public class GameDbContext : DbContext
     /// <summary>Hall of Fame entries (one row per deceased/retired character).</summary>
     public DbSet<HallOfFameEntry> HallOfFameEntries => Set<HallOfFameEntry>();
 
+    /// <summary>Inventory slots — item ref + quantity per character per save.</summary>
+    public DbSet<InventoryRecord> InventoryRecords => Set<InventoryRecord>();
+
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -33,7 +36,16 @@ public class GameDbContext : DbContext
         {
             e.HasKey(h => h.Id);
             e.HasIndex(h => h.FameScore);
-            // All other properties are primitive — no further config needed.
+        });
+
+        builder.Entity<InventoryRecord>(e =>
+        {
+            e.HasKey(i => i.Id);
+            e.HasIndex(i => new { i.SaveGameId, i.CharacterName });
+            e.HasIndex(i => new { i.SaveGameId, i.CharacterName, i.ItemRef }).IsUnique();
+            e.Property(i => i.SaveGameId).HasMaxLength(128).IsRequired();
+            e.Property(i => i.CharacterName).HasMaxLength(128).IsRequired();
+            e.Property(i => i.ItemRef).HasMaxLength(256).IsRequired();
         });
     }
 }

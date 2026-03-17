@@ -205,7 +205,26 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Backgrounds ───────────────────────────────────────────────────────
+        builder.Entity<ClassSpellUnlock>(e =>
+        {
+            e.HasKey(x => new { x.ClassId, x.SpellId });
+            e.HasOne(x => x.Class).WithMany(c => c.SpellUnlocks)
+             .HasForeignKey(x => x.ClassId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Spell).WithMany()
+             .HasForeignKey(x => x.SpellId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Equipment sets ──────────────────────────────────────────────────
+        builder.Entity<EquipmentSetEntry>(e =>
+        {
+            ConfigureContent(e);
+            e.Property(x => x.Description).HasMaxLength(512);
+            e.OwnsOne(x => x.Data, o =>
+            {
+                o.ToJson();
+                o.OwnsMany(d => d.Bonuses);
+            });
+        });
 
         builder.Entity<Background>(e =>
         {

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.SaveLoad;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -8,10 +9,17 @@ namespace RealmEngine.Core.Features.Inventory.Commands;
 /// </summary>
 public class DropItemHandler : IRequestHandler<DropItemCommand, DropItemResult>
 {
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<DropItemHandler> _logger;
 
-    public DropItemHandler(ILogger<DropItemHandler> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DropItemHandler"/> class.
+    /// </summary>
+    /// <param name="saveGameService">The save game service.</param>
+    /// <param name="logger">The logger.</param>
+    public DropItemHandler(ISaveGameService saveGameService, ILogger<DropItemHandler> logger)
     {
+        _saveGameService = saveGameService;
         _logger = logger;
     }
 
@@ -31,6 +39,12 @@ public class DropItemHandler : IRequestHandler<DropItemCommand, DropItemResult>
 
         if (removed)
         {
+            var saveGame = _saveGameService.GetCurrentSave();
+            if (saveGame != null)
+            {
+                _saveGameService.SaveGame(saveGame);
+            }
+
             _logger.LogInformation("Player {PlayerName} dropped {ItemName}",
                 player.Name, item.Name);
 

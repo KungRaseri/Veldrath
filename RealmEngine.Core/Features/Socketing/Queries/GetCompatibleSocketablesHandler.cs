@@ -1,4 +1,5 @@
 using MediatR;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
 
@@ -9,10 +10,17 @@ namespace RealmEngine.Core.Features.Socketing.Queries;
 /// </summary>
 public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSocketablesQuery, CompatibleSocketablesResult>
 {
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<GetCompatibleSocketablesHandler> _logger;
 
-    public GetCompatibleSocketablesHandler(ILogger<GetCompatibleSocketablesHandler> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetCompatibleSocketablesHandler"/> class.
+    /// </summary>
+    /// <param name="saveGameService">The save game service.</param>
+    /// <param name="logger">The logger.</param>
+    public GetCompatibleSocketablesHandler(ISaveGameService saveGameService, ILogger<GetCompatibleSocketablesHandler> logger)
     {
+        _saveGameService = saveGameService;
         _logger = logger;
     }
 
@@ -32,37 +40,37 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
 
         try
         {
-            // Note: In production, this would query the player's inventory or available socketables
-            // For now, we return an empty list with proper structure
-            
             _logger.LogInformation("Querying compatible socketables for socket type {SocketType}", request.SocketType);
 
-            // Example filtering logic (would query actual inventory in production):
-            // 1. Filter by socket type compatibility
-            // 2. Filter by category if specified
-            // 3. Filter by minimum rarity if specified
-            // 4. Sort by rarity/level/value
+            var saveGame = _saveGameService.GetCurrentSave();
+            if (saveGame == null)
+            {
+                result.Items = [];
+                result.TotalCount = 0;
+                result.SuggestedItems = [];
+                return Task.FromResult(result);
+            }
 
-            var items = new List<SocketableItemDto>();
+            var allSocketables = CollectSocketablesFromCharacter(saveGame.Character);
 
-            // IMPLEMENTATION NOTE: This handler currently returns an empty list for demonstration.
-            // Production implementation would integrate with IInventoryService:
-            //
-            // var allSocketables = await _inventoryService.GetSocketableItemsAsync(request.CharacterName);
-            // items = allSocketables
-            //     .Where(s => s.SocketType == request.SocketType || request.SocketType == SocketType.Prismatic)
-            //     .Where(s => request.Category == null || s.Category == request.Category)
-            //     .Where(s => request.MinimumRarity == null || s.Rarity >= request.MinimumRarity)
-            //     .Select(s => MapToDto(s))
-            //     .OrderByDescending(s => s.Rarity)
-            //     .ThenByDescending(s => s.Level)
-            //     .ToList();
+            var filtered = allSocketables
+                .Where(s => s.SocketType == request.SocketType)
+                .Where(s => request.Category == null || s.Category == request.Category)
+                .ToList();
+
+            if (request.MinimumRarity.HasValue)
+            {
+                filtered = filtered.Where(s => RarityWeightToItemRarity(s.RarityWeight) >= request.MinimumRarity.Value).ToList();
+            }
+
+            var items = filtered
+                .OrderByDescending(s => s.RarityWeight)
+                .Select(MapToDto)
+                .ToList();
 
             result.Items = items;
             result.TotalCount = items.Count;
-
-            // AI-suggested items based on player stats/level (future enhancement)
-            result.SuggestedItems = new List<SocketableItemDto>();
+            result.SuggestedItems = [];
 
             _logger.LogDebug("Found {Count} compatible socketables for {SocketType}",
                 result.TotalCount, request.SocketType);
@@ -77,36 +85,70 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
         }
     }
 
-    /// <summary>
-    /// Maps a socketable item to its DTO representation.
-    /// </summary>
-    /// <param name="socketable">The socketable item.</param>
-    /// <returns>The DTO representation.</returns>
+    private static List<ISocketable> CollectSocketablesFromCharacter(Character character)
+    {
+        var socketables = new List<ISocketable>();
+
+        foreach (var item in character.Inventory)
+            ExtractSocketContents(item, socketables);
+
+        Item?[] equipped =
+        [
+            character.EquippedMainHand, character.EquippedOffHand, character.EquippedHelmet,
+            character.EquippedShoulders, character.EquippedChest, character.EquippedBracers,
+            character.EquippedGloves, character.EquippedBelt, character.EquippedLegs,
+            character.EquippedBoots, character.EquippedNecklace, character.EquippedRing1, character.EquippedRing2
+        ];
+
+        foreach (var item in equipped.OfType<Item>())
+            ExtractSocketContents(item, socketables);
+
+        return socketables;
+    }
+
+    private static void ExtractSocketContents(Item item, List<ISocketable> result)
+    {
+        foreach (var socketList in item.Sockets.Values)
+            foreach (var socket in socketList)
+                if (socket.Content != null)
+                    result.Add(socket.Content);
+    }
+
+    private static ItemRarity RarityWeightToItemRarity(int rarityWeight) => rarityWeight switch
+    {
+        >= 80 => ItemRarity.Common,
+        >= 50 => ItemRarity.Uncommon,
+        >= 25 => ItemRarity.Rare,
+        >= 10 => ItemRarity.Epic,
+        _ => ItemRarity.Legendary
+    };
+
     private static SocketableItemDto MapToDto(ISocketable socketable)
     {
         var dto = new SocketableItemDto
         {
+            Id = socketable.Id,
             Name = socketable.Name,
             SocketType = socketable.SocketType,
             Description = socketable.Description ?? string.Empty,
-            Category = GetSocketableCategory(socketable)
+            Category = GetSocketableCategory(socketable),
+            Rarity = RarityWeightToItemRarity(socketable.RarityWeight)
         };
 
-        // Convert traits to stat bonuses
         foreach (var trait in socketable.Traits)
         {
-            var value = trait.Value.Type == TraitType.Number 
-                ? trait.Value.AsDouble() 
+            var value = trait.Value.Type == TraitType.Number
+                ? trait.Value.AsDouble()
                 : 0.0;
             var isPercentage = value < 1.0 && value > 0;
-            
+
             dto.Bonuses.Add(new StatBonusDto
             {
                 StatName = trait.Key,
                 Value = value,
                 IsPercentage = isPercentage,
-                DisplayText = isPercentage 
-                    ? $"+{value * 100:F1}% {trait.Key}" 
+                DisplayText = isPercentage
+                    ? $"+{value * 100:F1}% {trait.Key}"
                     : $"+{value} {trait.Key}"
             });
         }
@@ -114,11 +156,6 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
         return dto;
     }
 
-    /// <summary>
-    /// Determines the category of a socketable item.
-    /// </summary>
-    /// <param name="socketable">The socketable item.</param>
-    /// <returns>The category string.</returns>
     private static string GetSocketableCategory(ISocketable socketable)
     {
         return socketable switch

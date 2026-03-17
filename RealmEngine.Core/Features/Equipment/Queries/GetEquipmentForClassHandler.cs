@@ -1,33 +1,40 @@
 ﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Equipment.Queries;
 
 /// <summary>
-/// Handler for GetEquipmentForClassQuery.
-/// Loads base equipment items and filters by class proficiencies.
+/// Handles <see cref="GetEquipmentForClassQuery"/>.
+/// Loads weapon and armor items via <see cref="IWeaponRepository"/> and <see cref="IArmorRepository"/>,
+/// then filters by the class's proficiency lists. No direct DB context dependency.
 /// </summary>
 public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQuery, GetEquipmentForClassResult>
 {
     private readonly ICharacterClassRepository _classRepository;
-    private readonly IDbContextFactory<ContentDbContext> _dbFactory;
+    private readonly IWeaponRepository _weaponRepository;
+    private readonly IArmorRepository _armorRepository;
     private readonly ILogger<GetEquipmentForClassHandler> _logger;
     private readonly Random _random = new();
 
+    /// <param name="classRepository">Provides class proficiency lists.</param>
+    /// <param name="weaponRepository">Source of all active weapon items.</param>
+    /// <param name="armorRepository">Source of all active armor items.</param>
+    /// <param name="logger">Logger.</param>
     public GetEquipmentForClassHandler(
         ICharacterClassRepository classRepository,
-        IDbContextFactory<ContentDbContext> dbFactory,
+        IWeaponRepository weaponRepository,
+        IArmorRepository armorRepository,
         ILogger<GetEquipmentForClassHandler> logger)
     {
         _classRepository = classRepository ?? throw new ArgumentNullException(nameof(classRepository));
-        _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
+        _weaponRepository = weaponRepository ?? throw new ArgumentNullException(nameof(weaponRepository));
+        _armorRepository = armorRepository ?? throw new ArgumentNullException(nameof(armorRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <inheritdoc />
     public async Task<GetEquipmentForClassResult> Handle(GetEquipmentForClassQuery request, CancellationToken cancellationToken)
     {
         try
@@ -50,13 +57,11 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
                 WeaponProficiencies = weaponProfs
             };
 
-            using var db = _dbFactory.CreateDbContext();
-
             if (request.EquipmentType == null || request.EquipmentType.Equals("weapons", StringComparison.OrdinalIgnoreCase))
-                result.Weapons = await LoadWeapons(db, weaponProfs, request.MaxItemsPerCategory, request.RandomizeSelection, cancellationToken);
+                result.Weapons = await LoadWeapons(weaponProfs, request.MaxItemsPerCategory, request.RandomizeSelection, cancellationToken);
 
             if (request.EquipmentType == null || request.EquipmentType.Equals("armor", StringComparison.OrdinalIgnoreCase))
-                result.Armor = await LoadArmor(db, armorProfs, request.MaxItemsPerCategory, request.RandomizeSelection, cancellationToken);
+                result.Armor = await LoadArmor(armorProfs, request.MaxItemsPerCategory, request.RandomizeSelection, cancellationToken);
 
             _logger.LogInformation("Loaded {WeaponCount} weapons and {ArmorCount} armor items for class {ClassName}",
                 result.Weapons.Count, result.Armor.Count, characterClass.Name);
@@ -70,6 +75,7 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
         }
     }
 
+    // TypeKey (catalog category) → proficiency tokens recognised by class definitions
     private static readonly Dictionary<string, string[]> WeaponCategoryToProficiencies = new(StringComparer.OrdinalIgnoreCase)
     {
         ["heavy-blades"] = ["swords", "greatswords", "all"],
@@ -91,25 +97,14 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
         ["shield"] = ["shields", "all"],
     };
 
-    private async Task<List<Item>> LoadWeapons(ContentDbContext db, List<string> proficiencies, int maxItems, bool randomize, CancellationToken ct)
+    private async Task<List<Item>> LoadWeapons(List<string> proficiencies, int maxItems, bool randomize, CancellationToken ct)
     {
-        var weapons = await db.Weapons.Where(w => w.IsActive).ToListAsync(ct);
+        var all = await _weaponRepository.GetAllAsync();
 
-        var matched = weapons
-            .Where(w => WeaponCategoryToProficiencies.TryGetValue(w.TypeKey, out var profs) &&
+        var matched = all
+            .Where(w => w.TypeKey != null &&
+                        WeaponCategoryToProficiencies.TryGetValue(w.TypeKey, out var profs) &&
                         profs.Any(p => proficiencies.Contains(p, StringComparer.OrdinalIgnoreCase)))
-            .Select(w => new Item
-            {
-                Id = $"weapon:{w.TypeKey}:{w.Slug}",
-                Slug = w.Slug,
-                Name = w.DisplayName ?? w.TypeKey,
-                BaseName = w.DisplayName ?? w.TypeKey,
-                Type = ItemType.Weapon,
-                WeaponType = w.WeaponType,
-                Price = w.Stats.Value ?? 0,
-                Weight = w.Stats.Weight ?? 0,
-                TotalRarityWeight = w.RarityWeight,
-            })
             .ToList();
 
         if (randomize) matched = [.. matched.OrderBy(_ => _random.Next())];
@@ -117,26 +112,14 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
         return matched;
     }
 
-    private async Task<List<Item>> LoadArmor(ContentDbContext db, List<string> proficiencies, int maxItems, bool randomize, CancellationToken ct)
+    private async Task<List<Item>> LoadArmor(List<string> proficiencies, int maxItems, bool randomize, CancellationToken ct)
     {
-        var armors = await db.Armors.Where(a => a.IsActive).ToListAsync(ct);
+        var all = await _armorRepository.GetAllAsync();
 
-        var matched = armors
-            .Where(a => ArmorCategoryToProficiencies.TryGetValue(a.ArmorType, out var profs) &&
+        var matched = all
+            .Where(a => a.TypeKey != null &&
+                        ArmorCategoryToProficiencies.TryGetValue(a.TypeKey, out var profs) &&
                         profs.Any(p => proficiencies.Contains(p, StringComparer.OrdinalIgnoreCase)))
-            .Select(a => new Item
-            {
-                Id = $"armor:{a.TypeKey}:{a.Slug}",
-                Slug = a.Slug,
-                Name = a.DisplayName ?? a.TypeKey,
-                BaseName = a.DisplayName ?? a.TypeKey,
-                Type = a.ArmorType.Equals("shield", StringComparison.OrdinalIgnoreCase) ? ItemType.Shield : ItemType.Chest,
-                ArmorType = a.ArmorType,
-                ArmorClass = a.ArmorType,
-                Price = a.Stats.Value ?? 0,
-                Weight = a.Stats.Weight ?? 0,
-                TotalRarityWeight = a.RarityWeight,
-            })
             .ToList();
 
         if (randomize) matched = [.. matched.OrderBy(_ => _random.Next())];

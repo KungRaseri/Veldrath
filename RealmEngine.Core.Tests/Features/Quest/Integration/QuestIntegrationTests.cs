@@ -72,7 +72,10 @@ public class QuestIntegrationTests
         services.AddSingleton<MainQuestService>();
         services.AddSingleton<QuestService>();
         services.AddSingleton<QuestProgressService>();
-        services.AddSingleton<QuestRewardService>();
+        services.AddSingleton<QuestRewardService>(sp => new QuestRewardService(
+            sp.GetRequiredService<ISaveGameService>(),
+            null, // ItemGenerator has ContentDbContext dependencies not available in integration tests
+            sp.GetRequiredService<ILogger<QuestRewardService>>()));
         services.AddSingleton<QuestInitializationService>();
         services.AddSingleton<IAbilityRepository, InMemoryAbilityRepository>();
         services.AddSingleton<ISpellRepository, InMemorySpellRepository>();
