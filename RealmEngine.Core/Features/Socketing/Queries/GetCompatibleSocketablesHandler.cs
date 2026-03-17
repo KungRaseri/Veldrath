@@ -13,6 +13,11 @@ public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSock
     private readonly ISaveGameService _saveGameService;
     private readonly ILogger<GetCompatibleSocketablesHandler> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetCompatibleSocketablesHandler"/> class.
+    /// </summary>
+    /// <param name="saveGameService">The save game service.</param>
+    /// <param name="logger">The logger.</param>
     public GetCompatibleSocketablesHandler(ISaveGameService saveGameService, ILogger<GetCompatibleSocketablesHandler> logger)
     {
         _saveGameService = saveGameService;
