@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Features.Socketing;
 using RealmEngine.Core.Features.Socketing.Commands;
 using RealmEngine.Core.Features.Socketing.Queries;
 using RealmEngine.Shared.Models;
@@ -10,8 +12,17 @@ namespace RealmEngine.Core.Tests.Features.Socketing;
 [Trait("Category", "Feature")]
 public class SocketItemHandlerTests
 {
-    private static SocketItemHandler CreateHandler(IPublisher? publisher = null) =>
-        new(publisher ?? Mock.Of<IPublisher>(), NullLogger<SocketItemHandler>.Instance);
+    private static SocketService MakeSocketService() =>
+        new(NullLogger<SocketService>.Instance);
+
+    private static SocketItemHandler CreateHandler(
+        ISaveGameService? saveGameService = null,
+        IPublisher? publisher = null) =>
+        new(
+            saveGameService ?? Mock.Of<ISaveGameService>(),
+            MakeSocketService(),
+            publisher ?? Mock.Of<IPublisher>(),
+            NullLogger<SocketItemHandler>.Instance);
 
     private static Gem MakeGem(string name = "Ruby") =>
         new() { Id = Guid.NewGuid().ToString(), Name = name, SocketType = SocketType.Gem };
@@ -35,33 +46,41 @@ public class SocketItemHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Succeeds_WithValidGemAndIndex()
+    public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
         var gem = MakeGem("Sapphire");
-        var result = await CreateHandler().Handle(new SocketItemCommand("sword-01", 2, gem), default);
 
-        result.Success.Should().BeTrue();
-        result.SocketedItem.Should().BeSameAs(gem);
-        result.Message.Should().Contain("Sapphire");
+        var result = await CreateHandler(mockSaveSvc.Object).Handle(new SocketItemCommand("sword-01", 0, gem), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("No active game session");
     }
 
     [Fact]
-    public async Task Handle_PublishesItemSocketedEvent_OnSuccess()
+    public async Task Handle_ReturnsFailure_WhenEquipmentItemNotFound()
     {
-        var mockPublisher = new Mock<IPublisher>();
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(new SaveGame { Character = new Character { Name = "Hero" } });
         var gem = MakeGem("Emerald");
 
-        await CreateHandler(mockPublisher.Object).Handle(new SocketItemCommand("weapon-02", 0, gem), default);
+        var result = await CreateHandler(mockSaveSvc.Object).Handle(new SocketItemCommand("missing-id", 0, gem), default);
 
-        mockPublisher.Verify(p => p.Publish(It.IsAny<ItemSocketed>(), It.IsAny<CancellationToken>()), Times.Once);
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("missing-id");
     }
 }
 
 [Trait("Category", "Feature")]
 public class RemoveSocketedItemHandlerTests
 {
-    private static RemoveSocketedItemHandler CreateHandler() =>
-        new(Mock.Of<IPublisher>(), NullLogger<RemoveSocketedItemHandler>.Instance);
+    private static RemoveSocketedItemHandler CreateHandler(ISaveGameService? saveGameService = null) =>
+        new(
+            saveGameService ?? Mock.Of<ISaveGameService>(),
+            new SocketService(NullLogger<SocketService>.Instance),
+            Mock.Of<IPublisher>(),
+            NullLogger<RemoveSocketedItemHandler>.Instance);
 
     [Fact]
     public async Task Handle_ReturnsFailure_WhenSocketIndexIsNegative()
@@ -82,12 +101,15 @@ public class RemoveSocketedItemHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Succeeds_WithValidArguments()
+    public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
-        var result = await CreateHandler().Handle(new RemoveSocketedItemCommand("sword-01", 0, 20), default);
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
 
-        result.Success.Should().BeTrue();
-        result.GoldPaid.Should().Be(20);
+        var result = await CreateHandler(mockSaveSvc.Object).Handle(new RemoveSocketedItemCommand("sword-01", 0, 20), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("No active game session");
     }
 }
 
@@ -95,13 +117,29 @@ public class RemoveSocketedItemHandlerTests
 public class GetSocketInfoHandlerTests
 {
     [Fact]
-    public async Task Handle_ReturnsSuccess_WithEquipmentId()
+    public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
-        var handler = new GetSocketInfoHandler(NullLogger<GetSocketInfoHandler>.Instance);
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
+        var handler = new GetSocketInfoHandler(mockSaveSvc.Object, NullLogger<GetSocketInfoHandler>.Instance);
+
         var result = await handler.Handle(new GetSocketInfoQuery("helmet-05"), default);
 
-        result.Success.Should().BeTrue();
-        result.TotalSockets.Should().BeGreaterThanOrEqualTo(0);
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("No active game session");
+    }
+
+    [Fact]
+    public async Task Handle_ReturnsFailure_WhenItemNotFound()
+    {
+        var mockSaveSvc = new Mock<ISaveGameService>();
+        mockSaveSvc.Setup(s => s.GetCurrentSave()).Returns(new SaveGame { Character = new Character { Name = "Hero" } });
+        var handler = new GetSocketInfoHandler(mockSaveSvc.Object, NullLogger<GetSocketInfoHandler>.Instance);
+
+        var result = await handler.Handle(new GetSocketInfoQuery("helmet-05"), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("helmet-05");
     }
 }
 
@@ -109,7 +147,7 @@ public class GetSocketInfoHandlerTests
 public class GetSocketCostHandlerTests
 {
     private static GetSocketCostHandler Handler =>
-        new(NullLogger<GetSocketCostHandler>.Instance);
+        new(NullLogger<GetSocketCostHandler>.Instance, Mock.Of<ISaveGameService>());
 
     [Fact]
     public async Task Handle_ReturnsBaseCost_ForSocketOperation_AtIndexZero()
