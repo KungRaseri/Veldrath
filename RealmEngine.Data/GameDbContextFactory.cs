@@ -10,6 +10,11 @@ namespace RealmEngine.Data;
 /// </summary>
 public class GameDbContextFactory : IDesignTimeDbContextFactory<GameDbContext>
 {
+    /// <summary>
+    /// Creates a <see cref="GameDbContext"/> configured for EF design-time tooling.
+    /// </summary>
+    /// <param name="args">Command-line arguments (unused).</param>
+    /// <returns>A configured <see cref="GameDbContext"/> instance.</returns>
     public GameDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<GameDbContext>()
