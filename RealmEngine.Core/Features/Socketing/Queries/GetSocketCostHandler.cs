@@ -13,6 +13,13 @@ public class GetSocketCostHandler : IRequestHandler<GetSocketCostQuery, SocketCo
     private const int BaseRemoveCost = 20;
     private const int BaseUnlockCost = 100;
 
+    private readonly ILogger<GetSocketCostHandler> _logger;
+
+    public GetSocketCostHandler(ILogger<GetSocketCostHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the socket cost query.
     /// </summary>

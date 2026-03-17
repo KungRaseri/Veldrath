@@ -9,6 +9,13 @@ namespace RealmEngine.Core.Features.Socketing.Queries;
 /// </summary>
 public class GetCompatibleSocketablesHandler : IRequestHandler<GetCompatibleSocketablesQuery, CompatibleSocketablesResult>
 {
+    private readonly ILogger<GetCompatibleSocketablesHandler> _logger;
+
+    public GetCompatibleSocketablesHandler(ILogger<GetCompatibleSocketablesHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the compatible socketables query.
     /// </summary>

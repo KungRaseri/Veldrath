@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Socketing.Queries;
 /// </summary>
 public class GetSocketInfoHandler : IRequestHandler<GetSocketInfoQuery, SocketInfoResult>
 {
+    private readonly ILogger<GetSocketInfoHandler> _logger;
+
+    public GetSocketInfoHandler(ILogger<GetSocketInfoHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the get socket info query.
     /// </summary>

@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Combat.Commands.DefendAction;
 /// </summary>
 public class DefendActionHandler : IRequestHandler<DefendActionCommand, DefendActionResult>
 {
+    private readonly ILogger<DefendActionHandler> _logger;
+
+    public DefendActionHandler(ILogger<DefendActionHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the defend action command and returns the defense bonus.
     /// </summary>

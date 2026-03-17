@@ -9,6 +9,13 @@ namespace RealmEngine.Core.Features.Death;
 public class DeathService
 {
     private readonly Random _random = new();
+    private readonly ILogger<DeathService> _logger;
+
+    public DeathService(ILogger<DeathService> logger)
+    {
+        _logger = logger;
+    }
+
 
     /// <summary>
     /// Handle item dropping based on difficulty settings.

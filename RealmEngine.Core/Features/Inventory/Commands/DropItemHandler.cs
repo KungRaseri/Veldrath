@@ -8,6 +8,13 @@ namespace RealmEngine.Core.Features.Inventory.Commands;
 /// </summary>
 public class DropItemHandler : IRequestHandler<DropItemCommand, DropItemResult>
 {
+    private readonly ILogger<DropItemHandler> _logger;
+
+    public DropItemHandler(ILogger<DropItemHandler> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Handles the drop item command and removes the item from inventory.
     /// </summary>
