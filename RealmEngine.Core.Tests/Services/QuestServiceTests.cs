@@ -19,7 +19,7 @@ public class QuestServiceTests
     {
         _mockSaveGameService = new Mock<ISaveGameService>();
         _mockMainQuestService = new Mock<MainQuestService>();
-        var mockInitService = new Mock<QuestInitializationService>(_mockMainQuestService.Object);
+        var mockInitService = new Mock<QuestInitializationService>(_mockMainQuestService.Object, NullLogger<QuestInitializationService>.Instance);
         _service = new QuestService(_mockSaveGameService.Object, _mockMainQuestService.Object, mockInitService.Object, NullLogger<QuestService>.Instance);
     }
 

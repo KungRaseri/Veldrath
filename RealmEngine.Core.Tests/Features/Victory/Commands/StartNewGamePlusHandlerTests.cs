@@ -4,6 +4,7 @@ using RealmEngine.Core.Features.Victory.Commands;
 using RealmEngine.Core.Features.Victory.Services;
 using RealmEngine.Shared.Models;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Victory.Commands;
 
@@ -13,7 +14,7 @@ public class StartNewGamePlusHandlerTests
     public async Task Handle_Should_Return_Success_When_New_Game_Plus_Started()
     {
         // Arrange
-        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!);
+        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!, NullLogger<NewGamePlusService>.Instance);
 
         var ngPlusSave = new SaveGame
         {
@@ -49,7 +50,7 @@ public class StartNewGamePlusHandlerTests
     public async Task Handle_Should_Return_Failure_When_New_Game_Plus_Cannot_Start()
     {
         // Arrange
-        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!);
+        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!, NullLogger<NewGamePlusService>.Instance);
 
         mockNgPlusService.Setup(x => x.StartNewGamePlusAsync())
             .ReturnsAsync((false, (SaveGame?)null));
@@ -70,7 +71,7 @@ public class StartNewGamePlusHandlerTests
     public async Task Handle_Should_Call_StartNewGamePlusAsync()
     {
         // Arrange
-        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!);
+        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!, NullLogger<NewGamePlusService>.Instance);
 
         var ngPlusSave = new SaveGame
         {
@@ -95,7 +96,7 @@ public class StartNewGamePlusHandlerTests
     public async Task Handle_Should_Return_Success_Message_With_Enhanced_Character()
     {
         // Arrange
-        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!);
+        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!, NullLogger<NewGamePlusService>.Instance);
 
         var ngPlusSave = new SaveGame
         {
@@ -135,7 +136,7 @@ public class StartNewGamePlusHandlerTests
     public async Task Handle_Should_Return_Failure_When_Service_Returns_Null_Save()
     {
         // Arrange
-        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!);
+        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!, NullLogger<NewGamePlusService>.Instance);
 
         mockNgPlusService.Setup(x => x.StartNewGamePlusAsync())
             .ReturnsAsync((false, (SaveGame?)null));
@@ -159,7 +160,7 @@ public class StartNewGamePlusHandlerTests
     public async Task Handle_Should_Work_With_Different_Classes_And_Difficulties(string className, string difficulty)
     {
         // Arrange
-        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!);
+        var mockNgPlusService = new Mock<NewGamePlusService>(MockBehavior.Strict, (object)null!, NullLogger<NewGamePlusService>.Instance);
 
         var ngPlusSave = new SaveGame
         {

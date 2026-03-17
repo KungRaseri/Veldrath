@@ -25,7 +25,7 @@ public class CompleteQuestHandler : IRequestHandler<CompleteQuestCommand, Comple
 {
     private readonly Services.QuestService _questService;
     private readonly Services.QuestRewardService _rewardService;
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CompleteQuestHandler"/> class.
@@ -36,7 +36,7 @@ public class CompleteQuestHandler : IRequestHandler<CompleteQuestCommand, Comple
     public CompleteQuestHandler(
         Services.QuestService questService, 
         Services.QuestRewardService rewardService,
-        SaveGameService saveGameService)
+        ISaveGameService saveGameService)
     {
         _questService = questService;
         _rewardService = rewardService;

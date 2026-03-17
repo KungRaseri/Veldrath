@@ -18,8 +18,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Return_Result_With_Permadeath_When_Permadeath_Difficulty()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 var player = new Character
         {
@@ -72,8 +72,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Drop_Items_When_Difficulty_Requires()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 var player = new Character
         {
@@ -136,8 +136,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Apply_Gold_Penalty_When_Configured()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 var player = new Character
         {
@@ -194,8 +194,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Apply_XP_Penalty_When_Configured()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 var player = new Character
         {
@@ -252,8 +252,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Return_Empty_Result_When_No_SaveGame()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns((SaveGame?)null);
 
@@ -284,8 +284,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Increment_Death_Count_In_SaveGame()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 var player = new Character
         {
@@ -338,8 +338,8 @@ public class HandlePlayerDeathHandlerTests
     public async Task Handle_Should_Create_Hall_Of_Fame_Entry_On_Permadeath()
     {
         // Arrange
-        var mockDeathService = new Mock<DeathService>();
-        var mockSaveGameService = new Mock<SaveGameService>();
+        var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
+        var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
                 var player = new Character
         {
