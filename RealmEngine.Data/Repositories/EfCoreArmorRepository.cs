@@ -33,6 +33,7 @@ public class EfCoreArmorRepository(ContentDbContext db) : IArmorRepository
         Name = a.DisplayName ?? a.TypeKey,
         BaseName = a.DisplayName ?? a.TypeKey,
         Type = a.ArmorType.Equals("shield", StringComparison.OrdinalIgnoreCase) ? ItemType.Shield : ItemType.Chest,
+        TypeKey = a.TypeKey,
         ArmorType = a.ArmorType,
         ArmorClass = a.ArmorType,
         Price = a.Stats.Value ?? 0,

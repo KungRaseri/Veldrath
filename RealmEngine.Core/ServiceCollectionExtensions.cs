@@ -201,6 +201,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IInventoryService, InMemoryInventoryService>();
         }
         // External: host is responsible for registering ALL repo interfaces.
+        services.AddSingleton<ISaveGameContext, SaveGameContext>();
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();
         
         // Register feature services (concrete implementations)

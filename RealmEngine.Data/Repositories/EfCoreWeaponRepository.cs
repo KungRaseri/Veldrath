@@ -33,6 +33,7 @@ public class EfCoreWeaponRepository(ContentDbContext db) : IWeaponRepository
         Name = w.DisplayName ?? w.TypeKey,
         BaseName = w.DisplayName ?? w.TypeKey,
         Type = ItemType.Weapon,
+        TypeKey = w.TypeKey,
         WeaponType = w.WeaponType,
         Price = w.Stats.Value ?? 0,
         Weight = w.Stats.Weight ?? 0,
