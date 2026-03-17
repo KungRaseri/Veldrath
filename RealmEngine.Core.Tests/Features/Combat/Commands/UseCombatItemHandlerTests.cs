@@ -18,7 +18,7 @@ public class UseCombatItemHandlerTests
     public UseCombatItemHandlerTests()
     {
         _mockMediator = new Mock<IMediator>();
-        _handler = new UseCombatItemHandler(_mockMediator.Object);
+        _handler = new UseCombatItemHandler(_mockMediator.Object, NullLogger<UseCombatItemHandler>.Instance);
     }
 
     [Fact]

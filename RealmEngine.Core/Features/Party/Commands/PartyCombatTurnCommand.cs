@@ -120,10 +120,11 @@ public record PartyMemberActionResult
 /// </summary>
 public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, PartyCombatTurnResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly CombatService _combatService;
     private readonly PartyService _partyService;
     private readonly PartyAIService _partyAI;
+    private readonly ILogger<PartyCombatTurnHandler> _logger;
     private readonly Random _random = new();
 
     /// <summary>
@@ -131,12 +132,16 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="combatService">The combat service.</param>
-    public PartyCombatTurnHandler(SaveGameService saveGameService, CombatService combatService)
+    /// <param name="partyService">The party service.</param>
+    /// <param name="partyAI">The party AI service.</param>
+    /// <param name="logger">The logger.</param>
+    public PartyCombatTurnHandler(ISaveGameService saveGameService, CombatService combatService, PartyService partyService, PartyAIService partyAI, ILogger<PartyCombatTurnHandler> logger)
     {
         _saveGameService = saveGameService;
         _combatService = combatService;
-        _partyService = new PartyService();
-        _partyAI = new PartyAIService();
+        _partyService = partyService;
+        _partyAI = partyAI;
+        _logger = logger;
     }
 
     /// <summary>

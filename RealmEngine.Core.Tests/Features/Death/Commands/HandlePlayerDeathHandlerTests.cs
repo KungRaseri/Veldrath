@@ -48,7 +48,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -111,7 +112,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -169,7 +171,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -226,7 +229,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -255,7 +259,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var player = new Character { Name = "Hero" };
         var command = new HandlePlayerDeathCommand
@@ -311,7 +316,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var command = new HandlePlayerDeathCommand
         {
@@ -369,7 +375,8 @@ public class HandlePlayerDeathHandlerTests
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
             mockSaveGameService.Object,
-            mockHallOfFame.Object);
+            mockHallOfFame.Object,
+            NullLogger<HandlePlayerDeathHandler>.Instance);
 
         var command = new HandlePlayerDeathCommand
         {

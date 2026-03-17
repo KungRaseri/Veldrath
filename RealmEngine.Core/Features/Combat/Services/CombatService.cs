@@ -2,6 +2,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Utilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MediatR;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Core.Services;
@@ -36,12 +37,13 @@ public class CombatService
         AbilityDataService abilityCatalogService,
         SpellDataService spellCatalogService,
         ILogger<CombatService> logger,
+        ILoggerFactory loggerFactory,
         ItemGenerator? itemGenerator = null)
     {
         _saveGameService = saveGameService;
         _mediator = mediator;
         _logger = logger;
-        _reactiveAbilityService = new ReactiveAbilityService(logger, abilityCatalogService);
+        _reactiveAbilityService = new ReactiveAbilityService(loggerFactory.CreateLogger<ReactiveAbilityService>(), abilityCatalogService);
         _enemyAbilityAI = new EnemyAbilityAIService(abilityCatalogService);
         _enemySpellCastingAI = new EnemySpellCastingService(spellCatalogService);
         _itemGenerator = itemGenerator;
@@ -54,7 +56,8 @@ public class CombatService
     {
         _saveGameService = null!;
         _mediator = null!;
-        _reactiveAbilityService = new ReactiveAbilityService();
+        _logger = NullLogger<CombatService>.Instance;
+        _reactiveAbilityService = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance);
         _enemyAbilityAI = new EnemyAbilityAIService();
         _enemySpellCastingAI = new EnemySpellCastingService();
     }

@@ -16,7 +16,7 @@ public class QuestProgressServiceTests
     public QuestProgressServiceTests()
     {
         _mockSaveGameService = new Mock<SaveGameService>();
-        _service = new QuestProgressService(_mockSaveGameService.Object);
+        _service = new QuestProgressService(_mockSaveGameService.Object, NullLogger<QuestProgressService>.Instance);
     }
 
     [Fact]

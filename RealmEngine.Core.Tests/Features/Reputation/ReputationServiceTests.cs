@@ -14,7 +14,7 @@ public class ReputationServiceTests
 
     public ReputationServiceTests()
     {
-        _service = new ReputationService();
+        _service = new ReputationService(NullLogger<ReputationService>.Instance);
     }
 
     [Fact]

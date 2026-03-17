@@ -17,7 +17,7 @@ public class GameplayServiceTests
     public GameplayServiceTests()
     {
         _mockSaveGameService = new Mock<SaveGameService>();
-        _service = new GameplayService(_mockSaveGameService.Object);
+        _service = new GameplayService(_mockSaveGameService.Object, NullLogger<GameplayService>.Instance);
     }
 
     [Fact]

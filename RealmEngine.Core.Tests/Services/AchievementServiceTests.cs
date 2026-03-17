@@ -17,7 +17,7 @@ public class AchievementServiceTests
     public AchievementServiceTests()
     {
         _mockSaveGameService = new Mock<SaveGameService>();
-        _service = new AchievementService(_mockSaveGameService.Object);
+        _service = new AchievementService(_mockSaveGameService.Object, NullLogger<AchievementService>.Instance);
     }
 
     [Fact]

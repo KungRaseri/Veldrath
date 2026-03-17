@@ -14,7 +14,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Weapon()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var weapon = new Item { Name = "Iron Sword", Type = ItemType.Weapon };
         var player = new Character
         {
@@ -37,7 +37,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Shield()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var shield = new Item { Name = "Iron Shield", Type = ItemType.Shield };
         var player = new Character
         {
@@ -59,7 +59,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_OffHand()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var offHand = new Item { Name = "Tome", Type = ItemType.OffHand };
         var player = new Character
         {
@@ -81,7 +81,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Helmet()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var helmet = new Item { Name = "Iron Helmet", Type = ItemType.Helmet };
         var player = new Character
         {
@@ -103,7 +103,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Chest()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var chest = new Item { Name = "Iron Chest", Type = ItemType.Chest };
         var player = new Character
         {
@@ -125,7 +125,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Legs()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var legs = new Item { Name = "Iron Legs", Type = ItemType.Legs };
         var player = new Character
         {
@@ -147,7 +147,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Boots()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var boots = new Item { Name = "Iron Boots", Type = ItemType.Boots };
         var player = new Character
         {
@@ -169,7 +169,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Necklace()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var necklace = new Item { Name = "Gold Necklace", Type = ItemType.Necklace };
         var player = new Character
         {
@@ -191,7 +191,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Ring1_First()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var ring1 = new Item { Name = "Silver Ring", Type = ItemType.Ring };
         var ring2 = new Item { Name = "Gold Ring", Type = ItemType.Ring };
         var player = new Character
@@ -217,7 +217,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Unequip_Ring2_When_Ring1_Empty()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var ring2 = new Item { Name = "Gold Ring", Type = ItemType.Ring };
         var player = new Character
         {
@@ -241,7 +241,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Fail_When_Slot_Empty()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var player = new Character
         {
             Name = "Hero",
@@ -262,7 +262,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Fail_When_No_Ring_Equipped()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var player = new Character
         {
             Name = "Hero",
@@ -283,7 +283,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Return_Success_Message_With_Item_Name()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var weapon = new Item { Name = "Legendary Blade", Type = ItemType.Weapon };
         var player = new Character
         {
@@ -303,7 +303,7 @@ public class UnequipItemHandlerTests
     public async Task Handle_Should_Add_To_Inventory_After_Unequip()
     {
         // Arrange
-        var handler = new UnequipItemHandler();
+        var handler = new UnequipItemHandler(NullLogger<UnequipItemHandler>.Instance);
         var helmet = new Item { Name = "Diamond Helmet", Type = ItemType.Helmet, Rarity = ItemRarity.Legendary };
         var existingItem = new Item { Name = "Health Potion", Type = ItemType.Consumable };
         var player = new Character

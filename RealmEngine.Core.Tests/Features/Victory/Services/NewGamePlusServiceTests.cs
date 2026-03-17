@@ -15,7 +15,7 @@ public class NewGamePlusServiceTests
     public NewGamePlusServiceTests()
     {
         _mockSaveGameService = new Mock<ISaveGameService>();
-        _ngPlusService = new NewGamePlusService(_mockSaveGameService.Object);
+        _ngPlusService = new NewGamePlusService(_mockSaveGameService.Object, NullLogger<NewGamePlusService>.Instance);
     }
 
     #region StartNewGamePlusAsync Tests

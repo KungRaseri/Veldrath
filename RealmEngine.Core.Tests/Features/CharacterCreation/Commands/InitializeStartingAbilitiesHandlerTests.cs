@@ -30,7 +30,7 @@ public class InitializeStartingAbilitiesHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnAbilityCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnAbilityResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = className };
         var command = new InitializeStartingAbilitiesCommand
         {
@@ -58,7 +58,7 @@ public class InitializeStartingAbilitiesHandlerTests
     {
         // Arrange
         var mockMediator = new Mock<IMediator>();
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = "UnknownClass" };
         var command = new InitializeStartingAbilitiesCommand
         {
@@ -85,7 +85,7 @@ public class InitializeStartingAbilitiesHandlerTests
             .Setup(m => m.Send(It.IsAny<LearnAbilityCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnAbilityResult { Success = true, Message = "Learned" });
         
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestWarrior", ClassName = "Warrior" };
         var command = new InitializeStartingAbilitiesCommand
         {
@@ -122,7 +122,7 @@ public class InitializeStartingAbilitiesHandlerTests
                 };
             });
         
-        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object);
+        var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = "Warrior" };
         var command = new InitializeStartingAbilitiesCommand
         {

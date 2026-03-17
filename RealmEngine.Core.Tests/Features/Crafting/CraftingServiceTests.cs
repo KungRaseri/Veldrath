@@ -14,7 +14,7 @@ public class CraftingServiceTests
     public CraftingServiceTests()
     {
         _recipeCatalogLoader = new RecipeDataService(new InMemoryRecipeRepository());
-        _craftingService = new CraftingService(_recipeCatalogLoader);
+        _craftingService = new CraftingService(_recipeCatalogLoader, NullLogger<CraftingService>.Instance);
     }
 
     #region CanCraftRecipe Tests

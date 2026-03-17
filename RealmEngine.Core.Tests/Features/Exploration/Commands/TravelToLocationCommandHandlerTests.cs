@@ -25,7 +25,7 @@ public class TravelToLocationCommandHandlerTests
         _mockGameState.Setup(s => s.UpdateLocation(It.IsAny<string>()))
             .Callback<string>(location => _mockGameState.Object.CurrentLocation = location);
         
-        _handler = new TravelToLocationCommandHandler(_mockGameState.Object);
+        _handler = new TravelToLocationCommandHandler(_mockGameState.Object, NullLogger<TravelToLocationCommandHandler>.Instance);
     }
 
     [Fact]

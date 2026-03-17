@@ -15,7 +15,7 @@ public class VictoryServiceTests
     public VictoryServiceTests()
     {
         _mockSaveGameService = new Mock<ISaveGameService>();
-        _victoryService = new VictoryService(_mockSaveGameService.Object);
+        _victoryService = new VictoryService(_mockSaveGameService.Object, NullLogger<VictoryService>.Instance);
     }
 
     #region CalculateVictoryStatisticsAsync Tests

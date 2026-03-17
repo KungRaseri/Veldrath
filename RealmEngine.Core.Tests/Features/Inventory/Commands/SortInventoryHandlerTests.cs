@@ -14,7 +14,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Name()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var item1 = new Item { Name = "Zebra Potion", Type = ItemType.Consumable };
         var item2 = new Item { Name = "Apple Tart", Type = ItemType.Consumable };
         var item3 = new Item { Name = "Magic Scroll", Type = ItemType.Consumable };
@@ -39,7 +39,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Type()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var weapon = new Item { Name = "Sword", Type = ItemType.Weapon };
         var consumable = new Item { Name = "Potion", Type = ItemType.Consumable };
         var helmet = new Item { Name = "Helmet", Type = ItemType.Helmet };
@@ -66,7 +66,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Rarity_Descending()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var common = new Item { Name = "Common Sword", Type = ItemType.Weapon, Rarity = ItemRarity.Common };
         var legendary = new Item { Name = "Legendary Blade", Type = ItemType.Weapon, Rarity = ItemRarity.Legendary };
         var rare = new Item { Name = "Rare Axe", Type = ItemType.Weapon, Rarity = ItemRarity.Rare };
@@ -91,7 +91,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Value_Descending()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var cheap = new Item { Name = "Bread", Type = ItemType.Consumable, Price = 5 };
         var expensive = new Item { Name = "Diamond Ring", Type = ItemType.Ring, Price = 1000 };
         var medium = new Item { Name = "Iron Sword", Type = ItemType.Weapon, Price = 100 };
@@ -116,7 +116,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Name_When_Same_Type()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var sword1 = new Item { Name = "Zebra Sword", Type = ItemType.Weapon };
         var sword2 = new Item { Name = "Alpha Sword", Type = ItemType.Weapon };
         var sword3 = new Item { Name = "Beta Sword", Type = ItemType.Weapon };
@@ -141,7 +141,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Name_When_Same_Rarity()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var item1 = new Item { Name = "Zebra Item", Type = ItemType.Weapon, Rarity = ItemRarity.Epic };
         var item2 = new Item { Name = "Alpha Item", Type = ItemType.Weapon, Rarity = ItemRarity.Epic };
         var player = new Character
@@ -164,7 +164,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Sort_By_Name_When_Same_Value()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var item1 = new Item { Name = "Zebra Item", Type = ItemType.Weapon, Price = 100 };
         var item2 = new Item { Name = "Alpha Item", Type = ItemType.Weapon, Price = 100 };
         var player = new Character
@@ -187,7 +187,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Work_With_Empty_Inventory()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var player = new Character
         {
             Name = "Hero",
@@ -207,7 +207,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Work_With_Single_Item()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var item = new Item { Name = "Lonely Sword", Type = ItemType.Weapon };
         var player = new Character
         {
@@ -229,7 +229,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Return_Success_Message()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var player = new Character
         {
             Name = "Hero",
@@ -248,7 +248,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Default_To_Name_Sort_When_Invalid_Criteria()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var item1 = new Item { Name = "Zebra", Type = ItemType.Consumable };
         var item2 = new Item { Name = "Apple", Type = ItemType.Consumable };
         var player = new Character
@@ -272,7 +272,7 @@ public class SortInventoryHandlerTests
     public async Task Handle_Should_Preserve_Item_Count()
     {
         // Arrange
-        var handler = new SortInventoryHandler();
+        var handler = new SortInventoryHandler(NullLogger<SortInventoryHandler>.Instance);
         var items = new List<Item>
         {
             new Item { Name = "Item1", Type = ItemType.Consumable },
