@@ -117,36 +117,36 @@ public static class ContentEndpoints
     private static async Task<IResult> BrowseAsync(
         string type,
         string? search,
-        int page,
-        int pageSize,
+        int? page,
+        int? pageSize,
         ContentDbContext db,
         CancellationToken ct)
     {
-        page     = Math.Max(1, page == 0 ? 1 : page);
-        pageSize = Math.Clamp(pageSize == 0 ? 20 : pageSize, 1, 100);
+        var resolvedPage     = Math.Max(1, page ?? 1);
+        var resolvedPageSize = Math.Clamp(pageSize ?? 20, 1, 100);
 
         var result = type.ToLowerInvariant() switch
         {
-            "ability"          => await BrowseSet(db.Abilities,          type, search, page, pageSize, ct),
-            "species"          => await BrowseSet(db.Species,            type, search, page, pageSize, ct),
-            "class"            => await BrowseSet(db.ActorClasses,       type, search, page, pageSize, ct),
-            "archetype"        => await BrowseSet(db.ActorArchetypes,    type, search, page, pageSize, ct),
-            "instance"         => await BrowseSet(db.ActorInstances,     type, search, page, pageSize, ct),
-            "background"       => await BrowseSet(db.Backgrounds,        type, search, page, pageSize, ct),
-            "skill"            => await BrowseSet(db.Skills,             type, search, page, pageSize, ct),
-            "weapon"           => await BrowseSet(db.Weapons,            type, search, page, pageSize, ct),
-            "armor"            => await BrowseSet(db.Armors,             type, search, page, pageSize, ct),
-            "item"             => await BrowseSet(db.Items,              type, search, page, pageSize, ct),
-            "material"         => await BrowseSet(db.Materials,          type, search, page, pageSize, ct),
-            "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, page, pageSize, ct),
-            "enchantment"      => await BrowseSet(db.Enchantments,       type, search, page, pageSize, ct),
-            "spell"            => await BrowseSet(db.Spells,             type, search, page, pageSize, ct),
-            "quest"            => await BrowseSet(db.Quests,             type, search, page, pageSize, ct),
-            "recipe"           => await BrowseSet(db.Recipes,            type, search, page, pageSize, ct),
-            "loottable"        => await BrowseSet(db.LootTables,         type, search, page, pageSize, ct),
-            "organization"     => await BrowseSet(db.Organizations,      type, search, page, pageSize, ct),
-            "worldlocation"    => await BrowseSet(db.WorldLocations,     type, search, page, pageSize, ct),
-            "dialogue"         => await BrowseSet(db.Dialogues,          type, search, page, pageSize, ct),
+            "ability"          => await BrowseSet(db.Abilities,          type, search, resolvedPage, resolvedPageSize, ct),
+            "species"          => await BrowseSet(db.Species,            type, search, resolvedPage, resolvedPageSize, ct),
+            "class"            => await BrowseSet(db.ActorClasses,       type, search, resolvedPage, resolvedPageSize, ct),
+            "archetype"        => await BrowseSet(db.ActorArchetypes,    type, search, resolvedPage, resolvedPageSize, ct),
+            "instance"         => await BrowseSet(db.ActorInstances,     type, search, resolvedPage, resolvedPageSize, ct),
+            "background"       => await BrowseSet(db.Backgrounds,        type, search, resolvedPage, resolvedPageSize, ct),
+            "skill"            => await BrowseSet(db.Skills,             type, search, resolvedPage, resolvedPageSize, ct),
+            "weapon"           => await BrowseSet(db.Weapons,            type, search, resolvedPage, resolvedPageSize, ct),
+            "armor"            => await BrowseSet(db.Armors,             type, search, resolvedPage, resolvedPageSize, ct),
+            "item"             => await BrowseSet(db.Items,              type, search, resolvedPage, resolvedPageSize, ct),
+            "material"         => await BrowseSet(db.Materials,          type, search, resolvedPage, resolvedPageSize, ct),
+            "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, resolvedPage, resolvedPageSize, ct),
+            "enchantment"      => await BrowseSet(db.Enchantments,       type, search, resolvedPage, resolvedPageSize, ct),
+            "spell"            => await BrowseSet(db.Spells,             type, search, resolvedPage, resolvedPageSize, ct),
+            "quest"            => await BrowseSet(db.Quests,             type, search, resolvedPage, resolvedPageSize, ct),
+            "recipe"           => await BrowseSet(db.Recipes,            type, search, resolvedPage, resolvedPageSize, ct),
+            "loottable"        => await BrowseSet(db.LootTables,         type, search, resolvedPage, resolvedPageSize, ct),
+            "organization"     => await BrowseSet(db.Organizations,      type, search, resolvedPage, resolvedPageSize, ct),
+            "worldlocation"    => await BrowseSet(db.WorldLocations,     type, search, resolvedPage, resolvedPageSize, ct),
+            "dialogue"         => await BrowseSet(db.Dialogues,          type, search, resolvedPage, resolvedPageSize, ct),
             _                  => null,
         };
 

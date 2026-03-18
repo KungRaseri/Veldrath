@@ -32,7 +32,7 @@ public class FileTreeNodeViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
     }
 
-    public string  Icon     => IsDirectory ? "▸" : "·";
+    public string  Icon     => IsDirectory ? "▶" : "·";
     public string? IconPath { get; init; }
     public int EntityCount  => Children.Sum(c => c.Children.Count);
 }

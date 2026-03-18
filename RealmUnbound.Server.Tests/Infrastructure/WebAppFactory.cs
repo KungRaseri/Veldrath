@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RealmEngine.Data.Persistence;
@@ -73,7 +74,9 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         using var scope = host.Services.CreateScope();
         var sp = scope.ServiceProvider;
         sp.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
-        sp.GetRequiredService<ContentDbContext>().Database.EnsureCreated();
+        // EnsureCreated is a no-op once any tables exist in the shared SQLite in-memory
+        // database, so call CreateTables directly to create ContentDbContext's schema.
+        sp.GetRequiredService<ContentDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
 
         return host;
     }
