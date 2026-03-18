@@ -33,7 +33,7 @@ The Save/Load System preserves complete game state with auto-save, manual save, 
 - **Progress Protection**: Auto-save minimizes progress loss
 - **Multiple Characters**: Support for diverse playthroughs
 - **Complete State**: All game aspects preserved
-- **Reliable Persistence**: LiteDB-based storage
+- **Reliable Persistence**: EF Core (PostgreSQL via Npgsql) in production; in-memory repository in tests/local development
 
 ## Related Systems
 

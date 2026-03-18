@@ -8,7 +8,7 @@
 ### ✅ Phase 1-5 Complete (100%)
 - **CraftingService** - All validation methods implemented and tested (29/29 tests ✅)
 - **CraftRecipeHandler** - Full execution pipeline with material consumption, item creation, XP awards
-- **RecipeCatalogLoader** - Loads 30 recipes from JSON v5.1 format (7 blacksmithing, 5 alchemy, 3 jewelcrafting)
+- **RecipeDataService** - Loads 30 recipes from JSON v5.1 format (7 blacksmithing, 5 alchemy, 3 jewelcrafting)
 - **Recipe Learning System** - LearnRecipeCommand for trainer/quest rewards
 - **Recipe Discovery** - DiscoverRecipeCommand with skill-based chance (5% base + 0.5% per level)
 - **Known Recipes Query** - GetKnownRecipesQuery with filtering and material validation
@@ -592,23 +592,18 @@ Data/Json/recipes/
 
 #### Service Layer
 
-**CraftingService** (`RealmEngine.Core/Services/CraftingService.cs`)
-- `GetAvailableRecipes(stationType, playerLevel)` - Returns craftable recipes
-- `CanCraftRecipe(recipeId, character)` - Validates materials/requirements
-- `CraftItem(recipeId, character)` - Executes crafting, consumes materials
-- `GetStationInfo(stationId)` - Returns station data
-- `UpgradeStation(stationId, character)` - Upgrades station tier
+**CraftingService** (`RealmEngine.Core/Features/Crafting/Services/CraftingService.cs`)
+- `GetAvailableRecipes(character, stationId?)` - Returns craftable recipes for a character
+- `CanCraftRecipe(character, recipe, out failureReason)` - Validates all requirements
+- `ValidateMaterials(character, recipe, out failureReason)` - Checks if player has required materials
+- `CraftItemAsync(character, recipe, consumeMaterials)` - Executes crafting, consumes materials
+- `CalculateQuality(character, recipe)` - Determines crafted item quality
 
-**RecipeCatalogLoader** (`RealmEngine.Core/Services/RecipeCatalogLoader.cs`)
-- `LoadRecipes(category)` - Loads recipe catalog from JSON
+**RecipeDataService** (`RealmEngine.Core/Services/RecipeDataService.cs`)
+- `LoadAllRecipes()` - Loads all recipes from repository
+- `LoadRecipesByCategory(category)` - Loads recipes filtered by category
 - `GetRecipeById(recipeId)` - Retrieves specific recipe
-- `GetRecipesByStation(stationId)` - Filters recipes by station
-- `GetRecipesByLevel(minLevel, maxLevel)` - Level-appropriate recipes
-
-**MaterialValidator** (`RealmEngine.Core/Services/MaterialValidator.cs`)
-- `ValidateMaterials(recipe, inventory)` - Checks if player has materials
-- `ConsumeMaterials(recipe, inventory)` - Removes materials from inventory
-- `CalculateSuccessChance(recipe, skillLevel)` - Determines crafting success rate
+- `GetAvailableRecipes(skillLevel, category?)` - Returns recipes by minimum skill level
 
 #### Command/Query Layer (MediatR)
 
@@ -863,7 +858,7 @@ if (craftResult.Success)
 ### Phase 1: Core Infrastructure (Week 1)
 - [ ] Recipe data model
 - [ ] CraftingStation data model  
-- [ ] RecipeCatalogLoader service
+- [x] RecipeDataService
 - [ ] Basic JSON v5.1 recipe files (10-15 starter recipes)
 - [ ] CraftingService with CanCraft validation
 - [ ] **NEW**: Stat consolidation (remove legacy BonusStrength fields)
@@ -1029,7 +1024,7 @@ public BindingType DetermineBindingOnEnchant(Item item, Item enchantmentItem)
 ## Testing Strategy
 
 ### Unit Tests
-- RecipeCatalogLoader loading/parsing
+- RecipeDataService loading/parsing
 - Material validation logic
 - Quality randomization distribution
 - Experience calculation formulas
@@ -1050,7 +1045,7 @@ public BindingType DetermineBindingOnEnchant(Item item, Item enchantmentItem)
 
 ## Performance Considerations
 
-- **Recipe Caching**: Cache loaded recipes in RecipeCatalogLoader
+- **Recipe Caching**: Cache loaded recipes in RecipeDataService
 - **Material Lookup**: Index materials by item ID for O(1) validation
 - **Station Access**: Preload station data per location
 - **Recipe Filtering**: Filter server-side, not in Godot

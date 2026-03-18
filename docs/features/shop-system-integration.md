@@ -20,65 +20,49 @@ The shop system enables players to buy and sell items with merchant NPCs. It use
 
 ## Dependency Injection Setup
 
-### Required Services
+All shop-related services (`ShopEconomyService`, `SaveGameService`, `ISaveGameService`) are registered automatically by `AddRealmEngineCore()`. The only service hosts need to provide is the persistence backend.
+
+### Standard Setup (using engine DI extensions)
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Features.Shop.Commands;
-using RealmEngine.Core.Services;
+using RealmEngine.Core;
 
-// Create service collection
 var services = new ServiceCollection();
 
-// 1. Register IApocalypseTimer (game-specific timer)
-services.AddSingleton<IApocalypseTimer, YourApocalypseTimerImplementation>();
+// Register logging
+services.AddLogging(builder => builder.AddConsole());
 
-// 2. Register ISaveGameRepository (data persistence)
-services.AddSingleton<ISaveGameRepository, YourSaveGameRepository>();
+// Register all RealmEngine Core services (includes ShopEconomyService, SaveGameService, etc.)
+// Use the default in-memory persistence for quick setup:
+services.AddRealmEngineCore();
 
-// 3. Register logging
-services.AddLogging(builder => 
-{
-    builder.AddConsole();
-    // Add other logging providers as needed
-});
+// Register MediatR handlers (shop command handlers are in RealmEngine.Core assembly)
+services.AddRealmEngineMediatR();
 
-// 4. Register MediatR with shop command handlers
-services.AddMediatR(cfg => 
-    cfg.RegisterServicesFromAssembly(typeof(BrowseShopCommand).Assembly));
-
-// 5. Register SaveGameService
-services.AddSingleton<SaveGameService>();
-services.AddSingleton<ISaveGameService>(sp => 
-    sp.GetRequiredService<SaveGameService>());
-
-// 6. Register ShopEconomyService
-services.AddSingleton<ShopEconomyService>();
-
-// Build service provider
 var serviceProvider = services.BuildServiceProvider();
+```
+
+For PostgreSQL persistence:
+
+```csharp
+services.AddRealmEngineCore(p => p.UseNpgsql(connectionString));
+services.AddRealmEngineMediatR();
 ```
 
 ### Minimal Test Setup
 
-For testing without full implementations:
-
 ```csharp
 using Moq;
 
-// Mock IApocalypseTimer
-var mockTimer = new Mock<IApocalypseTimer>();
-mockTimer.Setup(t => t.GetBonusMinutes()).Returns(0);
-services.AddSingleton(mockTimer.Object);
+var services = new ServiceCollection();
+services.AddLogging();
 
-// Mock ISaveGameRepository
-var mockRepository = new Mock<ISaveGameRepository>();
-mockRepository.Setup(r => r.SaveGame(It.IsAny<SaveGame>()))
-    .Callback<SaveGame>(s => { /* Handle save */ });
-services.AddSingleton(mockRepository.Object);
+// In-memory mode wires up all repositories automatically — no mocking needed for most tests.
+services.AddRealmEngineCore();
+services.AddRealmEngineMediatR();
+
+var serviceProvider = services.BuildServiceProvider();
 ```
 
 ## Usage Examples
