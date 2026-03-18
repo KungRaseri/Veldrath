@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
+using System.Text.Json;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -93,9 +93,9 @@ public class ServerSaveGameRepository : ISaveGameRepository
         Id         = sg.Id,
         PlayerName = sg.PlayerName,
         SaveDate   = sg.SaveDate,
-        DataJson   = JsonConvert.SerializeObject(sg),
+        DataJson   = JsonSerializer.Serialize(sg),
     };
 
     private static SaveGame FromRecord(SaveGameRecord r) =>
-        JsonConvert.DeserializeObject<SaveGame>(r.DataJson) ?? new SaveGame { Id = r.Id };
+        JsonSerializer.Deserialize<SaveGame>(r.DataJson) ?? new SaveGame { Id = r.Id };
 }
