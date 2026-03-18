@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using System.Text.Json;
 using RealmForge.Models;
 
 namespace RealmForge.Services;
@@ -35,7 +35,7 @@ public class EditorSettingsService
             if (File.Exists(_settingsPath))
             {
                 var json = await File.ReadAllTextAsync(_settingsPath);
-                _cachedSettings = JsonConvert.DeserializeObject<EditorSettings>(json);
+                _cachedSettings = JsonSerializer.Deserialize<EditorSettings>(json);
                 if (_cachedSettings != null)
                 {
                     _logger.LogDebug("Loaded settings: Theme={Theme}", _cachedSettings.Theme);
@@ -60,7 +60,7 @@ public class EditorSettingsService
     {
         try
         {
-            var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
+            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(_settingsPath, json);
             _cachedSettings = settings;
             _logger.LogDebug("Settings saved");

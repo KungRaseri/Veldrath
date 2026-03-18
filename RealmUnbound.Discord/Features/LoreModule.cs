@@ -140,7 +140,7 @@ public sealed class LoreModule(
         }
 
         var needle = name.Trim();
-        var cls    = classes.GetByName(needle) ?? classes.GetClassByName(needle);
+        var cls    = classes.GetByName(needle);
 
         if (cls is null)
         {
