@@ -161,34 +161,34 @@ public class LearnRecipeHandlerTests
   };
 
   [Fact]
-  public void Handle_ReturnsFailure_WhenRecipeNotFound()
+  public async Task Handle_ReturnsFailure_WhenRecipeNotFound()
   {
     var handler = new LearnRecipeHandler(MakeService());
     var character = new Character { Name = "Hero", Inventory = [], LearnedRecipes = [], Skills = [], Level = 1 };
 
-    var result = handler.Handle(
-        new LearnRecipeCommand { Character = character, RecipeId = "unknown-recipe" }, default).Result;
+    var result = await handler.Handle(
+        new LearnRecipeCommand { Character = character, RecipeId = "unknown-recipe" }, default);
 
     result.Success.Should().BeFalse();
     result.Message.Should().Contain("unknown-recipe");
   }
 
   [Fact]
-  public void Handle_ReturnsFailure_WhenAlreadyKnown()
+  public async Task Handle_ReturnsFailure_WhenAlreadyKnown()
   {
     var recipe = MakeRecipe("iron-sword");
     var handler = new LearnRecipeHandler(MakeService([recipe]));
     var character = new Character { Name = "Hero", Inventory = [], LearnedRecipes = ["iron-sword"], Skills = [], Level = 1 };
 
-    var result = handler.Handle(
-        new LearnRecipeCommand { Character = character, RecipeId = "iron-sword" }, default).Result;
+    var result = await handler.Handle(
+        new LearnRecipeCommand { Character = character, RecipeId = "iron-sword" }, default);
 
     result.Success.Should().BeFalse();
     result.Message.Should().NotBeNullOrWhiteSpace();
   }
 
   [Fact]
-  public void Handle_Succeeds_WhenRecipeExistsAndNotKnown()
+  public async Task Handle_Succeeds_WhenRecipeExistsAndNotKnown()
   {
     var recipe = MakeRecipe("fire-potion", "Alchemy", level: 1);
     var handler = new LearnRecipeHandler(MakeService([recipe]));
@@ -201,8 +201,8 @@ public class LearnRecipeHandlerTests
       Level = 1
     };
 
-    var result = handler.Handle(
-        new LearnRecipeCommand { Character = character, RecipeId = "fire-potion", Source = "Trainer" }, default).Result;
+    var result = await handler.Handle(
+        new LearnRecipeCommand { Character = character, RecipeId = "fire-potion", Source = "Trainer" }, default);
 
     result.Success.Should().BeTrue();
     result.RecipeName.Should().Be(recipe.Name);
@@ -210,13 +210,13 @@ public class LearnRecipeHandlerTests
   }
 
   [Fact]
-  public void Handle_AddsRecipeToLearnedRecipes_OnSuccess()
+  public async Task Handle_AddsRecipeToLearnedRecipes_OnSuccess()
   {
     var recipe = MakeRecipe("basic-bread", "Cooking", level: 1);
     var handler = new LearnRecipeHandler(MakeService([recipe]));
     var character = new Character { Name = "Baker", Inventory = [], LearnedRecipes = [], Skills = [], Level = 1 };
 
-    handler.Handle(new LearnRecipeCommand { Character = character, RecipeId = "basic-bread", Source = "Trainer" }, default).Wait();
+    await handler.Handle(new LearnRecipeCommand { Character = character, RecipeId = "basic-bread", Source = "Trainer" }, default);
 
     character.LearnedRecipes.Should().Contain("basic-bread");
   }
@@ -250,20 +250,20 @@ public class DiscoverRecipeHandlerTests
   };
 
   [Fact]
-  public void Handle_ReturnsFailure_WhenCharacterLacksSkill()
+  public async Task Handle_ReturnsFailure_WhenCharacterLacksSkill()
   {
     var handler = new DiscoverRecipeHandler(MakeService());
     var character = new Character { Name = "Hero", Inventory = [], LearnedRecipes = [], Skills = [], Level = 1 };
 
-    var result = handler.Handle(
-        new DiscoverRecipeCommand { Character = character, SkillName = "Alchemy" }, default).Result;
+    var result = await handler.Handle(
+        new DiscoverRecipeCommand { Character = character, SkillName = "Alchemy" }, default);
 
     result.Success.Should().BeFalse();
     result.Message.Should().Contain("Alchemy");
   }
 
   [Fact]
-  public void Handle_ReturnsFailure_WhenNoDiscoverableRecipesExist()
+  public async Task Handle_ReturnsFailure_WhenNoDiscoverableRecipesExist()
   {
     var handler = new DiscoverRecipeHandler(MakeService()); // empty repo
     var character = new Character
@@ -275,15 +275,15 @@ public class DiscoverRecipeHandlerTests
       Level = 1
     };
 
-    var result = handler.Handle(
-        new DiscoverRecipeCommand { Character = character, SkillName = "Alchemy" }, default).Result;
+    var result = await handler.Handle(
+        new DiscoverRecipeCommand { Character = character, SkillName = "Alchemy" }, default);
 
     result.Success.Should().BeFalse();
     result.Message.Should().NotBeNullOrWhiteSpace();
   }
 
   [Fact]
-  public void Handle_AwardsXp_EvenOnFailure()
+  public async Task Handle_AwardsXp_EvenOnFailure()
   {
     var handler = new DiscoverRecipeHandler(MakeService());
     var skill = new CharacterSkill { SkillId = "alchemy", Name = "Alchemy", CurrentRank = 10 };
@@ -297,7 +297,7 @@ public class DiscoverRecipeHandlerTests
     };
     var xpBefore = skill.CurrentXP;
 
-    handler.Handle(new DiscoverRecipeCommand { Character = character, SkillName = "Alchemy" }, default).Wait();
+    await handler.Handle(new DiscoverRecipeCommand { Character = character, SkillName = "Alchemy" }, default);
 
     skill.CurrentXP.Should().BeGreaterThan(xpBefore);
   }
@@ -335,18 +335,18 @@ public class GetKnownRecipesHandlerTests
   }
 
   [Fact]
-  public void Handle_ReturnsEmpty_WhenCharacterKnowsNoRecipes()
+  public async Task Handle_ReturnsEmpty_WhenCharacterKnowsNoRecipes()
   {
     var (handler, _) = MakeHandler([MakeRecipe("sword", unlock: RecipeUnlockMethod.Trainer)]);
     var character = new Character { Name = "Hero", Inventory = [], LearnedRecipes = [], Skills = [], Level = 1 };
 
-    var result = handler.Handle(new GetKnownRecipesQuery { Character = character }, default).Result;
+    var result = await handler.Handle(new GetKnownRecipesQuery { Character = character }, default);
 
     result.Recipes.Should().BeEmpty();
   }
 
   [Fact]
-  public void Handle_ReturnsLearnedRecipes_WhenCharacterHasLearned()
+  public async Task Handle_ReturnsLearnedRecipes_WhenCharacterHasLearned()
   {
     var recipe = MakeRecipe("iron-sword", unlock: RecipeUnlockMethod.Trainer);
     var (handler, _) = MakeHandler([recipe]);
@@ -359,14 +359,14 @@ public class GetKnownRecipesHandlerTests
       Level = 1
     };
 
-    var result = handler.Handle(new GetKnownRecipesQuery { Character = character }, default).Result;
+    var result = await handler.Handle(new GetKnownRecipesQuery { Character = character }, default);
 
     result.Recipes.Should().HaveCount(1);
     result.Recipes[0].Recipe.Slug.Should().Be("iron-sword");
   }
 
   [Fact]
-  public void Handle_AutoUnlocksRecipes_WhenSkillLevelSufficient()
+  public async Task Handle_AutoUnlocksRecipes_WhenSkillLevelSufficient()
   {
     var recipe = MakeRecipe("silver-sword", level: 5, unlock: RecipeUnlockMethod.SkillLevel);
     var (handler, _) = MakeHandler([recipe]);
@@ -379,13 +379,13 @@ public class GetKnownRecipesHandlerTests
       Level = 1
     };
 
-    var result = handler.Handle(new GetKnownRecipesQuery { Character = character }, default).Result;
+    var result = await handler.Handle(new GetKnownRecipesQuery { Character = character }, default);
 
     result.Recipes.Should().HaveCount(1);
   }
 
   [Fact]
-  public void Handle_FiltersByStationId_WhenProvided()
+  public async Task Handle_FiltersByStationId_WhenProvided()
   {
     var swordRecipe = MakeRecipe("sword", "Blacksmithing");
     swordRecipe.RequiredStation = "anvil";
@@ -402,8 +402,8 @@ public class GetKnownRecipesHandlerTests
       Level = 1
     };
 
-    var result = handler.Handle(
-        new GetKnownRecipesQuery { Character = character, StationId = "anvil" }, default).Result;
+    var result = await handler.Handle(
+        new GetKnownRecipesQuery { Character = character, StationId = "anvil" }, default);
 
     result.Recipes.Should().HaveCount(1);
     result.Recipes[0].Recipe.Slug.Should().Be("sword");
