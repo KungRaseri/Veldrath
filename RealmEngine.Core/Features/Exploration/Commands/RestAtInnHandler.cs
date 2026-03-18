@@ -13,7 +13,7 @@ public class RestAtInnHandler : IRequestHandler<RestAtInnCommand, RestAtInnResul
 {
     private readonly ExplorationService _explorationService;
     private readonly GameStateService _gameState;
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<RestAtInnHandler> _logger;
 
     /// <summary>
@@ -22,7 +22,7 @@ public class RestAtInnHandler : IRequestHandler<RestAtInnCommand, RestAtInnResul
     public RestAtInnHandler(
         ExplorationService explorationService,
         GameStateService gameState,
-        SaveGameService saveGameService,
+        ISaveGameService saveGameService,
         ILogger<RestAtInnHandler> logger)
     {
         _explorationService = explorationService;

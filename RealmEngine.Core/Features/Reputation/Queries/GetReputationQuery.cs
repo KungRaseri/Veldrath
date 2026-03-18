@@ -84,13 +84,13 @@ public record FactionReputationInfo
 /// </summary>
 public class GetReputationHandler : IRequestHandler<GetReputationQuery, GetReputationResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ReputationService _reputationService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetReputationHandler"/> class.
     /// </summary>
-    public GetReputationHandler(SaveGameService saveGameService, ReputationService reputationService)
+    public GetReputationHandler(ISaveGameService saveGameService, ReputationService reputationService)
     {
         _saveGameService = saveGameService;
         _reputationService = reputationService;
