@@ -10,7 +10,7 @@ namespace RealmEngine.Core.Features.Inventory.Queries.GetPlayerInventory;
 /// </summary>
 public class GetPlayerInventoryQueryHandler : IRequestHandler<GetPlayerInventoryQuery, InventoryQueryResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<GetPlayerInventoryQueryHandler> _logger;
 
     /// <summary>
@@ -19,7 +19,7 @@ public class GetPlayerInventoryQueryHandler : IRequestHandler<GetPlayerInventory
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="logger">The logger.</param>
     public GetPlayerInventoryQueryHandler(
-        SaveGameService saveGameService,
+        ISaveGameService saveGameService,
         ILogger<GetPlayerInventoryQueryHandler> logger)
     {
         _saveGameService = saveGameService ?? throw new ArgumentNullException(nameof(saveGameService));
