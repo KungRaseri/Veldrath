@@ -2,7 +2,7 @@
 
 **Status**: ✅ 100% Complete
 **Implementation**: `RealmEngine.Core/Features/Party`
-**Tests**: 16/16 passing
+**Tests**: ✅ Passing
 
 ## Overview
 
@@ -54,7 +54,7 @@ Recruit and manage NPC allies for cooperative combat. Supports up to 4 party mem
 ### Queries
 - **GetPartyQuery**: Get party composition with member details
 
-## Godot Integration Example
+## Usage Example
 
 ```csharp
 // Recruit NPC to party

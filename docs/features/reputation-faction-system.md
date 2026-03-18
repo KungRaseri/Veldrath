@@ -2,12 +2,12 @@
 
 **Status**: ✅ 100% Complete
 **Implementation**: `RealmEngine.Core/Features/Reputation`
-**Faction Data**: `RealmEngine.Data/Data/Json/organizations/factions/catalog.json`
+**Faction Data**: Seeded to the content database; manage factions in RealmForge
 **Tests**: Integrated with all systems
 
 ## Overview
 
-Player actions influence relationships with 11 factions, affecting prices, quest availability, and faction hostility. Seven reputation levels from Hostile to Exalted provide gameplay consequences.
+Player actions influence relationships with factions, affecting prices, quest availability, and faction hostility. Seven reputation levels from Hostile to Exalted provide gameplay consequences.
 
 ## Implementation Details
 
@@ -20,7 +20,7 @@ Player actions influence relationships with 11 factions, affecting prices, quest
 6. **Revered** (6000 to 12000): 20% price discount, exclusive content
 7. **Exalted** (12000+): 30% price discount, faction champion status
 
-### 11 Factions (Organized by Type)
+### Factions (Organized by Type)
 
 **Trade Factions:**
 - **Merchants Guild**: Trade association, allies with Craftsmen Guild and Nobility
@@ -68,7 +68,7 @@ Player actions influence relationships with 11 factions, affecting prices, quest
 - **LoseReputationCommand**: Remove reputation points with warnings
 - **GetReputationQuery**: Get all or specific faction reputations with discount/access info
 
-## Godot Integration Example
+## Usage Example
 
 ```csharp
 // Gain reputation from quest completion

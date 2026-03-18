@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Spells System provides **144 total spells** organized into 4 magical traditions (Arcane, Divine, Occult, Primal) based on Pathfinder 2e. Each tradition contains 36 spells ranked from 0 (Cantrip) to 10. Any character can learn spells through spellbooks, scrolls, teachers, and quest rewards, but requires the appropriate tradition skill to cast effectively.
+The Spells System provides spells organized into 4 magical traditions (Arcane, Divine, Occult, Primal) based on Pathfinder 2e. Spells are ranked from 0 (Cantrip) to 10. Any character can learn spells through spellbooks, scrolls, teachers, and quest rewards, but requires the appropriate tradition skill to cast effectively.
 
 ## Core Philosophy
 
@@ -21,7 +21,7 @@ The Spells System provides **144 total spells** organized into 4 magical traditi
 
 ## Magical Traditions (Pathfinder 2e)
 
-### Arcane Tradition (36 Spells)
+### Arcane Tradition
 **Governing Attribute**: Intelligence  
 **Theme**: Study-based magic, raw power, manipulation of forces
 
@@ -37,7 +37,7 @@ The Spells System provides **144 total spells** organized into 4 magical traditi
 - **Rank 4-7**: Dimension Door, Wall of Force, Telekinesis, Disintegrate, Delayed Blast Fireball
 - **Rank 8-10**: Time Stop, Meteor Swarm, Wish
 
-### Divine Tradition (36 Spells)
+### Divine Tradition
 **Governing Attribute**: Wisdom  
 **Theme**: Faith-based magic, healing, protection, holy power
 
@@ -53,7 +53,7 @@ The Spells System provides **144 total spells** organized into 4 magical traditi
 - **Rank 4-7**: Holy Smite, Divine Power, Flame Strike, Greater Restoration, Regeneration
 - **Rank 8-10**: Mass Heal, Holy Aura, Miracle
 
-### Occult Tradition (36 Spells)
+### Occult Tradition
 **Governing Attribute**: Charisma  
 **Theme**: Mental/psychic magic, mind control, fear, illusions
 
@@ -69,7 +69,7 @@ The Spells System provides **144 total spells** organized into 4 magical traditi
 - **Rank 4-7**: Confusion, Dominate Person, Greater Invisibility, Feeblemind, Shadow Conjuration
 - **Rank 8-10**: Weird, Dominate Monster, Mass Charm
 
-### Primal Tradition (36 Spells)
+### Primal Tradition
 **Governing Attribute**: Wisdom  
 **Theme**: Nature-based magic, elements, beasts, plants, weather
 
