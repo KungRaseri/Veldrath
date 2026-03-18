@@ -16,7 +16,7 @@ A comprehensive spell-casting system providing magical combat options and utilit
 
 ## Core Features
 
-- **Spell Schools**: Destruction, Restoration, Alteration, Conjuration, Illusion, Mysticism
+- **Spell Traditions**: Arcane (INT), Divine (WIS), Occult (CHA), Primal (WIS) — see [Spells System](spells-system.md) for full breakdown
 - **Universal Access**: Any class can learn spells with skill investment
 - **Acquisition Methods**: Spellbooks, scrolls, trainers, quest rewards
 - **Skill Scaling**: Effectiveness scales with magic skill ranks

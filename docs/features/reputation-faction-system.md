@@ -115,8 +115,9 @@ if (standing != null)
     var finalPrice = basePrice * (1.0 - discount);
 }
 
-// Load faction data
-var factionService = new FactionDataService(dataPath);
+// Load faction data (FactionDataService is DI-injected, not manually constructed)
+// It is registered as AddScoped<FactionDataService>() via AddRealmEngineCore()
+var factionService = serviceProvider.GetRequiredService<FactionDataService>();
 var allFactions = factionService.LoadFactions();
 foreach (var faction in allFactions)
 {

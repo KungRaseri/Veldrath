@@ -28,7 +28,7 @@ Learned proficiencies that improve through use—"learning by doing":
 - **Build Differentiation**: Organic specialization based on playstyle
 - **Combat Integration**: All skill bonuses applied via `SkillEffectCalculator`
 
-**Implementation**: ✅ `SkillCatalogService`, `SkillProgressionService`, `AwardSkillXPCommand`, `InitializeCharacterSkillsCommand`
+**Implementation**: ✅ `SkillDataService`, `SkillProgressionService`, `AwardSkillXPCommand`, `InitializeCharacterSkillsCommand`
 
 See [Skills System](skills-system.md) for full details.
 
@@ -43,7 +43,7 @@ Class-granted active powers requiring conscious activation:
 - **Reactive Triggers**: Auto-execute on onCrit, onDodge, onBlock, onDamageTaken
 - **Enemy AI**: Intelligent ability usage based on health, combat phase, player status
 
-**Implementation**: ✅ `AbilityCatalogService`, `LearnAbilityCommand`, `UseAbilityCommand`, `PassiveBonusCalculator`, `ReactiveAbilityService`, `EnemyAbilityAIService`
+**Implementation**: ✅ `AbilityDataService`, `LearnAbilityCommand`, `UseAbilityCommand`, `PassiveBonusCalculator`, `ReactiveAbilityService`, `EnemyAbilityAIService`
 
 See [Abilities System](abilities-system.md) for full details.
 
@@ -57,7 +57,7 @@ Universal magical knowledge accessible to all with sufficient skill:
 - **Build Enabling**: Allows hybrid builds (warrior-mage, rogue-mage, etc.)
 - **Combat Integration**: Cast via `CastSpellCommand` with mana costs and success checks
 
-**Implementation**: ✅ `SpellCatalogService`, `SpellCastingService`, `LearnSpellCommand`, `CastSpellCommand`, `GetLearnableSpellsQuery`
+**Implementation**: ✅ `SpellDataService`, `SpellCastingService`, `LearnSpellCommand`, `CastSpellCommand`, `GetLearnableSpellsQuery`
 
 See [Spells System](spells-system.md) for full details.
 

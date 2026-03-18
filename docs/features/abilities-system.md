@@ -7,7 +7,7 @@
 The Abilities System provides **383 total abilities** organized by activation type and power tier. Abilities are special powers that characters acquire through class selection, progression, and discovery. Unlike skills (passive proficiencies), abilities are discrete powers with specific effects. Unlike spells (learnable magic), abilities are inherent character powers not requiring spell acquisition.
 
 **Combat Integration Status** (January 7, 2026):
-- ✅ **AbilityCatalogService** - Loads all 383 abilities from 4 JSON catalogs
+- ✅ **AbilityDataService** - Loads all 383 abilities from 4 JSON catalogs
 - ✅ **LearnAbilityCommand** - Class/level validation and learning system
 - ✅ **UseAbilityCommand** - Execution with damage, healing, cooldowns
 - ✅ **PassiveBonusCalculator** - Passive ability bonuses applied in combat

@@ -9,7 +9,7 @@ The Inventory System manages item storage, equipment, consumables, and procedura
 ## Core Components
 
 ### Item Management
-- **Storage**: Limited inventory capacity (20 slots)
+- **Storage**: Inventory capacity enforced at repository level (100 item limit)
 - **Equipment Slots**: Weapon, armor, shield, accessory
 - **Sorting**: Organize by name, type, or rarity
 
@@ -33,7 +33,7 @@ Items possess traits providing offensive, defensive, or utility bonuses with pro
 
 ## Key Features
 
-- **Capacity Management**: Strategic choices about what to carry
+- **Capacity Management**: Strategic choices about what to carry (100-slot repository limit)
 - **Equipment Optimization**: 13 equipment slots for build customization
 - **Procedural Variety**: Virtually unlimited item combinations
 - **Data-Driven**: JSON v4.0 specification for content expansion
