@@ -72,7 +72,7 @@ public class LoadGameHandlerTests : IDisposable
         result.SaveGame.Should().BeNull();
     }
 
-    [Fact(Skip = "Flaky test - intermittent serialization issues cause level=1 instead of expected 15")]
+    [Fact]
     public async Task Handle_Should_Load_Player_Stats_Correctly()
     {
         // Arrange
@@ -111,7 +111,7 @@ public class LoadGameHandlerTests : IDisposable
         loadedChar.Strength.Should().Be(20);
     }
 
-    [Fact(Skip = "Flaky test - intermittent enumeration/serialization issues")]
+    [Fact]
     public async Task Handle_Should_Load_Inventory_Items()
     {
         // Arrange
@@ -178,7 +178,7 @@ public class LoadGameHandlerTests : IDisposable
         result.SaveGame!.DifficultyLevel.Should().Be("Expert");
     }
 
-    [Fact(Skip = "Flaky test - intermittent null reference issues with equipped items")]
+    [Fact]
     public async Task Handle_Should_Load_Game_With_Equipped_Items()
     {
         // Arrange

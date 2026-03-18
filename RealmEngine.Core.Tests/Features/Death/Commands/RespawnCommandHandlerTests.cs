@@ -1,26 +1,32 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Death;
 using RealmEngine.Core.Features.Death.Commands;
 using RealmEngine.Core.Features.Death.Services;
 using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Death.Commands;
 
 public class RespawnCommandHandlerTests
 {
-  private sealed class FakeGameStateService : GameStateService
+  private sealed class FakeGameStateService : IGameStateService
   {
-    public override void UpdateLocation(string location) => CurrentLocation = location;
+    public string CurrentLocation { get; set; } = "Hub Town";
+    public SaveGame CurrentSave => throw new InvalidOperationException("No active save game");
+    public Character Player => throw new InvalidOperationException("No active save game");
+    public string DifficultyLevel => "Normal";
+    public bool IsIronmanMode => false;
+    public void UpdateLocation(string location) => CurrentLocation = location;
+    public void RecordDeath(string killedBy) { }
   }
 
   private static RespawnCommandHandler CreateHandler(
       ISaveGameService? saveGameService = null,
       DeathService? deathService = null,
-      GameStateService? gameState = null)
+      IGameStateService? gameState = null)
   {
     saveGameService ??= Mock.Of<ISaveGameService>();
     deathService ??= new DeathService(NullLogger<DeathService>.Instance);

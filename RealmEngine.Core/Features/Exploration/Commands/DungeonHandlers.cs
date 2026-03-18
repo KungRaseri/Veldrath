@@ -1,5 +1,6 @@
 using MediatR;
 using RealmEngine.Core.Features.Exploration.Services;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ public class EnterDungeonHandler : IRequestHandler<EnterDungeonCommand, EnterDun
 {
     private readonly ExplorationService _explorationService;
     private readonly DungeonGeneratorService _dungeonGenerator;
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ILogger<EnterDungeonHandler> _logger;
 
     private static readonly Dictionary<string, DungeonInstance> _activeDungeons = new();
@@ -24,7 +25,7 @@ public class EnterDungeonHandler : IRequestHandler<EnterDungeonCommand, EnterDun
     public EnterDungeonHandler(
         ExplorationService explorationService,
         DungeonGeneratorService dungeonGenerator,
-        GameStateService gameState,
+        IGameStateService gameState,
         ILogger<EnterDungeonHandler> logger)
     {
         _explorationService = explorationService;
@@ -210,14 +211,14 @@ public class ProceedToNextRoomHandler : IRequestHandler<ProceedToNextRoomCommand
 /// </summary>
 public class ClearDungeonRoomHandler : IRequestHandler<ClearDungeonRoomCommand, ClearDungeonRoomResult>
 {
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ILogger<ClearDungeonRoomHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClearDungeonRoomHandler"/> class.
     /// </summary>
     public ClearDungeonRoomHandler(
-        GameStateService gameState,
+        IGameStateService gameState,
         ILogger<ClearDungeonRoomHandler> logger)
     {
         _gameState = gameState;

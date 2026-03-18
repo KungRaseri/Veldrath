@@ -87,7 +87,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CharacterGrowthService>();
         services.AddScoped<ShopEconomyService>();
         services.AddScoped<LevelUpService>();
-        services.AddScoped<GameStateService>();
+        services.AddScoped<IGameStateService, GameStateService>();
         
         // Register harvesting services
         // HarvestingConfigData alias = RealmEngine.Core.Services.Harvesting.HarvestingConfig (all defaults)

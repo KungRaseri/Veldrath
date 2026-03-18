@@ -12,7 +12,7 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationCommand, ExploreLocationResult>
 {
     private readonly IMediator _mediator;
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ILogger<ExploreLocationCommandHandler> _logger;
     private readonly ItemGenerator? _itemGenerator;
 
@@ -21,7 +21,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
     /// </summary>
     public ExploreLocationCommandHandler(
         IMediator mediator,
-        GameStateService gameState,
+        IGameStateService gameState,
         ILogger<ExploreLocationCommandHandler> logger,
         ItemGenerator? itemGenerator = null)
     {

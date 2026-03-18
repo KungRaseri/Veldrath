@@ -1,5 +1,6 @@
 using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
@@ -8,9 +9,9 @@ namespace RealmEngine.Core.Services;
 /// Centralized service for accessing game state and context.
 /// Provides clean access to difficulty settings, current save, player character, and location.
 /// </summary>
-public class GameStateService
+public class GameStateService : IGameStateService
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<GameStateService> _logger;
 
     /// <summary>
@@ -29,7 +30,7 @@ public class GameStateService
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="logger">The logger.</param>
-    public GameStateService(SaveGameService saveGameService, ILogger<GameStateService> logger)
+    public GameStateService(ISaveGameService saveGameService, ILogger<GameStateService> logger)
     {
         _saveGameService = saveGameService;
         _logger = logger;

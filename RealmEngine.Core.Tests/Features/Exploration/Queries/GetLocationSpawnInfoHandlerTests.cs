@@ -4,6 +4,7 @@ using Moq;
 using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Features.Exploration.Queries;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Models;
@@ -14,14 +15,14 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 [Trait("Category", "Feature")]
 public class GetLocationSpawnInfoHandlerTests
 {
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly Mock<ExplorationService> _mockExplorationService;
     private readonly Mock<ILogger<GetLocationSpawnInfoHandler>> _mockLogger;
     private readonly GetLocationSpawnInfoHandler _handler;
 
     public GetLocationSpawnInfoHandlerTests()
     {
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _mockExplorationService = new Mock<ExplorationService>();
         _mockLogger = new Mock<ILogger<GetLocationSpawnInfoHandler>>();
         
@@ -179,7 +180,7 @@ public class GetLocationSpawnInfoHandlerTests
     public async Task Handle_Should_Return_Error_When_No_Location_Specified()
     {
         // Arrange
-        _mockGameState.Setup(g => g.CurrentLocation).Returns((string?)null);
+        _mockGameState.Setup(g => g.CurrentLocation).Returns((string)null!);
         var query = new GetLocationSpawnInfoQuery();
 
         // Act

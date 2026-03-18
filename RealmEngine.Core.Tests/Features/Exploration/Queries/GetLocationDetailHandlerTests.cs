@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Features.Exploration.Queries;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
 using Xunit;
@@ -12,14 +13,14 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 [Trait("Category", "Feature")]
 public class GetLocationDetailHandlerTests
 {
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly Mock<ExplorationService> _mockExplorationService;
     private readonly Mock<ILogger<GetLocationDetailHandler>> _mockLogger;
     private readonly GetLocationDetailHandler _handler;
 
     public GetLocationDetailHandlerTests()
     {
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _mockExplorationService = new Mock<ExplorationService>();
         _mockLogger = new Mock<ILogger<GetLocationDetailHandler>>();
         

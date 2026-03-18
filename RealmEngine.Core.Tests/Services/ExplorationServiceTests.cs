@@ -1,4 +1,5 @@
 using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Death.Queries;
@@ -17,7 +18,7 @@ namespace RealmEngine.Core.Tests.Services;
 public class ExplorationServiceTests
 {
     private readonly Mock<IMediator> _mockMediator;
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly Mock<SaveGameService> _mockSaveGameService;
     private readonly StubLocationGenerator _locationGenerator;
     private readonly ExplorationService _service;
@@ -44,7 +45,7 @@ public class ExplorationServiceTests
     public ExplorationServiceTests()
     {
         _mockMediator = new Mock<IMediator>();
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _mockSaveGameService = new Mock<SaveGameService>();
         _locationGenerator = new StubLocationGenerator();
 

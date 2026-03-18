@@ -17,7 +17,7 @@ namespace RealmEngine.Core.Features.Exploration;
 public class ExplorationService
 {
     private readonly IMediator _mediator;
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly SaveGameService _saveGameService;
     private readonly LocationGenerator _locationGenerator;
     private readonly ItemGenerator? _itemGenerator;
@@ -38,7 +38,7 @@ public class ExplorationService
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="locationGenerator">The location generator.</param>
     /// <param name="itemGenerator">The item generator (optional).</param>
-    public ExplorationService(IMediator mediator, GameStateService gameState, SaveGameService saveGameService, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null)
+    public ExplorationService(IMediator mediator, IGameStateService gameState, SaveGameService saveGameService, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null)
     {
         _mediator = mediator;
         _gameState = gameState;

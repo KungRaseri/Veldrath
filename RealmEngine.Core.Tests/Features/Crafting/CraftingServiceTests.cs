@@ -158,7 +158,7 @@ public class CraftingServiceTests
     public void ValidateMaterials_WithNullInventory_ReturnsFalse()
     {
         // Arrange
-        var character = new Character { Name = "Test", Inventory = null };
+        var character = new Character { Name = "Test", Inventory = null! };
         var recipe = CreateTestRecipe("test-recipe", "anvil", 1);
         recipe.Materials = [new RecipeMaterial { ItemReference = "iron-ingot", Quantity = 1 }];
 

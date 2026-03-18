@@ -254,18 +254,86 @@ public class CombatStatusEffectIntegrationTests
         character.ActiveStatusEffects.Should().BeEmpty("regeneration expires after 4 turns");
     }
 
-    [Fact(Skip = "Enemy model doesn't have Immunities collection yet")]
+    [Fact]
     public async Task ApplyStatusEffect_Should_Respect_Immunity()
     {
-        // Test skipped - requires Immunities property on Enemy model
-        await Task.CompletedTask;
+        // Arrange — enemy is immune to poison via the immuneToPoison trait
+        var enemy = new Enemy
+        {
+            Name = "Undead Skeleton",
+            Health = 100,
+            MaxHealth = 100,
+            Traits = new Dictionary<string, TraitValue>
+            {
+                { "immuneToPoison", new TraitValue { Value = "true" } }
+            }
+        };
+
+        var poisonEffect = new StatusEffect
+        {
+            Id = "poison1",
+            Type = StatusEffectType.Poisoned,
+            Category = StatusEffectCategory.DamageOverTime,
+            Name = "Poisoned",
+            OriginalDuration = 3,
+            RemainingDuration = 3,
+            TickDamage = 5,
+            DamageType = "poison"
+        };
+
+        // Act
+        var result = await _applyHandler.Handle(new ApplyStatusEffectCommand
+        {
+            TargetEnemy = enemy,
+            Effect = poisonEffect
+        }, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse("immune enemy should not be affected");
+        result.Resisted.Should().BeTrue("result should report immunity as a resist");
+        result.ResistancePercentage.Should().Be(100);
+        enemy.ActiveStatusEffects.Should().BeEmpty("no effect should be applied to an immune target");
     }
 
-    [Fact(Skip = "Enemy model doesn't have Resistances collection yet")]
+    [Fact]
     public async Task ApplyStatusEffect_Should_Respect_Resistance()
     {
-        // Test skipped - requires Resistances property on Enemy model
-        await Task.CompletedTask;
+        // Arrange — enemy has 100% fire resistance so burning is guaranteed to be resisted
+        var enemy = new Enemy
+        {
+            Name = "Fire Elemental",
+            Health = 100,
+            MaxHealth = 100,
+            Traits = new Dictionary<string, TraitValue>
+            {
+                { "resistFire", new TraitValue { Value = "100" } }
+            }
+        };
+
+        var burningEffect = new StatusEffect
+        {
+            Id = "burn1",
+            Type = StatusEffectType.Burning,
+            Category = StatusEffectCategory.DamageOverTime,
+            Name = "Burning",
+            OriginalDuration = 3,
+            RemainingDuration = 3,
+            TickDamage = 8,
+            DamageType = "fire"
+        };
+
+        // Act
+        var result = await _applyHandler.Handle(new ApplyStatusEffectCommand
+        {
+            TargetEnemy = enemy,
+            Effect = burningEffect
+        }, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse("100% resistance should always resist the effect");
+        result.Resisted.Should().BeTrue();
+        result.ResistancePercentage.Should().Be(100);
+        enemy.ActiveStatusEffects.Should().BeEmpty("fully resistant enemy should not have the effect applied");
     }
 
     [Fact]

@@ -48,7 +48,7 @@ public class QuestIntegrationTests
         });
 
         // Mock SkillCatalogService to avoid database dependencies
-        var mockSkillCatalog = new Mock<SkillDataService>(new InMemorySkillRepository(), null);
+        var mockSkillCatalog = new Mock<SkillDataService>(new InMemorySkillRepository(), null!);
         mockSkillCatalog.Setup(s => s.GetSkillDefinition(It.IsAny<string>()))
             .Returns(new SkillDefinition 
             { 

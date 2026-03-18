@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using RealmEngine.Core.Features.Exploration.Queries;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -12,12 +13,12 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 /// </summary>
 public class GetCurrentLocationQueryHandlerTests
 {
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly GetCurrentLocationQueryHandler _handler;
 
     public GetCurrentLocationQueryHandlerTests()
     {
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _handler = new GetCurrentLocationQueryHandler(_mockGameState.Object, NullLogger<GetCurrentLocationQueryHandler>.Instance);
     }
 
