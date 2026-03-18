@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 
 namespace RealmEngine.Core.Features.Exploration.Queries;
@@ -10,7 +11,7 @@ namespace RealmEngine.Core.Features.Exploration.Queries;
 /// </summary>
 public class GetLocationSpawnInfoHandler : IRequestHandler<GetLocationSpawnInfoQuery, LocationSpawnInfoDto>
 {
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ExplorationService _explorationService;
     private readonly ILogger<GetLocationSpawnInfoHandler> _logger;
 
@@ -21,7 +22,7 @@ public class GetLocationSpawnInfoHandler : IRequestHandler<GetLocationSpawnInfoQ
     /// <param name="explorationService">The exploration service.</param>
     /// <param name="logger">The logger.</param>
     public GetLocationSpawnInfoHandler(
-        GameStateService gameState,
+        IGameStateService gameState,
         ExplorationService explorationService,
         ILogger<GetLocationSpawnInfoHandler> logger)
     {

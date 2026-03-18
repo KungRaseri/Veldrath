@@ -14,13 +14,13 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 /// </summary>
 public class TravelToLocationCommandHandlerTests
 {
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly Mock<ISaveGameService> _mockSaveGameService;
     private readonly TravelToLocationCommandHandler _handler;
 
     public TravelToLocationCommandHandlerTests()
     {
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _mockGameState.SetupAllProperties();  // Enable automatic property tracking
         _mockGameState.Object.CurrentLocation = "Starting Village";
         

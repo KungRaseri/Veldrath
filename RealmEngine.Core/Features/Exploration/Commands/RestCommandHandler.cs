@@ -11,7 +11,7 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 /// </summary>
 public class RestCommandHandler : IRequestHandler<RestCommand, RestResult>
 {
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ILogger<RestCommandHandler> _logger;
 
     /// <summary>
@@ -19,7 +19,7 @@ public class RestCommandHandler : IRequestHandler<RestCommand, RestResult>
     /// </summary>
     /// <param name="gameState">The game state service.</param>
     /// <param name="logger">The logger.</param>
-    public RestCommandHandler(GameStateService gameState, ILogger<RestCommandHandler> logger)
+    public RestCommandHandler(IGameStateService gameState, ILogger<RestCommandHandler> logger)
     {
         _gameState = gameState;
         _logger = logger;

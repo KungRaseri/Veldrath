@@ -16,14 +16,14 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 public class ExploreLocationCommandHandlerTests
 {
     private readonly Mock<IMediator> _mockMediator;
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly ExploreLocationCommandHandler _handler;
     private readonly Character _player;
 
     public ExploreLocationCommandHandlerTests()
     {
         _mockMediator = new Mock<IMediator>();
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _player = new Character { Name = "Hero", Level = 1, Experience = 0, Gold = 0, Health = 100, MaxHealth = 100 };
 
         _mockGameState.SetupGet(s => s.Player).Returns(_player);

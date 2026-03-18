@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 namespace RealmEngine.Core.Features.Exploration.Queries;
 
@@ -9,7 +10,7 @@ namespace RealmEngine.Core.Features.Exploration.Queries;
 /// </summary>
 public class GetCurrentLocationQueryHandler : IRequestHandler<GetCurrentLocationQuery, GetCurrentLocationResult>
 {
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ILogger<GetCurrentLocationQueryHandler> _logger;
 
     /// <summary>
@@ -17,7 +18,7 @@ public class GetCurrentLocationQueryHandler : IRequestHandler<GetCurrentLocation
     /// </summary>
     /// <param name="gameState">The game state service.</param>
     /// <param name="logger">The logger.</param>
-    public GetCurrentLocationQueryHandler(GameStateService gameState, ILogger<GetCurrentLocationQueryHandler> logger)
+    public GetCurrentLocationQueryHandler(IGameStateService gameState, ILogger<GetCurrentLocationQueryHandler> logger)
     {
         _gameState = gameState;
         _logger = logger;

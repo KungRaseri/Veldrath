@@ -14,12 +14,12 @@ namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 /// </summary>
 public class RestCommandHandlerTests
 {
-    private readonly Mock<GameStateService> _mockGameState;
+    private readonly Mock<IGameStateService> _mockGameState;
     private readonly RestCommandHandler _handler;
 
     public RestCommandHandlerTests()
     {
-        _mockGameState = new Mock<GameStateService>();
+        _mockGameState = new Mock<IGameStateService>();
         _handler = new RestCommandHandler(_mockGameState.Object, NullLogger<RestCommandHandler>.Instance);
     }
 

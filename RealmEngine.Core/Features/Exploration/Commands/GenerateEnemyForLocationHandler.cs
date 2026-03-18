@@ -1,5 +1,6 @@
 using MediatR;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.Exploration;
 using Microsoft.Extensions.Logging;
@@ -12,7 +13,7 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 /// </summary>
 public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForLocationCommand, GenerateEnemyForLocationResult>
 {
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ExplorationService _explorationService;
     private readonly LocationGenerator _locationGenerator;
     private readonly EnemyGenerator _enemyGenerator;
@@ -22,7 +23,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
     /// Initializes a new instance of the <see cref="GenerateEnemyForLocationHandler"/> class.
     /// </summary>
     public GenerateEnemyForLocationHandler(
-        GameStateService gameState,
+        IGameStateService gameState,
         ExplorationService explorationService,
         LocationGenerator locationGenerator,
         EnemyGenerator enemyGenerator,

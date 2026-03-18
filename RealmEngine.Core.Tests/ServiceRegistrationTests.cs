@@ -30,7 +30,6 @@ using RealmEngine.Core.Services.Budget;
 using RealmEngine.Data;
 using RealmEngine.Data.Services;
 using RealmEngine.Data.Repositories;
-using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using System.Reflection;
@@ -389,13 +388,14 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void GameStateService_Should_Be_Registered()
+    public void IGameStateService_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<GameStateService>();
+        var service = _serviceProvider.GetService<IGameStateService>();
 
         // Assert
-        service.Should().NotBeNull("GameStateService should be registered");
+        service.Should().NotBeNull("IGameStateService should be registered in DI container");
+        service.Should().BeOfType<GameStateService>("IGameStateService should bind to GameStateService implementation");
     }
 
     #endregion

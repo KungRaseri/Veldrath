@@ -1,6 +1,7 @@
 using MediatR;
 using RealmEngine.Core.Features.Exploration.Services;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +13,7 @@ namespace RealmEngine.Core.Features.Exploration.Commands;
 public class RestAtInnHandler : IRequestHandler<RestAtInnCommand, RestAtInnResult>
 {
     private readonly ExplorationService _explorationService;
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly ISaveGameService _saveGameService;
     private readonly ILogger<RestAtInnHandler> _logger;
 
@@ -21,7 +22,7 @@ public class RestAtInnHandler : IRequestHandler<RestAtInnCommand, RestAtInnResul
     /// </summary>
     public RestAtInnHandler(
         ExplorationService explorationService,
-        GameStateService gameState,
+        IGameStateService gameState,
         ISaveGameService saveGameService,
         ILogger<RestAtInnHandler> logger)
     {

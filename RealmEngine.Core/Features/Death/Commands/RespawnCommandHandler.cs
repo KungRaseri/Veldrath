@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.SaveLoad;
 
@@ -12,7 +13,7 @@ namespace RealmEngine.Core.Features.Death.Commands;
 /// </summary>
 public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResult>
 {
-    private readonly GameStateService _gameState;
+    private readonly IGameStateService _gameState;
     private readonly DeathService _deathService;
     private readonly ISaveGameService _saveGameService;
     private readonly ILogger<RespawnCommandHandler> _logger;
@@ -25,7 +26,7 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="logger">The logger.</param>
     public RespawnCommandHandler(
-        GameStateService gameState,
+        IGameStateService gameState,
         DeathService deathService,
         ISaveGameService saveGameService,
         ILogger<RespawnCommandHandler> logger)
