@@ -1,3 +1,14 @@
+# Triggered by component release tags (e.g. engine/v1.2.3) created automatically
+# by the package job in each CI workflow after a successful main-branch build.
+# Can also be triggered manually via workflow_dispatch with an existing tag.
+#
+# Flow:
+#   1. Detect which component the tag belongs to
+#   2. Find the CI run that built artifacts for that commit (polls up to 5 min)
+#   3. Download the pre-built artifacts from that CI run
+#   4. Generate a scoped changelog (commits since the previous tag for this component)
+#   5. Build component-specific release notes
+#   6. Publish a GitHub Release with the artifacts and notes
 name: Release
 
 on:
@@ -166,11 +177,10 @@ jobs:
             {
               echo "## RealmEngine Libraries $VERSION"
               echo ""
-              echo "Core, Shared, and Data assemblies for use with .NET / Godot Engine."
+              echo "Core, Shared, and Data assemblies for consumption by any .NET application."
               echo ""
               echo "### Packages"
               echo "- \`RealmEngine-Libraries-$VERSION.zip\` — Core, Shared, and Data assemblies"
-              echo "- \`RealmEngine-Data-$VERSION.zip\` — JSON game data only (for direct Godot import)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
@@ -181,10 +191,10 @@ jobs:
             {
               echo "## RealmForge $VERSION"
               echo ""
-              echo "Content editor and tooling suite for RealmEngine."
+              echo "Avalonia desktop content editor for managing RealmEngine game data in Postgres."
               echo ""
               echo "### Packages"
-              echo "- \`RealmForge-Windows-$VERSION.zip\` — Windows desktop application (includes JSON data)"
+              echo "- \`RealmForge-Windows-$VERSION.zip\` — Windows desktop application (win-x64, self-contained)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
@@ -203,7 +213,7 @@ jobs:
               echo '```'
               echo ""
               echo "### Packages"
-              echo "- \`RealmUnbound-Server-$VERSION.zip\` — Self-contained server binary with JSON data"
+              echo "- \`RealmUnbound-Server-$VERSION.zip\` — ASP.NET Core server publish output (framework-dependent)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
@@ -239,7 +249,7 @@ jobs:
               echo '```'
               echo ""
               echo "### Packages"
-              echo "- \`RealmUnbound-Discord-$VERSION.zip\` — Self-contained bot binary"
+              echo "- \`RealmUnbound-Discord-$VERSION.zip\` — ASP.NET Core publish output (framework-dependent)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
