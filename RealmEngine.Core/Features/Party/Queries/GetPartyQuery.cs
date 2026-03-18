@@ -97,13 +97,13 @@ public record PartyMemberInfo
 /// </summary>
 public class GetPartyHandler : IRequestHandler<GetPartyQuery, GetPartyResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetPartyHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public GetPartyHandler(SaveGameService saveGameService)
+    public GetPartyHandler(ISaveGameService saveGameService)
     {
         _saveGameService = saveGameService;
     }

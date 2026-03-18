@@ -9,7 +9,7 @@ namespace RealmEngine.Core.Features.Inventory.Queries.CheckItemEquipped;
 /// </summary>
 public class CheckItemEquippedQueryHandler : IRequestHandler<CheckItemEquippedQuery, ItemEquippedResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
     private readonly ILogger<CheckItemEquippedQueryHandler> _logger;
 
     /// <summary>
@@ -18,7 +18,7 @@ public class CheckItemEquippedQueryHandler : IRequestHandler<CheckItemEquippedQu
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="logger">The logger.</param>
     public CheckItemEquippedQueryHandler(
-        SaveGameService saveGameService,
+        ISaveGameService saveGameService,
         ILogger<CheckItemEquippedQueryHandler> logger)
     {
         _saveGameService = saveGameService ?? throw new ArgumentNullException(nameof(saveGameService));
