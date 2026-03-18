@@ -177,7 +177,7 @@ Latest releases are published automatically on each merge to `main` and are avai
 
 | Component | Tag Prefix | Artifacts |
 |-----------|------------|-----------|
-| **Engine Libraries** | `engine/v*` | `RealmEngine-Libraries-{version}.zip` · `RealmEngine-Data-{version}.zip` |
+| **Engine Libraries** | `engine/v*` | `RealmEngine-Libraries-{version}.zip` |
 | **RealmForge** | `tooling/v*` | `RealmForge-Windows-{version}.zip` |
 | **RealmUnbound Server** | `server/v*` | `RealmUnbound-Server-{version}.zip` |
 | **RealmUnbound Client** | `client/v*` | `RealmUnbound-Client-Windows-{version}.zip` · `RealmUnbound-Client-Linux-{version}.zip` · `RealmUnbound-Client-macOS-x64-{version}.zip` · `RealmUnbound-Client-macOS-arm64-{version}.zip` |

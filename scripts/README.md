@@ -30,16 +30,6 @@ Creates and pushes a release tag for a specific component. Use this to manually 
 
 ---
 
-## `generate-release-notes.ps1`
-
-Generates release notes from git log since the last tag for a given component.
-
-```powershell
-.\scripts\generate-release-notes.ps1 -Component engine
-```
-
----
-
 ## `generate-coverage-report.ps1`
 
 Merges coverage XML outputs from `coverage-results/` and generates an HTML report under `coverage-report/`. Requires `reportgenerator` to be installed (`dotnet tool install -g dotnet-reportgenerator-globaltool`).
