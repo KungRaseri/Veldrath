@@ -12,7 +12,10 @@ namespace RealmEngine.Core.Tests.Features.Death.Commands;
 
 public class RespawnCommandHandlerTests
 {
-  private sealed class FakeGameStateService : GameStateService { }
+  private sealed class FakeGameStateService : GameStateService
+  {
+    public override void UpdateLocation(string location) => CurrentLocation = location;
+  }
 
   private static RespawnCommandHandler CreateHandler(
       ISaveGameService? saveGameService = null,
