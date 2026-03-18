@@ -4,10 +4,10 @@
 
 ## Overview
 
-The Abilities System provides **383 total abilities** organized by activation type and power tier. Abilities are special powers that characters acquire through class selection, progression, and discovery. Unlike skills (passive proficiencies), abilities are discrete powers with specific effects. Unlike spells (learnable magic), abilities are inherent character powers not requiring spell acquisition.
+The Abilities System provides a comprehensive ability catalog organized by activation type and power tier. Abilities are special powers that characters acquire through class selection, progression, and discovery. Unlike skills (passive proficiencies), abilities are discrete powers with specific effects. Unlike spells (learnable magic), abilities are inherent character powers not requiring spell acquisition.
 
 **Combat Integration Status** (January 7, 2026):
-- ✅ **AbilityDataService** - Loads all 383 abilities from 4 JSON catalogs
+- ✅ **AbilityDataService** - Loads abilities from the content database
 - ✅ **LearnAbilityCommand** - Class/level validation and learning system
 - ✅ **UseAbilityCommand** - Execution with damage, healing, cooldowns
 - ✅ **PassiveBonusCalculator** - Passive ability bonuses applied in combat
@@ -25,53 +25,53 @@ The Abilities System provides **383 total abilities** organized by activation ty
 **Class Identity**: Each class has a unique ability set reflecting their archetype. Warriors are melee-focused, Rogues are cunning, Mages are arcane.
 
 **Distinct from Skills & Spells**: 
-- **Skills** = Passive proficiencies practiced through use (54 skills, ranks 0-100)
-- **Abilities** = Special powers with activation requirements (383 abilities, tiers 1-5)
-- **Spells** = Learnable magic requiring tradition access (144 spells, ranks 0-10)
+- **Skills** = Passive proficiencies practiced through use (ranks 0–100)
+- **Abilities** = Special powers with activation requirements (tiers 1–5)
+- **Spells** = Learnable magic requiring tradition access (ranks 0–10)
 
 ## Ability Organization
 
 ### By Activation Type (4 Types)
 
-**Active Abilities (177 total)**: Require manual activation with mana cost and cooldown
-- **Offensive (88)**: Direct damage powers
-- **Defensive (34)**: Blocks, dodges, damage reduction
-- **Support (27)**: Buffs, healing, utility
-- **Utility (28)**: Non-combat benefits, exploration powers
-- **Control (8)**: Crowd control, disables, movement impairment
-- **Summon (4)**: Creature summoning
-- **Mobility (2)**: Movement abilities
+**Active Abilities**: Require manual activation with mana cost and cooldown
+- **Offensive**: Direct damage powers
+- **Defensive**: Blocks, dodges, damage reduction
+- **Support**: Buffs, healing, utility
+- **Utility**: Non-combat benefits, exploration powers
+- **Control**: Crowd control, disables, movement impairment
+- **Summon**: Creature summoning
+- **Mobility**: Movement abilities
 
-**Passive Abilities (131 total)**: Always-active effects requiring no activation
-- **General (16)**: Broad passive bonuses
-- **Offensive (38)**: Damage, critical, attack bonuses
-- **Defensive (39)**: Armor, resistance, health bonuses
-- **Leadership (24)**: Party/aura effects
-- **Environmental (22)**: Situational bonuses
-- **Mobility (7)**: Movement speed, terrain bonuses
-- **Sensory (1)**: Perception and detection
+**Passive Abilities**: Always-active effects requiring no activation
+- **General**: Broad passive bonuses
+- **Offensive**: Damage, critical, attack bonuses
+- **Defensive**: Armor, resistance, health bonuses
+- **Leadership**: Party/aura effects
+- **Environmental**: Situational bonuses
+- **Mobility**: Movement speed, terrain bonuses
+- **Sensory**: Perception and detection
 
-**Reactive Abilities (36 total)**: Auto-trigger on specific conditions
-- **Offensive (14)**: Counter-attacks, damage procs
-- **Defensive (12)**: Auto-blocks, damage reflection
-- **Utility (10)**: Situational auto-responses
+**Reactive Abilities**: Auto-trigger on specific conditions
+- **Offensive**: Counter-attacks, damage procs
+- **Defensive**: Auto-blocks, damage reflection
+- **Utility**: Situational auto-responses
 
-**Ultimate Abilities (39 total)**: Powerful tier 5 abilities with major impact
+**Ultimate Abilities**: Powerful tier 5 abilities with major impact
 - All ultimates are tier 5 (epic/legendary power level)
 - Long cooldowns, high mana costs
 - Game-changing effects
 
 ### By Power Tier (5 Tiers)
 
-Abilities are tiered by power level (based on `selectionWeight` in data):
+Abilities are tiered by power level (based on `rarityWeight` in the database):
 
-- **Tier 1 (Basic)**: selectionWeight < 50 — Starting abilities, common powers
-- **Tier 2 (Common)**: selectionWeight 50-99 — Standard abilities
-- **Tier 3 (Uncommon)**: selectionWeight 100-199 — Enhanced abilities
-- **Tier 4 (Rare)**: selectionWeight 200-399 — Powerful abilities
-- **Tier 5 (Epic/Legendary)**: selectionWeight 400+ or Ultimate type — Iconic abilities
+- **Tier 1 (Basic)**: rarityWeight < 50 — Starting abilities, common powers
+- **Tier 2 (Common)**: rarityWeight 50–99 — Standard abilities
+- **Tier 3 (Uncommon)**: rarityWeight 100–199 — Enhanced abilities
+- **Tier 4 (Rare)**: rarityWeight 200–399 — Powerful abilities
+- **Tier 5 (Epic/Legendary)**: rarityWeight 400+ or Ultimate type — Iconic abilities
 
-**Note**: Ultimate abilities are always tier 5 regardless of selectionWeight.
+**Note**: Ultimate abilities are always tier 5 regardless of rarityWeight.
 
 ## Ability Mechanics
 

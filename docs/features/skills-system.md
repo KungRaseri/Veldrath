@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Skills System provides practice-based progression where using skills improves proficiency over time. With **54 total skills** organized into 5 categories (Attribute, Weapon, Armor, Magic, Profession), the system offers deep specialization and diverse character builds. Skills are passive bonuses that rank up through repeated use, creating organic character development distinct from level-based progression and separate from the Abilities and Spells systems.
+The Skills System provides practice-based progression where using skills improves proficiency over time. With skills organized into 5 categories (Attribute, Weapon, Armor, Magic, Profession), the system offers deep specialization and diverse character builds. Skills are passive bonuses that rank up through repeated use, creating organic character development distinct from level-based progression and separate from the Abilities and Spells systems.
 
 ## Core Philosophy
 
@@ -20,7 +20,7 @@ The Skills System provides practice-based progression where using skills improve
 
 ## Skill Categories
 
-**Total Skills: 54** organized into 5 major categories:
+**Skills** organized into 5 major categories:
 
 ### Attribute Skills (24 Skills)
 Skills governed by and complementing each attribute. Skill checks combine skill rank + attribute modifier, creating meaningful synergy.

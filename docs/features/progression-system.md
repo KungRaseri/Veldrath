@@ -20,7 +20,7 @@ Flexible point distribution each level for specialization, hybrid builds, or bal
 
 ### Skills System (Practice-Based Progression) ✅ COMPLETE
 Learned proficiencies that improve through use—"learning by doing":
-- **Skill Categories**: Attribute (24), Weapon (10), Armor (4), Magic (16), Profession (12) = 54 total
+- **Skill Categories**: Attribute, Weapon, Armor, Magic, Profession
 - **Ranking System**: Rank 0 (untrained) to 100 (master)
 - **Use-Based XP**: Gain skill XP by using the skill (via `AwardSkillXPCommand`)
 - **Scaling Costs**: Each rank-up costs more XP (baseXPCost × (1 + currentRank × costMultiplier))
@@ -34,7 +34,7 @@ See [Skills System](skills-system.md) for full details.
 
 ### Abilities System (Class-Specific Powers) ✅ 95% COMPLETE
 Class-granted active powers requiring conscious activation:
-- **Ability Categories**: Active (177), Passive (131), Reactive (36), Ultimate (39) = 383 total
+- **Ability Categories**: Active, Passive, Reactive, Ultimate
 - **Resource Management**: Mana costs and cooldown timers tracked per character
 - **Class Identity**: Each class has unique ability set (via `GetAvailableAbilitiesQuery`)
 - **Level Unlocks**: Tier-based unlocking (Tier 1-5, levels 1/5/10/15/20)
@@ -49,7 +49,7 @@ See [Abilities System](abilities-system.md) for full details.
 
 ### Magic & Spell System (Learnable Magic) ✅ 90% COMPLETE
 Universal magical knowledge accessible to all with sufficient skill:
-- **Spell Traditions**: Arcane (36), Divine (36), Occult (36), Primal (36) = 144 total
+- **Spell Traditions**: Arcane, Divine, Occult, Primal
 - **Acquisition**: Learn via `LearnSpellCommand` from spellbooks/trainers
 - **Skill Requirements**: Minimum magic skill rank per spell rank (0-10)
 - **Spell Ranks**: 0 (Cantrip) to 10 (Legendary)

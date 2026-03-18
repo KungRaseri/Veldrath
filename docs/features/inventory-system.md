@@ -36,7 +36,6 @@ Items possess traits providing offensive, defensive, or utility bonuses with pro
 - **Capacity Management**: Strategic choices about what to carry (100-slot repository limit)
 - **Equipment Optimization**: 13 equipment slots for build customization
 - **Procedural Variety**: Virtually unlimited item combinations
-- **Data-Driven**: JSON v4.0 specification for content expansion
 - **Query APIs**: Complete MediatR-based API layer for UI integration
 
 ## Query APIs (MediatR)
