@@ -28,6 +28,8 @@ using RealmEngine.Core.Features.Victory.Services;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Features.Socketing;
+using RealmEngine.Core.Features.Enchanting;
+using RealmEngine.Core.Features.Upgrading;
 using RealmEngine.Core.Features.Achievements.Services;
 using RealmEngine.Core.Repositories;
 using RealmEngine.Data.Persistence;
@@ -229,6 +231,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SkillProgressionService>();
         services.AddScoped<GameplayService>();
         services.AddScoped<SocketService>();
+        services.AddScoped<EnchantingService>();
+        services.AddScoped<UpgradeService>();
         
         // Register combat AI services
         services.AddScoped<EnemySpellCastingService>();

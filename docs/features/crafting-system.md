@@ -30,16 +30,9 @@
 - ✅ **Station Validation** - Verifies correct station and tier
 
 ### ✅ Enhancement Systems Complete (100%)
-- ✅ **Enchanting System** - Apply magical properties to items
-  - Rarity-based slots: Common=1, Rare=2, Legendary=3
-  - Skill-based success: 100% (slot 1), 75% (slot 2), 50% (slot 3) + skill*0.3%
-  - Socket crystals add slots at skill levels 0/25/50
-  - Generic removal scrolls destroy enchantments
-- ✅ **Upgrade System** - Linear stat improvements (+1 to +10)
-  - Formula: `upgradeBonus = UpgradeLevel * 2.0` (additive, not multiplicative)
-  - Hybrid safety: +1-5 always succeed, +6-10 have graduated risk (95%-50%)
-  - Typed essences: Weapon/Armor/Accessory with Minor/Greater/Superior/Perfect tiers
-  - Failed upgrades drop 1 level, always consume essences
+- ✅ **[Enchanting System](enchanting-system.md)** — scroll-based magical property application
+- ✅ **[Upgrading System](upgrading-system.md)** — essence-based stat amplification (+1 to +10)
+- ✅ **[Socketing System](socketing-system.md)** — gem, rune, crystal, and orb slots
 - ✅ **Salvaging System** - Recycle unwanted items
   - Skill-based yield: 40% base + (skill * 0.3%), capped at 100%
   - Rarity scaling: Common=3, Legendary=10 base scraps
@@ -51,34 +44,17 @@
 
 ### ✅ Finalized Architecture
 
-1. **Enchanting System**: Post-craft enchanting using consumable scrolls
-   - Craft enchantment scrolls via recipes at Enchanting Altar
-   - Apply scrolls to existing gear through ApplyEnchantmentCommand (consumes scroll)
-   - Enchantments stored in Item.Enchantments list (uses existing architecture)
-   - **NOT socketable items** - separate from gem/essence/rune socket system
-
-2. **Enchantment Slots**: Items have MaxEnchantments property (0-3 slots)
-   - Slots determined at crafting time
-   - Can be expanded using special materials/catalysts during crafting
-   - Rare materials in recipe → more enchantment slots
-
-3. **Stat System Consolidation**: Merge legacy stats into Traits system
+1. **Stat System Consolidation**: Merge legacy stats into Traits system
    - Remove duplicate BonusStrength/Dexterity/etc. fields
    - Use Traits dictionary exclusively: `{ "bonusStrength": 5, "bonusDexterity": 3 }`
    - Item.GetTotalTraits() already implements unified merging
 
-4. **Binding Rules**: Hybrid approach based on enchantment type
-   - Common/Uncommon enchantments: No binding (tradeable)
-   - Rare enchantments: Bind on Equip (can trade scroll, binds when equipped)
-   - Epic/Legendary enchantments: Bind on Apply (scroll tradeable, item binds when enchanted)
-   - Quest reward enchantments: Bind on Craft (character-bound)
-
-5. **Crafting Quality**: Always succeeds, skill affects output quality
+2. **Crafting Quality**: Always succeeds, skill affects output quality
    - Low skill: Common/Uncommon items
    - High skill: Rare/Epic items
    - Critical success (5% chance): +1 quality tier
 
-6. **Material Sources**: All methods implemented
+3. **Material Sources**: All methods implemented
    - Enemy drops (loot tables)
    - Shop purchases (material vendors)
    - Gathering nodes (exploration system)
@@ -115,14 +91,9 @@ The Crafting System allows players to create, modify, and enhance equipment usin
 5. Consume materials and create item
 
 ### Equipment Enhancement
-- **Upgrade System**: Improve stats with additional materials (+1 to +10 levels)
-- **Enchanting System**: Apply magical effects using crafted scrolls
-  - **Enchantment Scrolls**: Consumable items that apply permanent enchantments
-  - **Application**: Use ApplyEnchantmentCommand to consume scroll and add enchantment
-  - **Slots**: Items have MaxEnchantments (0-3) determined at crafting time
-  - **Removal**: Optional RemoveEnchantmentCommand (destroys enchantment)
-  - **Rarity Tiers**: Minor (common), Lesser (uncommon), Greater (rare), Superior (epic), Legendary
-- **Socket System**: Existing gem/essence/rune/crystal/orb sockets (completely separate from enchantments)
+- **[Enchanting System](enchanting-system.md)** — Apply magical properties using crafted scrolls (scroll-based, skill-gated success rates)
+- **[Upgrading System](upgrading-system.md)** — Amplify item stats with essences (+1 to +10, hybrid safe/risky zones)
+- **[Socketing System](socketing-system.md)** — Gem, rune, crystal, and orb slots with link bonuses
 - **Modification System**: Reforge stats *(Future)*
 
 ### Crafting Skills *(Future)*
@@ -147,184 +118,9 @@ The Crafting System allows players to create, modify, and enhance equipment usin
 - [Exploration System](exploration-system.md) - Resource gathering
 - [Quest System](quest-system.md) - Recipe and material rewards
 - [Shop System](shop-system-integration.md) - Material purchasing
-
----
-
-## Technical Architecture
-
-### Architectural Changes Required
-
-#### 1. Stat System Consolidation
-
-**Problem**: Item and Enchantment models have duplicate stat systems:
-- Legacy: `BonusStrength`, `BonusDexterity`, `BonusConstitution`, etc. (hardcoded fields)
-- Modern: `Traits` dictionary with flexible key-value pairs
-
-**Solution**: Migrate to Traits-only system
-
-**Changes to Item.cs:**
-```csharp
-// REMOVE these legacy fields:
-public int BonusStrength { get; set; } = 0;
-public int BonusDexterity { get; set; } = 0;
-public int BonusConstitution { get; set; } = 0;
-public int BonusIntelligence { get; set; } = 0;
-public int BonusWisdom { get; set; } = 0;
-public int BonusCharisma { get; set; } = 0;
-
-// REMOVE these legacy methods:
-public int GetTotalBonusStrength() { ... }
-public int GetTotalBonusDexterity() { ... }
-// ... etc
-
-// KEEP: Traits-based system
-public Dictionary<string, TraitValue> Traits { get; set; }
-public Dictionary<string, TraitValue> GetTotalTraits() { ... } // Unified calculation
-```
-
-**Changes to Enchantment.cs:**
-```csharp
-// REMOVE these legacy fields:
-public int BonusStrength { get; set; } = 0;
-public int BonusDexterity { get; set; } = 0;
-// ... etc
-
-// KEEP: Traits-based system (already exists)
-public Dictionary<string, TraitValue> Traits { get; set; }
-```
-
-**Migration Impact:**
-- Items use the Traits system for all stat bonuses
-- Combat/Character systems use `GetTotalTraits()` for calculations
-- No gameplay impact - cleaner architecture
-
-#### 2. Enchantment Slot System
-
-**Add to Item.cs:**
-```csharp
-public class Item : ITraitable
-{
-    // NEW: Enchantment slot management
-    public int MaxEnchantments { get; set; } = 0;  // 0-3 slots
-    
-    // EXISTING: Enchantments list (now player-modifiable)
-    public List<Enchantment> Enchantments { get; set; } = new();
-    
-    // NEW: Helper methods
-    public bool CanAddEnchantment() => Enchantments.Count < MaxEnchantments;
-    public bool HasEnchantmentSlots() => MaxEnchantments > 0;
-    public int AvailableEnchantmentSlots() => MaxEnchantments - Enchantments.Count;
-}
-```
-
-**Generation Logic:**
-```csharp
-// In ItemGenerator or crafting logic
-public void SetEnchantmentSlots(Item item, List<Material> materials)
-{
-    // Base slots by rarity
-    item.MaxEnchantments = item.Rarity switch
-    {
-        ItemRarity.Common => 0,
-        ItemRarity.Uncommon => 1,
-        ItemRarity.Rare => 2,
-        ItemRarity.Epic => 2,
-        ItemRarity.Legendary => 3,
-        ItemRarity.Mythic => 3,
-        _ => 0
-    };
-    
-    // Bonus slots from catalyst materials
-    foreach (var material in materials)
-    {
-        if (material.HasTrait("EnchantmentSlotBonus"))
-        {
-            item.MaxEnchantments += material.GetTraitValue<int>("EnchantmentSlotBonus");
-        }
-    }
-    
-    // Cap at 5 total slots
-    item.MaxEnchantments = Math.Min(item.MaxEnchantments, 5);
-}
-```
-
-#### 3. Enchantment Scroll Item Type
-
-**Add to ItemType enum:**
-```csharp
-public enum ItemType
-{
-    // ... existing types
-    EnchantmentScroll,   // Consumable scrolls that apply enchantments
-}
-```
-
-**Enchantment Scroll Structure:**
-```csharp
-// No new class needed - use existing Item model
-// Enchantment scrolls are consumable items (Type = EnchantmentScroll)
-public class Item : ITraitable
-{
-    public ItemType Type { get; set; } // EnchantmentScroll
-    public Dictionary<string, TraitValue> Traits { get; set; } // Effects to apply
-    public EnchantmentRarity EnchantRarity { get; set; } // Determines binding rules
-    public List<string> ApplicableItemTypes { get; set; } // ["Weapon", "Armor", "Accessory"]
-    public BindingType BindingBehavior { get; set; } // Unbound/BindOnEquip/BindOnApply
-}
-```
-
-**Key Points:**
-- Scrolls are **consumable items**, NOT socketable items
-- Completely separate from existing Socket system (gems/essences/runes/crystals/orbs)
-- When applied, scroll is consumed and enchantment is baked into Item.Enchantments list
-- Scroll rarity determines binding behavior of enchanted item
-
-#### 4. Binding System
-
-**Add to Item.cs:**
-```csharp
-public enum BindingType
-{
-    Unbound,        // Can trade freely
-    BindOnEquip,    // Binds when equipped
-    BindOnApply,    // Binds when enchanted (for enchantment items)
-    CharacterBound  // Cannot trade (quest rewards)
-}
-
-public class Item : ITraitable
-{
-    public BindingType Binding { get; set; } = BindingType.Unbound;
-    public bool IsBound { get; set; } = false;
-    public string? BoundToCharacter { get; set; } = null;
-    
-    public void BindToCharacter(string characterName)
-    {
-        IsBound = true;
-        BoundToCharacter = characterName;
-    }
-}
-```
-
-**Binding Rules (enforced in commands):**
-```csharp
-public BindingType DetermineBindingOnEnchant(Item item, Item enchantmentItem)
-{
-    // Quest reward enchantments bind item immediately
-    if (enchantmentItem.Binding == BindingType.CharacterBound)
-        return BindingType.CharacterBound;
-    
-    // Epic/Legendary enchantments bind on apply
-    if (enchantmentItem.EnchantRarity >= EnchantmentRarity.Superior)
-        return BindingType.BindOnApply;
-    
-    // Rare enchantments bind on equip
-    if (enchantmentItem.EnchantRarity == EnchantmentRarity.Greater)
-        return BindingType.BindOnEquip;
-    
-    // Common/Uncommon: no binding change
-    return item.Binding;
-}
-```
+- [Enchanting System](enchanting-system.md) - Post-craft magical property application
+- [Upgrading System](upgrading-system.md) - Essence-based stat amplification
+- [Socketing System](socketing-system.md) - Gem, rune, crystal, and orb slots
 
 ---
 
@@ -338,8 +134,6 @@ public BindingType DetermineBindingOnEnchant(Item item, Item enchantmentItem)
 CraftItemCommand(string RecipeId, string CharacterId)
 UpgradeStationCommand(string StationId, string CharacterId)
 LearnRecipeCommand(string RecipeId, string CharacterId)
-ApplyEnchantmentCommand(string EnchantmentItemId, string TargetItemId, string CharacterId)
-RemoveEnchantmentCommand(string ItemId, int EnchantmentIndex, string CharacterId)
 ```
 
 **Queries:**
@@ -349,7 +143,6 @@ GetAvailableRecipesQuery(string StationType, int? PlayerLevel)
 GetCraftingStationsQuery(string? LocationId)
 GetRecipeDetailsQuery(string RecipeId)
 GetKnownRecipesQuery(string CharacterId)
-GetEnchantableSlotsQuery(string ItemId)
 ```
 
 **Results:**
@@ -361,15 +154,6 @@ public record CraftItemResult
     public int ExperienceGained { get; init; }
     public bool SkillLevelUp { get; init; }
     public List<string> MaterialsConsumed { get; init; } = new();
-    public string? ErrorMessage { get; init; }
-}
-
-public record ApplyEnchantmentResult
-{
-    public bool Success { get; init; }
-    public Item? EnchantedItem { get; init; }
-    public Enchantment? AppliedEnchantment { get; init; }
-    public BindingType? NewBindingType { get; init; }
     public string? ErrorMessage { get; init; }
 }
 
@@ -543,39 +327,6 @@ if (result.Success)
 }
 ```
 
-**4. Apply Enchantments:**
-```csharp
-// Player crafts enchantment scroll
-var craftCommand = new CraftItemCommand
-{
-    RecipeId = "recipe_scroll_fire",
-    CharacterId = player.Id
-};
-var craftResult = await mediator.Send(craftCommand);
-
-// Player applies scroll to weapon
-if (craftResult.Success)
-{
-    var enchantCommand = new ApplyEnchantmentCommand
-    {
-        EnchantmentItemId = craftResult.CraftedItem.Id,  // Scroll ID
-        TargetItemId = player.EquippedWeapon.Id,
-        CharacterId = player.Id
-    };
-    var enchantResult = await mediator.Send(enchantCommand);
-    
-    if (enchantResult.Success)
-    {
-        ShowNotification($"Enchantment applied! {enchantResult.AppliedEnchantment.Name}");
-        if (enchantResult.NewBindingType == BindingType.BindOnApply)
-        {
-            ShowWarning("Item is now bound to you and cannot be traded.");
-        }
-        RefreshEquipmentDisplay();
-    }
-}
-```
-
 ---
 
 ## Design Decisions
@@ -632,27 +383,6 @@ xp = recipe.BaseXP * (1 + (recipeTier - playerTier) * 0.5)
 3. **Discovery**: Find as loot in dungeons (5% drop chance from bosses)
 4. **Quest**: Reward from crafting-related quests
 5. **Skill**: Auto-unlock at specific skill levels
-
-### Enchantment Slot Expansion
-**Approach**: Catalyst materials in recipe increase slots
-
-**Base Slots by Rarity:**
-- Common: 0 slots
-- Uncommon: 1 slot
-- Rare: 2 slots
-- Epic/Legendary: 2-3 slots
-
-**Catalyst Bonus:** Including enchantment catalyst materials in the recipe adds +1 enchantment slot per catalyst. An Uncommon sword (1 base slot) with 2 catalysts yields 3 total slots.
-
-**Cap**: Maximum 5 enchantment slots per item
-
-### Binding Enforcement
-
-Binding type is determined when an enchantment is applied:
-- **Quest reward enchantments**: Bind immediately to character (cannot be traded)
-- **Epic/Legendary enchantments**: Bind on Apply — item becomes bound when enchanted
-- **Rare enchantments**: Bind on Equip — item binds when equipped, not at enchant time
-- **Common/Uncommon enchantments**: No binding change — item remains tradeable
 
 ---
 
