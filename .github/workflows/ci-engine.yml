@@ -182,9 +182,9 @@ jobs:
       run: |
         $version = "${{ steps.version.outputs.version-no-hash }}"
         New-Item -ItemType Directory -Force -Path package/Libraries
-        Copy-Item -Path "RealmEngine.Shared/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
-        Copy-Item -Path "RealmEngine.Core/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
-        Copy-Item -Path "RealmEngine.Data/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse
+        Copy-Item -Path "RealmEngine.Shared/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse -Force
+        Copy-Item -Path "RealmEngine.Core/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse -Force
+        Copy-Item -Path "RealmEngine.Data/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse -Force
         Compress-Archive -Path "package/*" -DestinationPath "RealmEngine-Libraries-$version.zip" -Force
         Write-Output "Created RealmEngine-Libraries-$version.zip"
       shell: pwsh
