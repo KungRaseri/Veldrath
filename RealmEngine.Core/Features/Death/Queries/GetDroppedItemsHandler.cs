@@ -8,13 +8,13 @@ namespace RealmEngine.Core.Features.Death.Queries;
 /// </summary>
 public class GetDroppedItemsHandler : IRequestHandler<GetDroppedItemsQuery, GetDroppedItemsResult>
 {
-    private readonly SaveGameService _saveGameService;
+    private readonly ISaveGameService _saveGameService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetDroppedItemsHandler"/> class.
     /// </summary>
     /// <param name="saveGameService">The save game service.</param>
-    public GetDroppedItemsHandler(SaveGameService saveGameService)
+    public GetDroppedItemsHandler(ISaveGameService saveGameService)
     {
         _saveGameService = saveGameService;
     }
