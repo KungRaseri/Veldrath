@@ -2,6 +2,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Core.Features.Salvaging.Commands;
+using RealmEngine.Core.Features.Salvaging.Queries;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Salvaging;
@@ -384,3 +385,95 @@ public class SalvagingIntegrationTests
         };
     }
 }
+
+/// <summary>Tests for the salvage preview query.</summary>
+[Trait("Category", "Feature")]
+public class GetSalvagePreviewHandlerTests
+{
+    private readonly IMediator _mediator;
+
+    public GetSalvagePreviewHandlerTests()
+    {
+        var services = new ServiceCollection();
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(SalvageItemHandler).Assembly));
+        _mediator = services.BuildServiceProvider().GetRequiredService<IMediator>();
+    }
+
+    [Fact]
+    public async Task Preview_Weapon_ReturnsCorrectSkillAndYield()
+    {
+        var character = CreateCharacterWithSkill("Blacksmithing", 100);
+        var item = new Item { Name = "Iron Sword", Type = ItemType.Weapon, Rarity = ItemRarity.Common };
+
+        var result = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
+
+        result.CanSalvage.Should().BeTrue();
+        result.SkillName.Should().Be("Blacksmithing");
+        result.SkillLevel.Should().Be(100);
+        // 40% base + (100 * 0.3%) = 70%
+        result.YieldRate.Should().Be(70.0);
+        result.ExpectedScrap.Should().ContainKey("Scrap Metal");
+        result.BlockedReason.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Preview_Consumable_ReturnsCantSalvage()
+    {
+        var character = CreateCharacterWithSkill("Salvaging", 0);
+        var item = new Item { Name = "Health Potion", Type = ItemType.Consumable, Rarity = ItemRarity.Common };
+
+        var result = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
+
+        result.CanSalvage.Should().BeFalse();
+        result.BlockedReason.Should().NotBeNullOrWhiteSpace();
+        result.ExpectedScrap.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Preview_MatchesSalvageCommandResult()
+    {
+        // Preview and actual salvage should produce identical scrap quantities and yield rate
+        var character = CreateCharacterWithSkill("Jewelcrafting", 60);
+        var item = new Item { Name = "Gold Ring", Type = ItemType.Ring, Rarity = ItemRarity.Rare };
+
+        var preview = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
+        var actual  = await _mediator.Send(new SalvageItemCommand { Character = character, Item = item, StationId = "jeweler" });
+
+        preview.CanSalvage.Should().BeTrue();
+        actual.Success.Should().BeTrue();
+        preview.YieldRate.Should().Be(actual.YieldRate);
+        preview.ExpectedScrap.Should().BeEquivalentTo(actual.ScrapMaterials);
+    }
+
+    [Fact]
+    public async Task Preview_DoesNotDestroyItem()
+    {
+        // Sending the preview twice should return the same result — item is never consumed
+        var character = CreateCharacterWithSkill("Blacksmithing", 0);
+        var item = new Item { Name = "Rusty Axe", Type = ItemType.Weapon, Rarity = ItemRarity.Common };
+
+        var first  = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
+        var second = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
+
+        first.YieldRate.Should().Be(second.YieldRate);
+        first.ExpectedScrap.Should().BeEquivalentTo(second.ExpectedScrap);
+    }
+
+    private static Character CreateCharacterWithSkill(string skillName, int rank) => new()
+    {
+        Name   = "Test Hero",
+        Skills = new Dictionary<string, CharacterSkill>
+        {
+            [skillName] = new CharacterSkill
+            {
+                SkillId     = skillName.ToLower(),
+                Name        = skillName,
+                Category    = "Crafting",
+                CurrentRank = rank,
+                CurrentXP   = 0,
+                XPToNextRank = 100
+            }
+        }
+    };
+}
+
