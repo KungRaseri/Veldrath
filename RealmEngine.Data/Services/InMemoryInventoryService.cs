@@ -13,6 +13,7 @@ public class InMemoryInventoryService : IInventoryService
 {
     private readonly ILogger<InMemoryInventoryService> _logger;
     private readonly Dictionary<string, Dictionary<string, int>> _inventories = [];
+    private readonly Dictionary<string, Dictionary<string, int>> _durabilities = [];
     private const int MaxSlots = 100;
 
     /// <param name="logger">Logger.</param>
@@ -100,6 +101,27 @@ public class InMemoryInventoryService : IInventoryService
             _logger.LogError(ex, "Failed to remove {ItemRef} from {CharacterName}'s inventory", itemRef, characterName);
             return Task.FromResult(false);
         }
+    }
+
+    /// <inheritdoc />
+    public Task<bool> ReduceItemDurabilityAsync(string characterName, string itemRef, int amount)
+    {
+        var inv = GetOrCreate(characterName);
+        if (!inv.ContainsKey(itemRef))
+        {
+            _logger.LogWarning("Cannot reduce durability for {ItemRef} on {CharacterName}: not in inventory", itemRef, characterName);
+            return Task.FromResult(false);
+        }
+        var current = _durabilities.TryGetValue(characterName, out var d) && d.TryGetValue(itemRef, out var dur) ? dur : 100;
+        var updated = Math.Max(0, current - amount);
+        if (!_durabilities.TryGetValue(characterName, out var charDur))
+        {
+            charDur = [];
+            _durabilities[characterName] = charDur;
+        }
+        charDur[itemRef] = updated;
+        _logger.LogDebug("{ItemRef} durability for {CharacterName}: {Old} -> {New}", itemRef, characterName, current, updated);
+        return Task.FromResult(true);
     }
 
     private Dictionary<string, int> GetOrCreate(string characterName)

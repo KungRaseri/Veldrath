@@ -48,4 +48,15 @@ public interface IInventoryService
     /// <param name="quantity">The quantity to remove.</param>
     /// <returns>True if items were successfully removed.</returns>
     Task<bool> RemoveItemAsync(string characterName, string itemRef, int quantity);
+
+    /// <summary>
+    /// Reduces the durability of an item in a character's inventory.
+    /// Durability is clamped to zero; a return value of <c>false</c> indicates the item
+    /// was not found, or the update could not be persisted.
+    /// </summary>
+    /// <param name="characterName">The character's name.</param>
+    /// <param name="itemRef">The item reference (e.g., "@items/tools/pickaxe:iron-pickaxe").</param>
+    /// <param name="amount">The amount to reduce durability by.</param>
+    /// <returns>True if the update succeeded.</returns>
+    Task<bool> ReduceItemDurabilityAsync(string characterName, string itemRef, int amount);
 }

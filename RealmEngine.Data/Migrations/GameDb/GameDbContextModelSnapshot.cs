@@ -35,6 +35,9 @@ namespace RealmEngine.Data.Migrations.GameDb
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<int?>("Durability")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ItemRef")
                         .IsRequired()
                         .HasMaxLength(256)

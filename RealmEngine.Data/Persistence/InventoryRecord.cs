@@ -22,6 +22,12 @@ public class InventoryRecord
     /// <summary>Stack size.</summary>
     public int Quantity { get; set; }
 
+    /// <summary>
+    /// Current durability of this item slot (0–100, or null if the item has no durability).
+    /// Only populated for equipment and tools; stackable consumables leave this null.
+    /// </summary>
+    public int? Durability { get; set; }
+
     /// <summary>Last write timestamp (UTC).</summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

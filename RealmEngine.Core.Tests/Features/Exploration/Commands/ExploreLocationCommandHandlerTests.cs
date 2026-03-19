@@ -65,11 +65,9 @@ public class ExploreLocationCommandHandlerTests
         }
 
         // Assert
-        if (peacefulResult != null)
-        {
-            peacefulResult.ExperienceGained.Should().BeGreaterThan(0);
-            peacefulResult.ExperienceGained.Should().BeInRange(10, 30);
-        }
+        peacefulResult.Should().NotBeNull("expected a peaceful exploration result within 50 tries");
+        peacefulResult!.ExperienceGained.Should().BeGreaterThan(0);
+        peacefulResult.ExperienceGained.Should().BeInRange(10, 30);
     }
 
     [Fact]
@@ -91,11 +89,9 @@ public class ExploreLocationCommandHandlerTests
         }
 
         // Assert
-        if (peacefulResult != null)
-        {
-            peacefulResult.GoldGained.Should().BeGreaterThan(0);
-            peacefulResult.GoldGained.Should().BeInRange(5, 25);
-        }
+        peacefulResult.Should().NotBeNull("expected a peaceful exploration result within 50 tries");
+        peacefulResult!.GoldGained.Should().BeGreaterThan(0);
+        peacefulResult.GoldGained.Should().BeInRange(5, 25);
     }
 
     [Fact]
@@ -128,10 +124,10 @@ public class ExploreLocationCommandHandlerTests
         // Arrange
         var command = new ExploreLocationCommand();
 
-        // Act
-        await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
+        // Assert — smoke: handler ran without throwing and returned a valid result
+        var smokeResult = await _handler.Handle(command, CancellationToken.None);
+        smokeResult.Should().NotBeNull();
+        smokeResult.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -151,14 +147,12 @@ public class ExploreLocationCommandHandlerTests
             }
         }
 
-        // Assert - Check if PlayerLeveledUp was published (if level up occurred)
-        if (_player.Level > 1)
-        {
-            _mockMediator.Verify(m => m.Publish(
-                It.IsAny<INotification>(),
-                It.IsAny<CancellationToken>()),
-                Times.AtLeast(1));
-        }
+        // Assert — player must have levelled (95 XP + any peaceful ≥10 XP crosses the 100 threshold)
+        _player.Level.Should().BeGreaterThan(1, "peaceful exploration always triggers a level-up from 95 XP");
+        _mockMediator.Verify(m => m.Publish(
+            It.IsAny<INotification>(),
+            It.IsAny<CancellationToken>()),
+            Times.AtLeast(1));
     }
 
     [Fact]
