@@ -154,7 +154,7 @@ public class LootTableService
     /// <param name="lootLookups">List of loot table references to merge.</param>
     /// <param name="mergeStrategy">How to combine multiple lookups (addPools, prioritizeFirst, prioritizeLast).</param>
     /// <returns>Result containing drops and gold amount.</returns>
-    public ChestLootResult RollChestDrops(List<string> lootLookups, string mergeStrategy = "addPools")
+    public async Task<ChestLootResult> RollChestDrops(List<string> lootLookups, string mergeStrategy = "addPools")
     {
         if (lootLookups == null || lootLookups.Count == 0)
         {
@@ -174,7 +174,7 @@ public class LootTableService
                 // Add all pools together (more loot)
                 foreach (var lookup in lootLookups)
                 {
-                    var lootResult = RollSingleChestLookup(lookup);
+                    var lootResult = await RollSingleChestLookup(lookup);
                     result.Gold += lootResult.Gold;
                     result.Drops.AddRange(lootResult.Drops);
                 }
@@ -182,17 +182,17 @@ public class LootTableService
 
             case "prioritizefirst":
                 // Use first lookup, ignore others
-                if (lootLookups.Any())
+                if (lootLookups.Count > 0)
                 {
-                    result = RollSingleChestLookup(lootLookups[0]);
+                    result = await RollSingleChestLookup(lootLookups[0]);
                 }
                 break;
 
             case "prioritizelast":
                 // Use last lookup, ignore others
-                if (lootLookups.Any())
+                if (lootLookups.Count > 0)
                 {
-                    result = RollSingleChestLookup(lootLookups[^1]);
+                    result = await RollSingleChestLookup(lootLookups[^1]);
                 }
                 break;
 
@@ -235,17 +235,60 @@ public class LootTableService
     }
 
     /// <summary>
-    /// Rolls loot for a single chest lookup reference.
+    /// Rolls loot for a single chest lookup reference by loading its loot table from the repository.
     /// </summary>
-    private ChestLootResult RollSingleChestLookup(string lookup)
+    private async Task<ChestLootResult> RollSingleChestLookup(string lookup)
     {
-        // Placeholder implementation - chest loot tables would be similar to enemy loot tables
-        // For now, return a simple result with random gold
-        return new ChestLootResult
+        if (string.IsNullOrWhiteSpace(lookup))
         {
-            Gold = _random.Next(10, 100),
-            Drops = new List<ItemDrop>()
-        };
+            _logger.LogWarning("Chest loot lookup reference is null or empty");
+            return new ChestLootResult();
+        }
+
+        var slug = ExtractSlugFromRef(lookup);
+        if (slug == null)
+        {
+            _logger.LogWarning("Invalid chest loot table reference format: {Lookup}", lookup);
+            return new ChestLootResult();
+        }
+
+        var lootTable = await _lootTableRepo.GetBySlugAsync(slug);
+        if (lootTable == null)
+        {
+            _logger.LogWarning("Chest loot table not found for slug: {Slug}", slug);
+            return new ChestLootResult();
+        }
+
+        var result = new ChestLootResult { Drops = [] };
+
+        foreach (var entry in lootTable.Entries)
+        {
+            if (!entry.IsGuaranteed)
+            {
+                var roll = _random.Next(1, 101);
+                if (roll > entry.DropWeight)
+                    continue;
+            }
+
+            // Gold entries use the "gold" item domain convention
+            if (string.Equals(entry.ItemDomain, "gold", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Gold += _random.Next(entry.QuantityMin, entry.QuantityMax + 1);
+                continue;
+            }
+
+            var quantity = _random.Next(entry.QuantityMin, entry.QuantityMax + 1);
+            var itemRef = $"@{entry.ItemDomain}:{entry.ItemSlug}";
+            result.Drops.Add(new ItemDrop
+            {
+                ItemRef = itemRef,
+                ItemName = ExtractItemName(itemRef),
+                Quantity = quantity,
+                IsBonus = false
+            });
+        }
+
+        return result;
     }
 }
 
