@@ -51,5 +51,22 @@ public class EfCoreAbilityRepository(ContentDbContext db, ILogger<EfCoreAbilityR
         Cooldown    = (int)(e.Stats.Cooldown ?? 0),
         ManaCost    = e.Stats.ManaCost ?? 0,
         Range       = e.Stats.Range.HasValue ? (int)e.Stats.Range.Value : null,
+        Duration    = e.Stats.Duration.HasValue ? (int)e.Stats.Duration.Value : null,
+        IsPassive   = e.Traits.IsPassive ?? false,
+        Type        = ParseAbilityType(e.AbilityType, e.Traits.IsPassive ?? false),
     };
+
+    // Entity AbilityType ("active"/"passive"/"reactive"/"ultimate") maps to activation style,
+    // not the model's combat-role enum. We preserve "passive" exactly; all active variants
+    // default to Offensive until per-row TypeKey data can drive a richer mapping.
+    private static AbilityTypeEnum ParseAbilityType(string abilityType, bool isPassive)
+    {
+        if (isPassive) return AbilityTypeEnum.Passive;
+        return abilityType.ToLowerInvariant() switch
+        {
+            "passive"  => AbilityTypeEnum.Passive,
+            "reactive" => AbilityTypeEnum.Defensive,
+            _          => AbilityTypeEnum.Offensive
+        };
+    }
 }

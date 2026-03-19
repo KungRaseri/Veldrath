@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
@@ -242,7 +243,30 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DungeonGeneratorService>();
         services.AddScoped<AchievementService>();
         
+        // Register hosted service so Generic Host consumers (ASP.NET Core, Blazor, Avalonia
+        // with IHost) get catalog initialization for free on startup.
+        // Non-hosted consumers call services.InitializeCatalogsAsync() after building the container.
+        services.AddHostedService<CatalogInitializationService>();
+        
         return services;
+    }
+
+    /// <summary>
+    /// Initializes the ability, spell, and skill catalog singletons.
+    /// Call this on the built <see cref="IServiceProvider"/> when not using the .NET Generic Host
+    /// (e.g. standalone console apps or test hosts that bypass <see cref="IHostedService"/> startup).
+    /// Generic Host consumers (ASP.NET Core, Blazor, Avalonia with IHost) do not need to call this —
+    /// <see cref="CatalogInitializationService"/> handles it automatically.
+    /// </summary>
+    /// <param name="services">The built service provider.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    public static async Task InitializeCatalogsAsync(
+        this IServiceProvider services,
+        CancellationToken cancellationToken = default)
+    {
+        await services.GetRequiredService<AbilityDataService>().InitializeAsync();
+        await services.GetRequiredService<SpellDataService>().InitializeAsync();
+        await services.GetRequiredService<SkillDataService>().InitializeAsync();
     }
     
     /// <summary>

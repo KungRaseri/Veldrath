@@ -48,5 +48,19 @@ public class EfCoreSpellRepository(ContentDbContext db, ILogger<EfCoreSpellRepos
         DisplayName = e.DisplayName ?? e.Slug,
         ManaCost    = e.Stats.ManaCost ?? 0,
         Rank        = e.RarityWeight,
+        Cooldown    = (int)(e.Stats.Cooldown ?? 0),
+        Range       = e.Stats.Range.HasValue ? (int)e.Stats.Range.Value : 0,
+        Duration    = (int)(e.Stats.Duration ?? 0),
+        Tradition   = ParseTradition(e.School),
     };
+
+    // Entity stores granular schools ("fire", "frost", etc.); map to the four broad traditions.
+    private static MagicalTradition ParseTradition(string school) =>
+        school.ToLowerInvariant() switch
+        {
+            "arcane" or "force" or "transmutation" => MagicalTradition.Arcane,
+            "divine" or "holy" or "sacred" or "light" or "healing" => MagicalTradition.Divine,
+            "shadow" or "occult" or "psychic" or "dark" or "void" => MagicalTradition.Occult,
+            _ => MagicalTradition.Primal  // fire, frost, nature, earth, water, wind, storm, …
+        };
 }
