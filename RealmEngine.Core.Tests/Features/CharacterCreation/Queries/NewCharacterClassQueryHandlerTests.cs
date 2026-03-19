@@ -239,4 +239,18 @@ public class GetSubclassesHandlerTests
 
         result.Subclasses.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task Handle_UsesGetSubclasses_WhenParentIdIsEmptyString()
+    {
+        var repo = new Mock<ICharacterClassRepository>();
+        repo.Setup(r => r.GetSubclasses()).Returns([]);
+
+        // Empty string is treated the same as null — delegates to GetSubclasses().
+        await new GetSubclassesHandler(repo.Object)
+            .Handle(new GetSubclassesQuery { ParentClassId = string.Empty }, default);
+
+        repo.Verify(r => r.GetSubclasses(), Times.Once);
+        repo.Verify(r => r.GetSubclassesForParent(It.IsAny<string>()), Times.Never);
+    }
 }

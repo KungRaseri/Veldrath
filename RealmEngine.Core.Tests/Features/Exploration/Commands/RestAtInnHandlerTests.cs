@@ -59,7 +59,7 @@ public class RestAtInnHandlerTests
         explorationSvc.Setup(s => s.GetKnownLocationsAsync()).ReturnsAsync([MakeInnLocation()]);
 
         var gameState = new Mock<IGameStateService>();
-        gameState.SetupGet(g => g.Player).Returns((Character?)null);
+        gameState.SetupGet(g => g.Player).Returns((Character)null!);
 
         var result = await CreateHandler(explorationSvc, gameState).Handle(
             new RestAtInnCommand("town-1", "", 10), default);
