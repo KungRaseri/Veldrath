@@ -52,14 +52,14 @@ public static class FoundryEndpoints
         string? status,
         string? contentType,
         string? search,
-        int page,
-        int pageSize,
+        int? page,
+        int? pageSize,
         FoundryService service,
         CancellationToken ct)
     {
-        page     = Math.Max(1, page == 0 ? 1 : page);
-        pageSize = Math.Clamp(pageSize == 0 ? 20 : pageSize, 1, 100);
-        var results = await service.ListSubmissionsAsync(status, contentType, search, page, pageSize, ct);
+        var resolvedPage     = Math.Max(1, page.GetValueOrDefault(1));
+        var resolvedPageSize = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
+        var results = await service.ListSubmissionsAsync(status, contentType, search, resolvedPage, resolvedPageSize, ct);
         return Results.Ok(results);
     }
 

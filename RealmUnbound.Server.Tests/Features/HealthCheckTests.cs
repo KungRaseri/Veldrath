@@ -11,7 +11,7 @@ public class HealthCheckTests
     [Fact]
     public async Task GameEngineHealthCheck_Should_Return_Healthy()
     {
-        var check  = new GameEngineHealthCheck();
+        var check  = new GameEngineHealthCheck(Mock.Of<ISender>());
         var ctx    = new HealthCheckContext
         {
             Registration = new HealthCheckRegistration("game-engine", check, null, null)
@@ -25,7 +25,7 @@ public class HealthCheckTests
     [Fact]
     public async Task GameEngineHealthCheck_Should_Include_Description()
     {
-        var check  = new GameEngineHealthCheck();
+        var check  = new GameEngineHealthCheck(Mock.Of<ISender>());
         var ctx    = new HealthCheckContext
         {
             Registration = new HealthCheckRegistration("game-engine", check, null, null)
