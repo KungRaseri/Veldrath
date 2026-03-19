@@ -114,8 +114,8 @@ public class ApplyStatusEffectTests
     [Fact]
     public async Task Should_Stack_Effect_When_Allowed()
     {
-        // Arrange
-        var character = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
+        // Arrange — Wisdom = 0 ensures no random resistance roll that could block the stack
+        var character = new Character { Name = "Hero", Health = 100, MaxHealth = 100, Wisdom = 0 };
         var existingEffect = new StatusEffect
         {
             Id = "bleed1",
