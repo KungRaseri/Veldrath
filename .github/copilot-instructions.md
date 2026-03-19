@@ -1,5 +1,16 @@
 # RealmEngine — Copilot Instructions (.NET 10.0)
 
+## Session Start — Required Reading
+
+**At the beginning of every session, read these files before doing anything else:**
+
+- [`.github/copilot-memory/engine-codebase.md`](.github/copilot-memory/engine-codebase.md) — key model facts, positional record constructors, known handler quirks
+- [`.github/copilot-memory/json-migration-status.md`](.github/copilot-memory/json-migration-status.md) — migration history and completed work log
+
+These files are committed to the repo and shared across all machines. **Do not use `/memories/repo/` for codebase notes** — write new discoveries directly to the files above using the file editing tools so they travel with the repo via git.
+
+---
+
 ## What This Repository Is
 
 **RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
