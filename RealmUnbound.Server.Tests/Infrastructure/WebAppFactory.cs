@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Data.Persistence;
 using RealmUnbound.Server.Data;
 
@@ -63,6 +64,13 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
             services.AddDbContext<ContentDbContext>(options =>
                 options.UseSqlite(ConnStr)
                        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+
+            // Catalog initialization runs before the SQLite schema is created (tables don't exist
+            // yet at hosted-service startup). Tests seed catalog data directly, so remove it.
+            var catalogInit = services.FirstOrDefault(
+                d => d.ImplementationType == typeof(CatalogInitializationService));
+            if (catalogInit is not null)
+                services.Remove(catalogInit);
         });
     }
 
