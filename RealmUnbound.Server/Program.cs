@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using RealmEngine.Core;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
@@ -70,13 +71,13 @@ try
     // ── ASP.NET Core Identity ─────────────────────────────────────────────────
     builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
         {
-            options.Password.RequireDigit           = true;
-            options.Password.RequiredLength         = 8;
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 8;
             options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase       = false;
-            options.User.RequireUniqueEmail         = true;
+            options.Password.RequireUppercase = false;
+            options.User.RequireUniqueEmail = true;
             options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan  = TimeSpan.FromMinutes(15);
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         })
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
@@ -88,19 +89,19 @@ try
     builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey        = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                ValidateIssuer          = true,
-                ValidIssuer             = builder.Configuration["Jwt:Issuer"],
-                ValidateAudience        = true,
-                ValidAudience           = builder.Configuration["Jwt:Audience"],
-                ClockSkew               = TimeSpan.FromSeconds(30),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                ValidateIssuer = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                ClockSkew = TimeSpan.FromSeconds(30),
             };
 
             // Allow SignalR to read the JWT from the query string (hub connections).
@@ -135,39 +136,39 @@ try
     // absent (CI, local dev without OAuth app registrations).
     // SignInScheme must be explicitly set to IdentityConstants.ExternalScheme so
     // the OAuth middleware writes the external cookie that GetExternalLoginInfoAsync reads.
-    var discordId     = builder.Configuration["OAuth:Discord:ClientId"];
+    var discordId = builder.Configuration["OAuth:Discord:ClientId"];
     var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"];
     if (!string.IsNullOrEmpty(discordId) && !string.IsNullOrEmpty(discordSecret))
         builder.Services.AddAuthentication()
             .AddDiscord(o =>
             {
-                o.SignInScheme  = IdentityConstants.ExternalScheme;
-                o.ClientId     = discordId;
+                o.SignInScheme = IdentityConstants.ExternalScheme;
+                o.ClientId = discordId;
                 o.ClientSecret = discordSecret;
                 o.Scope.Add("email");
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
             });
 
-    var googleId     = builder.Configuration["OAuth:Google:ClientId"];
+    var googleId = builder.Configuration["OAuth:Google:ClientId"];
     var googleSecret = builder.Configuration["OAuth:Google:ClientSecret"];
     if (!string.IsNullOrEmpty(googleId) && !string.IsNullOrEmpty(googleSecret))
         builder.Services.AddAuthentication()
             .AddGoogle(o =>
             {
-                o.SignInScheme  = IdentityConstants.ExternalScheme;
-                o.ClientId     = googleId;
+                o.SignInScheme = IdentityConstants.ExternalScheme;
+                o.ClientId = googleId;
                 o.ClientSecret = googleSecret;
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
             });
 
-    var msId     = builder.Configuration["OAuth:Microsoft:ClientId"];
+    var msId = builder.Configuration["OAuth:Microsoft:ClientId"];
     var msSecret = builder.Configuration["OAuth:Microsoft:ClientSecret"];
     if (!string.IsNullOrEmpty(msId) && !string.IsNullOrEmpty(msSecret))
         builder.Services.AddAuthentication()
             .AddMicrosoftAccount(o =>
             {
-                o.SignInScheme  = IdentityConstants.ExternalScheme;
-                o.ClientId     = msId;
+                o.SignInScheme = IdentityConstants.ExternalScheme;
+                o.ClientId = msId;
                 o.ClientSecret = msSecret;
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
             });
@@ -190,6 +191,7 @@ try
     // ── RealmEngine services ─────────────────────────────────────────────────
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
+    builder.Services.AddHostedService<CatalogInitializationService>();
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
     builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));

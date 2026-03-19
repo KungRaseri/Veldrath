@@ -243,10 +243,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DungeonGeneratorService>();
         services.AddScoped<AchievementService>();
         
-        // Register hosted service so Generic Host consumers (ASP.NET Core, Blazor, Avalonia
-        // with IHost) get catalog initialization for free on startup.
-        // Non-hosted consumers call services.InitializeCatalogsAsync() after building the container.
-        services.AddHostedService<CatalogInitializationService>();
+        // NOTE: Catalog initialization is NOT registered automatically because the startup
+        // order varies by host type:
+        //   • Generic Host consumers (ASP.NET Core, Blazor, Avalonia with IHost) —
+        //     add services.AddHostedService<CatalogInitializationService>() AFTER
+        //     AddRealmEngineCore(), so the host starts it after EF schema is ready.
+        //   • Non-hosted consumers (console apps, test fixtures) —
+        //     call await services.InitializeCatalogsAsync() on the built IServiceProvider.
         
         return services;
     }
