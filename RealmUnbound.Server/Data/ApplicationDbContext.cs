@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmUnbound.Server.Data.Entities;
@@ -17,6 +18,7 @@ namespace RealmUnbound.Server.Data;
 /// </summary>
 public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRole<Guid>, Guid>
 {
+    /// <summary>Initializes a new instance of <see cref="ApplicationDbContext"/>.</summary>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<Entities.Character> Characters => Set<Entities.Character>();
@@ -108,7 +110,11 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
         {
             e.HasKey(s => s.Id);
             e.Property(s => s.Title).HasMaxLength(200);
-            e.Property(s => s.Payload).HasColumnType("jsonb");
+            // jsonb is PostgreSQL-specific; fall back to plain text for SQLite (tests).
+            if (Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+                e.Property(s => s.Payload).HasColumnType("TEXT");
+            else
+                e.Property(s => s.Payload).HasColumnType("jsonb");
             e.Property(s => s.ContentType).HasConversion<string>();
             e.Property(s => s.Status).HasConversion<string>();
             e.HasOne(s => s.Submitter)
@@ -155,5 +161,21 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .HasForeignKey(v => v.VoterId)
              .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text
+        // so comparisons and ORDER BY work correctly in the SQLite test environment.
+        // This block is skipped for PostgreSQL (production) where DateTimeOffset is native.
+        if (Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var converter = new DateTimeOffsetToStringConverter();
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties()
+                    .Where(p => p.ClrType == typeof(DateTimeOffset) || p.ClrType == typeof(DateTimeOffset?)))
+                {
+                    property.SetValueConverter(converter);
+                }
+            }
+        }
     }
 }

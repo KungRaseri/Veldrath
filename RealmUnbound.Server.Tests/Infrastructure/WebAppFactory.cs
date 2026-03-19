@@ -48,6 +48,8 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:AccessTokenExpiryMinutes",          "15");
         builder.UseSetting("Jwt:RefreshTokenExpiryDays",            "30");
         builder.UseSetting("RealmEngine:DataPath",                  "");
+        // Rate limiting must not interfere with integration tests; set a very high permit limit.
+        builder.UseSetting("RateLimit:FoundryWritesPerMinute",      "100000");
 
         // Replace the production Postgres contexts with in-memory SQLite instances.
         // EF Core 8+ registers IDbContextOptionsConfiguration<T> (not DbContextOptions<T>),

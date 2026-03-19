@@ -121,12 +121,13 @@ try
     builder.Services.AddAuthorization(options =>
         options.AddPolicy("Curator", p => p.RequireRole("Curator")));
 
+    var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
         {
             o.Window = TimeSpan.FromMinutes(1);
-            o.PermitLimit = 5;
+            o.PermitLimit = foundryWriteLimit;
         });
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
