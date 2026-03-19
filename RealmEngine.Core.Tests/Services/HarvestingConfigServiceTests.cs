@@ -2,185 +2,200 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Services;
+using Xunit;
 
 namespace RealmEngine.Core.Tests.Services;
 
-[Trait("Category", "Service")]
+[Trait("Category", "Services")]
 public class HarvestingConfigServiceTests
 {
+    // ── Stub infrastructure ────────────────────────────────────────────────
+
     private sealed class StubConfigService(string? json) : GameConfigService
     {
         public override string? GetData(string key) => json;
     }
 
-    private sealed class CallCountingService(string? json, Action onGetData) : GameConfigService
+    private sealed class CallCountingConfigService(string? json, Action onCall) : GameConfigService
     {
-        public override string? GetData(string key) { onGetData(); return json; }
+        public override string? GetData(string key) { onCall(); return json; }
     }
 
-    private static HarvestingConfigService Create(string? json) =>
+    private static HarvestingConfigService CreateService(string? json = null) =>
         new(new StubConfigService(json), NullLogger<HarvestingConfigService>.Instance);
 
-    // Minimal valid JSON that exercises every section.
     private const string ValidJson = """
         {
           "nodeHealth": {
-            "baseDepletion": 25,
-            "healthThresholds": { "healthy": 0.7, "depleted": 0.3, "exhausted": 0.05 },
+            "baseDepletion": 30,
+            "healthThresholds": { "healthy": 0.9, "depleted": 0.5, "exhausted": 0.2 },
             "respawnRate": 5
           },
           "yieldCalculation": {
             "skillScaling": 0.005,
             "toolBonusPerTier": 0.15,
-            "maxToolBonus": 0.4,
+            "maxToolBonus": 0.45,
             "criticalMultiplier": 3.0,
-            "exhaustedPenalty": 0.4
+            "exhaustedPenalty": 0.3
           },
           "criticalHarvest": {
-            "baseChance": 0.08,
+            "baseChance": 0.10,
             "skillScaling": 0.001,
             "toolBonusPerTier": 0.02,
-            "richNodeBonus": 0.06,
-            "bonusMaterialChance": 0.3,
-            "rareDropChance": 0.12,
-            "durabilityReduction": 0.6,
+            "richNodeBonus": 0.08,
+            "bonusMaterialChance": 0.30,
+            "rareDropChance": 0.15,
+            "durabilityReduction": 0.4,
             "xpBonus": 2.0
           },
           "toolRequirements": {
             "enforceMinimum": false,
-            "noToolPenalty": 0.3,
+            "noToolPenalty": 0.6,
             "noToolDepletionMultiplier": 3.0,
             "allowNoToolForCommon": false
           },
           "skillXP": {
             "baseXP": 20,
             "toolQualityBonus": 0.2,
-            "tierMultipliers": { "common": 1.0, "rare": 4.0 }
+            "tierMultipliers": { "common": 1.5, "rare": 4.0 }
           },
           "durabilityLoss": {
             "baseLoss": 2,
-            "nodeResistance": { "common": 1.1 },
-            "toolHardness": { "tier3": 1.2 }
+            "nodeResistance": { "rock": 1.5 },
+            "toolHardness": { "iron": 0.8 }
           }
         }
         """;
 
-    // ── Default config (null JSON) ─────────────────────────────────────────────
+    // ── LoadConfig — defaults ──────────────────────────────────────────────
 
     [Fact]
-    public void LoadConfig_ReturnsDefaults_WhenConfigServiceReturnsNull()
+    public void LoadConfig_WhenConfigNotInDb_ReturnsDefaultValues()
     {
-        var config = Create(null).LoadConfig();
+        var config = CreateService(json: null).LoadConfig();
 
         config.BaseDepletion.Should().Be(20);
         config.HealthyThreshold.Should().Be(0.8);
         config.DepletedThreshold.Should().Be(0.4);
         config.ExhaustedThreshold.Should().Be(0.1);
         config.RespawnRate.Should().Be(1);
+        config.EnforceMinimumTool.Should().BeTrue();
+        config.AllowNoToolForCommon.Should().BeTrue();
+        config.BaseXP.Should().Be(10);
+        config.BaseDurabilityLoss.Should().Be(1);
     }
 
-    [Fact]
-    public void LoadConfig_ReturnsDefaults_WhenJsonIsMalformed()
-    {
-        var config = Create("{ this is not valid json }").LoadConfig();
-
-        config.BaseDepletion.Should().Be(20); // default
-    }
-
-    // ── JSON parsing ───────────────────────────────────────────────────────────
+    // ── LoadConfig — JSON mapping ──────────────────────────────────────────
 
     [Fact]
-    public void LoadConfig_ParsesNodeHealth_FromValidJson()
+    public void LoadConfig_ValidJson_MapsNodeHealthSection()
     {
-        var config = Create(ValidJson).LoadConfig();
+        var config = CreateService(ValidJson).LoadConfig();
 
-        config.BaseDepletion.Should().Be(25);
-        config.HealthyThreshold.Should().Be(0.7);
-        config.DepletedThreshold.Should().Be(0.3);
-        config.ExhaustedThreshold.Should().Be(0.05);
+        config.BaseDepletion.Should().Be(30);
+        config.HealthyThreshold.Should().Be(0.9);
+        config.DepletedThreshold.Should().Be(0.5);
+        config.ExhaustedThreshold.Should().Be(0.2);
         config.RespawnRate.Should().Be(5);
     }
 
     [Fact]
-    public void LoadConfig_ParsesYieldCalculation_FromValidJson()
+    public void LoadConfig_ValidJson_MapsYieldCalculationSection()
     {
-        var config = Create(ValidJson).LoadConfig();
+        var config = CreateService(ValidJson).LoadConfig();
 
         config.SkillScaling.Should().Be(0.005);
         config.ToolBonusPerTier.Should().Be(0.15);
-        config.MaxToolBonus.Should().Be(0.4);
+        config.MaxToolBonus.Should().Be(0.45);
         config.CriticalMultiplier.Should().Be(3.0);
-        config.ExhaustedPenalty.Should().Be(0.4);
+        config.ExhaustedPenalty.Should().Be(0.3);
     }
 
     [Fact]
-    public void LoadConfig_ParsesCriticalHarvest_FromValidJson()
+    public void LoadConfig_ValidJson_MapsCriticalHarvestSection()
     {
-        var config = Create(ValidJson).LoadConfig();
+        var config = CreateService(ValidJson).LoadConfig();
 
-        config.CriticalBaseChance.Should().Be(0.08);
-        config.BonusMaterialChance.Should().Be(0.3);
+        config.CriticalBaseChance.Should().Be(0.10);
+        config.CriticalSkillScaling.Should().Be(0.001);
+        config.BonusMaterialChance.Should().Be(0.30);
+        config.RareDropChance.Should().Be(0.15);
         config.CriticalXPBonus.Should().Be(2.0);
     }
 
     [Fact]
-    public void LoadConfig_ParsesToolRequirements_FromValidJson()
+    public void LoadConfig_ValidJson_MapsToolRequirementsSection()
     {
-        var config = Create(ValidJson).LoadConfig();
+        var config = CreateService(ValidJson).LoadConfig();
 
         config.EnforceMinimumTool.Should().BeFalse();
-        config.NoToolPenalty.Should().Be(0.3);
+        config.NoToolPenalty.Should().Be(0.6);
+        config.NoToolDepletionMultiplier.Should().Be(3.0);
         config.AllowNoToolForCommon.Should().BeFalse();
     }
 
     [Fact]
-    public void LoadConfig_ParsesSkillXP_FromValidJson()
+    public void LoadConfig_ValidJson_MapsSkillXPSection()
     {
-        var config = Create(ValidJson).LoadConfig();
+        var config = CreateService(ValidJson).LoadConfig();
 
         config.BaseXP.Should().Be(20);
         config.ToolQualityBonus.Should().Be(0.2);
+        config.TierXPMultipliers.Should().ContainKey("common").WhoseValue.Should().Be(1.5);
         config.TierXPMultipliers.Should().ContainKey("rare").WhoseValue.Should().Be(4.0);
     }
 
     [Fact]
-    public void LoadConfig_ParsesDurabilityLoss_FromValidJson()
+    public void LoadConfig_ValidJson_MapsDurabilityLossSection()
     {
-        var config = Create(ValidJson).LoadConfig();
+        var config = CreateService(ValidJson).LoadConfig();
 
         config.BaseDurabilityLoss.Should().Be(2);
-        config.NodeResistance.Should().ContainKey("common").WhoseValue.Should().Be(1.1);
-        config.ToolHardness.Should().ContainKey("tier3").WhoseValue.Should().Be(1.2);
+        config.NodeResistance.Should().ContainKey("rock").WhoseValue.Should().Be(1.5);
+        config.ToolHardness.Should().ContainKey("iron").WhoseValue.Should().Be(0.8);
     }
 
-    // ── Caching behaviour ──────────────────────────────────────────────────────
+    // ── LoadConfig — caching ───────────────────────────────────────────────
 
     [Fact]
     public void LoadConfig_CachesResult_OnSubsequentCalls()
     {
-        int calls = 0;
+        var callCount = 0;
         var svc = new HarvestingConfigService(
-            new CallCountingService(ValidJson, () => calls++),
+            new CallCountingConfigService(ValidJson, () => callCount++),
             NullLogger<HarvestingConfigService>.Instance);
 
         svc.LoadConfig();
         svc.LoadConfig();
 
-        calls.Should().Be(1, "config is only parsed once when cached");
+        callCount.Should().Be(1, "config data should only be loaded once");
     }
 
     [Fact]
     public void ClearCache_ForcesReload_OnNextCall()
     {
-        int calls = 0;
+        var callCount = 0;
         var svc = new HarvestingConfigService(
-            new CallCountingService(ValidJson, () => calls++),
+            new CallCountingConfigService(ValidJson, () => callCount++),
             NullLogger<HarvestingConfigService>.Instance);
 
         svc.LoadConfig();
         svc.ClearCache();
         svc.LoadConfig();
 
-        calls.Should().Be(2, "config is reloaded after cache is cleared");
+        callCount.Should().Be(2, "config should be reloaded after cache is cleared");
+    }
+
+    // ── LoadConfig — error handling ────────────────────────────────────────
+
+    [Fact]
+    public void LoadConfig_InvalidJson_FallsBackToDefaults()
+    {
+        var config = CreateService("{not valid json!!").LoadConfig();
+
+        // Falls back to type defaults — spot-check a few representative values
+        config.BaseDepletion.Should().Be(20);
+        config.BaseXP.Should().Be(10);
+        config.EnforceMinimumTool.Should().BeTrue();
     }
 }
