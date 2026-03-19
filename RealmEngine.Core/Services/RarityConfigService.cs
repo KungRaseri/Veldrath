@@ -14,6 +14,9 @@ public class RarityConfigService
     private readonly ILogger<RarityConfigService> _logger;
     private RarityConfig? _cachedConfig;
 
+    /// <summary>Initializes a new instance of <see cref="RarityConfigService"/>.</summary>
+    /// <param name="configService">Service used to load raw config JSON.</param>
+    /// <param name="logger">Logger instance.</param>
     public RarityConfigService(GameConfigService configService, ILogger<RarityConfigService> logger)
     {
         _configService = configService;

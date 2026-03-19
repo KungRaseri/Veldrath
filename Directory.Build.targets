@@ -8,6 +8,8 @@
   <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Explicitly promote CS1591 (missing XML doc) to a build error -->
+    <WarningsAsErrors>CS1591</WarningsAsErrors>
     <!-- Source Link: embed commit SHA in PDB and symbol package -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
