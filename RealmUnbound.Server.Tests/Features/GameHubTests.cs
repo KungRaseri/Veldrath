@@ -133,13 +133,14 @@ public class GameHubTests : IDisposable
     }
 
     private (GameHub Hub, FakeHubCallerClients Clients, FakeGroupManager Groups, FakeHubCallerContext Ctx)
-        CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1")
+        CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null)
     {
         var hub     = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
                                   new ZoneSessionRepository(db),
-                                  new ActiveCharacterTracker());
+                                  new ActiveCharacterTracker(),
+                                  mediator ?? Mock.Of<ISender>());
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();
         var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));
@@ -434,4 +435,127 @@ public class GameHubTests : IDisposable
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
     }
+
+    // ── GainExperience ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GainExperience_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db  = _factory.CreateContext();
+        var accountId       = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        // Skip SelectCharacter — no CharacterId in Context.Items
+        await hub.GainExperience(100);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task GainExperience_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult
+            {
+                Success       = true,
+                NewLevel      = 1,
+                NewExperience = 100,
+                LeveledUp     = false,
+            });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.GainExperience(100, "Quest");
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<RealmUnbound.Server.Features.LevelUp.GainExperienceHubCommand>(
+                c => c.CharacterId == character.Id && c.Amount == 100 && c.Source == "Quest"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GainExperience_Should_Broadcast_ExperienceGained_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult
+            {
+                Success       = true,
+                NewLevel      = 2,
+                NewExperience = 50,
+                LeveledUp     = true,
+                LeveledUpTo   = 2,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.GainExperience(150);
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ExperienceGained");
+    }
+
+    [Fact]
+    public async Task GainExperience_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult
+            {
+                Success      = false,
+                ErrorMessage = "Character not found",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.GainExperience(50);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task GainExperience_Should_Send_ExperienceGained_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult { Success = true, NewLevel = 1 });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId is intentionally NOT set
+
+        await hub.GainExperience(50);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ExperienceGained");
+    }
 }
+

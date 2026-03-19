@@ -192,6 +192,8 @@ try
     // ── RealmEngine services ─────────────────────────────────────────────────
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
+    // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
+    builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
