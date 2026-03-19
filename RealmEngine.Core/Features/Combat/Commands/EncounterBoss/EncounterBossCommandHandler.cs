@@ -104,7 +104,7 @@ public class EncounterBossCommandHandler : IRequestHandler<EncounterBossCommand,
     {
         if (boss.Prefixes.Any())
         {
-            return string.Join(" ", boss.Prefixes) + " " + boss.BaseName;
+            return string.Join(" ", boss.Prefixes.Select(p => p.Value)) + " " + boss.BaseName;
         }
 
         return boss.Type switch

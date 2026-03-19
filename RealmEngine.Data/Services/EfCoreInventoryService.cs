@@ -125,4 +125,33 @@ public class EfCoreInventoryService(
             return false;
         }
     }
+
+    /// <inheritdoc />
+    public async Task<bool> ReduceItemDurabilityAsync(string characterName, string itemRef, int amount)
+    {
+        var saveGameId = saveGameContext.SaveGameId;
+        try
+        {
+            var record = await db.InventoryRecords
+                .FirstOrDefaultAsync(r => r.SaveGameId == saveGameId
+                                       && r.CharacterName == characterName
+                                       && r.ItemRef == itemRef);
+            if (record is null)
+            {
+                logger.LogWarning("Cannot reduce durability for {ItemRef} on {CharacterName}: not in inventory", itemRef, characterName);
+                return false;
+            }
+            var current = record.Durability ?? 100;
+            record.Durability = Math.Max(0, current - amount);
+            record.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            logger.LogDebug("{ItemRef} durability for {CharacterName}: {Old} -> {New}", itemRef, characterName, current, record.Durability);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to reduce durability for {ItemRef} on {CharacterName}", itemRef, characterName);
+            return false;
+        }
+    }
 }

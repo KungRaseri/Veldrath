@@ -179,7 +179,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
             {
                 _logger.LogDebug("Tool {Tool} lost {Durability} durability for {Character}",
                     request.EquippedToolRef, durabilityLoss, request.CharacterName);
-                // TODO: Reduce tool durability via IInventoryService once the method is added
+                await _inventoryService.ReduceItemDurabilityAsync(request.CharacterName, request.EquippedToolRef, durabilityLoss);
             }
 
             var result = new HarvestResult
