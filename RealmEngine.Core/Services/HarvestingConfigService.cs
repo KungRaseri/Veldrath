@@ -14,6 +14,9 @@ public class HarvestingConfigService
     private readonly ILogger<HarvestingConfigService> _logger;
     private HarvestingConfig? _cachedConfig;
 
+    /// <summary>Initializes a new instance of <see cref="HarvestingConfigService"/>.</summary>
+    /// <param name="configService">Service used to load raw config JSON.</param>
+    /// <param name="logger">Logger instance.</param>
     public HarvestingConfigService(GameConfigService configService, ILogger<HarvestingConfigService> logger)
     {
         _configService = configService;

@@ -12,10 +12,24 @@ public class BudgetConfigFactory(GameConfigService configService, ILogger<Budget
 {
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    /// <summary>Loads the core budget configuration.</summary>
+    /// <returns>Loaded or default <see cref="BudgetConfig"/>.</returns>
     public BudgetConfig        GetBudgetConfig()    => Load<BudgetConfig>("budget-config");
+
+    /// <summary>Loads the material pool definitions.</summary>
+    /// <returns>Loaded or default <see cref="MaterialPools"/>.</returns>
     public MaterialPools       GetMaterialPools()   => Load<MaterialPools>("material-pools");
+
+    /// <summary>Loads the enemy type definitions used for loot budget scaling.</summary>
+    /// <returns>Loaded or default <see cref="EnemyTypes"/>.</returns>
     public EnemyTypes          GetEnemyTypes()      => Load<EnemyTypes>("enemy-types");
+
+    /// <summary>Loads the material filter configuration.</summary>
+    /// <returns>Loaded or default <see cref="MaterialFilterConfig"/>.</returns>
     public MaterialFilterConfig GetMaterialFilters() => Load<MaterialFilterConfig>("material-filters");
+
+    /// <summary>Loads the socket system configuration.</summary>
+    /// <returns>Loaded or default <see cref="SocketConfig"/>.</returns>
     public SocketConfig        GetSocketConfig()    => Load<SocketConfig>("socket-config");
 
     private T Load<T>(string key) where T : new()

@@ -21,6 +21,8 @@ public class DescriptiveTextService
     private Dictionary<string, List<string>>? _weather;
     private Dictionary<string, List<string>>? _timeOfDay;
 
+    /// <summary>Initializes a new instance of <see cref="DescriptiveTextService"/>.</summary>
+    /// <param name="configService">Service used to load word-list configuration data.</param>
     public DescriptiveTextService(GameConfigService configService)
     {
         _configService = configService;
