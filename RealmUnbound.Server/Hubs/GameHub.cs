@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.LevelUp;
 using RealmUnbound.Server.Services;
 
 namespace RealmUnbound.Server.Hubs;
@@ -27,19 +29,23 @@ public class GameHub : Hub
     private readonly IZoneRepository _zoneRepo;
     private readonly IZoneSessionRepository _zoneSessionRepo;
     private readonly IActiveCharacterTracker _activeCharacters;
+    private readonly ISender _mediator;
 
+    /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
         ILogger<GameHub> logger,
         ICharacterRepository characterRepo,
         IZoneRepository zoneRepo,
         IZoneSessionRepository zoneSessionRepo,
-        IActiveCharacterTracker activeCharacters)
+        IActiveCharacterTracker activeCharacters,
+        ISender mediator)
     {
-        _logger = logger;
-        _characterRepo = characterRepo;
-        _zoneRepo = zoneRepo;
+        _logger          = logger;
+        _characterRepo   = characterRepo;
+        _zoneRepo        = zoneRepo;
         _zoneSessionRepo = zoneSessionRepo;
         _activeCharacters = activeCharacters;
+        _mediator        = mediator;
     }
 
     public override async Task OnConnectedAsync()
@@ -222,6 +228,65 @@ public class GameHub : Hub
     {
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
         await Clients.Caller.SendAsync("ZoneLeft");
+    }
+
+    // ── Game actions ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Award experience points to the caller's active character.
+    /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
+    /// the command to the MediatR pipeline. Broadcasts the outcome to the character's current
+    /// zone group; falls back to the caller only when the character is not in a zone.
+    /// </summary>
+    /// <param name="amount">Positive number of experience points to award.</param>
+    /// <param name="source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
+    public async Task GainExperience(int amount, string? source = null)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GainExperience");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new GainExperienceHubCommand
+            {
+                CharacterId = characterId,
+                Amount      = amount,
+                Source      = source,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to gain experience");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId   = characterId,
+                result.NewLevel,
+                result.NewExperience,
+                result.LeveledUp,
+                result.LeveledUpTo,
+                Source        = source,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("ExperienceGained", payload);
+            else
+                await Clients.Caller.SendAsync("ExperienceGained", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} gained {Amount} XP from {Source}; now level {Level}",
+                characterId, amount, source ?? "Unknown", result.NewLevel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GainExperience for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to process experience gain");
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ using System.Reactive.Linq;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
+using RealmUnbound.Contracts.Content;
 
 namespace RealmUnbound.Client.Tests;
 
@@ -23,7 +24,8 @@ public class CharacterSelectViewModelTests : TestBase
         FakeCharacterService?         chars = null,
         FakeServerConnectionService?  conn = null,
         FakeNavigationService?        nav = null,
-        GameViewModel?                gameVm = null)
+        GameViewModel?                gameVm = null,
+        FakeContentService?           content = null)
     {
         conn   ??= new FakeServerConnectionService();
         nav    ??= new FakeNavigationService();
@@ -33,7 +35,8 @@ public class CharacterSelectViewModelTests : TestBase
             conn,
             nav,
             gameVm,
-            new FakeAuthService());
+            new FakeAuthService(),
+            FakeContentCache.Create(content));
     }
 
     // ── Initial load ──────────────────────────────────────────────────────────
@@ -619,5 +622,36 @@ public class CharacterSelectViewModelTests : TestBase
         conn.FireEvent("Error", "Zone not found");
 
         nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
+    }
+
+    // ── AvailableClasses — content catalog loading ────────────────────────────
+
+    [Fact]
+    public async Task AvailableClasses_Should_Be_Populated_From_Content_Catalog()
+    {
+        var content = new FakeContentService
+        {
+            Classes =
+            [
+                new ActorClassDto("@classes/warriors:fighter", "Fighter", "class"),
+                new ActorClassDto("@classes/mages:mage",       "Mage",    "class"),
+            ]
+        };
+
+        var vm = MakeVm(content: content);
+        await Task.Delay(50); // allow fire-and-forget LoadAsync to complete
+
+        vm.AvailableClasses.Should().BeEquivalentTo(new[] { "Fighter", "Mage" });
+    }
+
+    [Fact]
+    public async Task AvailableClasses_Should_Fall_Back_To_Builtins_When_Catalog_Empty()
+    {
+        var content = new FakeContentService { Classes = [] };
+        var vm = MakeVm(content: content);
+        await Task.Delay(50);
+
+        // Built-in fallback list must contain at least one entry
+        vm.AvailableClasses.Should().NotBeEmpty();
     }
 }

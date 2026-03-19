@@ -26,7 +26,8 @@ public class ViewDataBindingTests
             new FakeServerConnectionService(),
             new FakeNavigationService(),
             MakeGameVm(),
-            new FakeAuthService());
+            new FakeAuthService(),
+            FakeContentCache.Create());
 
     private static Window Show(object content)
     {

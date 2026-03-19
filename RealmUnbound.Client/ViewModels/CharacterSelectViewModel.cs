@@ -12,10 +12,12 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly IServerConnectionService _connection;
     private readonly INavigationService _navigation;
     private readonly GameViewModel _gameVm;
+    private readonly ContentCache _contentCache;
 
     private bool _isCreating;
     private string _newCharacterName = string.Empty;
     private string _selectedClass = string.Empty;
+    private IReadOnlyList<string> _availableClasses = ["Fighter", "Mage", "Rogue", "Cleric", "Ranger", "Paladin"];
 
     // Hub subscriptions — stored so they can be disposed before re-subscribing on retry
     private IDisposable? _zoneEnteredSub;
@@ -49,8 +51,13 @@ public class CharacterSelectViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _selectedClass, value);
     }
 
-    public IReadOnlyList<string> AvailableClasses { get; } =
-        ["Fighter", "Mage", "Rogue", "Cleric", "Ranger", "Paladin"];
+    /// <summary>Gets the list of available character classes for the creation dropdown.
+    /// Loaded from the content catalog on startup; falls back to the built-in list when the server is unavailable.</summary>
+    public IReadOnlyList<string> AvailableClasses
+    {
+        get => _availableClasses;
+        private set => this.RaiseAndSetIfChanged(ref _availableClasses, value);
+    }
 
     /// <summary>Drives the top bar title — changes when switching between list and create panels.</summary>
     public string PanelTitle => IsCreating ? "New Character" : "Select Your Character";
@@ -64,17 +71,20 @@ public class CharacterSelectViewModel : ViewModelBase
     public ReactiveCommand<CharacterEntryViewModel, Unit> DeleteCommand { get; }
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
 
+    /// <summary>Initializes a new instance of <see cref="CharacterSelectViewModel"/>.</summary>
     public CharacterSelectViewModel(
         ICharacterService characters,
         IServerConnectionService connection,
         INavigationService navigation,
         GameViewModel gameVm,
-        IAuthService auth)
+        IAuthService auth,
+        ContentCache contentCache)
     {
         _characters = characters;
         _connection = connection;
         _navigation = navigation;
         _gameVm = gameVm;
+        _contentCache = contentCache;
 
         var canCreate = this.WhenAnyValue(
             x => x.NewCharacterName, x => x.IsBusy, x => x.SelectedClass,
@@ -113,6 +123,15 @@ public class CharacterSelectViewModel : ViewModelBase
                 if (entry is not null)
                     entry.IsOnline = payload.IsOnline;
             });
+
+            // Load class catalog from content service (best-effort; falls back to built-in list on failure).
+            try
+            {
+                var classes = await _contentCache.GetClassesAsync();
+                if (classes.Count > 0)
+                    AvailableClasses = classes.Select(c => c.DisplayName).ToArray();
+            }
+            catch { /* keep hardcoded fallback */ }
 
             var list = await _characters.GetCharactersAsync();
             Characters.Clear();

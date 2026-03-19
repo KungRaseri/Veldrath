@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Contracts.Auth;
 using RealmUnbound.Contracts.Characters;
+using RealmUnbound.Contracts.Content;
 
 namespace RealmUnbound.Client.Tests.Infrastructure;
 
@@ -194,4 +196,54 @@ public class FakeZoneService : IZoneService
 
     public Task<ZoneDto?> GetZoneAsync(string zoneId)
         => Task.FromResult(ZoneToReturn);
+}
+
+// ── Content service stub ──────────────────────────────────────────────────────
+
+/// <summary>
+/// Configurable stub for <see cref="IContentService"/>.
+/// Default behaviour: returns empty lists for all catalog queries.
+/// Set <see cref="Classes"/> to non-empty values to simulate a populated class catalog.
+/// </summary>
+public class FakeContentService : IContentService
+{
+    /// <summary>Gets or sets the list of classes returned by <see cref="GetClassesAsync"/>.</summary>
+    public List<ActorClassDto> Classes { get; set; } =
+    [
+        new("@classes/warriors:fighter", "Fighter", "class"),
+        new("@classes/mages:mage",       "Mage",    "class"),
+        new("@classes/rogues:rogue",     "Rogue",   "class"),
+    ];
+
+    public Task<List<AbilityDto>>    GetAbilitiesAsync()            => Task.FromResult(new List<AbilityDto>());
+    public Task<AbilityDto?>         GetAbilityAsync(string slug)   => Task.FromResult<AbilityDto?>(null);
+    public Task<List<EnemyDto>>      GetEnemiesAsync()              => Task.FromResult(new List<EnemyDto>());
+    public Task<EnemyDto?>           GetEnemyAsync(string slug)     => Task.FromResult<EnemyDto?>(null);
+    public Task<List<NpcDto>>        GetNpcsAsync()                 => Task.FromResult(new List<NpcDto>());
+    public Task<NpcDto?>             GetNpcAsync(string slug)       => Task.FromResult<NpcDto?>(null);
+    public Task<List<QuestDto>>      GetQuestsAsync()               => Task.FromResult(new List<QuestDto>());
+    public Task<QuestDto?>           GetQuestAsync(string slug)     => Task.FromResult<QuestDto?>(null);
+    public Task<List<RecipeDto>>     GetRecipesAsync()              => Task.FromResult(new List<RecipeDto>());
+    public Task<RecipeDto?>          GetRecipeAsync(string slug)    => Task.FromResult<RecipeDto?>(null);
+    public Task<List<LootTableDto>>  GetLootTablesAsync()           => Task.FromResult(new List<LootTableDto>());
+    public Task<LootTableDto?>       GetLootTableAsync(string slug) => Task.FromResult<LootTableDto?>(null);
+    public Task<List<SpellDto>>      GetSpellsAsync()               => Task.FromResult(new List<SpellDto>());
+    public Task<SpellDto?>           GetSpellAsync(string slug)     => Task.FromResult<SpellDto?>(null);
+    public Task<List<ActorClassDto>> GetClassesAsync()              => Task.FromResult(new List<ActorClassDto>(Classes));
+    public Task<ActorClassDto?>      GetClassAsync(string slug)     => Task.FromResult(Classes.FirstOrDefault(c => c.Slug == slug));
+    public Task<List<SpeciesDto>>    GetSpeciesAsync()              => Task.FromResult(new List<SpeciesDto>());
+    public Task<SpeciesDto?>         GetSpeciesAsync(string slug)   => Task.FromResult<SpeciesDto?>(null);
+    public Task<List<BackgroundDto>> GetBackgroundsAsync()          => Task.FromResult(new List<BackgroundDto>());
+    public Task<BackgroundDto?>      GetBackgroundAsync(string slug)=> Task.FromResult<BackgroundDto?>(null);
+    public Task<List<SkillDto>>      GetSkillsAsync()               => Task.FromResult(new List<SkillDto>());
+    public Task<SkillDto?>           GetSkillAsync(string slug)     => Task.FromResult<SkillDto?>(null);
+}
+
+/// <summary>Factory that builds a <see cref="ContentCache"/> backed by a <see cref="FakeContentService"/>.</summary>
+public static class FakeContentCache
+{
+    /// <summary>Creates a <see cref="ContentCache"/> instance wired to a <see cref="FakeContentService"/>.</summary>
+    /// <param name="service">Optional custom service; defaults to a new <see cref="FakeContentService"/>.</param>
+    public static ContentCache Create(FakeContentService? service = null) =>
+        new(service ?? new FakeContentService(), NullLogger<ContentCache>.Instance);
 }
