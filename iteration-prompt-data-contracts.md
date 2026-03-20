@@ -17,10 +17,11 @@ Completed in previous sessions (do not re-implement):
 - `GET /api/content/items` (+slug), `GET /api/content/enchantments` (+slug) server endpoints — done (session-15)
 - `ItemDto`, `EnchantmentDto` added to `RealmUnbound.Contracts` — done (session-15)
 - Tests for `InMemoryArmorRepository`, `InMemoryWeaponRepository`, `InMemoryMaterialRepository`, `InMemoryEquipmentSetRepository` stubs — done (session-16)
+- Integration tests for typed content endpoints (`/classes`, `/species`, `/backgrounds`, `/skills`, `/enchantments`, `/abilities`, `/items`) — done in `ContentTypedEndpointTests.cs` (session-17)
 
 Goals — in priority order:
 1. **DatabaseSeeder for Items and Enchantments** — implement `SeedItemsAsync` and `SeedEnchantmentsAsync` in `DatabaseSeeder.cs` once a content design discussion has been had. TODO comments are already in place as markers. **Do not implement until the items/enchantments catalog content is decided.**
-2. **Integration tests for typed content endpoints** — `ContentEndpoints.cs` now has 29 typed routes (abilities, enemies, npcs, quests, recipes, loot-tables, spells, classes, species, backgrounds, skills, items, enchantments). None have integration test coverage in `RealmUnbound.Server.Tests`. Consider adding `WebApplicationFactory`-based integration tests for the most important routes.
+2. **Integration tests for remaining typed content routes** — `ContentTypedEndpointTests.cs` covers classes, species, backgrounds, skills, enchantments, abilities, items. Still missing: enemies, NPCs, quests, recipes, loot-tables, spells. Consider adding a second fixture/class for these.
 3. **Add repositories for unrepresented ContentDbContext tables** — the following `DbSet<T>` tables in `ContentDbContext` have no corresponding repository interface. Add them when needed by a feature handler:
    - `Organizations` → `IOrganizationRepository`
    - `WorldLocations` → `IWorldLocationRepository`

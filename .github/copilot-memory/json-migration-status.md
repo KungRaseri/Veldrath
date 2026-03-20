@@ -17,14 +17,14 @@ All Newtonsoft migration done as of 2026-03-16:
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
 - Newtonsoft remains in: `RealmUnbound.Server` (ServerSaveGameRepository), `RealmForge`, `RealmUnbound.Server.Tests` (test data fixtures)
 
-## Test Status (2026-03-20, session-16)
+## Test Status (2026-03-20, session-17)
 - Shared.Tests: 778 passed
 - Core.Tests: 1,738 passed
 - Data.Tests: 203 passed
+- Server.Tests: 331 passed (+39 from session-17)
 
-## What Remains (as of session-16)
-- All InMemory stub repos now have tests (Armor, Weapon, Material, EquipmentSet stubs added in session-16)
-- `InMemoryHallOfFameRepository` has tests in its dedicated file (`InMemoryHallOfFameRepositoryTests.cs`)
-- **Deferred**: `SeedItemsAsync` and `SeedEnchantmentsAsync` in `DatabaseSeeder.cs` — TODO comments added, pending content design discussion before implementing
-- ContentEndpoints `/classes`, `/species`, `/backgrounds`, `/skills`, `/enchantments` use `ContentDbContext` directly (intentional — entity fields not on shared models). Not a bug.
+## What Remains (as of session-17)
+- `ContentTypedEndpointTests.cs` added in session-17: 39 integration tests for /classes, /species, /backgrounds, /skills, /enchantments (+ slot filter), /abilities, /items (+ type filter)
+- **Deferred**: `SeedItemsAsync` and `SeedEnchantmentsAsync` in `DatabaseSeeder.cs` — pending content design discussion
+- Remaining unrepresented ContentDbContext tables (Organizations, WorldLocations, Dialogues, ActorInstances, MaterialProperties, TraitDefinitions) — no repos needed until a feature handler requires them
 - No content data is ever loaded from the filesystem — all DB-backed

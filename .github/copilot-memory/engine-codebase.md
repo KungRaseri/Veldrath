@@ -1,11 +1,11 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-16)
+## Test Counts (as of 2026-03-20, session-17)
 - RealmEngine.Core.Tests: **1,738 passing**
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **203 passing** (+9 from session-16: InMemoryArmorRepository, InMemoryWeaponRepository, InMemoryMaterialRepository, InMemoryEquipmentSetRepository stub tests)
+- RealmEngine.Data.Tests: **203 passing**
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
-- RealmUnbound.Server.Tests: **292 passing** (+13 from session-9)
+- RealmUnbound.Server.Tests: **331 passing** (+39 from session-17: ContentTypedEndpointTests — classes, species, backgrounds, skills, enchantments, abilities, items)
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -99,7 +99,11 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
 - Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
 
-### Session-16 Notes
+### Session-17 Integration Test Notes
+- `ContentTypedEndpointsFixture` seeds ActorClass, Species, Background, Skill, 2×Enchantment (different TargetSlot), Ability, Item into `ContentDbContext` — all routes under test resolve through the SQLite in-memory DB
+- `Enchantment` in the fixture = `RealmEngine.Data.Entities.Enchantment` (not Shared.Models) — resolved unambiguously because the test file does NOT import `RealmEngine.Shared.Models`
+- `EfCoreAbilityRepository.MapToModel` sets `Type = ParseAbilityType(entity.AbilityType, ...)` — seeding with `AbilityType = "active"` produces `AbilityTypeEnum.Offensive`; the endpoint DTO includes this as a string; tests do NOT assert the AbilityType string value
+- `Item.TotalRarityWeight` is NOT set by `EfCoreItemRepository.MapToModel` (maps Slug/Name/TypeKey/Weight/Price/StackSize/IsStackable only) — `ItemDto.RarityWeight` will be 0 for all seeded items in tests; avoid asserting RarityWeight in item DTO tests
 - `InMemoryHallOfFameRepository` already has a dedicated test file: `RealmEngine.Data.Tests/Repositories/InMemoryHallOfFameRepositoryTests.cs` — do NOT add it to `InMemoryStubRepositoryTests.cs`
 - `InMemoryEquipmentSetRepository` is NOT a stub — it returns 5 hardcoded sets (Dragonborn, Shadow Assassin, Arcane Scholar, Iron Guardian, Stormcaller). Test against non-empty count.
 - `ContentEndpoints.cs` intentionally uses `ContentDbContext` directly for `/classes`, `/species`, `/backgrounds`, `/skills` — those handlers map entity-specific fields (HitDie, PrimaryStat, GoverningAttribute, MaxRank) not present on shared models. This is by design, not a bug.
