@@ -22,6 +22,65 @@ namespace RealmEngine.Data.Migrations.GameDb
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.HarvestableNodeRecord", b =>
+                {
+                    b.Property<string>("NodeId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("BaseYield")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BiomeType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("CurrentHealth")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsRichNode")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastHarvestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LocationId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("LootTableRef")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MaterialTier")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MaxHealth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinToolTier")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NodeType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TimesHarvested")
+                        .HasColumnType("integer");
+
+                    b.HasKey("NodeId");
+
+                    b.HasIndex("LocationId");
+
+                    b.ToTable("HarvestableNodes");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Persistence.InventoryRecord", b =>
                 {
                     b.Property<int>("Id")

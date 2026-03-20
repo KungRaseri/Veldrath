@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-13)
-- RealmEngine.Core.Tests: **1,729 passing** (+4 from session-13: EfCoreNamePatternRepository tests)
+## Test Counts (as of 2026-03-20, session-14)
+- RealmEngine.Core.Tests: **1,729 passing**
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **136 passing** (+17 from session-13: EquipmentSet, CharacterClass, Species tests)
+- RealmEngine.Data.Tests: **157 passing** (+21 from session-14: Item, Enchantment, Node repo tests)
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
 - RealmUnbound.Server.Tests: **292 passing** (+13 from session-9)
 
@@ -133,3 +133,27 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 ### EfCoreNamePatternRepository Location
 - Lives in `RealmEngine.Core/Repositories/` (NOT in `RealmEngine.Data/Repositories/`)
 - Tests in `RealmEngine.Core.Tests/Repositories/EfCoreNamePatternRepositoryTests.cs`
+
+### IItemRepository (added session-14)
+- Interface in `RealmEngine.Shared/Abstractions/`, impl `EfCoreItemRepository` in `RealmEngine.Data/Repositories/`
+- Uses `ContentDbContext.Items` — entity `Item` has `ItemType` (not TypeKey) for category filtering
+- Methods: `GetAllAsync`, `GetBySlugAsync`, `GetByTypeAsync(itemType)` — itemType is lowercased before query
+- MapToModel maps: Slug, Name, TypeKey, Weight (float→double), Price (Value), StackSize, IsStackable
+
+### IEnchantmentRepository (added session-14)
+- Interface in `RealmEngine.Shared/Abstractions/`, impl `EfCoreEnchantmentRepository` in `RealmEngine.Data/Repositories/`
+- Uses `ContentDbContext.Enchantments` — entity `Enchantment` has `TargetSlot` column
+- Methods: `GetAllAsync`, `GetBySlugAsync`, `GetByTargetSlotAsync(targetSlot)` — lowercased before query
+
+### INodeRepository / EfCoreNodeRepository (added session-14)
+- Interface `INodeRepository` already existed in `RealmEngine.Shared/Abstractions/` (8 methods, all mutating + querying)
+- EF entity `HarvestableNodeRecord` in `RealmEngine.Data/Entities/HarvestableNodeRecord.cs` — PK = `NodeId` (string)
+- `EfCoreNodeRepository` uses **`GameDbContext`** (not ContentDbContext) — nodes are runtime game state, not catalog content
+- Migration `AddHarvestableNodes` in `RealmEngine.Data/Migrations/GameDb/` (generated with dotnet ef)
+- `GetNearbyNodesAsync` ignores `radius` (same as InMemory version) — real spatial queries would need PostGIS
+- `SaveNodeAsync` is an upsert: insert if NodeId not present, update mutable fields if found
+- Tests are in `RealmEngine.Data.Tests/Repositories/EfCoreGameRepositoryTests.cs`
+
+### ActorClassDto XML Docs (session-14)
+- Added full `<param>` docs for all 6 positional parameters of `ActorClassDto`
+- TypeKey doc: "DB category key for this class family (e.g. \"warriors\", \"casters\"). Not a content-reference prefix."
