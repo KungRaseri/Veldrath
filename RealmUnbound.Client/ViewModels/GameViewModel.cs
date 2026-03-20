@@ -121,6 +121,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Add or remove gold from the active character. Tuple: (amount, source) — pass a negative amount to spend.</summary>
     public ReactiveCommand<(int Amount, string? Source), Unit> AddGoldCommand { get; }
 
+    /// <summary>Apply damage to the active character, reducing current health.</summary>
+    public ReactiveCommand<(int DamageAmount, string? Source), Unit> TakeDamageCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -140,7 +143,8 @@ public class GameViewModel : ViewModelBase
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
         EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
-        AddGoldCommand   = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
+        AddGoldCommand    = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
+        TakeDamageCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -237,6 +241,15 @@ public class GameViewModel : ViewModelBase
             : $"Spent {-goldAdded} gold. Total: {newGoldTotal}");
     }
 
+    /// <summary>Called from hub when the active character has taken damage.</summary>
+    public void OnDamageTaken(int damageAmount, int currentHealth, int maxHealth, bool isDead)
+    {
+        CurrentHealth = currentHealth;
+        AppendLog(isDead
+            ? $"Took {damageAmount} damage and died. HP: 0/{maxHealth}"
+            : $"Took {damageAmount} damage. HP: {currentHealth}/{maxHealth}");
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
@@ -314,6 +327,18 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Gold transaction failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoTakeDamageAsync(int damageAmount, string? source)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("TakeDamage", new { DamageAmount = damageAmount, Source = source });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Damage application failed: {ex.Message}");
         }
     }
 

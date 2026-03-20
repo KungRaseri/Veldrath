@@ -2405,5 +2405,287 @@ public class GameHubTests : IDisposable
         var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
         attrs["Gold"].Should().Be(300);
     }
+
+    // ── TakeDamage helpers ───────────────────────────────────────────────────────
+
+    private static async Task<Character> SeedCharacterWithHealthAsync(
+        ApplicationDbContext db, Guid accountId, int currentHealth, int maxHealth)
+    {
+        var attrs = new Dictionary<string, int>
+        {
+            ["CurrentHealth"] = currentHealth,
+            ["MaxHealth"]     = maxHealth,
+        };
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"DmgChar_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+        return c;
+    }
+
+    // ── TakeDamage hub method ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task TakeDamage_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.TakeDamage(25);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task TakeDamage_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<TakeDamageHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TakeDamageHubResult { Success = true, CurrentHealth = 75, MaxHealth = 100, IsDead = false });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.TakeDamage(25, "Enemy");
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<TakeDamageHubCommand>(
+                c => c.CharacterId == character.Id && c.DamageAmount == 25 && c.Source == "Enemy"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TakeDamage_Should_Broadcast_DamageTaken_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<TakeDamageHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TakeDamageHubResult { Success = true, CurrentHealth = 75, MaxHealth = 100, IsDead = false });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.TakeDamage(25);
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "DamageTaken");
+    }
+
+    [Fact]
+    public async Task TakeDamage_Should_Send_DamageTaken_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<TakeDamageHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TakeDamageHubResult { Success = true, CurrentHealth = 50, MaxHealth = 100, IsDead = false });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally NOT set
+
+        await hub.TakeDamage(50);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "DamageTaken");
+    }
+
+    [Fact]
+    public async Task TakeDamage_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<TakeDamageHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TakeDamageHubResult { Success = false, ErrorMessage = "Damage must be positive" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.TakeDamage(-5);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task TakeDamage_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<TakeDamageHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.TakeDamage(25);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── TakeDamageHubCommandHandler ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task TakeDamage_Handler_Should_Reduce_CurrentHealth_By_DamageAmount()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 100, maxHealth: 100);
+
+        var handler = new TakeDamageHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<TakeDamageHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new TakeDamageHubCommand
+        {
+            CharacterId  = character.Id,
+            DamageAmount = 30,
+            Source       = "Goblin",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.CurrentHealth.Should().Be(70);
+        result.MaxHealth.Should().Be(100);
+        result.IsDead.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TakeDamage_Handler_Should_Clamp_Health_To_Zero_Not_Negative()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 10, maxHealth: 100);
+
+        var handler = new TakeDamageHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<TakeDamageHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new TakeDamageHubCommand
+        {
+            CharacterId  = character.Id,
+            DamageAmount = 50,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.CurrentHealth.Should().Be(0);
+        result.IsDead.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TakeDamage_Handler_Should_Fail_When_DamageAmount_Is_Zero_Or_Negative()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new TakeDamageHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<TakeDamageHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new TakeDamageHubCommand
+        {
+            CharacterId  = character.Id,
+            DamageAmount = 0,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("positive");
+    }
+
+    [Fact]
+    public async Task TakeDamage_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        await SeedAccountAsync(db);
+
+        var handler = new TakeDamageHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<TakeDamageHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new TakeDamageHubCommand
+        {
+            CharacterId  = Guid.NewGuid(),
+            DamageAmount = 25,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task TakeDamage_Handler_Should_Default_To_Level_Based_Max_When_Blob_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        // Character at level 1 → MaxHealth defaults to 10; no blob stored
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new TakeDamageHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<TakeDamageHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new TakeDamageHubCommand
+        {
+            CharacterId  = character.Id,
+            DamageAmount = 4,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.MaxHealth.Should().Be(10);           // level 1 * 10
+        result.CurrentHealth.Should().Be(6);        // 10 - 4
+    }
+
+    [Fact]
+    public async Task TakeDamage_Handler_Should_Persist_Updated_Health_To_Database()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 80, maxHealth: 100);
+
+        var handler = new TakeDamageHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<TakeDamageHubCommandHandler>.Instance);
+
+        await handler.Handle(new TakeDamageHubCommand
+        {
+            CharacterId  = character.Id,
+            DamageAmount = 20,
+        }, CancellationToken.None);
+
+        var updated = await db.Characters.FindAsync(character.Id);
+        var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
+        attrs["CurrentHealth"].Should().Be(60);
+    }
 }
 
