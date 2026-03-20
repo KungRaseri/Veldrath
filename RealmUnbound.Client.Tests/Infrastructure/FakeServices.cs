@@ -210,9 +210,9 @@ public class FakeContentService : IContentService
     /// <summary>Gets or sets the list of classes returned by <see cref="GetClassesAsync"/>.</summary>
     public List<ActorClassDto> Classes { get; set; } =
     [
-        new("@classes/warriors:fighter", "Fighter", "class"),
-        new("@classes/mages:mage",       "Mage",    "class"),
-        new("@classes/rogues:rogue",     "Rogue",   "class"),
+        new("@classes/warriors:fighter", "Fighter", "class", 10, "Strength",     10),
+        new("@classes/mages:mage",       "Mage",    "class",  6, "Intelligence", 10),
+        new("@classes/rogues:rogue",     "Rogue",   "class",  8, "Dexterity",    10),
     ];
 
     public Task<List<AbilityDto>>    GetAbilitiesAsync()            => Task.FromResult(new List<AbilityDto>());

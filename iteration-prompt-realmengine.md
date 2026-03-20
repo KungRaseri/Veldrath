@@ -1,7 +1,6 @@
 Continue iterating on the RealmEngine library projects (RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data).
 
 Setup:
-- Read /memories/repo/ to load any recorded gotchas and codebase notes before doing anything else.
 - Run `dotnet test RealmEngine.slnx` to establish the baseline. All work must finish with zero regressions against that baseline.
 
 Goals — in priority order:
@@ -10,7 +9,7 @@ Goals — in priority order:
 3. **Well documented** — every public type and member must have an XML `<summary>` (and `<param>`/`<returns>` where meaningful). This is a hard build rule enforced by CS1591.
 
 Process:
-- When running the gap analysis, first read /memories/repo/gap-analysis-process.md
+- When running the gap analysis, first read `.github/copilot-memory/gap-analysis-process.md`
   and use the prompt template and priority tiers defined there.
 - Use the Explore subagent to run a gap analysis before writing any code. Identify: incomplete feature implementations, untested handlers/services, missing XML docs.
 - Prioritize gaps from most impactful to least.
@@ -19,7 +18,7 @@ Process:
 - Run `dotnet build RealmEngine.slnx` and `dotnet test RealmEngine.slnx` after each batch of changes.
 
 Wrap-up:
-- If any new non-obvious constraints, gotchas, or architectural decisions were discovered during the session, create a new entry under /memories/repo/. Only record things that would have caused wasted time if unknown at the start of a future session.
+- If any new non-obvious constraints, gotchas, or architectural decisions were discovered during the session, write them into the appropriate `.github/copilot-memory/` file (edit it directly using file tools). Only record things that would have caused wasted time if unknown at the start of a future session.
 
 Rules that must never be broken:
 - Never suppress CS1591. Never add NoWarn entries.

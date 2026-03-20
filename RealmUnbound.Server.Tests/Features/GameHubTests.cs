@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http.Features;
@@ -556,6 +557,244 @@ public class GameHubTests : IDisposable
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ExperienceGained");
+    }
+
+    // ── AllocateAttributePoints ───────────────────────────────────────────────
+
+    private static async Task<Character> SeedCharacterWithAttributePointsAsync(
+        ApplicationDbContext db, Guid accountId, int unspent, Dictionary<string, int>? extra = null)
+    {
+        var attrs = new Dictionary<string, int>(extra ?? []) { ["UnspentAttributePoints"] = unspent };
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"AttrChar_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+        return c;
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        // Skip SelectCharacter — no CharacterId in Context.Items
+        await hub.AllocateAttributePoints(new Dictionary<string, int> { ["Strength"] = 1 });
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 5);
+
+        var allocations = new Dictionary<string, int> { ["Strength"] = 2, ["Dexterity"] = 1 };
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult
+            {
+                Success         = true,
+                PointsSpent     = 3,
+                RemainingPoints = 2,
+                NewAttributes   = new Dictionary<string, int> { ["Strength"] = 12, ["Dexterity"] = 8 },
+            });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AllocateAttributePoints(allocations);
+
+        mediatorMock.Verify(
+            m => m.Send(
+                It.Is<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommand>(
+                    c => c.CharacterId == character.Id && c.Allocations["Strength"] == 2),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Should_Broadcast_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 3);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult
+            {
+                Success = true, PointsSpent = 1, RemainingPoints = 2, NewAttributes = [],
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.AllocateAttributePoints(new Dictionary<string, int> { ["Intelligence"] = 1 });
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "AttributePointsAllocated");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Should_Send_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 3);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult
+            {
+                Success = true, PointsSpent = 1, RemainingPoints = 2, NewAttributes = [],
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally not set
+
+        await hub.AllocateAttributePoints(new Dictionary<string, int> { ["Wisdom"] = 1 });
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "AttributePointsAllocated");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 0);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult
+            {
+                Success      = false,
+                ErrorMessage = "Not enough unspent attribute points. Have 0, need 1.",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AllocateAttributePoints(new Dictionary<string, int> { ["Strength"] = 1 });
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Handler_Should_Apply_Increases_And_Persist()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(
+            db, accountId, unspent: 5,
+            extra: new Dictionary<string, int> { ["Strength"] = 10, ["Dexterity"] = 8 });
+
+        var handler = new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommand
+        {
+            CharacterId = character.Id,
+            Allocations = new Dictionary<string, int> { ["Strength"] = 2, ["Dexterity"] = 1 },
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.PointsSpent.Should().Be(3);
+        result.RemainingPoints.Should().Be(2);
+        result.NewAttributes["Strength"].Should().Be(12);
+        result.NewAttributes["Dexterity"].Should().Be(9);
+        result.NewAttributes["UnspentAttributePoints"].Should().Be(2);
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Handler_Should_Fail_When_Insufficient_Points()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 1);
+
+        var handler = new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommand
+        {
+            CharacterId = character.Id,
+            Allocations = new Dictionary<string, int> { ["Strength"] = 3 }, // 3 > 1 available
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Not enough unspent attribute points");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Handler_Should_Fail_When_Empty_Allocations()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 5);
+
+        var handler = new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommand
+        {
+            CharacterId = character.Id,
+            Allocations = [],
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("No attribute allocations provided");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubCommand
+        {
+            CharacterId = Guid.NewGuid(),
+            Allocations = new Dictionary<string, int> { ["Strength"] = 1 },
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
     }
 }
 

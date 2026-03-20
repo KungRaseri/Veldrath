@@ -527,7 +527,7 @@ public class CharacterSelectViewModelTests : TestBase
         var nav  = new FakeNavigationService();
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = new CharacterSelectViewModel(
-            new FakeCharacterService(), conn, nav, gameVm, auth);
+            new FakeCharacterService(), conn, nav, gameVm, auth, FakeContentCache.Create());
 
         await vm.LogoutCommand.Execute();
 
@@ -544,7 +544,8 @@ public class CharacterSelectViewModelTests : TestBase
             new FakeServerConnectionService(),
             nav,
             MakeGameVm(nav: nav),
-            auth);
+            auth,
+            FakeContentCache.Create());
 
         await vm.LogoutCommand.Execute();
 
@@ -582,9 +583,11 @@ public class CharacterSelectViewModelTests : TestBase
     }
 
     [Fact]
-    public void AvailableClasses_Should_Contain_Expected_Classes()
+    public async Task AvailableClasses_Should_Contain_Expected_Classes_When_Catalog_Empty()
     {
-        var vm = MakeVm();
+        // When the content catalog returns no classes the fallback hardcoded list is preserved.
+        var vm = MakeVm(content: new FakeContentService { Classes = [] });
+        await Task.Delay(50);
         vm.AvailableClasses.Should().Contain(["Fighter", "Mage", "Rogue", "Cleric", "Ranger", "Paladin"]);
     }
 
@@ -633,8 +636,8 @@ public class CharacterSelectViewModelTests : TestBase
         {
             Classes =
             [
-                new ActorClassDto("@classes/warriors:fighter", "Fighter", "class"),
-                new ActorClassDto("@classes/mages:mage",       "Mage",    "class"),
+                new ActorClassDto("@classes/warriors:fighter", "Fighter", "class", 10, "Strength",     10),
+                new ActorClassDto("@classes/mages:mage",       "Mage",    "class",  6, "Intelligence", 10),
             ]
         };
 

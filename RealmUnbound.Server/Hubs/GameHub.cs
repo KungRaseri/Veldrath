@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.LevelUp;
 using RealmUnbound.Server.Services;
 
@@ -286,6 +287,64 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in GainExperience for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to process experience gain");
+        }
+    }
+
+    // ── Character progression ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Spend a character's unallocated attribute points.
+    /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
+    /// to the MediatR pipeline. Sends <c>AttributePointsAllocated</c> to the zone group
+    /// (or the caller only when not in a zone) on success.
+    /// </summary>
+    /// <param name="allocations">
+    /// Map of attribute name (e.g. <c>"Strength"</c>) to the number of points to spend.
+    /// All values must be positive integers.
+    /// </param>
+    public async Task AllocateAttributePoints(Dictionary<string, int> allocations)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AllocateAttributePoints");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new AllocateAttributePointsHubCommand
+            {
+                CharacterId = characterId,
+                Allocations = allocations,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to allocate attribute points");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId     = characterId,
+                result.PointsSpent,
+                result.RemainingPoints,
+                result.NewAttributes,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("AttributePointsAllocated", payload);
+            else
+                await Clients.Caller.SendAsync("AttributePointsAllocated", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} allocated {Points} attribute points; {Remaining} remaining",
+                characterId, result.PointsSpent, result.RemainingPoints);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AllocateAttributePoints for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to allocate attribute points");
         }
     }
 

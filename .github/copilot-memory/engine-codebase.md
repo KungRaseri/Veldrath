@@ -82,11 +82,28 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - All test mocks use `Mock<IGameStateService>`; `FakeGameStateService` implements `IGameStateService` directly
 
 ### P3 Stubs (incomplete implementations)
-1. **MainMenuViewModel.SettingsCommand** — empty TODO body (`RealmUnbound.Client/ViewModels/MainMenuViewModel.cs` ~line 51)
-2. **CharacterSelectViewModel.AvailableClasses** — hardcoded list; should call `HttpContentService.GetClassesAsync()`
-3. **GameHub Hub→MediatR bridge** — `SelectCharacter`, `EnterZone`, `LeaveZone` do not dispatch to MediatR yet
+1. ~~**MainMenuViewModel.SettingsCommand**~~ — FIXED 2026-03-19: navigates to `SettingsViewModel`. Test updated.
+2. **CharacterSelectViewModel.AvailableClasses** — loads from ContentCache on startup (correct); falls back to hardcoded list when catalog is empty. Acceptable pattern.
+3. ~~**GameHub Hub→MediatR bridge missing for SelectCharacter/EnterZone**~~ — These intentionally do NOT dispatch to Core MediatR (no matching Core handler for session lifecycle). See architecture note below.
+
+### RealmUnbound Server Hub Architecture (2026-03-19)
+- `SelectCharacter` and `EnterZone` are **session management**, not game-logic operations — they do NOT call `mediator.Send`. The character tracker and zone session repository ARE the implementation. This matches the design intent.
+- `GainExperience` → `GainExperienceHubCommand` (wired 2026-03-16)
+- `AllocateAttributePoints` → `AllocateAttributePointsHubCommand` (wired 2026-03-19)
+- Pattern for adding the next hub→MediatR bridge: create `Features/{Feature}/{Name}HubCommand.cs` with command+result+handler; add hub method in `GameHub.cs` using `TryGetCharacterId` guard + try/catch + zone-group broadcast.
+
+### ActorClassDto Changed (2026-03-19)
+- `ActorClassDto` in `RealmUnbound.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
+- This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
+- Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
+
+### AvailableClasses Test Gotcha
+- `CharacterSelectViewModel.LoadAsync` fires-and-forgets on construction; `FakeContentService.GetClassesAsync()` completes synchronously (Task.FromResult)
+- So `LoadAsync` replaces `AvailableClasses` before the test's first assertion if a non-empty `FakeContentService` is used
+- Test for fallback list: pass `new FakeContentService { Classes = [] }` + `await Task.Delay(50)` to let fire-and-forget complete
+- Test for catalog-populated list: pass classes with `Task.Delay(50)` wait
 
 ### P4 XML Doc Gaps (will cause CS1591 build errors)
-- `RealmUnbound.Contracts`: all Auth, Characters, Zones, Foundry, Content DTOs missing `<summary>`
-- `RealmUnbound.Server` repo interfaces: `IZoneRepository`, `IZoneSessionRepository`, `IPlayerAccountRepository`, `ICharacterRepository` — missing method summaries
-- `RealmUnbound.Client` service interfaces: `IHubConnectionFactory`, `HttpContentService`, `INavigationService`, `HttpResponseHelper` — missing docs
+- `RealmUnbound.Contracts`: most DTO records missing `<summary>` (not yet fixed as of 2026-03-19)
+- `RealmUnbound.Server` repo interfaces: `IZoneRepository`, `IZoneSessionRepository`, `IPlayerAccountRepository` — missing method summaries
+- `RealmUnbound.Client` service interfaces: `IAuthService`, `ICharacterService`, `IContentService`, `INavigationService`, etc. — missing docs
