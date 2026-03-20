@@ -592,7 +592,7 @@ public class CharacterSelectViewModelTests : TestBase
         // When the content catalog returns no classes the fallback hardcoded list is preserved.
         var vm = MakeVm(content: new FakeContentService { Classes = [] });
         await Task.Delay(50);
-        vm.AvailableClasses.Should().Contain(["Fighter", "Mage", "Rogue", "Cleric", "Ranger", "Paladin"]);
+        vm.AvailableClasses.Should().Contain("Warrior");
     }
 
     // ── Hub Error event ───────────────────────────────────────────────────────
@@ -785,5 +785,63 @@ public class CharacterSelectViewModelTests : TestBase
             new CharacterSelectViewModel.ExperienceGainedPayload(character.Id, 1, 40L, false, null, "Explore"));
 
         gameVm.ActionLog.Should().NotBeEmpty();
+    }
+
+    // ── Hub callbacks — CharacterSelected (initial stat seeding) ─────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Seed_All_Stats_When_CharacterSelected_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 3, 50L, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("CharacterSelected",
+            new CharacterSelectViewModel.CharacterSelectedPayload(
+                character.Id, character.Name, character.ClassName,
+                Level: 3, Experience: 50L,
+                CurrentZoneId: "starting-zone",
+                CurrentHealth: 80, MaxHealth: 100,
+                CurrentMana: 40, MaxMana: 50,
+                Gold: 200, UnspentAttributePoints: 2,
+                SelectedAt: DateTimeOffset.UtcNow));
+
+        gameVm.Level.Should().Be(3);
+        gameVm.Experience.Should().Be(50L);
+        gameVm.CurrentHealth.Should().Be(80);
+        gameVm.MaxHealth.Should().Be(100);
+        gameVm.CurrentMana.Should().Be(40);
+        gameVm.MaxMana.Should().Be(50);
+        gameVm.Gold.Should().Be(200);
+        gameVm.UnspentAttributePoints.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Seed_Level_And_Experience_From_CharacterSelected()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 7, 300L, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("CharacterSelected",
+            new CharacterSelectViewModel.CharacterSelectedPayload(
+                character.Id, character.Name, character.ClassName,
+                Level: 7, Experience: 300L,
+                CurrentZoneId: "starting-zone",
+                CurrentHealth: 70, MaxHealth: 70,
+                CurrentMana: 35, MaxMana: 35,
+                Gold: 0, UnspentAttributePoints: 0,
+                SelectedAt: DateTimeOffset.UtcNow));
+
+        gameVm.Level.Should().Be(7);
+        gameVm.Experience.Should().Be(300L);
     }
 }

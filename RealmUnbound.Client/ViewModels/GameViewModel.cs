@@ -280,6 +280,31 @@ public class GameViewModel : ViewModelBase
             : $"Gained experience. Level: {newLevel}  XP: {newExperience}");
     }
 
+    /// <summary>Seeds all character stat properties from the <c>CharacterSelected</c> hub event so the HUD shows correct values immediately on login.</summary>
+    /// <param name="level">Character level.</param>
+    /// <param name="experience">Experience toward the next level.</param>
+    /// <param name="currentHealth">Current hit points.</param>
+    /// <param name="maxHealth">Maximum hit points.</param>
+    /// <param name="currentMana">Current mana points.</param>
+    /// <param name="maxMana">Maximum mana points.</param>
+    /// <param name="gold">Gold held.</param>
+    /// <param name="unspentAttributePoints">Attribute points not yet allocated.</param>
+    public void SeedInitialStats(
+        int level, long experience,
+        int currentHealth, int maxHealth,
+        int currentMana,  int maxMana,
+        int gold,         int unspentAttributePoints)
+    {
+        Level                  = level;
+        Experience             = experience;
+        CurrentHealth          = currentHealth;
+        MaxHealth              = maxHealth;
+        CurrentMana            = currentMana;
+        MaxMana                = maxMana;
+        Gold                   = gold;
+        UnspentAttributePoints = unspentAttributePoints;
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu

@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -133,14 +134,28 @@ public class GameHub : Hub
             IsOnline = true,
         });
 
+        // Deserialise the attributes blob so the client can seed the HUD immediately
+        var initAttrs     = JsonSerializer.Deserialize<Dictionary<string, int>>(
+            string.IsNullOrWhiteSpace(character.Attributes) ? "{}" : character.Attributes)
+            ?? new Dictionary<string, int>();
+        var initMaxHealth = initAttrs.GetValueOrDefault("MaxHealth", character.Level * 10);
+        var initMaxMana   = initAttrs.GetValueOrDefault("MaxMana",   character.Level * 5);
+
         await Clients.Caller.SendAsync("CharacterSelected", new
         {
             character.Id,
             character.Name,
             character.ClassName,
             character.Level,
+            character.Experience,
             character.CurrentZoneId,
-            SelectedAt = DateTimeOffset.UtcNow,
+            CurrentHealth          = initAttrs.GetValueOrDefault("CurrentHealth", initMaxHealth),
+            MaxHealth              = initMaxHealth,
+            CurrentMana            = initAttrs.GetValueOrDefault("CurrentMana", initMaxMana),
+            MaxMana                = initMaxMana,
+            Gold                   = initAttrs.GetValueOrDefault("Gold", 0),
+            UnspentAttributePoints = initAttrs.GetValueOrDefault("UnspentAttributePoints", 0),
+            SelectedAt             = DateTimeOffset.UtcNow,
         });
     }
 

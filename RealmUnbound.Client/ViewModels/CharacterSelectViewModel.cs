@@ -35,6 +35,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _goldChangedSub;
     private IDisposable? _damageTakenSub;
     private IDisposable? _experienceGainedSub;
+    private IDisposable? _characterSelectedSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -190,6 +191,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _goldChangedSub?.Dispose();
             _damageTakenSub?.Dispose();
             _experienceGainedSub?.Dispose();
+            _characterSelectedSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -240,6 +242,13 @@ public class CharacterSelectViewModel : ViewModelBase
             _experienceGainedSub = _connection.On<ExperienceGainedPayload>("ExperienceGained", payload =>
                 _gameVm.OnExperienceGained(payload.NewLevel, payload.NewExperience, payload.LeveledUp, payload.LeveledUpTo));
 
+            _characterSelectedSub = _connection.On<CharacterSelectedPayload>("CharacterSelected", payload =>
+                _gameVm.SeedInitialStats(
+                    payload.Level,        payload.Experience,
+                    payload.CurrentHealth, payload.MaxHealth,
+                    payload.CurrentMana,   payload.MaxMana,
+                    payload.Gold,          payload.UnspentAttributePoints));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -264,6 +273,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record GoldChangedPayload(Guid CharacterId, int GoldAdded, int NewGoldTotal, string? Source);
     internal record DamageTakenPayload(Guid CharacterId, int DamageAmount, int CurrentHealth, int MaxHealth, bool IsDead, string? Source);
     internal record ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source);
+    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, DateTimeOffset SelectedAt);
 
     private async Task DoCreateAsync()
     {

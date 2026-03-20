@@ -267,6 +267,99 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "CharacterSelected");
     }
 
+    [Fact]
+    public async Task SelectCharacter_Should_Include_Level_And_Experience_In_CharacterSelected_Payload()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"Char_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Level      = 4,
+            Experience = 75L,
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+        await hub.SelectCharacter(character.Id);
+
+        var msg  = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        var json = JsonSerializer.Serialize(msg.Args[0]);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("Level").GetInt32().Should().Be(4);
+        doc.RootElement.GetProperty("Experience").GetInt64().Should().Be(75L);
+        doc.RootElement.GetProperty("Name").GetString().Should().Be(character.Name);
+    }
+
+    [Fact]
+    public async Task SelectCharacter_Should_Include_Blob_Stats_In_CharacterSelected_Payload()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var attrs = new Dictionary<string, int>
+        {
+            ["CurrentHealth"] = 65,
+            ["MaxHealth"]     = 100,
+            ["Gold"]          = 300,
+            ["CurrentMana"]   = 20,
+            ["MaxMana"]       = 50,
+        };
+        var character = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"BlobChar_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+        await hub.SelectCharacter(character.Id);
+
+        var msg  = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        var json = JsonSerializer.Serialize(msg.Args[0]);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("CurrentHealth").GetInt32().Should().Be(65);
+        doc.RootElement.GetProperty("MaxHealth").GetInt32().Should().Be(100);
+        doc.RootElement.GetProperty("Gold").GetInt32().Should().Be(300);
+        doc.RootElement.GetProperty("CurrentMana").GetInt32().Should().Be(20);
+        doc.RootElement.GetProperty("MaxMana").GetInt32().Should().Be(50);
+    }
+
+    [Fact]
+    public async Task SelectCharacter_Should_Default_Health_And_Mana_When_Blob_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"EmptyAttr_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Level      = 3,
+            // Attributes left as default "{}"
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+        await hub.SelectCharacter(character.Id);
+
+        var msg  = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        var json = JsonSerializer.Serialize(msg.Args[0]);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("MaxHealth").GetInt32().Should().Be(30);      // Level 3 * 10
+        doc.RootElement.GetProperty("MaxMana").GetInt32().Should().Be(15);        // Level 3 * 5
+        doc.RootElement.GetProperty("CurrentHealth").GetInt32().Should().Be(30);  // defaults to MaxHealth
+    }
+
     // ── EnterZone ─────────────────────────────────────────────────────────────
 
     [Fact]
