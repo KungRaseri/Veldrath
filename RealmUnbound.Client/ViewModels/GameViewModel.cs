@@ -112,6 +112,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Activate an ability by ID, consuming mana and optionally restoring health.</summary>
     public ReactiveCommand<string, Unit> UseAbilityCommand { get; }
 
+    /// <summary>Award XP to a skill by ID and amount. Tuple: (skillId, amount).</summary>
+    public ReactiveCommand<(string SkillId, int Amount), Unit> AwardSkillXpCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -129,6 +132,7 @@ public class GameViewModel : ViewModelBase
         RestAtLocationCommand = ReactiveCommand.CreateFromTask(DoRestAtLocationAsync);
         AllocateAttributePointsCommand = ReactiveCommand.CreateFromTask<Dictionary<string, int>>(DoAllocateAttributePointsAsync);
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
+        AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -200,6 +204,14 @@ public class GameViewModel : ViewModelBase
             : $"Used {abilityId}. MP: {remainingMana}");
     }
 
+    /// <summary>Called from hub when the active character gains XP in a skill.</summary>
+    public void OnSkillXpGained(string skillId, int totalXp, int currentRank, bool rankedUp)
+    {
+        AppendLog(rankedUp
+            ? $"Skill {skillId} ranked up to {currentRank}! (Total XP: {totalXp})"
+            : $"Skill {skillId}: +XP \u2192 {totalXp} XP (Rank {currentRank})");
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
@@ -241,6 +253,18 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Ability use failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoAwardSkillXpAsync(string skillId, int amount)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("AwardSkillXp", new { SkillId = skillId, Amount = amount });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Skill XP award failed: {ex.Message}");
         }
     }
 

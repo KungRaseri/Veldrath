@@ -11,7 +11,9 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using RealmEngine.Core;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Repositories;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
@@ -209,6 +211,12 @@ try
     builder.Services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
     builder.Services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
     builder.Services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
+    builder.Services.AddScoped<IWeaponRepository, EfCoreWeaponRepository>();
+    builder.Services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
+    builder.Services.AddScoped<IInventoryService, EfCoreInventoryService>();
+    builder.Services.AddScoped<IArmorRepository, EfCoreArmorRepository>();
+    builder.Services.AddScoped<IEquipmentSetRepository, EfCoreEquipmentSetRepository>();
+    builder.Services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
 
     // ── Cookie policy ──────────────────────────────────────────────────────────
     // When running on plain HTTP (Docker dev, CI), browsers reject SameSite=None

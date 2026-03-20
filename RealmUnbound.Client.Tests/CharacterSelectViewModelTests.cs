@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
@@ -36,7 +37,8 @@ public class CharacterSelectViewModelTests : TestBase
             nav,
             gameVm,
             new FakeAuthService(),
-            FakeContentCache.Create(content));
+            FakeContentCache.Create(content),
+            new ClientSettings("http://localhost:8080"));
     }
 
     // ── Initial load ──────────────────────────────────────────────────────────
@@ -527,7 +529,8 @@ public class CharacterSelectViewModelTests : TestBase
         var nav  = new FakeNavigationService();
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = new CharacterSelectViewModel(
-            new FakeCharacterService(), conn, nav, gameVm, auth, FakeContentCache.Create());
+            new FakeCharacterService(), conn, nav, gameVm, auth, FakeContentCache.Create(),
+            new ClientSettings("http://localhost:8080"));
 
         await vm.LogoutCommand.Execute();
 
@@ -545,7 +548,8 @@ public class CharacterSelectViewModelTests : TestBase
             nav,
             MakeGameVm(nav: nav),
             auth,
-            FakeContentCache.Create());
+            FakeContentCache.Create(),
+            new ClientSettings("http://localhost:8080"));
 
         await vm.LogoutCommand.Execute();
 

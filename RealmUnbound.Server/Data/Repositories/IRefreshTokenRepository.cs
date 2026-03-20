@@ -5,8 +5,10 @@ namespace RealmUnbound.Server.Data.Repositories;
 /// <summary>Persistence contract for <see cref="RefreshToken"/>.</summary>
 public interface IRefreshTokenRepository
 {
+    /// <summary>Returns the token matching the given hash, or <see langword="null"/> if not found or already revoked.</summary>
     Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken ct = default);
 
+    /// <summary>Persists a new refresh token and returns the saved entity.</summary>
     Task<RefreshToken> CreateAsync(RefreshToken token, CancellationToken ct = default);
 
     /// <summary>Revoke a single token. Optionally record the replacement token ID (rotation).</summary>
