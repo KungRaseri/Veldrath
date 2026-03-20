@@ -273,7 +273,7 @@ public class HttpAuthServiceTests : TestBase
 public class HttpCharacterServiceTests : TestBase
 {
     private static readonly CharacterDto SampleChar = new(
-        Guid.NewGuid(), 1, "Hero", "@classes/warriors:fighter",
+        Guid.NewGuid(), 1, "Hero", "Warrior",
         1, 0, DateTimeOffset.UtcNow, "starting-zone");
 
     private static HttpCharacterService MakeSut(FakeHttpHandler handler, TokenStore? tokens = null)

@@ -64,7 +64,7 @@ public class FakeCharacterService : ICharacterService
     public List<CharacterDto> Characters { get; set; } = [];
 
     public (CharacterDto? Character, AppError? Error) CreateResult { get; set; } =
-        (new CharacterDto(Guid.NewGuid(), 1, "TestChar", "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone"), null);
+        (new CharacterDto(Guid.NewGuid(), 1, "TestChar", "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone"), null);
 
     public AppError? DeleteError { get; set; } = null;
 
@@ -216,9 +216,9 @@ public class FakeContentService : IContentService
     /// <summary>Gets or sets the list of classes returned by <see cref="GetClassesAsync"/>.</summary>
     public List<ActorClassDto> Classes { get; set; } =
     [
-        new("@classes/warriors:fighter", "Fighter", "class", 10, "Strength",     10),
-        new("@classes/mages:mage",       "Mage",    "class",  6, "Intelligence", 10),
-        new("@classes/rogues:rogue",     "Rogue",   "class",  8, "Dexterity",    10),
+        new("warrior", "Warrior", "warriors", 10, "strength",     50),
+        new("mage",    "Mage",    "casters",   6, "intelligence", 40),
+        new("rogue",   "Rogue",   "rogues",    8, "dexterity",    30),
     ];
 
     public Task<List<AbilityDto>>    GetAbilitiesAsync()            => Task.FromResult(new List<AbilityDto>());
