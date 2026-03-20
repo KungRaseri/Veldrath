@@ -1,9 +1,11 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-16)
+## Test Counts (as of 2026-03-19, session-2)
 - RealmEngine.Core.Tests: 1,283 passing
 - RealmEngine.Shared.Tests: 690 passing
 - RealmEngine.Data.Tests: 119 passing
+- RealmUnbound.Client.Tests: **258 passing**
+- RealmUnbound.Server.Tests: **235 passing**
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -90,7 +92,17 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `SelectCharacter` and `EnterZone` are **session management**, not game-logic operations — they do NOT call `mediator.Send`. The character tracker and zone session repository ARE the implementation. This matches the design intent.
 - `GainExperience` → `GainExperienceHubCommand` (wired 2026-03-16)
 - `AllocateAttributePoints` → `AllocateAttributePointsHubCommand` (wired 2026-03-19)
+- `RestAtLocation` → `RestAtLocationHubCommand` (wired 2026-03-19, session-2)
 - Pattern for adding the next hub→MediatR bridge: create `Features/{Feature}/{Name}HubCommand.cs` with command+result+handler; add hub method in `GameHub.cs` using `TryGetCharacterId` guard + try/catch + zone-group broadcast.
+
+### Character Attributes JSON Blob Schema (as of 2026-03-19 session-2)
+- `UnspentAttributePoints`: int — spent via `AllocateAttributePoints`
+- `Strength`, `Dexterity`, etc.: int — core stats
+- `Gold`: int — currency; deducted by `RestAtLocation` (default cost: 10)
+- `CurrentHealth`, `MaxHealth`: int — rest pool; restored to max by `RestAtLocation`
+- `CurrentMana`, `MaxMana`: int — rest pool; restored to max by `RestAtLocation`
+- If `MaxHealth`/`MaxMana` not present in blob, defaults: `Level * 10` / `Level * 5`
+- Handler key constants live on `RestAtLocationHubCommandHandler` as `internal const string KeyXxx`
 
 ### ActorClassDto Changed (2026-03-19)
 - `ActorClassDto` in `RealmUnbound.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
@@ -104,6 +116,6 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - Test for catalog-populated list: pass classes with `Task.Delay(50)` wait
 
 ### P4 XML Doc Gaps (will cause CS1591 build errors)
-- `RealmUnbound.Contracts`: most DTO records missing `<summary>` (not yet fixed as of 2026-03-19)
-- `RealmUnbound.Server` repo interfaces: `IZoneRepository`, `IZoneSessionRepository`, `IPlayerAccountRepository` — missing method summaries
-- `RealmUnbound.Client` service interfaces: `IAuthService`, `ICharacterService`, `IContentService`, `INavigationService`, etc. — missing docs
+- `RealmUnbound.Contracts`: DTO records fixed 2026-03-19 session-2 — all public records in `ContentContracts.cs` now have `<summary>`.
+- `RealmUnbound.Server` repo interfaces: `IZoneRepository`, `IZoneSessionRepository`, `IPlayerAccountRepository` — missing method summaries (still open)
+- `RealmUnbound.Client` service interfaces: `IAuthService`, `ICharacterService`, `IContentService`, `INavigationService`, etc. — missing docs (still open)
