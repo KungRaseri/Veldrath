@@ -4,6 +4,7 @@ using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Models.Harvesting;
+using HallOfFameEntry = RealmEngine.Shared.Models.HallOfFameEntry;
 
 namespace RealmEngine.Data.Tests.Repositories;
 
@@ -313,5 +314,78 @@ public class EfCoreNodeRepositoryTests
         var result = await repo.GetNearbyNodesAsync("zone-A", radius: 10);
 
         result.Should().HaveCount(1).And.Contain(n => n.NodeId == "node-a");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreHallOfFameRepositoryTests
+{
+    private static GameDbContext CreateGameDbContext() =>
+        new(new DbContextOptionsBuilder<GameDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static HallOfFameEntry MakeEntry(string name, string className = "Warrior", int level = 10) =>
+        new()
+        {
+            CharacterName = name,
+            ClassName     = className,
+            Level         = level,
+            DeathReason   = "Slain by a goblin",
+            DeathLocation = "Thornwood",
+        };
+
+    [Fact]
+    public void AddEntry_PersistsEntryAndCalculatesFameScore()
+    {
+        using var db = CreateGameDbContext();
+        var repo  = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
+        var entry = MakeEntry("Aldric");
+
+        repo.AddEntry(entry);
+
+        db.HallOfFameEntries.Should().HaveCount(1);
+        db.HallOfFameEntries.First().FameScore.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public void GetAllEntries_ReturnsOrderedByFameScoreDescending()
+    {
+        using var db = CreateGameDbContext();
+        var repo = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
+        repo.AddEntry(MakeEntry("LowHero",  level: 1));
+        repo.AddEntry(MakeEntry("HighHero", level: 50));
+
+        var result = repo.GetAllEntries();
+
+        result.Should().HaveCount(2);
+        result[0].CharacterName.Should().Be("HighHero");
+    }
+
+    [Fact]
+    public void GetAllEntries_RespectsLimit()
+    {
+        using var db = CreateGameDbContext();
+        var repo = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
+        for (var i = 1; i <= 5; i++)
+            repo.AddEntry(MakeEntry($"Hero-{i}", level: i));
+
+        var result = repo.GetAllEntries(limit: 3);
+
+        result.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void GetTopHeroes_ReturnsTopNByFameScore()
+    {
+        using var db = CreateGameDbContext();
+        var repo = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
+        for (var i = 1; i <= 5; i++)
+            repo.AddEntry(MakeEntry($"Hero-{i}", level: i));
+
+        var result = repo.GetTopHeroes(count: 2);
+
+        result.Should().HaveCount(2);
+        result[0].Level.Should().BeGreaterThanOrEqualTo(result[1].Level);
     }
 }

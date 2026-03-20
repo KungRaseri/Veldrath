@@ -17,12 +17,16 @@ All Newtonsoft migration done as of 2026-03-16:
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
 - Newtonsoft remains in: `RealmUnbound.Server` (ServerSaveGameRepository), `RealmForge`, `RealmUnbound.Server.Tests` (test data fixtures)
 
-## Test Status (2026-03-20, session-14)
+## Test Status (2026-03-20, session-15)
 - Shared.Tests: 778 passed
-- Core.Tests: 1,729 passed
-- Data.Tests: 157 passed
+- Core.Tests: 1,738 passed
+- Data.Tests: 194 passed
 
-## What Remains (as of session-14)
-- No `IItemRepository` / `IEnchantmentRepository` / `INodeRepository` / `ISpeciesRepository` gaps remain \u2014 all implemented, registered, and tested
-- EfCore repos still lacking tests: Armor, Enemy, LootTable, Material, Npc, Quest, Weapon, Spell (out of scope for this prompt iteration)
+## What Remains (as of session-15)
+- All EfCore content repos now have tests (Armor, Weapon, Material, Spell, Quest, Npc, Enemy, LootTable, HallOfFame added in session-15)
+- `GetSpeciesQuery`, `GetItemCatalogQuery`, `GetEnchantmentCatalogQuery` handlers added to Core; tested
+- `GET /api/content/items` + `GET /api/content/items/{slug}` endpoints added (IItemRepository)
+- `GET /api/content/enchantments` + `GET /api/content/enchantments/{slug}` endpoints added (ContentDbContext direct)
+- `ItemDto` and `EnchantmentDto` added to `RealmUnbound.Contracts/Content/ContentContracts.cs`
+- **Deferred**: `SeedItemsAsync` and `SeedEnchantmentsAsync` in `DatabaseSeeder.cs` — TODO comments added, pending content design discussion before implementing
 - No content data is ever loaded from the filesystem — all DB-backed

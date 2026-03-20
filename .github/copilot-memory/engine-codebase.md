@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-14)
-- RealmEngine.Core.Tests: **1,729 passing**
+## Test Counts (as of 2026-03-20, session-15)
+- RealmEngine.Core.Tests: **1,738 passing** (+9 from session-15: GetSpeciesQuery, GetItemCatalogQuery, GetEnchantmentCatalogQuery handler tests)
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **157 passing** (+21 from session-14: Item, Enchantment, Node repo tests)
+- RealmEngine.Data.Tests: **194 passing** (+37 from session-15: Armor/Weapon/Material/Spell/Quest/Npc/Enemy/LootTable/HallOfFame repo tests)
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
 - RealmUnbound.Server.Tests: **292 passing** (+13 from session-9)
 
@@ -98,6 +98,15 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `ActorClassDto` in `RealmUnbound.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
 - This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
 - Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
+
+### Session-15 Gotchas
+- `EfCoreMaterialRepository` and `EfCoreArmorRepository` / `EfCoreWeaponRepository` take only `ContentDbContext` (no logger param) — do NOT pass `NullLogger<T>.Instance`
+- `HallOfFameEntry` is in `RealmEngine.Shared.Models`, NOT `RealmEngine.Data.Entities` — when using it in Data.Tests (which imports both namespaces), use alias: `using HallOfFameEntry = RealmEngine.Shared.Models.HallOfFameEntry;`
+- `Enchantment` and `Item` exist in BOTH `RealmEngine.Data.Entities` and `RealmEngine.Shared.Models` — always qualify or alias when both namespaces are imported
+- `ContentEndpoints.cs` enchantment endpoint uses `ContentDbContext` directly (entity has `TypeKey`); item endpoint uses `IItemRepository` (shared model has `TypeKey` mapped)
+- `Item.TypeKey` on the shared model can be null — use `?? string.Empty` when mapping to `ItemDto.TypeKey`
+- `GetSpeciesQuery` handler namespace is `RealmEngine.Core.Features.Species.Queries` (feature folder named `Species`)
+- `EfCoreHallOfFameRepository` methods are synchronous (no async) — tests use `using var db` not `await using var db`
 
 ### AvailableClasses Test Gotcha
 - `CharacterSelectViewModel.LoadAsync` fires-and-forgets on construction; `FakeContentService.GetClassesAsync()` completes synchronously (Task.FromResult)
