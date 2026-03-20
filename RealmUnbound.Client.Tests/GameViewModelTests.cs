@@ -241,4 +241,122 @@ public class GameViewModelTests : TestBase
         vm.StatusMessage.Should().Be("Reconnecting...");
         changes.Should().Contain(nameof(GameViewModel.StatusMessage));
     }
+
+    // ── RestAtLocationCommand ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RestAtLocationCommand_Should_Send_RestAtLocation_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+        await vm.InitializeAsync("Hero", "inn-millhaven");
+
+        await vm.RestAtLocationCommand.Execute();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "RestAtLocation");
+    }
+
+    [Fact]
+    public async Task RestAtLocationCommand_Should_Send_Current_ZoneId()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+        await vm.InitializeAsync("Hero", "inn-millhaven");
+
+        await vm.RestAtLocationCommand.Execute();
+
+        conn.SentCommands
+            .Should().ContainSingle(c => c.Method == "RestAtLocation" && (string?)c.Arg == "inn-millhaven");
+    }
+
+    [Fact]
+    public async Task RestAtLocationCommand_Should_Not_Throw_When_Hub_Returns_Null()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        Func<Task> act = async () => await vm.RestAtLocationCommand.Execute();
+        await act.Should().NotThrowAsync();
+    }
+
+    // ── AllocateAttributePointsCommand ────────────────────────────────────────
+
+    [Fact]
+    public async Task AllocateAttributePointsCommand_Should_Send_AllocateAttributePoints_To_Hub()
+    {
+        var conn        = new FakeServerConnectionService();
+        var vm          = MakeVm(conn: conn);
+        var allocations = new Dictionary<string, int> { ["Strength"] = 2 };
+
+        await vm.AllocateAttributePointsCommand.Execute(allocations);
+
+        conn.SentCommands.Should().Contain(c => c.Method == "AllocateAttributePoints");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePointsCommand_Should_Send_Allocations_Dict()
+    {
+        var conn        = new FakeServerConnectionService();
+        var vm          = MakeVm(conn: conn);
+        var allocations = new Dictionary<string, int> { ["Strength"] = 1, ["Dexterity"] = 2 };
+
+        await vm.AllocateAttributePointsCommand.Execute(allocations);
+
+        var cmd  = conn.SentCommands.Should().ContainSingle(c => c.Method == "AllocateAttributePoints").Which;
+        var dict = cmd.Arg.Should().BeOfType<Dictionary<string, int>>().Subject;
+        dict["Strength"].Should().Be(1);
+        dict["Dexterity"].Should().Be(2);
+    }
+
+    // ── OnAttributePointsAllocated ────────────────────────────────────────────
+
+    [Fact]
+    public void OnAttributePointsAllocated_Should_Update_UnspentAttributePoints()
+    {
+        var vm = MakeVm();
+        vm.OnAttributePointsAllocated(remainingPoints: 3, newAttributes: []);
+
+        vm.UnspentAttributePoints.Should().Be(3);
+    }
+
+    [Fact]
+    public void OnAttributePointsAllocated_Should_Append_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnAttributePointsAllocated(remainingPoints: 5, newAttributes: []);
+
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("5"));
+    }
+
+    // ── OnCharacterRested ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnCharacterRested_Should_Update_Health_Properties()
+    {
+        var vm = MakeVm();
+        vm.OnCharacterRested(currentHealth: 80, maxHealth: 100, currentMana: 50, maxMana: 60, goldRemaining: 40);
+
+        vm.CurrentHealth.Should().Be(80);
+        vm.MaxHealth.Should().Be(100);
+    }
+
+    [Fact]
+    public void OnCharacterRested_Should_Update_Mana_And_Gold_Properties()
+    {
+        var vm = MakeVm();
+        vm.OnCharacterRested(currentHealth: 80, maxHealth: 100, currentMana: 50, maxMana: 60, goldRemaining: 40);
+
+        vm.CurrentMana.Should().Be(50);
+        vm.MaxMana.Should().Be(60);
+        vm.Gold.Should().Be(40);
+    }
+
+    [Fact]
+    public void OnCharacterRested_Should_Append_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnCharacterRested(currentHealth: 80, maxHealth: 100, currentMana: 50, maxMana: 60, goldRemaining: 40);
+
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Rested"));
+    }
 }
