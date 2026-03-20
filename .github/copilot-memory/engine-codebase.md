@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-15)
-- RealmEngine.Core.Tests: **1,738 passing** (+9 from session-15: GetSpeciesQuery, GetItemCatalogQuery, GetEnchantmentCatalogQuery handler tests)
+## Test Counts (as of 2026-03-20, session-16)
+- RealmEngine.Core.Tests: **1,738 passing**
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **194 passing** (+37 from session-15: Armor/Weapon/Material/Spell/Quest/Npc/Enemy/LootTable/HallOfFame repo tests)
+- RealmEngine.Data.Tests: **203 passing** (+9 from session-16: InMemoryArmorRepository, InMemoryWeaponRepository, InMemoryMaterialRepository, InMemoryEquipmentSetRepository stub tests)
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
 - RealmUnbound.Server.Tests: **292 passing** (+13 from session-9)
 
@@ -99,7 +99,10 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
 - Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
 
-### Session-15 Gotchas
+### Session-16 Notes
+- `InMemoryHallOfFameRepository` already has a dedicated test file: `RealmEngine.Data.Tests/Repositories/InMemoryHallOfFameRepositoryTests.cs` — do NOT add it to `InMemoryStubRepositoryTests.cs`
+- `InMemoryEquipmentSetRepository` is NOT a stub — it returns 5 hardcoded sets (Dragonborn, Shadow Assassin, Arcane Scholar, Iron Guardian, Stormcaller). Test against non-empty count.
+- `ContentEndpoints.cs` intentionally uses `ContentDbContext` directly for `/classes`, `/species`, `/backgrounds`, `/skills` — those handlers map entity-specific fields (HitDie, PrimaryStat, GoverningAttribute, MaxRank) not present on shared models. This is by design, not a bug.
 - `EfCoreMaterialRepository` and `EfCoreArmorRepository` / `EfCoreWeaponRepository` take only `ContentDbContext` (no logger param) — do NOT pass `NullLogger<T>.Instance`
 - `HallOfFameEntry` is in `RealmEngine.Shared.Models`, NOT `RealmEngine.Data.Entities` — when using it in Data.Tests (which imports both namespaces), use alias: `using HallOfFameEntry = RealmEngine.Shared.Models.HallOfFameEntry;`
 - `Enchantment` and `Item` exist in BOTH `RealmEngine.Data.Entities` and `RealmEngine.Shared.Models` — always qualify or alias when both namespaces are imported

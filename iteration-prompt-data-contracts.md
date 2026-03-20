@@ -12,30 +12,22 @@ Completed in previous sessions (do not re-implement):
 - `EfCoreBackgroundRepository` colon-split dead code removed — done
 - XML doc comments on `ActorClassDto`, `CharacterDto`, `CreateCharacterRequest` — done
 - Tests for `EfCoreBackgroundRepository`, `EfCoreEquipmentSetRepository`, `EfCoreCharacterClassRepository`, `EfCoreSpeciesRepository`, `EfCoreNamePatternRepository`, `EfCoreItemRepository`, `EfCoreEnchantmentRepository`, `EfCoreNodeRepository` — done
+- Tests for `EfCoreArmorRepository`, `EfCoreWeaponRepository`, `EfCoreMaterialRepository`, `EfCoreSpellRepository`, `EfCoreQuestRepository`, `EfCoreNpcRepository`, `EfCoreEnemyRepository`, `EfCoreLootTableRepository`, `EfCoreHallOfFameRepository` — done (session-15)
+- `GetSpeciesQuery`, `GetItemCatalogQuery`, `GetEnchantmentCatalogQuery` Core handlers with tests — done (session-15)
+- `GET /api/content/items` (+slug), `GET /api/content/enchantments` (+slug) server endpoints — done (session-15)
+- `ItemDto`, `EnchantmentDto` added to `RealmUnbound.Contracts` — done (session-15)
+- Tests for `InMemoryArmorRepository`, `InMemoryWeaponRepository`, `InMemoryMaterialRepository`, `InMemoryEquipmentSetRepository` stubs — done (session-16)
 
 Goals — in priority order:
-1. **Remaining Data repository test coverage** — these EfCore repositories still have zero tests in `RealmEngine.Data.Tests/`. Use the existing `TestContentDbContextFactory` (SQLite in-memory) pattern. For each: seed minimal data, cover `GetAllAsync`, `GetBySlug`/`GetByName`, any `GetByType` overload, and the not-found path. Missing repos:
-   - `EfCoreArmorRepository`
-   - `EfCoreWeaponRepository`
-   - `EfCoreMaterialRepository`
-   - `EfCoreSpellRepository`
-   - `EfCoreQuestRepository`
-   - `EfCoreNpcRepository`
-   - `EfCoreEnemyRepository`
-   - `EfCoreLootTableRepository`
-   - `EfCoreHallOfFameRepository` (uses `GameDbContext`, not `ContentDbContext`)
-2. **Core catalog feature handlers** — `ISpeciesRepository`, `IItemRepository`, and `IEnchantmentRepository` are registered in DI but no MediatR handler queries them. Add read-only query handlers in `RealmEngine.Core/Features/`:
-   - `GetSpeciesQuery` → returns `IReadOnlyList<Species>` (optionally filtered by `TypeKey`)
-   - `GetItemCatalogQuery` → returns `IReadOnlyList<Item>` (optionally filtered by `ItemType`)
-   - `GetEnchantmentCatalogQuery` → returns `IReadOnlyList<Enchantment>` (optionally filtered by `TargetSlot`)
-   For each: place in a sensibly named feature folder under `Core/Features/`, add FluentValidation validator if any input is present, and add handler tests in `RealmEngine.Core.Tests/`.
-3. **Server endpoints for Items and Enchantments** — `ContentEndpoints.cs` already has dedicated `/api/content/species` endpoints. Add matching endpoints for:
-   - `GET /api/content/items` — all items; optional `?type=` query string
-   - `GET /api/content/items/{slug}` — single item by slug
-   - `GET /api/content/enchantments` — all enchantments; optional `?targetSlot=` query string
-   - `GET /api/content/enchantments/{slug}` — single enchantment by slug
-   Map results through the existing `ContentSummaryDto` / `ContentDetailDto` pattern or add typed DTOs to `RealmUnbound.Contracts` if the existing generic shape is insufficient.
-4. **DatabaseSeeder gaps** — `SeedItemsAsync` and `SeedEnchantmentsAsync` are absent; both tables are empty on a fresh DB. **Do not implement this goal yet.** The items and enchantments to seed need to be decided in a separate discussion before any code is written. Leave a `// TODO: SeedItemsAsync — pending content design discussion` comment in `DatabaseSeeder.cs` as a marker if helpful, but do not add any seeding logic.
+1. **DatabaseSeeder for Items and Enchantments** — implement `SeedItemsAsync` and `SeedEnchantmentsAsync` in `DatabaseSeeder.cs` once a content design discussion has been had. TODO comments are already in place as markers. **Do not implement until the items/enchantments catalog content is decided.**
+2. **Integration tests for typed content endpoints** — `ContentEndpoints.cs` now has 29 typed routes (abilities, enemies, npcs, quests, recipes, loot-tables, spells, classes, species, backgrounds, skills, items, enchantments). None have integration test coverage in `RealmUnbound.Server.Tests`. Consider adding `WebApplicationFactory`-based integration tests for the most important routes.
+3. **Add repositories for unrepresented ContentDbContext tables** — the following `DbSet<T>` tables in `ContentDbContext` have no corresponding repository interface. Add them when needed by a feature handler:
+   - `Organizations` → `IOrganizationRepository`
+   - `WorldLocations` → `IWorldLocationRepository`
+   - `Dialogues` → `IDialogueRepository`
+   - `ActorInstances` → `IActorInstanceRepository`
+   - `MaterialProperties` → `IMaterialPropertyRepository`
+   - `TraitDefinitions` → `ITraitDefinitionRepository`
 
 Process:
 - Use the Explore subagent to run a gap analysis before writing any code. Cross-check `.github/copilot-memory/` so already-completed items are not re-reported.
