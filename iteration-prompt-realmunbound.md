@@ -14,6 +14,7 @@ Process:
 - Every new `GameHub` dispatch method must: validate character ownership first; wrap the mediator call in try/catch and send an error message back to the caller on failure; broadcast the result to the zone group with `Clients.Group(zoneId)`, not just the caller.
 - Every new or updated `HttpXxxService` method must be covered by a `FakeHttpHandler`-based test for success and non-2xx paths.
 - Run `dotnet build RealmUnbound.slnx` and `dotnet test RealmUnbound.slnx --filter Category!=UI` after each batch of changes.
+- After any change to `Program.cs` service registrations, verify DI completeness: every interface required by a Core handler or service that the server registers must have a concrete binding. The server uses `AddRealmEngineCore(p => p.UseExternal())` which skips all persistence-layer registrations — the server must explicitly register every `IXxxRepository` and `IXxxService` it needs. Known gaps that have already been fixed: `IInventoryService`, `IWeaponRepository`, `IMaterialRepository` (added 2026-03-19). If a new Core handler is added that injects an abstraction, check that Program.cs has a matching `AddScoped<IFoo, EfCoreFoo>()` call.
 
 Wrap-up:
 - If any non-obvious constraints, gotchas, or architectural decisions were discovered during the session, write them into the appropriate `.github/copilot-memory/` file (edit it directly using file tools). Only record things that would have caused wasted time if unknown at the start of a future session.

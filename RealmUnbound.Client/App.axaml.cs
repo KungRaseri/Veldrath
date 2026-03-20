@@ -104,6 +104,7 @@ public partial class App : Application
         services.AddSingleton<IHubConnectionFactory, HubConnectionFactory>();
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
         services.AddSingleton<ContentCache>();
+        services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')));
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();
@@ -112,11 +113,7 @@ public partial class App : Application
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
         services.AddSingleton<GameViewModel>();
-        services.AddTransient(sp =>
-        {
-            var vm = ActivatorUtilities.CreateInstance<CharacterSelectViewModel>(sp);
-            vm.ServerUrl = serverBaseUrl.TrimEnd('/');
-            return vm;
-        });
+        services.AddTransient<CharacterSelectViewModel>();
+        services.AddTransient<SettingsViewModel>();
     }
 }

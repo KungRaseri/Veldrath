@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Hubs;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Tests.Infrastructure;
@@ -1341,6 +1342,335 @@ public class GameHubTests : IDisposable
 
         result.Success.Should().BeTrue();
         result.RemainingMana.Should().Be(10); // 20 - 10 (DefaultManaCost)
+    }
+
+    // ── GetActiveCharacters ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetActiveCharacters_Should_Return_Empty_When_No_Characters_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, _, _, _) = CreateHub(db, accountId);
+
+        var result = await hub.GetActiveCharacters();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetActiveCharacters_Should_Return_Id_After_SelectCharacter()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+        var (hub, _, _, ctx) = CreateHub(db, accountId);
+
+        ctx.Items["CharacterId"] = character.Id;
+        // Simulate the tracker being updated by SelectCharacter by registering the character.
+        var tracker = new ActiveCharacterTracker();
+        tracker.TryClaim(character.Id, ctx.ConnectionId);
+
+        var hub2 = new GameHub(NullLogger<GameHub>.Instance,
+                               new CharacterRepository(db),
+                               new ZoneRepository(db),
+                               new ZoneSessionRepository(db),
+                               tracker,
+                               Mock.Of<ISender>());
+        hub2.Clients = hub.Clients;
+        hub2.Groups  = hub.Groups;
+        hub2.Context = ctx;
+
+        var result = await hub2.GetActiveCharacters();
+
+        result.Should().Contain(character.Id);
+    }
+
+    [Fact]
+    public async Task GetActiveCharacters_Should_Return_Multiple_Active_Ids()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId1     = await SeedAccountAsync(db);
+        var accountId2     = await SeedAccountAsync(db);
+        var charA          = await SeedCharacterAsync(db, accountId1);
+        var charB          = await SeedCharacterAsync(db, accountId2);
+
+        var tracker = new ActiveCharacterTracker();
+        tracker.TryClaim(charA.Id, "conn-A");
+        tracker.TryClaim(charB.Id, "conn-B");
+
+        var ctx = new FakeHubCallerContext("conn-A", MakeUser(accountId1));
+        var hub = new GameHub(NullLogger<GameHub>.Instance,
+                              new CharacterRepository(db),
+                              new ZoneRepository(db),
+                              new ZoneSessionRepository(db),
+                              tracker,
+                              Mock.Of<ISender>());
+        hub.Clients = new FakeHubCallerClients();
+        hub.Groups  = new FakeGroupManager();
+        hub.Context = ctx;
+
+        var result = await hub.GetActiveCharacters();
+
+        result.Should().Contain(charA.Id).And.Contain(charB.Id);
+    }
+
+    // ── AwardSkillXp ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AwardSkillXp_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AwardSkillXpHubResult
+            {
+                Success     = true,
+                SkillId     = "swordsmanship",
+                TotalXp     = 50,
+                CurrentRank = 0,
+                RankedUp    = false,
+            });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<AwardSkillXpHubCommand>(
+                c => c.CharacterId == character.Id && c.SkillId == "swordsmanship" && c.Amount == 50),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Should_Broadcast_SkillXpGained_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AwardSkillXpHubResult
+            {
+                Success = true, SkillId = "swordsmanship", TotalXp = 50, CurrentRank = 0, RankedUp = false,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "SkillXpGained");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Should_Send_SkillXpGained_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AwardSkillXpHubResult
+            {
+                Success = true, SkillId = "swordsmanship", TotalXp = 50, CurrentRank = 0, RankedUp = false,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally NOT set
+
+        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "SkillXpGained");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AwardSkillXpHubResult
+            {
+                Success      = false,
+                ErrorMessage = "Amount must be positive.",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 0));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Accumulate_Xp_And_Persist()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = character.Id,
+            SkillId     = "herbalism",
+            Amount      = 40,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.TotalXp.Should().Be(40);
+        result.CurrentRank.Should().Be(0);
+        result.RankedUp.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Trigger_RankUp_At_100_Xp()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = character.Id,
+            SkillId     = "swordsmanship",
+            Amount      = 100,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.TotalXp.Should().Be(100);
+        result.CurrentRank.Should().Be(1);
+        result.RankedUp.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Not_RankUp_Below_Threshold()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = character.Id,
+            SkillId     = "swordsmanship",
+            Amount      = 99,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.RankedUp.Should().BeFalse();
+        result.CurrentRank.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var missingCharId  = Guid.NewGuid();
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = missingCharId,
+            SkillId     = "herbalism",
+            Amount      = 10,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Fail_When_SkillId_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = character.Id,
+            SkillId     = "   ",
+            Amount      = 10,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Handler_Should_Fail_When_Amount_Is_Zero()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new AwardSkillXpHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AwardSkillXpHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AwardSkillXpHubCommand
+        {
+            CharacterId = character.Id,
+            SkillId     = "herbalism",
+            Amount      = 0,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("positive");
     }
 }
 

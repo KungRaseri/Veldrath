@@ -426,4 +426,48 @@ public class GameViewModelTests : TestBase
 
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("fireball"));
     }
+
+    // ── AwardSkillXpCommand ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AwardSkillXpCommand_Should_Send_AwardSkillXp_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.AwardSkillXpCommand.Execute(("herbalism", 40));
+
+        conn.SentCommands.Should().Contain(c => c.Method == "AwardSkillXp");
+    }
+
+    // ── OnSkillXpGained ───────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnSkillXpGained_Should_Append_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnSkillXpGained(skillId: "herbalism", totalXp: 40, currentRank: 0, rankedUp: false);
+
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("herbalism"));
+    }
+
+    [Fact]
+    public void OnSkillXpGained_Should_Show_RankUp_In_Log_When_RankedUp()
+    {
+        var vm = MakeVm();
+        vm.OnSkillXpGained(skillId: "swordsmanship", totalXp: 100, currentRank: 1, rankedUp: true);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("swordsmanship") && msg.Contains("ranked up"));
+    }
+
+    [Fact]
+    public void OnSkillXpGained_Should_Show_Xp_Total_When_Not_Ranked_Up()
+    {
+        var vm = MakeVm();
+        vm.OnSkillXpGained(skillId: "herbalism", totalXp: 40, currentRank: 0, rankedUp: false);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("herbalism") && msg.Contains("40"));
+    }
 }

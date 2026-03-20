@@ -467,6 +467,59 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Awards skill XP to the caller's active character for the specified skill.
+    /// Broadcasts <c>SkillXpGained</c> to the zone group (or back to the caller when not in a zone).
+    /// </summary>
+    /// <param name="request">Skill identifier and XP amount to award.</param>
+    public async Task AwardSkillXp(AwardSkillXpHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AwardSkillXp");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new AwardSkillXpHubCommand
+            {
+                CharacterId = characterId,
+                SkillId     = request.SkillId,
+                Amount      = request.Amount,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to award skill XP");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId  = characterId,
+                result.SkillId,
+                result.TotalXp,
+                result.CurrentRank,
+                result.RankedUp,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("SkillXpGained", payload);
+            else
+                await Clients.Caller.SendAsync("SkillXpGained", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} earned {Amount} XP in skill {SkillId}; total {Total}, rank {Rank}",
+                characterId, request.Amount, request.SkillId, result.TotalXp, result.CurrentRank);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AwardSkillXp for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to award skill XP");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
@@ -527,4 +580,9 @@ public class GameHub : Hub
         return false;
     }
 }
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.AwardSkillXp"/>.</summary>
+/// <param name="SkillId">Skill identifier (e.g. <c>"swordsmanship"</c>, <c>"herbalism"</c>).</param>
+/// <param name="Amount">XP amount to award. Must be positive.</param>
+public record AwardSkillXpHubRequest(string SkillId, int Amount);
 

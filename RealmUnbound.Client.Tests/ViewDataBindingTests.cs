@@ -27,7 +27,8 @@ public class ViewDataBindingTests
             new FakeNavigationService(),
             MakeGameVm(),
             new FakeAuthService(),
-            FakeContentCache.Create());
+            FakeContentCache.Create(),
+            new RealmUnbound.Client.ClientSettings("http://localhost:8080"));
 
     private static Window Show(object content)
     {

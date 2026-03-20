@@ -8,6 +8,7 @@ public interface ICharacterRepository
     /// <summary>Returns all non-deleted characters for an account, ordered by LastPlayedAt desc.</summary>
     Task<IReadOnlyList<Character>> GetByAccountIdAsync(Guid accountId, CancellationToken ct = default);
 
+    /// <summary>Returns the character with the given ID, or <see langword="null"/> if not found.</summary>
     Task<Character?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
     /// <summary>Returns the most recently played non-deleted character for an account.</summary>
@@ -19,7 +20,10 @@ public interface ICharacterRepository
     /// <summary>Returns the number of active (non-deleted) characters for an account.</summary>
     Task<int> GetActiveCountAsync(Guid accountId, CancellationToken ct = default);
 
+    /// <summary>Persists a new character and returns the saved entity.</summary>
     Task<Character> CreateAsync(Character character, CancellationToken ct = default);
+
+    /// <summary>Persists changes to an existing character.</summary>
     Task UpdateAsync(Character character, CancellationToken ct = default);
 
     /// <summary>Sets <see cref="Character.DeletedAt"/> to now (soft delete).</summary>
