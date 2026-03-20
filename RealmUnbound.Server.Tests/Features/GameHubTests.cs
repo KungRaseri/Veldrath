@@ -2108,5 +2108,302 @@ public class GameHubTests : IDisposable
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("not found");
     }
+
+    // ── AddGold helpers ──────────────────────────────────────────────────────────
+
+    private static async Task<Character> SeedCharacterWithGoldAsync(
+        ApplicationDbContext db, Guid accountId, int gold)
+    {
+        var attrs = new Dictionary<string, int> { ["Gold"] = gold };
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"GoldChar_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+        return c;
+    }
+
+    // ── AddGold hub method ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddGold_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.AddGold(100);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AddGold_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 50, NewGoldTotal = 50 });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AddGold(50, "Quest");
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<AddGoldHubCommand>(
+                c => c.CharacterId == character.Id && c.Amount == 50 && c.Source == "Quest"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AddGold_Should_Broadcast_GoldChanged_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 100, NewGoldTotal = 100 });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.AddGold(100);
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "GoldChanged");
+    }
+
+    [Fact]
+    public async Task AddGold_Should_Send_GoldChanged_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 25, NewGoldTotal = 25 });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally NOT set
+
+        await hub.AddGold(25);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "GoldChanged");
+    }
+
+    [Fact]
+    public async Task AddGold_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AddGoldHubResult { Success = false, ErrorMessage = "Not enough gold" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AddGold(-999);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AddGold_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<AddGoldHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AddGold(50);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── AddGoldHubCommandHandler ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Add_Gold_To_Character()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 100);
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = character.Id,
+            Amount      = 50,
+            Source      = "Loot",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.GoldAdded.Should().Be(50);
+        result.NewGoldTotal.Should().Be(150);
+    }
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Spend_Gold_When_Amount_Is_Negative()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 100);
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = character.Id,
+            Amount      = -30,
+            Source      = "Purchase",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.GoldAdded.Should().Be(-30);
+        result.NewGoldTotal.Should().Be(70);
+    }
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Fail_When_Amount_Is_Zero()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = character.Id,
+            Amount      = 0,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("zero");
+    }
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Fail_When_Not_Enough_Gold_To_Spend()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 20);
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = character.Id,
+            Amount      = -50,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("gold");
+    }
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        await SeedAccountAsync(db);
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = Guid.NewGuid(),
+            Amount      = 100,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Default_To_Zero_When_Blob_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId); // no gold blob
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = character.Id,
+            Amount      = 75,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.NewGoldTotal.Should().Be(75);
+    }
+
+    [Fact]
+    public async Task AddGold_Handler_Should_Persist_Updated_Gold_To_Database()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 200);
+
+        var handler = new AddGoldHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<AddGoldHubCommandHandler>.Instance);
+
+        await handler.Handle(new AddGoldHubCommand
+        {
+            CharacterId = character.Id,
+            Amount      = 100,
+        }, CancellationToken.None);
+
+        var updated = await db.Characters.FindAsync(character.Id);
+        var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
+        attrs["Gold"].Should().Be(300);
+    }
 }
 

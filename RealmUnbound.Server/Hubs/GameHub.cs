@@ -576,6 +576,60 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Add or remove gold from the caller's active character.
+    /// Broadcasts <c>GoldChanged</c> to the zone group (or back to the caller when not in a zone).
+    /// Pass a negative <paramref name="amount"/> to spend gold (e.g. making a purchase).
+    /// </summary>
+    /// <param name="amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
+    /// <param name="source">Optional label for the source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
+    public async Task AddGold(int amount, string? source = null)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AddGold");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new AddGoldHubCommand
+            {
+                CharacterId = characterId,
+                Amount      = amount,
+                Source      = source,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to modify gold");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId  = characterId,
+                result.GoldAdded,
+                result.NewGoldTotal,
+                Source       = source,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("GoldChanged", payload);
+            else
+                await Clients.Caller.SendAsync("GoldChanged", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} gold changed by {Amount} ({Source}); total now {Total}",
+                characterId, amount, source ?? "Unknown", result.NewGoldTotal);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AddGold for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to modify gold");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)

@@ -470,4 +470,83 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg =>
             msg.Contains("herbalism") && msg.Contains("40"));
     }
+
+    // ── EquipItemCommand ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task EquipItemCommand_Should_Send_EquipItem_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.EquipItemCommand.Execute(("MainHand", "iron_sword"));
+
+        conn.SentCommands.Should().Contain(c => c.Method == "EquipItem");
+    }
+
+    // ── OnItemEquipped ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnItemEquipped_Should_Append_Equip_Message_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnItemEquipped(slot: "MainHand", itemRef: "iron_sword");
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("iron_sword") && msg.Contains("MainHand"));
+    }
+
+    [Fact]
+    public void OnItemEquipped_Should_Append_Unequip_Message_When_ItemRef_Is_Null()
+    {
+        var vm = MakeVm();
+        vm.OnItemEquipped(slot: "MainHand", itemRef: null);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("MainHand") && msg.Contains("Unequipped"));
+    }
+
+    // ── AddGoldCommand ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddGoldCommand_Should_Send_AddGold_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.AddGoldCommand.Execute((100, "Loot"));
+
+        conn.SentCommands.Should().Contain(c => c.Method == "AddGold");
+    }
+
+    // ── OnGoldChanged ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnGoldChanged_Should_Update_Gold_Property()
+    {
+        var vm = MakeVm();
+        vm.OnGoldChanged(goldAdded: 50, newGoldTotal: 150);
+
+        vm.Gold.Should().Be(150);
+    }
+
+    [Fact]
+    public void OnGoldChanged_Should_Append_Gain_Message_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnGoldChanged(goldAdded: 50, newGoldTotal: 150);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("50") && msg.Contains("150"));
+    }
+
+    [Fact]
+    public void OnGoldChanged_Should_Append_Spend_Message_When_Amount_Is_Negative()
+    {
+        var vm = MakeVm();
+        vm.OnGoldChanged(goldAdded: -30, newGoldTotal: 70);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("Spent") && msg.Contains("30") && msg.Contains("70"));
+    }
 }
