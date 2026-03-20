@@ -30,6 +30,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | `AllocateAttributePoints` | `AllocateAttributePointsHubCommand` | 2026-03-19 session-3 |
 | `UseAbility` | `UseAbilityHubCommand` | 2026-03-19 session-4 |
 | `AwardSkillXp` | `AwardSkillXpHubCommand` | 2026-03-19 session-5 |
+| `EquipItem` | `EquipItemHubCommand` | 2026-03-20 session-8 |
 
 ## Character Attributes JSON Blob Schema
 
@@ -40,6 +41,20 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - `CurrentMana`, `MaxMana`: int — restored to max by `RestAtLocation`
 - Defaults when absent: `MaxHealth = Level * 10`, `MaxMana = Level * 5`
 - Handler key constants are `internal const string KeyXxx` on the handler class
+- **DO NOT store string-valued data in Attributes blob** — it's deserialized as `Dictionary<string, int>`; mixing types causes `JsonException` and data loss
+
+## Equipment Blob Schema (session-8)
+
+- `Character.EquipmentBlob` separate `text` column — `Dictionary<string, string>` JSON (slot → item-ref slug)
+- Added via migration `AddEquipmentBlob` in `Migrations/Application/`
+- Handler: `EquipItemHubCommandHandler` in `RealmUnbound.Server/Features/Characters/EquipItemHubCommand.cs`
+- Valid slots (case-insensitive): `MainHand`, `OffHand`, `Head`, `Chest`, `Legs`, `Feet`, `Ring`, `Amulet`
+- Slot names normalized to canonical casing (first entry in `ValidSlots` set) by handler
+- Pass `null` for `ItemRef` to unequip a slot
+- Broadcasts `ItemEquipped` payload: `{ CharacterId, Slot, ItemRef, AllEquippedItems }`
+- Hub method uses `EquipItemHubRequest(string Slot, string? ItemRef)` DTO in `RealmUnbound.Server.Hubs` namespace
+- Client sends: `SendCommandAsync<object>("EquipItem", new { Slot = slot, ItemRef = itemRef })`
+- Client callback: `GameViewModel.OnItemEquipped(string slot, string? itemRef)` → AppendLog
 
 ## UseAbility Handler Details (session-4)
 
@@ -67,6 +82,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-3 (2026-03-19) | 268 | 235 | 503 |
 | Session-4 (2026-03-19) | 274 | 246 | 520 |
 | Session-5 (2026-03-19) | **281** | **260** | **541** |
+| Session-8 (2026-03-20) | **281** | **279** | **560** |
 
 ## P3 Stubs Status
 
@@ -92,7 +108,6 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 
 ## Next Hub Bridge Candidates
 
-- `EquipItem` — needs server-side handler; `EquipItemCommand` takes full Core domain objects (not suitable directly)
 - `CraftItem` — needs server-side handler
 - `EnterDungeon` — static state gotcha: `EnterDungeonHandler._activeDungeons` is `private static Dictionary<string, DungeonInstance>`; use `ActiveDungeonScope` reflection helper in tests
 
@@ -171,4 +186,15 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 - `GameDbContext` already had Postgres migrations in `Migrations/GameDb/` (created earlier sessions)
 - Created `TestGameDbContextFactory` (SQLite `GameDbContext`) for server tests; updated `ServerRepositoryTests.cs`
 - 260 server tests passing; Docker server reaches Healthy status clean
+
+### Session-8 (2026-03-20) — EquipItem bridge + P2 coverage
+- Added `Character.EquipmentBlob` (`text`, default `{}`) to server EF entity
+- Configured in `ApplicationDbContext.OnModelCreating` + migration `AddEquipmentBlob` in `Migrations/Application/`
+- Implemented `EquipItemHubCommand` + `EquipItemHubResult` + `EquipItemHubCommandHandler` (8 valid slots, case-insensitive)
+- Added `GameHub.EquipItem(EquipItemHubRequest)` + `EquipItemHubRequest` record at bottom of `GameHub.cs`
+- Added client `GameViewModel.EquipItemCommand` (ReactiveCommand<(string, string?), Unit>) + `DoEquipItemAsync` + `OnItemEquipped`
+- Added 19 server tests: 2 SelectCharacter P2, 1 OnDisconnectedAsync P2, 5 catch-block (mediator throws), 6 EquipItem hub method, 5 EquipItemHubCommandHandler handler
+- KEY GOTCHA: `OnDisconnectedAsync` reads `AccountId` from `Context.Items` (set by `OnConnectedAsync`); tests that call `OnDisconnectedAsync` directly must pre-seed `ctx.Items["AccountId"] = accountId`
+- Also: `CreateHub` factory now accepts optional `IActiveCharacterTracker? tracker` param for P2 tests requiring pre-seeded trackers
+- Final: 281 client + 279 server = 560 total passing
 

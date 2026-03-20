@@ -32,6 +32,13 @@ public class Character
     /// </summary>
     public string Attributes { get; set; } = "{}";
 
+    /// <summary>
+    /// JSON-serialised equipment snapshot (slot → item-ref slug, e.g. <c>{"MainHand":"iron_sword"}</c>).
+    /// Kept separate from <see cref="Attributes"/> to avoid type conflicts (attribute values are integers;
+    /// equipment values are string slugs).  Deserialised on demand.
+    /// </summary>
+    public string EquipmentBlob { get; set; } = "{}";
+
     /// <summary>Zone the character starts in (fixed on creation; tutorial zone later).</summary>
     public string StartingZoneId { get; set; } = "starting-zone";
 
