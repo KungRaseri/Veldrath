@@ -23,7 +23,7 @@ public class CharacterRepositoryTests : IDisposable
     }
 
     private static Character MakeCharacter(Guid accountId, string name, int slot = 1) =>
-        new() { AccountId = accountId, Name = name, ClassName = "@classes/warriors:fighter", SlotIndex = slot };
+        new() { AccountId = accountId, Name = name, ClassName = "Warrior", SlotIndex = slot };
 
     // ── GetByAccountIdAsync ───────────────────────────────────────────────────
 

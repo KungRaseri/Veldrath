@@ -38,7 +38,7 @@ public class ZoneRepositoryTests : IDisposable
         {
             AccountId = accountId,
             Name      = $"Char_{Guid.NewGuid():N}",
-            ClassName = "@classes/warriors:fighter",
+            ClassName = "Warrior",
             SlotIndex = slotIndex,
         };
         db.Characters.Add(character);

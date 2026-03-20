@@ -126,7 +126,7 @@ public class GameHubTests : IDisposable
         {
             AccountId = accountId,
             Name      = $"Char_{Guid.NewGuid():N}",
-            ClassName = "@classes/warriors:fighter",
+            ClassName = "Warrior",
             SlotIndex = 1,
         };
         db.Characters.Add(c);
@@ -276,7 +276,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"Char_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Level      = 4,
             Experience = 75L,
@@ -312,7 +312,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"BlobChar_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
@@ -341,7 +341,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"EmptyAttr_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Level      = 3,
             // Attributes left as default "{}"
@@ -663,7 +663,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"AttrChar_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
@@ -908,7 +908,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"RestChar_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Level      = level,
             Attributes = JsonSerializer.Serialize(attrs),
@@ -1128,7 +1128,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"NoPool_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Level      = 4,
             Attributes = JsonSerializer.Serialize(new Dictionary<string, int> { ["Gold"] = 100 }),
@@ -1166,7 +1166,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"AblChar_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
@@ -1415,7 +1415,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"NoMana_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Level      = 4, // MaxMana default = 4 * 5 = 20
             Attributes = "{}",
@@ -2100,7 +2100,7 @@ public class GameHubTests : IDisposable
         {
             AccountId     = accountId,
             Name          = $"Eq_{Guid.NewGuid():N}",
-            ClassName     = "@classes/warriors:fighter",
+            ClassName     = "Warrior",
             SlotIndex     = 1,
             EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string> { ["MainHand"] = "iron_sword" }),
         };
@@ -2134,7 +2134,7 @@ public class GameHubTests : IDisposable
         {
             AccountId     = accountId,
             Name          = $"Eq_{Guid.NewGuid():N}",
-            ClassName     = "@classes/warriors:fighter",
+            ClassName     = "Warrior",
             SlotIndex     = 1,
             EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string> { ["Head"] = "leather_helm" }),
         };
@@ -2212,7 +2212,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"GoldChar_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
@@ -2513,7 +2513,7 @@ public class GameHubTests : IDisposable
         {
             AccountId  = accountId,
             Name       = $"DmgChar_{Guid.NewGuid():N}",
-            ClassName  = "@classes/warriors:fighter",
+            ClassName  = "Warrior",
             SlotIndex  = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };

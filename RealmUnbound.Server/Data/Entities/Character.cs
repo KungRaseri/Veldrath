@@ -19,7 +19,7 @@ public class Character
     /// <summary>Server-wide unique display name.</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Reference to the class catalog entry (e.g. "@classes/warriors:fighter").</summary>
+    /// <summary>Display name of the selected character class (e.g. "Warrior", "Mage").</summary>
     public string ClassName { get; set; } = string.Empty;
 
     public int Level { get; set; } = 1;

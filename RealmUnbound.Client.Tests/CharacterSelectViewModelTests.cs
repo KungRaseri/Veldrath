@@ -50,8 +50,8 @@ public class CharacterSelectViewModelTests : TestBase
         {
             Characters =
             [
-                new CharacterDto(Guid.NewGuid(), 1, "Alice", "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone"),
-                new CharacterDto(Guid.NewGuid(), 2, "Bob",   "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone")
+                new CharacterDto(Guid.NewGuid(), 1, "Alice", "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone"),
+                new CharacterDto(Guid.NewGuid(), 2, "Bob",   "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone")
             ]
         };
 
@@ -213,7 +213,7 @@ public class CharacterSelectViewModelTests : TestBase
     public async Task DeleteCommand_Should_Remove_Character_On_Success()
     {
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var fake = new FakeCharacterService { Characters = [character] };
         var vm   = MakeVm(chars: fake);
         await Task.Yield();
@@ -228,7 +228,7 @@ public class CharacterSelectViewModelTests : TestBase
     public async Task DeleteCommand_Should_Show_Error_When_Delete_Fails()
     {
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var fake = new FakeCharacterService
         {
             Characters  = [character],
@@ -250,7 +250,7 @@ public class CharacterSelectViewModelTests : TestBase
     {
         var conn      = new FakeServerConnectionService { ConnectShouldThrow = true };
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
         var vm = MakeVm(conn: conn);
 
@@ -264,7 +264,7 @@ public class CharacterSelectViewModelTests : TestBase
     {
         var conn      = new FakeServerConnectionService { ConnectShouldThrow = true };
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
         var vm = MakeVm(conn: conn);
 
@@ -283,7 +283,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -308,7 +308,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -332,7 +332,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -349,7 +349,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -366,7 +366,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm    = MakeGameVm(conn: conn);
         var vm        = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, ""); // empty zone
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, ""); // empty zone
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -474,7 +474,7 @@ public class CharacterSelectViewModelTests : TestBase
         // If create failed and then user deletes a different character,
         // the delete error (if any) overrides, but a successful delete clears the board.
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var fake = new FakeCharacterService
         {
             Characters  = [character],
@@ -605,7 +605,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm    = MakeGameVm(conn: conn, nav: nav);
         var vm        = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -622,7 +622,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm    = MakeGameVm(conn: conn, nav: nav);
         var vm        = MakeVm(conn: conn, nav: nav, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -640,15 +640,15 @@ public class CharacterSelectViewModelTests : TestBase
         {
             Classes =
             [
-                new ActorClassDto("@classes/warriors:fighter", "Fighter", "class", 10, "Strength",     10),
-                new ActorClassDto("@classes/mages:mage",       "Mage",    "class",  6, "Intelligence", 10),
+                new ActorClassDto("warrior", "Warrior", "warriors", 10, "strength",     50),
+                new ActorClassDto("mage",    "Mage",    "casters",   6, "intelligence", 40),
             ]
         };
 
         var vm = MakeVm(content: content);
         await Task.Delay(50); // allow fire-and-forget LoadAsync to complete
 
-        vm.AvailableClasses.Should().BeEquivalentTo(new[] { "Fighter", "Mage" });
+        vm.AvailableClasses.Should().BeEquivalentTo(new[] { "Warrior", "Mage" });
     }
 
     [Fact]
@@ -671,7 +671,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -688,7 +688,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -707,7 +707,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -724,7 +724,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -743,7 +743,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -760,7 +760,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -777,7 +777,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -796,7 +796,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 3, 50L, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 3, 50L, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
@@ -827,7 +827,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "@classes/warriors:fighter", 7, 300L, DateTimeOffset.UtcNow, "starting-zone");
+            "Warrior", 7, 300L, DateTimeOffset.UtcNow, "starting-zone");
         var entry = new CharacterEntryViewModel(character);
 
         await vm.SelectCommand.Execute(entry);
