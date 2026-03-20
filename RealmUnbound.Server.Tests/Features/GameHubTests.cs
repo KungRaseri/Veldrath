@@ -135,13 +135,13 @@ public class GameHubTests : IDisposable
     }
 
     private (GameHub Hub, FakeHubCallerClients Clients, FakeGroupManager Groups, FakeHubCallerContext Ctx)
-        CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null)
+        CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null, IActiveCharacterTracker? tracker = null)
     {
         var hub     = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
                                   new ZoneSessionRepository(db),
-                                  new ActiveCharacterTracker(),
+                                  tracker ?? new ActiveCharacterTracker(),
                                   mediator ?? Mock.Of<ISender>());
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();
@@ -1671,6 +1671,442 @@ public class GameHubTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("positive");
+    }
+
+    // ── SelectCharacter — missing paths ───────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCharacter_Should_Send_CharacterAlreadyActive_When_Already_Claimed()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        // Seed tracker with a different connection already holding this character
+        var tracker = new ActiveCharacterTracker();
+        tracker.TryClaim(character.Id, "other-conn");
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, connId: "this-conn", tracker: tracker);
+
+        await hub.SelectCharacter(character.Id);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "CharacterAlreadyActive");
+    }
+
+    [Fact]
+    public async Task SelectCharacter_Should_Broadcast_CharacterStatusChanged_Online_To_Account_Group()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.SelectCharacter(character.Id);
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "CharacterStatusChanged");
+    }
+
+    // ── OnDisconnectedAsync — missing paths ───────────────────────────────────
+
+    [Fact]
+    public async Task OnDisconnectedAsync_Should_Broadcast_CharacterStatusChanged_Offline_When_Character_Was_Active()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        // Pre-seed tracker so GetCharacterForConnection returns the character
+        var tracker = new ActiveCharacterTracker();
+        tracker.TryClaim(character.Id, "conn-active");
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, connId: "conn-active", tracker: tracker);
+        // AccountId is normally written to Context.Items by OnConnectedAsync
+        ctx.Items["AccountId"] = accountId;
+
+        await hub.OnDisconnectedAsync(null);
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "CharacterStatusChanged");
+    }
+
+    // ── Catch-block tests (mediator throws) ───────────────────────────────────
+
+    [Fact]
+    public async Task GainExperience_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.GainExperience(100);
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AllocateAttributePoints_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.AllocateAttributePointsHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AllocateAttributePoints(new Dictionary<string, int> { ["Strength"] = 1 });
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.RestAtLocationHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.RestAtLocation("inn-millhaven");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task UseAbility_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.UseAbility("fireball");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task AwardSkillXp_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 10));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── EquipItem hub method ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task EquipItem_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.EquipItem(new EquipItemHubRequest("MainHand", "iron_sword"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task EquipItem_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EquipItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EquipItemHubResult
+            {
+                Success = true,
+                Slot    = "MainHand",
+                ItemRef = "iron_sword",
+                AllEquippedItems = new Dictionary<string, string> { ["MainHand"] = "iron_sword" },
+            });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EquipItem(new EquipItemHubRequest("MainHand", "iron_sword"));
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<EquipItemHubCommand>(
+                c => c.CharacterId == character.Id && c.Slot == "MainHand" && c.ItemRef == "iron_sword"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EquipItem_Should_Broadcast_ItemEquipped_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EquipItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EquipItemHubResult { Success = true, Slot = "MainHand", ItemRef = "iron_sword", AllEquippedItems = [] });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.EquipItem(new EquipItemHubRequest("MainHand", "iron_sword"));
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ItemEquipped");
+    }
+
+    [Fact]
+    public async Task EquipItem_Should_Send_ItemEquipped_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EquipItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EquipItemHubResult { Success = true, Slot = "Head", ItemRef = "leather_helm", AllEquippedItems = [] });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally not set
+
+        await hub.EquipItem(new EquipItemHubRequest("Head", "leather_helm"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ItemEquipped");
+    }
+
+    [Fact]
+    public async Task EquipItem_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EquipItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EquipItemHubResult { Success = false, ErrorMessage = "Invalid slot" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EquipItem(new EquipItemHubRequest("Torso", null));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task EquipItem_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EquipItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EquipItem(new EquipItemHubRequest("MainHand", "iron_sword"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── EquipItemHubCommandHandler ────────────────────────────────────────────
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Equip_Item_In_Named_Slot()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new EquipItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<EquipItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = character.Id,
+            Slot        = "MainHand",
+            ItemRef     = "iron_sword",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Slot.Should().Be("MainHand");
+        result.ItemRef.Should().Be("iron_sword");
+        result.AllEquippedItems.Should().ContainKey("MainHand")
+              .WhoseValue.Should().Be("iron_sword");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Unequip_Item_When_ItemRef_Is_Null()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        // Seed character with a pre-equipped item
+        var c = new Character
+        {
+            AccountId     = accountId,
+            Name          = $"Eq_{Guid.NewGuid():N}",
+            ClassName     = "@classes/warriors:fighter",
+            SlotIndex     = 1,
+            EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string> { ["MainHand"] = "iron_sword" }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var handler = new EquipItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<EquipItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = c.Id,
+            Slot        = "MainHand",
+            ItemRef     = null,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ItemRef.Should().BeNull();
+        result.AllEquippedItems.Should().NotContainKey("MainHand");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Return_All_Equipped_Items_After_Equip()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        // Seed character with one item already equipped
+        var c = new Character
+        {
+            AccountId     = accountId,
+            Name          = $"Eq_{Guid.NewGuid():N}",
+            ClassName     = "@classes/warriors:fighter",
+            SlotIndex     = 1,
+            EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string> { ["Head"] = "leather_helm" }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var handler = new EquipItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<EquipItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = c.Id,
+            Slot        = "Chest",
+            ItemRef     = "chain_shirt",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.AllEquippedItems.Should().HaveCount(2);
+        result.AllEquippedItems.Should().ContainKey("Head").WhoseValue.Should().Be("leather_helm");
+        result.AllEquippedItems.Should().ContainKey("Chest").WhoseValue.Should().Be("chain_shirt");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Fail_When_Slot_Is_Invalid()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var handler = new EquipItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<EquipItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = character.Id,
+            Slot        = "Torso",   // not a valid slot
+            ItemRef     = "iron_sword",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Invalid");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db    = _factory.CreateContext();
+        var accountId         = await SeedAccountAsync(db);
+        var missingCharId     = Guid.NewGuid();
+
+        var handler = new EquipItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<EquipItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = missingCharId,
+            Slot        = "MainHand",
+            ItemRef     = "iron_sword",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
     }
 }
 

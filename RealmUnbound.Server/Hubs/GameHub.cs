@@ -520,6 +520,62 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Equips or unequips an item in a named slot for the caller's active character.
+    /// Broadcasts <c>ItemEquipped</c> to the zone group (or back to the caller when not in a zone).
+    /// Pass <see langword="null"/> as <paramref name="itemRef"/> to clear the slot.
+    /// </summary>
+    /// <param name="request">Slot name and item-reference slug (or null to unequip).</param>
+    public async Task EquipItem(EquipItemHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before EquipItem");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new EquipItemHubCommand
+            {
+                CharacterId = characterId,
+                Slot        = request.Slot,
+                ItemRef     = request.ItemRef,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to equip item");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId      = characterId,
+                result.Slot,
+                result.ItemRef,
+                result.AllEquippedItems,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("ItemEquipped", payload);
+            else
+                await Clients.Caller.SendAsync("ItemEquipped", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} {Action} '{ItemRef}' in slot {Slot}",
+                characterId,
+                request.ItemRef is null ? "cleared" : "equipped",
+                request.ItemRef ?? "(none)",
+                result.Slot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in EquipItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to equip item");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
@@ -585,4 +641,9 @@ public class GameHub : Hub
 /// <param name="SkillId">Skill identifier (e.g. <c>"swordsmanship"</c>, <c>"herbalism"</c>).</param>
 /// <param name="Amount">XP amount to award. Must be positive.</param>
 public record AwardSkillXpHubRequest(string SkillId, int Amount);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.EquipItem"/>.</summary>
+/// <param name="Slot">Slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Must be a known slot.</param>
+/// <param name="ItemRef">Item-reference slug to equip, or <see langword="null"/> to clear the slot.</param>
+public record EquipItemHubRequest(string Slot, string? ItemRef);
 

@@ -115,6 +115,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Award XP to a skill by ID and amount. Tuple: (skillId, amount).</summary>
     public ReactiveCommand<(string SkillId, int Amount), Unit> AwardSkillXpCommand { get; }
 
+    /// <summary>Equip or unequip an item in a named slot. Tuple: (slot, itemRef) — pass <see langword="null"/> itemRef to unequip.</summary>
+    public ReactiveCommand<(string Slot, string? ItemRef), Unit> EquipItemCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -133,6 +136,7 @@ public class GameViewModel : ViewModelBase
         AllocateAttributePointsCommand = ReactiveCommand.CreateFromTask<Dictionary<string, int>>(DoAllocateAttributePointsAsync);
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
+        EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -212,6 +216,14 @@ public class GameViewModel : ViewModelBase
             : $"Skill {skillId}: +XP \u2192 {totalXp} XP (Rank {currentRank})");
     }
 
+    /// <summary>Called from hub when an item is equipped or unequipped in a slot.</summary>
+    public void OnItemEquipped(string slot, string? itemRef)
+    {
+        AppendLog(itemRef is not null
+            ? $"Equipped '{itemRef}' in {slot} slot."
+            : $"Unequipped {slot} slot.");
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
@@ -265,6 +277,18 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Skill XP award failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoEquipItemAsync(string slot, string? itemRef)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("EquipItem", new { Slot = slot, ItemRef = itemRef });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Equip failed: {ex.Message}");
         }
     }
 

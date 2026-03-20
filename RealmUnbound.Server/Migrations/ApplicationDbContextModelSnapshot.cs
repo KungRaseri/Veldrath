@@ -179,6 +179,12 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EquipmentBlob")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("{}");
+
                     b.Property<long>("Experience")
                         .HasColumnType("bigint");
 

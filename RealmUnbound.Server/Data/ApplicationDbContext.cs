@@ -39,6 +39,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             // A single account cannot have two characters in the same slot.
             e.HasIndex(c => new { c.AccountId, c.SlotIndex }).IsUnique();
             e.Property(c => c.Attributes).HasColumnType("text");
+            e.Property(c => c.EquipmentBlob).HasColumnType("text").HasDefaultValue("{}");
             e.HasOne(c => c.Account)
              .WithMany()
              .HasForeignKey(c => c.AccountId)
