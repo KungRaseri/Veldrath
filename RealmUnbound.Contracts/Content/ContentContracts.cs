@@ -30,6 +30,7 @@ public record ContentTypeInfoDto(string ContentType, string DisplayLabel, string
 
 // ── Ability ───────────────────────────────────────────────────────────────────
 
+/// <summary>A single active or passive ability available to player characters.</summary>
 public record AbilityDto(
     string Slug,
     string DisplayName,
@@ -44,6 +45,7 @@ public record AbilityDto(
 
 // ── Enemy ─────────────────────────────────────────────────────────────────────
 
+/// <summary>An enemy entity that players can encounter in zones.</summary>
 public record EnemyDto(
     string Slug,
     string Name,
@@ -54,6 +56,7 @@ public record EnemyDto(
 
 // ── NPC ───────────────────────────────────────────────────────────────────────
 
+/// <summary>A non-player character present in zones (vendors, quest-givers, etc.).</summary>
 public record NpcDto(
     string Slug,
     string Name,
@@ -62,6 +65,7 @@ public record NpcDto(
 
 // ── Quest ─────────────────────────────────────────────────────────────────────
 
+/// <summary>A quest available for player characters to accept and complete.</summary>
 public record QuestDto(
     string Slug,
     string Title,
@@ -73,10 +77,12 @@ public record QuestDto(
 
 // ── Recipe ────────────────────────────────────────────────────────────────────
 
+/// <summary>A single material ingredient used in a crafting <see cref="RecipeDto"/>.</summary>
 public record RecipeMaterialDto(
     string ItemReference,
     int Quantity);
 
+/// <summary>A crafting recipe that produces an item from a set of materials.</summary>
 public record RecipeDto(
     string Slug,
     string Name,
@@ -89,6 +95,7 @@ public record RecipeDto(
 
 // ── LootTable ─────────────────────────────────────────────────────────────────
 
+/// <summary>A single entry in a loot table, describing one possible item drop.</summary>
 public record LootTableEntryDto(
     string ItemDomain,
     string ItemSlug,
@@ -97,6 +104,7 @@ public record LootTableEntryDto(
     int QuantityMax,
     bool IsGuaranteed);
 
+/// <summary>A loot table attached to an enemy, chest, or harvesting node.</summary>
 public record LootTableDto(
     string Slug,
     string Name,
@@ -108,6 +116,7 @@ public record LootTableDto(
 
 // ── Spell ─────────────────────────────────────────────────────────────────────
 
+/// <summary>A castable spell belonging to a particular school of magic.</summary>
 public record SpellDto(
     string SpellId,
     string Name,
@@ -118,6 +127,7 @@ public record SpellDto(
 
 // ── ActorClass ────────────────────────────────────────────────────────────────
 
+/// <summary>A playable character class (e.g. Fighter, Wizard) with its core mechanical properties.</summary>
 public record ActorClassDto(
     string Slug,
     string DisplayName,
@@ -128,6 +138,7 @@ public record ActorClassDto(
 
 // ── Species ───────────────────────────────────────────────────────────────────
 
+/// <summary>A playable species (e.g. Human, Elf) selectable during character creation.</summary>
 public record SpeciesDto(
     string Slug,
     string DisplayName,
@@ -136,6 +147,7 @@ public record SpeciesDto(
 
 // ── Background ────────────────────────────────────────────────────────────────
 
+/// <summary>A character background (e.g. Soldier, Sage) that provides starting bonuses.</summary>
 public record BackgroundDto(
     string Slug,
     string DisplayName,
@@ -144,6 +156,7 @@ public record BackgroundDto(
 
 // ── Skill ─────────────────────────────────────────────────────────────────────
 
+/// <summary>A learnable skill that grants bonuses as its rank increases.</summary>
 public record SkillDto(
     string Slug,
     string DisplayName,

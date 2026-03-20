@@ -348,6 +348,67 @@ public class GameHub : Hub
         }
     }
 
+    // ── Rest / Recovery ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Rest at an inn or rest point, restoring the caller's active character to full health
+    /// and mana in exchange for a gold cost stored in the character's attributes blob.
+    /// Broadcasts <c>CharacterRested</c> to the zone group (or the caller only when not in a zone)
+    /// on success, and sends <c>Error</c> on validation failure or handler error.
+    /// </summary>
+    /// <param name="locationId">ID of the inn or rest-point location.</param>
+    /// <param name="costInGold">Gold deducted for the rest (default: 10).</param>
+    public async Task RestAtLocation(string locationId, int costInGold = 10)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before RestAtLocation");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new RestAtLocationHubCommand
+            {
+                CharacterId = characterId,
+                LocationId  = locationId,
+                CostInGold  = costInGold,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to rest at location");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId    = characterId,
+                LocationId     = locationId,
+                result.CurrentHealth,
+                result.MaxHealth,
+                result.CurrentMana,
+                result.MaxMana,
+                result.GoldRemaining,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("CharacterRested", payload);
+            else
+                await Clients.Caller.SendAsync("CharacterRested", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} rested at {LocationId}; HP {Hp}/{MaxHp}, MP {Mp}/{MaxMp}, gold remaining {Gold}",
+                characterId, locationId, result.CurrentHealth, result.MaxHealth,
+                result.CurrentMana, result.MaxMana, result.GoldRemaining);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in RestAtLocation for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to process rest at location");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)

@@ -796,5 +796,266 @@ public class GameHubTests : IDisposable
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("not found");
     }
+
+    // ── RestAtLocation ────────────────────────────────────────────────────────
+
+    private static async Task<Character> SeedCharacterWithGoldAsync(
+        ApplicationDbContext db, Guid accountId, int gold, int level = 1)
+    {
+        var attrs = new Dictionary<string, int>
+        {
+            ["Gold"]          = gold,
+            ["MaxHealth"]     = level * 10,
+            ["CurrentHealth"] = 0,   // depleted
+            ["MaxMana"]       = level * 5,
+            ["CurrentMana"]   = 0,   // depleted
+        };
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"RestChar_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Level      = level,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+        return c;
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.RestAtLocation("inn-millhaven");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.RestAtLocationHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.RestAtLocationHubResult
+            {
+                Success       = true,
+                CurrentHealth = 10,
+                MaxHealth     = 10,
+                CurrentMana   = 5,
+                MaxMana       = 5,
+                GoldRemaining = 40,
+            });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.RestAtLocation("inn-millhaven", costInGold: 10);
+
+        mediatorMock.Verify(
+            m => m.Send(
+                It.Is<RealmUnbound.Server.Features.Characters.RestAtLocationHubCommand>(
+                    c => c.CharacterId == character.Id && c.LocationId == "inn-millhaven" && c.CostInGold == 10),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Should_Broadcast_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.RestAtLocationHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.RestAtLocationHubResult
+            {
+                Success = true, CurrentHealth = 10, MaxHealth = 10,
+                CurrentMana = 5, MaxMana = 5, GoldRemaining = 40,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.RestAtLocation("inn-millhaven");
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "CharacterRested");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Should_Send_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.RestAtLocationHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.RestAtLocationHubResult
+            {
+                Success = true, CurrentHealth = 10, MaxHealth = 10,
+                CurrentMana = 5, MaxMana = 5, GoldRemaining = 40,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally not set
+
+        await hub.RestAtLocation("inn-millhaven");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "CharacterRested");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 5);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.RestAtLocationHubResult>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.RestAtLocationHubResult
+            {
+                Success      = false,
+                ErrorMessage = "Not enough gold to rest. Have 5, need 10.",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.RestAtLocation("inn-millhaven");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Handler_Should_Restore_Health_And_Mana_And_Deduct_Gold()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50, level: 3);
+
+        var handler = new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommand
+        {
+            CharacterId = character.Id,
+            LocationId  = "inn-millhaven",
+            CostInGold  = 10,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.CurrentHealth.Should().Be(30); // level 3 * 10
+        result.MaxHealth.Should().Be(30);
+        result.CurrentMana.Should().Be(15);  // level 3 * 5
+        result.MaxMana.Should().Be(15);
+        result.GoldRemaining.Should().Be(40); // 50 - 10
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Handler_Should_Fail_When_Not_Enough_Gold()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 5);
+
+        var handler = new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommand
+        {
+            CharacterId = character.Id,
+            LocationId  = "inn-millhaven",
+            CostInGold  = 10,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Not enough gold");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        await SeedAccountAsync(db);
+
+        var handler = new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommand
+        {
+            CharacterId = Guid.NewGuid(),
+            LocationId  = "inn-millhaven",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task RestAtLocation_Handler_Should_Default_Pools_From_Level_When_Not_In_Blob()
+    {
+        await using var db  = _factory.CreateContext();
+        var accountId       = await SeedAccountAsync(db);
+
+        // Character has only Gold in attrs — no MaxHealth/MaxMana
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"NoPool_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Level      = 4,
+            Attributes = JsonSerializer.Serialize(new Dictionary<string, int> { ["Gold"] = 100 }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var handler = new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.RestAtLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.RestAtLocationHubCommand
+        {
+            CharacterId = c.Id,
+            LocationId  = "inn-millhaven",
+            CostInGold  = 0,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.MaxHealth.Should().Be(40); // level 4 * 10
+        result.MaxMana.Should().Be(20);   // level 4 * 5
+    }
 }
 
