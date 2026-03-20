@@ -593,4 +593,57 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg =>
             msg.Contains("died") || msg.Contains("Dead") || msg.Contains("0"));
     }
+
+    // ── GainExperienceCommand ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GainExperienceCommand_Should_Send_GainExperience_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.GainExperienceCommand.Execute((100, "Quest"));
+
+        conn.SentCommands.Should().Contain(c => c.Method == "GainExperience");
+    }
+
+    // ── OnExperienceGained ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnExperienceGained_Should_Update_Level_Property()
+    {
+        var vm = MakeVm();
+        vm.OnExperienceGained(newLevel: 3, newExperience: 50L, leveledUp: true, leveledUpTo: 3);
+
+        vm.Level.Should().Be(3);
+    }
+
+    [Fact]
+    public void OnExperienceGained_Should_Update_Experience_Property()
+    {
+        var vm = MakeVm();
+        vm.OnExperienceGained(newLevel: 2, newExperience: 120L, leveledUp: false, leveledUpTo: null);
+
+        vm.Experience.Should().Be(120L);
+    }
+
+    [Fact]
+    public void OnExperienceGained_Should_Append_LevelUp_Message_When_LeveledUp()
+    {
+        var vm = MakeVm();
+        vm.OnExperienceGained(newLevel: 4, newExperience: 10L, leveledUp: true, leveledUpTo: 4);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("4") && (msg.Contains("Level") || msg.Contains("level") || msg.Contains("Leveled")));
+    }
+
+    [Fact]
+    public void OnExperienceGained_Should_Append_Xp_Message_When_Not_LeveledUp()
+    {
+        var vm = MakeVm();
+        vm.OnExperienceGained(newLevel: 2, newExperience: 50L, leveledUp: false, leveledUpTo: null);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("2") && msg.Contains("50"));
+    }
 }

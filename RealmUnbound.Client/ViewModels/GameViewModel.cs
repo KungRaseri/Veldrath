@@ -51,6 +51,8 @@ public class GameViewModel : ViewModelBase
     private int _currentMana;
     private int _maxMana;
     private int _gold;
+    private int _level;
+    private long _experience;
 
     /// <summary>Attribute points the character has earned but not yet spent.</summary>
     public int UnspentAttributePoints
@@ -94,6 +96,20 @@ public class GameViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _gold, value);
     }
 
+    /// <summary>Current level of the active character.</summary>
+    public int Level
+    {
+        get => _level;
+        set => this.RaiseAndSetIfChanged(ref _level, value);
+    }
+
+    /// <summary>Experience points accumulated toward the next level.</summary>
+    public long Experience
+    {
+        get => _experience;
+        set => this.RaiseAndSetIfChanged(ref _experience, value);
+    }
+
     /// <summary>Players currently online in the same zone.</summary>
     public ObservableCollection<string> OnlinePlayers { get; } = [];
 
@@ -124,6 +140,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Apply damage to the active character, reducing current health.</summary>
     public ReactiveCommand<(int DamageAmount, string? Source), Unit> TakeDamageCommand { get; }
 
+    /// <summary>Award experience to the active character. Tuple: (amount, source).</summary>
+    public ReactiveCommand<(int Amount, string? Source), Unit> GainExperienceCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -144,7 +163,8 @@ public class GameViewModel : ViewModelBase
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
         EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
         AddGoldCommand    = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
-        TakeDamageCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
+        TakeDamageCommand      = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
+        GainExperienceCommand  = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoGainExperienceAsync(t.Item1, t.Item2));
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -250,6 +270,16 @@ public class GameViewModel : ViewModelBase
             : $"Took {damageAmount} damage. HP: {currentHealth}/{maxHealth}");
     }
 
+    /// <summary>Called from hub when the active character gains experience and possibly levels up.</summary>
+    public void OnExperienceGained(int newLevel, long newExperience, bool leveledUp, int? leveledUpTo)
+    {
+        Level      = newLevel;
+        Experience = newExperience;
+        AppendLog(leveledUp
+            ? $"Leveled up to {leveledUpTo}! XP toward next level: {newExperience}"
+            : $"Gained experience. Level: {newLevel}  XP: {newExperience}");
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
@@ -339,6 +369,18 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Damage application failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoGainExperienceAsync(int amount, string? source)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("GainExperience", new { Amount = amount, Source = source });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Experience award failed: {ex.Message}");
         }
     }
 

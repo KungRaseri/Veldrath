@@ -34,6 +34,8 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
 | `TakeDamage` | `TakeDamageHubCommand` | 2026-03-20 session-10 |
 
+> **Note**: All 8 bridges above are server-side complete. `GainExperience` client-side wiring (Level/Experience props, command, callback, subscription) was added session-11. All 14 bridges are now fully wired end-to-end.
+
 ## Character Attributes JSON Blob Schema
 
 - `UnspentAttributePoints`: int — spent via `AllocateAttributePoints`
@@ -97,6 +99,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-8 (2026-03-20) | **281** | **279** | **560** |
 | Session-9 (2026-03-20) | **288** | **292** | **580** |
 | Session-10 (2026-03-20) | **296** | **304** | **600** |
+| Session-11 (2026-03-20) | **304** | **304** | **608** |
 
 ## P3 Stubs Status
 
@@ -133,6 +136,15 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - `DamageTakenPayload` internal record lives in `CharacterSelectViewModel.cs`
 - Client callback: `GameViewModel.OnDamageTaken(int damageAmount, int currentHealth, int maxHealth, bool isDead)` → updates `CurrentHealth` property + AppendLog
 - Hub sends: `TakeDamageCommand.Execute((damageAmount, source))` via `ReactiveCommand<(int, string?), Unit>`
+
+## GainExperience Client Wiring Details (session-11)
+
+- `GameViewModel.Level` (int) and `Experience` (long) reactive properties added
+- `GainExperienceCommand : ReactiveCommand<(int Amount, string? Source), Unit>` — sends `"GainExperience"` with `new { Amount, Source }`
+- `OnExperienceGained(int newLevel, long newExperience, bool leveledUp, int? leveledUpTo)` — updates `Level`, `Experience`, `AppendLog` with level-up branch
+- `ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source)` internal record in `CharacterSelectViewModel.cs`
+- `_experienceGainedSub` field + disposal + subscription added to `CharacterSelectViewModel.DoSelectAsync` — 14th subscription
+- Server broadcasts payload via `GainExperience` hub method; field names match result properties: `NewLevel`, `NewExperience`, `LeveledUp`, `LeveledUpTo`
 
 ## Next Hub Bridge Candidates
 

@@ -18,7 +18,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private bool _isCreating;
     private string _newCharacterName = string.Empty;
     private string _selectedClass = string.Empty;
-    private IReadOnlyList<string> _availableClasses = ["Fighter", "Mage", "Rogue", "Cleric", "Ranger", "Paladin"];
+    private IReadOnlyList<string> _availableClasses = ["Warrior"];
 
     // Hub subscriptions — stored so they can be disposed before re-subscribing on retry
     private IDisposable? _zoneEnteredSub;
@@ -34,6 +34,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _itemEquippedSub;
     private IDisposable? _goldChangedSub;
     private IDisposable? _damageTakenSub;
+    private IDisposable? _experienceGainedSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -105,12 +106,12 @@ public class CharacterSelectViewModel : ViewModelBase
             x => x.NewCharacterName, x => x.IsBusy, x => x.SelectedClass,
             (name, busy, cls) => !string.IsNullOrWhiteSpace(name) && !busy && !string.IsNullOrWhiteSpace(cls));
 
-        SelectCommand       = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoSelectAsync);
-        ShowCreateCommand   = ReactiveCommand.Create(() => { IsCreating = true; ClearError(); });
+        SelectCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoSelectAsync);
+        ShowCreateCommand = ReactiveCommand.Create(() => { IsCreating = true; ClearError(); });
         CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; SelectedClass = string.Empty; ClearError(); });
-        CreateCommand       = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
-        DeleteCommand       = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoDeleteAsync);
-        LogoutCommand       = ReactiveCommand.CreateFromTask(async () =>
+        CreateCommand = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
+        DeleteCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoDeleteAsync);
+        LogoutCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             await auth.LogoutAsync();
             navigation.NavigateTo<MainMenuViewModel>();
@@ -188,6 +189,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _itemEquippedSub?.Dispose();
             _goldChangedSub?.Dispose();
             _damageTakenSub?.Dispose();
+            _experienceGainedSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -235,6 +237,9 @@ public class CharacterSelectViewModel : ViewModelBase
             _damageTakenSub = _connection.On<DamageTakenPayload>("DamageTaken", payload =>
                 _gameVm.OnDamageTaken(payload.DamageAmount, payload.CurrentHealth, payload.MaxHealth, payload.IsDead));
 
+            _experienceGainedSub = _connection.On<ExperienceGainedPayload>("ExperienceGained", payload =>
+                _gameVm.OnExperienceGained(payload.NewLevel, payload.NewExperience, payload.LeveledUp, payload.LeveledUpTo));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -258,6 +263,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ItemEquippedPayload(Guid CharacterId, string Slot, string? ItemRef, Dictionary<string, string> AllEquippedItems);
     internal record GoldChangedPayload(Guid CharacterId, int GoldAdded, int NewGoldTotal, string? Source);
     internal record DamageTakenPayload(Guid CharacterId, int DamageAmount, int CurrentHealth, int MaxHealth, bool IsDead, string? Source);
+    internal record ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source);
 
     private async Task DoCreateAsync()
     {

@@ -733,4 +733,57 @@ public class CharacterSelectViewModelTests : TestBase
 
         gameVm.ActionLog.Should().NotBeEmpty();
     }
+
+    // ── Hub callbacks — ExperienceGained ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Update_Level_When_ExperienceGained_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("ExperienceGained",
+            new CharacterSelectViewModel.ExperienceGainedPayload(character.Id, 3, 50L, true, 3, "Combat"));
+
+        gameVm.Level.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Update_Experience_When_ExperienceGained_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("ExperienceGained",
+            new CharacterSelectViewModel.ExperienceGainedPayload(character.Id, 2, 75L, false, null, "Quest"));
+
+        gameVm.Experience.Should().Be(75L);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Append_Log_When_ExperienceGained_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("ExperienceGained",
+            new CharacterSelectViewModel.ExperienceGainedPayload(character.Id, 1, 40L, false, null, "Explore"));
+
+        gameVm.ActionLog.Should().NotBeEmpty();
+    }
 }
