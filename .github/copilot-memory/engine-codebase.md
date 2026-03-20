@@ -1,11 +1,11 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-17)
+## Test Counts (as of 2026-03-20, session-18)
 - RealmEngine.Core.Tests: **1,738 passing**
 - RealmEngine.Shared.Tests: **778 passing**
 - RealmEngine.Data.Tests: **203 passing**
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
-- RealmUnbound.Server.Tests: **331 passing** (+39 from session-17: ContentTypedEndpointTests — classes, species, backgrounds, skills, enchantments, abilities, items)
+- RealmUnbound.Server.Tests: **350 passing** (+19 from session-18: ContentExtendedEndpointTests — enemies, NPCs, quests, recipes, loot-tables, spells)
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -59,6 +59,20 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 
 ### Enum Confusion
 - `RarityTier` enum is in `RealmEngine.Shared.Models`. Separate from `ItemRarity` (used on items). Don't confuse the two.
+
+### Enemy / NPC Dual-Archetype Behavior
+- `EfCoreEnemyRepository` and `EfCoreNpcRepository` **both** query `db.ActorArchetypes` without any hostility/role filter. A single seeded `ActorArchetype` row therefore appears in both `/api/content/enemies` and `/api/content/npcs` responses. This is by design — hostility is a trait flag, not a filter applied by the repos.
+
+### SpellDto.School Is a Mapped Tradition, Not the Raw Entity School
+- `EfCoreSpellRepository.ParseTradition(school)` maps entity granular schools to 4 broad traditions. `"fire"` → `MagicalTradition.Primal` → `SpellDto.School = "Primal"`. Other mappings: `"arcane"/"force"/"transmutation"` → `"Arcane"`, `"divine"/"holy"/"sacred"/"light"/"healing"` → `"Divine"`, `"shadow"/"occult"/"psychic"/"dark"/"void"` → `"Occult"`.
+
+### QuestDto — Partially-Unmapped Fields
+- `EfCoreQuestRepository.MapToModel` does **not** set `QuestType` or `Difficulty` on the shared `Quest` model. Those fields default to empty string. Only `Slug`, `Title` (= DisplayName), `DisplayName`, and `RarityWeight` are populated from the entity.
+
+### DatabaseSeeder — Items & Enchantments (session-18)
+- `SeedItemsAsync` seeds 17 items (consumable×4, crystal×2, gem×3, rune×3, essence×3, orb×2) using `I()`, `ISt()`, `ITr()` factory helpers.
+- `SeedEnchantmentsAsync` seeds 9 enchantments (weapon×4, armor×3, any×2) using `EE()`, `ESt()`, `ETr()` factory helpers.
+- `SeedContentRegistryAsync` also registers Items (`items/general`) and Enchantments (`items/enchantments`).
 
 ### ShopEconomyService / Shop Handler Tests
 - Pass `null!` for the DbContextFactory: `new ItemDataService(null!, NullLogger<ItemDataService>.Instance)` is safe because `LoadCatalog` catches the resulting exception and returns `[]`.

@@ -17,14 +17,18 @@ All Newtonsoft migration done as of 2026-03-16:
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
 - Newtonsoft remains in: `RealmUnbound.Server` (ServerSaveGameRepository), `RealmForge`, `RealmUnbound.Server.Tests` (test data fixtures)
 
-## Test Status (2026-03-20, session-17)
+## Test Status (2026-03-20, session-18)
 - Shared.Tests: 778 passed
 - Core.Tests: 1,738 passed
 - Data.Tests: 203 passed
-- Server.Tests: 331 passed (+39 from session-17)
+- Server.Tests: 350 passed (+19 from session-18: ContentExtendedEndpointTests — enemies, NPCs, quests, recipes, loot-tables, spells)
 
-## What Remains (as of session-17)
-- `ContentTypedEndpointTests.cs` added in session-17: 39 integration tests for /classes, /species, /backgrounds, /skills, /enchantments (+ slot filter), /abilities, /items (+ type filter)
-- **Deferred**: `SeedItemsAsync` and `SeedEnchantmentsAsync` in `DatabaseSeeder.cs` — pending content design discussion
+## What Was Done (session-18)
+- `SeedItemsAsync` implemented in `DatabaseSeeder.cs`: 17 items covering all 6 ItemType values (consumable, crystal, gem, rune, essence, orb), with factory helpers `I()`, `ISt()`, `ITr()`
+- `SeedEnchantmentsAsync` implemented in `DatabaseSeeder.cs`: 9 enchantments covering all 3 TargetSlot values (weapon ×4, armor ×3, any ×2), with factory helpers `EE()`, `ESt()`, `ETr()`
+- `SeedContentRegistryAsync` updated to also register Items (`items/general`) and Enchantments (`items/enchantments`)
+- `ContentExtendedEndpointTests.cs` added in `RealmUnbound.Server.Tests/Features/`: 19 integration tests for /enemies, /npcs, /quests, /recipes, /loot-tables, /spells
+
+## What Remains (as of session-18)
 - Remaining unrepresented ContentDbContext tables (Organizations, WorldLocations, Dialogues, ActorInstances, MaterialProperties, TraitDefinitions) — no repos needed until a feature handler requires them
 - No content data is ever loaded from the filesystem — all DB-backed
