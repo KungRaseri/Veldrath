@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Serilog;
@@ -7,14 +8,15 @@ namespace RealmUnbound.Server.Data.Repositories;
 
 /// <summary>
 /// Server-side implementation of <see cref="IHallOfFameRepository"/> backed by
-/// <see cref="ApplicationDbContext"/> (SQLite dev / Postgres prod).
+/// <see cref="GameDbContext"/> (Postgres prod, SQLite tests).
 /// Registered when <c>AddRealmEngineCore(p =&gt; p.UseExternal())</c> is used.
 /// </summary>
 public class ServerHallOfFameRepository : IHallOfFameRepository
 {
-    private readonly ApplicationDbContext _db;
+    private readonly GameDbContext _db;
 
-    public ServerHallOfFameRepository(ApplicationDbContext db) => _db = db;
+    /// <summary>Initializes a new instance of <see cref="ServerHallOfFameRepository"/>.</summary>
+    public ServerHallOfFameRepository(GameDbContext db) => _db = db;
 
     public void AddEntry(HallOfFameEntry entry)
     {

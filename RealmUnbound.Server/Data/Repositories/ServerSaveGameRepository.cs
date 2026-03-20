@@ -8,14 +8,15 @@ namespace RealmUnbound.Server.Data.Repositories;
 
 /// <summary>
 /// Server-side implementation of <see cref="ISaveGameRepository"/> backed by
-/// <see cref="ApplicationDbContext"/> (SQLite dev / Postgres prod).
+/// <see cref="GameDbContext"/> (Postgres prod, SQLite tests).
 /// Registered when <c>AddRealmEngineCore(p =&gt; p.UseExternal())</c> is used.
 /// </summary>
 public class ServerSaveGameRepository : ISaveGameRepository
 {
-    private readonly ApplicationDbContext _db;
+    private readonly GameDbContext _db;
 
-    public ServerSaveGameRepository(ApplicationDbContext db) => _db = db;
+    /// <summary>Initializes a new instance of <see cref="ServerSaveGameRepository"/>.</summary>
+    public ServerSaveGameRepository(GameDbContext db) => _db = db;
 
     public void Save(SaveGame saveGame)
     {
