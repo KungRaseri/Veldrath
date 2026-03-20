@@ -129,6 +129,9 @@ public class FakeServerConnectionService : IServerConnectionService
     public ConnectionState State => _state;
     public bool ConnectShouldThrow { get; set; }
 
+    /// <summary>Records every (method, arg) pair sent via <see cref="SendCommandAsync{TResult}"/>.</summary>
+    public List<(string Method, object? Arg)> SentCommands { get; } = [];
+
     public event Action<ConnectionState>? StateChanged;
 
     public Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
@@ -154,7 +157,10 @@ public class FakeServerConnectionService : IServerConnectionService
     }
 
     public Task<TResult?> SendCommandAsync<TResult>(string method, object command)
-        => Task.FromResult(default(TResult));
+    {
+        SentCommands.Add((method, command));
+        return Task.FromResult(default(TResult));
+    }
 
     public Task DisconnectAsync()
     {

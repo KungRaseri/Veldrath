@@ -1,10 +1,10 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-19, session-2)
+## Test Counts (as of 2026-03-19, session-3)
 - RealmEngine.Core.Tests: 1,283 passing
 - RealmEngine.Shared.Tests: 690 passing
 - RealmEngine.Data.Tests: 119 passing
-- RealmUnbound.Client.Tests: **258 passing**
+- RealmUnbound.Client.Tests: **268 passing** (+10 from session-3)
 - RealmUnbound.Server.Tests: **235 passing**
 
 ## Key Model Facts
@@ -87,6 +87,8 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 1. ~~**MainMenuViewModel.SettingsCommand**~~ — FIXED 2026-03-19: navigates to `SettingsViewModel`. Test updated.
 2. **CharacterSelectViewModel.AvailableClasses** — loads from ContentCache on startup (correct); falls back to hardcoded list when catalog is empty. Acceptable pattern.
 3. ~~**GameHub Hub→MediatR bridge missing for SelectCharacter/EnterZone**~~ — These intentionally do NOT dispatch to Core MediatR (no matching Core handler for session lifecycle). See architecture note below.
+4. ~~**GameViewModel gameplay commands**~~ — FIXED 2026-03-19 session-3: `RestAtLocationCommand` and `AllocateAttributePointsCommand` added; `OnAttributePointsAllocated` and `OnCharacterRested` callbacks added; observable stat properties added (`UnspentAttributePoints`, `CurrentHealth`, `MaxHealth`, `CurrentMana`, `MaxMana`, `Gold`). CharacterSelectViewModel wires hub subscriptions for both new events. FakeServerConnectionService now tracks sent commands in `SentCommands` list.
+5. **CharacterSelectViewModel.ServerUrl** — still hardcoded to `"http://localhost:8080"` (P3 remaining)
 
 ### RealmUnbound Server Hub Architecture (2026-03-19)
 - `SelectCharacter` and `EnterZone` are **session management**, not game-logic operations — they do NOT call `mediator.Send`. The character tracker and zone session repository ARE the implementation. This matches the design intent.

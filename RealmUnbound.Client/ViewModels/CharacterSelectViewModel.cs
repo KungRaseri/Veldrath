@@ -26,6 +26,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _hubErrorSub;
     private IDisposable? _characterStatusSub;
     private IDisposable? _characterAlreadyActiveSub;
+    private IDisposable? _attrAllocatedSub;
+    private IDisposable? _characterRestedSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -166,6 +168,8 @@ public class CharacterSelectViewModel : ViewModelBase
             _playerLeftSub?.Dispose();
             _hubErrorSub?.Dispose();
             _characterAlreadyActiveSub?.Dispose();
+            _attrAllocatedSub?.Dispose();
+            _characterRestedSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -191,6 +195,13 @@ public class CharacterSelectViewModel : ViewModelBase
                 IsBusy = false;
             });
 
+            _attrAllocatedSub = _connection.On<AttributePointsAllocatedPayload>("AttributePointsAllocated", payload =>
+                _gameVm.OnAttributePointsAllocated(payload.RemainingPoints, payload.NewAttributes));
+
+            _characterRestedSub = _connection.On<CharacterRestedPayload>("CharacterRested", payload =>
+                _gameVm.OnCharacterRested(payload.CurrentHealth, payload.MaxHealth,
+                    payload.CurrentMana, payload.MaxMana, payload.GoldRemaining));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -207,6 +218,8 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ZoneEnteredPayload(string Id, string Name, string Description, string ZoneType, IEnumerable<OccupantInfo> Occupants);
     internal record PlayerEventPayload(string CharacterName);
     internal record CharacterStatusPayload(Guid CharacterId, bool IsOnline);
+    internal record AttributePointsAllocatedPayload(Guid CharacterId, int PointsSpent, int RemainingPoints, Dictionary<string, int> NewAttributes);
+    internal record CharacterRestedPayload(Guid CharacterId, string LocationId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int GoldRemaining);
 
     private async Task DoCreateAsync()
     {
