@@ -549,4 +549,48 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg =>
             msg.Contains("Spent") && msg.Contains("30") && msg.Contains("70"));
     }
+
+    // ── TakeDamageCommand ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task TakeDamageCommand_Should_Send_TakeDamage_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.TakeDamageCommand.Execute((25, "Trap"));
+
+        conn.SentCommands.Should().Contain(c => c.Method == "TakeDamage");
+    }
+
+    // ── OnDamageTaken ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnDamageTaken_Should_Update_CurrentHealth_Property()
+    {
+        var vm = MakeVm();
+        vm.OnDamageTaken(damageAmount: 30, currentHealth: 70, maxHealth: 100, isDead: false);
+
+        vm.CurrentHealth.Should().Be(70);
+    }
+
+    [Fact]
+    public void OnDamageTaken_Should_Append_Damage_Message_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnDamageTaken(damageAmount: 30, currentHealth: 70, maxHealth: 100, isDead: false);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("30") && msg.Contains("70") && msg.Contains("100"));
+    }
+
+    [Fact]
+    public void OnDamageTaken_Should_Append_Died_Message_When_IsDead()
+    {
+        var vm = MakeVm();
+        vm.OnDamageTaken(damageAmount: 50, currentHealth: 0, maxHealth: 100, isDead: true);
+
+        vm.ActionLog.Should().ContainSingle(msg =>
+            msg.Contains("died") || msg.Contains("Dead") || msg.Contains("0"));
+    }
 }

@@ -32,6 +32,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | `AwardSkillXp` | `AwardSkillXpHubCommand` | 2026-03-19 session-5 |
 | `EquipItem` | `EquipItemHubCommand` | 2026-03-20 session-8 |
 | `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
+| `TakeDamage` | `TakeDamageHubCommand` | 2026-03-20 session-10 |
 
 ## Character Attributes JSON Blob Schema
 
@@ -95,6 +96,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-5 (2026-03-19) | **281** | **260** | **541** |
 | Session-8 (2026-03-20) | **281** | **279** | **560** |
 | Session-9 (2026-03-20) | **288** | **292** | **580** |
+| Session-10 (2026-03-20) | **296** | **304** | **600** |
 
 ## P3 Stubs Status
 
@@ -118,6 +120,19 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - Config key: `ServerBaseUrl` in `appsettings.json` (falls back to `http://localhost:8080/`)
 - Both `CharacterSelectViewModel` (7th ctor param) and `SettingsViewModel` (2nd ctor param) inject it
 - Both ViewModels now use `services.AddTransient<T>()` — no manual factory needed
+
+## TakeDamage Handler Details (session-10)
+
+- Blob keys: `CurrentHealth` (int), `MaxHealth` (int)
+- `DamageAmount` must be > 0; zero/negative rejected with "must be positive" message
+- Health clamped to 0 (never negative): `newHealth = Math.Max(0, currentHealth - damageAmount)`
+- `IsDead = newHealth == 0`
+- Default `MaxHealth = Level * 10` when blob missing `MaxHealth` key
+- Default `CurrentHealth = MaxHealth` when blob missing `CurrentHealth` key
+- Broadcasts `DamageTaken` payload: `{ CharacterId, DamageAmount, CurrentHealth, MaxHealth, IsDead, Source }`
+- `DamageTakenPayload` internal record lives in `CharacterSelectViewModel.cs`
+- Client callback: `GameViewModel.OnDamageTaken(int damageAmount, int currentHealth, int maxHealth, bool isDead)` → updates `CurrentHealth` property + AppendLog
+- Hub sends: `TakeDamageCommand.Execute((damageAmount, source))` via `ReactiveCommand<(int, string?), Unit>`
 
 ## Next Hub Bridge Candidates
 

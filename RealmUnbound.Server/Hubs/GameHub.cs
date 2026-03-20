@@ -630,6 +630,61 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Apply damage to the caller's active character, reducing current health (clamped to zero).
+    /// Broadcasts <c>DamageTaken</c> to the zone group (or back to the caller when not in a zone).
+    /// </summary>
+    /// <param name="damageAmount">Positive number of hit points to remove.</param>
+    /// <param name="source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
+    public async Task TakeDamage(int damageAmount, string? source = null)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TakeDamage");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new TakeDamageHubCommand
+            {
+                CharacterId  = characterId,
+                DamageAmount = damageAmount,
+                Source       = source,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to apply damage");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId   = characterId,
+                DamageAmount  = damageAmount,
+                result.CurrentHealth,
+                result.MaxHealth,
+                result.IsDead,
+                Source        = source,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("DamageTaken", payload);
+            else
+                await Clients.Caller.SendAsync("DamageTaken", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} took {Damage} damage from {Source}; HP {Hp}/{Max} IsDead={Dead}",
+                characterId, damageAmount, source ?? "Unknown", result.CurrentHealth, result.MaxHealth, result.IsDead);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in TakeDamage for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to apply damage");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)

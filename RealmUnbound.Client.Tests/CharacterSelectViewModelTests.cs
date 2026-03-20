@@ -661,4 +661,76 @@ public class CharacterSelectViewModelTests : TestBase
         // Built-in fallback list must contain at least one entry
         vm.AvailableClasses.Should().NotBeEmpty();
     }
+
+    // ── Hub callbacks — GoldChanged ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Update_Gold_When_GoldChanged_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("GoldChanged",
+            new CharacterSelectViewModel.GoldChangedPayload(character.Id, 50, 150, "Quest"));
+
+        gameVm.Gold.Should().Be(150);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Append_Log_When_GoldChanged_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("GoldChanged",
+            new CharacterSelectViewModel.GoldChangedPayload(character.Id, 100, 200, "Loot"));
+
+        gameVm.ActionLog.Should().NotBeEmpty();
+    }
+
+    // ── Hub callbacks — DamageTaken ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Update_Health_When_DamageTaken_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("DamageTaken",
+            new CharacterSelectViewModel.DamageTakenPayload(character.Id, 30, 70, 100, false, "Goblin"));
+
+        gameVm.CurrentHealth.Should().Be(70);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Append_Log_When_DamageTaken_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "@classes/warriors:fighter", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("DamageTaken",
+            new CharacterSelectViewModel.DamageTakenPayload(character.Id, 30, 70, 100, false, "Trap"));
+
+        gameVm.ActionLog.Should().NotBeEmpty();
+    }
 }
