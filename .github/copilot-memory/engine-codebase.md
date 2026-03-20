@@ -1,11 +1,11 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-19, session-3)
+## Test Counts (as of 2026-03-19, session-4)
 - RealmEngine.Core.Tests: 1,283 passing
 - RealmEngine.Shared.Tests: 690 passing
 - RealmEngine.Data.Tests: 119 passing
-- RealmUnbound.Client.Tests: **268 passing** (+10 from session-3)
-- RealmUnbound.Server.Tests: **235 passing**
+- RealmUnbound.Client.Tests: **274 passing** (+6 from session-4)
+- RealmUnbound.Server.Tests: **246 passing** (+11 from session-4)
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -83,28 +83,16 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `GameStateService` depends on `ISaveGameService` (not concrete `SaveGameService`)
 - All test mocks use `Mock<IGameStateService>`; `FakeGameStateService` implements `IGameStateService` directly
 
-### P3 Stubs (incomplete implementations)
-1. ~~**MainMenuViewModel.SettingsCommand**~~ — FIXED 2026-03-19: navigates to `SettingsViewModel`. Test updated.
-2. **CharacterSelectViewModel.AvailableClasses** — loads from ContentCache on startup (correct); falls back to hardcoded list when catalog is empty. Acceptable pattern.
-3. ~~**GameHub Hub→MediatR bridge missing for SelectCharacter/EnterZone**~~ — These intentionally do NOT dispatch to Core MediatR (no matching Core handler for session lifecycle). See architecture note below.
-4. ~~**GameViewModel gameplay commands**~~ — FIXED 2026-03-19 session-3: `RestAtLocationCommand` and `AllocateAttributePointsCommand` added; `OnAttributePointsAllocated` and `OnCharacterRested` callbacks added; observable stat properties added (`UnspentAttributePoints`, `CurrentHealth`, `MaxHealth`, `CurrentMana`, `MaxMana`, `Gold`). CharacterSelectViewModel wires hub subscriptions for both new events. FakeServerConnectionService now tracks sent commands in `SentCommands` list.
-5. **CharacterSelectViewModel.ServerUrl** — still hardcoded to `"http://localhost:8080"` (P3 remaining)
+### P3 Stubs — see [unbound-memory.md](unbound-memory.md) for full status
 
-### RealmUnbound Server Hub Architecture (2026-03-19)
-- `SelectCharacter` and `EnterZone` are **session management**, not game-logic operations — they do NOT call `mediator.Send`. The character tracker and zone session repository ARE the implementation. This matches the design intent.
-- `GainExperience` → `GainExperienceHubCommand` (wired 2026-03-16)
-- `AllocateAttributePoints` → `AllocateAttributePointsHubCommand` (wired 2026-03-19)
-- `RestAtLocation` → `RestAtLocationHubCommand` (wired 2026-03-19, session-2)
-- Pattern for adding the next hub→MediatR bridge: create `Features/{Feature}/{Name}HubCommand.cs` with command+result+handler; add hub method in `GameHub.cs` using `TryGetCharacterId` guard + try/catch + zone-group broadcast.
+### RealmUnbound — Hub Architecture, Blob Schema, P3/P4 Status
 
-### Character Attributes JSON Blob Schema (as of 2026-03-19 session-2)
-- `UnspentAttributePoints`: int — spent via `AllocateAttributePoints`
-- `Strength`, `Dexterity`, etc.: int — core stats
-- `Gold`: int — currency; deducted by `RestAtLocation` (default cost: 10)
-- `CurrentHealth`, `MaxHealth`: int — rest pool; restored to max by `RestAtLocation`
-- `CurrentMana`, `MaxMana`: int — rest pool; restored to max by `RestAtLocation`
-- If `MaxHealth`/`MaxMana` not present in blob, defaults: `Level * 10` / `Level * 5`
-- Handler key constants live on `RestAtLocationHubCommandHandler` as `internal const string KeyXxx`
+> Full details in [unbound-memory.md](unbound-memory.md). Summary:
+
+- Server hub commands follow the **blob pattern**: read `Character.Attributes` JSON, mutate, save. Never call Core handlers (type mismatch).
+- Wired bridges: `GainExperience`, `RestAtLocation`, `AllocateAttributePoints`, `UseAbility`
+- Last P3 stub open: `CharacterSelectViewModel.ServerUrl` hardcoded to `"http://localhost:8080"`
+- P4 XML docs: `IPlayerAccountRepository` still missing; `IZoneRepository`/`IZoneSessionRepository` fixed session-4
 
 ### ActorClassDto Changed (2026-03-19)
 - `ActorClassDto` in `RealmUnbound.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
@@ -116,8 +104,3 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - So `LoadAsync` replaces `AvailableClasses` before the test's first assertion if a non-empty `FakeContentService` is used
 - Test for fallback list: pass `new FakeContentService { Classes = [] }` + `await Task.Delay(50)` to let fire-and-forget complete
 - Test for catalog-populated list: pass classes with `Task.Delay(50)` wait
-
-### P4 XML Doc Gaps (will cause CS1591 build errors)
-- `RealmUnbound.Contracts`: DTO records fixed 2026-03-19 session-2 — all public records in `ContentContracts.cs` now have `<summary>`.
-- `RealmUnbound.Server` repo interfaces: `IZoneRepository`, `IZoneSessionRepository`, `IPlayerAccountRepository` — missing method summaries (still open)
-- `RealmUnbound.Client` service interfaces: `IAuthService`, `ICharacterService`, `IContentService`, `INavigationService`, etc. — missing docs (still open)

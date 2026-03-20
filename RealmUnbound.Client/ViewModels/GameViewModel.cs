@@ -109,6 +109,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Spend unallocated attribute points by sending an allocation map to the server.</summary>
     public ReactiveCommand<Dictionary<string, int>, Unit> AllocateAttributePointsCommand { get; }
 
+    /// <summary>Activate an ability by ID, consuming mana and optionally restoring health.</summary>
+    public ReactiveCommand<string, Unit> UseAbilityCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -125,6 +128,7 @@ public class GameViewModel : ViewModelBase
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
         RestAtLocationCommand = ReactiveCommand.CreateFromTask(DoRestAtLocationAsync);
         AllocateAttributePointsCommand = ReactiveCommand.CreateFromTask<Dictionary<string, int>>(DoAllocateAttributePointsAsync);
+        UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -185,6 +189,17 @@ public class GameViewModel : ViewModelBase
         AppendLog($"Rested. HP: {currentHealth}/{maxHealth}  MP: {currentMana}/{maxMana}  Gold: {goldRemaining}");
     }
 
+    /// <summary>Called from hub when the active character has used an ability.</summary>
+    public void OnAbilityUsed(string abilityId, int remainingMana, int healthRestored)
+    {
+        CurrentMana = remainingMana;
+        if (healthRestored > 0)
+            CurrentHealth = Math.Min(CurrentHealth + healthRestored, MaxHealth);
+        AppendLog(healthRestored > 0
+            ? $"Used {abilityId}. MP: {remainingMana}  +{healthRestored} HP"
+            : $"Used {abilityId}. MP: {remainingMana}");
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
@@ -214,6 +229,18 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Attribute allocation failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoUseAbilityAsync(string abilityId)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("UseAbility", abilityId);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Ability use failed: {ex.Message}");
         }
     }
 

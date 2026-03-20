@@ -1057,5 +1057,290 @@ public class GameHubTests : IDisposable
         result.MaxHealth.Should().Be(40); // level 4 * 10
         result.MaxMana.Should().Be(20);   // level 4 * 5
     }
+
+    // ── UseAbility ────────────────────────────────────────────────────────────
+
+    private static async Task<Character> SeedCharacterWithManaAsync(
+        ApplicationDbContext db, Guid accountId, int currentMana, int maxMana, Dictionary<string, int>? extra = null)
+    {
+        var attrs = new Dictionary<string, int>(extra ?? [])
+        {
+            ["CurrentMana"] = currentMana,
+            ["MaxMana"]     = maxMana,
+        };
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"AblChar_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+        return c;
+    }
+
+    [Fact]
+    public async Task UseAbility_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        // Skip SelectCharacter — no CharacterId in Context.Items
+        await hub.UseAbility("fireball");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task UseAbility_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.UseAbilityHubResult
+            {
+                Success       = true,
+                AbilityId     = "fireball",
+                ManaCost      = 10,
+                RemainingMana = 40,
+            });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.UseAbility("fireball");
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<RealmUnbound.Server.Features.Characters.UseAbilityHubCommand>(
+                c => c.CharacterId == character.Id && c.AbilityId == "fireball"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task UseAbility_Should_Broadcast_AbilityUsed_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.UseAbilityHubResult
+            {
+                Success = true, AbilityId = "fireball", ManaCost = 10, RemainingMana = 40,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.UseAbility("fireball");
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "AbilityUsed");
+    }
+
+    [Fact]
+    public async Task UseAbility_Should_Send_AbilityUsed_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.UseAbilityHubResult
+            {
+                Success = true, AbilityId = "fireball", ManaCost = 10, RemainingMana = 40,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        // CurrentZoneId intentionally NOT set
+
+        await hub.UseAbility("fireball");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "AbilityUsed");
+    }
+
+    [Fact]
+    public async Task UseAbility_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<RealmUnbound.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RealmUnbound.Server.Features.Characters.UseAbilityHubResult
+            {
+                Success      = false,
+                ErrorMessage = "Not enough mana.",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.UseAbility("fireball");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task UseAbility_Handler_Should_Deduct_Mana_And_Persist()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithManaAsync(db, accountId, currentMana: 50, maxMana: 50);
+
+        var handler = new RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.UseAbilityHubCommand
+        {
+            CharacterId = character.Id,
+            AbilityId   = "fireball",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ManaCost.Should().Be(10);
+        result.RemainingMana.Should().Be(40);
+        result.HealthRestored.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UseAbility_Handler_Should_Restore_Health_For_Healing_Ability()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithManaAsync(db, accountId,
+            currentMana: 50, maxMana: 50,
+            extra: new Dictionary<string, int> { ["CurrentHealth"] = 60, ["MaxHealth"] = 100 });
+
+        var handler = new RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.UseAbilityHubCommand
+        {
+            CharacterId = character.Id,
+            AbilityId   = "minor_heal",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.HealthRestored.Should().Be(25); // HealingAmount = 25; room to heal = 40
+        result.RemainingMana.Should().Be(40);
+    }
+
+    [Fact]
+    public async Task UseAbility_Handler_Should_Fail_When_Not_Enough_Mana()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithManaAsync(db, accountId, currentMana: 5, maxMana: 50);
+
+        var handler = new RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.UseAbilityHubCommand
+        {
+            CharacterId = character.Id,
+            AbilityId   = "fireball",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("mana");
+    }
+
+    [Fact]
+    public async Task UseAbility_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db    = _factory.CreateContext();
+        var accountId         = await SeedAccountAsync(db);
+        var missingCharId     = Guid.NewGuid();
+
+        var handler = new RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.UseAbilityHubCommand
+        {
+            CharacterId = missingCharId,
+            AbilityId   = "fireball",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task UseAbility_Handler_Should_Fail_When_AbilityId_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithManaAsync(db, accountId, currentMana: 50, maxMana: 50);
+
+        var handler = new RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.UseAbilityHubCommand
+        {
+            CharacterId = character.Id,
+            AbilityId   = "   ",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
+
+    [Fact]
+    public async Task UseAbility_Handler_Should_Default_Mana_From_Level_When_Not_In_Blob()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        // Character has NO mana in attrs blob — should default from level
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"NoMana_{Guid.NewGuid():N}",
+            ClassName  = "@classes/warriors:fighter",
+            SlotIndex  = 1,
+            Level      = 4, // MaxMana default = 4 * 5 = 20
+            Attributes = "{}",
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var handler = new RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<RealmUnbound.Server.Features.Characters.UseAbilityHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new RealmUnbound.Server.Features.Characters.UseAbilityHubCommand
+        {
+            CharacterId = c.Id,
+            AbilityId   = "fireball",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.RemainingMana.Should().Be(10); // 20 - 10 (DefaultManaCost)
+    }
 }
 

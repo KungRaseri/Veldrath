@@ -409,6 +409,64 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Activate an ability for the caller's active character, consuming mana and optionally
+    /// restoring health for healing abilities.
+    /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
+    /// to the MediatR pipeline. Sends <c>AbilityUsed</c> to the zone group
+    /// (or the caller only when not in a zone) on success.
+    /// </summary>
+    /// <param name="abilityId">
+    /// ID of the ability to activate (e.g. <c>"fireball"</c>, <c>"heal"</c>).
+    /// Ability IDs that contain <c>"heal"</c> (case-insensitive) also restore hit points.
+    /// </param>
+    public async Task UseAbility(string abilityId)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before UseAbility");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new UseAbilityHubCommand
+            {
+                CharacterId = characterId,
+                AbilityId   = abilityId,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to use ability");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId    = characterId,
+                result.AbilityId,
+                result.ManaCost,
+                result.RemainingMana,
+                result.HealthRestored,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("AbilityUsed", payload);
+            else
+                await Clients.Caller.SendAsync("AbilityUsed", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} used ability {AbilityId}; {Mana} mana remaining, {Heal} HP restored",
+                characterId, abilityId, result.RemainingMana, result.HealthRestored);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in UseAbility for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to use ability");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
