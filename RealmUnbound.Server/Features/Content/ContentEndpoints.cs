@@ -6,10 +6,11 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Foundry;
-using SharedAbility = RealmEngine.Shared.Models.Ability;
-using SharedQuest   = RealmEngine.Shared.Models.Quest;
-using SharedRecipe  = RealmEngine.Shared.Models.Recipe;
-using SharedSpell   = RealmEngine.Shared.Models.Spell;
+using SharedAbility     = RealmEngine.Shared.Models.Ability;
+using SharedItem        = RealmEngine.Shared.Models.Item;
+using SharedQuest       = RealmEngine.Shared.Models.Quest;
+using SharedRecipe      = RealmEngine.Shared.Models.Recipe;
+using SharedSpell       = RealmEngine.Shared.Models.Spell;
 
 namespace RealmUnbound.Server.Features.Content;
 
@@ -38,8 +39,10 @@ namespace RealmUnbound.Server.Features.Content;
 /// GET /api/content/backgrounds           — all active backgrounds
 /// GET /api/content/backgrounds/{slug}    — single background
 /// GET /api/content/skills                — all active skills
-/// GET /api/content/skills/{slug}         — single skill
-///
+/// GET /api/content/skills/{slug}         — single skill/// GET /api/content/items                  — all active catalog items; optional ?type= filter
+/// GET /api/content/items/{slug}           — single catalog item by slug
+/// GET /api/content/enchantments           — all active enchantments; optional ?targetSlot= filter
+/// GET /api/content/enchantments/{slug}    — single enchantment by slug///
 /// GET /api/content/schema                — all registered content type schemas (public)
 /// GET /api/content/browse                — paged list across any entity type (public)
 /// GET /api/content/browse/{type}/{slug}  — full entity detail by type + slug (public)
@@ -102,6 +105,14 @@ public static class ContentEndpoints
         // Skills
         group.MapGet("/skills",           GetSkillsAsync);
         group.MapGet("/skills/{slug}",    GetSkillBySlugAsync);
+
+        // Items
+        group.MapGet("/items",            GetItemsAsync);
+        group.MapGet("/items/{slug}",     GetItemBySlugAsync);
+
+        // Enchantments
+        group.MapGet("/enchantments",         GetEnchantmentsAsync);
+        group.MapGet("/enchantments/{slug}",  GetEnchantmentBySlugAsync);
 
         return app;
     }
@@ -494,4 +505,52 @@ public static class ContentEndpoints
         MaxRank:            s.MaxRank,
         GoverningAttribute: s.GoverningAttribute,
         RarityWeight:       s.RarityWeight);
+
+    // ── Items ──────────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetItemsAsync(string? type, IItemRepository repo)
+    {
+        var items = type is not null
+            ? await repo.GetByTypeAsync(type)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToDto));
+    }
+
+    private static async Task<IResult> GetItemBySlugAsync(string slug, IItemRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
+    }
+
+    // ── Enchantments ───────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetEnchantmentsAsync(string? targetSlot, ContentDbContext db, CancellationToken ct)
+    {
+        var query = db.Enchantments.Where(e => e.IsActive).AsNoTracking();
+        if (targetSlot is not null)
+            query = query.Where(e => e.TargetSlot == targetSlot.ToLowerInvariant());
+        var items = await query.ToListAsync(ct);
+        return Results.Ok(items.Select(ToEnchantmentDto));
+    }
+
+    private static async Task<IResult> GetEnchantmentBySlugAsync(string slug, ContentDbContext db, CancellationToken ct)
+    {
+        var item = await db.Enchantments
+            .Where(e => e.IsActive && e.Slug == slug)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ct);
+        return item is null ? Results.NotFound() : Results.Ok(ToEnchantmentDto(item));
+    }
+
+    private static ItemDto ToDto(SharedItem i) => new(
+        Slug:         i.Slug,
+        DisplayName:  i.Name,
+        TypeKey:      i.TypeKey ?? string.Empty,
+        RarityWeight: i.TotalRarityWeight);
+
+    private static EnchantmentDto ToEnchantmentDto(RealmEngine.Data.Entities.Enchantment e) => new(
+        Slug:         e.Slug,
+        DisplayName:  e.DisplayName ?? e.Slug,
+        TypeKey:      e.TypeKey,
+        RarityWeight: e.RarityWeight);
 }

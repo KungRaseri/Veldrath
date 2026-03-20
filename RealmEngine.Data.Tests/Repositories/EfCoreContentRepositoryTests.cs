@@ -511,3 +511,532 @@ public class EfCoreSpeciesRepositoryTests
         result.Should().HaveCount(2).And.OnlyContain(s => s.TypeKey == "humanoid");
     }
 }
+
+[Trait("Category", "Repository")]
+public class EfCoreArmorRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static Armor MakeArmor(string slug, string armorType = "light", bool active = true) =>
+        new() { Slug = slug, TypeKey = "chest", ArmorType = armorType, EquipSlot = "chest", IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveArmors()
+    {
+        await using var db = CreateDbContext();
+        db.Armors.AddRange(MakeArmor("iron-chest"), MakeArmor("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreArmorRepository(db);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedItem()
+    {
+        await using var db = CreateDbContext();
+        db.Armors.Add(MakeArmor("iron-chest", "heavy"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreArmorRepository(db);
+
+        var result = await repo.GetBySlugAsync("iron-chest");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron-chest");
+        result.ArmorType.Should().Be("heavy");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.Armors.Add(MakeArmor("ghost", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreArmorRepository(db);
+
+        (await repo.GetBySlugAsync("ghost")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenNotFound()
+    {
+        await using var db = CreateDbContext();
+        var repo = new EfCoreArmorRepository(db);
+
+        (await repo.GetBySlugAsync("nonexistent")).Should().BeNull();
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreWeaponRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static Weapon MakeWeapon(string slug, string weaponType = "sword", bool active = true) =>
+        new() { Slug = slug, TypeKey = "swords", WeaponType = weaponType, DamageType = "physical", IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveWeapons()
+    {
+        await using var db = CreateDbContext();
+        db.Weapons.AddRange(MakeWeapon("iron-sword"), MakeWeapon("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreWeaponRepository(db);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedItem()
+    {
+        await using var db = CreateDbContext();
+        db.Weapons.Add(MakeWeapon("iron-sword", "sword"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreWeaponRepository(db);
+
+        var result = await repo.GetBySlugAsync("iron-sword");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron-sword");
+        result.WeaponType.Should().Be("sword");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.Weapons.Add(MakeWeapon("phantom", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreWeaponRepository(db);
+
+        (await repo.GetBySlugAsync("phantom")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenNotFound()
+    {
+        await using var db = CreateDbContext();
+        var repo = new EfCoreWeaponRepository(db);
+
+        (await repo.GetBySlugAsync("nonexistent")).Should().BeNull();
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreMaterialRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static Material MakeMaterial(string slug, string family = "metal", bool active = true) =>
+        new() { Slug = slug, TypeKey = family, MaterialFamily = family, IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveMaterials()
+    {
+        await using var db = CreateDbContext();
+        db.Materials.AddRange(MakeMaterial("iron"), MakeMaterial("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreMaterialRepository(db);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedEntry()
+    {
+        await using var db = CreateDbContext();
+        db.Materials.Add(MakeMaterial("iron", "metal"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreMaterialRepository(db);
+
+        var result = await repo.GetBySlugAsync("iron");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron");
+        result.MaterialFamily.Should().Be("metal");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenNotFound()
+    {
+        await using var db = CreateDbContext();
+        var repo = new EfCoreMaterialRepository(db);
+
+        (await repo.GetBySlugAsync("nonexistent")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByFamiliesAsync_FiltersOnMaterialFamily()
+    {
+        await using var db = CreateDbContext();
+        db.Materials.AddRange(
+            MakeMaterial("iron",     "metal"),
+            MakeMaterial("oak",      "wood"),
+            MakeMaterial("steel",    "metal"),
+            MakeMaterial("leather",  "leather"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreMaterialRepository(db);
+
+        var result = await repo.GetByFamiliesAsync(["metal", "wood"]);
+
+        result.Should().HaveCount(3).And.NotContain(m => m.MaterialFamily == "leather");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreSpellRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static Spell MakeSpell(string slug, string school = "fire", bool active = true) =>
+        new() { Slug = slug, TypeKey = school, School = school, IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveSpells()
+    {
+        await using var db = CreateDbContext();
+        db.Spells.AddRange(MakeSpell("fireball"), MakeSpell("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedSpell()
+    {
+        await using var db = CreateDbContext();
+        db.Spells.Add(MakeSpell("fireball", "fire"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("fireball");
+
+        result.Should().NotBeNull();
+        result!.SpellId.Should().Be("fireball");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.Spells.Add(MakeSpell("ghost-fire", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
+
+        (await repo.GetBySlugAsync("ghost-fire")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetBySchoolAsync_FiltersOnSchool()
+    {
+        await using var db = CreateDbContext();
+        db.Spells.AddRange(
+            MakeSpell("fireball",   "fire"),
+            MakeSpell("heal",       "healing"),
+            MakeSpell("fire-storm", "fire"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
+
+        var result = await repo.GetBySchoolAsync("fire");
+
+        result.Should().HaveCount(2).And.OnlyContain(s => s.SpellId != "heal");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreQuestRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static Quest MakeQuest(string slug, string typeKey = "main", bool active = true) =>
+        new() { Slug = slug, TypeKey = typeKey, IsActive = active, DisplayName = slug, Traits = new() };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveQuests()
+    {
+        await using var db = CreateDbContext();
+        db.Quests.AddRange(MakeQuest("rescue-mission"), MakeQuest("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreQuestRepository(db, NullLogger<EfCoreQuestRepository>.Instance);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedQuest()
+    {
+        await using var db = CreateDbContext();
+        db.Quests.Add(MakeQuest("rescue-mission", "main"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreQuestRepository(db, NullLogger<EfCoreQuestRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("rescue-mission");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("rescue-mission");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.Quests.Add(MakeQuest("invisible-quest", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreQuestRepository(db, NullLogger<EfCoreQuestRepository>.Instance);
+
+        (await repo.GetBySlugAsync("invisible-quest")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByTypeKeyAsync_FiltersOnTypeKey()
+    {
+        await using var db = CreateDbContext();
+        db.Quests.AddRange(
+            MakeQuest("quest-a", "main"),
+            MakeQuest("quest-b", "side"),
+            MakeQuest("quest-c", "main"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreQuestRepository(db, NullLogger<EfCoreQuestRepository>.Instance);
+
+        var result = await repo.GetByTypeKeyAsync("main");
+
+        result.Should().HaveCount(2).And.OnlyContain(q => q.Slug != "quest-b");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreNpcRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static ActorArchetype MakeArchetype(string slug, string typeKey = "merchant", bool active = true) =>
+        new() { Slug = slug, TypeKey = typeKey, IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveArchetypes()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.AddRange(MakeArchetype("innkeeper"), MakeArchetype("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreNpcRepository(db, NullLogger<EfCoreNpcRepository>.Instance);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedNpc()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.Add(MakeArchetype("innkeeper", "innkeeper"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreNpcRepository(db, NullLogger<EfCoreNpcRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("innkeeper");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("innkeeper");
+        result.Occupation.Should().Be("innkeeper");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.Add(MakeArchetype("ghost-npc", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreNpcRepository(db, NullLogger<EfCoreNpcRepository>.Instance);
+
+        (await repo.GetBySlugAsync("ghost-npc")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByCategoryAsync_FiltersOnTypeKey()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.AddRange(
+            MakeArchetype("blacksmith", "merchant"),
+            MakeArchetype("guard",      "guard"),
+            MakeArchetype("alchemist",  "merchant"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreNpcRepository(db, NullLogger<EfCoreNpcRepository>.Instance);
+
+        var result = await repo.GetByCategoryAsync("merchant");
+
+        result.Should().HaveCount(2).And.OnlyContain(n => n.Occupation == "merchant");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreEnemyRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static ActorArchetype MakeArchetype(string slug, string typeKey = "beasts/wolf", bool active = true) =>
+        new() { Slug = slug, TypeKey = typeKey, IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveArchetypes()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.AddRange(MakeArchetype("wolf"), MakeArchetype("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreEnemyRepository(db, NullLogger<EfCoreEnemyRepository>.Instance);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedEnemy()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.Add(MakeArchetype("wolf", "beasts/wolf"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreEnemyRepository(db, NullLogger<EfCoreEnemyRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("wolf");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("wolf");
+        result.Attributes.Should().ContainKey("strength");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.Add(MakeArchetype("spectral-wolf", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreEnemyRepository(db, NullLogger<EfCoreEnemyRepository>.Instance);
+
+        (await repo.GetBySlugAsync("spectral-wolf")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByFamilyAsync_FiltersOnTypeKey()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.AddRange(
+            MakeArchetype("wolf",   "beasts/wolf"),
+            MakeArchetype("bandit", "humanoids/bandit"),
+            MakeArchetype("bear",   "beasts/bear"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreEnemyRepository(db, NullLogger<EfCoreEnemyRepository>.Instance);
+
+        var result = await repo.GetByFamilyAsync("beasts/wolf");
+
+        result.Should().HaveCount(1).And.Contain(e => e.Slug == "wolf");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreLootTableRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static LootTable MakeLootTable(string slug, string typeKey = "enemies", bool active = true) =>
+        new() { Slug = slug, TypeKey = typeKey, IsActive = active, DisplayName = slug };
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsOnlyActiveLootTables()
+    {
+        await using var db = CreateDbContext();
+        db.LootTables.AddRange(MakeLootTable("goblin-drops"), MakeLootTable("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);
+
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsMappedLootTable()
+    {
+        await using var db = CreateDbContext();
+        db.LootTables.Add(MakeLootTable("goblin-drops", "enemies"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("goblin-drops");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("goblin-drops");
+        result.Context.Should().Be("enemies");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.LootTables.Add(MakeLootTable("ghost-table", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);
+
+        (await repo.GetBySlugAsync("ghost-table")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByContextAsync_FiltersOnTypeKey()
+    {
+        await using var db = CreateDbContext();
+        db.LootTables.AddRange(
+            MakeLootTable("orc-drops",  "enemies"),
+            MakeLootTable("chest-a",    "chests"),
+            MakeLootTable("wolf-drops", "enemies"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);
+
+        var result = await repo.GetByContextAsync("enemies");
+
+        result.Should().HaveCount(2).And.OnlyContain(t => t.Context == "enemies");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_IncludesEntries_WhenPresent()
+    {
+        await using var db = CreateDbContext();
+        var table = MakeLootTable("boss-drops", "enemies");
+        db.LootTables.Add(table);
+        await db.SaveChangesAsync();
+        db.LootTableEntries.Add(new LootTableEntry
+        {
+            LootTableId  = table.Id,
+            ItemDomain   = "weapons",
+            ItemSlug     = "iron-sword",
+            DropWeight   = 50,
+            QuantityMin  = 1,
+            QuantityMax  = 1,
+        });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("boss-drops");
+
+        result.Should().NotBeNull();
+        result!.Entries.Should().HaveCount(1);
+        result.Entries[0].ItemSlug.Should().Be("iron-sword");
+    }
+}

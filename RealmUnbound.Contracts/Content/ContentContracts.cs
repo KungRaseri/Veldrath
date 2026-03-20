@@ -170,3 +170,29 @@ public record SkillDto(
     int MaxRank,
     string? GoverningAttribute,
     int RarityWeight);
+
+// ── Item ──────────────────────────────────────────────────────────────────────
+
+/// <summary>A general-purpose catalog item (consumable, gem, rune, essence, etc.).</summary>
+/// <param name="Slug">Unique URL-safe identifier for this item.</param>
+/// <param name="DisplayName">Display name shown to players.</param>
+/// <param name="TypeKey">Category key grouping related items (e.g. "consumables", "gems").</param>
+/// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
+public record ItemDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    int RarityWeight);
+
+// ── Enchantment ───────────────────────────────────────────────────────────────
+
+/// <summary>An enchantment that can be applied to equipment to grant bonuses.</summary>
+/// <param name="Slug">Unique URL-safe identifier for this enchantment.</param>
+/// <param name="DisplayName">Display name shown to players.</param>
+/// <param name="TypeKey">Category key grouping related enchantments.</param>
+/// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
+public record EnchantmentDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    int RarityWeight);

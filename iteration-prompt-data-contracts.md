@@ -1,14 +1,41 @@
 Continue iterating on `RealmEngine.Data` and `RealmUnbound.Contracts`, maintaining consistency with the completed move away from JSON file-based content toward PostgreSQL/EF Core as the single source of truth for all content.
 
 Setup:
-- Read `.github/copilot-memory/engine-codebase.md` and `.github/copilot-memory/json-migration-status.md` before writing any code. Cross-check those files so already-completed work is not re-attempted.
+- Read `.github/copilot-memory/engine-codebase.md` and `.github/copilot-memory/json-migration-status.md` before writing any code. Cross-check those files AND the "Completed in previous sessions" section above so already-completed work is not re-attempted.
 - Run `dotnet test RealmEngine.slnx` to establish the baseline. All work must finish with zero regressions against that baseline.
 
+Completed in previous sessions (do not re-implement):
+- `ISpeciesRepository` / `EfCoreSpeciesRepository` — done, registered, tested
+- `IItemRepository` / `EfCoreItemRepository` — done, registered, tested
+- `IEnchantmentRepository` / `EfCoreEnchantmentRepository` — done, registered, tested
+- `INodeRepository` / `EfCoreNodeRepository` + `HarvestableNodeRecord` entity + `AddHarvestableNodes` migration — done, registered, tested
+- `EfCoreBackgroundRepository` colon-split dead code removed — done
+- XML doc comments on `ActorClassDto`, `CharacterDto`, `CreateCharacterRequest` — done
+- Tests for `EfCoreBackgroundRepository`, `EfCoreEquipmentSetRepository`, `EfCoreCharacterClassRepository`, `EfCoreSpeciesRepository`, `EfCoreNamePatternRepository`, `EfCoreItemRepository`, `EfCoreEnchantmentRepository`, `EfCoreNodeRepository` — done
+
 Goals — in priority order:
-1. **Missing EF repositories** — several `ContentDbContext` entities have no `IXxxRepository` / `EfCoreXxxRepository` pair. Implement them end-to-end: interface in `RealmEngine.Core/Abstractions/`, EF Core implementation in `RealmEngine.Data/Repositories/`, registration in `RealmUnbound.Server/Program.cs`, and tests in `RealmEngine.Data.Tests/`. Priority: `ISpeciesRepository` (`SpeciesDto` already in Contracts, needed by character creation); `INodeRepository` + `EfCoreNodeRepository` (`InMemoryNodeRepository` is the spec — match its interface, then create the EF entity and migration); `IItemRepository` (general items not covered by weapon/armor repos); `IEnchantmentRepository` (referenced by `Item.EnchantmentIds`). For each: add a `GetAllAsync`, `GetBySlug`, and `GetByTypeAsync` as appropriate; use a `MapToModel(entity)` private static method; `AsNoTracking()` on all queries.
-2. **Legacy format cleanup** — `EfCoreBackgroundRepository.GetBackgroundByIdAsync` splits on `:` to handle the old `"backgrounds/strength:soldier"` format. `Character.BackgroundId` now stores a bare slug, so that split-and-fallback is dead code. Remove it and query directly by slug. Add a test confirming the bare-slug path works.
-3. **Contracts alignment** — add XML doc comments to `ActorClassDto.TypeKey` (holds the DB `TypeKey` column value, e.g. `"warriors"`; not a `@classes/...` prefix), `CharacterDto.ClassName` and `CreateCharacterRequest.ClassName` (stores the class `DisplayName`, e.g. `"Warrior"` — not a slug). Verify `SpeciesDto` field names align with the `Species` EF entity once `ISpeciesRepository` is implemented; adjust if they diverge.
-4. **Data repository test coverage** — these EfCore repositories have zero tests in `RealmEngine.Data.Tests/`: `EfCoreBackgroundRepository`, `EfCoreEquipmentSetRepository`, `EfCoreNamePatternRepository`, `EfCoreCharacterClassRepository`. Use the `TestContentDbContextFactory` (SQLite in-memory) pattern already in the project. For each: seed minimal data per test, cover `GetAllAsync`, `GetBySlug`/`GetByName`, any `GetByType` overload, and the not-found path.
+1. **Remaining Data repository test coverage** — these EfCore repositories still have zero tests in `RealmEngine.Data.Tests/`. Use the existing `TestContentDbContextFactory` (SQLite in-memory) pattern. For each: seed minimal data, cover `GetAllAsync`, `GetBySlug`/`GetByName`, any `GetByType` overload, and the not-found path. Missing repos:
+   - `EfCoreArmorRepository`
+   - `EfCoreWeaponRepository`
+   - `EfCoreMaterialRepository`
+   - `EfCoreSpellRepository`
+   - `EfCoreQuestRepository`
+   - `EfCoreNpcRepository`
+   - `EfCoreEnemyRepository`
+   - `EfCoreLootTableRepository`
+   - `EfCoreHallOfFameRepository` (uses `GameDbContext`, not `ContentDbContext`)
+2. **Core catalog feature handlers** — `ISpeciesRepository`, `IItemRepository`, and `IEnchantmentRepository` are registered in DI but no MediatR handler queries them. Add read-only query handlers in `RealmEngine.Core/Features/`:
+   - `GetSpeciesQuery` → returns `IReadOnlyList<Species>` (optionally filtered by `TypeKey`)
+   - `GetItemCatalogQuery` → returns `IReadOnlyList<Item>` (optionally filtered by `ItemType`)
+   - `GetEnchantmentCatalogQuery` → returns `IReadOnlyList<Enchantment>` (optionally filtered by `TargetSlot`)
+   For each: place in a sensibly named feature folder under `Core/Features/`, add FluentValidation validator if any input is present, and add handler tests in `RealmEngine.Core.Tests/`.
+3. **Server endpoints for Items and Enchantments** — `ContentEndpoints.cs` already has dedicated `/api/content/species` endpoints. Add matching endpoints for:
+   - `GET /api/content/items` — all items; optional `?type=` query string
+   - `GET /api/content/items/{slug}` — single item by slug
+   - `GET /api/content/enchantments` — all enchantments; optional `?targetSlot=` query string
+   - `GET /api/content/enchantments/{slug}` — single enchantment by slug
+   Map results through the existing `ContentSummaryDto` / `ContentDetailDto` pattern or add typed DTOs to `RealmUnbound.Contracts` if the existing generic shape is insufficient.
+4. **DatabaseSeeder gaps** — `SeedItemsAsync` and `SeedEnchantmentsAsync` are absent; both tables are empty on a fresh DB. **Do not implement this goal yet.** The items and enchantments to seed need to be decided in a separate discussion before any code is written. Leave a `// TODO: SeedItemsAsync — pending content design discussion` comment in `DatabaseSeeder.cs` as a marker if helpful, but do not add any seeding logic.
 
 Process:
 - Use the Explore subagent to run a gap analysis before writing any code. Cross-check `.github/copilot-memory/` so already-completed items are not re-reported.

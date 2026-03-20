@@ -25,6 +25,9 @@ public static class DatabaseSeeder
         await SeedClassAbilityUnlocksAsync(db);
         await SeedSpeciesAbilityPoolsAsync(db);
         await SeedContentRegistryAsync(db);
+
+        // TODO: SeedItemsAsync — pending content design discussion (items catalog)
+        // TODO: SeedEnchantmentsAsync — pending content design discussion (enchantments catalog)
     }
 
     // Stat/trait factory helpers — keeps data rows concise.
