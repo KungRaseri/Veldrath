@@ -128,6 +128,12 @@ public record SpellDto(
 // ── ActorClass ────────────────────────────────────────────────────────────────
 
 /// <summary>A playable character class (e.g. Fighter, Wizard) with its core mechanical properties.</summary>
+/// <param name="Slug">Unique URL-safe identifier for this class.</param>
+/// <param name="DisplayName">Display name shown to players (e.g. "Warrior", "Mage").</param>
+/// <param name="TypeKey">DB category key for this class family (e.g. "warriors", "casters"). Not a content-reference prefix.</param>
+/// <param name="HitDie">Sides of the health die rolled per level (e.g. 10 for Fighter, 6 for Wizard).</param>
+/// <param name="PrimaryStat">Primary scaling attribute (e.g. "strength", "intelligence").</param>
+/// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
 public record ActorClassDto(
     string Slug,
     string DisplayName,

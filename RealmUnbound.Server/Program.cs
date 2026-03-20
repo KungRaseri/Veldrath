@@ -224,6 +224,9 @@ try
     builder.Services.AddScoped<IEquipmentSetRepository, EfCoreEquipmentSetRepository>();
     builder.Services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
     builder.Services.AddScoped<ISpeciesRepository, EfCoreSpeciesRepository>();
+    builder.Services.AddScoped<IItemRepository, EfCoreItemRepository>();
+    builder.Services.AddScoped<IEnchantmentRepository, EfCoreEnchantmentRepository>();
+    builder.Services.AddScoped<INodeRepository, EfCoreNodeRepository>();
 
     // ── Cookie policy ──────────────────────────────────────────────────────────
     // When running on plain HTTP (Docker dev, CI), browsers reject SameSite=None
