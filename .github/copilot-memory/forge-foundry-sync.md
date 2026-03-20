@@ -40,6 +40,28 @@
 - `ApplicationDbContext.FoundrySubmission.Payload` is `TEXT` (not `jsonb`) on SQLite to avoid affinity issues
 - `RealmUnbound.Server.Tests.csproj` references Moq and has global usings for `RealmUnbound.Contracts.Foundry`, `Moq`, `MediatR`
 
+## RealmUnbound Server + Client Iteration (2026-03-19)
+
+### Completed this session
+- Fixed pre-existing build error: `ActorClassDto` gained `HitDie`, `PrimaryStat`, `RarityWeight` params; updated `FakeServices.cs` and 2 `CharacterSelectViewModelTests.cs` direct ctor calls
+- Fixed `AvailableClasses_Should_Contain_Expected_Classes` test — renamed to `AvailableClasses_Should_Contain_Expected_Classes_When_Catalog_Empty`; added `await Task.Delay(50)` and empty catalog to correctly test fallback path
+- Fixed P3 stub: `MainMenuViewModel.SettingsCommand` now navigates to new `SettingsViewModel`; test updated to check navigation
+- Created `SettingsViewModel` (`RealmUnbound.Client/ViewModels/SettingsViewModel.cs`) with `BackCommand` to return to main menu
+- Implemented `AllocateAttributePoints` Hub→MediatR bridge:
+  - `RealmUnbound.Server/Features/Characters/AllocateAttributePointsHubCommand.cs` — command + result + handler (reads/writes `Character.Attributes` JSON blob)
+  - `GameHub.AllocateAttributePoints(Dictionary<string,int>)` — validates ownership via `TryGetCharacterId`, dispatches, broadcasts zone-group or caller
+- Added 9 tests for `AllocateAttributePoints` in `GameHubTests.cs` (hub dispatch, handler direct, success/error/not-in-zone/in-zone paths)
+
+### Test counts after this session
+- RealmUnbound.Client.Tests: 212 passing
+- RealmUnbound.Server.Tests: 226 passing
+
+### Remaining open items (P1/P2/P3/P4)
+- P4 XML doc gaps: ~55 missing `<summary>` on public DTOs/interfaces (see engine-codebase.md for list). This will produce CS1591 build errors when those files are next touched.
+- P2: SelectCommand concurrent retry logic not tested; DeleteCommand error recovery not exhaustively tested
+- Next hub→MediatR candidates: `UseAbility`, `EquipItem`, `CraftItem` (all need server-side entity model and handler to be created first)
+- `SettingsViewModel` is a placeholder — full settings screen (audio, server URL config, keybindings) is future work
+
 ## WebAppFactory / Integration Test Gotcha
 - Curator role is NOT created at startup in SQLite/Test env — role creation in `Program.cs` is inside `if (providerName.Contains("Npgsql"))`
 - `GetCuratorTokenAsync` helper must: register → `CreateScope()` → `RoleManager.CreateAsync("Curator")` → `UserManager.AddToRoleAsync` → **re-login** (re-login required because `IssueTokenPairAsync` calls `IsInRoleAsync`; old token won't have the Curator role claim)

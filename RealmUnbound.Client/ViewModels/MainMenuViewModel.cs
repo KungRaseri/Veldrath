@@ -48,7 +48,7 @@ public class MainMenuViewModel : ViewModelBase
             await auth.LogoutAsync();
             // IsLoggedIn updates automatically via the WhenAnyValue subscription above
         });
-        SettingsCommand = ReactiveCommand.Create(() => { /* TODO: settings screen */ });
+        SettingsCommand = ReactiveCommand.Create(() => navigation.NavigateTo<SettingsViewModel>());
         ExitCommand     = ReactiveCommand.Create(doExit);
     }
 }

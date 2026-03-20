@@ -47,12 +47,15 @@ public class MainMenuViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task SettingsCommand_Should_Execute_Without_Throwing()
+    public async Task SettingsCommand_Should_Navigate_To_SettingsViewModel()
     {
-        var vm  = MakeVm();
+        var nav = new FakeNavigationService();
+        var vm  = MakeVm(nav);
         var cmd = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.SettingsCommand;
-        // SettingsCommand is a no-op placeholder; just verify it completes without error
+
         await cmd.Execute();
+
+        nav.NavigationLog.Should().Contain(typeof(SettingsViewModel));
     }
 
     [Fact]
