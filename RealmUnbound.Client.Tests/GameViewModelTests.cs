@@ -359,4 +359,71 @@ public class GameViewModelTests : TestBase
 
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Rested"));
     }
+
+    // ── UseAbilityCommand ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UseAbilityCommand_Should_Send_UseAbility_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.UseAbilityCommand.Execute("fireball");
+
+        conn.SentCommands.Should().Contain(c => c.Method == "UseAbility");
+    }
+
+    [Fact]
+    public async Task UseAbilityCommand_Should_Send_AbilityId_As_Arg()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.UseAbilityCommand.Execute("minor_heal");
+
+        conn.SentCommands
+            .Should().ContainSingle(c => c.Method == "UseAbility" && (string?)c.Arg == "minor_heal");
+    }
+
+    // ── OnAbilityUsed ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnAbilityUsed_Should_Update_CurrentMana()
+    {
+        var vm = MakeVm();
+        vm.OnAbilityUsed(abilityId: "fireball", remainingMana: 30, healthRestored: 0);
+
+        vm.CurrentMana.Should().Be(30);
+    }
+
+    [Fact]
+    public void OnAbilityUsed_Should_Not_Change_CurrentHealth_When_No_Healing()
+    {
+        var vm = MakeVm();
+        vm.OnCharacterRested(currentHealth: 80, maxHealth: 100, currentMana: 50, maxMana: 60, goldRemaining: 0);
+
+        vm.OnAbilityUsed(abilityId: "fireball", remainingMana: 40, healthRestored: 0);
+
+        vm.CurrentHealth.Should().Be(80);
+    }
+
+    [Fact]
+    public void OnAbilityUsed_Should_Increase_CurrentHealth_For_Healing_Ability()
+    {
+        var vm = MakeVm();
+        vm.OnCharacterRested(currentHealth: 60, maxHealth: 100, currentMana: 50, maxMana: 60, goldRemaining: 0);
+
+        vm.OnAbilityUsed(abilityId: "minor_heal", remainingMana: 40, healthRestored: 25);
+
+        vm.CurrentHealth.Should().Be(85);
+    }
+
+    [Fact]
+    public void OnAbilityUsed_Should_Append_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnAbilityUsed(abilityId: "fireball", remainingMana: 30, healthRestored: 0);
+
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("fireball"));
+    }
 }

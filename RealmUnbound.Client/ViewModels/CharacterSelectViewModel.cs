@@ -28,6 +28,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _characterAlreadyActiveSub;
     private IDisposable? _attrAllocatedSub;
     private IDisposable? _characterRestedSub;
+    private IDisposable? _abilityUsedSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -170,6 +171,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _characterAlreadyActiveSub?.Dispose();
             _attrAllocatedSub?.Dispose();
             _characterRestedSub?.Dispose();
+            _abilityUsedSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -202,6 +204,9 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnCharacterRested(payload.CurrentHealth, payload.MaxHealth,
                     payload.CurrentMana, payload.MaxMana, payload.GoldRemaining));
 
+            _abilityUsedSub = _connection.On<AbilityUsedPayload>("AbilityUsed", payload =>
+                _gameVm.OnAbilityUsed(payload.AbilityId, payload.RemainingMana, payload.HealthRestored));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -220,6 +225,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record CharacterStatusPayload(Guid CharacterId, bool IsOnline);
     internal record AttributePointsAllocatedPayload(Guid CharacterId, int PointsSpent, int RemainingPoints, Dictionary<string, int> NewAttributes);
     internal record CharacterRestedPayload(Guid CharacterId, string LocationId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int GoldRemaining);
+    internal record AbilityUsedPayload(Guid CharacterId, string AbilityId, int ManaCost, int RemainingMana, int HealthRestored);
 
     private async Task DoCreateAsync()
     {

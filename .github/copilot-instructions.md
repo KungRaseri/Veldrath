@@ -6,7 +6,8 @@
 
 - [`.github/copilot-memory/engine-codebase.md`](.github/copilot-memory/engine-codebase.md) — key model facts, positional record constructors, known handler quirks, testing gotchas, known open P3/P4 items
 - [`.github/copilot-memory/json-migration-status.md`](.github/copilot-memory/json-migration-status.md) — migration history and completed work log
-- [`.github/copilot-memory/forge-foundry-sync.md`](.github/copilot-memory/forge-foundry-sync.md) — Forge ↔ Foundry content schema, server implementation notes, integration test gotchas
+- [`.github/copilot-memory/forge-foundry-sync.md`](.github/copilot-memory/forge-foundry-sync.md) — Forge ↔ Foundry content schema, Foundry endpoint notes, integration test gotchas
+- [`.github/copilot-memory/unbound-memory.md`](.github/copilot-memory/unbound-memory.md) — RealmUnbound Server + Client hub architecture, blob schema, P3/P4 status, session log
 - [`.github/copilot-memory/gap-analysis-process.md`](.github/copilot-memory/gap-analysis-process.md) — process template for gap analysis at session start
 
 These files are committed to the repo and shared across all machines. **Do not use `/memories/repo/` for codebase notes** — write new discoveries directly to the files above using the file editing tools so they travel with the repo via git.
