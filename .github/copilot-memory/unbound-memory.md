@@ -96,7 +96,32 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - `CraftItem` — needs server-side handler
 - `EnterDungeon` — static state gotcha: `EnterDungeonHandler._activeDungeons` is `private static Dictionary<string, DungeonInstance>`; use `ActiveDungeonScope` reflection helper in tests
 
-## Known Gotchas
+## DbContext Separation (established 2026-03-19 session-6)
+
+Three DbContexts share the same Postgres database but own distinct table sets:
+
+| Context | Namespace | Tables | Purpose |
+|---|---|---|---|
+| `ApplicationDbContext` | `RealmUnbound.Server.Data` | Identity (AspNet*), Characters, RefreshTokens, Zones, ZoneSessions, Foundry* | Server auth + operational |
+| `GameDbContext` | `RealmEngine.Data.Persistence` | SaveGames, HallOfFameEntries, InventoryRecords | Game-state entities (portable across clients) |
+| `ContentDbContext` | `RealmEngine.Data.Persistence` | Weapons, Armors, Skills, Spells, Abilities, Recipes, etc. | Read-only content catalog |
+
+**Rule**: game entities (saves, inventory, hall of fame) always go in `GameDbContext`, NOT in `ApplicationDbContext`. Server auth + operational rows go in `ApplicationDbContext`.
+
+`ServerSaveGameRepository` and `ServerHallOfFameRepository` inject `GameDbContext` (not `ApplicationDbContext`).
+
+Migrations for each context:
+- `ApplicationDbContext`: `RealmUnbound.Server/Migrations/` (original) + `Migrations/Application/` (newer)
+- `GameDbContext`: `RealmEngine.Data/Migrations/GameDb/`
+- `ContentDbContext`: `RealmEngine.Data/Migrations/`
+
+All three are migrated at startup in `Program.cs` with shared `allKnown` set to avoid `RepairStaleMigrationsAsync` false-positives.
+
+Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
+- `TestDbContextFactory` → `ApplicationDbContext` (SQLite) — used by Zone, Auth, Character, GameHub tests
+- `TestGameDbContextFactory` → `GameDbContext` (SQLite) — used by `ServerSaveGameRepositoryTests` + `ServerHallOfFameRepositoryTests`
+
+
 
 ### ActorClassDto (breaking change, session-3)
 - `ActorClassDto` ctor gained `HitDie` (int), `PrimaryStat` (string), `RarityWeight` (int)
@@ -135,3 +160,15 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - Added `SkillXpGained` subscription + `SkillXpGainedPayload` in `CharacterSelectViewModel`
 - Added 14 server tests (3 GetActiveCharacters + 11 AwardSkillXp) + 4 GameViewModel tests + 3 SettingsViewModelTests
 - Total: 281 client + 260 server = 541 passing
+
+### Session-6 (2026-03-19) — Docker startup fix
+- Root cause: `GameDbContext` was never registered in server DI; `EfCoreInventoryService` injected it → `AggregateException` at container build time
+- Architectural fix: removed `SaveGames`/`HallOfFameEntries` from `ApplicationDbContext` (they were added incorrectly in session-5)
+- Established DbContext separation rule (see section above)
+- `ServerSaveGameRepository` + `ServerHallOfFameRepository` now inject `GameDbContext`
+- Registered `GameDbContext` with Npgsql in `Program.cs`; threaded into migration startup block with `allKnown` union
+- New `ApplicationDbContext` migration: `RemoveGameEntitiesFromApplicationDbContext` (drops SaveGames/HallOfFameEntries)
+- `GameDbContext` already had Postgres migrations in `Migrations/GameDb/` (created earlier sessions)
+- Created `TestGameDbContextFactory` (SQLite `GameDbContext`) for server tests; updated `ServerRepositoryTests.cs`
+- 260 server tests passing; Docker server reaches Healthy status clean
+

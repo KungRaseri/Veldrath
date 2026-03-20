@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealmEngine.Data.Entities;
-using RealmEngine.Data.Persistence;
 using RealmUnbound.Server.Data.Entities;
-using HallOfFameEntry = RealmEngine.Shared.Models.HallOfFameEntry;
 
 namespace RealmUnbound.Server.Data;
 
@@ -28,10 +26,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<FoundrySubmission> FoundrySubmissions => Set<FoundrySubmission>();
     public DbSet<FoundryVote> FoundryVotes => Set<FoundryVote>();
     public DbSet<FoundryNotification> FoundryNotifications => Set<FoundryNotification>();
-
-    // Engine entities — stored in server DB so character saves survive reconnect.
-    public DbSet<SaveGameRecord> SaveGames => Set<SaveGameRecord>();
-    public DbSet<HallOfFameEntry> HallOfFameEntries => Set<HallOfFameEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -91,19 +85,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithMany()
              .HasForeignKey(s => s.CharacterId)
              .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        builder.Entity<SaveGameRecord>(e =>
-        {
-            e.HasKey(s => s.Id);
-            e.HasIndex(s => s.PlayerName);
-            e.Property(s => s.DataJson).HasColumnType("text");
-        });
-
-        builder.Entity<HallOfFameEntry>(e =>
-        {
-            e.HasKey(h => h.Id);
-            e.HasIndex(h => h.FameScore);
         });
 
         builder.Entity<FoundrySubmission>(e =>

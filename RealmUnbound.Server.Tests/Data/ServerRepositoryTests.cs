@@ -9,7 +9,7 @@ namespace RealmUnbound.Server.Tests.Data;
 
 public class ServerHallOfFameRepositoryTests : IDisposable
 {
-    private readonly TestDbContextFactory _factory = new();
+    private readonly TestGameDbContextFactory _factory = new();
 
     public ServerHallOfFameRepositoryTests()
     {
@@ -144,7 +144,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
 
 public class ServerSaveGameRepositoryTests : IDisposable
 {
-    private readonly TestDbContextFactory _factory = new();
+    private readonly TestGameDbContextFactory _factory = new();
 
     public void Dispose() => _factory.Dispose();
 

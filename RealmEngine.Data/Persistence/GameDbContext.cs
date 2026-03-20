@@ -4,8 +4,9 @@ using RealmEngine.Shared.Models;
 namespace RealmEngine.Data.Persistence;
 
 /// <summary>
-/// EF Core context for standalone / Godot local persistence (SQLite).
-/// Not used by RealmUnbound.Server — the server uses its own <c>ApplicationDbContext</c>.
+/// EF Core context for game-state entities: saves, hall of fame, and inventory records.
+/// Used by both standalone clients (SQLite) and <c>RealmUnbound.Server</c> (Postgres).
+/// Auth/Identity/server-operational tables live in <c>ApplicationDbContext</c>.
 /// </summary>
 public class GameDbContext : DbContext
 {

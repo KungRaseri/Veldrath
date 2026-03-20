@@ -70,6 +70,12 @@ try
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(connectionString));
 
+    // Game entities (saves, hall of fame, inventory) live in their own context
+    // so they can also be used by standalone clients (Avalonia, Godot) without
+    // pulling in ASP.NET Core Identity scaffolding.
+    builder.Services.AddDbContext<GameDbContext>(options =>
+        options.UseNpgsql(connectionString));
+
     // ── ASP.NET Core Identity ─────────────────────────────────────────────────
     builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
         {
@@ -263,6 +269,7 @@ try
     {
         var services = scope.ServiceProvider;
         var appDb = services.GetRequiredService<ApplicationDbContext>();
+        var gameDb = services.GetRequiredService<GameDbContext>();
 
         if (appDb.Database.ProviderName?.Contains("Npgsql") == true)
         {
@@ -276,10 +283,14 @@ try
                 .Concat(contentDb.Database.ProviderName?.Contains("Npgsql") == true
                     ? contentDb.Database.GetMigrations()
                     : [])
+                .Concat(gameDb.Database.GetMigrations())
                 .ToHashSet(StringComparer.Ordinal);
 
             await RepairStaleMigrationsAsync(appDb, app.Environment.IsDevelopment(), allKnown);
             await appDb.Database.MigrateAsync();
+
+            await RepairStaleMigrationsAsync(gameDb, app.Environment.IsDevelopment(), allKnown);
+            await gameDb.Database.MigrateAsync();
 
             if (contentDb.Database.ProviderName?.Contains("Npgsql") == true)
             {
