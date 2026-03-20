@@ -266,4 +266,78 @@ public class InMemoryStubRepositoryTests
         var repo = new InMemoryLootTableRepository();
         (await repo.GetByContextAsync("dungeon")).Should().BeEmpty();
     }
+
+    // ── InMemoryArmorRepository ───────────────────────────────────────────
+
+    [Fact]
+    public async Task ArmorRepository_GetAllAsync_ReturnsEmptyList()
+    {
+        var repo = new InMemoryArmorRepository();
+        (await repo.GetAllAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ArmorRepository_GetBySlugAsync_ReturnsNull()
+    {
+        var repo = new InMemoryArmorRepository();
+        (await repo.GetBySlugAsync("iron-plate")).Should().BeNull();
+    }
+
+    // ── InMemoryWeaponRepository ──────────────────────────────────────────
+
+    [Fact]
+    public async Task WeaponRepository_GetAllAsync_ReturnsEmptyList()
+    {
+        var repo = new InMemoryWeaponRepository();
+        (await repo.GetAllAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task WeaponRepository_GetBySlugAsync_ReturnsNull()
+    {
+        var repo = new InMemoryWeaponRepository();
+        (await repo.GetBySlugAsync("iron-sword")).Should().BeNull();
+    }
+
+    // ── InMemoryMaterialRepository ────────────────────────────────────────
+
+    [Fact]
+    public async Task MaterialRepository_GetAllAsync_ReturnsEmptyList()
+    {
+        var repo = new InMemoryMaterialRepository();
+        (await repo.GetAllAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MaterialRepository_GetByFamiliesAsync_ReturnsEmptyList()
+    {
+        var repo = new InMemoryMaterialRepository();
+        (await repo.GetByFamiliesAsync(["metal", "wood"])).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MaterialRepository_GetBySlugAsync_ReturnsNull()
+    {
+        var repo = new InMemoryMaterialRepository();
+        (await repo.GetBySlugAsync("iron-ingot")).Should().BeNull();
+    }
+
+    // ── InMemoryEquipmentSetRepository (hardcoded data) ───────────────────
+
+    [Fact]
+    public void EquipmentSetRepository_GetAllSets_ReturnsFiveSets()
+    {
+        var repo = new InMemoryEquipmentSetRepository();
+        repo.GetAllSets().Should().HaveCount(5);
+    }
+
+    [Fact]
+    public void EquipmentSetRepository_GetAllSets_ContainsExpectedSetNames()
+    {
+        var repo = new InMemoryEquipmentSetRepository();
+        var names = repo.GetAllSets().Select(s => s.Name).ToList();
+        names.Should().Contain("Dragonborn")
+             .And.Contain("Shadow Assassin")
+             .And.Contain("Arcane Scholar");
+    }
 }
