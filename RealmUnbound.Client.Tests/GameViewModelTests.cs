@@ -594,6 +594,36 @@ public class GameViewModelTests : TestBase
             msg.Contains("died") || msg.Contains("Dead") || msg.Contains("0"));
     }
 
+    // ── SeedInitialStats ────────────────────────────────────────────────────
+
+    [Fact]
+    public void SeedInitialStats_Should_Set_All_Properties()
+    {
+        var vm = MakeVm();
+        vm.SeedInitialStats(
+            level: 5, experience: 200L,
+            currentHealth: 80, maxHealth: 100,
+            currentMana: 40, maxMana: 50,
+            gold: 300, unspentAttributePoints: 3);
+
+        vm.Level.Should().Be(5);
+        vm.Experience.Should().Be(200L);
+        vm.CurrentHealth.Should().Be(80);
+        vm.MaxHealth.Should().Be(100);
+        vm.CurrentMana.Should().Be(40);
+        vm.MaxMana.Should().Be(50);
+        vm.Gold.Should().Be(300);
+        vm.UnspentAttributePoints.Should().Be(3);
+    }
+
+    [Fact]
+    public void SeedInitialStats_With_Zero_Values_Should_Not_Throw()
+    {
+        var vm = MakeVm();
+        var act = () => vm.SeedInitialStats(0, 0L, 0, 0, 0, 0, 0, 0);
+        act.Should().NotThrow();
+    }
+
     // ── GainExperienceCommand ───────────────────────────────────────────────────
 
     [Fact]

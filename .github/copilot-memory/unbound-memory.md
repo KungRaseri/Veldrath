@@ -34,7 +34,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
 | `TakeDamage` | `TakeDamageHubCommand` | 2026-03-20 session-10 |
 
-> **Note**: All 8 bridges above are server-side complete. `GainExperience` client-side wiring (Level/Experience props, command, callback, subscription) was added session-11. All 14 bridges are now fully wired end-to-end.
+> **Note**: All 8 bridges above are server-side complete. `GainExperience` client-side wiring (Level/Experience props, command, callback, subscription) was added session-11. All 8 bridges are fully wired end-to-end. `CharacterSelected` payload was extended in session-12 to include blob stats + Experience; client now calls `SeedInitialStats` on login.
 
 ## Character Attributes JSON Blob Schema
 
@@ -100,6 +100,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-9 (2026-03-20) | **288** | **292** | **580** |
 | Session-10 (2026-03-20) | **296** | **304** | **600** |
 | Session-11 (2026-03-20) | **304** | **304** | **608** |
+| Session-12 (2026-03-20) | **308** | **307** | **615** |
 
 ## P3 Stubs Status
 
@@ -145,6 +146,15 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - `ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source)` internal record in `CharacterSelectViewModel.cs`
 - `_experienceGainedSub` field + disposal + subscription added to `CharacterSelectViewModel.DoSelectAsync` — 14th subscription
 - Server broadcasts payload via `GainExperience` hub method; field names match result properties: `NewLevel`, `NewExperience`, `LeveledUp`, `LeveledUpTo`
+
+## CharacterSelected Payload Details (session-12)
+
+- `GameHub.SelectCharacter` now deserializes `Character.Attributes` blob before broadcasting
+- Broadcasting `CharacterSelected` includes: `Id, Name, ClassName, Level, Experience, CurrentZoneId, CurrentHealth, MaxHealth, CurrentMana, MaxMana, Gold, UnspentAttributePoints, SelectedAt`
+- Defaults when blob empty: `MaxHealth = Level * 10`, `MaxMana = Level * 5`, `CurrentHealth = MaxHealth`, `CurrentMana = MaxMana`, `Gold = 0`, `UnspentAttributePoints = 0`
+- Client: `CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, DateTimeOffset SelectedAt)` internal record in `CharacterSelectViewModel.cs`
+- Client subscription: `_characterSelectedSub` — 15th subscription total (14th active; `_characterStatusSub` declared but reserved for future online-status tracking)
+- All 8 seeded values go to `_gameVm.SeedInitialStats(...)` — eliminates zero-HUD on login
 
 ## Next Hub Bridge Candidates
 
@@ -237,4 +247,34 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 - KEY GOTCHA: `OnDisconnectedAsync` reads `AccountId` from `Context.Items` (set by `OnConnectedAsync`); tests that call `OnDisconnectedAsync` directly must pre-seed `ctx.Items["AccountId"] = accountId`
 - Also: `CreateHub` factory now accepts optional `IActiveCharacterTracker? tracker` param for P2 tests requiring pre-seeded trackers
 - Final: 281 client + 279 server = 560 total passing
+
+### Session-9 (2026-03-20) — AddGold bridge + DamageTaken prep
+- Implemented `AddGold` hub bridge: `AddGoldHubCommand` + handler + `GameHub.AddGold` + client `AddGoldCommand` + `OnGoldChanged`
+- Added `GoldChanged` subscription + `GoldChangedPayload` in `CharacterSelectViewModel`
+- Fixed P3 stub: `ItemEquipped` hub subscription missing from `CharacterSelectViewModel` — added `_itemEquippedSub` + `ItemEquippedPayload`
+- Added 8 server tests + 8 client tests
+- Total: 288 client + 292 server = 580 total passing
+
+### Session-10 (2026-03-20) — TakeDamage bridge
+- Implemented `TakeDamage` hub bridge: `TakeDamageHubCommand` + handler + `GameHub.TakeDamage` + client `TakeDamageCommand` + `OnDamageTaken`
+- Added `DamageTaken` subscription + `DamageTakenPayload` in `CharacterSelectViewModel`
+- Added `AvailableClasses_Should_Fall_Back_To_Builtins_When_Catalog_Empty` test (NotBeEmpty guard)
+- Added 8 server tests + 8 client tests
+- Total: 296 client + 304 server = 600 total passing
+
+### Session-11 (2026-03-20) — GainExperience client wiring
+- Added `GameViewModel.Level` (int) + `Experience` (long) reactive properties
+- Implemented `GainExperienceCommand : ReactiveCommand<(int Amount, string? Source), Unit>`
+- Implemented `OnExperienceGained(int newLevel, long newExperience, bool leveledUp, int? leveledUpTo)` — updates `Level`, `Experience`, `AppendLog`
+- Added `ExperienceGainedPayload` record + `_experienceGainedSub` field/disposal/subscription in `CharacterSelectViewModel`
+- 8 new tests (4 server + 4 client)
+- Total: 304 client + 304 server = 608 total passing
+
+### Session-12 (2026-03-20) — CharacterSelected payload + SeedInitialStats
+- Extended `GameHub.SelectCharacter`: deserializes `Attributes` blob, includes `Experience`, `CurrentHealth`, `MaxHealth`, `CurrentMana`, `MaxMana`, `Gold`, `UnspentAttributePoints` in `CharacterSelected` payload
+- Added `GameViewModel.SeedInitialStats(int level, long experience, int currentHealth, int maxHealth, int currentMana, int maxMana, int gold, int unspentAttributePoints)` — eliminates all-zero HUD on login
+- Added `CharacterSelectedPayload` internal record in `CharacterSelectViewModel.cs`
+- Added `_characterSelectedSub` field + disposal + `"CharacterSelected"` subscription in `DoSelectAsync` — 15th subscription total (14th active; `_characterStatusSub` declared but reserved)
+- Added 7 new tests: 3 server (CharacterSelected payload content including blob defaults) + 2 GameViewModel (SeedInitialStats) + 2 CharacterSelectViewModel (CharacterSelected subscription)
+- Total: 308 client + 307 server = 615 total passing
 
