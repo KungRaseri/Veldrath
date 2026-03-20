@@ -167,20 +167,6 @@ public class EfCoreBackgroundRepositoryTests
     }
 
     [Fact]
-    public async Task GetBackgroundByIdAsync_StripsPrefixedSlug()
-    {
-        await using var db = CreateDbContext();
-        db.Backgrounds.Add(MakeBackground("farmer", "constitution"));
-        await db.SaveChangesAsync();
-        var repo = new EfCoreBackgroundRepository(db, NullLogger<EfCoreBackgroundRepository>.Instance);
-
-        var result = await repo.GetBackgroundByIdAsync("backgrounds/constitution:farmer");
-
-        result.Should().NotBeNull();
-        result!.Slug.Should().Be("farmer");
-    }
-
-    [Fact]
     public async Task GetBackgroundsByAttributeAsync_FiltersOnTypeKey()
     {
         await using var db = CreateDbContext();
@@ -257,5 +243,271 @@ public class EfCoreRecipeRepositoryTests
         var result = await repo.GetByCraftingSkillAsync("alchemy");
 
         result.Should().HaveCount(2).And.OnlyContain(r => r.RequiredSkill == "alchemy");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreEquipmentSetRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static EquipmentSetEntry MakeSet(string slug, string? displayName = null) =>
+        new() { Slug = slug, DisplayName = displayName ?? slug, TypeKey = "equipment-set" };
+
+    [Fact]
+    public void GetAll_ReturnsAllRows()
+    {
+        using var db = CreateDbContext();
+        db.EquipmentSets.AddRange(MakeSet("shadow-set"), MakeSet("iron-set"));
+        db.SaveChanges();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        repo.GetAll().Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void GetById_FindsBySlug()
+    {
+        using var db = CreateDbContext();
+        db.EquipmentSets.Add(MakeSet("shadow-set", "Shadow Set"));
+        db.SaveChanges();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        var result = repo.GetById("shadow-set");
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Shadow Set");
+    }
+
+    [Fact]
+    public void GetById_FindsByGuidString()
+    {
+        using var db = CreateDbContext();
+        var entry = MakeSet("iron-set");
+        db.EquipmentSets.Add(entry);
+        db.SaveChanges();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        var result = repo.GetById(entry.Id.ToString());
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(entry.Id.ToString());
+    }
+
+    [Fact]
+    public void GetById_ReturnsNull_WhenNotFound()
+    {
+        using var db = CreateDbContext();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        repo.GetById("nonexistent").Should().BeNull();
+    }
+
+    [Fact]
+    public void GetByName_FindsByDisplayName()
+    {
+        using var db = CreateDbContext();
+        db.EquipmentSets.Add(MakeSet("forest-set", "Forest Set"));
+        db.SaveChanges();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        var result = repo.GetByName("Forest Set");
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Forest Set");
+    }
+
+    [Fact]
+    public void GetByName_FindsBySlug()
+    {
+        using var db = CreateDbContext();
+        db.EquipmentSets.Add(MakeSet("forest-set", "Forest Set"));
+        db.SaveChanges();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        var result = repo.GetByName("forest-set");
+
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GetByName_ReturnsNull_WhenNotFound()
+    {
+        using var db = CreateDbContext();
+        var repo = new EfCoreEquipmentSetRepository(db);
+
+        repo.GetByName("nonexistent").Should().BeNull();
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreCharacterClassRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static ActorClass MakeClass(string slug, string typeKey = "fighters", string? displayName = null, bool active = true) =>
+        new() { Slug = slug, TypeKey = typeKey, DisplayName = displayName ?? slug, IsActive = active, PrimaryStat = "strength" };
+
+    [Fact]
+    public void GetAll_ReturnsOnlyActiveClasses()
+    {
+        using var db = CreateDbContext();
+        db.ActorClasses.AddRange(MakeClass("warrior"), MakeClass("hidden", active: false));
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        repo.GetAll().Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void GetBaseClasses_ReturnsAll_BecauseIsSubclassIsAlwaysFalse()
+    {
+        using var db = CreateDbContext();
+        db.ActorClasses.AddRange(MakeClass("warrior"), MakeClass("mage", "casters"));
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        // MapToModel hardcodes IsSubclass = false, so all mapped classes are base classes
+        repo.GetBaseClasses().Should().HaveCount(2);
+        repo.GetSubclasses().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetClassesByType_FiltersById_WithTypeKeyPrefix()
+    {
+        using var db = CreateDbContext();
+        db.ActorClasses.AddRange(
+            MakeClass("warrior", "fighters", "Warrior"),
+            MakeClass("mage", "casters", "Mage"));
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        // GetAll() maps Id = "{typeKey}:{displayName}" so filtering by typeKey prefix works
+        var result = repo.GetClassesByType("fighters");
+
+        result.Should().HaveCount(1).And.Contain(c => c.Slug == "warrior");
+    }
+
+    [Fact]
+    public void GetByName_FindsByDisplayName_CaseInsensitive()
+    {
+        using var db = CreateDbContext();
+        db.ActorClasses.Add(MakeClass("warrior", "fighters", "Warrior"));
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        var result = repo.GetByName("WARRIOR");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("warrior");
+    }
+
+    [Fact]
+    public void GetByName_ReturnsNull_WhenNotFound()
+    {
+        using var db = CreateDbContext();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        repo.GetByName("nonexistent").Should().BeNull();
+    }
+
+    [Fact]
+    public void GetById_FindsByCompositeId()
+    {
+        using var db = CreateDbContext();
+        db.ActorClasses.Add(MakeClass("warrior", "fighters", "Warrior"));
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        var result = repo.GetById("fighters:Warrior");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("warrior");
+    }
+
+    [Fact]
+    public void GetById_FallsBackToDisplayName_WhenIdNotFound()
+    {
+        using var db = CreateDbContext();
+        db.ActorClasses.Add(MakeClass("warrior", "fighters", "Warrior"));
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        // Passing the display name directly uses the GetByName fallback
+        var result = repo.GetById("Warrior");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("warrior");
+    }
+}
+
+[Trait("Category", "Repository")]
+public class EfCoreSpeciesRepositoryTests
+{
+    private static ContentDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static RealmEngine.Data.Entities.Species MakeSpecies(string slug, string typeKey = "humanoid", bool active = true) =>
+        new() { Slug = slug, TypeKey = typeKey, DisplayName = slug, IsActive = active };
+
+    [Fact]
+    public async Task GetAllSpeciesAsync_ReturnsOnlyActive()
+    {
+        await using var db = CreateDbContext();
+        db.Species.AddRange(MakeSpecies("human"), MakeSpecies("hidden", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpeciesRepository(db, NullLogger<EfCoreSpeciesRepository>.Instance);
+
+        (await repo.GetAllSpeciesAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetSpeciesBySlugAsync_ReturnsMappedModel()
+    {
+        await using var db = CreateDbContext();
+        db.Species.Add(MakeSpecies("elf", "humanoid"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpeciesRepository(db, NullLogger<EfCoreSpeciesRepository>.Instance);
+
+        var result = await repo.GetSpeciesBySlugAsync("elf");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("elf");
+        result.TypeKey.Should().Be("humanoid");
+    }
+
+    [Fact]
+    public async Task GetSpeciesBySlugAsync_ReturnsNull_WhenInactive()
+    {
+        await using var db = CreateDbContext();
+        db.Species.Add(MakeSpecies("ghost", active: false));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpeciesRepository(db, NullLogger<EfCoreSpeciesRepository>.Instance);
+
+        (await repo.GetSpeciesBySlugAsync("ghost")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetSpeciesByTypeAsync_FiltersOnTypeKey()
+    {
+        await using var db = CreateDbContext();
+        db.Species.AddRange(
+            MakeSpecies("human", "humanoid"),
+            MakeSpecies("wolf",  "beast"),
+            MakeSpecies("elf",   "humanoid"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreSpeciesRepository(db, NullLogger<EfCoreSpeciesRepository>.Instance);
+
+        var result = await repo.GetSpeciesByTypeAsync("humanoid");
+
+        result.Should().HaveCount(2).And.OnlyContain(s => s.TypeKey == "humanoid");
     }
 }

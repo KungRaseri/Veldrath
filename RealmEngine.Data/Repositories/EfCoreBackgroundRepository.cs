@@ -27,14 +27,9 @@ public class EfCoreBackgroundRepository(ContentDbContext db, ILogger<EfCoreBackg
     /// <inheritdoc />
     public async Task<Background?> GetBackgroundByIdAsync(string backgroundId)
     {
-        // Support both "backgrounds/strength:soldier" format and bare slugs
-        var slug = backgroundId.Contains(':')
-            ? backgroundId.Split(':').Last()
-            : backgroundId;
-
         var entity = await db.Backgrounds
             .AsNoTracking()
-            .Where(b => b.IsActive && b.Slug == slug)
+            .Where(b => b.IsActive && b.Slug == backgroundId)
             .FirstOrDefaultAsync();
 
         return entity is null ? null : MapToModel(entity);

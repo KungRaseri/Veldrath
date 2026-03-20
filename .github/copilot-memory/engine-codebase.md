@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-9)
-- RealmEngine.Core.Tests: 1,283 passing
-- RealmEngine.Shared.Tests: 690 passing
-- RealmEngine.Data.Tests: 119 passing
+## Test Counts (as of 2026-03-20, session-13)
+- RealmEngine.Core.Tests: **1,729 passing** (+4 from session-13: EfCoreNamePatternRepository tests)
+- RealmEngine.Shared.Tests: **778 passing**
+- RealmEngine.Data.Tests: **136 passing** (+17 from session-13: EquipmentSet, CharacterClass, Species tests)
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
 - RealmUnbound.Server.Tests: **292 passing** (+13 from session-9)
 
@@ -104,3 +104,32 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - So `LoadAsync` replaces `AvailableClasses` before the test's first assertion if a non-empty `FakeContentService` is used
 - Test for fallback list: pass `new FakeContentService { Classes = [] }` + `await Task.Delay(50)` to let fire-and-forget complete
 - Test for catalog-populated list: pass classes with `Task.Delay(50)` wait
+
+### ISpeciesRepository (added session-13)
+- `ISpeciesRepository` interface in `RealmEngine.Shared/Abstractions/`
+- `EfCoreSpeciesRepository` in `RealmEngine.Data/Repositories/`
+- `RealmEngine.Shared/Models/Species.cs` shared model (Slug, DisplayName, TypeKey, RarityWeight)
+- Registered in `RealmUnbound.Server/Program.cs` as `AddScoped<ISpeciesRepository, EfCoreSpeciesRepository>()`
+- DTO: `SpeciesDto` in `RealmUnbound.Contracts` — browse-list projection only (no stats/traits)
+
+### EfCoreBackgroundRepository Legacy Cleanup (session-13)
+- Removed dead-code `:` split in `GetBackgroundByIdAsync` — now queries directly by bare slug
+- Removed `GetBackgroundByIdAsync_StripsPrefixedSlug` test (was testing dead code)
+
+### CharacterContracts.cs XML Docs (session-13)
+- Added full XML `<summary>` + `<param>` docs to `CreateCharacterRequest` and `CharacterDto`
+- `ClassName` param doc states: stores the class display name (e.g. "Warrior", "Mage")
+
+### EfCoreEquipmentSetRepository Tests (session-13)
+- All 3 public methods tested (synchronous — no async): `GetAll`, `GetById`, `GetByName`
+- No logger constructor arg — just `new EfCoreEquipmentSetRepository(db)`
+
+### EfCoreCharacterClassRepository Notes
+- `MapToModel` hardcodes `IsSubclass = false` and `ParentClassId = null` for all rows
+- `GetClassesByType(classType)` filters by `Id.StartsWith("{classType}:")` — Id format = `"{typeKey}:{displayName}"`
+- Uses sync-over-async pattern with `SemaphoreSlim` cache — test each method on a fresh `ContentDbContext` (separate `CreateDbContext()` call) to avoid cache bleed between tests
+- Implements `IDisposable` — call `repo.Dispose()` in tests if creating multiple repos on same db
+
+### EfCoreNamePatternRepository Location
+- Lives in `RealmEngine.Core/Repositories/` (NOT in `RealmEngine.Data/Repositories/`)
+- Tests in `RealmEngine.Core.Tests/Repositories/EfCoreNamePatternRepositoryTests.cs`
