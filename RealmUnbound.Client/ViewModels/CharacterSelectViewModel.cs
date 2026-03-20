@@ -31,6 +31,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _characterRestedSub;
     private IDisposable? _abilityUsedSub;
     private IDisposable? _skillXpGainedSub;
+    private IDisposable? _itemEquippedSub;
+    private IDisposable? _goldChangedSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -182,6 +184,8 @@ public class CharacterSelectViewModel : ViewModelBase
             _characterRestedSub?.Dispose();
             _abilityUsedSub?.Dispose();
             _skillXpGainedSub?.Dispose();
+            _itemEquippedSub?.Dispose();
+            _goldChangedSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -220,6 +224,12 @@ public class CharacterSelectViewModel : ViewModelBase
             _skillXpGainedSub = _connection.On<SkillXpGainedPayload>("SkillXpGained", payload =>
                 _gameVm.OnSkillXpGained(payload.SkillId, payload.TotalXp, payload.CurrentRank, payload.RankedUp));
 
+            _itemEquippedSub = _connection.On<ItemEquippedPayload>("ItemEquipped", payload =>
+                _gameVm.OnItemEquipped(payload.Slot, payload.ItemRef));
+
+            _goldChangedSub = _connection.On<GoldChangedPayload>("GoldChanged", payload =>
+                _gameVm.OnGoldChanged(payload.GoldAdded, payload.NewGoldTotal));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -240,6 +250,8 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record CharacterRestedPayload(Guid CharacterId, string LocationId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int GoldRemaining);
     internal record AbilityUsedPayload(Guid CharacterId, string AbilityId, int ManaCost, int RemainingMana, int HealthRestored);
     internal record SkillXpGainedPayload(Guid CharacterId, string SkillId, int TotalXp, int CurrentRank, bool RankedUp);
+    internal record ItemEquippedPayload(Guid CharacterId, string Slot, string? ItemRef, Dictionary<string, string> AllEquippedItems);
+    internal record GoldChangedPayload(Guid CharacterId, int GoldAdded, int NewGoldTotal, string? Source);
 
     private async Task DoCreateAsync()
     {

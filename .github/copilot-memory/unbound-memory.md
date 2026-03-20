@@ -31,12 +31,13 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | `UseAbility` | `UseAbilityHubCommand` | 2026-03-19 session-4 |
 | `AwardSkillXp` | `AwardSkillXpHubCommand` | 2026-03-19 session-5 |
 | `EquipItem` | `EquipItemHubCommand` | 2026-03-20 session-8 |
+| `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
 
 ## Character Attributes JSON Blob Schema
 
 - `UnspentAttributePoints`: int — spent via `AllocateAttributePoints`
 - `Strength`, `Dexterity`, etc.: int — core stats
-- `Gold`: int — currency; deducted by `RestAtLocation` (default cost: 10)
+- `Gold`: int — currency; deducted by `RestAtLocation` (default cost: 10); modified directly by `AddGold`
 - `CurrentHealth`, `MaxHealth`: int — restored to max by `RestAtLocation`
 - `CurrentMana`, `MaxMana`: int — restored to max by `RestAtLocation`
 - Defaults when absent: `MaxHealth = Level * 10`, `MaxMana = Level * 5`
@@ -55,6 +56,16 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - Hub method uses `EquipItemHubRequest(string Slot, string? ItemRef)` DTO in `RealmUnbound.Server.Hubs` namespace
 - Client sends: `SendCommandAsync<object>("EquipItem", new { Slot = slot, ItemRef = itemRef })`
 - Client callback: `GameViewModel.OnItemEquipped(string slot, string? itemRef)` → AppendLog
+
+## AddGold Handler Details (session-9)
+
+- Blob key: `Gold` (same key used by `RestAtLocationHubCommandHandler.KeyGold`)
+- `Amount` can be positive (add) or negative (spend); zero is rejected
+- Over-spend guard: if `-Amount > currentGold`, fails with "Not enough gold" message
+- Broadcasts `GoldChanged` payload: `{ CharacterId, GoldAdded, NewGoldTotal, Source }`
+- `GoldChangedPayload` internal record lives in `CharacterSelectViewModel.cs`
+- Client callback: `GameViewModel.OnGoldChanged(int goldAdded, int newGoldTotal)` → updates `Gold` property + AppendLog
+- Hub sends: `SendCommandAsync<object>("AddGold", new { Amount, Source })`
 
 ## UseAbility Handler Details (session-4)
 
@@ -83,12 +94,14 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-4 (2026-03-19) | 274 | 246 | 520 |
 | Session-5 (2026-03-19) | **281** | **260** | **541** |
 | Session-8 (2026-03-20) | **281** | **279** | **560** |
+| Session-9 (2026-03-20) | **288** | **292** | **580** |
 
 ## P3 Stubs Status
 
 1. ~~`MainMenuViewModel.SettingsCommand`~~ — FIXED session-3: navigates to `SettingsViewModel`
 2. ~~`CharacterSelectViewModel.ServerUrl`~~ — FIXED session-5: delegates to `ClientSettings` singleton (injected)
 3. ~~`SettingsViewModel` placeholder~~ — FIXED session-5: has real `ServerUrl` property + `ClientSettings` injection
+4. ~~`ItemEquipped` hub subscription missing from `CharacterSelectViewModel`~~ — FIXED session-9: added `_itemEquippedSub` field, disposal, subscription, and `ItemEquippedPayload` record
 
 ## P4 XML Doc Gaps
 

@@ -118,6 +118,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Equip or unequip an item in a named slot. Tuple: (slot, itemRef) — pass <see langword="null"/> itemRef to unequip.</summary>
     public ReactiveCommand<(string Slot, string? ItemRef), Unit> EquipItemCommand { get; }
 
+    /// <summary>Add or remove gold from the active character. Tuple: (amount, source) — pass a negative amount to spend.</summary>
+    public ReactiveCommand<(int Amount, string? Source), Unit> AddGoldCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -137,6 +140,7 @@ public class GameViewModel : ViewModelBase
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
         EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
+        AddGoldCommand   = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -224,6 +228,15 @@ public class GameViewModel : ViewModelBase
             : $"Unequipped {slot} slot.");
     }
 
+    /// <summary>Called from hub when the active character's gold total has changed.</summary>
+    public void OnGoldChanged(int goldAdded, int newGoldTotal)
+    {
+        Gold = newGoldTotal;
+        AppendLog(goldAdded >= 0
+            ? $"Gained {goldAdded} gold. Total: {newGoldTotal}"
+            : $"Spent {-goldAdded} gold. Total: {newGoldTotal}");
+    }
+
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
@@ -289,6 +302,18 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Equip failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoAddGoldAsync(int amount, string? source)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("AddGold", new { Amount = amount, Source = source });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Gold transaction failed: {ex.Message}");
         }
     }
 
