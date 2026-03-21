@@ -1,6 +1,8 @@
 using ReactiveUI;
 using System.Reactive.Linq;
 using System.Windows.Input;
+using RealmUnbound.Assets;
+using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
 
 namespace RealmUnbound.Client.ViewModels;
@@ -31,7 +33,7 @@ public class MainMenuViewModel : ViewModelBase
     public ICommand SettingsCommand { get; }
     public ICommand ExitCommand { get; }
 
-    public MainMenuViewModel(INavigationService navigation, TokenStore tokenStore, IAuthService auth, Action? exit = null)
+    public MainMenuViewModel(INavigationService navigation, TokenStore tokenStore, IAuthService auth, Action? exit = null, IAssetStore? assetStore = null, IAudioPlayer? audioPlayer = null)
     {
         var doExit = exit ?? (() => System.Environment.Exit(0));
 
@@ -50,5 +52,12 @@ public class MainMenuViewModel : ViewModelBase
         });
         SettingsCommand = ReactiveCommand.Create(() => navigation.NavigateTo<SettingsViewModel>());
         ExitCommand     = ReactiveCommand.Create(doExit);
+
+        if (assetStore is not null && audioPlayer is not null)
+        {
+            var townMusicPath = assetStore.ResolveAudioPath(AudioAssets.MusicTown);
+            if (townMusicPath is not null)
+                _ = audioPlayer.PlayMusicAsync(townMusicPath);
+        }
     }
 }

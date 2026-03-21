@@ -9,6 +9,9 @@
              x:DataType="vm:MainMenuViewModel">
 
     <Grid RowDefinitions="*,Auto,*">
+        <Grid.Background>
+            <ImageBrush Source="{DynamicResource UiBg1}" Stretch="UniformToFill" Opacity="0.4" />
+        </Grid.Background>
 
         <!-- Title block -->
         <StackPanel Grid.Row="1"

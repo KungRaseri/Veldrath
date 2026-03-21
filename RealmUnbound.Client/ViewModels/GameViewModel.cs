@@ -1,6 +1,9 @@
+using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
+using RealmUnbound.Assets;
+using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
 
 namespace RealmUnbound.Client.ViewModels;
@@ -12,6 +15,8 @@ public class GameViewModel : ViewModelBase
     private readonly IZoneService _zoneService;
     private readonly TokenStore _tokens;
     private readonly INavigationService _navigation;
+    private readonly IAssetStore? _assetStore;
+    private readonly IAudioPlayer? _audioPlayer;
 
     // ── Zone state ────────────────────────────────────────────────────────────
     private string _zoneName = string.Empty;
@@ -173,6 +178,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Scrolling action log (last 100 entries).</summary>
     public ObservableCollection<string> ActionLog { get; } = [];
 
+    /// <summary>The eight equipment slots for the active character.</summary>
+    public IReadOnlyList<EquipmentSlotViewModel> EquipmentSlots { get; }
+
     /// <summary>Toggles the collapsible left stats/log panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
 
@@ -223,14 +231,33 @@ public class GameViewModel : ViewModelBase
         IServerConnectionService connection,
         IZoneService zoneService,
         TokenStore tokens,
-        INavigationService navigation)
+        INavigationService navigation,
+        IAssetStore? assetStore = null,
+        IAudioPlayer? audioPlayer = null)
     {
         _connection = connection;
         _zoneService = zoneService;
         _tokens = tokens;
         _navigation = navigation;
+        _assetStore = assetStore;
+        _audioPlayer = audioPlayer;
 
         CharacterName = tokens.Username ?? "Adventurer";
+
+        EquipmentSlots =
+        [
+            new("MainHand", "Main Hand"),
+            new("OffHand",  "Off Hand"),
+            new("Head",     "Head"),
+            new("Chest",    "Chest"),
+            new("Legs",     "Legs"),
+            new("Feet",     "Feet"),
+            new("Ring",     "Ring"),
+            new("Amulet",   "Amulet"),
+        ];
+        if (assetStore is not null)
+            _ = LoadEquipmentIconsAsync(assetStore);
+
         ToggleLeftPanelCommand = ReactiveCommand.Create(() => { IsLeftPanelOpen = !IsLeftPanelOpen; });
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
         DevGainXpCommand    = ReactiveCommand.CreateFromTask(() => DoGainExperienceAsync(100, "dev"));
@@ -262,6 +289,15 @@ public class GameViewModel : ViewModelBase
             ZoneType        = zone.Type;
             HasInn          = zone.HasInn;
             HasMerchant     = zone.HasMerchant;
+        }
+
+        if (_assetStore is not null && _audioPlayer is not null)
+        {
+            var musicPath = ZoneType.Equals("Dungeon", StringComparison.OrdinalIgnoreCase)
+                ? _assetStore.ResolveAudioPath(AudioAssets.MusicDungeon)
+                : _assetStore.ResolveAudioPath(AudioAssets.MusicExplore);
+            if (musicPath is not null)
+                await _audioPlayer.PlayMusicAsync(musicPath);
         }
 
         AppendLog($"Welcome to {ZoneName}, {CharacterName}!");
@@ -329,8 +365,16 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Called from hub when an item is equipped or unequipped in a slot.</summary>
-    public void OnItemEquipped(string slot, string? itemRef)
+    public void OnItemEquipped(string slot, string? itemRef, IReadOnlyDictionary<string, string>? allEquippedItems = null)
     {
+        if (allEquippedItems is not null)
+        {
+            foreach (var equipSlot in EquipmentSlots)
+            {
+                allEquippedItems.TryGetValue(equipSlot.SlotName, out var currentRef);
+                equipSlot.ItemRef = currentRef;
+            }
+        }
         AppendLog(itemRef is not null
             ? $"Equipped '{itemRef}' in {slot} slot."
             : $"Unequipped {slot} slot.");
@@ -349,6 +393,12 @@ public class GameViewModel : ViewModelBase
     public void OnDamageTaken(int damageAmount, int currentHealth, int maxHealth, bool isDead)
     {
         CurrentHealth = currentHealth;
+        if (_assetStore is not null && _audioPlayer is not null)
+        {
+            var sfxPath = _assetStore.ResolveAudioPath(AudioAssets.ImpactMetalHeavy1);
+            if (sfxPath is not null)
+                _audioPlayer.PlaySfx(sfxPath);
+        }
         AppendLog(isDead
             ? $"Took {damageAmount} damage and died. HP: 0/{maxHealth}"
             : $"Took {damageAmount} damage. HP: {currentHealth}/{maxHealth}");
@@ -535,5 +585,26 @@ public class GameViewModel : ViewModelBase
         ActionLog.Add($"[{DateTime.Now:HH:mm}] {message}");
         while (ActionLog.Count > 100)
             ActionLog.RemoveAt(0);
+    }
+
+    private async Task LoadEquipmentIconsAsync(IAssetStore assetStore)
+    {
+        var weaponBytes = await assetStore.LoadImageAsync(ItemAssets.Weapon01);
+        var armorBytes  = await assetStore.LoadImageAsync(ItemAssets.Armor01);
+        var potionBytes = await assetStore.LoadImageAsync(ItemAssets.Potion01);
+        Bitmap? weaponIcon = weaponBytes is null ? null : new Bitmap(new MemoryStream(weaponBytes));
+        Bitmap? armorIcon  = armorBytes  is null ? null : new Bitmap(new MemoryStream(armorBytes));
+        Bitmap? potionIcon = potionBytes is null ? null : new Bitmap(new MemoryStream(potionBytes));
+        foreach (var slot in EquipmentSlots)
+        {
+            Bitmap? icon;
+            if (slot.SlotName is "MainHand" or "OffHand")
+                icon = weaponIcon;
+            else if (slot.SlotName is "Ring" or "Amulet")
+                icon = potionIcon;
+            else
+                icon = armorIcon;
+            slot.Icon = icon;
+        }
     }
 }

@@ -1,6 +1,9 @@
+using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
+using RealmUnbound.Assets;
+using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Contracts.Characters;
 
@@ -14,11 +17,13 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly GameViewModel _gameVm;
     private readonly ContentCache _contentCache;
     private readonly ClientSettings _settings;
+    private readonly IAssetStore? _assetStore;
 
     private bool _isCreating;
     private string _newCharacterName = string.Empty;
     private string _selectedClass = string.Empty;
     private IReadOnlyList<string> _availableClasses = ["Warrior"];
+    private Bitmap? _selectedClassIcon;
 
     // Hub subscriptions — stored so they can be disposed before re-subscribing on retry
     private IDisposable? _zoneEnteredSub;
@@ -71,6 +76,13 @@ public class CharacterSelectViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _availableClasses, value);
     }
 
+    /// <summary>Class badge icon for the currently selected class in the create form, or <see langword="null"/> when no class is selected or assets are unavailable.</summary>
+    public Bitmap? SelectedClassIcon
+    {
+        get => _selectedClassIcon;
+        private set => this.RaiseAndSetIfChanged(ref _selectedClassIcon, value);
+    }
+
     /// <summary>Drives the top bar title — changes when switching between list and create panels.</summary>
     public string PanelTitle => IsCreating ? "New Character" : "Select Your Character";
 
@@ -96,7 +108,8 @@ public class CharacterSelectViewModel : ViewModelBase
         GameViewModel gameVm,
         IAuthService auth,
         ContentCache contentCache,
-        ClientSettings settings)
+        ClientSettings settings,
+        IAssetStore? assetStore = null)
     {
         _characters = characters;
         _connection = connection;
@@ -104,6 +117,11 @@ public class CharacterSelectViewModel : ViewModelBase
         _gameVm = gameVm;
         _contentCache = contentCache;
         _settings = settings;
+        _assetStore = assetStore;
+
+        if (assetStore is not null)
+            this.WhenAnyValue(x => x.SelectedClass)
+                .Subscribe(cls => _ = LoadSelectedClassIconAsync(cls));
 
         var canCreate = this.WhenAnyValue(
             x => x.NewCharacterName, x => x.IsBusy, x => x.SelectedClass,
@@ -153,17 +171,13 @@ public class CharacterSelectViewModel : ViewModelBase
             catch { /* keep hardcoded fallback */ }
 
             var list = await _characters.GetCharactersAsync();
-            Characters.Clear();
-            foreach (var c in list.OrderBy(x => x.SlotIndex))
-                Characters.Add(new CharacterEntryViewModel(c));
+            PopulateCharacters(list);
         }
         catch
         {
             // Hub unavailable during load is non-fatal — characters still load via HTTP
             var list = await _characters.GetCharactersAsync();
-            Characters.Clear();
-            foreach (var c in list.OrderBy(x => x.SlotIndex))
-                Characters.Add(new CharacterEntryViewModel(c));
+            PopulateCharacters(list);
         }
         finally { IsBusy = false; }
     }
@@ -235,7 +249,7 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnSkillXpGained(payload.SkillId, payload.TotalXp, payload.CurrentRank, payload.RankedUp));
 
             _itemEquippedSub = _connection.On<ItemEquippedPayload>("ItemEquipped", payload =>
-                _gameVm.OnItemEquipped(payload.Slot, payload.ItemRef));
+                _gameVm.OnItemEquipped(payload.Slot, payload.ItemRef, payload.AllEquippedItems));
 
             _goldChangedSub = _connection.On<GoldChangedPayload>("GoldChanged", payload =>
                 _gameVm.OnGoldChanged(payload.GoldAdded, payload.NewGoldTotal));
@@ -286,6 +300,36 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, DateTimeOffset SelectedAt);
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
+
+    private void PopulateCharacters(IEnumerable<CharacterDto> characters)
+    {
+        var entries = characters.OrderBy(x => x.SlotIndex).Select(c => new CharacterEntryViewModel(c)).ToList();
+        Characters.Clear();
+        foreach (var entry in entries)
+            Characters.Add(entry);
+        if (_assetStore is not null)
+            _ = LoadEntryIconsAsync(entries);
+    }
+
+    private async Task LoadEntryIconsAsync(IReadOnlyList<CharacterEntryViewModel> entries)
+    {
+        foreach (var entry in entries)
+        {
+            var path = ClassAssets.GetPath(entry.Character.ClassName);
+            if (path is null) continue;
+            var bytes = await _assetStore!.LoadImageAsync(path);
+            if (bytes is not null)
+                entry.ClassIcon = new Bitmap(new MemoryStream(bytes));
+        }
+    }
+
+    private async Task LoadSelectedClassIconAsync(string className)
+    {
+        var path = ClassAssets.GetPath(className);
+        if (path is null) { SelectedClassIcon = null; return; }
+        var bytes = await _assetStore!.LoadImageAsync(path);
+        SelectedClassIcon = bytes is null ? null : new Bitmap(new MemoryStream(bytes));
+    }
 
     private async Task DoCreateAsync()
     {

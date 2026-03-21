@@ -2,11 +2,14 @@ using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using RealmUnbound.Assets;
+using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Client.Views;
@@ -73,7 +76,32 @@ public partial class App : Application
             };
         }
 
+        _ = LoadUiChromeAsync();
+
+        // Pre-warm IAudioPlayer on a background thread so VLC native libs are loaded
+        // before the first navigation event (avoids a visible freeze on the UI thread).
+        _ = Task.Run(() => Services.GetRequiredService<IAudioPlayer>());
+
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private async Task LoadUiChromeAsync()
+    {
+        var assetStore = Services.GetRequiredService<IAssetStore>();
+        (string Key, string Path)[] items =
+        [
+            ("UiBg1",   UiAssets.Background1),
+            ("UiBg2",   UiAssets.Background2),
+            ("UiBoard", UiAssets.Board),
+            ("UiTitle", UiAssets.Title),
+        ];
+        foreach (var (key, path) in items)
+        {
+            var bytes = await assetStore.LoadImageAsync(path);
+            if (bytes is null) continue;
+            var bmp = new Bitmap(new MemoryStream(bytes));
+            await Dispatcher.UIThread.InvokeAsync(() => Resources[key] = bmp);
+        }
     }
 
     private static void ConfigureServices(IServiceCollection services, IConfiguration configuration, string serverBaseUrl)
@@ -109,6 +137,13 @@ public partial class App : Application
 
         // Game asset store — warms the IMemoryCache during the splash screen
         services.AddRealmUnboundAssets();
+
+        // Audio player — falls back to no-op if the native VLC library is unavailable
+        services.AddSingleton<IAudioPlayer>(_ =>
+        {
+            try { return new LibVlcAudioPlayer(); }
+            catch { return new NullAudioPlayer(); }
+        });
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();

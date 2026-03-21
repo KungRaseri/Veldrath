@@ -65,7 +65,11 @@
     <PackageVersion Include="Serilog.Sinks.Debug"                               Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File"                                Version="7.0.0" />
   </ItemGroup>
-
+  <!-- ── Audio ─────────────────────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageVersion Include="LibVLCSharp"                                       Version="3.9.0" />
+    <PackageVersion Include="VideoLAN.LibVLC.Windows"                           Version="3.0.21" />
+  </ItemGroup>
   <!-- ── Avalonia ─────────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Avalonia"                                          Version="11.2.3" />
