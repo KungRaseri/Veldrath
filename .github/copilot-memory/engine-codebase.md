@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-19)
-- RealmEngine.Core.Tests: **1,738 passing**
+## Test Counts (as of session-20)
+- RealmEngine.Core.Tests: **1,847 passing** (+109 from session-20: 11 catalog query handlers + 6 Goal-3 handlers)
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **203 passing**
+- RealmEngine.Data.Tests: **227 passing** (+24 from session-20: 6 Goal-3 repo test classes)
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
 - RealmUnbound.Server.Tests: **362 passing** (+12 from session-19: ContentEquipmentEndpointTests — weapons, armors, materials)
 
@@ -78,6 +78,45 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `GET /api/content/materials`, `/api/content/materials/{slug}` — backed by `IMaterialRepository`
 - All 6 routes are anonymous (no auth required)
 - `ContentEquipmentEndpointTests.cs` — 12 integration tests in `RealmUnbound.Server.Tests/Features/`
+
+### Goal-3 New Content Types (session-20)
+
+**Shared models added** (`RealmEngine.Shared/Models/`):
+- `OrganizationEntry(Slug, DisplayName, TypeKey, OrgType, RarityWeight)`
+- `WorldLocationEntry(Slug, DisplayName, TypeKey, LocationType, RarityWeight, int? MinLevel, int? MaxLevel)`
+- `DialogueEntry(Slug, DisplayName, TypeKey, string? Speaker, RarityWeight, List<string> Lines)`
+- `ActorInstanceEntry(Slug, DisplayName, TypeKey, Guid ArchetypeId, int? LevelOverride, string? FactionOverride, RarityWeight)`
+- `MaterialPropertyEntry(Slug, DisplayName, TypeKey, string MaterialFamily, float CostScale, RarityWeight)`
+- `TraitDefinitionEntry(string Key, string ValueType, string? Description, string? AppliesTo)` — NOT a ContentBase model, no `IsActive`, no `Slug`
+
+**Interfaces** in `RealmEngine.Shared/Abstractions/` and **EfCore repos** in `RealmEngine.Data/Repositories/` added for all 6.
+
+**TraitDefinition special case**:
+- Entity has no `IsActive` — `GetAllAsync()` has no `Where(IsActive)` predicate
+- Identifier is `Key` (not `Slug`) — `GetByKeyAsync(key)` not `GetBySlugAsync`
+- `GetByAppliesToAsync(entityType)` returns rows where `AppliesTo == "*"` OR `AppliesTo.Contains(entityType)` — both wildcards AND partial matches
+
+**Server routes** (all in `ContentEndpoints.cs`):
+- `GET /api/content/organizations[?orgType=]`, `/api/content/organizations/{slug}`
+- `GET /api/content/world-locations[?locationType=]`, `/api/content/world-locations/{slug}`
+- `GET /api/content/dialogues[?speaker=]`, `/api/content/dialogues/{slug}`
+- `GET /api/content/actor-instances[?typeKey=]`, `/api/content/actor-instances/{slug}`
+- `GET /api/content/material-properties[?family=]`, `/api/content/material-properties/{slug}`
+- `GET /api/content/traits[?appliesTo=]`, `/api/content/traits/{key}` (key not slug)
+
+**Core handlers** added (each with filter + validator):
+- `GetOrganizationCatalogQuery(OrgType?)` → `IOrganizationRepository.GetByTypeAsync/GetAllAsync`
+- `GetWorldLocationCatalogQuery(LocationType?)` → `IWorldLocationRepository.GetByLocationTypeAsync/GetAllAsync`
+- `GetDialogueCatalogQuery(Speaker?)` → `IDialogueRepository.GetBySpeakerAsync/GetAllAsync`
+- `GetActorInstanceCatalogQuery(TypeKey?)` → `IActorInstanceRepository.GetByTypeKeyAsync/GetAllAsync`
+- `GetMaterialPropertyCatalogQuery(Family?)` → `IMaterialPropertyRepository.GetByFamilyAsync/GetAllAsync`
+- `GetTraitCatalogQuery(AppliesTo?)` → `ITraitDefinitionRepository.GetByAppliesToAsync/GetAllAsync`
+
+**Session-20 also completed Goals 1+2** (11 previously-missing catalog query handlers):
+- `AbilityCatalog`, `EnemyCatalog`, `NpcCatalog`, `QuestCatalog`, `RecipeCatalog`, `LootTableCatalog`, `SpellCatalog`, `SkillCatalog`, `MaterialCatalog`, `WeaponCatalog`, `ArmorCatalog`
+- `WeaponCatalog` and `ArmorCatalog` have no filter param (no filter method on `IWeaponRepository`/`IArmorRepository`)
+- `MaterialCatalog` wraps single `Family` string in `[request.Family]` collection expression for `IMaterialRepository.GetByFamiliesAsync(IEnumerable<string>)`
+- `QuestCatalog` requires `using SharedQuest = RealmEngine.Shared.Models.Quest;` alias in test file — namespace `RealmEngine.Core.Features.Quest` conflicts with model type name
 
 ### DatabaseSeeder — Items & Enchantments (session-18)
 - `SeedItemsAsync` seeds 17 items (consumable×4, crystal×2, gem×3, rune×3, essence×3, orb×2) using `I()`, `ISt()`, `ITr()` factory helpers.

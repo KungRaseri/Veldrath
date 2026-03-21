@@ -239,3 +239,66 @@ public record MaterialDto(
     string DisplayName,
     string MaterialFamily,
     int RarityWeight);
+
+// ── Organization ──────────────────────────────────────────────────────────────
+/// <summary>An organization catalog entry (faction, guild, business, or shop).</summary>
+/// <param name="Slug">URL-safe identifier.</param>
+/// <param name="DisplayName">Human-readable name.</param>
+/// <param name="TypeKey">Domain type key (e.g. "factions", "guilds").</param>
+/// <param name="OrgType">Org sub-type: "faction", "guild", "business", or "shop".</param>
+/// <param name="RarityWeight">Selection weight for random draws.</param>
+public record OrganizationDto(string Slug, string DisplayName, string TypeKey, string OrgType, int RarityWeight);
+
+// ── WorldLocation ─────────────────────────────────────────────────────────────
+/// <summary>A world location catalog entry (environment, location, or region).</summary>
+/// <param name="Slug">URL-safe identifier.</param>
+/// <param name="DisplayName">Human-readable name.</param>
+/// <param name="TypeKey">Domain type key (e.g. "environments", "locations", "regions").</param>
+/// <param name="LocationType">Location sub-type: "environment", "location", or "region".</param>
+/// <param name="RarityWeight">Selection weight for random draws.</param>
+/// <param name="MinLevel">Minimum recommended character level, or <see langword="null"/> if unconstrained.</param>
+/// <param name="MaxLevel">Maximum recommended character level, or <see langword="null"/> if unconstrained.</param>
+public record WorldLocationDto(string Slug, string DisplayName, string TypeKey,
+    string LocationType, int RarityWeight, int? MinLevel, int? MaxLevel);
+
+// ── Dialogue ──────────────────────────────────────────────────────────────────
+/// <summary>A dialogue catalog entry belonging to a speaker type.</summary>
+/// <param name="Slug">URL-safe identifier.</param>
+/// <param name="DisplayName">Human-readable name.</param>
+/// <param name="TypeKey">Domain type key (e.g. "greetings", "farewells").</param>
+/// <param name="Speaker">Speaker type (e.g. "merchant", "guard"), or <see langword="null"/> for any speaker.</param>
+/// <param name="RarityWeight">Selection weight for random draws.</param>
+/// <param name="Lines">Dialogue lines.</param>
+public record DialogueDto(string Slug, string DisplayName, string TypeKey,
+    string? Speaker, int RarityWeight, List<string> Lines);
+
+// ── ActorInstance ─────────────────────────────────────────────────────────────
+/// <summary>A named actor instance that overrides an archetype for quest-critical or unique actors.</summary>
+/// <param name="Slug">URL-safe identifier.</param>
+/// <param name="DisplayName">Human-readable name.</param>
+/// <param name="TypeKey">Origin category (e.g. "boss", "story", "unique").</param>
+/// <param name="ArchetypeId">ID of the base actor archetype.</param>
+/// <param name="LevelOverride">Level override, or <see langword="null"/> to use archetype default.</param>
+/// <param name="FactionOverride">Faction override, or <see langword="null"/> to use archetype default.</param>
+/// <param name="RarityWeight">Selection weight for random draws.</param>
+public record ActorInstanceDto(string Slug, string DisplayName, string TypeKey,
+    Guid ArchetypeId, int? LevelOverride, string? FactionOverride, int RarityWeight);
+
+// ── MaterialProperty ──────────────────────────────────────────────────────────
+/// <summary>A material property definition describing the physical characteristics of a material family.</summary>
+/// <param name="Slug">URL-safe identifier.</param>
+/// <param name="DisplayName">Human-readable name.</param>
+/// <param name="TypeKey">Domain type key (e.g. "metals", "woods").</param>
+/// <param name="MaterialFamily">Material family: "metal", "wood", "leather", "gem", "fabric", "bone", or "stone".</param>
+/// <param name="CostScale">Budget formula multiplier.</param>
+/// <param name="RarityWeight">Selection weight for random draws.</param>
+public record MaterialPropertyDto(string Slug, string DisplayName, string TypeKey,
+    string MaterialFamily, float CostScale, int RarityWeight);
+
+// ── TraitDefinition ───────────────────────────────────────────────────────────
+/// <summary>A trait vocabulary entry defining a known trait key and its value type.</summary>
+/// <param name="Key">Trait key used in entity Traits columns (e.g. "aggressive", "fireResist").</param>
+/// <param name="ValueType">Value type: "bool", "int", "float", or "string".</param>
+/// <param name="Description">Human-readable description, or <see langword="null"/>.</param>
+/// <param name="AppliesTo">Comma-separated entity types, or "*" for all, or <see langword="null"/>.</param>
+public record TraitDefinitionDto(string Key, string ValueType, string? Description, string? AppliesTo);

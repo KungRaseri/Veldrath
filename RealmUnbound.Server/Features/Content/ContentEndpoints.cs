@@ -133,6 +133,30 @@ public static class ContentEndpoints
         group.MapGet("/materials",        GetMaterialsAsync);
         group.MapGet("/materials/{slug}", GetMaterialBySlugAsync);
 
+        // Organizations
+        group.MapGet("/organizations",          GetOrganizationsAsync);
+        group.MapGet("/organizations/{slug}",   GetOrganizationBySlugAsync);
+
+        // World Locations
+        group.MapGet("/world-locations",          GetWorldLocationsAsync);
+        group.MapGet("/world-locations/{slug}",   GetWorldLocationBySlugAsync);
+
+        // Dialogues
+        group.MapGet("/dialogues",          GetDialoguesAsync);
+        group.MapGet("/dialogues/{slug}",   GetDialogueBySlugAsync);
+
+        // Actor Instances
+        group.MapGet("/actor-instances",          GetActorInstancesAsync);
+        group.MapGet("/actor-instances/{slug}",   GetActorInstanceBySlugAsync);
+
+        // Material Properties
+        group.MapGet("/material-properties",          GetMaterialPropertiesAsync);
+        group.MapGet("/material-properties/{slug}",   GetMaterialPropertyBySlugAsync);
+
+        // Trait Definitions
+        group.MapGet("/traits",         GetTraitsAsync);
+        group.MapGet("/traits/{key}",   GetTraitByKeyAsync);
+
         return app;
     }
 
@@ -634,4 +658,118 @@ public static class ContentEndpoints
         DisplayName:    m.DisplayName,
         MaterialFamily: m.MaterialFamily,
         RarityWeight:   (int)m.RarityWeight);
+
+    // ── Organizations ─────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetOrganizationsAsync(IOrganizationRepository repo, string? orgType = null)
+    {
+        var items = orgType is not null
+            ? await repo.GetByTypeAsync(orgType)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToOrganizationDto));
+    }
+
+    private static async Task<IResult> GetOrganizationBySlugAsync(string slug, IOrganizationRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToOrganizationDto(item));
+    }
+
+    private static OrganizationDto ToOrganizationDto(OrganizationEntry o) =>
+        new(o.Slug, o.DisplayName, o.TypeKey, o.OrgType, o.RarityWeight);
+
+    // ── World Locations ───────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetWorldLocationsAsync(IWorldLocationRepository repo, string? locationType = null)
+    {
+        var items = locationType is not null
+            ? await repo.GetByLocationTypeAsync(locationType)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToWorldLocationDto));
+    }
+
+    private static async Task<IResult> GetWorldLocationBySlugAsync(string slug, IWorldLocationRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToWorldLocationDto(item));
+    }
+
+    private static WorldLocationDto ToWorldLocationDto(WorldLocationEntry w) =>
+        new(w.Slug, w.DisplayName, w.TypeKey, w.LocationType, w.RarityWeight, w.MinLevel, w.MaxLevel);
+
+    // ── Dialogues ─────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetDialoguesAsync(IDialogueRepository repo, string? speaker = null)
+    {
+        var items = speaker is not null
+            ? await repo.GetBySpeakerAsync(speaker)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToDialogueDto));
+    }
+
+    private static async Task<IResult> GetDialogueBySlugAsync(string slug, IDialogueRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToDialogueDto(item));
+    }
+
+    private static DialogueDto ToDialogueDto(DialogueEntry d) =>
+        new(d.Slug, d.DisplayName, d.TypeKey, d.Speaker, d.RarityWeight, d.Lines);
+
+    // ── Actor Instances ───────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetActorInstancesAsync(IActorInstanceRepository repo, string? typeKey = null)
+    {
+        var items = typeKey is not null
+            ? await repo.GetByTypeKeyAsync(typeKey)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToActorInstanceDto));
+    }
+
+    private static async Task<IResult> GetActorInstanceBySlugAsync(string slug, IActorInstanceRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToActorInstanceDto(item));
+    }
+
+    private static ActorInstanceDto ToActorInstanceDto(ActorInstanceEntry a) =>
+        new(a.Slug, a.DisplayName, a.TypeKey, a.ArchetypeId, a.LevelOverride, a.FactionOverride, a.RarityWeight);
+
+    // ── Material Properties ───────────────────────────────────────────────────
+
+    private static async Task<IResult> GetMaterialPropertiesAsync(IMaterialPropertyRepository repo, string? family = null)
+    {
+        var items = family is not null
+            ? await repo.GetByFamilyAsync(family)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToMaterialPropertyDto));
+    }
+
+    private static async Task<IResult> GetMaterialPropertyBySlugAsync(string slug, IMaterialPropertyRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToMaterialPropertyDto(item));
+    }
+
+    private static MaterialPropertyDto ToMaterialPropertyDto(MaterialPropertyEntry m) =>
+        new(m.Slug, m.DisplayName, m.TypeKey, m.MaterialFamily, m.CostScale, m.RarityWeight);
+
+    // ── Trait Definitions ─────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetTraitsAsync(ITraitDefinitionRepository repo, string? appliesTo = null)
+    {
+        var items = appliesTo is not null
+            ? await repo.GetByAppliesToAsync(appliesTo)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToTraitDefinitionDto));
+    }
+
+    private static async Task<IResult> GetTraitByKeyAsync(string key, ITraitDefinitionRepository repo)
+    {
+        var item = await repo.GetByKeyAsync(key);
+        return item is null ? Results.NotFound() : Results.Ok(ToTraitDefinitionDto(item));
+    }
+
+    private static TraitDefinitionDto ToTraitDefinitionDto(TraitDefinitionEntry t) =>
+        new(t.Key, t.ValueType, t.Description, t.AppliesTo);
 }
