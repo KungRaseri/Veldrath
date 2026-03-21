@@ -201,7 +201,7 @@ jobs:
         TAG="discord/v$VERSION"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag $TAG
+        git tag $TAG ${{ github.sha }}
         git push origin $TAG
         echo "Created tag: $TAG"
 
