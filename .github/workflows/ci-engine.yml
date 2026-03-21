@@ -203,7 +203,7 @@ jobs:
         $tag = "engine/v$version"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag $tag
+        git tag $tag ${{ github.sha }}
         git push origin $tag
         Write-Output "Created tag: $tag"
       shell: pwsh

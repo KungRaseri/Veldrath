@@ -19,6 +19,7 @@ on:
       - 'server/v*'
       - 'client/v*'
       - 'discord/v*'
+      - 'foundry/v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -74,6 +75,11 @@ jobs:
           WORKFLOW="ci-discord.yml"
           ARTIFACT_NAME="discord-release-artifacts"
           VERSION="${TAG#discord/v}"
+        elif [[ "$TAG" == foundry/v* ]]; then
+          COMPONENT="foundry"
+          WORKFLOW="ci-foundry.yml"
+          ARTIFACT_NAME="foundry-release-artifacts"
+          VERSION="${TAG#foundry/v}"
         else
           echo "Unknown tag prefix: $TAG"
           exit 1
@@ -231,6 +237,20 @@ jobs:
               echo "- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
               echo "- \`RealmUnbound-Client-macOS-x64-$VERSION.zip\` — macOS desktop app (osx-x64, Intel, self-contained)"
               echo "- \`RealmUnbound-Client-macOS-arm64-$VERSION.zip\` — macOS desktop app (osx-arm64, Apple Silicon, self-contained)"
+              echo ""
+              echo "### Changes"
+              printf '%s\n' "$CHANGELOG"
+            } > release-body.md
+            ;;
+          foundry)
+            NAME="RealmFoundry $VERSION"
+            {
+              echo "## RealmFoundry $VERSION"
+              echo ""
+              echo "Blazor Server community content portal for RealmUnbound."
+              echo ""
+              echo "### Packages"
+              echo "- \`RealmFoundry-$VERSION.zip\` -- ASP.NET Core publish output"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
