@@ -106,6 +106,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-13 (2026-03-20) | **340** | **383** | **723** |
 | Session-14 (2026-03-21) | **340** | **383** | **723** |
 | Session-15 (2026-03-21) | **340** | **416** | **756** |
+| Session-16 (2026-03-21) | **362** | **416** | **778** |
 
 ## P3 Stubs Status
 
@@ -284,6 +285,23 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 - Fixed `IZoneRepository` + `IZoneSessionRepository` XML docs (8 summaries)
 - Added 10 server tests + 6 client tests = 16 new tests
 - Total: 274 client + 246 server = 520 passing
+
+### Session-16 (2026-03-21) — GameView UI redesign
+- **GameView.axaml** fully rewritten: 3-row (Auto/\*/Auto) × 3-column (Auto/\*/220) layout
+  - Row 0: topbar border — character name → zone name + zone-type badge (StringConverters.IsNotNullOrEmpty), status message, logout button
+  - Row 1 col 0: collapsible left panel via DockPanel `LastChildFill="False"` — toggle button always visible (28px, docked Right), content Border (196px, IsVisible="{Binding IsLeftPanelOpen}") with HP/MP ProgressBars + action log
+  - Row 1 col 1: center map placeholder
+  - Row 1 col 2: right character panel (220px) — level, XP progress (ExperienceToNextLevel), gold, unspent points badge, online players, dev tools Expander
+  - Row 2: context-sensitive action bar (HasInn → "Rest at Inn", HasMerchant → "Shop", always: Craft Item, Enter Dungeon, Use Ability)
+- **GameViewModel.cs** extended with 11 new properties/commands:
+  - `IsLeftPanelOpen` (bool, default true) + `LeftPanelToggleIcon` (◀/▶) + `ToggleLeftPanelCommand`
+  - `HasInn`, `HasMerchant`, `ZoneType` — set from `ZoneDto` in `InitializeAsync`
+  - `HasUnspentPoints` (computed, raised when `UnspentAttributePoints` changes)
+  - `ExperienceToNextLevel` (computed `Math.Max(1L, Level * 500L)`, raised when `Level` changes)
+  - `DevGainXpCommand` (gains 100 XP), `DevAddGoldCommand` (+50 gold), `DevTakeDamageCommand` (takes 10 damage)
+- **22 new tests** added to `GameViewModelTests.cs` for all new properties/commands
+- AXAML bug: old layout content was left below `</UserControl>` after rewrite → caused AVLN1001 "multiple root elements"; fixed by stripping duplicate content after first closing tag
+- Final count: **362 client + 416 server = 778 total passing**
 
 ### Session-5 (2026-03-19)
 - Fixed 3 latent DI gaps: `IArmorRepository`, `IEquipmentSetRepository`, `INamePatternRepository`; added 2 new using directives to Program.cs
