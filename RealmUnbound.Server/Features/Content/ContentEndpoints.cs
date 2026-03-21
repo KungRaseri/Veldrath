@@ -42,11 +42,18 @@ namespace RealmUnbound.Server.Features.Content;
 /// GET /api/content/skills/{slug}         — single skill/// GET /api/content/items                  — all active catalog items; optional ?type= filter
 /// GET /api/content/items/{slug}           — single catalog item by slug
 /// GET /api/content/enchantments           — all active enchantments; optional ?targetSlot= filter
-/// GET /api/content/enchantments/{slug}    — single enchantment by slug///
+/// GET /api/content/enchantments/{slug}    — single enchantment by slug
+/// GET /api/content/weapons                — all active weapons
+/// GET /api/content/weapons/{slug}         — single weapon by slug
+/// GET /api/content/armors                 — all active armor pieces
+/// GET /api/content/armors/{slug}          — single armor piece by slug
+/// GET /api/content/materials              — all active materials
+/// GET /api/content/materials/{slug}       — single material by slug
+///
 /// GET /api/content/schema                — all registered content type schemas (public)
 /// GET /api/content/browse                — paged list across any entity type (public)
 /// GET /api/content/browse/{type}/{slug}  — full entity detail by type + slug (public)
-/// /// </summary>
+/// </summary>
 public static class ContentEndpoints
 {
     private static readonly JsonSerializerOptions _detailJsonOpts =
@@ -113,6 +120,18 @@ public static class ContentEndpoints
         // Enchantments
         group.MapGet("/enchantments",         GetEnchantmentsAsync);
         group.MapGet("/enchantments/{slug}",  GetEnchantmentBySlugAsync);
+
+        // Weapons
+        group.MapGet("/weapons",          GetWeaponsAsync);
+        group.MapGet("/weapons/{slug}",   GetWeaponBySlugAsync);
+
+        // Armors
+        group.MapGet("/armors",           GetArmorsAsync);
+        group.MapGet("/armors/{slug}",    GetArmorBySlugAsync);
+
+        // Materials
+        group.MapGet("/materials",        GetMaterialsAsync);
+        group.MapGet("/materials/{slug}", GetMaterialBySlugAsync);
 
         return app;
     }
@@ -553,4 +572,66 @@ public static class ContentEndpoints
         DisplayName:  e.DisplayName ?? e.Slug,
         TypeKey:      e.TypeKey,
         RarityWeight: e.RarityWeight);
+
+    // ── Weapons ───────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetWeaponsAsync(IWeaponRepository repo)
+    {
+        var items = await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToWeaponDto));
+    }
+
+    private static async Task<IResult> GetWeaponBySlugAsync(string slug, IWeaponRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToWeaponDto(item));
+    }
+
+    // ── Armors ────────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetArmorsAsync(IArmorRepository repo)
+    {
+        var items = await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToArmorDto));
+    }
+
+    private static async Task<IResult> GetArmorBySlugAsync(string slug, IArmorRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToArmorDto(item));
+    }
+
+    // ── Materials ─────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetMaterialsAsync(IMaterialRepository repo)
+    {
+        var items = await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToMaterialDto));
+    }
+
+    private static async Task<IResult> GetMaterialBySlugAsync(string slug, IMaterialRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToMaterialDto(item));
+    }
+
+    private static WeaponDto ToWeaponDto(SharedItem i) => new(
+        Slug:        i.Slug,
+        DisplayName: i.Name,
+        TypeKey:     i.TypeKey ?? string.Empty,
+        WeaponType:  i.WeaponType ?? string.Empty,
+        RarityWeight: i.TotalRarityWeight);
+
+    private static ArmorDto ToArmorDto(SharedItem i) => new(
+        Slug:        i.Slug,
+        DisplayName: i.Name,
+        TypeKey:     i.TypeKey ?? string.Empty,
+        ArmorType:   i.ArmorClass ?? string.Empty,
+        RarityWeight: i.TotalRarityWeight);
+
+    private static MaterialDto ToMaterialDto(MaterialEntry m) => new(
+        Slug:           m.Slug,
+        DisplayName:    m.DisplayName,
+        MaterialFamily: m.MaterialFamily,
+        RarityWeight:   (int)m.RarityWeight);
 }

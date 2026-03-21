@@ -17,11 +17,11 @@ All Newtonsoft migration done as of 2026-03-16:
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
 - Newtonsoft remains in: `RealmUnbound.Server` (ServerSaveGameRepository), `RealmForge`, `RealmUnbound.Server.Tests` (test data fixtures)
 
-## Test Status (2026-03-20, session-18)
+## Test Status (2026-03-20, session-19)
 - Shared.Tests: 778 passed
 - Core.Tests: 1,738 passed
 - Data.Tests: 203 passed
-- Server.Tests: 350 passed (+19 from session-18: ContentExtendedEndpointTests — enemies, NPCs, quests, recipes, loot-tables, spells)
+- Server.Tests: 362 passed (+12 from session-19: ContentEquipmentEndpointTests — weapons, armors, materials)
 
 ## What Was Done (session-18)
 - `SeedItemsAsync` implemented in `DatabaseSeeder.cs`: 17 items covering all 6 ItemType values (consumable, crystal, gem, rune, essence, orb), with factory helpers `I()`, `ISt()`, `ITr()`
@@ -29,6 +29,11 @@ All Newtonsoft migration done as of 2026-03-16:
 - `SeedContentRegistryAsync` updated to also register Items (`items/general`) and Enchantments (`items/enchantments`)
 - `ContentExtendedEndpointTests.cs` added in `RealmUnbound.Server.Tests/Features/`: 19 integration tests for /enemies, /npcs, /quests, /recipes, /loot-tables, /spells
 
-## What Remains (as of session-18)
+## What Was Done (session-19)
+- `WeaponDto`, `ArmorDto`, `MaterialDto` added to `RealmUnbound.Contracts/Content/ContentContracts.cs`
+- `GET /api/content/weapons` (+slug), `GET /api/content/armors` (+slug), `GET /api/content/materials` (+slug) added to `ContentEndpoints.cs` — backed by `IWeaponRepository`, `IArmorRepository`, `IMaterialRepository` respectively
+- `ContentEquipmentEndpointTests.cs` added in `RealmUnbound.Server.Tests/Features/`: 12 integration tests for /weapons, /armors, /materials
+
+## What Remains (as of session-19)
 - Remaining unrepresented ContentDbContext tables (Organizations, WorldLocations, Dialogues, ActorInstances, MaterialProperties, TraitDefinitions) — no repos needed until a feature handler requires them
 - No content data is ever loaded from the filesystem — all DB-backed
