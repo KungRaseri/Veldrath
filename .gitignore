@@ -50,3 +50,7 @@ coverage-results/
 
 # DocFX generated API YAML metadata (produced during docs build — do not commit)
 /api/
+
+# Game asset binaries — purchased packs; must not be redistributed via a public repo.
+# Run scripts/sync-assets.ps1 to populate this folder from your local asset library.
+RealmUnbound.Assets/GameAssets/

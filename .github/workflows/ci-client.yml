@@ -137,6 +137,23 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    # Game asset binaries are stored as a GitHub Release in the private
+    # KungRaseri/RealmEngine-Assets repo (not committed here due to size/licensing).
+    # ASSETS_TOKEN must be a fine-grained PAT with Contents:Read on that repo,
+    # added as a repository secret in KungRaseri/RealmEngine settings.
+    - name: Download game assets
+      env:
+        GH_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+      run: |
+        $destPath = "RealmUnbound.Assets/GameAssets"
+        New-Item -ItemType Directory -Force -Path $destPath | Out-Null
+        gh release download --repo KungRaseri/RealmUnbound-Assets --pattern "GameAssets-*.zip" --dir ./assets-tmp
+        $zipFile = Get-ChildItem ./assets-tmp/GameAssets-*.zip | Select-Object -First 1
+        Expand-Archive -Path $zipFile.FullName -DestinationPath $destPath -Force
+        $fileCount = (Get-ChildItem $destPath -Recurse -File).Count
+        Write-Output "Extracted $fileCount asset files to $destPath"
+      shell: pwsh
+
     - name: Generate version
       id: version
       run: |
