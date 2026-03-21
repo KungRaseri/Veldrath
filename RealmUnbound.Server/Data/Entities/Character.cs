@@ -39,11 +39,11 @@ public class Character
     /// </summary>
     public string EquipmentBlob { get; set; } = "{}";
 
-    /// <summary>Zone the character starts in (fixed on creation; tutorial zone later).</summary>
-    public string StartingZoneId { get; set; } = "starting-zone";
+    /// <summary>Zone the character starts in (fixed on creation).</summary>
+    public string StartingZoneId { get; set; } = "fenwick-crossing";
 
     /// <summary>Zone the character is currently in (updated on EnterZone).</summary>
-    public string CurrentZoneId { get; set; } = "starting-zone";
+    public string CurrentZoneId { get; set; } = "fenwick-crossing";
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

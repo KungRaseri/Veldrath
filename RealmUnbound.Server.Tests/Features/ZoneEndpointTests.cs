@@ -17,7 +17,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var zones = await response.Content.ReadFromJsonAsync<ZoneDto[]>();
         zones.Should().NotBeNull();
-        zones!.Length.Should().Be(5);
+        zones!.Length.Should().Be(16);
     }
 
     [Fact]
@@ -28,14 +28,13 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
 
         var starter = zones!.SingleOrDefault(z => z.IsStarter);
         starter.Should().NotBeNull();
-        starter!.Id.Should().Be("starting-zone");
+        starter!.Id.Should().Be("fenwick-crossing");
     }
 
     [Fact]
     public async Task GetZones_Should_Return_Correct_Zone_Types()
     {
         var zones = await _client.GetFromJsonAsync<ZoneDto[]>("/api/zones");
-        zones.Should().Contain(z => z.Type == "Tutorial");
         zones.Should().Contain(z => z.Type == "Town");
         zones.Should().Contain(z => z.Type == "Dungeon");
         zones.Should().Contain(z => z.Type == "Wilderness");
@@ -51,11 +50,11 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     [Fact]
     public async Task GetZoneById_Should_Return_Zone_Details()
     {
-        var response = await _client.GetAsync("/api/zones/starting-zone");
+        var response = await _client.GetAsync("/api/zones/fenwick-crossing");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var zone = await response.Content.ReadFromJsonAsync<ZoneDto>();
-        zone!.Id.Should().Be("starting-zone");
+        zone!.Id.Should().Be("fenwick-crossing");
         zone.IsStarter.Should().BeTrue();
         zone.MinLevel.Should().Be(0);
     }

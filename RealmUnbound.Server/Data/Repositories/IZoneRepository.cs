@@ -10,6 +10,9 @@ public interface IZoneRepository
 
     /// <summary>Returns the zone with the given <paramref name="zoneId"/>, or <see langword="null"/> if not found.</summary>
     Task<Zone?> GetByIdAsync(string zoneId);
+
+    /// <summary>Returns all zones belonging to the given <paramref name="regionId"/>.</summary>
+    Task<List<Zone>> GetByRegionIdAsync(string regionId);
 }
 
 /// <summary>Tracks active player connections within a zone.</summary>

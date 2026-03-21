@@ -52,19 +52,19 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Return_All_Zones()
     {
         await using var db = _factory.CreateContext();
-        // DB is pre-seeded with 5 zones via HasData(); verify all are returned
+        // DB is pre-seeded with 16 zones via HasData(); verify all are returned
         var repo   = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
 
-        result.Should().HaveCount(5);
-        result.Should().Contain(z => z.Id == "starting-zone");
+        result.Should().HaveCount(16);
+        result.Should().Contain(z => z.Id == "fenwick-crossing");
     }
 
     [Fact]
     public async Task GetAllAsync_Should_Return_Starter_Zones_First()
     {
         await using var db = _factory.CreateContext();
-        // Seeded data has "starting-zone" as the only starter zone
+        // Seeded data has "fenwick-crossing" as the only starter zone
         var repo   = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
 
@@ -77,7 +77,8 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Return_Empty_When_No_Zones()
     {
         await using var db = _factory.CreateContext();
-        // Remove all seeded zones before testing the empty-list path
+        // Remove connection records first (FK constraint: ZoneConnection references Zone)
+        db.ZoneConnections.RemoveRange(db.ZoneConnections);
         db.Zones.RemoveRange(db.Zones);
         await db.SaveChangesAsync();
 
@@ -90,12 +91,12 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByIdAsync_Should_Return_Zone_When_Found()
     {
         await using var db = _factory.CreateContext();
-        // "starting-zone" is pre-seeded via HasData()
+        // "fenwick-crossing" is pre-seeded via HasData()
         var repo   = new ZoneRepository(db);
-        var result = await repo.GetByIdAsync("starting-zone");
+        var result = await repo.GetByIdAsync("fenwick-crossing");
 
         result.Should().NotBeNull();
-        result!.Name.Should().Be("Ashenveil Crossroads");
+        result!.Name.Should().Be("Fenwick's Crossing");
     }
 
     [Fact]
@@ -113,7 +114,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task AddAsync_Should_Persist_Session()
     {
         await using var db = _factory.CreateContext();
-        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        // Use a pre-seeded zone so FK constraints are satisfied
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
@@ -122,7 +123,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId    = character.Id,
             CharacterName  = character.Name,
             ConnectionId   = "conn-1",
-            ZoneId         = "zone-1",
+            ZoneId         = "fenwick-crossing",
         };
 
         var repo = new ZoneSessionRepository(db);
@@ -136,18 +137,18 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByZoneIdAsync_Should_Return_Sessions_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        // Reuse pre-seeded zones (starting-zone and town-millhaven)
+        // Reuse pre-seeded zones (fenwick-crossing and aldenmere)
         var accountId = await SeedAccountAsync(db);
         var char1     = await SeedCharacterAsync(db, accountId, slotIndex: 1);
         var char2     = await SeedCharacterAsync(db, accountId, slotIndex: 2);
 
         db.ZoneSessions.AddRange(
-            new ZoneSession { CharacterId = char1.Id, CharacterName = char1.Name, ConnectionId = "c1", ZoneId = "starting-zone" },
-            new ZoneSession { CharacterId = char2.Id, CharacterName = char2.Name, ConnectionId = "c2", ZoneId = "town-millhaven" });
+            new ZoneSession { CharacterId = char1.Id, CharacterName = char1.Name, ConnectionId = "c1", ZoneId = "fenwick-crossing" },
+            new ZoneSession { CharacterId = char2.Id, CharacterName = char2.Name, ConnectionId = "c2", ZoneId = "aldenmere" });
         await db.SaveChangesAsync();
 
         var repo   = new ZoneSessionRepository(db);
-        var result = await repo.GetByZoneIdAsync("starting-zone");
+        var result = await repo.GetByZoneIdAsync("fenwick-crossing");
 
         result.Should().ContainSingle(s => s.ConnectionId == "c1");
     }
@@ -156,7 +157,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByConnectionIdAsync_Should_Return_Session_When_Found()
     {
         await using var db = _factory.CreateContext();
-        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        // Use a pre-seeded zone so FK constraints are satisfied
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
@@ -165,7 +166,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-abc",
-            ZoneId        = "zone-1",
+            ZoneId        = "fenwick-crossing",
         });
         await db.SaveChangesAsync();
 
@@ -188,7 +189,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByCharacterIdAsync_Should_Return_Session_When_Found()
     {
         await using var db = _factory.CreateContext();
-        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        // Use a pre-seeded zone so FK constraints are satisfied
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
@@ -197,7 +198,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-xyz",
-            ZoneId        = "zone-1",
+            ZoneId        = "fenwick-crossing",
         });
         await db.SaveChangesAsync();
 
@@ -221,7 +222,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task RemoveAsync_Should_Delete_Session()
     {
         await using var db = _factory.CreateContext();
-        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        // Use a pre-seeded zone so FK constraints are satisfied
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
@@ -230,7 +231,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-del",
-            ZoneId        = "zone-1",
+            ZoneId        = "fenwick-crossing",
         };
         db.ZoneSessions.Add(session);
         await db.SaveChangesAsync();
@@ -246,7 +247,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task RemoveByConnectionIdAsync_Should_Delete_Session()
     {
         await using var db = _factory.CreateContext();
-        db.Zones.Add(MakeZone("zone-1", "Zone 1"));
+        // Use a pre-seeded zone so FK constraints are satisfied
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
@@ -255,7 +256,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-rem",
-            ZoneId        = "zone-1",
+            ZoneId        = "fenwick-crossing",
         });
         await db.SaveChangesAsync();
 
