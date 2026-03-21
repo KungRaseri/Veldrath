@@ -32,4 +32,22 @@ public static class ClassAssets
 
     /// <summary>Necromancer class badge.</summary>
     public const string Necromancer = "classes/Badge_necro.png";
+
+    /// <summary>
+    /// Returns the asset path for the given class name, or <see langword="null"/> if the name is not recognised.
+    /// </summary>
+    /// <param name="className">Display name of the class (case-sensitive, e.g. <c>"Warrior"</c>).</param>
+    public static string? GetPath(string? className) => className switch
+    {
+        nameof(Warrior)     => Warrior,
+        nameof(Mage)        => Mage,
+        nameof(Rogue)       => Rogue,
+        nameof(Assassin)    => Assassin,
+        nameof(Barbarian)   => Barbarian,
+        nameof(Hunter)      => Hunter,
+        nameof(Paladin)     => Paladin,
+        nameof(Priest)      => Priest,
+        nameof(Necromancer) => Necromancer,
+        _                   => null,
+    };
 }

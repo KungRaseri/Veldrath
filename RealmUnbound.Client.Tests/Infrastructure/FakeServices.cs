@@ -267,6 +267,24 @@ public static class FakeContentCache
         new(service ?? new FakeContentService(), NullLogger<ContentCache>.Instance);
 }
 
+// ── Audio player stub ─────────────────────────────────────────────────────────
+
+/// <summary>No-op stub for <see cref="IAudioPlayer"/>. All calls are silently ignored.</summary>
+public class FakeAudioPlayer : IAudioPlayer
+{
+    /// <inheritdoc />
+    public Task PlayMusicAsync(string filePath) => Task.CompletedTask;
+
+    /// <inheritdoc />
+    public void PlaySfx(string filePath) { }
+
+    /// <inheritdoc />
+    public void StopMusic() { }
+
+    /// <inheritdoc />
+    public void Dispose() => GC.SuppressFinalize(this);
+}
+
 // ── Asset store stub ──────────────────────────────────────────────────────────
 
 /// <summary>

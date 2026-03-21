@@ -11,6 +11,9 @@
              x:DataType="vm:CharacterSelectViewModel">
 
     <Grid RowDefinitions="Auto,*">
+        <Grid.Background>
+            <ImageBrush Source="{DynamicResource UiBg1}" Stretch="UniformToFill" Opacity="0.3" />
+        </Grid.Background>
 
         <!-- Top bar -->
         <Border Grid.Row="0"
@@ -72,8 +75,16 @@
                                         Width="480">
                                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,Auto">
 
-                                        <!-- Character info -->
-                                        <StackPanel Grid.Row="0" Grid.Column="0">
+                                        <!-- Character info with class icon -->
+                                        <StackPanel Grid.Row="0" Grid.Column="0"
+                                                    Orientation="Horizontal" Spacing="10">
+                                            <Image Source="{Binding ClassIcon}"
+                                                   Width="40" Height="40"
+                                                   Stretch="Uniform"
+                                                   VerticalAlignment="Center"
+                                                   IsVisible="{Binding ClassIcon,
+                                                       Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                            <StackPanel VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock Text="{Binding Character.Name}"
                                                            Classes="title"
@@ -99,6 +110,7 @@
                                                     </MultiBinding>
                                                 </TextBlock.Text>
                                             </TextBlock>
+                                            </StackPanel>
                                         </StackPanel>
 
                                         <Button Grid.Row="0" Grid.Column="1"
@@ -181,6 +193,14 @@
                           HorizontalAlignment="Stretch"
                           Height="44"
                           FontSize="15" />
+
+                <Image Source="{Binding SelectedClassIcon}"
+                       Width="72" Height="72"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       Margin="0,8,0,0"
+                       IsVisible="{Binding SelectedClassIcon,
+                           Converter={x:Static ObjectConverters.IsNotNull}}" />
 
                 <Button Content="Create Character"
                         Classes="accent"

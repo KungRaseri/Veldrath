@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using ReactiveUI;
 using RealmUnbound.Contracts.Characters;
 
@@ -11,8 +12,16 @@ namespace RealmUnbound.Client.ViewModels;
 public class CharacterEntryViewModel : ViewModelBase
 {
     private bool _isOnline;
+    private Bitmap? _classIcon;
 
     public CharacterDto Character { get; }
+
+    /// <summary>Class badge icon loaded from the asset store, or <see langword="null"/> when assets are unavailable.</summary>
+    public Bitmap? ClassIcon
+    {
+        get => _classIcon;
+        set => this.RaiseAndSetIfChanged(ref _classIcon, value);
+    }
 
     /// <summary>True while another client (or this one) has this character actively in use.</summary>
     public bool IsOnline

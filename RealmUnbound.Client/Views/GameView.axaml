@@ -270,6 +270,46 @@
                         </Border>
 
                         <!-- Divider -->
+                        <Border Classes="separator" Margin="0,10" />
+
+                        <!-- Equipment slots -->
+                        <TextBlock Text="Equipment"
+                                   Classes="caption"
+                                   Margin="0,0,0,6" />
+                        <ItemsControl ItemsSource="{Binding EquipmentSlots}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:EquipmentSlotViewModel">
+                                    <Border Width="44" Height="52"
+                                            Margin="2"
+                                            Background="{DynamicResource GameBackground2Brush}"
+                                            BorderBrush="{DynamicResource GameBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="3"
+                                            ToolTip.Tip="{Binding Label}">
+                                        <StackPanel>
+                                            <Image Source="{Binding Icon}"
+                                                   Width="36" Height="36"
+                                                   Stretch="Uniform"
+                                                   Margin="4,4,4,0"
+                                                   VerticalAlignment="Top" />
+                                            <TextBlock Text="{Binding Label}"
+                                                       FontSize="6"
+                                                       Classes="caption"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="2,1"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Divider -->
                         <Border Classes="separator" Margin="0,12" />
 
                         <!-- Online players -->
