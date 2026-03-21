@@ -5,11 +5,17 @@ namespace RealmUnbound.Server.Data.Repositories;
 
 public class ZoneRepository(ApplicationDbContext db) : IZoneRepository
 {
+    /// <inheritdoc/>
     public Task<List<Zone>> GetAllAsync() =>
         db.Zones.OrderBy(z => z.IsStarter ? 0 : 1).ThenBy(z => z.Name).ToListAsync();
 
+    /// <inheritdoc/>
     public Task<Zone?> GetByIdAsync(string zoneId) =>
         db.Zones.FirstOrDefaultAsync(z => z.Id == zoneId);
+
+    /// <inheritdoc/>
+    public Task<List<Zone>> GetByRegionIdAsync(string regionId) =>
+        db.Zones.Where(z => z.RegionId == regionId).OrderBy(z => z.MinLevel).ThenBy(z => z.Name).ToListAsync();
 }
 
 public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionRepository

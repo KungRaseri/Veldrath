@@ -195,7 +195,7 @@ public class GameHubTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-disc",
-            ZoneId        = "starting-zone",
+            ZoneId        = "fenwick-crossing",
         });
         await db.SaveChangesAsync();
 
@@ -204,7 +204,7 @@ public class GameHubTests : IDisposable
         await hub.OnDisconnectedAsync(null);
 
         db.ZoneSessions.Should().BeEmpty();
-        groups.RemovedGroups.Should().Contain("zone:starting-zone");
+        groups.RemovedGroups.Should().Contain("zone:fenwick-crossing");
     }
 
     // ── SelectCharacter ───────────────────────────────────────────────────────
@@ -370,7 +370,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         // Skip SelectCharacter — no CharacterId in Items
-        await hub.EnterZone("starting-zone");
+        await hub.EnterZone("fenwick-crossing");
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -405,7 +405,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("starting-zone"); // seeded zone
+        await hub.EnterZone("fenwick-crossing"); // seeded zone
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ZoneEntered");
@@ -422,9 +422,9 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("starting-zone");
+        await hub.EnterZone("fenwick-crossing");
 
-        groups.AddedGroups.Should().Contain("zone:starting-zone");
+        groups.AddedGroups.Should().Contain("zone:fenwick-crossing");
     }
 
     [Fact]
@@ -438,7 +438,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("starting-zone");
+        await hub.EnterZone("fenwick-crossing");
 
         db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "conn-enter");
     }
@@ -470,7 +470,7 @@ public class GameHubTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-leave",
-            ZoneId        = "starting-zone",
+            ZoneId        = "fenwick-crossing",
         });
         await db.SaveChangesAsync();
 
@@ -479,7 +479,7 @@ public class GameHubTests : IDisposable
         await hub.LeaveZone();
 
         db.ZoneSessions.Should().BeEmpty();
-        groups.RemovedGroups.Should().Contain("zone:starting-zone");
+        groups.RemovedGroups.Should().Contain("zone:fenwick-crossing");
     }
 
     // ── EnterZone with stale session handling ─────────────────────────────────
@@ -497,7 +497,7 @@ public class GameHubTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "stale-conn",
-            ZoneId        = "town-millhaven",
+            ZoneId        = "aldenmere",
         });
         await db.SaveChangesAsync();
 
@@ -505,7 +505,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("starting-zone");
+        await hub.EnterZone("fenwick-crossing");
 
         // Old stale session should be gone; new one created
         db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "new-conn");
@@ -525,7 +525,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
         // CharacterName intentionally omitted
 
-        await hub.EnterZone("starting-zone");
+        await hub.EnterZone("fenwick-crossing");
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -3159,11 +3159,11 @@ public class GameHubTests : IDisposable
             NullLogger<EnterDungeonHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, "dungeon-grotto"),
+            new EnterDungeonHubCommand(accountId, "verdant-barrow"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        result.DungeonId.Should().Be("dungeon-grotto");
+        result.DungeonId.Should().Be("verdant-barrow");
     }
 
     [Fact]
@@ -3195,7 +3195,7 @@ public class GameHubTests : IDisposable
             NullLogger<EnterDungeonHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, "town-millhaven"),
+            new EnterDungeonHubCommand(accountId, "aldenmere"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();

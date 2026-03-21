@@ -455,6 +455,178 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDiscoverable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsStarter")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorldId")
+                        .IsRequired()
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorldId");
+
+                    b.ToTable("Regions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "thornveil",
+                            Description = "A dense Eiraveth forest shrouding ruins of the first kingdoms, where moss-covered paths lead beginners into adventure.",
+                            IsDiscoverable = true,
+                            IsStarter = true,
+                            MaxLevel = 6,
+                            MinLevel = 0,
+                            Name = "Thornveil",
+                            Type = "Forest",
+                            WorldId = "draveth"
+                        },
+                        new
+                        {
+                            Id = "greymoor",
+                            Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.",
+                            IsDiscoverable = true,
+                            IsStarter = false,
+                            MaxLevel = 14,
+                            MinLevel = 5,
+                            Name = "Greymoor",
+                            Type = "Highland",
+                            WorldId = "draveth"
+                        },
+                        new
+                        {
+                            Id = "saltcliff",
+                            Description = "Thysmara sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remnants of a sunken empire.",
+                            IsDiscoverable = true,
+                            IsStarter = false,
+                            MaxLevel = 20,
+                            MinLevel = 10,
+                            Name = "Saltcliff",
+                            Type = "Coastal",
+                            WorldId = "draveth"
+                        },
+                        new
+                        {
+                            Id = "cinderplain",
+                            Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.",
+                            IsDiscoverable = true,
+                            IsStarter = false,
+                            MaxLevel = 30,
+                            MinLevel = 18,
+                            Name = "Cinderplain",
+                            Type = "Volcanic",
+                            WorldId = "draveth"
+                        });
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RegionConnection", b =>
+                {
+                    b.Property<string>("FromRegionId")
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ToRegionId")
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("FromRegionId", "ToRegionId");
+
+                    b.HasIndex("ToRegionId");
+
+                    b.ToTable("RegionConnections");
+
+                    b.HasData(
+                        new
+                        {
+                            FromRegionId = "thornveil",
+                            ToRegionId = "greymoor"
+                        },
+                        new
+                        {
+                            FromRegionId = "greymoor",
+                            ToRegionId = "thornveil"
+                        },
+                        new
+                        {
+                            FromRegionId = "greymoor",
+                            ToRegionId = "saltcliff"
+                        },
+                        new
+                        {
+                            FromRegionId = "saltcliff",
+                            ToRegionId = "greymoor"
+                        },
+                        new
+                        {
+                            FromRegionId = "greymoor",
+                            ToRegionId = "cinderplain"
+                        },
+                        new
+                        {
+                            FromRegionId = "cinderplain",
+                            ToRegionId = "greymoor"
+                        });
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.World", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Era")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Worlds");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "draveth",
+                            Description = "A world of scattered kingdoms, ancient ruins, and contested wilds, shaped by centuries of war and forgotten magic.",
+                            Era = "The Age of Embers",
+                            Name = "Draveth"
+                        });
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
                 {
                     b.Property<string>("Id")
@@ -464,6 +636,18 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("HasInn")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasMerchant")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDiscoverable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPvpEnabled")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsStarter")
                         .HasColumnType("boolean");
@@ -478,63 +662,427 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<string>("RegionId")
+                        .IsRequired()
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RegionId");
 
                     b.ToTable("Zones");
 
                     b.HasData(
                         new
                         {
-                            Id = "starting-zone",
-                            Description = "A small crossroads at the edge of the Ashenveil Forest, where new adventurers gather.",
+                            Id = "fenwick-crossing",
+                            Description = "A well-worn crossroads inn and market at the forest's edge, where new adventurers take their first uncertain steps.",
+                            HasInn = true,
+                            HasMerchant = true,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
                             IsStarter = true,
                             MaxPlayers = 0,
                             MinLevel = 0,
-                            Name = "Ashenveil Crossroads",
-                            Type = 0
+                            Name = "Fenwick's Crossing",
+                            RegionId = "thornveil",
+                            Type = "Town"
                         },
                         new
                         {
-                            Id = "town-millhaven",
-                            Description = "A prosperous market town built along the Silver River, hub of trade and gossip.",
-                            IsStarter = false,
-                            MaxPlayers = 0,
-                            MinLevel = 0,
-                            Name = "Millhaven",
-                            Type = 1
-                        },
-                        new
-                        {
-                            Id = "town-ironhold",
-                            Description = "A fortified dwarven outpost in the foothills, renowned for its smiths and ales.",
-                            IsStarter = false,
-                            MaxPlayers = 0,
-                            MinLevel = 5,
-                            Name = "Ironhold",
-                            Type = 1
-                        },
-                        new
-                        {
-                            Id = "dungeon-grotto",
-                            Description = "A shallow cave network overrun with kobolds and giant insects — ideal for beginners.",
+                            Id = "greenveil-paths",
+                            Description = "Winding root-bound trails beneath a canopy of ancient oaks, alive with sprites and overly curious wildlife.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
                             IsStarter = false,
                             MaxPlayers = 0,
                             MinLevel = 1,
-                            Name = "Mossglow Grotto",
-                            Type = 2
+                            Name = "The Greenveil Paths",
+                            RegionId = "thornveil",
+                            Type = "Wilderness"
                         },
                         new
                         {
-                            Id = "wild-ashenveil",
-                            Description = "Dense woodland alive with wolves, bandits, and rumours of something darker within.",
+                            Id = "thornveil-hollow",
+                            Description = "A shaded hollow deep in the forest where old Eiraveth wards have begun to fail and darker things stir.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
                             IsStarter = false,
                             MaxPlayers = 0,
                             MinLevel = 3,
-                            Name = "Ashenveil Forest",
-                            Type = 3
+                            Name = "Thornveil Hollow",
+                            RegionId = "thornveil",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "verdant-barrow",
+                            Description = "A barrow complex reclaimed by roots and bioluminescent fungi, prowled by the restless dead of a forgotten village.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 4,
+                            Name = "The Verdant Barrow",
+                            RegionId = "thornveil",
+                            Type = "Dungeon"
+                        },
+                        new
+                        {
+                            Id = "aldenmere",
+                            Description = "A grey-stoned Dravan waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.",
+                            HasInn = true,
+                            HasMerchant = true,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 5,
+                            Name = "Aldenmere",
+                            RegionId = "greymoor",
+                            Type = "Town"
+                        },
+                        new
+                        {
+                            Id = "pale-moor",
+                            Description = "Endless fog-blanketed moors where waymarks shift overnight and travellers learn quickly to trust local guides.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 7,
+                            Name = "The Pale Moor",
+                            RegionId = "greymoor",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "soddenfen",
+                            Description = "A waterlogged fenland buzzing with plague insects and half-submerged ruins, avoided by all with good sense.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 9,
+                            Name = "Soddenfen",
+                            RegionId = "greymoor",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "barrow-deeps",
+                            Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard ancient Dravan relics.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 11,
+                            Name = "The Barrow Deeps",
+                            RegionId = "greymoor",
+                            Type = "Dungeon"
+                        },
+                        new
+                        {
+                            Id = "tolvaren",
+                            Description = "A salt-caked Thysmara port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.",
+                            HasInn = true,
+                            HasMerchant = true,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 10,
+                            Name = "Tolvaren",
+                            RegionId = "saltcliff",
+                            Type = "Town"
+                        },
+                        new
+                        {
+                            Id = "tidewrack-flats",
+                            Description = "Tide-scoured mudflats littered with shipwreck timber and kelp-draped bones, hunted by scavengers and wading predators.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 12,
+                            Name = "The Tidewrack Flats",
+                            RegionId = "saltcliff",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "saltcliff-heights",
+                            Description = "Wind-blasted clifftops above the Thysmara sea, dotted with lighthouse ruins and contested by rival gull-rider clans.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 14,
+                            Name = "The Saltcliff Heights",
+                            RegionId = "saltcliff",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "sunken-name",
+                            Description = "The drowned heart of a once-great Thysmara empire, now a flooded ruin accessible only to the brave and the waterproofed.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 16,
+                            Name = "The Sunken Name",
+                            RegionId = "saltcliff",
+                            Type = "Dungeon"
+                        },
+                        new
+                        {
+                            Id = "skarhold",
+                            Description = "A Kaldrek forge-city built inside a dormant caldera, where the best smiths in Draveth ply their trade under sulphur skies.",
+                            HasInn = true,
+                            HasMerchant = true,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 18,
+                            Name = "Skarhold",
+                            RegionId = "cinderplain",
+                            Type = "Town"
+                        },
+                        new
+                        {
+                            Id = "ashfields",
+                            Description = "Grey ash plains stretching to the horizon, dotted with fused obsidian trees and the scorched skulls of fallen armies.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 20,
+                            Name = "The Ashfields",
+                            RegionId = "cinderplain",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "smoldering-reach",
+                            Description = "A cracked lava field where vents of superheated gas erupt without warning and heat-adapted predators hunt at dusk.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 23,
+                            Name = "The Smoldering Reach",
+                            RegionId = "cinderplain",
+                            Type = "Wilderness"
+                        },
+                        new
+                        {
+                            Id = "kaldrek-maw",
+                            Description = "A vast volcanic vent complex known as the Maw, lair of Kaldrek's fire-bound ancient and final test of the worthy.",
+                            HasInn = false,
+                            HasMerchant = false,
+                            IsDiscoverable = true,
+                            IsPvpEnabled = false,
+                            IsStarter = false,
+                            MaxPlayers = 0,
+                            MinLevel = 26,
+                            Name = "Kaldrek's Maw",
+                            RegionId = "cinderplain",
+                            Type = "Dungeon"
+                        });
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneConnection", b =>
+                {
+                    b.Property<string>("FromZoneId")
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ToZoneId")
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("FromZoneId", "ToZoneId");
+
+                    b.HasIndex("ToZoneId");
+
+                    b.ToTable("ZoneConnections");
+
+                    b.HasData(
+                        new
+                        {
+                            FromZoneId = "fenwick-crossing",
+                            ToZoneId = "greenveil-paths"
+                        },
+                        new
+                        {
+                            FromZoneId = "greenveil-paths",
+                            ToZoneId = "fenwick-crossing"
+                        },
+                        new
+                        {
+                            FromZoneId = "greenveil-paths",
+                            ToZoneId = "thornveil-hollow"
+                        },
+                        new
+                        {
+                            FromZoneId = "thornveil-hollow",
+                            ToZoneId = "greenveil-paths"
+                        },
+                        new
+                        {
+                            FromZoneId = "thornveil-hollow",
+                            ToZoneId = "verdant-barrow"
+                        },
+                        new
+                        {
+                            FromZoneId = "verdant-barrow",
+                            ToZoneId = "thornveil-hollow"
+                        },
+                        new
+                        {
+                            FromZoneId = "thornveil-hollow",
+                            ToZoneId = "aldenmere"
+                        },
+                        new
+                        {
+                            FromZoneId = "aldenmere",
+                            ToZoneId = "thornveil-hollow"
+                        },
+                        new
+                        {
+                            FromZoneId = "aldenmere",
+                            ToZoneId = "pale-moor"
+                        },
+                        new
+                        {
+                            FromZoneId = "pale-moor",
+                            ToZoneId = "aldenmere"
+                        },
+                        new
+                        {
+                            FromZoneId = "pale-moor",
+                            ToZoneId = "soddenfen"
+                        },
+                        new
+                        {
+                            FromZoneId = "soddenfen",
+                            ToZoneId = "pale-moor"
+                        },
+                        new
+                        {
+                            FromZoneId = "soddenfen",
+                            ToZoneId = "barrow-deeps"
+                        },
+                        new
+                        {
+                            FromZoneId = "barrow-deeps",
+                            ToZoneId = "soddenfen"
+                        },
+                        new
+                        {
+                            FromZoneId = "soddenfen",
+                            ToZoneId = "tolvaren"
+                        },
+                        new
+                        {
+                            FromZoneId = "tolvaren",
+                            ToZoneId = "soddenfen"
+                        },
+                        new
+                        {
+                            FromZoneId = "tolvaren",
+                            ToZoneId = "tidewrack-flats"
+                        },
+                        new
+                        {
+                            FromZoneId = "tidewrack-flats",
+                            ToZoneId = "tolvaren"
+                        },
+                        new
+                        {
+                            FromZoneId = "tidewrack-flats",
+                            ToZoneId = "saltcliff-heights"
+                        },
+                        new
+                        {
+                            FromZoneId = "saltcliff-heights",
+                            ToZoneId = "tidewrack-flats"
+                        },
+                        new
+                        {
+                            FromZoneId = "saltcliff-heights",
+                            ToZoneId = "sunken-name"
+                        },
+                        new
+                        {
+                            FromZoneId = "sunken-name",
+                            ToZoneId = "saltcliff-heights"
+                        },
+                        new
+                        {
+                            FromZoneId = "barrow-deeps",
+                            ToZoneId = "skarhold"
+                        },
+                        new
+                        {
+                            FromZoneId = "skarhold",
+                            ToZoneId = "barrow-deeps"
+                        },
+                        new
+                        {
+                            FromZoneId = "skarhold",
+                            ToZoneId = "ashfields"
+                        },
+                        new
+                        {
+                            FromZoneId = "ashfields",
+                            ToZoneId = "skarhold"
+                        },
+                        new
+                        {
+                            FromZoneId = "ashfields",
+                            ToZoneId = "smoldering-reach"
+                        },
+                        new
+                        {
+                            FromZoneId = "smoldering-reach",
+                            ToZoneId = "ashfields"
+                        },
+                        new
+                        {
+                            FromZoneId = "smoldering-reach",
+                            ToZoneId = "kaldrek-maw"
+                        },
+                        new
+                        {
+                            FromZoneId = "kaldrek-maw",
+                            ToZoneId = "smoldering-reach"
                         });
                 });
 
@@ -704,6 +1252,66 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.World", "World")
+                        .WithMany("Regions")
+                        .HasForeignKey("WorldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("World");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RegionConnection", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "FromRegion")
+                        .WithMany("Connections")
+                        .HasForeignKey("FromRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "ToRegion")
+                        .WithMany()
+                        .HasForeignKey("ToRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromRegion");
+
+                    b.Navigation("ToRegion");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "Region")
+                        .WithMany("Zones")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneConnection", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "FromZone")
+                        .WithMany("Exits")
+                        .HasForeignKey("FromZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "ToZone")
+                        .WithMany()
+                        .HasForeignKey("ToZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromZone");
+
+                    b.Navigation("ToZone");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
                 {
                     b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
@@ -728,8 +1336,22 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Votes");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+                {
+                    b.Navigation("Connections");
+
+                    b.Navigation("Zones");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.World", b =>
+                {
+                    b.Navigation("Regions");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
                 {
+                    b.Navigation("Exits");
+
                     b.Navigation("Sessions");
                 });
 #pragma warning restore 612, 618

@@ -6,7 +6,7 @@ namespace RealmUnbound.Server.Data.Entities;
 /// </summary>
 public class Zone
 {
-    public string Id { get; set; } = string.Empty; // e.g. "starting-zone", "town-millhaven"
+    public string Id { get; set; } = string.Empty; // e.g. "fenwick-crossing", "aldenmere"
 
     public string Name { get; set; } = string.Empty;
 
@@ -23,8 +23,31 @@ public class Zone
     /// <summary>True for the zone new characters start in.</summary>
     public bool IsStarter { get; set; }
 
+    /// <summary>True if the zone contains an inn where characters can rest.</summary>
+    public bool HasInn { get; set; }
+
+    /// <summary>True if the zone contains a merchant shop.</summary>
+    public bool HasMerchant { get; set; }
+
+    /// <summary>True if player-versus-player combat is allowed in this zone.</summary>
+    public bool IsPvpEnabled { get; set; }
+
+    /// <summary>False for zones that are unlocked through progression or quests rather than open exploration.</summary>
+    public bool IsDiscoverable { get; set; } = true;
+
+    // FK
+    /// <summary>The region this zone belongs to.</summary>
+    public string RegionId { get; set; } = string.Empty;
+
     // Navigation
+    /// <summary>Parent region.</summary>
+    public Region Region { get; set; } = null!;
+
+    /// <summary>Active player sessions currently inside this zone.</summary>
     public ICollection<ZoneSession> Sessions { get; set; } = [];
+
+    /// <summary>Directed connections to adjacent zones (exits from this zone).</summary>
+    public ICollection<ZoneConnection> Exits { get; set; } = [];
 }
 
 public enum ZoneType

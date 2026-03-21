@@ -104,6 +104,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-11 (2026-03-20) | **304** | **304** | **608** |
 | Session-12 (2026-03-20) | **308** | **307** | **615** |
 | Session-13 (2026-03-20) | **340** | **383** | **723** |
+| Session-14 (2026-03-21) | **340** | **383** | **723** |
 
 ## P3 Stubs Status
 
@@ -181,7 +182,42 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - Broadcasts `DungeonEntered` payload: `{ CharacterId, DungeonId, DungeonSlug }`
 - `DungeonEnteredPayload` internal record lives in `CharacterSelectViewModel.cs`
 - Client callback: `GameViewModel.OnDungeonEntered(string dungeonId, string dungeonSlug)` → `AppendLog`
-- Seeded dungeon available in `TestDbContextFactory` (SQLite + `EnsureCreated`): `"dungeon-grotto"` (Mossglow Grotto, `ZoneType.Dungeon`)
+- Seeded dungeon available in `TestDbContextFactory` (SQLite + `EnsureCreated`): **REPLACED in session-14 — use `"verdant-barrow"` (Verdant Barrow, ZoneType.Dungeon)**
+
+## World / Region / Zone Schema (session-14 — 2026-03-21)
+
+Full World → Region → Zone hierarchy implemented.
+
+**Entities** (all in `RealmUnbound.Server/Data/Entities/`):
+- `World.cs`: `Id` (slug), `Name`, `Description`, `Era`, `ICollection<Region> Regions`
+- `Region.cs`: `Id` (slug), `Name`, `Description`, `RegionType Type`, `MinLevel`, `MaxLevel`, `IsStarter`, `IsDiscoverable`, `WorldId` FK, navigation `World`, `ICollection<Zone> Zones`, `ICollection<RegionConnection> Connections`
+- `RegionType` enum (in `Region.cs`): `Forest`, `Highland`, `Coastal`, `Volcanic`
+- `RegionConnection.cs`: composite PK (`FromRegionId` + `ToRegionId`), navigate `FromRegion`, `ToRegion`; `Restrict` delete-behavior on both FK sides
+- `ZoneConnection.cs`: composite PK (`FromZoneId` + `ToZoneId`), navigate `FromZone`, `ToZone`; `Restrict` delete-behavior on both FK sides; bidirectional travel = 2 rows
+
+**Zone entity changes** (`Zone.cs`):
+- Added: `string RegionId` (FK), `Region Region` nav, `bool HasInn`, `bool HasMerchant`, `bool IsPvpEnabled`, `bool IsDiscoverable`, `ICollection<ZoneConnection> Exits`
+- Removed: old Tutorial type seed data (5 zones removed)
+
+**Seed data (Draveth world)**:
+- 1 World: `draveth` / "Draveth" / "The Age of Embers"
+- 4 Regions: `thornveil` (Forest, starter), `greymoor` (Highland), `saltcliff` (Coastal), `cinderplain` (Volcanic)
+- 6 RegionConnections: thornveil↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
+- 16 Zones: 4 per region (1 Town, 2 Wilderness, 1 Dungeon)
+- **Starter zone**: `fenwick-crossing` (Fenwick's Crossing, Thornveil)
+- **Dungeon IDs**: `verdant-barrow`, `barrow-deeps`, `sunken-name`, `kaldrek-maw`
+- 30 ZoneConnections (bidirectional = 2 rows per pair; cross-region borders included)
+
+**Character default zone**: `"fenwick-crossing"` (was `"starting-zone"`)
+
+**Repositories**: `IRegionRepository` + `RegionRepository`, `IWorldRepository` + `WorldRepository` added; `IZoneRepository.GetByRegionIdAsync` added  
+**DI**: `IRegionRepository` + `IWorldRepository` registered in `Program.cs`  
+**Contracts**: `RegionDto`, `WorldDto` added to `ZoneContracts.cs`; `ZoneDto` extended with optional `RegionId?`, `HasInn`, `HasMerchant`  
+**Endpoints**: `GET /api/regions`, `GET /api/regions/{id}`, `GET /api/regions/{id}/connections`, `GET /api/worlds`, `GET /api/worlds/{id}`, `GET /api/zones/by-region/{regionId}`  
+**Migration**: `AddWorldRegionZoneConnections` in `Migrations/Application/`
+
+**SQLite FK tests**: FK constraints ARE enforced in `TestDbContextFactory`. Tests that add custom zones without RegionId will fail. Use seeded zone IDs (`"fenwick-crossing"`, `"aldenmere"`, etc.) in ZoneSession tests instead of `MakeZone`.  
+When deleting all zones in tests: delete `ZoneConnections` first (FK Restrict on Zone), then Zones.
 
 ## IContentService Extension (session-13)
 
