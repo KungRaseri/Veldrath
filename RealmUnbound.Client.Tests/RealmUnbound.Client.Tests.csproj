@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RealmUnbound.Client\RealmUnbound.Client.csproj" />
+    <ProjectReference Include="..\RealmUnbound.Assets\RealmUnbound.Assets.csproj" />
   </ItemGroup>
 
   <ItemGroup>

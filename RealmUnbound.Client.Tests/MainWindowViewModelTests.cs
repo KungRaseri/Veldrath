@@ -10,7 +10,7 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Start_With_Splash_ViewModel()
     {
         var nav    = new FakeNavigationService();
-        var splash = new SplashViewModel(nav);
+        var splash = new SplashViewModel(nav, new FakeAssetStore());
         var vm     = new MainWindowViewModel(nav, splash);
 
         vm.CurrentPage.Should().BeSameAs(splash);
@@ -20,7 +20,7 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Update_When_Navigation_Fires_Generic()
     {
         var nav    = new FakeNavigationService();
-        var splash = new SplashViewModel(nav);
+        var splash = new SplashViewModel(nav, new FakeAssetStore());
         var vm     = new MainWindowViewModel(nav, splash);
 
         // Navigate using the typed overload — FakeNavigationService raises CurrentPageChanged
@@ -35,7 +35,7 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Update_For_Multiple_Navigations()
     {
         var nav    = new FakeNavigationService();
-        var splash = new SplashViewModel(nav);
+        var splash = new SplashViewModel(nav, new FakeAssetStore());
         var vm     = new MainWindowViewModel(nav, splash);
 
         var first  = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
@@ -51,7 +51,7 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Raise_PropertyChanged()
     {
         var nav      = new FakeNavigationService();
-        var splash   = new SplashViewModel(nav);
+        var splash   = new SplashViewModel(nav, new FakeAssetStore());
         var vm       = new MainWindowViewModel(nav, splash);
         var changes  = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
