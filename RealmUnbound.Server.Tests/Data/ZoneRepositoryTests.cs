@@ -108,6 +108,43 @@ public class ZoneRepositoryTests : IDisposable
         result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task GetByRegionIdAsync_Should_Return_Zones_In_Region()
+    {
+        await using var db = _factory.CreateContext();
+        // "thornveil" has 4 seeded zones: fenwick-crossing, greenveil-paths, thornveil-hollow, verdant-barrow
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetByRegionIdAsync("thornveil");
+
+        result.Should().HaveCount(4);
+        result.Should().OnlyContain(z => z.RegionId == "thornveil");
+        result.Should().Contain(z => z.Id == "fenwick-crossing");
+        result.Should().Contain(z => z.Id == "verdant-barrow");
+    }
+
+    [Fact]
+    public async Task GetByRegionIdAsync_Should_Return_Empty_For_Unknown_Region()
+    {
+        await using var db = _factory.CreateContext();
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetByRegionIdAsync("nonexistent-region");
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetByRegionIdAsync_Should_Return_Zones_Ordered_By_Level()
+    {
+        await using var db = _factory.CreateContext();
+        // greymoor zones: aldenmere (L5), pale-moor (L7), soddenfen (L9), barrow-deeps (L11)
+        var repo   = new ZoneRepository(db);
+        var result = await repo.GetByRegionIdAsync("greymoor");
+
+        result.Should().HaveCount(4);
+        result[0].MinLevel.Should().BeLessThanOrEqualTo(result[1].MinLevel);
+        result[1].MinLevel.Should().BeLessThanOrEqualTo(result[2].MinLevel);
+        result[2].MinLevel.Should().BeLessThanOrEqualTo(result[3].MinLevel);
+    }
+
     // ── ZoneSessionRepository ─────────────────────────────────────────────────
 
     [Fact]
