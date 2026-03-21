@@ -227,6 +227,12 @@ try
     builder.Services.AddScoped<IItemRepository, EfCoreItemRepository>();
     builder.Services.AddScoped<IEnchantmentRepository, EfCoreEnchantmentRepository>();
     builder.Services.AddScoped<INodeRepository, EfCoreNodeRepository>();
+    builder.Services.AddScoped<IOrganizationRepository, EfCoreOrganizationRepository>();
+    builder.Services.AddScoped<IWorldLocationRepository, EfCoreWorldLocationRepository>();
+    builder.Services.AddScoped<IDialogueRepository, EfCoreDialogueRepository>();
+    builder.Services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();
+    builder.Services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();
+    builder.Services.AddScoped<ITraitDefinitionRepository, EfCoreTraitDefinitionRepository>();
 
     // ── Cookie policy ──────────────────────────────────────────────────────────
     // When running on plain HTTP (Docker dev, CI), browsers reject SameSite=None

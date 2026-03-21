@@ -17,11 +17,22 @@ All Newtonsoft migration done as of 2026-03-16:
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
 - Newtonsoft remains in: `RealmUnbound.Server` (ServerSaveGameRepository), `RealmForge`, `RealmUnbound.Server.Tests` (test data fixtures)
 
-## Test Status (2026-03-20, session-19)
+## Test Status (session-20)
 - Shared.Tests: 778 passed
-- Core.Tests: 1,738 passed
-- Data.Tests: 203 passed
-- Server.Tests: 362 passed (+12 from session-19: ContentEquipmentEndpointTests — weapons, armors, materials)
+- Core.Tests: **1,847 passed** (+109: 11 Goals-1/2 handlers + tests, 6 Goal-3 handlers + tests)
+- Data.Tests: **227 passed** (+24: 6 Goal-3 EfCore repo test classes × 4 tests each)
+- Server.Tests: 362 passed (unchanged)
+
+## What Was Done (session-20)
+
+### Goal 1+2 — 11 missing Core catalog query handlers
+All 11 wired end-to-end (Core handler + unit tests):
+`AbilityCatalog`, `EnemyCatalog`, `NpcCatalog`, `QuestCatalog`, `RecipeCatalog`, `LootTableCatalog`, `SpellCatalog`, `SkillCatalog`, `MaterialCatalog`, `WeaponCatalog`, `ArmorCatalog`
+
+### Goal 3 — 6 new content tables wired end-to-end
+Created: shared models, interfaces, EfCore repos, Program.cs registrations, ContentContracts.cs DTOs, ContentEndpoints.cs routes + handlers + mappers, Core handlers, Core.Tests, Data.Tests
+- `Organization` / `WorldLocation` / `Dialogue` / `ActorInstance` / `MaterialProperty` / `TraitDefinition`
+- All 12 server routes registered; TraitDefinition uses `/traits/{key}` (not slug)
 
 ## What Was Done (session-18)
 - `SeedItemsAsync` implemented in `DatabaseSeeder.cs`: 17 items covering all 6 ItemType values (consumable, crystal, gem, rune, essence, orb), with factory helpers `I()`, `ISt()`, `ITr()`
