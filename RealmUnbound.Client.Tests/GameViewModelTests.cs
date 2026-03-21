@@ -730,4 +730,243 @@ public class GameViewModelTests : TestBase
 
         conn.SentCommands.Should().Contain(c => c.Method == "EnterDungeon");
     }
+
+    // ── IsLeftPanelOpen + ToggleLeftPanelCommand ──────────────────────────────
+
+    [Fact]
+    public void IsLeftPanelOpen_Should_Default_To_True()
+    {
+        var vm = MakeVm();
+        vm.IsLeftPanelOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ToggleLeftPanelCommand_Should_Collapse_Panel_When_Open()
+    {
+        var vm = MakeVm();
+        await vm.ToggleLeftPanelCommand.Execute();
+        vm.IsLeftPanelOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ToggleLeftPanelCommand_Should_Expand_Panel_When_Collapsed()
+    {
+        var vm = MakeVm();
+        await vm.ToggleLeftPanelCommand.Execute(); // collapse
+        await vm.ToggleLeftPanelCommand.Execute(); // expand
+        vm.IsLeftPanelOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LeftPanelToggleIcon_Should_Be_Left_Arrow_When_Open()
+    {
+        var vm = MakeVm();
+        vm.LeftPanelToggleIcon.Should().Be("◀");
+    }
+
+    [Fact]
+    public async Task LeftPanelToggleIcon_Should_Be_Right_Arrow_When_Collapsed()
+    {
+        var vm = MakeVm();
+        await vm.ToggleLeftPanelCommand.Execute();
+        vm.LeftPanelToggleIcon.Should().Be("▶");
+    }
+
+    [Fact]
+    public async Task ToggleLeftPanelCommand_Should_RaisePropertyChanged_For_IsLeftPanelOpen()
+    {
+        var vm      = MakeVm();
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        await vm.ToggleLeftPanelCommand.Execute();
+
+        changes.Should().Contain(nameof(GameViewModel.IsLeftPanelOpen));
+        changes.Should().Contain(nameof(GameViewModel.LeftPanelToggleIcon));
+    }
+
+    // ── Zone context flags (HasInn, HasMerchant, ZoneType) ───────────────────
+
+    [Fact]
+    public void HasInn_Should_Default_To_False()
+    {
+        var vm = MakeVm();
+        vm.HasInn.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasMerchant_Should_Default_To_False()
+    {
+        var vm = MakeVm();
+        vm.HasMerchant.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ZoneType_Should_Default_To_Empty()
+    {
+        var vm = MakeVm();
+        vm.ZoneType.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Should_Set_ZoneType_From_Service()
+    {
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick's Crossing",
+                "A cozy starting town.", "Town", 0, 50, true, 0,
+                RegionId: "thornveil", HasInn: true, HasMerchant: true)
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        vm.ZoneType.Should().Be("Town");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Should_Set_HasInn_True_For_Inn_Zone()
+    {
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick's Crossing",
+                "A cozy starting town.", "Town", 0, 50, true, 0,
+                RegionId: "thornveil", HasInn: true, HasMerchant: false)
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        vm.HasInn.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Should_Set_HasInn_False_For_Wilderness_Zone()
+    {
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("greenveil-paths", "Greenveil Paths",
+                "A forest path.", "Wilderness", 1, 50, false, 0)
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.InitializeAsync("Hero", "greenveil-paths");
+
+        vm.HasInn.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Should_Set_HasMerchant_True_For_Merchant_Zone()
+    {
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick's Crossing",
+                "A cozy starting town.", "Town", 0, 50, true, 0,
+                RegionId: "thornveil", HasInn: false, HasMerchant: true)
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        vm.HasMerchant.Should().BeTrue();
+    }
+
+    // ── HasUnspentPoints ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void HasUnspentPoints_Should_Be_False_When_Zero()
+    {
+        var vm = MakeVm();
+        vm.UnspentAttributePoints = 0;
+        vm.HasUnspentPoints.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasUnspentPoints_Should_Be_True_When_Points_Available()
+    {
+        var vm = MakeVm();
+        vm.UnspentAttributePoints = 3;
+        vm.HasUnspentPoints.Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasUnspentPoints_Should_RaisePropertyChanged_When_UnspentPoints_Changes()
+    {
+        var vm      = MakeVm();
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        vm.UnspentAttributePoints = 2;
+
+        changes.Should().Contain(nameof(GameViewModel.HasUnspentPoints));
+    }
+
+    // ── ExperienceToNextLevel ────────────────────────────────────────────────
+
+    [Fact]
+    public void ExperienceToNextLevel_Should_Scale_With_Level()
+    {
+        var vm = MakeVm();
+        vm.SeedInitialStats(level: 5, experience: 0, currentHealth: 50, maxHealth: 50,
+                            currentMana: 25, maxMana: 25, gold: 0, unspentAttributePoints: 0);
+
+        vm.ExperienceToNextLevel.Should().Be(2500L); // 5 * 500
+    }
+
+    [Fact]
+    public void ExperienceToNextLevel_Should_Be_At_Least_One_At_Level_Zero()
+    {
+        var vm = MakeVm();
+        vm.SeedInitialStats(level: 0, experience: 0, currentHealth: 10, maxHealth: 10,
+                            currentMana: 5, maxMana: 5, gold: 0, unspentAttributePoints: 0);
+
+        vm.ExperienceToNextLevel.Should().BeGreaterThanOrEqualTo(1L);
+    }
+
+    [Fact]
+    public void ExperienceToNextLevel_Should_RaisePropertyChanged_When_Level_Changes()
+    {
+        var vm      = MakeVm();
+        var changes = new List<string>();
+        vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
+
+        vm.Level = 10;
+
+        changes.Should().Contain(nameof(GameViewModel.ExperienceToNextLevel));
+    }
+
+    // ── Dev commands ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DevGainXpCommand_Should_Send_GainExperience_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.DevGainXpCommand.Execute();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "GainExperience");
+    }
+
+    [Fact]
+    public async Task DevAddGoldCommand_Should_Send_AddGold_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.DevAddGoldCommand.Execute();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "AddGold");
+    }
+
+    [Fact]
+    public async Task DevTakeDamageCommand_Should_Send_TakeDamage_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.DevTakeDamageCommand.Execute();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "TakeDamage");
+    }
 }

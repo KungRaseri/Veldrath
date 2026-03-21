@@ -8,7 +8,367 @@
              x:Class="RealmUnbound.Client.Views.GameView"
              x:DataType="vm:GameViewModel">
 
-    <Grid RowDefinitions="Auto,*">
+    <!-- ══════════════════════════════════════════════════════════════════════
+         GAME VIEW — 3-column layout with collapsible left panel
+         Row 0: Header  (Auto)
+         Row 1: Content — Left|Center|Right  (*)
+         Row 2: Action bar  (Auto)
+    ══════════════════════════════════════════════════════════════════════ -->
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── ROW 0: HEADER ──────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Classes="panel-topbar">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+
+                <!-- Left: character name → zone name + zone type badge -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="{Binding CharacterName}"
+                               Classes="accent"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="→"
+                               Foreground="{DynamicResource GameTextTertiaryBrush}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ZoneName}"
+                               FontSize="14"
+                               VerticalAlignment="Center" />
+                    <Border Background="{DynamicResource GameBackground3Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="6,2"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding ZoneType,
+                                        Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding ZoneType}"
+                                   Classes="caption" />
+                    </Border>
+                </StackPanel>
+
+                <!-- Centre: status message -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusMessage}"
+                           Classes="muted"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0" />
+
+                <!-- Right: logout -->
+                <Button Grid.Column="2"
+                        Content="Logout"
+                        Classes="danger ghost"
+                        Command="{Binding LogoutCommand}"
+                        Height="32"
+                        FontSize="13" />
+            </Grid>
+        </Border>
+
+        <!-- ── ROW 1: 3-COLUMN CONTENT ───────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,220">
+
+            <!-- ── LEFT PANEL (collapsible) ──────────────────────────────── -->
+            <!-- DockPanel auto-sizes the column: 224px open, 28px collapsed -->
+            <DockPanel Grid.Column="0"
+                       Background="{DynamicResource GameBackground1Brush}"
+                       LastChildFill="False">
+
+                <!-- Toggle button — always visible, pinned to right edge -->
+                <Button DockPanel.Dock="Right"
+                        Classes="icon ghost"
+                        Content="{Binding LeftPanelToggleIcon}"
+                        Command="{Binding ToggleLeftPanelCommand}"
+                        Width="28"
+                        VerticalAlignment="Top"
+                        Margin="0,10,2,0"
+                        ToolTip.Tip="Toggle stats panel" />
+
+                <!-- Collapsible content panel -->
+                <Border DockPanel.Dock="Left"
+                        IsVisible="{Binding IsLeftPanelOpen}"
+                        Width="196"
+                        BorderBrush="{DynamicResource GameBorderBrush}"
+                        BorderThickness="0,0,1,0"
+                        Padding="12,12,8,12">
+                    <DockPanel>
+
+                        <!-- HP / MP bars — docked to top -->
+                        <StackPanel DockPanel.Dock="Top"
+                                    Spacing="10"
+                                    Margin="0,0,0,12">
+
+                            <!-- HP bar -->
+                            <StackPanel Spacing="3">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="HP"
+                                               Classes="caption"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="caption"
+                                               VerticalAlignment="Center">
+                                        <Run Text="{Binding CurrentHealth}" /><Run Text=" / " /><Run Text="{Binding MaxHealth}" />
+                                    </TextBlock>
+                                </Grid>
+                                <ProgressBar Classes="health"
+                                             Minimum="0"
+                                             Maximum="{Binding MaxHealth}"
+                                             Value="{Binding CurrentHealth}"
+                                             Height="8" />
+                            </StackPanel>
+
+                            <!-- MP bar -->
+                            <StackPanel Spacing="3">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="MP"
+                                               Classes="caption"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="caption"
+                                               VerticalAlignment="Center">
+                                        <Run Text="{Binding CurrentMana}" /><Run Text=" / " /><Run Text="{Binding MaxMana}" />
+                                    </TextBlock>
+                                </Grid>
+                                <ProgressBar Classes="mana"
+                                             Minimum="0"
+                                             Maximum="{Binding MaxMana}"
+                                             Value="{Binding CurrentMana}"
+                                             Height="8" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Divider -->
+                        <Border DockPanel.Dock="Top"
+                                Classes="separator"
+                                Margin="0,0,0,10" />
+
+                        <!-- Log label -->
+                        <TextBlock DockPanel.Dock="Top"
+                                   Text="Action Log"
+                                   Classes="caption"
+                                   Margin="0,0,0,6" />
+
+                        <!-- Scrolling log -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding ActionLog}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+
+            <!-- ── CENTER PANEL (zone view) ──────────────────────────────── -->
+            <Border Grid.Column="1"
+                    Background="{DynamicResource GameBackground0Brush}"
+                    Padding="24">
+                <DockPanel>
+
+                    <!-- Zone description header -->
+                    <StackPanel DockPanel.Dock="Top"
+                                Margin="0,0,0,16"
+                                Spacing="4">
+                        <TextBlock Text="{Binding ZoneDescription}"
+                                   Classes="muted"
+                                   FontStyle="Italic"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <!-- Zone visual placeholder -->
+                    <Border Background="{DynamicResource GameBackground2Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            MinHeight="280">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="8">
+                            <TextBlock Text="[ Zone Visual ]"
+                                       Classes="muted"
+                                       FontSize="20"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Tile map rendering coming soon"
+                                       Classes="caption"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </DockPanel>
+            </Border>
+
+            <!-- ── RIGHT PANEL (character stats + online players) ────────── -->
+            <Border Grid.Column="2"
+                    Background="{DynamicResource GameBackground1Brush}"
+                    BorderBrush="{DynamicResource GameBorderBrush}"
+                    BorderThickness="1,0,0,0"
+                    Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="0">
+
+                        <!-- Character stats header -->
+                        <TextBlock Text="Character"
+                                   Classes="caption"
+                                   Margin="0,0,0,10" />
+
+                        <!-- Level -->
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                            <TextBlock Text="Level"
+                                       FontSize="12"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Level}"
+                                       Classes="accent"
+                                       FontWeight="Bold"
+                                       FontSize="14" />
+                        </Grid>
+
+                        <!-- XP bar -->
+                        <StackPanel Spacing="2" Margin="0,0,0,8">
+                            <ProgressBar Classes="xp"
+                                         Minimum="0"
+                                         Maximum="{Binding ExperienceToNextLevel}"
+                                         Value="{Binding Experience}"
+                                         Height="4" />
+                            <TextBlock Classes="caption"
+                                       HorizontalAlignment="Right">
+                                <Run Text="{Binding Experience}" /><Run Text=" / " /><Run Text="{Binding ExperienceToNextLevel}" /><Run Text=" XP" />
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Gold -->
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                            <TextBlock Text="Gold"
+                                       FontSize="12"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Gold}"
+                                       Classes="accent"
+                                       FontSize="13" />
+                        </Grid>
+
+                        <!-- Unspent AP badge (only when > 0) -->
+                        <Border IsVisible="{Binding HasUnspentPoints}"
+                                Background="{DynamicResource GameWarningMutedBrush}"
+                                BorderBrush="{DynamicResource GameWarningBrush}"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Padding="6,3"
+                                Margin="0,6,0,0">
+                            <TextBlock Classes="warning" FontSize="11">
+                                <Run Text="{Binding UnspentAttributePoints}" /><Run Text=" unspent attribute points" />
+                            </TextBlock>
+                        </Border>
+
+                        <!-- Divider -->
+                        <Border Classes="separator" Margin="0,12" />
+
+                        <!-- Online players -->
+                        <TextBlock Text="Online in Zone"
+                                   Classes="caption"
+                                   Margin="0,0,0,8" />
+                        <ItemsControl ItemsSource="{Binding OnlinePlayers}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="6"
+                                                Margin="0,2">
+                                        <Ellipse Width="7" Height="7"
+                                                 Fill="{DynamicResource GameSuccessBrush}"
+                                                 VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding}" FontSize="12" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Divider -->
+                        <Border Classes="separator" Margin="0,12" />
+
+                        <!-- Dev Tools expander (debug helpers during development) -->
+                        <Expander Header="Dev Tools"
+                                  HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Stretch">
+                            <StackPanel Spacing="4" Margin="0,6,0,0">
+                                <Button Content="Gain 100 XP"
+                                        Classes="ghost"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding DevGainXpCommand}" />
+                                <Button Content="+50 Gold"
+                                        Classes="ghost"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding DevAddGoldCommand}" />
+                                <Button Content="Take 10 Damage"
+                                        Classes="ghost"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding DevTakeDamageCommand}" />
+                            </StackPanel>
+                        </Expander>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+        </Grid>
+
+        <!-- ── ROW 2: CONTEXT-SENSITIVE ACTION BAR ───────────────────────── -->
+        <Border Grid.Row="2"
+                Classes="panel-statusbar">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="8"
+                        VerticalAlignment="Center">
+
+                <!-- Context: only in zones with an inn -->
+                <Button Content="Rest at Inn"
+                        Classes="accent"
+                        IsVisible="{Binding HasInn}"
+                        Command="{Binding RestAtLocationCommand}"
+                        Height="36"
+                        FontSize="13" />
+
+                <!-- Context: only in zones with a merchant -->
+                <Button Content="Shop"
+                        Classes="ghost"
+                        IsVisible="{Binding HasMerchant}"
+                        Height="36"
+                        FontSize="13" />
+
+                <!-- Always available -->
+                <Button Content="Craft Item"
+                        Classes="ghost"
+                        Command="{Binding CraftItemCommand}"
+                        CommandParameter="basic-sword"
+                        Height="36"
+                        FontSize="13" />
+                <Button Content="Enter Dungeon"
+                        Classes="ghost"
+                        Command="{Binding EnterDungeonCommand}"
+                        CommandParameter="verdant-barrow"
+                        Height="36"
+                        FontSize="13" />
+                <Button Content="Use Ability"
+                        Classes="ghost"
+                        Command="{Binding UseAbilityCommand}"
+                        CommandParameter="fireball"
+                        Height="36"
+                        FontSize="13" />
+
+            </StackPanel>
+        </Border>
+
+    </Grid>
+
+</UserControl>
+
 
         <!-- Top bar -->
         <Border Grid.Row="0"

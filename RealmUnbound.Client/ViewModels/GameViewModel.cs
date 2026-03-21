@@ -58,7 +58,11 @@ public class GameViewModel : ViewModelBase
     public int UnspentAttributePoints
     {
         get => _unspentAttributePoints;
-        set => this.RaiseAndSetIfChanged(ref _unspentAttributePoints, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _unspentAttributePoints, value);
+            this.RaisePropertyChanged(nameof(HasUnspentPoints));
+        }
     }
 
     /// <summary>Current hit points of the active character.</summary>
@@ -100,7 +104,11 @@ public class GameViewModel : ViewModelBase
     public int Level
     {
         get => _level;
-        set => this.RaiseAndSetIfChanged(ref _level, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _level, value);
+            this.RaisePropertyChanged(nameof(ExperienceToNextLevel));
+        }
     }
 
     /// <summary>Experience points accumulated toward the next level.</summary>
@@ -110,14 +118,75 @@ public class GameViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _experience, value);
     }
 
+    /// <summary>Experience required to reach the next level (placeholder: <c>Level * 500</c>).</summary>
+    public long ExperienceToNextLevel => Math.Max(1L, Level * 500L);
+
+    /// <summary>Whether the active character has unspent attribute points to allocate.</summary>
+    public bool HasUnspentPoints => UnspentAttributePoints > 0;
+
+    // ── Left panel state ──────────────────────────────────────────────────────
+    private bool _isLeftPanelOpen = true;
+
+    /// <summary>Whether the collapsible left stats/log panel is expanded.</summary>
+    public bool IsLeftPanelOpen
+    {
+        get => _isLeftPanelOpen;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _isLeftPanelOpen, value);
+            this.RaisePropertyChanged(nameof(LeftPanelToggleIcon));
+        }
+    }
+
+    /// <summary>Icon text for the left panel toggle button: <c>◀</c> when open, <c>▶</c> when collapsed.</summary>
+    public string LeftPanelToggleIcon => IsLeftPanelOpen ? "◀" : "▶";
+
+    // ── Zone context flags ────────────────────────────────────────────────────
+    private bool _hasInn;
+    private bool _hasMerchant;
+    private string _zoneType = string.Empty;
+
+    /// <summary>Whether the current zone has an inn available for resting.</summary>
+    public bool HasInn
+    {
+        get => _hasInn;
+        private set => this.RaiseAndSetIfChanged(ref _hasInn, value);
+    }
+
+    /// <summary>Whether the current zone has a merchant for buying and selling.</summary>
+    public bool HasMerchant
+    {
+        get => _hasMerchant;
+        private set => this.RaiseAndSetIfChanged(ref _hasMerchant, value);
+    }
+
+    /// <summary>The type classification of the current zone (e.g. Town, Wilderness, Dungeon).</summary>
+    public string ZoneType
+    {
+        get => _zoneType;
+        private set => this.RaiseAndSetIfChanged(ref _zoneType, value);
+    }
+
     /// <summary>Players currently online in the same zone.</summary>
     public ObservableCollection<string> OnlinePlayers { get; } = [];
 
     /// <summary>Scrolling action log (last 100 entries).</summary>
     public ObservableCollection<string> ActionLog { get; } = [];
 
+    /// <summary>Toggles the collapsible left stats/log panel open or closed.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
+
     /// <summary>Logs out the character, leaves the zone, and returns to the main menu.</summary>
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
+
+    /// <summary>Dev helper: gains 100 XP. Used during development for testing progression.</summary>
+    public ReactiveCommand<Unit, Unit> DevGainXpCommand { get; }
+
+    /// <summary>Dev helper: adds 50 gold. Used during development for testing economy.</summary>
+    public ReactiveCommand<Unit, Unit> DevAddGoldCommand { get; }
+
+    /// <summary>Dev helper: deals 10 damage. Used during development for testing combat.</summary>
+    public ReactiveCommand<Unit, Unit> DevTakeDamageCommand { get; }
 
     /// <summary>Rest at the current zone's inn, restoring HP and MP at a cost of 10 gold.</summary>
     public ReactiveCommand<Unit, Unit> RestAtLocationCommand { get; }
@@ -162,7 +231,11 @@ public class GameViewModel : ViewModelBase
         _navigation = navigation;
 
         CharacterName = tokens.Username ?? "Adventurer";
+        ToggleLeftPanelCommand = ReactiveCommand.Create(() => { IsLeftPanelOpen = !IsLeftPanelOpen; });
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
+        DevGainXpCommand    = ReactiveCommand.CreateFromTask(() => DoGainExperienceAsync(100, "dev"));
+        DevAddGoldCommand   = ReactiveCommand.CreateFromTask(() => DoAddGoldAsync(50, "dev"));
+        DevTakeDamageCommand = ReactiveCommand.CreateFromTask(() => DoTakeDamageAsync(10, "dev"));
         RestAtLocationCommand = ReactiveCommand.CreateFromTask(DoRestAtLocationAsync);
         AllocateAttributePointsCommand = ReactiveCommand.CreateFromTask<Dictionary<string, int>>(DoAllocateAttributePointsAsync);
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
@@ -186,6 +259,9 @@ public class GameViewModel : ViewModelBase
         {
             ZoneName        = zone.Name;
             ZoneDescription = zone.Description;
+            ZoneType        = zone.Type;
+            HasInn          = zone.HasInn;
+            HasMerchant     = zone.HasMerchant;
         }
 
         AppendLog($"Welcome to {ZoneName}, {CharacterName}!");
