@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
+using RealmUnbound.Assets;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Client.Views;
@@ -105,6 +106,9 @@ public partial class App : Application
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
         services.AddSingleton<ContentCache>();
         services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')));
+
+        // Game asset store — warms the IMemoryCache during the splash screen
+        services.AddRealmUnboundAssets();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();

@@ -133,7 +133,7 @@ public class SplashViewModelTests : TestBase
     public void Title_Should_Be_RealmUnbound()
     {
         var nav = new FakeNavigationService();
-        var vm  = new SplashViewModel(nav);
+        var vm  = new SplashViewModel(nav, new FakeAssetStore());
         vm.Title.Should().Be("RealmUnbound");
     }
 
@@ -141,7 +141,7 @@ public class SplashViewModelTests : TestBase
     public void Subtitle_Should_Not_Be_Empty()
     {
         var nav = new FakeNavigationService();
-        var vm  = new SplashViewModel(nav);
+        var vm  = new SplashViewModel(nav, new FakeAssetStore());
         vm.Subtitle.Should().NotBeNullOrEmpty();
     }
 
@@ -149,7 +149,7 @@ public class SplashViewModelTests : TestBase
     public async Task SplashViewModel_Should_Eventually_Navigate_To_MainMenu()
     {
         var nav = new FakeNavigationService();
-        var vm = new SplashViewModel(nav);
+        var vm = new SplashViewModel(nav, new FakeAssetStore());
 
         // Await the actual task so the test never races against wall-clock timing.
         await vm.SplashTask;
@@ -161,7 +161,7 @@ public class SplashViewModelTests : TestBase
     public void Progress_Should_RaisePropertyChanged_When_Set()
     {
         var nav     = new FakeNavigationService();
-        var vm      = new SplashViewModel(nav);
+        var vm      = new SplashViewModel(nav, new FakeAssetStore());
         var changes = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 
@@ -175,7 +175,7 @@ public class SplashViewModelTests : TestBase
     public void StatusText_Should_RaisePropertyChanged_When_Set()
     {
         var nav     = new FakeNavigationService();
-        var vm      = new SplashViewModel(nav);
+        var vm      = new SplashViewModel(nav, new FakeAssetStore());
         var changes = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 

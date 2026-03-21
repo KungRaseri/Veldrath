@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmUnbound.Assets;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Contracts.Auth;
@@ -264,4 +265,27 @@ public static class FakeContentCache
     /// <param name="service">Optional custom service; defaults to a new <see cref="FakeContentService"/>.</param>
     public static ContentCache Create(FakeContentService? service = null) =>
         new(service ?? new FakeContentService(), NullLogger<ContentCache>.Instance);
+}
+
+// ── Asset store stub ──────────────────────────────────────────────────────────
+
+/// <summary>
+/// No-op stub for <see cref="IAssetStore"/>.
+/// Returns <see langword="null"/> for images, <see langword="null"/> for audio paths,
+/// empty sequences for category listings, and <see langword="false"/> for existence checks.
+/// </summary>
+public class FakeAssetStore : IAssetStore
+{
+    /// <inheritdoc />
+    public Task<byte[]?> LoadImageAsync(string relativePath, CancellationToken cancellationToken = default)
+        => Task.FromResult<byte[]?>(null);
+
+    /// <inheritdoc />
+    public string? ResolveAudioPath(string relativePath) => null;
+
+    /// <inheritdoc />
+    public IEnumerable<string> GetPaths(AssetCategory category) => [];
+
+    /// <inheritdoc />
+    public bool Exists(string relativePath) => false;
 }
