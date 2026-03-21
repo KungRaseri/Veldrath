@@ -143,6 +143,12 @@ public class GameViewModel : ViewModelBase
     /// <summary>Award experience to the active character. Tuple: (amount, source).</summary>
     public ReactiveCommand<(int Amount, string? Source), Unit> GainExperienceCommand { get; }
 
+    /// <summary>Craft an item by recipe slug, deducting gold from the active character.</summary>
+    public ReactiveCommand<string, Unit> CraftItemCommand { get; }
+
+    /// <summary>Enter a dungeon by slug, looking up the dungeon via the zone catalog.</summary>
+    public ReactiveCommand<string, Unit> EnterDungeonCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -165,6 +171,8 @@ public class GameViewModel : ViewModelBase
         AddGoldCommand    = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
         TakeDamageCommand      = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
         GainExperienceCommand  = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoGainExperienceAsync(t.Item1, t.Item2));
+        CraftItemCommand       = ReactiveCommand.CreateFromTask<string>(DoCraftItemAsync);
+        EnterDungeonCommand    = ReactiveCommand.CreateFromTask<string>(DoEnterDungeonAsync);
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -278,6 +286,19 @@ public class GameViewModel : ViewModelBase
         AppendLog(leveledUp
             ? $"Leveled up to {leveledUpTo}! XP toward next level: {newExperience}"
             : $"Gained experience. Level: {newLevel}  XP: {newExperience}");
+    }
+
+    /// <summary>Called from hub when an item has been successfully crafted by the character.</summary>
+    public void OnItemCrafted(string recipeSlug, int goldSpent, int remainingGold)
+    {
+        Gold = remainingGold;
+        AppendLog($"Crafted '{recipeSlug}'. Gold spent: {goldSpent}. Remaining: {remainingGold}");
+    }
+
+    /// <summary>Called from hub when the character has entered a dungeon.</summary>
+    public void OnDungeonEntered(string dungeonId, string dungeonSlug)
+    {
+        AppendLog($"Entered dungeon '{dungeonSlug}' (ID: {dungeonId}).");
     }
 
     /// <summary>Seeds all character stat properties from the <c>CharacterSelected</c> hub event so the HUD shows correct values immediately on login.</summary>
@@ -406,6 +427,30 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Experience award failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoCraftItemAsync(string recipeSlug)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("CraftItem", recipeSlug);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Crafting failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoEnterDungeonAsync(string dungeonSlug)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("EnterDungeon", dungeonSlug);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Enter dungeon failed: {ex.Message}");
         }
     }
 
