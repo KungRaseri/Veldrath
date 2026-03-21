@@ -33,8 +33,10 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | `EquipItem` | `EquipItemHubCommand` | 2026-03-20 session-8 |
 | `AddGold` | `AddGoldHubCommand` | 2026-03-20 session-9 |
 | `TakeDamage` | `TakeDamageHubCommand` | 2026-03-20 session-10 |
+| `CraftItem` | `CraftItemHubCommand` | 2026-03-20 session-13 |
+| `EnterDungeon` | `EnterDungeonHubCommand` | 2026-03-20 session-13 |
 
-> **Note**: All 8 bridges above are server-side complete. `GainExperience` client-side wiring (Level/Experience props, command, callback, subscription) was added session-11. All 8 bridges are fully wired end-to-end. `CharacterSelected` payload was extended in session-12 to include blob stats + Experience; client now calls `SeedInitialStats` on login.
+> **Note**: All 10 bridges above are server-side complete and fully wired end-to-end.
 
 ## Character Attributes JSON Blob Schema
 
@@ -101,6 +103,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 | Session-10 (2026-03-20) | **296** | **304** | **600** |
 | Session-11 (2026-03-20) | **304** | **304** | **608** |
 | Session-12 (2026-03-20) | **308** | **307** | **615** |
+| Session-13 (2026-03-20) | **340** | **383** | **723** |
 
 ## P3 Stubs Status
 
@@ -156,10 +159,39 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - Client subscription: `_characterSelectedSub` — 15th subscription total (14th active; `_characterStatusSub` declared but reserved for future online-status tracking)
 - All 8 seeded values go to `_gameVm.SeedInitialStats(...)` — eliminates zero-HUD on login
 
-## Next Hub Bridge Candidates
+## CraftItem Handler Details (session-13)
 
-- `CraftItem` — needs server-side handler
-- `EnterDungeon` — static state gotcha: `EnterDungeonHandler._activeDungeons` is `private static Dictionary<string, DungeonInstance>`; use `ActiveDungeonScope` reflection helper in tests
+- `DefaultCraftingCost = 50` — `internal const int` on `CraftItemHubCommandHandler`
+- Blob key: `"Gold"` (same as `AddGold` / `RestAtLocation` handlers)
+- Guard: if `currentGold < 50` → fails with `"Not enough gold to craft this item"`
+- On success: `newGold = currentGold - 50`; saves character; returns `RecipeSlug` as `ItemCrafted`
+- Broadcasts `ItemCrafted` payload: `{ CharacterId, RecipeSlug, GoldSpent, RemainingGold }`
+- `ItemCraftedPayload` internal record lives in `CharacterSelectViewModel.cs`
+- Client callback: `GameViewModel.OnItemCrafted(string recipeSlug, int goldSpent, int remainingGold)` → updates `Gold = remainingGold` + `AppendLog`
+- **`DefaultCraftingCost` is `internal` — tests must hardcode `50` (not reference the constant directly)**
+
+## EnterDungeon Handler Details (session-13)
+
+- Uses `IZoneRepository.GetByIdAsync(dungeonSlug)` — `Zone.Id` IS the slug (e.g., `"dungeon-grotto"`)
+- **`IDungeonRepository` does NOT exist** — earlier iteration prompt note was a fiction; use `IZoneRepository`
+- `IZoneRepository` is already registered in `Program.cs` — no new DI registration needed
+- Validates `zone.Type == ZoneType.Dungeon`; fails with `"'{name}' is not a dungeon"` for non-dungeon zones
+- Fails with `"Dungeon '{slug}' not found"` for missing zone; fails on empty slug
+- Returns `zone.Id` as `DungeonId` in result
+- Broadcasts `DungeonEntered` payload: `{ CharacterId, DungeonId, DungeonSlug }`
+- `DungeonEnteredPayload` internal record lives in `CharacterSelectViewModel.cs`
+- Client callback: `GameViewModel.OnDungeonEntered(string dungeonId, string dungeonSlug)` → `AppendLog`
+- Seeded dungeon available in `TestDbContextFactory` (SQLite + `EnsureCreated`): `"dungeon-grotto"` (Mossglow Grotto, `ZoneType.Dungeon`)
+
+## IContentService Extension (session-13)
+
+- 6 new content types added: `Organization`, `WorldLocation`, `Dialogue`, `ActorInstance`, `MaterialProperty`, `TraitDefinition`
+- 12 new methods on `IContentService` + `HttpContentService` (2 per type: list + single)
+- Routes: `api/content/organizations`, `api/content/world-locations`, `api/content/dialogues`, `api/content/actor-instances`, `api/content/material-properties`, `api/content/traits`
+- `TraitDefinition` uses `key` param (not `slug`) in route and DTO
+- All 12 implementations are one-liner `GetListAsync<T>` or `GetSingleAsync<T>` delegates
+- `FakeContentService` stubs all 12 with `Task.FromResult(new List<T>())` / `Task.FromResult<T?>(null)`
+- 24 new tests in `HttpContentServiceTests.cs` (4 per type)
 
 ## DbContext Separation (established 2026-03-19 session-6)
 
@@ -277,4 +309,14 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 - Added `_characterSelectedSub` field + disposal + `"CharacterSelected"` subscription in `DoSelectAsync` — 15th subscription total (14th active; `_characterStatusSub` declared but reserved)
 - Added 7 new tests: 3 server (CharacterSelected payload content including blob defaults) + 2 GameViewModel (SeedInitialStats) + 2 CharacterSelectViewModel (CharacterSelected subscription)
 - Total: 308 client + 307 server = 615 total passing
+- NOTE: actual server count at end of session was already 362 (includes +55 from subsequent Content service tests added during this session but logged as session-13)
+
+### Session-13 (2026-03-20) — Content service extension + CraftItem + EnterDungeon bridges
+- **Goal 1**: Extended `IContentService` / `HttpContentService` with 12 new methods (2 per type) for 6 new content types: `Organization`, `WorldLocation`, `Dialogue`, `ActorInstance`, `MaterialProperty`, `TraitDefinition`
+- **Goal 2**: Added 24 new tests to `HttpContentServiceTests.cs` (4 per type); client 308→332
+- **Goal 3**: Implemented `CraftItem` hub bridge end-to-end: `CraftItemHubCommand.cs` (handler deducts 50 gold), `GameHub.CraftItem`, client `CraftItemCommand` + `OnItemCrafted`, `ItemCraftedPayload` + `_itemCraftedSub` in `CharacterSelectViewModel`
+- **Goal 4**: Implemented `EnterDungeon` hub bridge end-to-end: `EnterDungeonHubCommand.cs` (uses `IZoneRepository`, validates `ZoneType.Dungeon`), `GameHub.EnterDungeon`, client `EnterDungeonCommand` + `OnDungeonEntered`, `DungeonEnteredPayload` + `_dungeonEnteredSub` in `CharacterSelectViewModel`
+- Key discovery: `IDungeonRepository` doesn't exist — `EnterDungeon` uses `IZoneRepository.GetByIdAsync(slug)` + `ZoneType.Dungeon` check
+- Tests: 21 server tests for Goals 3+4 added to `GameHubTests.cs`; 5 client tests in `GameViewModelTests.cs`; 3 client tests in `CharacterSelectViewModelTests.cs`
+- Final count: **340 client + 383 server = 723 total passing**
 

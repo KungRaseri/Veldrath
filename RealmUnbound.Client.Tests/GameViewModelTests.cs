@@ -676,4 +676,58 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg =>
             msg.Contains("2") && msg.Contains("50"));
     }
+
+    // ── OnItemCrafted ───────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnItemCrafted_Should_Update_Gold_To_RemainingGold()
+    {
+        var vm = MakeVm();
+        vm.OnItemCrafted("iron-sword", goldSpent: 50, remainingGold: 150);
+        vm.Gold.Should().Be(150);
+    }
+
+    [Fact]
+    public void OnItemCrafted_Should_Append_Log_With_Recipe_Name()
+    {
+        var vm = MakeVm();
+        vm.OnItemCrafted("magic-staff", goldSpent: 50, remainingGold: 200);
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("magic-staff"));
+    }
+
+    // ── OnDungeonEntered ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnDungeonEntered_Should_Append_Log_With_Dungeon_Id()
+    {
+        var vm = MakeVm();
+        vm.OnDungeonEntered("dungeon-grotto", "dungeon-grotto");
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("dungeon-grotto"));
+    }
+
+    // ── CraftItemCommand ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CraftItemCommand_Should_Send_CraftItem_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.CraftItemCommand.Execute("iron-sword");
+
+        conn.SentCommands.Should().Contain(c => c.Method == "CraftItem");
+    }
+
+    // ── EnterDungeonCommand ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task EnterDungeonCommand_Should_Send_EnterDungeon_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.EnterDungeonCommand.Execute("dungeon-grotto");
+
+        conn.SentCommands.Should().Contain(c => c.Method == "EnterDungeon");
+    }
 }

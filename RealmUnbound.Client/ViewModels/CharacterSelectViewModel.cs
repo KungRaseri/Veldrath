@@ -36,6 +36,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _damageTakenSub;
     private IDisposable? _experienceGainedSub;
     private IDisposable? _characterSelectedSub;
+    private IDisposable? _itemCraftedSub;
+    private IDisposable? _dungeonEnteredSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -192,6 +194,8 @@ public class CharacterSelectViewModel : ViewModelBase
             _damageTakenSub?.Dispose();
             _experienceGainedSub?.Dispose();
             _characterSelectedSub?.Dispose();
+            _itemCraftedSub?.Dispose();
+            _dungeonEnteredSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -249,6 +253,12 @@ public class CharacterSelectViewModel : ViewModelBase
                     payload.CurrentMana,   payload.MaxMana,
                     payload.Gold,          payload.UnspentAttributePoints));
 
+            _itemCraftedSub = _connection.On<ItemCraftedPayload>("ItemCrafted", payload =>
+                _gameVm.OnItemCrafted(payload.RecipeSlug, payload.GoldSpent, payload.RemainingGold));
+
+            _dungeonEnteredSub = _connection.On<DungeonEnteredPayload>("DungeonEntered", payload =>
+                _gameVm.OnDungeonEntered(payload.DungeonId, payload.DungeonSlug));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -274,6 +284,8 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record DamageTakenPayload(Guid CharacterId, int DamageAmount, int CurrentHealth, int MaxHealth, bool IsDead, string? Source);
     internal record ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source);
     internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, DateTimeOffset SelectedAt);
+    internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
+    internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
 
     private async Task DoCreateAsync()
     {

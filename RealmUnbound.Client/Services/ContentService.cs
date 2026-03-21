@@ -41,6 +41,24 @@ public interface IContentService
 
     Task<List<SkillDto>> GetSkillsAsync();
     Task<SkillDto?> GetSkillAsync(string slug);
+
+    Task<List<OrganizationDto>> GetOrganizationsAsync();
+    Task<OrganizationDto?> GetOrganizationAsync(string slug);
+
+    Task<List<WorldLocationDto>> GetWorldLocationsAsync();
+    Task<WorldLocationDto?> GetWorldLocationAsync(string slug);
+
+    Task<List<DialogueDto>> GetDialoguesAsync();
+    Task<DialogueDto?> GetDialogueAsync(string slug);
+
+    Task<List<ActorInstanceDto>> GetActorInstancesAsync();
+    Task<ActorInstanceDto?> GetActorInstanceAsync(string slug);
+
+    Task<List<MaterialPropertyDto>> GetMaterialPropertiesAsync();
+    Task<MaterialPropertyDto?> GetMaterialPropertyAsync(string slug);
+
+    Task<List<TraitDefinitionDto>> GetTraitDefinitionsAsync();
+    Task<TraitDefinitionDto?> GetTraitDefinitionAsync(string key);
 }
 
 // ── Implementation ─────────────────────────────────────────────────────────────
@@ -118,4 +136,22 @@ public class HttpContentService(
 
     public Task<List<SkillDto>> GetSkillsAsync()                        => GetListAsync<SkillDto>("api/content/skills");
     public Task<SkillDto?> GetSkillAsync(string slug)                   => GetSingleAsync<SkillDto>($"api/content/skills/{slug}");
+
+    public Task<List<OrganizationDto>> GetOrganizationsAsync()            => GetListAsync<OrganizationDto>("api/content/organizations");
+    public Task<OrganizationDto?> GetOrganizationAsync(string slug)       => GetSingleAsync<OrganizationDto>($"api/content/organizations/{slug}");
+
+    public Task<List<WorldLocationDto>> GetWorldLocationsAsync()          => GetListAsync<WorldLocationDto>("api/content/world-locations");
+    public Task<WorldLocationDto?> GetWorldLocationAsync(string slug)     => GetSingleAsync<WorldLocationDto>($"api/content/world-locations/{slug}");
+
+    public Task<List<DialogueDto>> GetDialoguesAsync()                    => GetListAsync<DialogueDto>("api/content/dialogues");
+    public Task<DialogueDto?> GetDialogueAsync(string slug)               => GetSingleAsync<DialogueDto>($"api/content/dialogues/{slug}");
+
+    public Task<List<ActorInstanceDto>> GetActorInstancesAsync()          => GetListAsync<ActorInstanceDto>("api/content/actor-instances");
+    public Task<ActorInstanceDto?> GetActorInstanceAsync(string slug)     => GetSingleAsync<ActorInstanceDto>($"api/content/actor-instances/{slug}");
+
+    public Task<List<MaterialPropertyDto>> GetMaterialPropertiesAsync()   => GetListAsync<MaterialPropertyDto>("api/content/material-properties");
+    public Task<MaterialPropertyDto?> GetMaterialPropertyAsync(string slug) => GetSingleAsync<MaterialPropertyDto>($"api/content/material-properties/{slug}");
+
+    public Task<List<TraitDefinitionDto>> GetTraitDefinitionsAsync()      => GetListAsync<TraitDefinitionDto>("api/content/traits");
+    public Task<TraitDefinitionDto?> GetTraitDefinitionAsync(string key)  => GetSingleAsync<TraitDefinitionDto>($"api/content/traits/{key}");
 }

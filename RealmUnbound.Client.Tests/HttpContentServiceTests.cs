@@ -601,4 +601,300 @@ public class HttpContentServiceTests : TestBase
 
         result.Should().BeNull();
     }
+
+    // ── GetOrganizationsAsync ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOrganizationsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<OrganizationDto>
+        {
+            new("merchants-guild", "Merchants Guild", "guilds", "guild", 80),
+        };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetOrganizationsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("merchants-guild");
+    }
+
+    [Fact]
+    public async Task GetOrganizationsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetOrganizationsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetOrganizationAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new OrganizationDto("merchants-guild", "Merchants Guild", "guilds", "guild", 80);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetOrganizationAsync("merchants-guild");
+
+        result.Should().NotBeNull();
+        result!.DisplayName.Should().Be("Merchants Guild");
+    }
+
+    [Fact]
+    public async Task GetOrganizationAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetOrganizationAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetWorldLocationsAsync ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetWorldLocationsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<WorldLocationDto>
+        {
+            new("darkwood-forest", "Darkwood Forest", "environments", "environment", 60, 5, 15),
+        };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetWorldLocationsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("darkwood-forest");
+    }
+
+    [Fact]
+    public async Task GetWorldLocationsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetWorldLocationsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetWorldLocationAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new WorldLocationDto("darkwood-forest", "Darkwood Forest", "environments", "environment", 60, 5, 15);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetWorldLocationAsync("darkwood-forest");
+
+        result.Should().NotBeNull();
+        result!.DisplayName.Should().Be("Darkwood Forest");
+    }
+
+    [Fact]
+    public async Task GetWorldLocationAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetWorldLocationAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetDialoguesAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetDialoguesAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<DialogueDto>
+        {
+            new("merchant-greeting", "Merchant Greeting", "greetings", "merchant", 50, ["Welcome, traveller!"]),
+        };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetDialoguesAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("merchant-greeting");
+    }
+
+    [Fact]
+    public async Task GetDialoguesAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetDialoguesAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetDialogueAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new DialogueDto("merchant-greeting", "Merchant Greeting", "greetings", "merchant", 50, ["Welcome, traveller!"]);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetDialogueAsync("merchant-greeting");
+
+        result.Should().NotBeNull();
+        result!.DisplayName.Should().Be("Merchant Greeting");
+    }
+
+    [Fact]
+    public async Task GetDialogueAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetDialogueAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetActorInstancesAsync ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetActorInstancesAsync_Should_Return_List_On_Success()
+    {
+        var archetypeId = Guid.NewGuid();
+        var expected = new List<ActorInstanceDto>
+        {
+            new("bandit-king", "Bandit King", "boss", archetypeId, 10, "bandits", 30),
+        };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetActorInstancesAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("bandit-king");
+    }
+
+    [Fact]
+    public async Task GetActorInstancesAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetActorInstancesAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetActorInstanceAsync_Should_Return_Dto_On_Success()
+    {
+        var archetypeId = Guid.NewGuid();
+        var expected = new ActorInstanceDto("bandit-king", "Bandit King", "boss", archetypeId, 10, "bandits", 30);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetActorInstanceAsync("bandit-king");
+
+        result.Should().NotBeNull();
+        result!.DisplayName.Should().Be("Bandit King");
+    }
+
+    [Fact]
+    public async Task GetActorInstanceAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetActorInstanceAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetMaterialPropertiesAsync ────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetMaterialPropertiesAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<MaterialPropertyDto>
+        {
+            new("iron-properties", "Iron Properties", "metals", "metal", 1.5f, 70),
+        };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetMaterialPropertiesAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("iron-properties");
+    }
+
+    [Fact]
+    public async Task GetMaterialPropertiesAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetMaterialPropertiesAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetMaterialPropertyAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new MaterialPropertyDto("iron-properties", "Iron Properties", "metals", "metal", 1.5f, 70);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetMaterialPropertyAsync("iron-properties");
+
+        result.Should().NotBeNull();
+        result!.DisplayName.Should().Be("Iron Properties");
+    }
+
+    [Fact]
+    public async Task GetMaterialPropertyAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetMaterialPropertyAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetTraitDefinitionsAsync ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetTraitDefinitionsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<TraitDefinitionDto>
+        {
+            new("aggressive", "bool", "Makes the entity attack on sight", "enemy"),
+        };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetTraitDefinitionsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Key.Should().Be("aggressive");
+    }
+
+    [Fact]
+    public async Task GetTraitDefinitionsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetTraitDefinitionsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTraitDefinitionAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new TraitDefinitionDto("aggressive", "bool", "Makes the entity attack on sight", "enemy");
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetTraitDefinitionAsync("aggressive");
+
+        result.Should().NotBeNull();
+        result!.ValueType.Should().Be("bool");
+    }
+
+    [Fact]
+    public async Task GetTraitDefinitionAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetTraitDefinitionAsync("nonexistent-key");
+
+        result.Should().BeNull();
+    }
 }

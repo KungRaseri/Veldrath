@@ -243,6 +243,18 @@ public class FakeContentService : IContentService
     public Task<BackgroundDto?>      GetBackgroundAsync(string slug)=> Task.FromResult<BackgroundDto?>(null);
     public Task<List<SkillDto>>      GetSkillsAsync()               => Task.FromResult(new List<SkillDto>());
     public Task<SkillDto?>           GetSkillAsync(string slug)     => Task.FromResult<SkillDto?>(null);
+    public Task<List<OrganizationDto>>    GetOrganizationsAsync()            => Task.FromResult(new List<OrganizationDto>());
+    public Task<OrganizationDto?>         GetOrganizationAsync(string slug)  => Task.FromResult<OrganizationDto?>(null);
+    public Task<List<WorldLocationDto>>   GetWorldLocationsAsync()           => Task.FromResult(new List<WorldLocationDto>());
+    public Task<WorldLocationDto?>        GetWorldLocationAsync(string slug) => Task.FromResult<WorldLocationDto?>(null);
+    public Task<List<DialogueDto>>        GetDialoguesAsync()                => Task.FromResult(new List<DialogueDto>());
+    public Task<DialogueDto?>             GetDialogueAsync(string slug)      => Task.FromResult<DialogueDto?>(null);
+    public Task<List<ActorInstanceDto>>   GetActorInstancesAsync()           => Task.FromResult(new List<ActorInstanceDto>());
+    public Task<ActorInstanceDto?>        GetActorInstanceAsync(string slug) => Task.FromResult<ActorInstanceDto?>(null);
+    public Task<List<MaterialPropertyDto>> GetMaterialPropertiesAsync()              => Task.FromResult(new List<MaterialPropertyDto>());
+    public Task<MaterialPropertyDto?>      GetMaterialPropertyAsync(string slug)     => Task.FromResult<MaterialPropertyDto?>(null);
+    public Task<List<TraitDefinitionDto>> GetTraitDefinitionsAsync()         => Task.FromResult(new List<TraitDefinitionDto>());
+    public Task<TraitDefinitionDto?>      GetTraitDefinitionAsync(string key)=> Task.FromResult<TraitDefinitionDto?>(null);
 }
 
 /// <summary>Factory that builds a <see cref="ContentCache"/> backed by a <see cref="FakeContentService"/>.</summary>

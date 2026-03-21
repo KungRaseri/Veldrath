@@ -700,6 +700,100 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Craft an item using the named recipe, deducting the crafting cost from the caller's
+    /// active character's gold. Broadcasts <c>ItemCrafted</c> to the zone group (or back to
+    /// the caller when not in a zone).
+    /// </summary>
+    /// <param name="recipeSlug">The slug of the recipe to craft (e.g. <c>"iron-sword"</c>).</param>
+    public async Task CraftItem(string recipeSlug)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before CraftItem");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new CraftItemHubCommand(characterId, recipeSlug));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to craft item");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId   = characterId,
+                RecipeSlug    = recipeSlug,
+                result.GoldSpent,
+                result.RemainingGold,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("ItemCrafted", payload);
+            else
+                await Clients.Caller.SendAsync("ItemCrafted", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} crafted '{RecipeSlug}'; remaining gold {Gold}",
+                characterId, recipeSlug, result.RemainingGold);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in CraftItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to craft item");
+        }
+    }
+
+    /// <summary>
+    /// Enter a dungeon zone by slug, looking up the dungeon via the zone catalog.
+    /// Broadcasts <c>DungeonEntered</c> to the zone group (or back to the caller when not in a zone).
+    /// </summary>
+    /// <param name="dungeonSlug">The slug / zone ID of the dungeon (e.g. <c>"dungeon-grotto"</c>).</param>
+    public async Task EnterDungeon(string dungeonSlug)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before EnterDungeon");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new EnterDungeonHubCommand(characterId, dungeonSlug));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to enter dungeon");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId = characterId,
+                DungeonId   = result.DungeonId,
+                DungeonSlug = dungeonSlug,
+            };
+
+            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("DungeonEntered", payload);
+            else
+                await Clients.Caller.SendAsync("DungeonEntered", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} entered dungeon {DungeonId}",
+                characterId, result.DungeonId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in EnterDungeon for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to enter dungeon");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)

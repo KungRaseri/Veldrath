@@ -2780,5 +2780,444 @@ public class GameHubTests : IDisposable
         var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
         attrs["CurrentHealth"].Should().Be(60);
     }
+
+    // ── CraftItem helpers ──────────────────────────────────────────────────────────
+
+    private static async Task<Character> SeedCharacterWithCraftingGoldAsync(
+        ApplicationDbContext db, Guid accountId, int gold)
+    {
+        var attrs = new Dictionary<string, int> { ["Gold"] = gold };
+        var c = new Character
+        {
+            AccountId  = accountId,
+            Name       = $"CraftChar_{Guid.NewGuid():N}",
+            ClassName  = "Warrior",
+            SlotIndex  = 1,
+            Attributes = JsonSerializer.Serialize(attrs),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+        return c;
+    }
+
+    // ── CraftItem hub method ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CraftItem_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.CraftItem("iron-sword");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task CraftItem_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.CraftItem("iron-sword");
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<CraftItemHubCommand>(
+                c => c.CharacterId == character.Id && c.RecipeSlug == "iron-sword"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CraftItem_Should_Broadcast_ItemCrafted_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.CraftItem("iron-sword");
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ItemCrafted");
+    }
+
+    [Fact]
+    public async Task CraftItem_Should_Send_ItemCrafted_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.CraftItem("iron-sword");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ItemCrafted");
+    }
+
+    [Fact]
+    public async Task CraftItem_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CraftItemHubResult { Success = false, ErrorMessage = "Not enough gold to craft this item" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.CraftItem("iron-sword");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task CraftItem_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.CraftItem("iron-sword");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── CraftItemHubCommandHandler ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CraftItem_Handler_Should_Deduct_Gold_And_Return_Crafted_Item()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
+
+        var handler = new CraftItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new CraftItemHubCommand(character.Id, "iron-sword"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ItemCrafted.Should().Be("iron-sword");
+        result.GoldSpent.Should().Be(50);
+        result.RemainingGold.Should().Be(150);
+    }
+
+    [Fact]
+    public async Task CraftItem_Handler_Should_Fail_When_Not_Enough_Gold()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 10);
+
+        var handler = new CraftItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new CraftItemHubCommand(character.Id, "iron-sword"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("gold");
+    }
+
+    [Fact]
+    public async Task CraftItem_Handler_Should_Fail_When_Recipe_Slug_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
+
+        var handler = new CraftItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new CraftItemHubCommand(character.Id, ""),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
+
+    [Fact]
+    public async Task CraftItem_Handler_Should_Fail_When_Character_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+
+        var handler = new CraftItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new CraftItemHubCommand(Guid.NewGuid(), "iron-sword"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task CraftItem_Handler_Should_Persist_Updated_Gold_To_Database()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 300);
+
+        var handler = new CraftItemHubCommandHandler(
+            new CharacterRepository(db),
+            NullLogger<CraftItemHubCommandHandler>.Instance);
+
+        await handler.Handle(
+            new CraftItemHubCommand(character.Id, "magic-staff"),
+            CancellationToken.None);
+
+        var updated = await db.Characters.FindAsync(character.Id);
+        var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
+        attrs["Gold"].Should().Be(250);
+    }
+
+    // ── EnterDungeon hub method ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task EnterDungeon_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.EnterDungeon("dungeon-grotto");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EnterDungeonHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EnterDungeonHubResult { Success = true, DungeonId = "dungeon-grotto" });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EnterDungeon("dungeon-grotto");
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<EnterDungeonHubCommand>(
+                c => c.CharacterId == character.Id && c.DungeonSlug == "dungeon-grotto"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Should_Broadcast_DungeonEntered_To_Zone_Group_When_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EnterDungeonHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EnterDungeonHubResult { Success = true, DungeonId = "dungeon-grotto" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "starting-zone";
+
+        await hub.EnterDungeon("dungeon-grotto");
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "DungeonEntered");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Should_Send_DungeonEntered_To_Caller_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EnterDungeonHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EnterDungeonHubResult { Success = true, DungeonId = "dungeon-grotto" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EnterDungeon("dungeon-grotto");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "DungeonEntered");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EnterDungeonHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EnterDungeonHubResult { Success = false, ErrorMessage = "Dungeon not found" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EnterDungeon("nonexistent-dungeon");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<EnterDungeonHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.EnterDungeon("dungeon-grotto");
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── EnterDungeonHubCommandHandler ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task EnterDungeon_Handler_Should_Return_DungeonId_For_Valid_Dungeon()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new EnterDungeonHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<EnterDungeonHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new EnterDungeonHubCommand(accountId, "dungeon-grotto"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.DungeonId.Should().Be("dungeon-grotto");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Handler_Should_Fail_When_Zone_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new EnterDungeonHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<EnterDungeonHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new EnterDungeonHubCommand(accountId, "nonexistent-dungeon"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Handler_Should_Fail_When_Zone_Is_Not_A_Dungeon()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new EnterDungeonHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<EnterDungeonHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new EnterDungeonHubCommand(accountId, "town-millhaven"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not a dungeon");
+    }
+
+    [Fact]
+    public async Task EnterDungeon_Handler_Should_Fail_When_Slug_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new EnterDungeonHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<EnterDungeonHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new EnterDungeonHubCommand(accountId, ""),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
 }
 

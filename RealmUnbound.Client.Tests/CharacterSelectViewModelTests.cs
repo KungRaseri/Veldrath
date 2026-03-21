@@ -844,4 +844,59 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.Level.Should().Be(7);
         gameVm.Experience.Should().Be(300L);
     }
+
+    // ── Hub callbacks — ItemCrafted ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Update_Gold_When_ItemCrafted_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("ItemCrafted",
+            new CharacterSelectViewModel.ItemCraftedPayload(character.Id, "iron-sword", 50, 150));
+
+        gameVm.Gold.Should().Be(150);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Append_Log_When_ItemCrafted_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("ItemCrafted",
+            new CharacterSelectViewModel.ItemCraftedPayload(character.Id, "magic-staff", 50, 200));
+
+        gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("magic-staff"));
+    }
+
+    // ── Hub callbacks — DungeonEntered ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Append_Log_When_DungeonEntered_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new CharacterEntryViewModel(character);
+
+        await vm.SelectCommand.Execute(entry);
+        conn.FireEvent("DungeonEntered",
+            new CharacterSelectViewModel.DungeonEnteredPayload(character.Id, "dungeon-grotto", "dungeon-grotto"));
+
+        gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("dungeon-grotto"));
+    }
 }
