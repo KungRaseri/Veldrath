@@ -1,11 +1,11 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of 2026-03-20, session-18)
+## Test Counts (as of 2026-03-20, session-19)
 - RealmEngine.Core.Tests: **1,738 passing**
 - RealmEngine.Shared.Tests: **778 passing**
 - RealmEngine.Data.Tests: **203 passing**
 - RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
-- RealmUnbound.Server.Tests: **350 passing** (+19 from session-18: ContentExtendedEndpointTests — enemies, NPCs, quests, recipes, loot-tables, spells)
+- RealmUnbound.Server.Tests: **362 passing** (+12 from session-19: ContentEquipmentEndpointTests — weapons, armors, materials)
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -68,6 +68,16 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 
 ### QuestDto — Partially-Unmapped Fields
 - `EfCoreQuestRepository.MapToModel` does **not** set `QuestType` or `Difficulty` on the shared `Quest` model. Those fields default to empty string. Only `Slug`, `Title` (= DisplayName), `DisplayName`, and `RarityWeight` are populated from the entity.
+
+### WeaponDto / ArmorDto / MaterialDto (session-19)
+- `WeaponDto(Slug, DisplayName, TypeKey, WeaponType, RarityWeight)` added to `RealmUnbound.Contracts/Content/ContentContracts.cs`
+- `ArmorDto(Slug, DisplayName, TypeKey, ArmorType, RarityWeight)` added to same file — `ArmorType` is `Item.ArmorClass` from the shared model (mapped from `Armor.ArmorType` entity field)
+- `MaterialDto(Slug, DisplayName, MaterialFamily, RarityWeight)` added to same file — `RarityWeight` is cast from `MaterialEntry.RarityWeight` (float) to int
+- `GET /api/content/weapons`, `/api/content/weapons/{slug}` — backed by `IWeaponRepository`
+- `GET /api/content/armors`, `/api/content/armors/{slug}` — backed by `IArmorRepository`
+- `GET /api/content/materials`, `/api/content/materials/{slug}` — backed by `IMaterialRepository`
+- All 6 routes are anonymous (no auth required)
+- `ContentEquipmentEndpointTests.cs` — 12 integration tests in `RealmUnbound.Server.Tests/Features/`
 
 ### DatabaseSeeder — Items & Enchantments (session-18)
 - `SeedItemsAsync` seeds 17 items (consumable×4, crystal×2, gem×3, rune×3, essence×3, orb×2) using `I()`, `ISt()`, `ITr()` factory helpers.
