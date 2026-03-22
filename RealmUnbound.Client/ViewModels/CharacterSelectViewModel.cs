@@ -172,6 +172,16 @@ public class CharacterSelectViewModel : ViewModelBase
 
             var list = await _characters.GetCharactersAsync();
             PopulateCharacters(list);
+
+            // Query which characters are currently active on the server and mark them online.
+            try
+            {
+                var activeIds = await _connection.SendCommandAsync<IEnumerable<Guid>>("GetActiveCharacters");
+                if (activeIds is not null)
+                    foreach (var entry in Characters)
+                        entry.IsOnline = activeIds.Contains(entry.Character.Id);
+            }
+            catch { /* best-effort: IsOnline stays false if query fails */ }
         }
         catch
         {
@@ -189,7 +199,7 @@ public class CharacterSelectViewModel : ViewModelBase
         try
         {
             var character = entry.Character;
-            var zoneId = character.CurrentZoneId.Length > 0 ? character.CurrentZoneId : "starting-zone";
+            var zoneId = character.CurrentZoneId.Length > 0 ? character.CurrentZoneId : "fenwick-crossing";
 
             await _connection.ConnectAsync(ServerUrl);
 
@@ -262,10 +272,10 @@ public class CharacterSelectViewModel : ViewModelBase
 
             _characterSelectedSub = _connection.On<CharacterSelectedPayload>("CharacterSelected", payload =>
                 _gameVm.SeedInitialStats(
-                    payload.Level,        payload.Experience,
+                    payload.Level, payload.Experience,
                     payload.CurrentHealth, payload.MaxHealth,
-                    payload.CurrentMana,   payload.MaxMana,
-                    payload.Gold,          payload.UnspentAttributePoints));
+                    payload.CurrentMana, payload.MaxMana,
+                    payload.Gold, payload.UnspentAttributePoints));
 
             _itemCraftedSub = _connection.On<ItemCraftedPayload>("ItemCrafted", payload =>
                 _gameVm.OnItemCrafted(payload.RecipeSlug, payload.GoldSpent, payload.RemainingGold));
@@ -340,7 +350,10 @@ public class CharacterSelectViewModel : ViewModelBase
             var (character, error) = await _characters.CreateCharacterAsync(new CreateCharacterRequest(NewCharacterName!, SelectedClass!));
             if (character is not null)
             {
-                Characters.Add(new CharacterEntryViewModel(character));
+                var entry = new CharacterEntryViewModel(character);
+                Characters.Add(entry);
+                if (_assetStore is not null)
+                    _ = LoadEntryIconsAsync([entry]);
                 NewCharacterName = string.Empty;
                 SelectedClass = string.Empty;
                 IsCreating = false;

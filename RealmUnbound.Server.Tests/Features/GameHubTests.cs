@@ -541,7 +541,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         // Skip SelectCharacter — no CharacterId in Context.Items
-        await hub.GainExperience(100);
+        await hub.GainExperience(new GainExperienceHubRequest(100));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -568,7 +568,7 @@ public class GameHubTests : IDisposable
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.GainExperience(100, "Quest");
+        await hub.GainExperience(new GainExperienceHubRequest(100, "Quest"));
 
         mediatorMock.Verify(
             m => m.Send(It.Is<RealmUnbound.Server.Features.LevelUp.GainExperienceHubCommand>(
@@ -600,7 +600,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
 
-        await hub.GainExperience(150);
+        await hub.GainExperience(new GainExperienceHubRequest(150));
 
         clients.GroupProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ExperienceGained");
@@ -625,7 +625,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.GainExperience(50);
+        await hub.GainExperience(new GainExperienceHubRequest(50));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -647,7 +647,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
         // CurrentZoneId is intentionally NOT set
 
-        await hub.GainExperience(50);
+        await hub.GainExperience(new GainExperienceHubRequest(50));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ExperienceGained");
@@ -925,7 +925,7 @@ public class GameHubTests : IDisposable
         var accountId      = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
-        await hub.RestAtLocation("inn-millhaven");
+        await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -956,7 +956,7 @@ public class GameHubTests : IDisposable
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.RestAtLocation("inn-millhaven", costInGold: 10);
+        await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven", 10));
 
         mediatorMock.Verify(
             m => m.Send(
@@ -988,7 +988,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
 
-        await hub.RestAtLocation("inn-millhaven");
+        await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
 
         clients.GroupProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "CharacterRested");
@@ -1016,7 +1016,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
         // CurrentZoneId intentionally not set
 
-        await hub.RestAtLocation("inn-millhaven");
+        await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "CharacterRested");
@@ -1043,7 +1043,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.RestAtLocation("inn-millhaven");
+        await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -1841,7 +1841,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.GainExperience(100);
+        await hub.GainExperience(new GainExperienceHubRequest(100));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -1883,7 +1883,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.RestAtLocation("inn-millhaven");
+        await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2230,7 +2230,7 @@ public class GameHubTests : IDisposable
         var accountId      = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
-        await hub.AddGold(100);
+        await hub.AddGold(new AddGoldHubRequest(100));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2251,7 +2251,7 @@ public class GameHubTests : IDisposable
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.AddGold(50, "Quest");
+        await hub.AddGold(new AddGoldHubRequest(50, "Quest"));
 
         mediatorMock.Verify(
             m => m.Send(It.Is<AddGoldHubCommand>(
@@ -2276,7 +2276,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
 
-        await hub.AddGold(100);
+        await hub.AddGold(new AddGoldHubRequest(100));
 
         clients.GroupProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "GoldChanged");
@@ -2298,7 +2298,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
         // CurrentZoneId intentionally NOT set
 
-        await hub.AddGold(25);
+        await hub.AddGold(new AddGoldHubRequest(25));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "GoldChanged");
@@ -2319,7 +2319,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.AddGold(-999);
+        await hub.AddGold(new AddGoldHubRequest(-999));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2340,7 +2340,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.AddGold(50);
+        await hub.AddGold(new AddGoldHubRequest(50));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2531,7 +2531,7 @@ public class GameHubTests : IDisposable
         var accountId      = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
-        await hub.TakeDamage(25);
+        await hub.TakeDamage(new TakeDamageHubRequest(25));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2552,7 +2552,7 @@ public class GameHubTests : IDisposable
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.TakeDamage(25, "Enemy");
+        await hub.TakeDamage(new TakeDamageHubRequest(25, "Enemy"));
 
         mediatorMock.Verify(
             m => m.Send(It.Is<TakeDamageHubCommand>(
@@ -2577,7 +2577,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
 
-        await hub.TakeDamage(25);
+        await hub.TakeDamage(new TakeDamageHubRequest(25));
 
         clients.GroupProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "DamageTaken");
@@ -2599,7 +2599,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
         // CurrentZoneId intentionally NOT set
 
-        await hub.TakeDamage(50);
+        await hub.TakeDamage(new TakeDamageHubRequest(50));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "DamageTaken");
@@ -2620,7 +2620,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.TakeDamage(-5);
+        await hub.TakeDamage(new TakeDamageHubRequest(-5));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -2641,7 +2641,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.TakeDamage(25);
+        await hub.TakeDamage(new TakeDamageHubRequest(25));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");

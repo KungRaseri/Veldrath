@@ -14,6 +14,8 @@ public interface IHubConnection : IAsyncDisposable
     event Func<string?, Task>? Reconnected;
     Task StartAsync(CancellationToken cancellationToken = default);
     Task StopAsync();
+    /// <summary>Invokes a hub method with no arguments.</summary>
+    Task<TResult> InvokeAsync<TResult>(string methodName);
     Task<TResult> InvokeAsync<TResult>(string methodName, object arg);
     IDisposable On<T>(string methodName, Action<T> handler);
 }
@@ -44,6 +46,9 @@ internal sealed class HubConnectionWrapper : IHubConnection
         => _inner.StartAsync(cancellationToken);
 
     public Task StopAsync() => _inner.StopAsync();
+
+    public Task<TResult> InvokeAsync<TResult>(string methodName)
+        => _inner.InvokeAsync<TResult>(methodName);
 
     public Task<TResult> InvokeAsync<TResult>(string methodName, object arg)
         => _inner.InvokeAsync<TResult>(methodName, arg);

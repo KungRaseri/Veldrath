@@ -379,6 +379,7 @@
                 <Button Content="Shop"
                         Classes="ghost"
                         IsVisible="{Binding HasMerchant}"
+                        Command="{Binding VisitShopCommand}"
                         Height="36"
                         FontSize="13" />
 

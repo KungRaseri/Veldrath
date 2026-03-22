@@ -899,4 +899,35 @@ public class CharacterSelectViewModelTests : TestBase
 
         gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("dungeon-grotto"));
     }
+
+    // ── GetActiveCharacters on load ──────────────────────────────────────────
+
+    [Fact]
+    public async Task LoadAsync_Should_Call_GetActiveCharacters_On_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        _ = MakeVm(conn: conn);
+        await Task.Yield(); // allow fire-and-forget LoadAsync to complete
+
+        conn.SentCommands.Should().Contain(c => c.Method == "GetActiveCharacters");
+    }
+
+    [Fact]
+    public async Task LoadAsync_Should_Mark_Active_Characters_IsOnline()
+    {
+        var charId = Guid.NewGuid();
+        var chars  = new FakeCharacterService
+        {
+            Characters =
+            [
+                new CharacterDto(charId, 1, "Alice", "Warrior", 1, 0, DateTimeOffset.UtcNow, "fenwick-crossing")
+            ]
+        };
+
+        var conn = new FakeServerConnectionService { ActiveCharacterIds = [charId] };
+        var vm   = MakeVm(chars: chars, conn: conn);
+        await Task.Yield();
+
+        vm.Characters.Should().ContainSingle(e => e.Character.Id == charId && e.IsOnline);
+    }
 }

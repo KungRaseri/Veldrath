@@ -5,6 +5,7 @@ using RealmUnbound.Client.ViewModels;
 using RealmUnbound.Contracts.Auth;
 using RealmUnbound.Contracts.Characters;
 using RealmUnbound.Contracts.Content;
+using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Tests.Infrastructure;
 
@@ -133,6 +134,9 @@ public class FakeServerConnectionService : IServerConnectionService
     /// <summary>Records every (method, arg) pair sent via <see cref="SendCommandAsync{TResult}"/>.</summary>
     public List<(string Method, object? Arg)> SentCommands { get; } = [];
 
+    /// <summary>When set, returned by <see cref="SendCommandAsync{TResult}(string)"/> for <c>GetActiveCharacters</c>.</summary>
+    public IEnumerable<Guid>? ActiveCharacterIds { get; set; }
+
     public event Action<ConnectionState>? StateChanged;
 
     public Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
@@ -155,6 +159,20 @@ public class FakeServerConnectionService : IServerConnectionService
     {
         if (_handlers.TryGetValue(method, out var h))
             ((Action<T>)h)(payload);
+    }
+
+    public Task SendCommandAsync(string method)
+    {
+        SentCommands.Add((method, null));
+        return Task.CompletedTask;
+    }
+
+    public Task<TResult?> SendCommandAsync<TResult>(string method)
+    {
+        SentCommands.Add((method, null));
+        if (method == "GetActiveCharacters" && ActiveCharacterIds is TResult result)
+            return Task.FromResult<TResult?>(result);
+        return Task.FromResult(default(TResult));
     }
 
     public Task<TResult?> SendCommandAsync<TResult>(string method, object command)
@@ -193,16 +211,36 @@ public static class SessionStoreFactory
 public class FakeZoneService : IZoneService
 {
     public ZoneDto? ZoneToReturn { get; set; } =
-        new ZoneDto("starting-zone", "The Starting Vale", "A peaceful valley for beginners.",
-            "outdoor", 1, 50, true, 0);
+        new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town of Fenwick Crossing.",
+            "Town", 1, 50, true, 0, null, HasInn: true, HasMerchant: true);
 
     public List<ZoneDto> Zones { get; set; } = [];
+    public List<RegionDto> Regions { get; set; } = [];
+    public List<WorldDto> Worlds { get; set; } = [];
 
     public Task<List<ZoneDto>> GetZonesAsync()
         => Task.FromResult(new List<ZoneDto>(Zones));
 
     public Task<ZoneDto?> GetZoneAsync(string zoneId)
         => Task.FromResult(ZoneToReturn);
+
+    public Task<List<ZoneDto>> GetZonesByRegionAsync(string regionId)
+        => Task.FromResult(Zones.Where(z => z.RegionId == regionId).ToList());
+
+    public Task<List<RegionDto>> GetRegionsAsync()
+        => Task.FromResult(new List<RegionDto>(Regions));
+
+    public Task<RegionDto?> GetRegionAsync(string regionId)
+        => Task.FromResult(Regions.FirstOrDefault(r => r.Id == regionId));
+
+    public Task<List<RegionDto>> GetRegionConnectionsAsync(string regionId)
+        => Task.FromResult<List<RegionDto>>([]);
+
+    public Task<List<WorldDto>> GetWorldsAsync()
+        => Task.FromResult(new List<WorldDto>(Worlds));
+
+    public Task<WorldDto?> GetWorldAsync(string worldId)
+        => Task.FromResult(Worlds.FirstOrDefault(w => w.Id == worldId));
 }
 
 // ── Content service stub ──────────────────────────────────────────────────────
@@ -256,6 +294,16 @@ public class FakeContentService : IContentService
     public Task<MaterialPropertyDto?>      GetMaterialPropertyAsync(string slug)     => Task.FromResult<MaterialPropertyDto?>(null);
     public Task<List<TraitDefinitionDto>> GetTraitDefinitionsAsync()         => Task.FromResult(new List<TraitDefinitionDto>());
     public Task<TraitDefinitionDto?>      GetTraitDefinitionAsync(string key)=> Task.FromResult<TraitDefinitionDto?>(null);
+    public Task<List<ItemDto>>            GetItemsAsync()                    => Task.FromResult(new List<ItemDto>());
+    public Task<ItemDto?>                 GetItemAsync(string slug)          => Task.FromResult<ItemDto?>(null);
+    public Task<List<EnchantmentDto>>     GetEnchantmentsAsync()             => Task.FromResult(new List<EnchantmentDto>());
+    public Task<EnchantmentDto?>          GetEnchantmentAsync(string slug)   => Task.FromResult<EnchantmentDto?>(null);
+    public Task<List<WeaponDto>>          GetWeaponsAsync()                  => Task.FromResult(new List<WeaponDto>());
+    public Task<WeaponDto?>               GetWeaponAsync(string slug)        => Task.FromResult<WeaponDto?>(null);
+    public Task<List<ArmorDto>>           GetArmorsAsync()                   => Task.FromResult(new List<ArmorDto>());
+    public Task<ArmorDto?>                GetArmorAsync(string slug)         => Task.FromResult<ArmorDto?>(null);
+    public Task<List<MaterialDto>>        GetMaterialsAsync()                => Task.FromResult(new List<MaterialDto>());
+    public Task<MaterialDto?>             GetMaterialAsync(string slug)      => Task.FromResult<MaterialDto?>(null);
 }
 
 /// <summary>Factory that builds a <see cref="ContentCache"/> backed by a <see cref="FakeContentService"/>.</summary>

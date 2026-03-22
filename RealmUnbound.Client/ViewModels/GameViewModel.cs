@@ -123,8 +123,8 @@ public class GameViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _experience, value);
     }
 
-    /// <summary>Experience required to reach the next level (placeholder: <c>Level * 500</c>).</summary>
-    public long ExperienceToNextLevel => Math.Max(1L, Level * 500L);
+    /// <summary>Experience required to reach the next level (<c>Level * 100</c>, matching the server formula).</summary>
+    public long ExperienceToNextLevel => Math.Max(1L, Level * 100L);
 
     /// <summary>Whether the active character has unspent attribute points to allocate.</summary>
     public bool HasUnspentPoints => UnspentAttributePoints > 0;
@@ -226,6 +226,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Enter a dungeon by slug, looking up the dungeon via the zone catalog.</summary>
     public ReactiveCommand<string, Unit> EnterDungeonCommand { get; }
 
+    /// <summary>Open the merchant shop available in zones with a merchant.</summary>
+    public ReactiveCommand<Unit, Unit> VisitShopCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -273,6 +276,7 @@ public class GameViewModel : ViewModelBase
         GainExperienceCommand  = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoGainExperienceAsync(t.Item1, t.Item2));
         CraftItemCommand       = ReactiveCommand.CreateFromTask<string>(DoCraftItemAsync);
         EnterDungeonCommand    = ReactiveCommand.CreateFromTask<string>(DoEnterDungeonAsync);
+        VisitShopCommand       = ReactiveCommand.CreateFromTask(DoVisitShopAsync);
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -425,6 +429,9 @@ public class GameViewModel : ViewModelBase
     public void OnDungeonEntered(string dungeonId, string dungeonSlug)
     {
         AppendLog($"Entered dungeon '{dungeonSlug}' (ID: {dungeonId}).");
+        // Treat dungeon entry as a zone transition: refresh zone state and send EnterZone.
+        _ = InitializeAsync(CharacterName, dungeonId);
+        _ = _connection.SendCommandAsync<object>("EnterZone", dungeonId);
     }
 
     /// <summary>Seeds all character stat properties from the <c>CharacterSelected</c> hub event so the HUD shows correct values immediately on login.</summary>
@@ -455,7 +462,8 @@ public class GameViewModel : ViewModelBase
     private async Task DoLogoutAsync()
     {
         // Leave zone, disconnect hub, then go back to main menu
-        try { await _connection.SendCommandAsync<object>("LeaveZone", new { }); } catch { /* ignore */ }
+        try { await _connection.SendCommandAsync("LeaveZone"); } catch { /* ignore */ }
+        _audioPlayer?.StopMusic();
         await _connection.DisconnectAsync();
         _navigation.NavigateTo<MainMenuViewModel>();
     }
@@ -464,7 +472,7 @@ public class GameViewModel : ViewModelBase
     {
         try
         {
-            await _connection.SendCommandAsync<object>("RestAtLocation", _currentZoneId);
+            await _connection.SendCommandAsync<object>("RestAtLocation", new { LocationId = _currentZoneId, CostInGold = 10 });
         }
         catch (Exception ex)
         {
@@ -578,6 +586,12 @@ public class GameViewModel : ViewModelBase
         {
             AppendLog($"Enter dungeon failed: {ex.Message}");
         }
+    }
+
+    private Task DoVisitShopAsync()
+    {
+        AppendLog("Shop coming in M5.");
+        return Task.CompletedTask;
     }
 
     private void AppendLog(string message)
