@@ -166,40 +166,25 @@ public class SplashViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task SplashViewModel_Should_Navigate_To_CharacterSelect_When_Token_Valid()
+    public async Task SplashViewModel_Should_Refresh_Token_And_Navigate_To_MainMenu_When_Authenticated()
     {
         var nav    = new FakeNavigationService();
         var tokens = new TokenStore();
         tokens.Set("access", "refresh", "User", Guid.NewGuid(),
                    expiry: DateTimeOffset.UtcNow.AddHours(1));
-
-        var vm = MakeVm(nav, tokens);
-        await vm.SplashTask;
-
-        nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
-        nav.NavigationLog.Should().NotContain(typeof(MainMenuViewModel));
-    }
-
-    [Fact]
-    public async Task SplashViewModel_Should_Refresh_And_Navigate_To_CharacterSelect_When_Token_Expiring()
-    {
-        var nav    = new FakeNavigationService();
-        var tokens = new TokenStore();
-        // Expiry is in the past — IsExpiringSoon is true
-        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
-                   expiry: DateTimeOffset.UtcNow.AddMinutes(-5));
         var auth = new FakeAuthService { RefreshResult = true };
 
         var vm = MakeVm(nav, tokens, auth);
         await vm.SplashTask;
 
+        // Refresh is always called when authenticated — regardless of expiry.
         auth.RefreshCallCount.Should().Be(1);
-        nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
-        nav.NavigationLog.Should().NotContain(typeof(MainMenuViewModel));
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+        nav.NavigationLog.Should().NotContain(typeof(CharacterSelectViewModel));
     }
 
     [Fact]
-    public async Task SplashViewModel_Should_Navigate_To_MainMenu_When_Token_Expiring_And_Refresh_Fails()
+    public async Task SplashViewModel_Should_Still_Navigate_To_MainMenu_When_Refresh_Fails()
     {
         var nav    = new FakeNavigationService();
         var tokens = new TokenStore();

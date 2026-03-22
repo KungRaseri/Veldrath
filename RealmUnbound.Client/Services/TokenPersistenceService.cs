@@ -52,6 +52,17 @@ public sealed class TokenPersistenceService
         if (File.Exists(FilePath))
             File.Delete(FilePath);
     }
+
+    /// <summary>
+    /// Saves the token data to persistent storage when running on Windows.
+    /// A no-op on non-Windows platforms so call sites do not need platform guards.
+    /// </summary>
+    public void SaveCurrent(string accessToken, string refreshToken, string username,
+        Guid accountId, DateTimeOffset expiry, bool isCurator)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Save(accessToken, refreshToken, username, accountId, expiry, isCurator);
+    }
 }
 
 public sealed record TokenData(

@@ -18,6 +18,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly ContentCache _contentCache;
     private readonly ClientSettings _settings;
     private readonly IAssetStore? _assetStore;
+    private readonly IAuthService _auth;
+    private readonly TokenStore _tokens;
 
     private bool _isCreating;
     private string _newCharacterName = string.Empty;
@@ -108,6 +110,7 @@ public class CharacterSelectViewModel : ViewModelBase
         INavigationService navigation,
         GameViewModel gameVm,
         IAuthService auth,
+        TokenStore tokens,
         ContentCache contentCache,
         ClientSettings settings,
         IAssetStore? assetStore = null)
@@ -119,6 +122,8 @@ public class CharacterSelectViewModel : ViewModelBase
         _contentCache = contentCache;
         _settings = settings;
         _assetStore = assetStore;
+        _auth = auth;
+        _tokens = tokens;
 
         if (assetStore is not null)
             this.WhenAnyValue(x => x.SelectedClass)
@@ -149,6 +154,19 @@ public class CharacterSelectViewModel : ViewModelBase
         ClearError();
         try
         {
+            // If the access token is expired or expiring shortly, refresh before attempting any
+            // server calls. This handles restarts where the stored token has aged past its expiry.
+            if (_tokens.IsExpiringSoon)
+            {
+                var refreshed = await _auth.RefreshAsync();
+                if (!refreshed)
+                {
+                    // Refresh token also invalid — redirect so the user can log in again.
+                    _navigation.NavigateTo<MainMenuViewModel>();
+                    return;
+                }
+            }
+
             // Establish hub connection early so we can subscribe to real-time status change events.
             // ConnectAsync is idempotent — safe to call if already connected.
             await _connection.ConnectAsync(ServerUrl);

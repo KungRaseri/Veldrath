@@ -26,7 +26,9 @@ public class CharacterSelectViewModelTests : TestBase
         FakeServerConnectionService?  conn = null,
         FakeNavigationService?        nav = null,
         GameViewModel?                gameVm = null,
-        FakeContentService?           content = null)
+        FakeContentService?           content = null,
+        FakeAuthService?              auth = null,
+        TokenStore?                   tokens = null)
     {
         conn   ??= new FakeServerConnectionService();
         nav    ??= new FakeNavigationService();
@@ -36,7 +38,8 @@ public class CharacterSelectViewModelTests : TestBase
             conn,
             nav,
             gameVm,
-            new FakeAuthService(),
+            auth ?? new FakeAuthService(),
+            tokens ?? new TokenStore(),
             FakeContentCache.Create(content),
             new ClientSettings("http://localhost:8080"));
     }
@@ -69,6 +72,43 @@ public class CharacterSelectViewModelTests : TestBase
         await Task.Yield();
 
         fake.GetCallCount.Should().BeGreaterThanOrEqualTo(1);
+    }
+
+    [Fact]
+    public async Task LoadAsync_Should_Refresh_Token_When_Expiring_Then_Load_Characters()
+    {
+        var tokens  = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddMinutes(-5)); // expired
+        var auth  = new FakeAuthService { RefreshResult = true };
+        var chars = new FakeCharacterService
+        {
+            Characters = [new CharacterDto(Guid.NewGuid(), 1, "Hero", "Warrior", 1, 0, DateTimeOffset.UtcNow, "zone")]
+        };
+        var nav = new FakeNavigationService();
+
+        var vm = MakeVm(chars: chars, nav: nav, auth: auth, tokens: tokens);
+        await Task.Yield();
+
+        auth.RefreshCallCount.Should().Be(1);
+        vm.Characters.Should().HaveCount(1);
+        nav.NavigationLog.Should().NotContain(typeof(MainMenuViewModel));
+    }
+
+    [Fact]
+    public async Task LoadAsync_Should_Navigate_To_MainMenu_When_Token_Expiring_And_Refresh_Fails()
+    {
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddMinutes(-5)); // expired
+        var auth = new FakeAuthService { RefreshResult = false };
+        var nav  = new FakeNavigationService();
+
+        var vm = MakeVm(nav: nav, auth: auth, tokens: tokens);
+        await Task.Yield();
+
+        auth.RefreshCallCount.Should().Be(1);
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
     // ── ShowCreate / CancelCreate ─────────────────────────────────────────────
@@ -529,7 +569,7 @@ public class CharacterSelectViewModelTests : TestBase
         var nav  = new FakeNavigationService();
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = new CharacterSelectViewModel(
-            new FakeCharacterService(), conn, nav, gameVm, auth, FakeContentCache.Create(),
+            new FakeCharacterService(), conn, nav, gameVm, auth, new TokenStore(), FakeContentCache.Create(),
             new ClientSettings("http://localhost:8080"));
 
         await vm.LogoutCommand.Execute();
@@ -548,6 +588,7 @@ public class CharacterSelectViewModelTests : TestBase
             nav,
             MakeGameVm(nav: nav),
             auth,
+            new TokenStore(),
             FakeContentCache.Create(),
             new ClientSettings("http://localhost:8080"));
 

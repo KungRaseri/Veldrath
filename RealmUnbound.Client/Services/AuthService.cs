@@ -22,6 +22,7 @@ public interface IAuthService
 public class HttpAuthService(
     HttpClient http,
     TokenStore tokens,
+    TokenPersistenceService persistence,
     ILogger<HttpAuthService> logger) : IAuthService
 {
     private static async Task<AppError> ReadErrorAsync(HttpResponseMessage response, string context = "")
@@ -52,8 +53,13 @@ public class HttpAuthService(
             if (response.IsSuccessStatusCode)
             {
                 var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
-                if (auth is not null) tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                                                   auth.AccessTokenExpiry, auth.IsCurator);
+                if (auth is not null)
+                {
+                    tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                               auth.AccessTokenExpiry, auth.IsCurator);
+                    persistence.SaveCurrent(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                                            auth.AccessTokenExpiry, auth.IsCurator);
+                }
                 return (auth, null);
             }
 
@@ -74,8 +80,13 @@ public class HttpAuthService(
             if (response.IsSuccessStatusCode)
             {
                 var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
-                if (auth is not null) tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                                                   auth.AccessTokenExpiry, auth.IsCurator);
+                if (auth is not null)
+                {
+                    tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                               auth.AccessTokenExpiry, auth.IsCurator);
+                    persistence.SaveCurrent(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                                            auth.AccessTokenExpiry, auth.IsCurator);
+                }
                 return (auth, null);
             }
 
@@ -98,14 +109,17 @@ public class HttpAuthService(
             if (!response.IsSuccessStatusCode)
             {
                 tokens.Clear();
+                persistence.Clear();
                 return false;
             }
 
             var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
-            if (auth is null) { tokens.Clear(); return false; }
+            if (auth is null) { tokens.Clear(); persistence.Clear(); return false; }
 
             tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
                         auth.AccessTokenExpiry, auth.IsCurator);
+            persistence.SaveCurrent(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
+                                    auth.AccessTokenExpiry, auth.IsCurator);
             return true;
         }
         catch (Exception ex)
@@ -134,6 +148,7 @@ public class HttpAuthService(
         finally
         {
             tokens.Clear();
+            persistence.Clear();
         }
     }
 
@@ -176,6 +191,8 @@ public class HttpAuthService(
 
         tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
                     response.AccessTokenExpiry, response.IsCurator);
+        persistence.SaveCurrent(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
+                                response.AccessTokenExpiry, response.IsCurator);
         return (response, null);
     }
 

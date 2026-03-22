@@ -102,26 +102,19 @@ public class SplashViewModel : ViewModelBase
         await AnimateProgressTo(100, step: 2, delayMs: 18);
         await Task.Delay(300);
 
-        // If a valid saved session exists, skip login and go straight to character select.
-        // If the access token is expiring soon (or already expired), attempt a silent refresh first.
-        if (_tokens.IsAuthenticated && !_tokens.IsExpiringSoon)
+        // Always exchange the stored refresh token for a fresh access token on launch.
+        // This avoids relying on expiry estimation, which is vulnerable to clock skew
+        // between the client and the server. The refresh token (30-day lifetime) handles
+        // the common case of the short-lived access token (15 min) having aged out.
+        // If the refresh fails the server rejects the session; tokens.Clear() fires and
+        // MainMenuViewModel will show the logged-out state.
+        if (_tokens.IsAuthenticated)
         {
-            _navigation.NavigateTo<CharacterSelectViewModel>();
-        }
-        else if (_tokens.IsAuthenticated)
-        {
-            // Token exists but is stale — try a silent refresh before deciding where to route.
             StatusText = "Restoring session...";
-            var refreshed = await _auth.RefreshAsync();
-            if (refreshed)
-                _navigation.NavigateTo<CharacterSelectViewModel>();
-            else
-                _navigation.NavigateTo<MainMenuViewModel>();
+            await _auth.RefreshAsync();
         }
-        else
-        {
-            _navigation.NavigateTo<MainMenuViewModel>();
-        }
+
+        _navigation.NavigateTo<MainMenuViewModel>();
     }
 
     private async Task AnimateProgressTo(double target, int step, int delayMs)
