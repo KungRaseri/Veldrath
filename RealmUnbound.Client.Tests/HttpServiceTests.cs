@@ -55,7 +55,7 @@ public class HttpAuthServiceTests : TestBase
     {
         tokens ??= new TokenStore();
         var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
-        return new HttpAuthService(http, tokens, NullLogger<HttpAuthService>.Instance);
+        return new HttpAuthService(http, tokens, new TokenPersistenceService(), NullLogger<HttpAuthService>.Instance);
     }
 
     // ── RegisterAsync ─────────────────────────────────────────────────────────

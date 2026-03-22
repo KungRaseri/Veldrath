@@ -46,6 +46,7 @@ public partial class App : Application
         Services = services.BuildServiceProvider();
 
         // Restore persisted session (DPAPI-encrypted) so the user stays logged in across restarts.
+        // Saving and clearing are handled explicitly by HttpAuthService after each login/refresh/logout.
         if (OperatingSystem.IsWindows())
         {
 #pragma warning disable CA1416 // ProtectedData is Windows-only — guarded by OperatingSystem.IsWindows()
@@ -55,16 +56,6 @@ public partial class App : Application
             if (saved is not null)
                 tokenStore.Set(saved.AccessToken, saved.RefreshToken, saved.Username, saved.AccountId,
                                saved.AccessTokenExpiry, saved.IsCurator);
-
-            // Mirror every token update to persistent storage, and clear on logout.
-            tokenStore.WhenAnyValue(t => t.AccessToken).Subscribe(at =>
-            {
-                if (at is not null && tokenStore.RefreshToken is not null && tokenStore.Username is not null && tokenStore.AccountId.HasValue)
-                    persistence.Save(at, tokenStore.RefreshToken, tokenStore.Username, tokenStore.AccountId.Value,
-                                      tokenStore.AccessTokenExpiry ?? DateTimeOffset.UtcNow.AddMinutes(15), tokenStore.IsCurator);
-                else if (at is null)
-                    persistence.Clear();
-            });
 #pragma warning restore CA1416
         }
 
