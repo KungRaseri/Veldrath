@@ -43,6 +43,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _characterSelectedSub;
     private IDisposable? _itemCraftedSub;
     private IDisposable? _dungeonEnteredSub;
+    private IDisposable? _shopVisitedSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -220,6 +221,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _characterSelectedSub?.Dispose();
             _itemCraftedSub?.Dispose();
             _dungeonEnteredSub?.Dispose();
+            _shopVisitedSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -283,6 +285,9 @@ public class CharacterSelectViewModel : ViewModelBase
             _dungeonEnteredSub = _connection.On<DungeonEnteredPayload>("DungeonEntered", payload =>
                 _gameVm.OnDungeonEntered(payload.DungeonId, payload.DungeonSlug));
 
+            _shopVisitedSub = _connection.On<ShopVisitedPayload>("ShopVisited", payload =>
+                _gameVm.OnShopVisited(payload.ZoneId, payload.ZoneName));
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -310,6 +315,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, DateTimeOffset SelectedAt);
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
+    internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {
