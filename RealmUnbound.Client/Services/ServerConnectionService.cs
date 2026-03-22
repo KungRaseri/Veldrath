@@ -10,6 +10,8 @@ public interface IServerConnectionService
     event Action<ConnectionState>? StateChanged;
     Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default);
     Task DisconnectAsync();
+    Task SendCommandAsync(string method);
+    Task<TResult?> SendCommandAsync<TResult>(string method);
     Task<TResult?> SendCommandAsync<TResult>(string method, object command);
     IDisposable On<T>(string method, Action<T> handler);
 }
@@ -87,6 +89,22 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
             await _connection.StopAsync();
             State = ConnectionState.Disconnected;
         }
+    }
+
+    public async Task SendCommandAsync(string method)
+    {
+        if (_connection is null || State != ConnectionState.Connected)
+            throw new InvalidOperationException("Not connected to server.");
+
+        await _connection.InvokeAsync<object?>(method);
+    }
+
+    public async Task<TResult?> SendCommandAsync<TResult>(string method)
+    {
+        if (_connection is null || State != ConnectionState.Connected)
+            throw new InvalidOperationException("Not connected to server.");
+
+        return await _connection.InvokeAsync<TResult>(method);
     }
 
     public async Task<TResult?> SendCommandAsync<TResult>(string method, object command)

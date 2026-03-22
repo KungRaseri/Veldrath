@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using RealmUnbound.Client.Services;
+using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Tests;
 
@@ -527,6 +528,122 @@ public class HttpZoneServiceTests : TestBase
     {
         var sut    = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("offline")));
         var result = await sut.GetZoneAsync("zone-1");
+        result.Should().BeNull();
+    }
+
+    private static readonly RegionDto SampleRegion =
+        new("thornveil", "Thornveil", "Green region.", "Forest", 1, 20, true, "aethoria");
+
+    private static readonly WorldDto SampleWorld =
+        new("aethoria", "Aethoria", "The main world.", "Modern");
+
+    // ── GetZonesByRegionAsync ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetZonesByRegionAsync_Should_Return_List_On_Success()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(new List<ZoneDto> { SampleZone }));
+        var result = await sut.GetZonesByRegionAsync("thornveil");
+        result.Should().ContainSingle(z => z.Id == "starting-zone");
+    }
+
+    [Fact]
+    public async Task GetZonesByRegionAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Error", HttpStatusCode.InternalServerError));
+        var result = await sut.GetZonesByRegionAsync("thornveil");
+        result.Should().BeEmpty();
+    }
+
+    // ── GetRegionsAsync ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetRegionsAsync_Should_Return_List_On_Success()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(new List<RegionDto> { SampleRegion }));
+        var result = await sut.GetRegionsAsync();
+        result.Should().ContainSingle(r => r.Id == "thornveil");
+    }
+
+    [Fact]
+    public async Task GetRegionsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Error", HttpStatusCode.InternalServerError));
+        var result = await sut.GetRegionsAsync();
+        result.Should().BeEmpty();
+    }
+
+    // ── GetRegionAsync ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetRegionAsync_Should_Return_Dto_On_Success()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(SampleRegion));
+        var result = await sut.GetRegionAsync("thornveil");
+        result.Should().NotBeNull();
+        result!.Id.Should().Be("thornveil");
+    }
+
+    [Fact]
+    public async Task GetRegionAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+        var result = await sut.GetRegionAsync("missing");
+        result.Should().BeNull();
+    }
+
+    // ── GetRegionConnectionsAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetRegionConnectionsAsync_Should_Return_List_On_Success()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(new List<RegionDto> { SampleRegion }));
+        var result = await sut.GetRegionConnectionsAsync("thornveil");
+        result.Should().ContainSingle(r => r.Id == "thornveil");
+    }
+
+    [Fact]
+    public async Task GetRegionConnectionsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Error", HttpStatusCode.InternalServerError));
+        var result = await sut.GetRegionConnectionsAsync("thornveil");
+        result.Should().BeEmpty();
+    }
+
+    // ── GetWorldsAsync ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetWorldsAsync_Should_Return_List_On_Success()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(new List<WorldDto> { SampleWorld }));
+        var result = await sut.GetWorldsAsync();
+        result.Should().ContainSingle(w => w.Id == "aethoria");
+    }
+
+    [Fact]
+    public async Task GetWorldsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Error", HttpStatusCode.InternalServerError));
+        var result = await sut.GetWorldsAsync();
+        result.Should().BeEmpty();
+    }
+
+    // ── GetWorldAsync ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetWorldAsync_Should_Return_Dto_On_Success()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(SampleWorld));
+        var result = await sut.GetWorldAsync("aethoria");
+        result.Should().NotBeNull();
+        result!.Id.Should().Be("aethoria");
+    }
+
+    [Fact]
+    public async Task GetWorldAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+        var result = await sut.GetWorldAsync("missing");
         result.Should().BeNull();
     }
 }

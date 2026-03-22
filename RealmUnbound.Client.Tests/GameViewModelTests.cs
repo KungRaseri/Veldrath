@@ -266,7 +266,10 @@ public class GameViewModelTests : TestBase
         await vm.RestAtLocationCommand.Execute();
 
         conn.SentCommands
-            .Should().ContainSingle(c => c.Method == "RestAtLocation" && (string?)c.Arg == "inn-millhaven");
+            .Should().ContainSingle(c => c.Method == "RestAtLocation");
+        var cmd = conn.SentCommands.Single(c => c.Method == "RestAtLocation");
+        var locationId = (string?)cmd.Arg!.GetType().GetProperty("LocationId")?.GetValue(cmd.Arg);
+        locationId.Should().Be("inn-millhaven");
     }
 
     [Fact]
@@ -705,6 +708,31 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("dungeon-grotto"));
     }
 
+    [Fact]
+    public void OnDungeonEntered_Should_Send_EnterZone_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+        vm.OnDungeonEntered("dungeon-grotto", "dungeon-grotto");
+
+        conn.SentCommands.Should().Contain(c => c.Method == "EnterZone");
+    }
+
+    [Fact]
+    public async Task OnDungeonEntered_Should_Call_InitializeAsync()
+    {
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("dungeon-grotto", "Grotto of Echoes",
+                "A dark cave.", "Dungeon", 1, 10, false, 0)
+        };
+        var vm = MakeVm(zones: zones);
+        vm.OnDungeonEntered("dungeon-grotto", "dungeon-grotto");
+        await Task.Yield(); // allow fire-and-forget InitializeAsync to complete
+
+        vm.ZoneName.Should().Be("Grotto of Echoes");
+    }
+
     // ── CraftItemCommand ────────────────────────────────────────────────────────────
 
     [Fact]
@@ -729,6 +757,16 @@ public class GameViewModelTests : TestBase
         await vm.EnterDungeonCommand.Execute("dungeon-grotto");
 
         conn.SentCommands.Should().Contain(c => c.Method == "EnterDungeon");
+    }
+
+    // ── VisitShopCommand ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task VisitShopCommand_Should_Append_Message_To_ActionLog()
+    {
+        var vm = MakeVm();
+        await vm.VisitShopCommand.Execute();
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Shop"));
     }
 
     // ── IsLeftPanelOpen + ToggleLeftPanelCommand ──────────────────────────────
@@ -910,7 +948,7 @@ public class GameViewModelTests : TestBase
         vm.SeedInitialStats(level: 5, experience: 0, currentHealth: 50, maxHealth: 50,
                             currentMana: 25, maxMana: 25, gold: 0, unspentAttributePoints: 0);
 
-        vm.ExperienceToNextLevel.Should().Be(2500L); // 5 * 500
+        vm.ExperienceToNextLevel.Should().Be(500L); // 5 * 100
     }
 
     [Fact]

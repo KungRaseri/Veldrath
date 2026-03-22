@@ -21,6 +21,16 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - Fixed 2026-03-19 session-5: `IArmorRepository → EfCoreArmorRepository`, `IEquipmentSetRepository → EfCoreEquipmentSetRepository`, `INamePatternRepository → EfCoreNamePatternRepository` also missing. Added `using RealmEngine.Core.Abstractions` and `using RealmEngine.Core.Repositories` to Program.cs for these.
 - Always run `dotnet build RealmUnbound.Server` after adding a new Core handler to catch missing registrations before Docker.
 
+## SignalR Parameter Binding — Critical Rule
+
+Hub methods that the client calls **must** use a single request DTO (record) as their parameter — NOT multiple separate primitives. Multiple-primitive signatures (e.g. `GainExperience(int amount, string? source)`) cause SignalR binding failures when the client sends an anonymous object via `InvokeAsync(..., new { Amount, Source })` because SignalR tries to deserialize the JSON object as the first `int` parameter.
+
+Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamage` hub methods to accept `GainExperienceHubRequest`, `AddGoldHubRequest`, `TakeDamageHubRequest` DTOs.
+
+**Pattern for all hub methods**: Use a DTO record at the protocol boundary, just like `AwardSkillXp(AwardSkillXpHubRequest)` and `EquipItem(EquipItemHubRequest)`.
+
+**`IServerConnectionService` zero-arg overload**: Use `SendCommandAsync(string method)` (no command object) for hub methods that take no parameters, e.g. `LeaveZone`. The underlying `IHubConnection.InvokeAsync<TResult>(string methodName)` zero-arg overload is also available.
+
 ## Wired Hub→MediatR Bridges
 
 | Hub Method | HubCommand | Session |

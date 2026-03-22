@@ -48,6 +48,9 @@ public class FakeHubConnection : IHubConnection
         return Task.CompletedTask;
     }
 
+    public Task<TResult> InvokeAsync<TResult>(string methodName)
+        => Task.FromResult(default(TResult)!);
+
     public Task<TResult> InvokeAsync<TResult>(string methodName, object arg)
         => Task.FromResult(default(TResult)!);
 

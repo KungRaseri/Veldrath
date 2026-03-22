@@ -897,4 +897,234 @@ public class HttpContentServiceTests : TestBase
 
         result.Should().BeNull();
     }
+
+    // ── GetItemsAsync ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetItemsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<ItemDto> { new("iron-ore", "Iron Ore", "ores", 10) };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetItemsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("iron-ore");
+    }
+
+    [Fact]
+    public async Task GetItemsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Internal Server Error", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetItemsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetItemAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new ItemDto("iron-ore", "Iron Ore", "ores", 10);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetItemAsync("iron-ore");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron-ore");
+    }
+
+    [Fact]
+    public async Task GetItemAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetItemAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetEnchantmentsAsync ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetEnchantmentsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<EnchantmentDto> { new("flaming", "Flaming", "elemental", 8) };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetEnchantmentsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("flaming");
+    }
+
+    [Fact]
+    public async Task GetEnchantmentsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Internal Server Error", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetEnchantmentsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetEnchantmentAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new EnchantmentDto("flaming", "Flaming", "elemental", 8);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetEnchantmentAsync("flaming");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("flaming");
+    }
+
+    [Fact]
+    public async Task GetEnchantmentAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetEnchantmentAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetWeaponsAsync ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetWeaponsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<WeaponDto> { new("iron-sword", "Iron Sword", "swords", "sword", 10) };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetWeaponsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("iron-sword");
+    }
+
+    [Fact]
+    public async Task GetWeaponsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Internal Server Error", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetWeaponsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetWeaponAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new WeaponDto("iron-sword", "Iron Sword", "swords", "sword", 10);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetWeaponAsync("iron-sword");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron-sword");
+    }
+
+    [Fact]
+    public async Task GetWeaponAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetWeaponAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetArmorsAsync ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetArmorsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<ArmorDto> { new("iron-helm", "Iron Helm", "helms", "medium", 10) };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetArmorsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("iron-helm");
+    }
+
+    [Fact]
+    public async Task GetArmorsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Internal Server Error", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetArmorsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetArmorAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new ArmorDto("iron-helm", "Iron Helm", "helms", "medium", 10);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetArmorAsync("iron-helm");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron-helm");
+    }
+
+    [Fact]
+    public async Task GetArmorAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetArmorAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
+
+    // ── GetMaterialsAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetMaterialsAsync_Should_Return_List_On_Success()
+    {
+        var expected = new List<MaterialDto> { new("iron", "Iron", "metals", 10) };
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetMaterialsAsync();
+
+        result.Should().HaveCount(1);
+        result[0].Slug.Should().Be("iron");
+    }
+
+    [Fact]
+    public async Task GetMaterialsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Internal Server Error", HttpStatusCode.InternalServerError));
+
+        var result = await sut.GetMaterialsAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetMaterialAsync_Should_Return_Dto_On_Success()
+    {
+        var expected = new MaterialDto("iron", "Iron", "metals", 10);
+        var sut = MakeSut(FakeHttpHandler.Json(expected));
+
+        var result = await sut.GetMaterialAsync("iron");
+
+        result.Should().NotBeNull();
+        result!.Slug.Should().Be("iron");
+    }
+
+    [Fact]
+    public async Task GetMaterialAsync_Should_Return_Null_On_Not_Found()
+    {
+        var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+
+        var result = await sut.GetMaterialAsync("nonexistent");
+
+        result.Should().BeNull();
+    }
 }

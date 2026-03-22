@@ -256,7 +256,7 @@ public class GameHub : Hub
     /// </summary>
     /// <param name="amount">Positive number of experience points to award.</param>
     /// <param name="source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
-    public async Task GainExperience(int amount, string? source = null)
+    public async Task GainExperience(GainExperienceHubRequest request)
     {
         if (!TryGetCharacterId(out var characterId))
         {
@@ -269,8 +269,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new GainExperienceHubCommand
             {
                 CharacterId = characterId,
-                Amount      = amount,
-                Source      = source,
+                Amount      = request.Amount,
+                Source      = request.Source,
             });
 
             if (!result.Success)
@@ -286,7 +286,7 @@ public class GameHub : Hub
                 result.NewExperience,
                 result.LeveledUp,
                 result.LeveledUpTo,
-                Source        = source,
+                Source        = request.Source,
             };
 
             if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
@@ -296,7 +296,7 @@ public class GameHub : Hub
 
             _logger.LogInformation(
                 "Character {CharacterId} gained {Amount} XP from {Source}; now level {Level}",
-                characterId, amount, source ?? "Unknown", result.NewLevel);
+                characterId, request.Amount, request.Source ?? "Unknown", result.NewLevel);
         }
         catch (Exception ex)
         {
@@ -371,9 +371,8 @@ public class GameHub : Hub
     /// Broadcasts <c>CharacterRested</c> to the zone group (or the caller only when not in a zone)
     /// on success, and sends <c>Error</c> on validation failure or handler error.
     /// </summary>
-    /// <param name="locationId">ID of the inn or rest-point location.</param>
-    /// <param name="costInGold">Gold deducted for the rest (default: 10).</param>
-    public async Task RestAtLocation(string locationId, int costInGold = 10)
+    /// <param name="request">Request DTO containing the location ID and optional gold cost.</param>
+    public async Task RestAtLocation(RestAtLocationHubRequest request)
     {
         if (!TryGetCharacterId(out var characterId))
         {
@@ -386,8 +385,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new RestAtLocationHubCommand
             {
                 CharacterId = characterId,
-                LocationId  = locationId,
-                CostInGold  = costInGold,
+                LocationId  = request.LocationId,
+                CostInGold  = request.CostInGold,
             });
 
             if (!result.Success)
@@ -399,7 +398,7 @@ public class GameHub : Hub
             var payload = new
             {
                 CharacterId    = characterId,
-                LocationId     = locationId,
+                LocationId     = request.LocationId,
                 result.CurrentHealth,
                 result.MaxHealth,
                 result.CurrentMana,
@@ -414,7 +413,7 @@ public class GameHub : Hub
 
             _logger.LogInformation(
                 "Character {CharacterId} rested at {LocationId}; HP {Hp}/{MaxHp}, MP {Mp}/{MaxMp}, gold remaining {Gold}",
-                characterId, locationId, result.CurrentHealth, result.MaxHealth,
+                characterId, request.LocationId, result.CurrentHealth, result.MaxHealth,
                 result.CurrentMana, result.MaxMana, result.GoldRemaining);
         }
         catch (Exception ex)
@@ -598,7 +597,7 @@ public class GameHub : Hub
     /// </summary>
     /// <param name="amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
     /// <param name="source">Optional label for the source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
-    public async Task AddGold(int amount, string? source = null)
+    public async Task AddGold(AddGoldHubRequest request)
     {
         if (!TryGetCharacterId(out var characterId))
         {
@@ -611,8 +610,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new AddGoldHubCommand
             {
                 CharacterId = characterId,
-                Amount      = amount,
-                Source      = source,
+                Amount      = request.Amount,
+                Source      = request.Source,
             });
 
             if (!result.Success)
@@ -626,7 +625,7 @@ public class GameHub : Hub
                 CharacterId  = characterId,
                 result.GoldAdded,
                 result.NewGoldTotal,
-                Source       = source,
+                Source       = request.Source,
             };
 
             if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
@@ -636,7 +635,7 @@ public class GameHub : Hub
 
             _logger.LogInformation(
                 "Character {CharacterId} gold changed by {Amount} ({Source}); total now {Total}",
-                characterId, amount, source ?? "Unknown", result.NewGoldTotal);
+                characterId, request.Amount, request.Source ?? "Unknown", result.NewGoldTotal);
         }
         catch (Exception ex)
         {
@@ -651,7 +650,7 @@ public class GameHub : Hub
     /// </summary>
     /// <param name="damageAmount">Positive number of hit points to remove.</param>
     /// <param name="source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
-    public async Task TakeDamage(int damageAmount, string? source = null)
+    public async Task TakeDamage(TakeDamageHubRequest request)
     {
         if (!TryGetCharacterId(out var characterId))
         {
@@ -664,8 +663,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new TakeDamageHubCommand
             {
                 CharacterId  = characterId,
-                DamageAmount = damageAmount,
-                Source       = source,
+                DamageAmount = request.DamageAmount,
+                Source       = request.Source,
             });
 
             if (!result.Success)
@@ -677,11 +676,11 @@ public class GameHub : Hub
             var payload = new
             {
                 CharacterId   = characterId,
-                DamageAmount  = damageAmount,
+                DamageAmount  = request.DamageAmount,
                 result.CurrentHealth,
                 result.MaxHealth,
                 result.IsDead,
-                Source        = source,
+                Source        = request.Source,
             };
 
             if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
@@ -691,7 +690,7 @@ public class GameHub : Hub
 
             _logger.LogInformation(
                 "Character {CharacterId} took {Damage} damage from {Source}; HP {Hp}/{Max} IsDead={Dead}",
-                characterId, damageAmount, source ?? "Unknown", result.CurrentHealth, result.MaxHealth, result.IsDead);
+                characterId, request.DamageAmount, request.Source ?? "Unknown", result.CurrentHealth, result.MaxHealth, result.IsDead);
         }
         catch (Exception ex)
         {
@@ -855,6 +854,11 @@ public class GameHub : Hub
     }
 }
 
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.RestAtLocation"/>.</summary>
+/// <param name="LocationId">ID of the inn or rest-point location.</param>
+/// <param name="CostInGold">Gold deducted for the rest (default: 10).</param>
+public record RestAtLocationHubRequest(string LocationId, int CostInGold = 10);
+
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.AwardSkillXp"/>.</summary>
 /// <param name="SkillId">Skill identifier (e.g. <c>"swordsmanship"</c>, <c>"herbalism"</c>).</param>
 /// <param name="Amount">XP amount to award. Must be positive.</param>
@@ -864,4 +868,19 @@ public record AwardSkillXpHubRequest(string SkillId, int Amount);
 /// <param name="Slot">Slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Must be a known slot.</param>
 /// <param name="ItemRef">Item-reference slug to equip, or <see langword="null"/> to clear the slot.</param>
 public record EquipItemHubRequest(string Slot, string? ItemRef);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.GainExperience"/>.</summary>
+/// <param name="Amount">Positive number of experience points to award.</param>
+/// <param name="Source">Optional label for the XP source (e.g. <c>"Combat"</c>, <c>"Quest"</c>).</param>
+public record GainExperienceHubRequest(int Amount, string? Source = null);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.AddGold"/>.</summary>
+/// <param name="Amount">Gold to add (positive) or spend (negative). Cannot be zero.</param>
+/// <param name="Source">Optional label for the gold source or sink (e.g. <c>"Loot"</c>, <c>"Quest"</c>).</param>
+public record AddGoldHubRequest(int Amount, string? Source = null);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.TakeDamage"/>.</summary>
+/// <param name="DamageAmount">Positive number of hit points to remove.</param>
+/// <param name="Source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
+public record TakeDamageHubRequest(int DamageAmount, string? Source = null);
 
