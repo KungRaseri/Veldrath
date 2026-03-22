@@ -1020,4 +1020,220 @@ public class GameViewModelTests : TestBase
 
         conn.SentCommands.Should().Contain(c => c.Method == "TakeDamage");
     }
+
+    // ── Zone view mode ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void ZoneViewMode_Should_Default_To_Zone()
+    {
+        var vm = MakeVm();
+        vm.ZoneViewMode.Should().Be("Zone");
+        vm.IsZoneViewActive.Should().BeTrue();
+        vm.IsRegionViewActive.Should().BeFalse();
+        vm.IsWorldViewActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowRegionViewCommand_Should_Set_ZoneViewMode_To_Region()
+    {
+        var vm = MakeVm();
+        await vm.ShowRegionViewCommand.Execute();
+        vm.ZoneViewMode.Should().Be("Region");
+        vm.IsRegionViewActive.Should().BeTrue();
+        vm.IsZoneViewActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowWorldViewCommand_Should_Set_ZoneViewMode_To_World()
+    {
+        var vm = MakeVm();
+        await vm.ShowWorldViewCommand.Execute();
+        vm.ZoneViewMode.Should().Be("World");
+        vm.IsWorldViewActive.Should().BeTrue();
+        vm.IsZoneViewActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowZoneViewCommand_Should_Return_To_Zone_View()
+    {
+        var vm = MakeVm();
+        await vm.ShowRegionViewCommand.Execute();
+        await vm.ShowZoneViewCommand.Execute();
+        vm.ZoneViewMode.Should().Be("Zone");
+        vm.IsZoneViewActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Should_Reset_ZoneViewMode_To_Zone()
+    {
+        var vm = MakeVm();
+        await vm.ShowRegionViewCommand.Execute();
+
+        await vm.InitializeAsync("Hero", "any-zone");
+
+        vm.ZoneViewMode.Should().Be("Zone");
+    }
+
+    // ── World context loading ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task InitializeAsync_Should_Populate_RegionZones_And_Mark_Current()
+    {
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "draveth");
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                "Town", 1, 50, true, 0, RegionId: "thornveil", HasInn: true, HasMerchant: true),
+            Regions = [thornveil],
+            Zones =
+            [
+                new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                    "Town", 1, 50, true, 0, "thornveil"),
+                new ZoneDto("greenveil-paths", "The Greenveil Paths", "Winding paths.",
+                    "Wilderness", 1, 30, false, 0, "thornveil"),
+            ],
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        vm.RegionZones.Should().HaveCount(2);
+        vm.RegionZones.Should().Contain(z => z.Id == "fenwick-crossing" && z.IsCurrentZone);
+        vm.RegionZones.Should().Contain(z => z.Id == "greenveil-paths" && !z.IsCurrentZone);
+        vm.RegionName.Should().Be("Thornveil");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Should_Populate_WorldRegions_And_Mark_Current_Region()
+    {
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "draveth");
+        var greymoor  = new RegionDto("greymoor",  "Greymoor",  "A bleak moor.", "Highland", 5, 14, false, "draveth");
+        var world     = new WorldDto("draveth", "Draveth", "A world of embers.", "The Age of Embers");
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                "Town", 1, 50, true, 0, RegionId: "thornveil"),
+            Regions = [thornveil, greymoor],
+            Worlds  = [world],
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        vm.WorldRegions.Should().HaveCount(2);
+        vm.WorldRegions.Should().Contain(r => r.Id == "thornveil" && r.IsCurrentRegion);
+        vm.WorldRegions.Should().Contain(r => r.Id == "greymoor"  && !r.IsCurrentRegion);
+        vm.WorldName.Should().Be("Draveth");
+        vm.WorldEra.Should().Be("The Age of Embers");
+    }
+
+    // ── Zone travel ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task TravelToZoneCommand_Should_Send_EnterZone_Hub_Command()
+    {
+        var conn  = new FakeServerConnectionService();
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("aldenmere", "Aldenmere", "A highland town.",
+                "Town", 5, 50, false, 0),
+        };
+        var vm = MakeVm(conn: conn, zones: zones);
+
+        await vm.TravelToZoneCommand.Execute("aldenmere");
+
+        conn.SentCommands.Should().Contain(c => c.Method == "EnterZone");
+    }
+
+    [Fact]
+    public async Task TravelToZoneCommand_Should_Skip_Hub_Call_When_Already_In_Zone()
+    {
+        var conn  = new FakeServerConnectionService();
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                "Town", 1, 50, true, 0),
+        };
+        var vm = MakeVm(conn: conn, zones: zones);
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+        conn.SentCommands.Clear();
+
+        await vm.TravelToZoneCommand.Execute("fenwick-crossing");
+
+        conn.SentCommands.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RegionZones_TravelCommand_Should_Be_Null_For_Current_Zone_Only()
+    {
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "draveth");
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                "Town", 1, 50, true, 0, RegionId: "thornveil"),
+            Regions = [thornveil],
+            Zones =
+            [
+                new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                    "Town", 1, 50, true, 0, "thornveil"),
+                new ZoneDto("greenveil-paths", "The Greenveil Paths", "Winding paths.",
+                    "Wilderness", 1, 30, false, 0, "thornveil"),
+            ],
+        };
+        var vm = MakeVm(zones: zones);
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        var current = vm.RegionZones.Single(z => z.IsCurrentZone);
+        var other   = vm.RegionZones.Single(z => !z.IsCurrentZone);
+
+        current.TravelCommand.Should().BeNull();
+        current.CanTravel.Should().BeFalse();
+        other.TravelCommand.Should().NotBeNull();
+        other.CanTravel.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ViewRegionCommand_Should_Load_Region_Data_And_Switch_To_Region_View()
+    {
+        var greymoor = new RegionDto("greymoor", "Greymoor", "A bleak moor.", "Highland", 5, 14, false, "draveth");
+        var zones = new FakeZoneService
+        {
+            Regions = [greymoor],
+            Zones =
+            [
+                new ZoneDto("pale-moor", "The Pale Moor", "A desolate plain.",
+                    "Wilderness", 7, 30, false, 0, "greymoor"),
+            ],
+        };
+        var vm = MakeVm(zones: zones);
+
+        await vm.ViewRegionCommand.Execute("greymoor");
+
+        vm.ZoneViewMode.Should().Be("Region");
+        vm.RegionName.Should().Be("Greymoor");
+        vm.RegionZones.Should().Contain(z => z.Id == "pale-moor");
+    }
+
+    [Fact]
+    public async Task ShowRegionViewCommand_Should_Restore_Current_Region_After_Drill_Into_Other()
+    {
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.",     "Forest",   0, 6,  true,  "draveth");
+        var greymoor  = new RegionDto("greymoor",  "Greymoor",  "A bleak moor.",      "Highland", 5, 14, false, "draveth");
+        var zones = new FakeZoneService
+        {
+            ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
+                "Town", 1, 50, true, 0, RegionId: "thornveil"),
+            Regions = [thornveil, greymoor],
+        };
+        var vm = MakeVm(zones: zones);
+        await vm.InitializeAsync("Hero", "fenwick-crossing");
+
+        // Drill into a different region from the world view
+        await vm.ViewRegionCommand.Execute("greymoor");
+        vm.RegionName.Should().Be("Greymoor");
+
+        // Clicking the Region tab should restore the player's actual region
+        await vm.ShowRegionViewCommand.Execute();
+        vm.RegionName.Should().Be("Thornveil");
+    }
 }

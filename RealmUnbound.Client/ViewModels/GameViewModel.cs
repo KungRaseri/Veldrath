@@ -150,6 +150,22 @@ public class GameViewModel : ViewModelBase
     private bool _hasInn;
     private bool _hasMerchant;
     private string _zoneType = string.Empty;
+    private int _zoneMinLevel;
+    private string _regionId = string.Empty;
+
+    // ── Zone view mode (Zone | Region | World) ────────────────────────────────
+    private string _zoneViewMode = "Zone";
+
+    // ── Region state ──────────────────────────────────────────────────────────
+    private string _regionName = string.Empty;
+    private string _regionDescription = string.Empty;
+    private string _regionType = string.Empty;
+    private int _regionMinLevel;
+    private int _regionMaxLevel;
+
+    // ── World state ───────────────────────────────────────────────────────────
+    private string _worldName = string.Empty;
+    private string _worldEra = string.Empty;
 
     /// <summary>Whether the current zone has an inn available for resting.</summary>
     public bool HasInn
@@ -172,6 +188,90 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _zoneType, value);
     }
 
+    /// <summary>Minimum recommended character level for the current zone.</summary>
+    public int ZoneMinLevel
+    {
+        get => _zoneMinLevel;
+        private set => this.RaiseAndSetIfChanged(ref _zoneMinLevel, value);
+    }
+
+    // ── Zone view mode ────────────────────────────────────────────────────────
+
+    /// <summary>Active centre-panel view: <c>Zone</c>, <c>Region</c>, or <c>World</c>.</summary>
+    public string ZoneViewMode
+    {
+        get => _zoneViewMode;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _zoneViewMode, value);
+            this.RaisePropertyChanged(nameof(IsZoneViewActive));
+            this.RaisePropertyChanged(nameof(IsRegionViewActive));
+            this.RaisePropertyChanged(nameof(IsWorldViewActive));
+        }
+    }
+
+    /// <summary>Whether the zone detail panel is currently active.</summary>
+    public bool IsZoneViewActive => ZoneViewMode == "Zone";
+
+    /// <summary>Whether the region map panel is currently active.</summary>
+    public bool IsRegionViewActive => ZoneViewMode == "Region";
+
+    /// <summary>Whether the world overview panel is currently active.</summary>
+    public bool IsWorldViewActive => ZoneViewMode == "World";
+
+    // ── Region state ──────────────────────────────────────────────────────────
+
+    /// <summary>Name of the region the current zone belongs to.</summary>
+    public string RegionName
+    {
+        get => _regionName;
+        private set => this.RaiseAndSetIfChanged(ref _regionName, value);
+    }
+
+    /// <summary>Description text for the current region.</summary>
+    public string RegionDescription
+    {
+        get => _regionDescription;
+        private set => this.RaiseAndSetIfChanged(ref _regionDescription, value);
+    }
+
+    /// <summary>Type classification of the current region (Forest, Highland, Coastal, Volcanic).</summary>
+    public string RegionType
+    {
+        get => _regionType;
+        private set => this.RaiseAndSetIfChanged(ref _regionType, value);
+    }
+
+    /// <summary>Minimum character level for zones within the current region.</summary>
+    public int RegionMinLevel
+    {
+        get => _regionMinLevel;
+        private set => this.RaiseAndSetIfChanged(ref _regionMinLevel, value);
+    }
+
+    /// <summary>Maximum character level for zones within the current region.</summary>
+    public int RegionMaxLevel
+    {
+        get => _regionMaxLevel;
+        private set => this.RaiseAndSetIfChanged(ref _regionMaxLevel, value);
+    }
+
+    // ── World state ───────────────────────────────────────────────────────────
+
+    /// <summary>Name of the world the current zone belongs to.</summary>
+    public string WorldName
+    {
+        get => _worldName;
+        private set => this.RaiseAndSetIfChanged(ref _worldName, value);
+    }
+
+    /// <summary>Era label for the current world (e.g. "The Age of Embers").</summary>
+    public string WorldEra
+    {
+        get => _worldEra;
+        private set => this.RaiseAndSetIfChanged(ref _worldEra, value);
+    }
+
     /// <summary>Players currently online in the same zone.</summary>
     public ObservableCollection<string> OnlinePlayers { get; } = [];
 
@@ -180,6 +280,12 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>The eight equipment slots for the active character.</summary>
     public IReadOnlyList<EquipmentSlotViewModel> EquipmentSlots { get; }
+
+    /// <summary>All zones in the current region, ordered by minimum level. Used by the zone and region panels.</summary>
+    public ObservableCollection<ZoneNodeViewModel> RegionZones { get; } = [];
+
+    /// <summary>All regions in the current world, used by the world overview panel.</summary>
+    public ObservableCollection<RegionCardViewModel> WorldRegions { get; } = [];
 
     /// <summary>Toggles the collapsible left stats/log panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
@@ -229,6 +335,21 @@ public class GameViewModel : ViewModelBase
     /// <summary>Open the merchant shop available in zones with a merchant.</summary>
     public ReactiveCommand<Unit, Unit> VisitShopCommand { get; }
 
+    /// <summary>Switches the centre panel to the zone detail view.</summary>
+    public ReactiveCommand<Unit, Unit> ShowZoneViewCommand { get; }
+
+    /// <summary>Switches the centre panel to the region map view, restoring the character's current region.</summary>
+    public ReactiveCommand<Unit, Unit> ShowRegionViewCommand { get; }
+
+    /// <summary>Switches the centre panel to the world overview.</summary>
+    public ReactiveCommand<Unit, Unit> ShowWorldViewCommand { get; }
+
+    /// <summary>Travel to any zone by slug, sending <c>EnterZone</c> to the server and reinitializing zone state.</summary>
+    public ReactiveCommand<string, Unit> TravelToZoneCommand { get; }
+
+    /// <summary>Load a specific region's zone details in the Region panel and switch to that view.</summary>
+    public ReactiveCommand<string, Unit> ViewRegionCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -263,20 +384,32 @@ public class GameViewModel : ViewModelBase
 
         ToggleLeftPanelCommand = ReactiveCommand.Create(() => { IsLeftPanelOpen = !IsLeftPanelOpen; });
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
-        DevGainXpCommand    = ReactiveCommand.CreateFromTask(() => DoGainExperienceAsync(100, "dev"));
-        DevAddGoldCommand   = ReactiveCommand.CreateFromTask(() => DoAddGoldAsync(50, "dev"));
+        DevGainXpCommand = ReactiveCommand.CreateFromTask(() => DoGainExperienceAsync(100, "dev"));
+        DevAddGoldCommand = ReactiveCommand.CreateFromTask(() => DoAddGoldAsync(50, "dev"));
         DevTakeDamageCommand = ReactiveCommand.CreateFromTask(() => DoTakeDamageAsync(10, "dev"));
         RestAtLocationCommand = ReactiveCommand.CreateFromTask(DoRestAtLocationAsync);
         AllocateAttributePointsCommand = ReactiveCommand.CreateFromTask<Dictionary<string, int>>(DoAllocateAttributePointsAsync);
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
         EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
-        AddGoldCommand    = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
-        TakeDamageCommand      = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
-        GainExperienceCommand  = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoGainExperienceAsync(t.Item1, t.Item2));
-        CraftItemCommand       = ReactiveCommand.CreateFromTask<string>(DoCraftItemAsync);
-        EnterDungeonCommand    = ReactiveCommand.CreateFromTask<string>(DoEnterDungeonAsync);
-        VisitShopCommand       = ReactiveCommand.CreateFromTask(DoVisitShopAsync);
+        AddGoldCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
+        TakeDamageCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
+        GainExperienceCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoGainExperienceAsync(t.Item1, t.Item2));
+        CraftItemCommand = ReactiveCommand.CreateFromTask<string>(DoCraftItemAsync);
+        EnterDungeonCommand = ReactiveCommand.CreateFromTask<string>(DoEnterDungeonAsync);
+        VisitShopCommand = ReactiveCommand.CreateFromTask(DoVisitShopAsync);
+
+        ShowZoneViewCommand = ReactiveCommand.Create(() => { ZoneViewMode = "Zone"; });
+        ShowRegionViewCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            if (string.IsNullOrEmpty(_regionId))
+                ZoneViewMode = "Region";
+            else
+                await DoShowRegionDetailsAsync(_regionId);
+        });
+        ShowWorldViewCommand = ReactiveCommand.Create(() => { ZoneViewMode = "World"; });
+        TravelToZoneCommand = ReactiveCommand.CreateFromTask<string>(DoTravelToZoneAsync);
+        ViewRegionCommand = ReactiveCommand.CreateFromTask<string>(DoShowRegionDetailsAsync);
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -284,15 +417,18 @@ public class GameViewModel : ViewModelBase
     {
         CharacterName = characterName;
         _currentZoneId = zoneId;
+        ZoneViewMode = "Zone";
 
         var zone = await _zoneService.GetZoneAsync(zoneId);
         if (zone is not null)
         {
-            ZoneName        = zone.Name;
+            ZoneName = zone.Name;
             ZoneDescription = zone.Description;
-            ZoneType        = zone.Type;
-            HasInn          = zone.HasInn;
-            HasMerchant     = zone.HasMerchant;
+            ZoneType = zone.Type;
+            HasInn = zone.HasInn;
+            HasMerchant = zone.HasMerchant;
+            ZoneMinLevel = zone.MinLevel;
+            await LoadWorldContextAsync(zone.RegionId, zoneId);
         }
 
         if (_assetStore is not null && _audioPlayer is not null)
@@ -342,10 +478,10 @@ public class GameViewModel : ViewModelBase
     public void OnCharacterRested(int currentHealth, int maxHealth, int currentMana, int maxMana, int goldRemaining)
     {
         CurrentHealth = currentHealth;
-        MaxHealth     = maxHealth;
-        CurrentMana   = currentMana;
-        MaxMana       = maxMana;
-        Gold          = goldRemaining;
+        MaxHealth = maxHealth;
+        CurrentMana = currentMana;
+        MaxMana = maxMana;
+        Gold = goldRemaining;
         AppendLog($"Rested. HP: {currentHealth}/{maxHealth}  MP: {currentMana}/{maxMana}  Gold: {goldRemaining}");
     }
 
@@ -411,7 +547,7 @@ public class GameViewModel : ViewModelBase
     /// <summary>Called from hub when the active character gains experience and possibly levels up.</summary>
     public void OnExperienceGained(int newLevel, long newExperience, bool leveledUp, int? leveledUpTo)
     {
-        Level      = newLevel;
+        Level = newLevel;
         Experience = newExperience;
         AppendLog(leveledUp
             ? $"Leveled up to {leveledUpTo}! XP toward next level: {newExperience}"
@@ -434,6 +570,94 @@ public class GameViewModel : ViewModelBase
         _ = _connection.SendCommandAsync<object>("EnterZone", dungeonId);
     }
 
+    private async Task LoadWorldContextAsync(string? regionId, string currentZoneId)
+    {
+        if (regionId is null) return;
+        _regionId = regionId;
+
+        var region = await _zoneService.GetRegionAsync(regionId);
+        if (region is null) return;
+
+        RegionName = region.Name;
+        RegionDescription = region.Description;
+        RegionType = region.Type;
+        RegionMinLevel = region.MinLevel;
+        RegionMaxLevel = region.MaxLevel;
+
+        var zones = await _zoneService.GetZonesByRegionAsync(regionId);
+        RegionZones.Clear();
+        foreach (var z in zones)
+        {
+            var zId = z.Id;
+            RegionZones.Add(new ZoneNodeViewModel(
+                z.Id, z.Name, z.Type, z.MinLevel,
+                z.HasInn, z.HasMerchant,
+                isCurrentZone: z.Id == currentZoneId,
+                onTravel: z.Id != currentZoneId ? () => DoTravelToZoneAsync(zId) : null));
+        }
+
+        var world = await _zoneService.GetWorldAsync(region.WorldId);
+        if (world is not null)
+        {
+            WorldName = world.Name;
+            WorldEra = world.Era;
+        }
+
+        var allRegions = await _zoneService.GetRegionsAsync();
+        WorldRegions.Clear();
+        foreach (var r in allRegions)
+        {
+            var rId = r.Id;
+            WorldRegions.Add(new RegionCardViewModel(
+                r.Id, r.Name, r.Type,
+                r.MinLevel, r.MaxLevel,
+                isCurrentRegion: r.Id == regionId,
+                onExplore: () => DoShowRegionDetailsAsync(rId)));
+        }
+    }
+
+    private async Task DoTravelToZoneAsync(string zoneId)
+    {
+        if (zoneId == _currentZoneId) return;
+        try
+        {
+            await _connection.SendCommandAsync<object>("EnterZone", zoneId);
+            await InitializeAsync(CharacterName, zoneId);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Travel failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoShowRegionDetailsAsync(string regionId)
+    {
+        if (string.IsNullOrEmpty(regionId)) return;
+
+        var region = await _zoneService.GetRegionAsync(regionId);
+        if (region is null) return;
+
+        RegionName = region.Name;
+        RegionDescription = region.Description;
+        RegionType = region.Type;
+        RegionMinLevel = region.MinLevel;
+        RegionMaxLevel = region.MaxLevel;
+
+        var zones = await _zoneService.GetZonesByRegionAsync(regionId);
+        RegionZones.Clear();
+        foreach (var z in zones)
+        {
+            var zId = z.Id;
+            RegionZones.Add(new ZoneNodeViewModel(
+                z.Id, z.Name, z.Type, z.MinLevel,
+                z.HasInn, z.HasMerchant,
+                isCurrentZone: z.Id == _currentZoneId,
+                onTravel: z.Id != _currentZoneId ? () => DoTravelToZoneAsync(zId) : null));
+        }
+
+        ZoneViewMode = "Region";
+    }
+
     /// <summary>Seeds all character stat properties from the <c>CharacterSelected</c> hub event so the HUD shows correct values immediately on login.</summary>
     /// <param name="level">Character level.</param>
     /// <param name="experience">Experience toward the next level.</param>
@@ -446,16 +670,16 @@ public class GameViewModel : ViewModelBase
     public void SeedInitialStats(
         int level, long experience,
         int currentHealth, int maxHealth,
-        int currentMana,  int maxMana,
-        int gold,         int unspentAttributePoints)
+        int currentMana, int maxMana,
+        int gold, int unspentAttributePoints)
     {
-        Level                  = level;
-        Experience             = experience;
-        CurrentHealth          = currentHealth;
-        MaxHealth              = maxHealth;
-        CurrentMana            = currentMana;
-        MaxMana                = maxMana;
-        Gold                   = gold;
+        Level = level;
+        Experience = experience;
+        CurrentHealth = currentHealth;
+        MaxHealth = maxHealth;
+        CurrentMana = currentMana;
+        MaxMana = maxMana;
+        Gold = gold;
         UnspentAttributePoints = unspentAttributePoints;
     }
 
@@ -616,10 +840,10 @@ public class GameViewModel : ViewModelBase
     private async Task LoadEquipmentIconsAsync(IAssetStore assetStore)
     {
         var weaponBytes = await assetStore.LoadImageAsync(ItemAssets.Weapon01);
-        var armorBytes  = await assetStore.LoadImageAsync(ItemAssets.Armor01);
+        var armorBytes = await assetStore.LoadImageAsync(ItemAssets.Armor01);
         var potionBytes = await assetStore.LoadImageAsync(ItemAssets.Potion01);
         Bitmap? weaponIcon = weaponBytes is null ? null : new Bitmap(new MemoryStream(weaponBytes));
-        Bitmap? armorIcon  = armorBytes  is null ? null : new Bitmap(new MemoryStream(armorBytes));
+        Bitmap? armorIcon = armorBytes is null ? null : new Bitmap(new MemoryStream(armorBytes));
         Bitmap? potionIcon = potionBytes is null ? null : new Bitmap(new MemoryStream(potionBytes));
         foreach (var slot in EquipmentSlots)
         {
