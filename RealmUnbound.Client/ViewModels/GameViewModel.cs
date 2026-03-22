@@ -588,11 +588,23 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    private Task DoVisitShopAsync()
+    private async Task DoVisitShopAsync()
     {
-        AppendLog("Shop coming in M5.");
-        return Task.CompletedTask;
+        try
+        {
+            await _connection.SendCommandAsync<object>("VisitShop", new { ZoneId = _currentZoneId });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Shop visit failed: {ex.Message}");
+        }
     }
+
+    /// <summary>Handles the ShopVisited hub event.</summary>
+    /// <param name="zoneId">The zone ID of the visited shop.</param>
+    /// <param name="zoneName">The display name of the zone.</param>
+    public void OnShopVisited(string zoneId, string zoneName)
+        => AppendLog($"Welcome to the shop at {zoneName}!");
 
     private void AppendLog(string message)
     {

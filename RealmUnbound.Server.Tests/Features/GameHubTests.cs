@@ -3219,5 +3219,182 @@ public class GameHubTests : IDisposable
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("empty");
     }
+
+    // ── VisitShop hub method ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task VisitShop_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.VisitShop(new VisitShopHubRequest("fenwick-crossing"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task VisitShop_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<VisitShopHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VisitShopHubResult { Success = true, ZoneId = "fenwick-crossing", ZoneName = "Fenwick's Crossing" });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.VisitShop(new VisitShopHubRequest("fenwick-crossing"));
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<VisitShopHubCommand>(
+                c => c.CharacterId == character.Id && c.ZoneId == "fenwick-crossing"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task VisitShop_Should_Send_ShopVisited_To_Caller_On_Success()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<VisitShopHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VisitShopHubResult { Success = true, ZoneId = "fenwick-crossing", ZoneName = "Fenwick's Crossing" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.VisitShop(new VisitShopHubRequest("fenwick-crossing"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ShopVisited");
+    }
+
+    [Fact]
+    public async Task VisitShop_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<VisitShopHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VisitShopHubResult { Success = false, ErrorMessage = "greenveil-paths has no merchant" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.VisitShop(new VisitShopHubRequest("greenveil-paths"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task VisitShop_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<VisitShopHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.VisitShop(new VisitShopHubRequest("fenwick-crossing"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // ── VisitShopHubCommandHandler ────────────────────────────────────────────
+
+    [Fact]
+    public async Task VisitShop_Handler_Should_Return_Zone_Info_For_Merchant_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new VisitShopHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<VisitShopHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new VisitShopHubCommand(accountId, "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ZoneId.Should().Be("fenwick-crossing");
+        result.ZoneName.Should().Be("Fenwick's Crossing");
+    }
+
+    [Fact]
+    public async Task VisitShop_Handler_Should_Fail_When_Zone_Not_Found()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new VisitShopHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<VisitShopHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new VisitShopHubCommand(accountId, "nonexistent-zone"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task VisitShop_Handler_Should_Fail_When_Zone_Has_No_Merchant()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new VisitShopHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<VisitShopHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new VisitShopHubCommand(accountId, "greenveil-paths"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("no merchant");
+    }
+
+    [Fact]
+    public async Task VisitShop_Handler_Should_Fail_When_Zone_Id_Is_Empty()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var handler = new VisitShopHubCommandHandler(
+            new ZoneRepository(db),
+            NullLogger<VisitShopHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new VisitShopHubCommand(accountId, ""),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
 }
 

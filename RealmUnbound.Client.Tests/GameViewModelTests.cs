@@ -762,11 +762,24 @@ public class GameViewModelTests : TestBase
     // ── VisitShopCommand ──────────────────────────────────────────────────────
 
     [Fact]
-    public async Task VisitShopCommand_Should_Append_Message_To_ActionLog()
+    public async Task VisitShopCommand_Should_Send_VisitShop_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.VisitShopCommand.Execute();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "VisitShop");
+    }
+
+    [Fact]
+    public void OnShopVisited_Should_Append_Welcome_Message_To_ActionLog()
     {
         var vm = MakeVm();
-        await vm.VisitShopCommand.Execute();
-        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Shop"));
+
+        vm.OnShopVisited("fenwick-crossing", "Fenwick's Crossing");
+
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Fenwick's Crossing"));
     }
 
     // ── IsLeftPanelOpen + ToggleLeftPanelCommand ──────────────────────────────

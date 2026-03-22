@@ -793,6 +793,44 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>Visits the merchant shop at the current zone.</summary>
+    /// <param name="request">Request containing the zone ID to visit.</param>
+    public async Task VisitShop(VisitShopHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before VisitShop");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new VisitShopHubCommand(characterId, request.ZoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to visit shop");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ShopVisited", new
+            {
+                CharacterId = characterId,
+                ZoneId      = result.ZoneId,
+                ZoneName    = result.ZoneName,
+            });
+
+            _logger.LogInformation(
+                "Character {CharacterId} visited shop at zone {ZoneId}",
+                characterId, result.ZoneId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in VisitShop for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to visit shop");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
@@ -883,4 +921,8 @@ public record AddGoldHubRequest(int Amount, string? Source = null);
 /// <param name="DamageAmount">Positive number of hit points to remove.</param>
 /// <param name="Source">Optional label for the damage source (e.g. <c>"Enemy"</c>, <c>"Trap"</c>).</param>
 public record TakeDamageHubRequest(int DamageAmount, string? Source = null);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.VisitShop"/>.</summary>
+/// <param name="ZoneId">ID of the zone whose merchant to visit.</param>
+public record VisitShopHubRequest(string ZoneId);
 

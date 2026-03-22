@@ -45,8 +45,9 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | `TakeDamage` | `TakeDamageHubCommand` | 2026-03-20 session-10 |
 | `CraftItem` | `CraftItemHubCommand` | 2026-03-20 session-13 |
 | `EnterDungeon` | `EnterDungeonHubCommand` | 2026-03-20 session-13 |
+| `VisitShop` | `VisitShopHubCommand` | 2026-03-21 session-17 |
 
-> **Note**: All 10 bridges above are server-side complete and fully wired end-to-end.
+> **Note**: All 11 bridges above are server-side complete and fully wired end-to-end.
 
 ## Character Attributes JSON Blob Schema
 
@@ -117,6 +118,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-14 (2026-03-21) | **340** | **383** | **723** |
 | Session-15 (2026-03-21) | **340** | **416** | **756** |
 | Session-16 (2026-03-21) | **362** | **416** | **778** |
+| Session-17 (2026-03-21) | **401** | **425** | **826** |
 
 ## P3 Stubs Status
 
@@ -124,6 +126,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 2. ~~`CharacterSelectViewModel.ServerUrl`~~ — FIXED session-5: delegates to `ClientSettings` singleton (injected)
 3. ~~`SettingsViewModel` placeholder~~ — FIXED session-5: has real `ServerUrl` property + `ClientSettings` injection
 4. ~~`ItemEquipped` hub subscription missing from `CharacterSelectViewModel`~~ — FIXED session-9: added `_itemEquippedSub` field, disposal, subscription, and `ItemEquippedPayload` record
+5. ~~`DoVisitShopAsync` stub logging "Shop coming in M5."~~ — FIXED session-17: full hub bridge implemented (`VisitShopHubCommand` + handler + `GameHub.VisitShop` + client wiring)
 
 ## P4 XML Doc Gaps
 
@@ -182,6 +185,22 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 - `ItemCraftedPayload` internal record lives in `CharacterSelectViewModel.cs`
 - Client callback: `GameViewModel.OnItemCrafted(string recipeSlug, int goldSpent, int remainingGold)` → updates `Gold = remainingGold` + `AppendLog`
 - **`DefaultCraftingCost` is `internal` — tests must hardcode `50` (not reference the constant directly)**
+
+## VisitShop Handler Details (session-17)
+
+- Uses `IZoneRepository.GetByIdAsync(zoneId)` — validates zone exists + `HasMerchant == true`
+- ZoneId empty string → fails with "Zone ID cannot be empty"
+- Zone not found → fails with `"Zone '{zoneId}' not found"`
+- Zone `HasMerchant == false` → fails with `"Zone '{name}' has no merchant"`
+- Returns `{ ZoneId, ZoneName }` on success
+- Broadcasts `ShopVisited` payload: `{ CharacterId, ZoneId, ZoneName }` — **to Caller ONLY** (not zone group)
+- `ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName)` internal record in `CharacterSelectViewModel.cs`
+- 18th subscription: `_shopVisitedSub` field + disposal + `"ShopVisited"` subscription in `DoSelectAsync`
+- Client callback: `GameViewModel.OnShopVisited(string zoneId, string zoneName)` → `AppendLog("Welcome to the shop at {zoneName}!")`
+- Client sends: `SendCommandAsync<object>("VisitShop", new { ZoneId = _currentZoneId })`
+- `VisitShopHubRequest(string ZoneId)` DTO record at bottom of `GameHub.cs`
+- Zone with `HasMerchant = true` for handler tests: `"fenwick-crossing"` (from seed data)
+- Zone with `HasMerchant = false` for handler tests: `"greenveil-paths"`
 
 ## EnterDungeon Handler Details (session-13)
 
@@ -384,4 +403,14 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 - Key discovery: `IDungeonRepository` doesn't exist — `EnterDungeon` uses `IZoneRepository.GetByIdAsync(slug)` + `ZoneType.Dungeon` check
 - Tests: 21 server tests for Goals 3+4 added to `GameHubTests.cs`; 5 client tests in `GameViewModelTests.cs`; 3 client tests in `CharacterSelectViewModelTests.cs`
 - Final count: **340 client + 383 server = 723 total passing**
+
+### Session-17 (2026-03-21) — VisitShop hub bridge
+- **Gap analysis**: found 1 remaining P3 stub — `DoVisitShopAsync` logged "Shop coming in M5." with no hub call; no server counterpart existed
+- **P4 false positive**: subagent reported missing CraftItem/EnterDungeon handler tests — already existed (5 CraftItem + 4 EnterDungeon handler tests in `GameHubTests.cs`)
+- Created `RealmUnbound.Server/Features/Characters/VisitShopHubCommand.cs` — validates zone + `HasMerchant == true`; broadcasts `ShopVisited` to Caller only
+- Added `GameHub.VisitShop(VisitShopHubRequest)` + `VisitShopHubRequest(string ZoneId)` DTO to `GameHub.cs`
+- Replaced `DoVisitShopAsync` stub; added `GameViewModel.OnShopVisited`; added 18th subscription `_shopVisitedSub` + `ShopVisitedPayload` in `CharacterSelectViewModel`
+- Added 9 server tests (5 hub dispatch + 4 handler) + 2 GameViewModel tests + 1 CharacterSelectViewModel test
+- Key fix: subscription test used non-existent `MakeConnectedVmAsync` helper + `conn.Subscriptions` property — rewritten to follow `DungeonEntered` event-fire pattern; assertion changed to `Contain(msg => msg.Contains("Welcome to the shop at Fenwick Crossing"))` since zone name appears in multiple log entries
+- Final count: **401 client + 425 server = 826 total passing**
 
