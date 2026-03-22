@@ -167,42 +167,362 @@
                 </Border>
             </DockPanel>
 
-            <!-- ── CENTER PANEL (zone view) ──────────────────────────────── -->
+            <!-- ── CENTER PANEL (Zone / Region / World views) ───────────── -->
             <Border Grid.Column="1"
                     Background="{DynamicResource GameBackground0Brush}"
                     Padding="24">
                 <DockPanel>
 
-                    <!-- Zone description header -->
-                    <StackPanel DockPanel.Dock="Top"
-                                Margin="0,0,0,16"
-                                Spacing="4">
+                    <!-- Header: zone description + view selector tabs -->
+                    <DockPanel DockPanel.Dock="Top"
+                               Margin="0,0,0,16">
+
+                        <!-- View tabs (right-aligned) -->
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    Spacing="2"
+                                    VerticalAlignment="Center">
+                            <Button Content="Zone"
+                                    Classes="ghost"
+                                    Classes.accent="{Binding IsZoneViewActive}"
+                                    Command="{Binding ShowZoneViewCommand}"
+                                    Height="28"
+                                    FontSize="12" />
+                            <Button Content="Region"
+                                    Classes="ghost"
+                                    Classes.accent="{Binding IsRegionViewActive}"
+                                    Command="{Binding ShowRegionViewCommand}"
+                                    Height="28"
+                                    FontSize="12" />
+                            <Button Content="World"
+                                    Classes="ghost"
+                                    Classes.accent="{Binding IsWorldViewActive}"
+                                    Command="{Binding ShowWorldViewCommand}"
+                                    Height="28"
+                                    FontSize="12" />
+                        </StackPanel>
+
+                        <!-- Zone description (fills remaining width) -->
                         <TextBlock Text="{Binding ZoneDescription}"
                                    Classes="muted"
                                    FontStyle="Italic"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
 
-                    <!-- Zone visual placeholder -->
-                    <Border Background="{DynamicResource GameBackground2Brush}"
-                            BorderBrush="{DynamicResource GameBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            MinHeight="280">
-                        <StackPanel HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Spacing="8">
-                            <TextBlock Text="[ Zone Visual ]"
-                                       Classes="muted"
-                                       FontSize="20"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock Text="Tile map rendering coming soon"
-                                       Classes="caption"
-                                       HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
+                    <!-- Three panels stacked — only the active one is visible -->
+                    <Grid>
+
+                        <!-- ══════════════════════════════════════════════════
+                             ZONE PANEL — current zone details + mini region list
+                        ══════════════════════════════════════════════════ -->
+                        <ScrollViewer IsVisible="{Binding IsZoneViewActive}"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="16">
+
+                                <!-- Feature badges (Inn / Merchant) -->
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="8"
+                                            Margin="0,4,0,0">
+                                    <Border Background="{DynamicResource GameSuccessMutedBrush}"
+                                            BorderBrush="{DynamicResource GameSuccessBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="10,5"
+                                            IsVisible="{Binding HasInn}">
+                                        <TextBlock Text="Inn"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource GameSuccessBrush}" />
+                                    </Border>
+                                    <Border Background="{DynamicResource GameInfoMutedBrush}"
+                                            BorderBrush="{DynamicResource GameInfoBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="10,5"
+                                            IsVisible="{Binding HasMerchant}">
+                                        <TextBlock Text="Merchant"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource GameInfoBrush}" />
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Region breadcrumb + min level -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0"
+                                                Orientation="Horizontal"
+                                                Spacing="8"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="Region:"
+                                                   Classes="caption"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding RegionName}"
+                                                   FontSize="13"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Spacing="4"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="Min level"
+                                                   Classes="caption"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding ZoneMinLevel}"
+                                                   Classes="accent"
+                                                   FontWeight="Bold"
+                                                   FontSize="15"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Classes="separator" />
+
+                                <!-- Mini zone list for current region -->
+                                <TextBlock Text="Zones in this region"
+                                           Classes="caption" />
+                                <ItemsControl ItemsSource="{Binding RegionZones}">
+                                    <ItemsControl.Styles>
+                                        <Style Selector="Border.active">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+                                        </Style>
+                                    </ItemsControl.Styles>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ZoneNodeViewModel">
+                                            <Border Margin="0,0,8,8"
+                                                    Padding="10,7"
+                                                    CornerRadius="4"
+                                                    Background="{DynamicResource GameBackground2Brush}"
+                                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                                    BorderThickness="1"
+                                                    MinWidth="120"
+                                                    Classes.active="{Binding IsCurrentZone}">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold" />
+                                                    <StackPanel Orientation="Horizontal"
+                                                                Spacing="6">
+                                                        <TextBlock Text="{Binding Type}"
+                                                                   FontSize="10"
+                                                                   Classes="caption" />
+                                                        <TextBlock FontSize="10"
+                                                                   Classes="caption">
+                                                            <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <Button Content="Travel →"
+                                                            Classes="ghost"
+                                                            FontSize="10"
+                                                            Height="22"
+                                                            Padding="6,0"
+                                                            IsVisible="{Binding CanTravel}"
+                                                            Command="{Binding TravelCommand}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- ══════════════════════════════════════════════════
+                             REGION PANEL — region info + full zone card grid
+                        ══════════════════════════════════════════════════ -->
+                        <ScrollViewer IsVisible="{Binding IsRegionViewActive}"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="16">
+
+                                <!-- Region header -->
+                                <StackPanel Spacing="6">
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="10">
+                                        <TextBlock Text="{Binding RegionName}"
+                                                   FontSize="20"
+                                                   FontWeight="Bold" />
+                                        <Border Background="{DynamicResource GameBackground3Brush}"
+                                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="3"
+                                                Padding="6,2"
+                                                VerticalAlignment="Center"
+                                                IsVisible="{Binding RegionType,
+                                                    Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <TextBlock Text="{Binding RegionType}"
+                                                       Classes="caption" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Classes="muted"
+                                               FontSize="13">
+                                        <Run Text="Levels " /><Run Text="{Binding RegionMinLevel}" /><Run Text="–" /><Run Text="{Binding RegionMaxLevel}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding RegionDescription}"
+                                               Classes="muted"
+                                               FontStyle="Italic"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Classes="separator" />
+
+                                <TextBlock Text="Zones"
+                                           Classes="caption" />
+                                <ItemsControl ItemsSource="{Binding RegionZones}">
+                                    <ItemsControl.Styles>
+                                        <Style Selector="Border.active">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+                                        </Style>
+                                    </ItemsControl.Styles>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ZoneNodeViewModel">
+                                            <Border Margin="0,0,12,12"
+                                                    Padding="14,10"
+                                                    CornerRadius="6"
+                                                    Background="{DynamicResource GameBackground2Brush}"
+                                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                                    BorderThickness="1"
+                                                    MinWidth="160"
+                                                    Classes.active="{Binding IsCurrentZone}">
+                                                <StackPanel Spacing="6">
+                                                    <StackPanel Orientation="Horizontal"
+                                                                Spacing="6">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="13"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBlock Text="★"
+                                                                   Classes="accent"
+                                                                   FontSize="11"
+                                                                   VerticalAlignment="Center"
+                                                                   IsVisible="{Binding IsCurrentZone}" />
+                                                    </StackPanel>
+                                                    <Border CornerRadius="3"
+                                                            Padding="5,2"
+                                                            Background="{DynamicResource GameBackground4Brush}"
+                                                            HorizontalAlignment="Left">
+                                                        <TextBlock Text="{Binding Type}"
+                                                                   FontSize="10"
+                                                                   Classes="caption" />
+                                                    </Border>
+                                                    <StackPanel Orientation="Horizontal"
+                                                                Spacing="8">
+                                                        <TextBlock FontSize="11">
+                                                            <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
+                                                        </TextBlock>
+                                                        <TextBlock Text="Inn"
+                                                                   FontSize="10"
+                                                                   Classes="muted"
+                                                                   IsVisible="{Binding HasInn}" />
+                                                        <TextBlock Text="Shop"
+                                                                   FontSize="10"
+                                                                   Classes="muted"
+                                                                   IsVisible="{Binding HasMerchant}" />
+                                                    </StackPanel>
+                                                    <Button Content="Travel here"
+                                                            Classes="ghost"
+                                                            FontSize="11"
+                                                            Height="26"
+                                                            IsVisible="{Binding CanTravel}"
+                                                            Command="{Binding TravelCommand}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- ══════════════════════════════════════════════════
+                             WORLD PANEL — world header + region card grid
+                        ══════════════════════════════════════════════════ -->
+                        <ScrollViewer IsVisible="{Binding IsWorldViewActive}"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="16">
+
+                                <!-- World header -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding WorldName}"
+                                               FontSize="22"
+                                               FontWeight="Bold" />
+                                    <TextBlock Text="{Binding WorldEra}"
+                                               Classes="muted"
+                                               FontStyle="Italic" />
+                                </StackPanel>
+
+                                <Border Classes="separator" />
+
+                                <TextBlock Text="Regions"
+                                           Classes="caption" />
+                                <ItemsControl ItemsSource="{Binding WorldRegions}">
+                                    <ItemsControl.Styles>
+                                        <Style Selector="Border.active">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                                        </Style>
+                                    </ItemsControl.Styles>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:RegionCardViewModel">
+                                            <Border Margin="0,0,16,16"
+                                                    Padding="16,12"
+                                                    CornerRadius="6"
+                                                    Background="{DynamicResource GameBackground2Brush}"
+                                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                                    BorderThickness="1"
+                                                    MinWidth="200"
+                                                    Classes.active="{Binding IsCurrentRegion}">
+                                                <StackPanel Spacing="8">
+                                                    <StackPanel Orientation="Horizontal"
+                                                                Spacing="8">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="15"
+                                                                   FontWeight="Bold" />
+                                                        <TextBlock Text="You are here"
+                                                                   FontSize="10"
+                                                                   Classes="accent"
+                                                                   VerticalAlignment="Center"
+                                                                   IsVisible="{Binding IsCurrentRegion}" />
+                                                    </StackPanel>
+                                                    <Border CornerRadius="3"
+                                                            Padding="6,2"
+                                                            Background="{DynamicResource GameBackground3Brush}"
+                                                            HorizontalAlignment="Left">
+                                                        <TextBlock Text="{Binding Type}"
+                                                                   FontSize="11"
+                                                                   Classes="caption" />
+                                                    </Border>
+                                                    <TextBlock FontSize="12"
+                                                               Classes="muted">
+                                                        <Run Text="Levels " /><Run Text="{Binding MinLevel}" /><Run Text="–" /><Run Text="{Binding MaxLevel}" />
+                                                    </TextBlock>
+                                                    <Button Content="Explore →"
+                                                            Classes="ghost"
+                                                            FontSize="11"
+                                                            Height="26"
+                                                            Command="{Binding ExploreCommand}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                    </Grid>
                 </DockPanel>
             </Border>
 
@@ -388,12 +708,6 @@
                         Classes="ghost"
                         Command="{Binding CraftItemCommand}"
                         CommandParameter="basic-sword"
-                        Height="36"
-                        FontSize="13" />
-                <Button Content="Enter Dungeon"
-                        Classes="ghost"
-                        Command="{Binding EnterDungeonCommand}"
-                        CommandParameter="verdant-barrow"
                         Height="36"
                         FontSize="13" />
                 <Button Content="Use Ability"
