@@ -1,7 +1,7 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of session-21)
-- RealmEngine.Core.Tests: **1,850 passing** (+3 from session-21: RefreshMerchantInventory happy-path tests)
+## Test Counts (as of session-22)
+- RealmEngine.Core.Tests: **1,867 passing** (+17 from session-22: DungeonGeneratorService tests)
 - RealmEngine.Shared.Tests: **778 passing**
 - RealmEngine.Data.Tests: **227 passing**
 - RealmUnbound.Client.Tests: **401 passing**
