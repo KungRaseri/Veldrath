@@ -46,7 +46,7 @@ public class ShopEconomyService
     /// </summary>
     /// <param name="npc">The NPC merchant.</param>
     /// <returns>The shop inventory.</returns>
-    public ShopInventory GetOrCreateInventory(NPC npc)
+    public virtual ShopInventory GetOrCreateInventory(NPC npc)
     {
         if (!npc.Traits.ContainsKey("isMerchant") || !npc.Traits["isMerchant"].AsBool())
         {
@@ -283,7 +283,7 @@ public class ShopEconomyService
     /// <summary>
     /// Refresh dynamic inventory items (daily).
     /// </summary>
-    public void RefreshDynamicInventory(NPC merchant, ShopInventory inventory)
+    public virtual void RefreshDynamicInventory(NPC merchant, ShopInventory inventory)
     {
         // Clear existing dynamic items
         inventory.DynamicItems.Clear();

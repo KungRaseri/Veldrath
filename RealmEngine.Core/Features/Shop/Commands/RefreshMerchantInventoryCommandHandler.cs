@@ -94,13 +94,16 @@ public class RefreshMerchantInventoryCommandHandler : IRequestHandler<RefreshMer
                 : "hybrid";
 
             int itemsAdded = 0;
+            int itemsRemoved = 0;
             if (shopInventoryType == "dynamic-only" || shopInventoryType == "hybrid")
             {
+                // RefreshDynamicInventory clears all old items then regenerates,
+                // so the old count is fully removed and the new count is fully added.
+                itemsRemoved = initialDynamicCount;
                 _shopService.RefreshDynamicInventory(merchant, inventory);
                 itemsAdded = inventory.DynamicItems.Count;
             }
 
-            var itemsRemoved = initialDynamicCount - inventory.DynamicItems.Count;
             var itemsExpired = expiredItems.Count;
 
             _logger.LogInformation(
