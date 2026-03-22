@@ -12,21 +12,29 @@ public class SettingsViewModel : ViewModelBase
     private readonly INavigationService _navigation;
     private readonly ClientSettings _settings;
     private readonly IAudioPlayer _audio;
+    private readonly SettingsPersistenceService _persistence;
 
     /// <summary>Initializes a new instance of <see cref="SettingsViewModel"/>.</summary>
     /// <param name="navigation">Navigation service used to return to the previous screen.</param>
     /// <param name="settings">Shared client settings whose values are exposed for editing.</param>
     /// <param name="audio">Audio player that receives volume/mute changes immediately.</param>
-    public SettingsViewModel(INavigationService navigation, ClientSettings settings, IAudioPlayer audio)
+    /// <param name="persistence">Service that saves settings to disk when the user leaves this screen.</param>
+    public SettingsViewModel(INavigationService navigation, ClientSettings settings, IAudioPlayer audio,
+        SettingsPersistenceService persistence)
     {
-        _navigation = navigation;
-        _settings   = settings;
-        _audio      = audio;
+        _navigation  = navigation;
+        _settings    = settings;
+        _audio       = audio;
+        _persistence = persistence;
 
-        BackCommand = ReactiveCommand.Create(() => _navigation.NavigateTo<MainMenuViewModel>());
+        BackCommand = ReactiveCommand.Create(() =>
+        {
+            _persistence.Save(_settings);
+            _navigation.NavigateTo<MainMenuViewModel>();
+        });
     }
 
-    /// <summary>Navigates back to the main menu.</summary>
+    /// <summary>Navigates back to the main menu and persists the current settings to disk.</summary>
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> BackCommand { get; }
 
     // ── Audio ──────────────────────────────────────────────────────────────────
