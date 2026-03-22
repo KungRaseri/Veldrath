@@ -60,12 +60,15 @@ public class TokenStore : ReactiveObject
     public void Set(string accessToken, string refreshToken, string username, Guid accountId,
                     DateTimeOffset? expiry = null, bool isCurator = false)
     {
-        AccessToken        = accessToken;
+        // Set all supporting fields first so that observers of AccessToken (e.g. the
+        // token-persistence subscription in App.axaml.cs) see a fully-populated store
+        // when AccessToken raises PropertyChanged.
         RefreshToken       = refreshToken;
         Username           = username;
         AccountId          = accountId;
         AccessTokenExpiry  = expiry;
         IsCurator          = isCurator;
+        AccessToken        = accessToken;
     }
 
     public void Clear()

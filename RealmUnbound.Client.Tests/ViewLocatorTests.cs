@@ -52,7 +52,7 @@ public class ViewLocatorTests
     [AvaloniaFact]
     public void Build_Should_Return_SplashView_For_SplashViewModel()
     {
-        var vm = new SplashViewModel(new FakeNavigationService(), new FakeAssetStore());
+        var vm = new SplashViewModel(new FakeNavigationService(), new FakeAssetStore(), new TokenStore(), new FakeAuthService());
 
         var result = _sut.Build(vm);
 

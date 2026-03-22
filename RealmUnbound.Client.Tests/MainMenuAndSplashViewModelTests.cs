@@ -129,39 +129,96 @@ public class MainMenuViewModelTests : TestBase
 
 public class SplashViewModelTests : TestBase
 {
+    private static SplashViewModel MakeVm(
+        FakeNavigationService? nav  = null,
+        TokenStore?            tokens = null,
+        FakeAuthService?       auth   = null)
+        => new SplashViewModel(
+            nav    ?? new FakeNavigationService(),
+            new FakeAssetStore(),
+            tokens ?? new TokenStore(),
+            auth   ?? new FakeAuthService());
+
     [Fact]
     public void Title_Should_Be_RealmUnbound()
     {
-        var nav = new FakeNavigationService();
-        var vm  = new SplashViewModel(nav, new FakeAssetStore());
+        var vm = MakeVm();
         vm.Title.Should().Be("RealmUnbound");
     }
 
     [Fact]
     public void Subtitle_Should_Not_Be_Empty()
     {
-        var nav = new FakeNavigationService();
-        var vm  = new SplashViewModel(nav, new FakeAssetStore());
+        var vm = MakeVm();
         vm.Subtitle.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
-    public async Task SplashViewModel_Should_Eventually_Navigate_To_MainMenu()
+    public async Task SplashViewModel_Should_Navigate_To_MainMenu_When_Not_Authenticated()
     {
         var nav = new FakeNavigationService();
-        var vm = new SplashViewModel(nav, new FakeAssetStore());
+        var vm  = MakeVm(nav);
 
-        // Await the actual task so the test never races against wall-clock timing.
         await vm.SplashTask;
 
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+        nav.NavigationLog.Should().NotContain(typeof(CharacterSelectViewModel));
+    }
+
+    [Fact]
+    public async Task SplashViewModel_Should_Navigate_To_CharacterSelect_When_Token_Valid()
+    {
+        var nav    = new FakeNavigationService();
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddHours(1));
+
+        var vm = MakeVm(nav, tokens);
+        await vm.SplashTask;
+
+        nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
+        nav.NavigationLog.Should().NotContain(typeof(MainMenuViewModel));
+    }
+
+    [Fact]
+    public async Task SplashViewModel_Should_Refresh_And_Navigate_To_CharacterSelect_When_Token_Expiring()
+    {
+        var nav    = new FakeNavigationService();
+        var tokens = new TokenStore();
+        // Expiry is in the past — IsExpiringSoon is true
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddMinutes(-5));
+        var auth = new FakeAuthService { RefreshResult = true };
+
+        var vm = MakeVm(nav, tokens, auth);
+        await vm.SplashTask;
+
+        auth.RefreshCallCount.Should().Be(1);
+        nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
+        nav.NavigationLog.Should().NotContain(typeof(MainMenuViewModel));
+    }
+
+    [Fact]
+    public async Task SplashViewModel_Should_Navigate_To_MainMenu_When_Token_Expiring_And_Refresh_Fails()
+    {
+        var nav    = new FakeNavigationService();
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddMinutes(-5));
+        var auth = new FakeAuthService { RefreshResult = false };
+
+        var vm = MakeVm(nav, tokens, auth);
+        await vm.SplashTask;
+
+        auth.RefreshCallCount.Should().Be(1);
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+        nav.NavigationLog.Should().NotContain(typeof(CharacterSelectViewModel));
     }
 
     [Fact]
     public void Progress_Should_RaisePropertyChanged_When_Set()
     {
-        var nav     = new FakeNavigationService();
-        var vm      = new SplashViewModel(nav, new FakeAssetStore());
+        var vm      = MakeVm();
         var changes = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 
@@ -174,8 +231,7 @@ public class SplashViewModelTests : TestBase
     [Fact]
     public void StatusText_Should_RaisePropertyChanged_When_Set()
     {
-        var nav     = new FakeNavigationService();
-        var vm      = new SplashViewModel(nav, new FakeAssetStore());
+        var vm      = MakeVm();
         var changes = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 

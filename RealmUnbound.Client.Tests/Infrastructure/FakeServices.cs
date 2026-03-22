@@ -317,9 +317,18 @@ public static class FakeContentCache
 
 // ── Audio player stub ─────────────────────────────────────────────────────────
 
-/// <summary>No-op stub for <see cref="IAudioPlayer"/>. All calls are silently ignored.</summary>
+/// <summary>Configurable stub for <see cref="IAudioPlayer"/>. Records calls for test assertions.</summary>
 public class FakeAudioPlayer : IAudioPlayer
 {
+    /// <summary>Gets the last music volume set via <see cref="SetMusicVolume"/>.</summary>
+    public int  MusicVolume { get; private set; } = 80;
+
+    /// <summary>Gets the last SFX volume set via <see cref="SetSfxVolume"/>.</summary>
+    public int  SfxVolume   { get; private set; } = 100;
+
+    /// <summary>Gets whether the audio is currently muted.</summary>
+    public bool Muted       { get; private set; }
+
     /// <inheritdoc />
     public Task PlayMusicAsync(string filePath) => Task.CompletedTask;
 
@@ -328,6 +337,15 @@ public class FakeAudioPlayer : IAudioPlayer
 
     /// <inheritdoc />
     public void StopMusic() { }
+
+    /// <inheritdoc />
+    public void SetMusicVolume(int volume) => MusicVolume = volume;
+
+    /// <inheritdoc />
+    public void SetSfxVolume(int volume) => SfxVolume = volume;
+
+    /// <inheritdoc />
+    public void SetMuted(bool muted) => Muted = muted;
 
     /// <inheritdoc />
     public void Dispose() => GC.SuppressFinalize(this);
