@@ -10,8 +10,8 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Start_With_Splash_ViewModel()
     {
         var nav    = new FakeNavigationService();
-        var splash = new SplashViewModel(nav, new FakeAssetStore());
-        var vm     = new MainWindowViewModel(nav, splash);
+        var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
+        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"));
 
         vm.CurrentPage.Should().BeSameAs(splash);
     }
@@ -20,8 +20,8 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Update_When_Navigation_Fires_Generic()
     {
         var nav    = new FakeNavigationService();
-        var splash = new SplashViewModel(nav, new FakeAssetStore());
-        var vm     = new MainWindowViewModel(nav, splash);
+        var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
+        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"));
 
         // Navigate using the typed overload — FakeNavigationService raises CurrentPageChanged
         // only when given a concrete ViewModelBase instance.
@@ -35,8 +35,8 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Update_For_Multiple_Navigations()
     {
         var nav    = new FakeNavigationService();
-        var splash = new SplashViewModel(nav, new FakeAssetStore());
-        var vm     = new MainWindowViewModel(nav, splash);
+        var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
+        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"));
 
         var first  = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
         var second = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
@@ -51,8 +51,8 @@ public class MainWindowViewModelTests : TestBase
     public void CurrentPage_Should_Raise_PropertyChanged()
     {
         var nav      = new FakeNavigationService();
-        var splash   = new SplashViewModel(nav, new FakeAssetStore());
-        var vm       = new MainWindowViewModel(nav, splash);
+        var splash   = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
+        var vm       = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"));
         var changes  = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 

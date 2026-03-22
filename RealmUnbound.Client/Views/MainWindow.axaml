@@ -12,7 +12,8 @@
         Width="1280" Height="720"
         MinWidth="1024" MinHeight="600"
         WindowStartupLocation="CenterScreen"
-        Background="#0a0a0f">
+        Background="#0a0a0f"
+        WindowState="{Binding WindowState}">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />

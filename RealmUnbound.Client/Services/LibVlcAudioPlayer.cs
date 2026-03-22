@@ -13,6 +13,9 @@ public sealed class LibVlcAudioPlayer : IAudioPlayer
     private readonly LibVLC _libVlc;
     private readonly MediaPlayer _musicPlayer;
     private Media? _currentMusic;
+    private int _musicVolume = 80;
+    private int _sfxVolume  = 100;
+    private bool _muted;
 
     /// <summary>Initializes a new instance of <see cref="LibVlcAudioPlayer"/>.</summary>
     public LibVlcAudioPlayer()
@@ -54,6 +57,23 @@ public sealed class LibVlcAudioPlayer : IAudioPlayer
 
     /// <inheritdoc />
     public void StopMusic() => _musicPlayer.Stop();
+
+    /// <inheritdoc />
+    public void SetMusicVolume(int volume)
+    {
+        _musicVolume = Math.Clamp(volume, 0, 100);
+        _musicPlayer.Volume = _muted ? 0 : _musicVolume;
+    }
+
+    /// <inheritdoc />
+    public void SetSfxVolume(int volume) => _sfxVolume = Math.Clamp(volume, 0, 100);
+
+    /// <inheritdoc />
+    public void SetMuted(bool muted)
+    {
+        _muted = muted;
+        _musicPlayer.Volume = _muted ? 0 : _musicVolume;
+    }
 
     /// <inheritdoc />
     public void Dispose()

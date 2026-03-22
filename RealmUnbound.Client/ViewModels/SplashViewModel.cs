@@ -25,6 +25,8 @@ public class SplashViewModel : ViewModelBase
 
     private readonly INavigationService _navigation;
     private readonly IAssetStore _assetStore;
+    private readonly TokenStore _tokens;
+    private readonly IAuthService _auth;
     private double _progress;
     private string _statusText = "Initializing...";
 
@@ -55,11 +57,13 @@ public class SplashViewModel : ViewModelBase
     public Task SplashTask { get; }
 
     /// <summary>Initializes a new instance of <see cref="SplashViewModel"/>.</summary>
-    public SplashViewModel(INavigationService navigation, IAssetStore assetStore)
+    public SplashViewModel(INavigationService navigation, IAssetStore assetStore, TokenStore tokens, IAuthService auth)
     {
         _navigation = navigation;
         _assetStore = assetStore;
-        SplashTask = RunSplashAsync();
+        _tokens     = tokens;
+        _auth       = auth;
+        SplashTask  = RunSplashAsync();
     }
 
     private async Task RunSplashAsync()
@@ -98,7 +102,26 @@ public class SplashViewModel : ViewModelBase
         await AnimateProgressTo(100, step: 2, delayMs: 18);
         await Task.Delay(300);
 
-        _navigation.NavigateTo<MainMenuViewModel>();
+        // If a valid saved session exists, skip login and go straight to character select.
+        // If the access token is expiring soon (or already expired), attempt a silent refresh first.
+        if (_tokens.IsAuthenticated && !_tokens.IsExpiringSoon)
+        {
+            _navigation.NavigateTo<CharacterSelectViewModel>();
+        }
+        else if (_tokens.IsAuthenticated)
+        {
+            // Token exists but is stale — try a silent refresh before deciding where to route.
+            StatusText = "Restoring session...";
+            var refreshed = await _auth.RefreshAsync();
+            if (refreshed)
+                _navigation.NavigateTo<CharacterSelectViewModel>();
+            else
+                _navigation.NavigateTo<MainMenuViewModel>();
+        }
+        else
+        {
+            _navigation.NavigateTo<MainMenuViewModel>();
+        }
     }
 
     private async Task AnimateProgressTo(double target, int step, int delayMs)

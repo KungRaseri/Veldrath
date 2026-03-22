@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <Grid RowDefinitions="*,Auto,*">
+
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    Width="420"
+                    Spacing="8">
+
+            <TextBlock Text="Settings"
+                       Classes="title-large"
+                       FontSize="36"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,24" />
+
+            <!-- ── Audio ───────────────────────────────────────────────── -->
+            <TextBlock Text="AUDIO"
+                       Classes="muted"
+                       FontSize="11"
+                       LetterSpacing="2"
+                       Margin="0,8,0,4" />
+
+            <!-- Mute toggle -->
+            <CheckBox Content="Mute all audio"
+                      IsChecked="{Binding Muted}" />
+
+            <!-- Master volume -->
+            <TextBlock Text="Master Volume" Classes="muted" Margin="0,8,0,0" />
+            <Grid ColumnDefinitions="*,40">
+                <Slider Grid.Column="0"
+                        Minimum="0" Maximum="100"
+                        Value="{Binding MasterVolume}"
+                        IsEnabled="{Binding !Muted}"
+                        TickFrequency="1"
+                        VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding MasterVolume}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- Music volume -->
+            <TextBlock Text="Music Volume" Classes="muted" Margin="0,4,0,0" />
+            <Grid ColumnDefinitions="*,40">
+                <Slider Grid.Column="0"
+                        Minimum="0" Maximum="100"
+                        Value="{Binding MusicVolume}"
+                        IsEnabled="{Binding !Muted}"
+                        TickFrequency="1"
+                        VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding MusicVolume}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- SFX volume -->
+            <TextBlock Text="Sound Effects Volume" Classes="muted" Margin="0,4,0,0" />
+            <Grid ColumnDefinitions="*,40">
+                <Slider Grid.Column="0"
+                        Minimum="0" Maximum="100"
+                        Value="{Binding SfxVolume}"
+                        IsEnabled="{Binding !Muted}"
+                        TickFrequency="1"
+                        VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding SfxVolume}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- ── Display ─────────────────────────────────────────────── -->
+            <TextBlock Text="DISPLAY"
+                       Classes="muted"
+                       FontSize="11"
+                       LetterSpacing="2"
+                       Margin="0,16,0,4" />
+
+            <CheckBox Content="Full screen"
+                      IsChecked="{Binding FullScreen}" />
+
+            <!-- Back -->
+            <Button Content="Back"
+                    Classes="ghost"
+                    Command="{Binding BackCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="16"
+                    Margin="0,24,0,0" />
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

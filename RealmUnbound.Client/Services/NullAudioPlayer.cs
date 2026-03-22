@@ -16,5 +16,14 @@ internal sealed class NullAudioPlayer : IAudioPlayer
     public void StopMusic() { }
 
     /// <inheritdoc />
+    public void SetMusicVolume(int volume) { }
+
+    /// <inheritdoc />
+    public void SetSfxVolume(int volume) { }
+
+    /// <inheritdoc />
+    public void SetMuted(bool muted) { }
+
+    /// <inheritdoc />
     public void Dispose() { }
 }

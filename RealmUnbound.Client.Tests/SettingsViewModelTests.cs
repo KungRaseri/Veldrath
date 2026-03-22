@@ -6,8 +6,16 @@ namespace RealmUnbound.Client.Tests;
 
 public class SettingsViewModelTests : TestBase
 {
-    private static SettingsViewModel MakeVm(FakeNavigationService? nav = null, RealmUnbound.Client.ClientSettings? settings = null)
-        => new SettingsViewModel(nav ?? new FakeNavigationService(), settings ?? new RealmUnbound.Client.ClientSettings("http://localhost:8080"));
+    private static (SettingsViewModel Vm, FakeAudioPlayer Audio, ClientSettings Settings) MakeVm(
+        FakeNavigationService? nav = null,
+        ClientSettings? settings   = null,
+        FakeAudioPlayer? audio     = null)
+    {
+        var s = settings ?? new ClientSettings("http://localhost:8080");
+        var a = audio    ?? new FakeAudioPlayer();
+        var vm = new SettingsViewModel(nav ?? new FakeNavigationService(), s, a);
+        return (vm, a, s);
+    }
 
     // ── BackCommand ───────────────────────────────────────────────────────────
 
@@ -15,32 +23,122 @@ public class SettingsViewModelTests : TestBase
     public async Task BackCommand_Should_Navigate_To_MainMenuViewModel()
     {
         var nav = new FakeNavigationService();
-        var vm  = MakeVm(nav: nav);
+        var (vm, _, _) = MakeVm(nav: nav);
 
         await vm.BackCommand.Execute();
 
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
-    // ── ServerUrl ─────────────────────────────────────────────────────────────
+    // ── Audio — volume properties ──────────────────────────────────────────────
 
     [Fact]
-    public void ServerUrl_Should_Reflect_ClientSettings_ServerBaseUrl()
+    public void MasterVolume_Should_Reflect_ClientSettings_Default()
     {
-        var settings = new RealmUnbound.Client.ClientSettings("https://my-server:9000");
-        var vm       = MakeVm(settings: settings);
-
-        vm.ServerUrl.Should().Be("https://my-server:9000");
+        var (vm, _, _) = MakeVm();
+        vm.MasterVolume.Should().Be(100);
     }
 
     [Fact]
-    public void ServerUrl_Set_Should_Update_ClientSettings_ServerBaseUrl()
+    public void MusicVolume_Should_Reflect_ClientSettings_Default()
     {
-        var settings = new RealmUnbound.Client.ClientSettings("http://localhost:8080");
-        var vm       = MakeVm(settings: settings);
+        var (vm, _, _) = MakeVm();
+        vm.MusicVolume.Should().Be(80);
+    }
 
-        vm.ServerUrl = "https://prod.example.com";
+    [Fact]
+    public void SfxVolume_Should_Reflect_ClientSettings_Default()
+    {
+        var (vm, _, _) = MakeVm();
+        vm.SfxVolume.Should().Be(100);
+    }
 
-        settings.ServerBaseUrl.Should().Be("https://prod.example.com");
+    [Fact]
+    public void Setting_MusicVolume_Updates_AudioPlayer()
+    {
+        var (vm, audio, _) = MakeVm();
+
+        vm.MusicVolume = 50;
+
+        // master=100, music=50 → scaled = 100/100 * 50 = 50
+        audio.MusicVolume.Should().Be(50);
+    }
+
+    [Fact]
+    public void Setting_SfxVolume_Updates_AudioPlayer()
+    {
+        var (vm, audio, _) = MakeVm();
+
+        vm.SfxVolume = 60;
+
+        audio.SfxVolume.Should().Be(60);
+    }
+
+    [Fact]
+    public void Setting_MasterVolume_Scales_Both_AudioChannels()
+    {
+        var settings = new ClientSettings("http://localhost:8080")
+        {
+            MusicVolume = 80,
+            SfxVolume   = 100
+        };
+        var (vm, audio, _) = MakeVm(settings: settings);
+
+        vm.MasterVolume = 50;
+
+        // music: 50/100 * 80 = 40 ; sfx: 50/100 * 100 = 50
+        audio.MusicVolume.Should().Be(40);
+        audio.SfxVolume.Should().Be(50);
+    }
+
+    // ── Audio — mute ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Muted_DefaultsTo_False()
+    {
+        var (vm, _, _) = MakeVm();
+        vm.Muted.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Setting_Muted_True_Calls_SetMuted_On_AudioPlayer()
+    {
+        var (vm, audio, _) = MakeVm();
+
+        vm.Muted = true;
+
+        audio.Muted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Setting_Muted_False_Unmutes_AudioPlayer()
+    {
+        var (vm, audio, _) = MakeVm();
+        vm.Muted = true;
+
+        vm.Muted = false;
+
+        audio.Muted.Should().BeFalse();
+    }
+
+    // ── Display ───────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void FullScreen_DefaultsTo_False()
+    {
+        var (vm, _, _) = MakeVm();
+        vm.FullScreen.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Setting_FullScreen_Updates_ClientSettings()
+    {
+        var settings = new ClientSettings("http://localhost:8080");
+        var (vm, _, _) = MakeVm(settings: settings);
+
+        vm.FullScreen = true;
+
+        settings.FullScreen.Should().BeTrue();
     }
 }
+
