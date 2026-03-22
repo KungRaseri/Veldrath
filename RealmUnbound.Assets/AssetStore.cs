@@ -25,7 +25,12 @@ public sealed class AssetStore : IAssetStore
         [AssetCategory.CraftingMining]   = "crafting/mining",
         [AssetCategory.CraftingFishing]  = "crafting/fishing",
         [AssetCategory.CraftingHunting]  = "crafting/hunting",
-        [AssetCategory.CraftingForest]   = "crafting/forest",
+        [AssetCategory.CraftingForest]       = "crafting/forest",
+        [AssetCategory.Accessories]           = "items/accessories",
+        [AssetCategory.Shields]               = "items/shields",
+        [AssetCategory.Food]                  = "items/food",
+        [AssetCategory.ItemMisc]              = "items/misc",
+        [AssetCategory.CraftingIngredients]   = "items/crafting-ingredients",
     };
 
     private readonly string _assetsRoot;

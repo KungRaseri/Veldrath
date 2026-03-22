@@ -47,4 +47,19 @@ public enum AssetCategory
 
     /// <summary>Forestry and plant harvesting resource icons.</summary>
     CraftingForest,
+
+    /// <summary>Accessory item icons (rings, amulets, trinkets, etc.).</summary>
+    Accessories,
+
+    /// <summary>Shield item icons.</summary>
+    Shields,
+
+    /// <summary>Food and consumable item icons.</summary>
+    Food,
+
+    /// <summary>Miscellaneous item icons.</summary>
+    ItemMisc,
+
+    /// <summary>Crafting ingredient and reagent icons.</summary>
+    CraftingIngredients,
 }

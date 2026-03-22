@@ -840,18 +840,26 @@ public class GameViewModel : ViewModelBase
     private async Task LoadEquipmentIconsAsync(IAssetStore assetStore)
     {
         var weaponBytes = await assetStore.LoadImageAsync(ItemAssets.Weapon01);
+        var shieldBytes = await assetStore.LoadImageAsync(ItemAssets.Shield01);
         var armorBytes = await assetStore.LoadImageAsync(ItemAssets.Armor01);
-        var potionBytes = await assetStore.LoadImageAsync(ItemAssets.Potion01);
+        var ringBytes = await assetStore.LoadImageAsync(ItemAssets.Accessory18);
+        var necklaceBytes = await assetStore.LoadImageAsync(ItemAssets.Accessory01);
         Bitmap? weaponIcon = weaponBytes is null ? null : new Bitmap(new MemoryStream(weaponBytes));
+        Bitmap? shieldIcon = shieldBytes is null ? null : new Bitmap(new MemoryStream(shieldBytes));
         Bitmap? armorIcon = armorBytes is null ? null : new Bitmap(new MemoryStream(armorBytes));
-        Bitmap? potionIcon = potionBytes is null ? null : new Bitmap(new MemoryStream(potionBytes));
+        Bitmap? ringIcon = ringBytes is null ? null : new Bitmap(new MemoryStream(ringBytes));
+        Bitmap? necklaceIcon = necklaceBytes is null ? null : new Bitmap(new MemoryStream(necklaceBytes));
         foreach (var slot in EquipmentSlots)
         {
             Bitmap? icon;
-            if (slot.SlotName is "MainHand" or "OffHand")
+            if (slot.SlotName is "MainHand")
                 icon = weaponIcon;
-            else if (slot.SlotName is "Ring" or "Amulet")
-                icon = potionIcon;
+            else if (slot.SlotName is "OffHand")
+                icon = shieldIcon;
+            else if (slot.SlotName is "Ring")
+                icon = ringIcon;
+            else if (slot.SlotName is "Amulet")
+                icon = necklaceIcon;
             else
                 icon = armorIcon;
             slot.Icon = icon;
