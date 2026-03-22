@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
 
@@ -7,13 +8,15 @@ namespace RealmUnbound.Client.Tests;
 public class SettingsViewModelTests : TestBase
 {
     private static (SettingsViewModel Vm, FakeAudioPlayer Audio, ClientSettings Settings) MakeVm(
-        FakeNavigationService? nav = null,
-        ClientSettings? settings   = null,
-        FakeAudioPlayer? audio     = null)
+        FakeNavigationService? nav             = null,
+        ClientSettings? settings               = null,
+        FakeAudioPlayer? audio                 = null,
+        SettingsPersistenceService? persistence = null)
     {
         var s = settings ?? new ClientSettings("http://localhost:8080");
         var a = audio    ?? new FakeAudioPlayer();
-        var vm = new SettingsViewModel(nav ?? new FakeNavigationService(), s, a);
+        var p = persistence ?? new SettingsPersistenceService(Path.GetTempFileName());
+        var vm = new SettingsViewModel(nav ?? new FakeNavigationService(), s, a, p);
         return (vm, a, s);
     }
 
@@ -28,6 +31,23 @@ public class SettingsViewModelTests : TestBase
         await vm.BackCommand.Execute();
 
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+    }
+
+    [Fact]
+    public async Task BackCommand_Should_Persist_Settings_Before_Navigating()
+    {
+        var tempFile    = Path.GetTempFileName();
+        var persistence = new SettingsPersistenceService(tempFile);
+        var settings    = new ClientSettings("http://testserver:9090") { MusicVolume = 42, Muted = true };
+        var (vm, _, _) = MakeVm(settings: settings, persistence: persistence);
+
+        await vm.BackCommand.Execute();
+
+        var loaded = persistence.Load();
+        loaded.Should().NotBeNull();
+        loaded!.MusicVolume.Should().Be(42);
+        loaded.Muted.Should().BeTrue();
+        loaded.ServerBaseUrl.Should().Be("http://testserver:9090");
     }
 
     // ── Audio — volume properties ──────────────────────────────────────────────

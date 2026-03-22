@@ -45,6 +45,21 @@ public partial class App : Application
         ConfigureServices(services, configuration, serverBaseUrl);
         Services = services.BuildServiceProvider();
 
+        // Restore persisted settings so player preferences survive restarts.
+        // Saving is handled explicitly by SettingsViewModel when the user leaves the settings screen.
+        var settingsPersistence = Services.GetRequiredService<SettingsPersistenceService>();
+        var clientSettings      = Services.GetRequiredService<ClientSettings>();
+        var savedSettings = settingsPersistence.Load();
+        if (savedSettings is not null)
+        {
+            clientSettings.ServerBaseUrl = savedSettings.ServerBaseUrl;
+            clientSettings.MasterVolume  = savedSettings.MasterVolume;
+            clientSettings.MusicVolume   = savedSettings.MusicVolume;
+            clientSettings.SfxVolume     = savedSettings.SfxVolume;
+            clientSettings.Muted         = savedSettings.Muted;
+            clientSettings.FullScreen    = savedSettings.FullScreen;
+        }
+
         // Restore persisted session (DPAPI-encrypted) so the user stays logged in across restarts.
         // Saving and clearing are handled explicitly by HttpAuthService after each login/refresh/logout.
         if (OperatingSystem.IsWindows())
@@ -105,6 +120,9 @@ public partial class App : Application
 
         // Persists DPAPI-encrypted tokens so sessions survive restarts.
         services.AddSingleton<TokenPersistenceService>();
+
+        // Persists player settings (audio, display, server URL) so preferences survive restarts.
+        services.AddSingleton<SettingsPersistenceService>();
 
         // Persists lightweight session preferences (email only — never tokens/passwords)
         services.AddSingleton<SessionStore>();
