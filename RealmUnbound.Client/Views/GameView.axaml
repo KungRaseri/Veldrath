@@ -255,9 +255,13 @@
                                         <TextBlock Text="Region:"
                                                    Classes="caption"
                                                    VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding RegionName}"
-                                                   FontSize="13"
-                                                   VerticalAlignment="Center" />
+                                        <Button Content="{Binding RegionName}"
+                                                Command="{Binding ShowRegionViewCommand}"
+                                                Classes="ghost"
+                                                FontSize="13"
+                                                Height="24"
+                                                Padding="4,0"
+                                                VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1"
                                                 Orientation="Horizontal"

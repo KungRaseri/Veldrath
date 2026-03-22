@@ -135,6 +135,28 @@ Write-Host "Copying crafting/forest..." -NoNewline
 $n = Sync-Assets "$ft\ForestIcons\ForestIcons_transparent" "$dest\crafting\forest"
 Write-Host " $n files"
 
+# ── Extra item categories ──────────────────────────────────────────────────────
+$ri = "$SourcePath\rpg_items"
+Write-Host "Copying accessories..." -NoNewline
+$n = Sync-Assets "$ri\Accessory" "$dest\items\accessories"
+Write-Host " $n files"
+
+Write-Host "Copying shields..." -NoNewline
+$n = Sync-Assets "$ri\Shields" "$dest\items\shields"
+Write-Host " $n files"
+
+Write-Host "Copying food..." -NoNewline
+$n = Sync-Assets "$ri\Food" "$dest\items\food"
+Write-Host " $n files"
+
+Write-Host "Copying misc items..." -NoNewline
+$n = Sync-Assets "$ri\Misc" "$dest\items\misc"
+Write-Host " $n files"
+
+Write-Host "Copying crafting ingredients..." -NoNewline
+$n = Sync-Assets "$ri\Crafting&Gathering" "$dest\items\crafting-ingredients"
+Write-Host " $n files"
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 $totalFiles = (Get-ChildItem $dest -File -Recurse).Count
 $totalSize  = [math]::Round((Get-ChildItem $dest -File -Recurse | Measure-Object Length -Sum).Sum / 1MB, 1)
