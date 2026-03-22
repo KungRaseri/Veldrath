@@ -1,11 +1,11 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of session-20)
-- RealmEngine.Core.Tests: **1,847 passing** (+109 from session-20: 11 catalog query handlers + 6 Goal-3 handlers)
+## Test Counts (as of session-21)
+- RealmEngine.Core.Tests: **1,850 passing** (+3 from session-21: RefreshMerchantInventory happy-path tests)
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **227 passing** (+24 from session-20: 6 Goal-3 repo test classes)
-- RealmUnbound.Client.Tests: **288 passing** (+7 from session-9)
-- RealmUnbound.Server.Tests: **362 passing** (+12 from session-19: ContentEquipmentEndpointTests — weapons, armors, materials)
+- RealmEngine.Data.Tests: **227 passing**
+- RealmUnbound.Client.Tests: **401 passing**
+- RealmUnbound.Server.Tests: **425 passing**
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
