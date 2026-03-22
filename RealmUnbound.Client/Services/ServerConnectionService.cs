@@ -14,6 +14,8 @@ public interface IServerConnectionService
     Task<TResult?> SendCommandAsync<TResult>(string method);
     Task<TResult?> SendCommandAsync<TResult>(string method, object command);
     IDisposable On<T>(string method, Action<T> handler);
+    /// <summary>Registers a handler for a server-to-client message that carries no payload.</summary>
+    IDisposable On(string method, Action handler);
 }
 
 public class ServerConnectionService : IServerConnectionService, IAsyncDisposable
@@ -116,6 +118,14 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
     }
 
     public IDisposable On<T>(string method, Action<T> handler)
+    {
+        if (_connection is null)
+            throw new InvalidOperationException("Not connected to server.");
+        return _connection.On(method, handler);
+    }
+
+    /// <inheritdoc/>
+    public IDisposable On(string method, Action handler)
     {
         if (_connection is null)
             throw new InvalidOperationException("Not connected to server.");

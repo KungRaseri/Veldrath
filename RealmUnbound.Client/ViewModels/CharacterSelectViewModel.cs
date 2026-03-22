@@ -46,6 +46,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _itemCraftedSub;
     private IDisposable? _dungeonEnteredSub;
     private IDisposable? _shopVisitedSub;
+    private IDisposable? _zoneLeftSub;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -240,6 +241,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _itemCraftedSub?.Dispose();
             _dungeonEnteredSub?.Dispose();
             _shopVisitedSub?.Dispose();
+            _zoneLeftSub?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -305,6 +307,8 @@ public class CharacterSelectViewModel : ViewModelBase
 
             _shopVisitedSub = _connection.On<ShopVisitedPayload>("ShopVisited", payload =>
                 _gameVm.OnShopVisited(payload.ZoneId, payload.ZoneName));
+
+            _zoneLeftSub = _connection.On("ZoneLeft", () => _gameVm.OnZoneLeft());
 
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);

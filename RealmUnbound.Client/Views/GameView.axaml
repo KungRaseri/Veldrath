@@ -601,6 +601,12 @@
                                    Classes="caption"
                                    Margin="0,0,0,6" />
                         <ItemsControl ItemsSource="{Binding EquipmentSlots}">
+                            <ItemsControl.Styles>
+                                <Style Selector="Border.equipped">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+                                </Style>
+                            </ItemsControl.Styles>
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal" />
@@ -614,12 +620,14 @@
                                             BorderBrush="{DynamicResource GameBorderBrush}"
                                             BorderThickness="1"
                                             CornerRadius="3"
-                                            ToolTip.Tip="{Binding Label}">
+                                            ToolTip.Tip="{Binding Label}"
+                                            Classes.equipped="{Binding IsOccupied}">
                                         <StackPanel>
-                                            <Image Source="{Binding Icon}"
+                                            <Image Source="{Binding DisplayIcon}"
                                                    Width="36" Height="36"
                                                    Stretch="Uniform"
                                                    Margin="4,4,4,0"
+                                                   Opacity="{Binding SlotOpacity}"
                                                    VerticalAlignment="Top" />
                                             <TextBlock Text="{Binding Label}"
                                                        FontSize="6"
