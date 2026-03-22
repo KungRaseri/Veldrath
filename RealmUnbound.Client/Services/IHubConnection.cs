@@ -17,7 +17,10 @@ public interface IHubConnection : IAsyncDisposable
     /// <summary>Invokes a hub method with no arguments.</summary>
     Task<TResult> InvokeAsync<TResult>(string methodName);
     Task<TResult> InvokeAsync<TResult>(string methodName, object arg);
+    /// <summary>Registers a handler for a server-to-client message that carries a typed payload.</summary>
     IDisposable On<T>(string methodName, Action<T> handler);
+    /// <summary>Registers a handler for a server-to-client message that carries no payload.</summary>
+    IDisposable On(string methodName, Action handler);
 }
 
 /// <summary>
@@ -54,6 +57,9 @@ internal sealed class HubConnectionWrapper : IHubConnection
         => _inner.InvokeAsync<TResult>(methodName, arg);
 
     public IDisposable On<T>(string methodName, Action<T> handler)
+        => _inner.On(methodName, handler);
+
+    public IDisposable On(string methodName, Action handler)
         => _inner.On(methodName, handler);
 
     public ValueTask DisposeAsync() => _inner.DisposeAsync();

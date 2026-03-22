@@ -154,11 +154,24 @@ public class FakeServerConnectionService : IServerConnectionService
         return DummyDisposable.Instance;
     }
 
+    public IDisposable On(string method, Action handler)
+    {
+        _handlers[method] = handler;
+        return DummyDisposable.Instance;
+    }
+
     /// <summary>Invokes a previously registered handler as if the server sent the event.</summary>
     public void FireEvent<T>(string method, T payload)
     {
         if (_handlers.TryGetValue(method, out var h))
             ((Action<T>)h)(payload);
+    }
+
+    /// <summary>Invokes a previously registered parameterless handler as if the server sent the event.</summary>
+    public void FireEvent(string method)
+    {
+        if (_handlers.TryGetValue(method, out var h))
+            ((Action)h)();
     }
 
     public Task SendCommandAsync(string method)

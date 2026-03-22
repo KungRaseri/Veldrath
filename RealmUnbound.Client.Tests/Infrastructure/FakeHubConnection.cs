@@ -60,6 +60,12 @@ public class FakeHubConnection : IHubConnection
         return new DummyDisposable();
     }
 
+    public IDisposable On(string methodName, Action handler)
+    {
+        _onHandlers[methodName] = handler;
+        return new DummyDisposable();
+    }
+
     public ValueTask DisposeAsync()
     {
         DisposeCallCount++;

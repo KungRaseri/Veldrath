@@ -509,6 +509,64 @@ public class GameViewModelTests : TestBase
             msg.Contains("MainHand") && msg.Contains("Unequipped"));
     }
 
+    [Fact]
+    public void OnItemEquipped_WithAllEquippedItems_Should_Sync_ItemRef_On_Each_Matching_Slot()
+    {
+        var vm       = MakeVm();
+        var allItems = new Dictionary<string, string>
+        {
+            ["MainHand"] = "iron_sword",
+            ["Head"]     = "iron_helm",
+        };
+
+        vm.OnItemEquipped(slot: "MainHand", itemRef: "iron_sword", allEquippedItems: allItems);
+
+        vm.EquipmentSlots.Single(s => s.SlotName == "MainHand").ItemRef.Should().Be("iron_sword");
+        vm.EquipmentSlots.Single(s => s.SlotName == "Head").ItemRef.Should().Be("iron_helm");
+    }
+
+    [Fact]
+    public void OnItemEquipped_WithAllEquippedItems_Should_Clear_Slots_Not_Present_In_Map()
+    {
+        var vm   = MakeVm();
+        var chest = vm.EquipmentSlots.Single(s => s.SlotName == "Chest");
+        chest.ItemRef = "leather_chest";
+
+        var allItems = new Dictionary<string, string>
+        {
+            ["MainHand"] = "iron_sword",
+        };
+
+        vm.OnItemEquipped(slot: "MainHand", itemRef: "iron_sword", allEquippedItems: allItems);
+
+        chest.ItemRef.Should().BeNull();
+    }
+
+    [Fact]
+    public void OnItemEquipped_WithAllEquippedItems_Should_Leave_Unmapped_Slots_With_Null_ItemIcon()
+    {
+        var vm       = MakeVm();
+        var allItems = new Dictionary<string, string>
+        {
+            ["MainHand"] = "iron_sword",
+        };
+
+        vm.OnItemEquipped(slot: "MainHand", itemRef: "iron_sword", allEquippedItems: allItems);
+
+        vm.EquipmentSlots.Single(s => s.SlotName == "Chest").ItemIcon.Should().BeNull();
+    }
+
+    // ── OnZoneLeft ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnZoneLeft_Should_Append_Zone_Departure_Message_To_ActionLog()
+    {
+        var vm = MakeVm();
+        vm.OnZoneLeft();
+
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("zone") || msg.Contains("Zone"));
+    }
+
     // ── AddGoldCommand ────────────────────────────────────────────────────────
 
     [Fact]

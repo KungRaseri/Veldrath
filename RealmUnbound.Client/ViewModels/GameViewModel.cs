@@ -512,8 +512,12 @@ public class GameViewModel : ViewModelBase
             foreach (var equipSlot in EquipmentSlots)
             {
                 allEquippedItems.TryGetValue(equipSlot.SlotName, out var currentRef);
-                equipSlot.ItemRef = currentRef;
+                equipSlot.ItemRef  = currentRef;
+                if (currentRef is null)
+                    equipSlot.ItemIcon = null;
             }
+            if (_assetStore is not null)
+                _ = RefreshAllEquippedIconsAsync(_assetStore);
         }
         AppendLog(itemRef is not null
             ? $"Equipped '{itemRef}' in {slot} slot."
@@ -830,11 +834,26 @@ public class GameViewModel : ViewModelBase
     public void OnShopVisited(string zoneId, string zoneName)
         => AppendLog($"Welcome to the shop at {zoneName}!");
 
+    /// <summary>Called from the hub when the server confirms the active character has left their current zone.</summary>
+    public void OnZoneLeft()
+        => AppendLog("You have left the zone.");
+
     private void AppendLog(string message)
     {
         ActionLog.Add($"[{DateTime.Now:HH:mm}] {message}");
         while (ActionLog.Count > 100)
             ActionLog.RemoveAt(0);
+    }
+
+    private async Task RefreshAllEquippedIconsAsync(IAssetStore assetStore)
+    {
+        foreach (var equipSlot in EquipmentSlots)
+        {
+            if (equipSlot.ItemRef is null)
+                continue;
+            var bytes = await assetStore.LoadImageAsync(equipSlot.ItemRef);
+            equipSlot.ItemIcon = bytes is null ? null : new Bitmap(new MemoryStream(bytes));
+        }
     }
 
     private async Task LoadEquipmentIconsAsync(IAssetStore assetStore)
