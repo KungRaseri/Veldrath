@@ -12,8 +12,8 @@ using RealmEngine.Data.Persistence;
 namespace RealmEngine.Data.Migrations.GameDb
 {
     [DbContext(typeof(GameDbContext))]
-    [Migration("20260317170148_InitialGameDbSchema")]
-    partial class InitialGameDbSchema
+    [Migration("20260323145521_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,65 @@ namespace RealmEngine.Data.Migrations.GameDb
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.HarvestableNodeRecord", b =>
+                {
+                    b.Property<string>("NodeId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("BaseYield")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BiomeType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("CurrentHealth")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsRichNode")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastHarvestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LocationId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("LootTableRef")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MaterialTier")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MaxHealth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinToolTier")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NodeType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TimesHarvested")
+                        .HasColumnType("integer");
+
+                    b.HasKey("NodeId");
+
+                    b.HasIndex("LocationId");
+
+                    b.ToTable("HarvestableNodes");
+                });
 
             modelBuilder.Entity("RealmEngine.Data.Persistence.InventoryRecord", b =>
                 {
@@ -37,6 +96,9 @@ namespace RealmEngine.Data.Migrations.GameDb
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<int?>("Durability")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ItemRef")
                         .IsRequired()

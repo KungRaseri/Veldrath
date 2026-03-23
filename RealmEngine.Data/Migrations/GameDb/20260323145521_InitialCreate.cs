@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RealmEngine.Data.Migrations.GameDb
 {
     /// <inheritdoc />
-    public partial class InitialGameDbSchema : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -38,6 +38,30 @@ namespace RealmEngine.Data.Migrations.GameDb
                 });
 
             migrationBuilder.CreateTable(
+                name: "HarvestableNodes",
+                columns: table => new
+                {
+                    NodeId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    NodeType = table.Column<string>(type: "text", nullable: false),
+                    DisplayName = table.Column<string>(type: "text", nullable: false),
+                    MaterialTier = table.Column<string>(type: "text", nullable: false),
+                    CurrentHealth = table.Column<int>(type: "integer", nullable: false),
+                    MaxHealth = table.Column<int>(type: "integer", nullable: false),
+                    LastHarvestedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    TimesHarvested = table.Column<int>(type: "integer", nullable: false),
+                    LocationId = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    BiomeType = table.Column<string>(type: "text", nullable: false),
+                    LootTableRef = table.Column<string>(type: "text", nullable: false),
+                    MinToolTier = table.Column<int>(type: "integer", nullable: false),
+                    BaseYield = table.Column<int>(type: "integer", nullable: false),
+                    IsRichNode = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HarvestableNodes", x => x.NodeId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InventoryRecords",
                 columns: table => new
                 {
@@ -47,6 +71,7 @@ namespace RealmEngine.Data.Migrations.GameDb
                     CharacterName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     ItemRef = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
+                    Durability = table.Column<int>(type: "integer", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -75,6 +100,11 @@ namespace RealmEngine.Data.Migrations.GameDb
                 column: "FameScore");
 
             migrationBuilder.CreateIndex(
+                name: "IX_HarvestableNodes_LocationId",
+                table: "HarvestableNodes",
+                column: "LocationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InventoryRecords_SaveGameId_CharacterName",
                 table: "InventoryRecords",
                 columns: new[] { "SaveGameId", "CharacterName" });
@@ -101,6 +131,9 @@ namespace RealmEngine.Data.Migrations.GameDb
         {
             migrationBuilder.DropTable(
                 name: "HallOfFameEntries");
+
+            migrationBuilder.DropTable(
+                name: "HarvestableNodes");
 
             migrationBuilder.DropTable(
                 name: "InventoryRecords");
