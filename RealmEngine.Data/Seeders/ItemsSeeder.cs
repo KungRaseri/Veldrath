@@ -67,6 +67,12 @@ public static class ItemsSeeder
             // Orbs — rare consumable aura items
             new() { Slug = "orb-of-force", TypeKey = "orbs", ItemType = "orb", DisplayName = "Orb of Force", RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(0.80f, 3, 300, 30.0f, 60.0f), Traits = ITr(false, false, false, false, true, true) },
             new() { Slug = "orb-of-decay", TypeKey = "orbs", ItemType = "orb", DisplayName = "Orb of Decay", RarityWeight = 15, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(0.90f, 2, 400, 25.0f, 30.0f), Traits = ITr(false, false, false, false, true, true) },
+
+            // Scrolls — single-use magical documents
+            new() { Slug = "scroll-of-fireball", TypeKey = "scrolls", ItemType = "scroll", DisplayName = "Scroll of Fireball", RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(0.05f, 5, 60, 25.0f, null), Traits = ITr(true, false, false, false, true, true) },
+
+            // Crafting components — refined from raw materials
+            new() { Slug = "iron-ingot", TypeKey = "crafting-components", ItemType = "component", DisplayName = "Iron Ingot", RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(1.0f, 50, 5, null, null), Traits = ITr(true, false, false, false, false, false) },
         };
 
         db.Items.AddRange(items);
