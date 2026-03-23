@@ -30,6 +30,12 @@ public static class DatabaseSeeder
         await MaterialsSeeder.SeedAsync(db);
         await ActorSeeder.SeedAsync(db);
         await ItemsSeeder.SeedAsync(db);
+        await WeaponsSeeder.SeedAsync(db);
+        await ArmorSeeder.SeedAsync(db);
+        await ArchetypeSeeder.SeedAsync(db);
+        await RecipesSeeder.SeedAsync(db);
+        await OrganizationsSeeder.SeedAsync(db);
+        await DialogueSeeder.SeedAsync(db);
         await ContentRegistrySeeder.SeedAsync(db);
     }
 

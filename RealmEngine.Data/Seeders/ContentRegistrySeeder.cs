@@ -48,6 +48,24 @@ public static class ContentRegistrySeeder
         foreach (var e in await db.Enchantments.AsNoTracking().ToListAsync())
             Register(e.Id, "Enchantments", "items/enchantments", e.TypeKey, e.Slug);
 
+        foreach (var e in await db.Weapons.AsNoTracking().ToListAsync())
+            Register(e.Id, "Weapons", "equipment/weapons", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Armors.AsNoTracking().ToListAsync())
+            Register(e.Id, "Armors", "equipment/armor", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.ActorArchetypes.AsNoTracking().ToListAsync())
+            Register(e.Id, "ActorArchetypes", "actors/archetypes", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Recipes.AsNoTracking().ToListAsync())
+            Register(e.Id, "Recipes", "crafting/recipes", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Organizations.AsNoTracking().ToListAsync())
+            Register(e.Id, "Organizations", "world/organizations", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Dialogues.AsNoTracking().ToListAsync())
+            Register(e.Id, "Dialogues", "world/dialogue", e.TypeKey, e.Slug);
+
         if (entries.Count > 0)
         {
             db.ContentRegistry.AddRange(entries);
