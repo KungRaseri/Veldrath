@@ -9,11 +9,11 @@ using RealmUnbound.Server.Data;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Migrations
+namespace RealmUnbound.Server.Migrations.Application
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260315195324_AddDescriptionAndNotifications")]
-    partial class AddDescriptionAndNotifications
+    [Migration("20260323145505_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,91 +155,6 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Persistence.SaveGameRecord", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DataJson")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PlayerName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("SaveDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("SlotIndex")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayerName");
-
-                    b.ToTable("SaveGames");
-                });
-
-            modelBuilder.Entity("RealmEngine.Shared.Models.HallOfFameEntry", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<int>("AchievementsUnlocked")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("CharacterName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ClassName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("DeathCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("DeathDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeathLocation")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DeathReason")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DifficultyLevel")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("FameScore")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsPermadeath")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PlayTimeMinutes")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("QuestsCompleted")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TotalEnemiesDefeated")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FameScore");
-
-                    b.ToTable("HallOfFameEntries");
-                });
-
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Character", b =>
                 {
                     b.Property<Guid>("Id")
@@ -267,8 +182,18 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EquipmentBlob")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("{}");
+
                     b.Property<long>("Experience")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("InventoryBlob")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("LastPlayedAt")
                         .HasColumnType("timestamp with time zone");
@@ -537,6 +462,87 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDiscoverable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsStarter")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorldId")
+                        .IsRequired()
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorldId");
+
+                    b.ToTable("Regions");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RegionConnection", b =>
+                {
+                    b.Property<string>("FromRegionId")
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ToRegionId")
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("FromRegionId", "ToRegionId");
+
+                    b.HasIndex("ToRegionId");
+
+                    b.ToTable("RegionConnections");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.World", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Era")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Worlds");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
                 {
                     b.Property<string>("Id")
@@ -546,6 +552,18 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("HasInn")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasMerchant")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDiscoverable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPvpEnabled")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsStarter")
                         .HasColumnType("boolean");
@@ -560,64 +578,34 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<string>("RegionId")
+                        .IsRequired()
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Zones");
+                    b.HasIndex("RegionId");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = "starting-zone",
-                            Description = "A small crossroads at the edge of the Ashenveil Forest, where new adventurers gather.",
-                            IsStarter = true,
-                            MaxPlayers = 0,
-                            MinLevel = 0,
-                            Name = "Ashenveil Crossroads",
-                            Type = 0
-                        },
-                        new
-                        {
-                            Id = "town-millhaven",
-                            Description = "A prosperous market town built along the Silver River, hub of trade and gossip.",
-                            IsStarter = false,
-                            MaxPlayers = 0,
-                            MinLevel = 0,
-                            Name = "Millhaven",
-                            Type = 1
-                        },
-                        new
-                        {
-                            Id = "town-ironhold",
-                            Description = "A fortified dwarven outpost in the foothills, renowned for its smiths and ales.",
-                            IsStarter = false,
-                            MaxPlayers = 0,
-                            MinLevel = 5,
-                            Name = "Ironhold",
-                            Type = 1
-                        },
-                        new
-                        {
-                            Id = "dungeon-grotto",
-                            Description = "A shallow cave network overrun with kobolds and giant insects — ideal for beginners.",
-                            IsStarter = false,
-                            MaxPlayers = 0,
-                            MinLevel = 1,
-                            Name = "Mossglow Grotto",
-                            Type = 2
-                        },
-                        new
-                        {
-                            Id = "wild-ashenveil",
-                            Description = "Dense woodland alive with wolves, bandits, and rumours of something darker within.",
-                            IsStarter = false,
-                            MaxPlayers = 0,
-                            MinLevel = 3,
-                            Name = "Ashenveil Forest",
-                            Type = 3
-                        });
+                    b.ToTable("Zones");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneConnection", b =>
+                {
+                    b.Property<string>("FromZoneId")
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ToZoneId")
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("FromZoneId", "ToZoneId");
+
+                    b.HasIndex("ToZoneId");
+
+                    b.ToTable("ZoneConnections");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
@@ -786,6 +774,66 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.World", "World")
+                        .WithMany("Regions")
+                        .HasForeignKey("WorldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("World");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RegionConnection", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "FromRegion")
+                        .WithMany("Connections")
+                        .HasForeignKey("FromRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "ToRegion")
+                        .WithMany()
+                        .HasForeignKey("ToRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromRegion");
+
+                    b.Navigation("ToRegion");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "Region")
+                        .WithMany("Zones")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneConnection", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "FromZone")
+                        .WithMany("Exits")
+                        .HasForeignKey("FromZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "ToZone")
+                        .WithMany()
+                        .HasForeignKey("ToZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromZone");
+
+                    b.Navigation("ToZone");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
                 {
                     b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
@@ -810,8 +858,22 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Votes");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+                {
+                    b.Navigation("Connections");
+
+                    b.Navigation("Zones");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.World", b =>
+                {
+                    b.Navigation("Regions");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
                 {
+                    b.Navigation("Exits");
+
                     b.Navigation("Sessions");
                 });
 #pragma warning restore 612, 618
