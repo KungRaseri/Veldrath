@@ -7,10 +7,10 @@ using RealmEngine.Shared.Models;
 using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Foundry;
 using SharedAbility     = RealmEngine.Shared.Models.Ability;
-using SharedItem        = RealmEngine.Shared.Models.Item;
 using SharedQuest       = RealmEngine.Shared.Models.Quest;
 using SharedRecipe      = RealmEngine.Shared.Models.Recipe;
 using SharedSpell       = RealmEngine.Shared.Models.Spell;
+using DataItem          = RealmEngine.Data.Entities.Item;
 
 namespace RealmUnbound.Server.Features.Content;
 
@@ -39,14 +39,10 @@ namespace RealmUnbound.Server.Features.Content;
 /// GET /api/content/backgrounds           — all active backgrounds
 /// GET /api/content/backgrounds/{slug}    — single background
 /// GET /api/content/skills                — all active skills
-/// GET /api/content/skills/{slug}         — single skill/// GET /api/content/items                  — all active catalog items; optional ?type= filter
+/// GET /api/content/skills/{slug}         — single skill/// GET /api/content/items                  — all active catalog items; optional ?type= filter (e.g. ?type=weapon, ?type=armor)
 /// GET /api/content/items/{slug}           — single catalog item by slug
 /// GET /api/content/enchantments           — all active enchantments; optional ?targetSlot= filter
 /// GET /api/content/enchantments/{slug}    — single enchantment by slug
-/// GET /api/content/weapons                — all active weapons
-/// GET /api/content/weapons/{slug}         — single weapon by slug
-/// GET /api/content/armors                 — all active armor pieces
-/// GET /api/content/armors/{slug}          — single armor piece by slug
 /// GET /api/content/materials              — all active materials
 /// GET /api/content/materials/{slug}       — single material by slug
 ///
@@ -121,14 +117,6 @@ public static class ContentEndpoints
         group.MapGet("/enchantments",         GetEnchantmentsAsync);
         group.MapGet("/enchantments/{slug}",  GetEnchantmentBySlugAsync);
 
-        // Weapons
-        group.MapGet("/weapons",          GetWeaponsAsync);
-        group.MapGet("/weapons/{slug}",   GetWeaponBySlugAsync);
-
-        // Armors
-        group.MapGet("/armors",           GetArmorsAsync);
-        group.MapGet("/armors/{slug}",    GetArmorBySlugAsync);
-
         // Materials
         group.MapGet("/materials",        GetMaterialsAsync);
         group.MapGet("/materials/{slug}", GetMaterialBySlugAsync);
@@ -188,8 +176,6 @@ public static class ContentEndpoints
             "instance"         => await BrowseSet(db.ActorInstances,     type, search, resolvedPage, resolvedPageSize, ct),
             "background"       => await BrowseSet(db.Backgrounds,        type, search, resolvedPage, resolvedPageSize, ct),
             "skill"            => await BrowseSet(db.Skills,             type, search, resolvedPage, resolvedPageSize, ct),
-            "weapon"           => await BrowseSet(db.Weapons,            type, search, resolvedPage, resolvedPageSize, ct),
-            "armor"            => await BrowseSet(db.Armors,             type, search, resolvedPage, resolvedPageSize, ct),
             "item"             => await BrowseSet(db.Items,              type, search, resolvedPage, resolvedPageSize, ct),
             "material"         => await BrowseSet(db.Materials,          type, search, resolvedPage, resolvedPageSize, ct),
             "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, resolvedPage, resolvedPageSize, ct),
@@ -254,8 +240,6 @@ public static class ContentEndpoints
             "instance"         => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "background"       => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "skill"            => await db.Skills.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "weapon"           => await db.Weapons.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "armor"            => await db.Armors.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "item"             => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "material"         => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "materialproperty" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
@@ -551,18 +535,22 @@ public static class ContentEndpoints
 
     // ── Items ──────────────────────────────────────────────────────────────────
 
-    private static async Task<IResult> GetItemsAsync(string? type, IItemRepository repo)
+    private static async Task<IResult> GetItemsAsync(string? type, ContentDbContext db, CancellationToken ct)
     {
-        var items = type is not null
-            ? await repo.GetByTypeAsync(type)
-            : await repo.GetAllAsync();
-        return Results.Ok(items.Select(ToDto));
+        var query = db.Items.Where(i => i.IsActive).AsNoTracking();
+        if (type is not null)
+            query = query.Where(i => i.ItemType == type.ToLowerInvariant());
+        var items = await query.ToListAsync(ct);
+        return Results.Ok(items.Select(ToItemDto));
     }
 
-    private static async Task<IResult> GetItemBySlugAsync(string slug, IItemRepository repo)
+    private static async Task<IResult> GetItemBySlugAsync(string slug, ContentDbContext db, CancellationToken ct)
     {
-        var item = await repo.GetBySlugAsync(slug);
-        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
+        var item = await db.Items
+            .Where(i => i.IsActive && i.Slug == slug)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ct);
+        return item is null ? Results.NotFound() : Results.Ok(ToItemDto(item));
     }
 
     // ── Enchantments ───────────────────────────────────────────────────────────
@@ -585,45 +573,20 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToEnchantmentDto(item));
     }
 
-    private static ItemDto ToDto(SharedItem i) => new(
-        Slug:         i.Slug,
-        DisplayName:  i.Name,
-        TypeKey:      i.TypeKey ?? string.Empty,
-        RarityWeight: i.TotalRarityWeight);
+    private static ItemDto ToItemDto(DataItem i) => new(
+        Slug:        i.Slug,
+        DisplayName: i.DisplayName ?? i.Slug,
+        TypeKey:     i.TypeKey,
+        RarityWeight: i.RarityWeight,
+        ItemType:    i.ItemType,
+        WeaponType:  i.WeaponType,
+        ArmorType:   i.ArmorType);
 
     private static EnchantmentDto ToEnchantmentDto(RealmEngine.Data.Entities.Enchantment e) => new(
         Slug:         e.Slug,
         DisplayName:  e.DisplayName ?? e.Slug,
         TypeKey:      e.TypeKey,
         RarityWeight: e.RarityWeight);
-
-    // ── Weapons ───────────────────────────────────────────────────────────────
-
-    private static async Task<IResult> GetWeaponsAsync(IWeaponRepository repo)
-    {
-        var items = await repo.GetAllAsync();
-        return Results.Ok(items.Select(ToWeaponDto));
-    }
-
-    private static async Task<IResult> GetWeaponBySlugAsync(string slug, IWeaponRepository repo)
-    {
-        var item = await repo.GetBySlugAsync(slug);
-        return item is null ? Results.NotFound() : Results.Ok(ToWeaponDto(item));
-    }
-
-    // ── Armors ────────────────────────────────────────────────────────────────
-
-    private static async Task<IResult> GetArmorsAsync(IArmorRepository repo)
-    {
-        var items = await repo.GetAllAsync();
-        return Results.Ok(items.Select(ToArmorDto));
-    }
-
-    private static async Task<IResult> GetArmorBySlugAsync(string slug, IArmorRepository repo)
-    {
-        var item = await repo.GetBySlugAsync(slug);
-        return item is null ? Results.NotFound() : Results.Ok(ToArmorDto(item));
-    }
 
     // ── Materials ─────────────────────────────────────────────────────────────
 
@@ -638,20 +601,6 @@ public static class ContentEndpoints
         var item = await repo.GetBySlugAsync(slug);
         return item is null ? Results.NotFound() : Results.Ok(ToMaterialDto(item));
     }
-
-    private static WeaponDto ToWeaponDto(SharedItem i) => new(
-        Slug:        i.Slug,
-        DisplayName: i.Name,
-        TypeKey:     i.TypeKey ?? string.Empty,
-        WeaponType:  i.WeaponType ?? string.Empty,
-        RarityWeight: i.TotalRarityWeight);
-
-    private static ArmorDto ToArmorDto(SharedItem i) => new(
-        Slug:        i.Slug,
-        DisplayName: i.Name,
-        TypeKey:     i.TypeKey ?? string.Empty,
-        ArmorType:   i.ArmorClass ?? string.Empty,
-        RarityWeight: i.TotalRarityWeight);
 
     private static MaterialDto ToMaterialDto(MaterialEntry m) => new(
         Slug:           m.Slug,

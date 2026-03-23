@@ -115,34 +115,16 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Weapons ───────────────────────────────────────────────────────────
-
-        builder.Entity<Weapon>(e =>
-        {
-            ConfigureContent(e);
-            e.Property(x => x.WeaponType).HasMaxLength(32).IsRequired();
-            e.Property(x => x.DamageType).HasMaxLength(32).IsRequired();
-            e.OwnsOne(x => x.Stats, o => o.ToJson());
-            e.OwnsOne(x => x.Traits, o => o.ToJson());
-        });
-
-        // ── Armor ─────────────────────────────────────────────────────────────
-
-        builder.Entity<Armor>(e =>
-        {
-            ConfigureContent(e);
-            e.Property(x => x.ArmorType).HasMaxLength(32).IsRequired();
-            e.Property(x => x.EquipSlot).HasMaxLength(32).IsRequired();
-            e.OwnsOne(x => x.Stats, o => o.ToJson());
-            e.OwnsOne(x => x.Traits, o => o.ToJson());
-        });
-
-        // ── General items ─────────────────────────────────────────────────────
+        // ── Items (consumables, gems, weapons, armor, and all other equipment) ──
 
         builder.Entity<Item>(e =>
         {
             ConfigureContent(e);
             e.Property(x => x.ItemType).HasMaxLength(32).IsRequired();
+            e.Property(x => x.WeaponType).HasMaxLength(32);
+            e.Property(x => x.DamageType).HasMaxLength(32);
+            e.Property(x => x.ArmorType).HasMaxLength(32);
+            e.Property(x => x.EquipSlot).HasMaxLength(32);
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });

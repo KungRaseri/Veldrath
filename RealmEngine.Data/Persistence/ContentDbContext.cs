@@ -31,11 +31,7 @@ public class ContentDbContext : DbContext
     public DbSet<ActorArchetype> ActorArchetypes => Set<ActorArchetype>();
     /// <summary>Named unique actor instances that override an archetype.</summary>
     public DbSet<ActorInstance> ActorInstances => Set<ActorInstance>();
-    /// <summary>Weapons.</summary>
-    public DbSet<Weapon> Weapons => Set<Weapon>();
-    /// <summary>Armor pieces.</summary>
-    public DbSet<Armor> Armors => Set<Armor>();
-    /// <summary>General items (consumables, quest items, misc).</summary>
+    /// <summary>Items — consumables, gems, runes, weapons, armor, and all other equipment.</summary>
     public DbSet<Item> Items => Set<Item>();
     /// <summary>Crafting materials.</summary>
     public DbSet<Material> Materials => Set<Material>();

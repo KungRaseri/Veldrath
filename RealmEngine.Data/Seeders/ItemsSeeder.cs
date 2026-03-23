@@ -73,6 +73,42 @@ public static class ItemsSeeder
 
             // Crafting components — refined from raw materials
             new() { Slug = "iron-ingot", TypeKey = "crafting-components", ItemType = "component", DisplayName = "Iron Ingot", RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(1.0f, 50, 5, null, null), Traits = ITr(true, false, false, false, false, false) },
+
+            // Weapons — ItemType="weapon", TypeKey matches WeaponCategoryToProficiencies keys
+            new()
+            {
+                Slug = "iron-sword", TypeKey = "heavy-blades", ItemType = "weapon", DisplayName = "Iron Sword",
+                WeaponType = "sword", DamageType = "physical", HandsRequired = 1,
+                RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats = new() { Weight = 3.5f, Value = 25, DamageMin = 4, DamageMax = 8, AttackSpeed = 1.0f, Durability = 100 },
+                Traits = new() { Versatile = true },
+            },
+            new()
+            {
+                Slug = "hunters-bow", TypeKey = "bows", ItemType = "weapon", DisplayName = "Hunter's Bow",
+                WeaponType = "bow", DamageType = "physical", HandsRequired = 2,
+                RarityWeight = 75, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats = new() { Weight = 2.0f, Value = 35, DamageMin = 3, DamageMax = 7, AttackSpeed = 0.8f, Durability = 80 },
+                Traits = new() { TwoHanded = true },
+            },
+
+            // Armor — ItemType="armor", TypeKey matches ArmorCategoryToProficiencies keys
+            new()
+            {
+                Slug = "leather-cap", TypeKey = "light", ItemType = "armor", DisplayName = "Leather Cap",
+                ArmorType = "light", EquipSlot = "head",
+                RarityWeight = 85, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats = new() { Weight = 0.5f, Value = 12, ArmorRating = 2, Durability = 60 },
+                Traits = new() { StealthPenalty = false },
+            },
+            new()
+            {
+                Slug = "iron-chestplate", TypeKey = "heavy", ItemType = "armor", DisplayName = "Iron Chestplate",
+                ArmorType = "heavy", EquipSlot = "chest",
+                RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats = new() { Weight = 15.0f, Value = 80, ArmorRating = 8, Durability = 150, MovementPenalty = 0.1f },
+                Traits = new() { StealthPenalty = true },
+            },
         };
 
         db.Items.AddRange(items);

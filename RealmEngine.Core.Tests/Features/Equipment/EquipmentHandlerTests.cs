@@ -47,26 +47,19 @@ public class GetEquipmentForClassHandlerTests
 {
     private static GetEquipmentForClassHandler CreateHandler(
         CharacterClass? returnedClass,
-        IWeaponRepository? weaponRepo = null,
-        IArmorRepository? armorRepo = null)
+        IItemRepository? itemRepo = null)
     {
         var mockClassRepo = new Mock<ICharacterClassRepository>();
         mockClassRepo.Setup(r => r.GetById(It.IsAny<string>())).Returns(returnedClass);
 
-        var mockWeaponRepo = weaponRepo is not null
-            ? Mock.Get(weaponRepo)
-            : new Mock<IWeaponRepository>();
-        mockWeaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-
-        var mockArmorRepo = armorRepo is not null
-            ? Mock.Get(armorRepo)
-            : new Mock<IArmorRepository>();
-        mockArmorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
+        var mockItemRepo = itemRepo is not null
+            ? Mock.Get(itemRepo)
+            : new Mock<IItemRepository>();
+        mockItemRepo.Setup(r => r.GetByTypeAsync(It.IsAny<string>())).ReturnsAsync([]);
 
         return new GetEquipmentForClassHandler(
             mockClassRepo.Object,
-            mockWeaponRepo.Object,
-            mockArmorRepo.Object,
+            mockItemRepo.Object,
             NullLogger<GetEquipmentForClassHandler>.Instance);
     }
 

@@ -264,58 +264,6 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("ArchetypeAbilityPools");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Armor", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ArmorType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("EquipSlot")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("RarityWeight")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("TypeKey")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TypeKey");
-
-                    b.HasIndex("TypeKey", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("Armors");
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.Background", b =>
                 {
                     b.Property<Guid>("Id")
@@ -610,9 +558,24 @@ namespace RealmEngine.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ArmorType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("DamageType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<string>("DisplayName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<string>("EquipSlot")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int?>("HandsRequired")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -640,6 +603,10 @@ namespace RealmEngine.Data.Migrations
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");
+
+                    b.Property<string>("WeaponType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 
@@ -1278,61 +1245,6 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("TraitDefinitions");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Weapon", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DamageType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("HandsRequired")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("RarityWeight")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("TypeKey")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("WeaponType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TypeKey");
-
-                    b.HasIndex("TypeKey", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("Weapons");
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.WorldLocation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1750,67 +1662,6 @@ namespace RealmEngine.Data.Migrations
                     b.Navigation("Archetype");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.Armor", b =>
-                {
-                    b.OwnsOne("RealmEngine.Data.Entities.ArmorStats", "Stats", b1 =>
-                        {
-                            b1.Property<Guid>("ArmorId");
-
-                            b1.Property<int?>("ArmorRating");
-
-                            b1.Property<int?>("Durability");
-
-                            b1.Property<int?>("MagicResist");
-
-                            b1.Property<float?>("MovementPenalty");
-
-                            b1.Property<int?>("Value");
-
-                            b1.Property<float?>("Weight");
-
-                            b1.HasKey("ArmorId");
-
-                            b1.ToTable("Armors");
-
-                            b1.ToJson("Stats");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ArmorId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.ArmorTraits", "Traits", b1 =>
-                        {
-                            b1.Property<Guid>("ArmorId");
-
-                            b1.Property<bool?>("ColdResist");
-
-                            b1.Property<bool?>("Cursed");
-
-                            b1.Property<bool?>("FireResist");
-
-                            b1.Property<bool?>("LightningResist");
-
-                            b1.Property<bool?>("Magical");
-
-                            b1.Property<bool?>("StealthPenalty");
-
-                            b1.HasKey("ArmorId");
-
-                            b1.ToTable("Armors");
-
-                            b1.ToJson("Traits");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ArmorId");
-                        });
-
-                    b.Navigation("Stats")
-                        .IsRequired();
-
-                    b.Navigation("Traits")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("RealmEngine.Data.Entities.Background", b =>
                 {
                     b.OwnsOne("RealmEngine.Data.Entities.BackgroundStats", "Stats", b1 =>
@@ -2117,9 +1968,27 @@ namespace RealmEngine.Data.Migrations
                         {
                             b1.Property<Guid>("ItemId");
 
+                            b1.Property<int?>("ArmorRating");
+
+                            b1.Property<float?>("AttackSpeed");
+
+                            b1.Property<float?>("CritChance");
+
+                            b1.Property<int?>("DamageMax");
+
+                            b1.Property<int?>("DamageMin");
+
+                            b1.Property<int?>("Durability");
+
                             b1.Property<float?>("Duration");
 
                             b1.Property<float?>("EffectPower");
+
+                            b1.Property<int?>("MagicResist");
+
+                            b1.Property<float?>("MovementPenalty");
+
+                            b1.Property<float?>("Range");
 
                             b1.Property<int?>("StackSize");
 
@@ -2141,17 +2010,39 @@ namespace RealmEngine.Data.Migrations
                         {
                             b1.Property<Guid>("ItemId");
 
+                            b1.Property<bool?>("ColdResist");
+
                             b1.Property<bool?>("Consumable");
+
+                            b1.Property<bool?>("Cursed");
+
+                            b1.Property<bool?>("Finesse");
+
+                            b1.Property<bool?>("FireResist");
+
+                            b1.Property<bool?>("LightningResist");
 
                             b1.Property<bool?>("Magical");
 
                             b1.Property<bool?>("QuestItem");
 
+                            b1.Property<bool?>("Reach");
+
+                            b1.Property<bool?>("Silvered");
+
                             b1.Property<bool?>("Soulbound");
 
                             b1.Property<bool?>("Stackable");
 
+                            b1.Property<bool?>("StealthPenalty");
+
+                            b1.Property<bool?>("Throwable");
+
+                            b1.Property<bool?>("TwoHanded");
+
                             b1.Property<bool?>("Unique");
+
+                            b1.Property<bool?>("Versatile");
 
                             b1.HasKey("ItemId");
 
@@ -2800,73 +2691,6 @@ namespace RealmEngine.Data.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("SpellId");
-                        });
-
-                    b.Navigation("Stats")
-                        .IsRequired();
-
-                    b.Navigation("Traits")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.Weapon", b =>
-                {
-                    b.OwnsOne("RealmEngine.Data.Entities.WeaponStats", "Stats", b1 =>
-                        {
-                            b1.Property<Guid>("WeaponId");
-
-                            b1.Property<float?>("AttackSpeed");
-
-                            b1.Property<float?>("CritChance");
-
-                            b1.Property<int?>("DamageMax");
-
-                            b1.Property<int?>("DamageMin");
-
-                            b1.Property<int?>("Durability");
-
-                            b1.Property<float?>("Range");
-
-                            b1.Property<int?>("Value");
-
-                            b1.Property<float?>("Weight");
-
-                            b1.HasKey("WeaponId");
-
-                            b1.ToTable("Weapons");
-
-                            b1.ToJson("Stats");
-
-                            b1.WithOwner()
-                                .HasForeignKey("WeaponId");
-                        });
-
-                    b.OwnsOne("RealmEngine.Data.Entities.WeaponTraits", "Traits", b1 =>
-                        {
-                            b1.Property<Guid>("WeaponId");
-
-                            b1.Property<bool?>("Finesse");
-
-                            b1.Property<bool?>("Magical");
-
-                            b1.Property<bool?>("Reach");
-
-                            b1.Property<bool?>("Silvered");
-
-                            b1.Property<bool?>("Throwable");
-
-                            b1.Property<bool?>("TwoHanded");
-
-                            b1.Property<bool?>("Versatile");
-
-                            b1.HasKey("WeaponId");
-
-                            b1.ToTable("Weapons");
-
-                            b1.ToJson("Traits");
-
-                            b1.WithOwner()
-                                .HasForeignKey("WeaponId");
                         });
 
                     b.Navigation("Stats")

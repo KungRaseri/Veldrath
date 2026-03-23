@@ -66,12 +66,6 @@ public interface IContentService
     Task<List<EnchantmentDto>> GetEnchantmentsAsync();
     Task<EnchantmentDto?> GetEnchantmentAsync(string slug);
 
-    Task<List<WeaponDto>> GetWeaponsAsync();
-    Task<WeaponDto?> GetWeaponAsync(string slug);
-
-    Task<List<ArmorDto>> GetArmorsAsync();
-    Task<ArmorDto?> GetArmorAsync(string slug);
-
     Task<List<MaterialDto>> GetMaterialsAsync();
     Task<MaterialDto?> GetMaterialAsync(string slug);
 }
@@ -175,12 +169,6 @@ public class HttpContentService(
 
     public Task<List<EnchantmentDto>> GetEnchantmentsAsync()              => GetListAsync<EnchantmentDto>("api/content/enchantments");
     public Task<EnchantmentDto?> GetEnchantmentAsync(string slug)         => GetSingleAsync<EnchantmentDto>($"api/content/enchantments/{slug}");
-
-    public Task<List<WeaponDto>> GetWeaponsAsync()                        => GetListAsync<WeaponDto>("api/content/weapons");
-    public Task<WeaponDto?> GetWeaponAsync(string slug)                   => GetSingleAsync<WeaponDto>($"api/content/weapons/{slug}");
-
-    public Task<List<ArmorDto>> GetArmorsAsync()                          => GetListAsync<ArmorDto>("api/content/armors");
-    public Task<ArmorDto?> GetArmorAsync(string slug)                     => GetSingleAsync<ArmorDto>($"api/content/armors/{slug}");
 
     public Task<List<MaterialDto>> GetMaterialsAsync()                    => GetListAsync<MaterialDto>("api/content/materials");
     public Task<MaterialDto?> GetMaterialAsync(string slug)               => GetSingleAsync<MaterialDto>($"api/content/materials/{slug}");

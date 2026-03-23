@@ -57,5 +57,8 @@ public class EfCoreItemRepository(ContentDbContext db, ILogger<EfCoreItemReposit
         Price       = entity.Stats.Value ?? 0,
         StackSize   = entity.Stats.StackSize ?? 1,
         IsStackable = entity.Traits.Stackable ?? false,
+        WeaponType  = entity.WeaponType,
+        ArmorType   = entity.ArmorType,
+        ArmorClass  = entity.ArmorType,
     };
 }

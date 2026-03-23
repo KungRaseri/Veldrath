@@ -17,7 +17,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
     private static readonly HashSet<string> KnownTables = new(StringComparer.OrdinalIgnoreCase)
     {
         "Abilities", "Species", "ActorClasses", "ActorArchetypes", "ActorInstances",
-        "Weapons", "Armors", "Items", "Materials", "Enchantments",
+        "Items", "Materials", "Enchantments",
         "Skills", "Spells", "Backgrounds", "Quests", "Recipes",
         "LootTables", "Organizations", "MaterialProperties", "WorldLocations", "Dialogues"
     };
@@ -42,8 +42,6 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "ActorClasses"       => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "ActorArchetypes"    => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "ActorInstances"     => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Weapons"            => await db.Weapons.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Armors"             => await db.Armors.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Items"              => await db.Items.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Materials"          => await db.Materials.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Enchantments"       => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
@@ -154,8 +152,6 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "ActorClasses"       => await RemoveFromSet<ActorClass>(db, entityId),
                 "ActorArchetypes"    => await RemoveFromSet<ActorArchetype>(db, entityId),
                 "ActorInstances"     => await RemoveFromSet<ActorInstance>(db, entityId),
-                "Weapons"            => await RemoveFromSet<Weapon>(db, entityId),
-                "Armors"             => await RemoveFromSet<Armor>(db, entityId),
                 "Items"              => await RemoveFromSet<Item>(db, entityId),
                 "Materials"          => await RemoveFromSet<Material>(db, entityId),
                 "Enchantments"       => await RemoveFromSet<Enchantment>(db, entityId),
@@ -210,8 +206,6 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         "ActorClasses"       => new ActorClass(),
         "ActorArchetypes"    => new ActorArchetype(),
         "ActorInstances"     => new ActorInstance(),
-        "Weapons"            => new Weapon(),
-        "Armors"             => new Armor(),
         "Items"              => new Item(),
         "Materials"          => new Material(),
         "Enchantments"       => new Enchantment(),
@@ -237,8 +231,6 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             case "ActorClasses":       db.ActorClasses.Add((ActorClass)entity);                 break;
             case "ActorArchetypes":    db.ActorArchetypes.Add((ActorArchetype)entity);           break;
             case "ActorInstances":     db.ActorInstances.Add((ActorInstance)entity);             break;
-            case "Weapons":            db.Weapons.Add((Weapon)entity);                          break;
-            case "Armors":             db.Armors.Add((Armor)entity);                            break;
             case "Items":              db.Items.Add((Item)entity);                              break;
             case "Materials":          db.Materials.Add((Material)entity);                      break;
             case "Enchantments":       db.Enchantments.Add((Enchantment)entity);                break;
@@ -285,8 +277,6 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "ActorClasses"       => await SelectRows(db.ActorClasses, typeKey),
                 "ActorArchetypes"    => await SelectRows(db.ActorArchetypes, typeKey),
                 "ActorInstances"     => await SelectRows(db.ActorInstances, typeKey),
-                "Weapons"            => await SelectRows(db.Weapons, typeKey),
-                "Armors"             => await SelectRows(db.Armors, typeKey),
                 "Items"              => await SelectRows(db.Items, typeKey),
                 "Materials"          => await SelectRows(db.Materials, typeKey),
                 "Enchantments"       => await SelectRows(db.Enchantments, typeKey),

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -7,15 +7,13 @@ using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
 using Xunit;
 using DataItem = RealmEngine.Data.Entities.Item;
-using DataWeapon = RealmEngine.Data.Entities.Weapon;
-using DataArmor = RealmEngine.Data.Entities.Armor;
 
 namespace RealmEngine.Core.Tests.Services;
 
 [Trait("Category", "Services")]
 public class ItemDataServiceTests
 {
-    // ── Helpers ────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private static ContentDbContext CreateDb(string dbName) =>
         new(new DbContextOptionsBuilder<ContentDbContext>()
@@ -33,16 +31,16 @@ public class ItemDataServiceTests
     private static ItemDataService CreateService(string dbName) =>
         new(CreateFactory(dbName), NullLogger<ItemDataService>.Instance);
 
-    private static DataWeapon MakeWeapon(string slug, string typeKey, int rarityWeight = 80, bool isActive = true) =>
-        new() { Slug = slug, TypeKey = typeKey, WeaponType = "sword", DamageType = "physical", IsActive = isActive, RarityWeight = rarityWeight };
+    private static DataItem MakeWeapon(string slug, string typeKey, int rarityWeight = 80, bool isActive = true) =>
+        new() { Slug = slug, TypeKey = typeKey, ItemType = "weapon", WeaponType = "sword", DamageType = "physical", IsActive = isActive, RarityWeight = rarityWeight };
 
-    private static DataArmor MakeArmor(string slug, string typeKey, int rarityWeight = 80, bool isActive = true) =>
-        new() { Slug = slug, TypeKey = typeKey, ArmorType = "light", EquipSlot = "chest", IsActive = isActive, RarityWeight = rarityWeight };
+    private static DataItem MakeArmor(string slug, string typeKey, int rarityWeight = 80, bool isActive = true) =>
+        new() { Slug = slug, TypeKey = typeKey, ItemType = "armor", ArmorType = "light", EquipSlot = "chest", IsActive = isActive, RarityWeight = rarityWeight };
 
     private static DataItem MakeItem(string slug, string typeKey, int rarityWeight = 80, bool isActive = true) =>
         new() { Slug = slug, TypeKey = typeKey, ItemType = "consumable", IsActive = isActive, RarityWeight = rarityWeight };
 
-    // ── LoadCatalog — basic queries ────────────────────────────────────────
+    // â”€â”€ LoadCatalog â€” basic queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public void LoadCatalog_WhenDatabaseIsEmpty_ReturnsEmpty()
@@ -58,7 +56,7 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("iron-sword", "swords"));
+            seed.Items.Add(MakeWeapon("iron-sword", "swords"));
             seed.SaveChanges();
         }
 
@@ -73,7 +71,7 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("rusty-sword", "swords", isActive: false));
+            seed.Items.Add(MakeWeapon("rusty-sword", "swords", isActive: false));
             seed.SaveChanges();
         }
 
@@ -86,8 +84,8 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("axe", "axes"));
-            seed.Armors.Add(MakeArmor("plate", "chest-armor"));
+            seed.Items.Add(MakeWeapon("axe", "axes"));
+            seed.Items.Add(MakeArmor("plate", "chest-armor"));
             seed.Items.Add(MakeItem("potion", "consumables"));
             seed.SaveChanges();
         }
@@ -98,7 +96,7 @@ public class ItemDataServiceTests
         service.LoadCatalog("consumables").Should().HaveCount(1).And.Contain(t => t.Slug == "potion");
     }
 
-    // ── LoadCatalog — rarity filtering ────────────────────────────────────
+    // â”€â”€ LoadCatalog â€” rarity filtering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public void LoadCatalog_WithRarityFilter_ExcludesNonMatchingItems()
@@ -106,9 +104,9 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            // rarityWeight 80 → Common; 5 → Legendary
-            seed.Weapons.Add(MakeWeapon("common-sword", "swords", rarityWeight: 80));
-            seed.Weapons.Add(MakeWeapon("legendary-sword", "swords", rarityWeight: 5));
+            // rarityWeight 80 â†’ Common; 5 â†’ Legendary
+            seed.Items.Add(MakeWeapon("common-sword", "swords", rarityWeight: 80));
+            seed.Items.Add(MakeWeapon("legendary-sword", "swords", rarityWeight: 5));
             seed.SaveChanges();
         }
 
@@ -123,11 +121,11 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("w-common", "swords", rarityWeight: 80));
-            seed.Weapons.Add(MakeWeapon("w-uncommon", "swords", rarityWeight: 60));
-            seed.Weapons.Add(MakeWeapon("w-rare", "swords", rarityWeight: 30));
-            seed.Weapons.Add(MakeWeapon("w-epic", "swords", rarityWeight: 15));
-            seed.Weapons.Add(MakeWeapon("w-legendary", "swords", rarityWeight: 5));
+            seed.Items.Add(MakeWeapon("w-common", "swords", rarityWeight: 80));
+            seed.Items.Add(MakeWeapon("w-uncommon", "swords", rarityWeight: 60));
+            seed.Items.Add(MakeWeapon("w-rare", "swords", rarityWeight: 30));
+            seed.Items.Add(MakeWeapon("w-epic", "swords", rarityWeight: 15));
+            seed.Items.Add(MakeWeapon("w-legendary", "swords", rarityWeight: 5));
             seed.SaveChanges();
         }
 
@@ -140,7 +138,7 @@ public class ItemDataServiceTests
         service.LoadCatalog("swords", ItemRarity.Legendary).Should().ContainSingle(t => t.Slug == "w-legendary");
     }
 
-    // ── LoadCatalog — caching ──────────────────────────────────────────────
+    // â”€â”€ LoadCatalog â€” caching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public void LoadCatalog_CachesResult_SecondCallDoesNotCreateNewDbContext()
@@ -148,7 +146,7 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("sword", "swords"));
+            seed.Items.Add(MakeWeapon("sword", "swords"));
             seed.SaveChanges();
         }
 
@@ -173,7 +171,7 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("sword", "swords", rarityWeight: 80));
+            seed.Items.Add(MakeWeapon("sword", "swords", rarityWeight: 80));
             seed.SaveChanges();
         }
 
@@ -192,7 +190,7 @@ public class ItemDataServiceTests
         callCount.Should().Be(2, "unfiltered and filtered catalog are separate cache entries");
     }
 
-    // ── LoadCatalog — error handling ───────────────────────────────────────
+    // â”€â”€ LoadCatalog â€” error handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public void LoadCatalog_WhenDbFactoryThrows_ReturnsEmpty()
@@ -204,7 +202,7 @@ public class ItemDataServiceTests
         service.LoadCatalog("swords").Should().BeEmpty();
     }
 
-    // ── LoadMultipleCategories ─────────────────────────────────────────────
+    // â”€â”€ LoadMultipleCategories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public void LoadMultipleCategories_AggregatesAllCategories()
@@ -212,8 +210,8 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("sword", "swords"));
-            seed.Armors.Add(MakeArmor("chest", "chest-armor"));
+            seed.Items.Add(MakeWeapon("sword", "swords"));
+            seed.Items.Add(MakeArmor("chest", "chest-armor"));
             seed.SaveChanges();
         }
         var service = CreateService(dbName);
@@ -233,7 +231,7 @@ public class ItemDataServiceTests
             .Should().BeEmpty();
     }
 
-    // ── ClearCache ─────────────────────────────────────────────────────────
+    // â”€â”€ ClearCache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public void ClearCache_ForcesReload_OnNextCall()
@@ -241,7 +239,7 @@ public class ItemDataServiceTests
         var dbName = Guid.NewGuid().ToString();
         using (var seed = CreateDb(dbName))
         {
-            seed.Weapons.Add(MakeWeapon("sword", "swords"));
+            seed.Items.Add(MakeWeapon("sword", "swords"));
             seed.SaveChanges();
         }
 

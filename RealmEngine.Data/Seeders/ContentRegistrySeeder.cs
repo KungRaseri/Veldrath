@@ -48,12 +48,6 @@ public static class ContentRegistrySeeder
         foreach (var e in await db.Enchantments.AsNoTracking().ToListAsync())
             Register(e.Id, "Enchantments", "items/enchantments", e.TypeKey, e.Slug);
 
-        foreach (var e in await db.Weapons.AsNoTracking().ToListAsync())
-            Register(e.Id, "Weapons", "equipment/weapons", e.TypeKey, e.Slug);
-
-        foreach (var e in await db.Armors.AsNoTracking().ToListAsync())
-            Register(e.Id, "Armors", "equipment/armor", e.TypeKey, e.Slug);
-
         foreach (var e in await db.ActorArchetypes.AsNoTracking().ToListAsync())
             Register(e.Id, "ActorArchetypes", "actors/archetypes", e.TypeKey, e.Slug);
 

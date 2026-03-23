@@ -7,30 +7,26 @@ namespace RealmEngine.Core.Features.Equipment.Queries;
 
 /// <summary>
 /// Handles <see cref="GetEquipmentForClassQuery"/>.
-/// Loads weapon and armor items via <see cref="IWeaponRepository"/> and <see cref="IArmorRepository"/>,
+/// Loads weapon and armor items via <see cref="IItemRepository"/> filtered by <c>ItemType</c>,
 /// then filters by the class's proficiency lists. No direct DB context dependency.
 /// </summary>
 public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQuery, GetEquipmentForClassResult>
 {
     private readonly ICharacterClassRepository _classRepository;
-    private readonly IWeaponRepository _weaponRepository;
-    private readonly IArmorRepository _armorRepository;
+    private readonly IItemRepository _itemRepository;
     private readonly ILogger<GetEquipmentForClassHandler> _logger;
     private readonly Random _random = new();
 
     /// <param name="classRepository">Provides class proficiency lists.</param>
-    /// <param name="weaponRepository">Source of all active weapon items.</param>
-    /// <param name="armorRepository">Source of all active armor items.</param>
+    /// <param name="itemRepository">Source of weapon and armor items filtered by type.</param>
     /// <param name="logger">Logger.</param>
     public GetEquipmentForClassHandler(
         ICharacterClassRepository classRepository,
-        IWeaponRepository weaponRepository,
-        IArmorRepository armorRepository,
+        IItemRepository itemRepository,
         ILogger<GetEquipmentForClassHandler> logger)
     {
         _classRepository = classRepository ?? throw new ArgumentNullException(nameof(classRepository));
-        _weaponRepository = weaponRepository ?? throw new ArgumentNullException(nameof(weaponRepository));
-        _armorRepository = armorRepository ?? throw new ArgumentNullException(nameof(armorRepository));
+        _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -99,7 +95,7 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
 
     private async Task<List<Item>> LoadWeapons(List<string> proficiencies, int maxItems, bool randomize, CancellationToken ct)
     {
-        var all = await _weaponRepository.GetAllAsync();
+        var all = await _itemRepository.GetByTypeAsync("weapon");
 
         var matched = all
             .Where(w => w.TypeKey != null &&
@@ -114,7 +110,7 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
 
     private async Task<List<Item>> LoadArmor(List<string> proficiencies, int maxItems, bool randomize, CancellationToken ct)
     {
-        var all = await _armorRepository.GetAllAsync();
+        var all = await _itemRepository.GetByTypeAsync("armor");
 
         var matched = all
             .Where(a => a.TypeKey != null &&

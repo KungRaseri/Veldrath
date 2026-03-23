@@ -41,8 +41,6 @@ public class CategoryDiscoveryService
         using var db = _dbFactory.CreateDbContext();
 
         DiscoverDomain(db, "items", () => db.Items.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey)
-            .Union(db.Weapons.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey))
-            .Union(db.Armors.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey))
             .Union(db.Materials.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey)));
 
         DiscoverDomain(db, "abilities", () => db.Abilities.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));

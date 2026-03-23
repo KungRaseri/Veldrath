@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 
@@ -16,7 +16,7 @@ public static class RecipesSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.Recipes.AddRange(
-            // ── Weapon recipes ────────────────────────────────────────────────
+            // â”€â”€ Weapon recipes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new Recipe
             {
                 Slug             = "iron-sword-recipe",
@@ -26,7 +26,7 @@ public static class RecipesSeeder
                 IsActive         = true,
                 Version          = 1,
                 UpdatedAt        = now,
-                OutputItemDomain = "equipment/weapons",
+                OutputItemDomain = "items/general",
                 OutputItemSlug   = "iron-sword",
                 OutputQuantity   = 1,
                 CraftingSkill    = "blacksmithing",
@@ -55,7 +55,7 @@ public static class RecipesSeeder
                 IsActive         = true,
                 Version          = 1,
                 UpdatedAt        = now,
-                OutputItemDomain = "equipment/weapons",
+                OutputItemDomain = "items/general",
                 OutputItemSlug   = "hunters-bow",
                 OutputQuantity   = 1,
                 CraftingSkill    = "woodworking",
@@ -77,7 +77,7 @@ public static class RecipesSeeder
                 },
             },
 
-            // ── Armor recipes ─────────────────────────────────────────────────
+            // â”€â”€ Armor recipes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new Recipe
             {
                 Slug             = "leather-cap-recipe",
@@ -87,7 +87,7 @@ public static class RecipesSeeder
                 IsActive         = true,
                 Version          = 1,
                 UpdatedAt        = now,
-                OutputItemDomain = "equipment/armor",
+                OutputItemDomain = "items/general",
                 OutputItemSlug   = "leather-cap",
                 OutputQuantity   = 1,
                 CraftingSkill    = "leatherworking",
@@ -116,7 +116,7 @@ public static class RecipesSeeder
                 IsActive         = true,
                 Version          = 1,
                 UpdatedAt        = now,
-                OutputItemDomain = "equipment/armor",
+                OutputItemDomain = "items/general",
                 OutputItemSlug   = "iron-chestplate",
                 OutputQuantity   = 1,
                 CraftingSkill    = "blacksmithing",
@@ -137,7 +137,7 @@ public static class RecipesSeeder
                 },
             },
 
-            // ── Item recipes ──────────────────────────────────────────────────
+            // â”€â”€ Item recipes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new Recipe
             {
                 Slug             = "scroll-of-fireball-recipe",
