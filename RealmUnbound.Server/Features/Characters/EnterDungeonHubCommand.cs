@@ -67,8 +67,8 @@ public class EnterDungeonHubCommandHandler : IRequestHandler<EnterDungeonHubComm
             return new EnterDungeonHubResult { Success = false, ErrorMessage = $"'{zone.Name}' is not a dungeon" };
 
         _logger.LogInformation(
-            "Character {CharacterId} entered dungeon {DungeonId} ({Name})",
-            request.CharacterId, zone.Id, zone.Name);
+            "Character {CharacterIdPrefix} entered dungeon {DungeonId} ({Name})",
+            request.CharacterId.ToString()[..8], zone.Id, zone.Name);
 
         return new EnterDungeonHubResult
         {

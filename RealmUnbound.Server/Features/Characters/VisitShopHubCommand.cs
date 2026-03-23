@@ -68,8 +68,8 @@ public class VisitShopHubCommandHandler : IRequestHandler<VisitShopHubCommand, V
             return new VisitShopHubResult { Success = false, ErrorMessage = $"{zone.Name} has no merchant" };
 
         _logger.LogInformation(
-            "Character {CharacterId} visited shop at {ZoneId} ({ZoneName})",
-            request.CharacterId, zone.Id, zone.Name);
+            "Character {CharacterIdPrefix} visited shop at {ZoneId} ({ZoneName})",
+            request.CharacterId.ToString()[..8], zone.Id, zone.Name);
 
         return new VisitShopHubResult
         {
