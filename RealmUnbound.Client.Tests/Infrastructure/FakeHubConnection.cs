@@ -93,9 +93,13 @@ public class FakeHubConnectionFactory : IHubConnectionFactory
     public FakeHubConnection Connection { get; } = new();
     public string? LastCreatedUrl { get; private set; }
 
+    /// <summary>The access-token provider delegate passed to the last <see cref="CreateConnection"/> call.</summary>
+    public Func<Task<string?>>? LastAccessTokenProvider { get; private set; }
+
     public IHubConnection CreateConnection(string hubUrl, Func<Task<string?>> accessTokenProvider)
     {
         LastCreatedUrl = hubUrl;
+        LastAccessTokenProvider = accessTokenProvider;
         return Connection;
     }
 }

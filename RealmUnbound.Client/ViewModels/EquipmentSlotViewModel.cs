@@ -25,7 +25,6 @@ public sealed class EquipmentSlotViewModel : ViewModelBase
             this.RaiseAndSetIfChanged(ref _itemRef, value);
             this.RaisePropertyChanged(nameof(IsEmpty));
             this.RaisePropertyChanged(nameof(IsOccupied));
-            this.RaisePropertyChanged(nameof(SlotOpacity));
             this.RaisePropertyChanged(nameof(DisplayIcon));
         }
     }
@@ -57,9 +56,6 @@ public sealed class EquipmentSlotViewModel : ViewModelBase
     /// When the equipped item's icon cannot be resolved, falls back to the placeholder.
     /// </summary>
     public Bitmap? DisplayIcon => IsEmpty ? _icon : (_itemIcon ?? _icon);
-
-    /// <summary>Opacity for the displayed icon — dimmed to indicate an empty slot, full when an item is equipped.</summary>
-    public double SlotOpacity => IsEmpty ? 0.25 : 1.0;
 
     /// <summary><see langword="true"/> when no item is equipped in this slot.</summary>
     public bool IsEmpty => _itemRef is null;

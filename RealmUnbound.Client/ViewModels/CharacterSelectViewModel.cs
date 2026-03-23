@@ -2,6 +2,7 @@ using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
+using System.Reactive.Linq;
 using RealmUnbound.Assets;
 using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
@@ -47,6 +48,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _dungeonEnteredSub;
     private IDisposable? _shopVisitedSub;
     private IDisposable? _zoneLeftSub;
+    private IDisposable? _inventoryLoadedSub;
+    private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
@@ -242,6 +245,8 @@ public class CharacterSelectViewModel : ViewModelBase
             _dungeonEnteredSub?.Dispose();
             _shopVisitedSub?.Dispose();
             _zoneLeftSub?.Dispose();
+            _inventoryLoadedSub?.Dispose();
+            _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
@@ -310,6 +315,15 @@ public class CharacterSelectViewModel : ViewModelBase
 
             _zoneLeftSub = _connection.On("ZoneLeft", () => _gameVm.OnZoneLeft());
 
+            _inventoryLoadedSub = _connection.On<InventoryLoadedPayload>("InventoryLoaded", payload =>
+                _gameVm.OnInventoryLoaded(payload.Items));
+
+            // Proactively refresh the access token every 5 minutes during gameplay so it
+            // never silently expires mid-session and cause hub reconnects to fail with 401.
+            _tokenRefreshTimer?.Dispose();
+            _tokenRefreshTimer = Observable.Interval(TimeSpan.FromMinutes(5))
+                .Subscribe(tick => { _ = DoProactiveTokenRefreshAsync(); });
+
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
@@ -319,6 +333,14 @@ public class CharacterSelectViewModel : ViewModelBase
             ErrorMessage = $"Failed to connect: {ex.Message}";
         }
         finally { IsBusy = false; }
+    }
+
+    private async Task DoProactiveTokenRefreshAsync()
+    {
+        if (!_tokens.IsExpiringSoon) return;
+        var refreshed = await _auth.RefreshAsync();
+        if (!refreshed)
+            _navigation.NavigateTo<MainMenuViewModel>();
     }
 
     // ── Payload shapes (matching server hub broadcasts) ────────────────────────
@@ -338,6 +360,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
+    internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

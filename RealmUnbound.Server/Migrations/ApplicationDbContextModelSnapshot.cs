@@ -188,6 +188,10 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<long>("Experience")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("InventoryBlob")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("LastPlayedAt")
                         .HasColumnType("timestamp with time zone");
 

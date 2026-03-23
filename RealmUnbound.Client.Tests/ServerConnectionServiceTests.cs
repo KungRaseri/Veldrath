@@ -6,11 +6,15 @@ namespace RealmUnbound.Client.Tests;
 
 public class ServerConnectionServiceTests : TestBase
 {
-    private static (ServerConnectionService Svc, FakeHubConnectionFactory Factory) MakeSut()
+    private static (ServerConnectionService Svc, FakeHubConnectionFactory Factory) MakeSut(
+        TokenStore? tokens = null, FakeAuthService? auth = null)
     {
         var factory = new FakeHubConnectionFactory();
-        var tokens  = new TokenStore();
-        var svc     = new ServerConnectionService(NullLogger<ServerConnectionService>.Instance, tokens, factory);
+        var svc     = new ServerConnectionService(
+            NullLogger<ServerConnectionService>.Instance,
+            tokens ?? new TokenStore(),
+            factory,
+            auth   ?? new FakeAuthService());
         return (svc, factory);
     }
 
@@ -230,5 +234,62 @@ public class ServerConnectionServiceTests : TestBase
         var act = async () => await svc.DisposeAsync();
 
         await act.Should().NotThrowAsync();
+    }
+
+    // ── AccessTokenProvider — silent refresh ──────────────────────────────────
+
+    [Fact]
+    public async Task AccessTokenProvider_Should_Call_RefreshAsync_When_Token_Is_Expiring()
+    {
+        var tokens = new TokenStore();
+        var auth   = new FakeAuthService();
+        var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
+
+        // Seed an access token that expires in 90 seconds (< the 2-min IsExpiringSoon window)
+        tokens.Set("old-token", "my-refresh", "user", Guid.NewGuid(),
+                   DateTimeOffset.UtcNow.AddSeconds(90));
+
+        await svc.ConnectAsync("http://localhost");
+
+        // Invoke the provider exactly as SignalR does on reconnect
+        await factory.LastAccessTokenProvider!.Invoke();
+
+        auth.RefreshCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AccessTokenProvider_Should_Not_Call_RefreshAsync_When_Token_Is_Valid()
+    {
+        var tokens = new TokenStore();
+        var auth   = new FakeAuthService();
+        var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
+
+        // Token is valid for 10 more minutes — not expiring soon
+        tokens.Set("valid-token", "my-refresh", "user", Guid.NewGuid(),
+                   DateTimeOffset.UtcNow.AddMinutes(10));
+
+        await svc.ConnectAsync("http://localhost");
+        await factory.LastAccessTokenProvider!.Invoke();
+
+        auth.RefreshCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AccessTokenProvider_Should_Not_Call_RefreshAsync_When_No_RefreshToken()
+    {
+        var tokens = new TokenStore();
+        var auth   = new FakeAuthService();
+        var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
+
+        // Expiring but no refresh token — can't silently re-auth
+        tokens.Set("old-token", string.Empty, "user", Guid.NewGuid(),
+                   DateTimeOffset.UtcNow.AddSeconds(30));
+        // Overwrite RefreshToken with null to simulate missing token
+        tokens.RefreshToken = null;
+
+        await svc.ConnectAsync("http://localhost");
+        await factory.LastAccessTokenProvider!.Invoke();
+
+        auth.RefreshCallCount.Should().Be(0);
     }
 }

@@ -146,6 +146,32 @@ public class GameViewModel : ViewModelBase
     /// <summary>Icon text for the left panel toggle button: <c>◀</c> when open, <c>▶</c> when collapsed.</summary>
     public string LeftPanelToggleIcon => IsLeftPanelOpen ? "◀" : "▶";
 
+    // ── Overlay panel state ───────────────────────────────────────────────────
+    private bool _isInventoryOpen;
+    private bool _isShopOpen;
+    private string _shopZoneName = string.Empty;
+
+    /// <summary>Whether the player's inventory panel is currently visible.</summary>
+    public bool IsInventoryOpen
+    {
+        get => _isInventoryOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isInventoryOpen, value);
+    }
+
+    /// <summary>Whether the town shop panel is currently visible.</summary>
+    public bool IsShopOpen
+    {
+        get => _isShopOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isShopOpen, value);
+    }
+
+    /// <summary>Display name of the zone whose shop is currently open.</summary>
+    public string ShopZoneName
+    {
+        get => _shopZoneName;
+        private set => this.RaiseAndSetIfChanged(ref _shopZoneName, value);
+    }
+
     // ── Zone context flags ────────────────────────────────────────────────────
     private bool _hasInn;
     private bool _hasMerchant;
@@ -281,6 +307,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>The eight equipment slots for the active character.</summary>
     public IReadOnlyList<EquipmentSlotViewModel> EquipmentSlots { get; }
 
+    /// <summary>Items currently loaded in the character's inventory panel.</summary>
+    public ObservableCollection<InventoryItemViewModel> InventoryItems { get; } = [];
+
     /// <summary>All zones in the current region, ordered by minimum level. Used by the zone and region panels.</summary>
     public ObservableCollection<ZoneNodeViewModel> RegionZones { get; } = [];
 
@@ -289,6 +318,12 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Toggles the collapsible left stats/log panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
+
+    /// <summary>Toggles the inventory panel: opens it and fetches items from the server when closed; closes it when open.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleInventoryCommand { get; }
+
+    /// <summary>Closes the town shop panel.</summary>
+    public ReactiveCommand<Unit, Unit> CloseShopCommand { get; }
 
     /// <summary>Logs out the character, leaves the zone, and returns to the main menu.</summary>
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
@@ -383,6 +418,8 @@ public class GameViewModel : ViewModelBase
             _ = LoadEquipmentIconsAsync(assetStore);
 
         ToggleLeftPanelCommand = ReactiveCommand.Create(() => { IsLeftPanelOpen = !IsLeftPanelOpen; });
+        ToggleInventoryCommand = ReactiveCommand.CreateFromTask(DoToggleInventoryAsync);
+        CloseShopCommand = ReactiveCommand.Create(() => { IsShopOpen = false; });
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
         DevGainXpCommand = ReactiveCommand.CreateFromTask(() => DoGainExperienceAsync(100, "dev"));
         DevAddGoldCommand = ReactiveCommand.CreateFromTask(() => DoAddGoldAsync(50, "dev"));
@@ -828,15 +865,47 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Handles the ShopVisited hub event.</summary>
+    /// <summary>Handles the ShopVisited hub event: opens the shop panel for the given zone.</summary>
     /// <param name="zoneId">The zone ID of the visited shop.</param>
     /// <param name="zoneName">The display name of the zone.</param>
     public void OnShopVisited(string zoneId, string zoneName)
-        => AppendLog($"Welcome to the shop at {zoneName}!");
+    {
+        ShopZoneName = zoneName;
+        IsShopOpen   = true;
+        AppendLog($"Welcome to the shop at {zoneName}!");
+    }
 
     /// <summary>Called from the hub when the server confirms the active character has left their current zone.</summary>
     public void OnZoneLeft()
         => AppendLog("You have left the zone.");
+
+    /// <summary>Called from the hub when the server responds with the character's current inventory items.</summary>
+    /// <param name="items">Inventory entries loaded from the server.</param>
+    public void OnInventoryLoaded(IReadOnlyList<InventoryItemEntry> items)
+    {
+        InventoryItems.Clear();
+        foreach (var item in items)
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability));
+        IsInventoryOpen = true;
+    }
+
+    private async Task DoToggleInventoryAsync()
+    {
+        if (IsInventoryOpen)
+        {
+            IsInventoryOpen = false;
+            return;
+        }
+
+        try
+        {
+            await _connection.SendCommandAsync("GetInventory");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Inventory load failed: {ex.Message}");
+        }
+    }
 
     private void AppendLog(string message)
     {
@@ -885,3 +954,12 @@ public class GameViewModel : ViewModelBase
         }
     }
 }
+
+/// <summary>
+/// A single item-slot entry received in the <c>InventoryLoaded</c> hub payload.
+/// Mirrors <c>InventoryItemDto</c> on the server side.
+/// </summary>
+/// <param name="ItemRef">Item-reference slug (e.g. <c>"iron_sword"</c>).</param>
+/// <param name="Quantity">Stack size.</param>
+/// <param name="Durability">Current durability (0–100), or <see langword="null"/> for stackable items.</param>
+public record InventoryItemEntry(string ItemRef, int Quantity, int? Durability);

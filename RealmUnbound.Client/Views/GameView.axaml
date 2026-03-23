@@ -623,15 +623,25 @@
                                             ToolTip.Tip="{Binding Label}"
                                             Classes.equipped="{Binding IsOccupied}">
                                         <StackPanel>
-                                            <Image Source="{Binding DisplayIcon}"
-                                                   Width="36" Height="36"
-                                                   Stretch="Uniform"
-                                                   Margin="4,4,4,0"
-                                                   Opacity="{Binding SlotOpacity}"
-                                                   VerticalAlignment="Top" />
+                                            <Panel Width="36" Height="36" Margin="4,4,4,0">
+                                                <Image Source="{Binding DisplayIcon}"
+                                                       Width="36" Height="36"
+                                                       Stretch="Uniform"
+                                                       IsVisible="{Binding IsOccupied}"
+                                                       VerticalAlignment="Top" />
+                                                <TextBlock Text="{Binding Label}"
+                                                           FontSize="7"
+                                                           Classes="caption"
+                                                           IsVisible="{Binding IsEmpty}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           TextWrapping="Wrap"
+                                                           TextAlignment="Center" />
+                                            </Panel>
                                             <TextBlock Text="{Binding Label}"
                                                        FontSize="6"
                                                        Classes="caption"
+                                                       IsVisible="{Binding IsOccupied}"
                                                        HorizontalAlignment="Center"
                                                        Margin="2,1"
                                                        TextTrimming="CharacterEllipsis" />
@@ -692,6 +702,136 @@
 
         </Grid>
 
+        <!-- ── INVENTORY OVERLAY ─────────────────────────────────────────── -->
+        <!-- Spans center + right columns so the left stats panel stays visible -->
+        <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                IsVisible="{Binding IsInventoryOpen}"
+                Background="#B2000000">
+            <Border MaxWidth="640"
+                    MaxHeight="520"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource GameBackground1Brush}"
+                    BorderBrush="{DynamicResource GameBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <DockPanel>
+
+                    <!-- Header -->
+                    <Border DockPanel.Dock="Top"
+                            Background="{DynamicResource GameBackground2Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="16,10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="Inventory"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    Content="✕"
+                                    Classes="ghost icon"
+                                    Command="{Binding ToggleInventoryCommand}"
+                                    Width="32" Height="32" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Item list -->
+                    <ScrollViewer Padding="16"
+                                  VerticalScrollBarVisibility="Auto">
+                        <Panel>
+                            <!-- Empty state -->
+                            <TextBlock Text="Your inventory is empty."
+                                       Classes="muted"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Margin="0,32"
+                                       IsVisible="{Binding !InventoryItems.Count}" />
+
+                            <!-- Item rows -->
+                            <ItemsControl ItemsSource="{Binding InventoryItems}"
+                                          IsVisible="{Binding InventoryItems.Count}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:InventoryItemViewModel">
+                                        <Border BorderBrush="{DynamicResource GameBorderBrush}"
+                                                BorderThickness="0,0,0,1"
+                                                Padding="4,8">
+                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding DisplayName}"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding DurabilityText}"
+                                                           Classes="caption"
+                                                           IsVisible="{Binding HasDurability}"
+                                                           Margin="8,0"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding QuantityText}"
+                                                           Classes="accent"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Panel>
+                    </ScrollViewer>
+
+                </DockPanel>
+            </Border>
+        </Border>
+
+        <!-- ── SHOP OVERLAY ──────────────────────────────────────────────── -->
+        <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                IsVisible="{Binding IsShopOpen}"
+                Background="#B2000000">
+            <Border MaxWidth="640"
+                    MaxHeight="520"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource GameBackground1Brush}"
+                    BorderBrush="{DynamicResource GameBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <DockPanel>
+
+                    <!-- Header -->
+                    <Border DockPanel.Dock="Top"
+                            Background="{DynamicResource GameBackground2Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="16,10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="Shop"
+                                           FontSize="16"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding ShopZoneName}"
+                                           Classes="muted"
+                                           FontSize="14"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="✕"
+                                    Classes="ghost icon"
+                                    Command="{Binding CloseShopCommand}"
+                                    Width="32" Height="32" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Shop placeholder content -->
+                    <StackPanel Margin="16" Spacing="12">
+                        <TextBlock Text="Browse the merchant's wares. Purchasing and selling will be available soon."
+                                   Classes="muted"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                </DockPanel>
+            </Border>
+        </Border>
+
         <!-- ── ROW 2: CONTEXT-SENSITIVE ACTION BAR ───────────────────────── -->
         <Border Grid.Row="2"
                 Classes="panel-statusbar">
@@ -716,6 +856,12 @@
                         FontSize="13" />
 
                 <!-- Always available -->
+                <Button Content="Inventory"
+                        Classes="ghost"
+                        Command="{Binding ToggleInventoryCommand}"
+                        Classes.accent="{Binding IsInventoryOpen}"
+                        Height="36"
+                        FontSize="13" />
                 <Button Content="Craft Item"
                         Classes="ghost"
                         Command="{Binding CraftItemCommand}"

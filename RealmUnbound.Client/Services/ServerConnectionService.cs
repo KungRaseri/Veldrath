@@ -23,6 +23,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
     private readonly ILogger<ServerConnectionService> _logger;
     private readonly TokenStore _tokens;
     private readonly IHubConnectionFactory _connectionFactory;
+    private readonly IAuthService _auth;
     private IHubConnection? _connection;
     private ConnectionState _state = ConnectionState.Disconnected;
 
@@ -38,11 +39,17 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     public event Action<ConnectionState>? StateChanged;
 
-    public ServerConnectionService(ILogger<ServerConnectionService> logger, TokenStore tokens, IHubConnectionFactory connectionFactory)
+    /// <summary>Initializes a new instance of <see cref="ServerConnectionService"/>.</summary>
+    public ServerConnectionService(
+        ILogger<ServerConnectionService> logger,
+        TokenStore tokens,
+        IHubConnectionFactory connectionFactory,
+        IAuthService auth)
     {
         _logger = logger;
         _tokens = tokens;
         _connectionFactory = connectionFactory;
+        _auth = auth;
     }
 
     public async Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
@@ -54,7 +61,15 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
         _connection = _connectionFactory.CreateConnection(
             $"{serverUrl}/hubs/game",
-            () => Task.FromResult(_tokens.AccessToken));
+            async () =>
+            {
+                // Silently refresh the access token on every (re)connection attempt so that
+                // automatic reconnects after a network blip don't fail with 401 due to an
+                // expired token. The RefreshToken remains valid for 30 days.
+                if (_tokens.IsExpiringSoon && _tokens.RefreshToken is not null)
+                    await _auth.RefreshAsync();
+                return _tokens.AccessToken;
+            });
 
         _connection.Closed += async (error) =>
         {
