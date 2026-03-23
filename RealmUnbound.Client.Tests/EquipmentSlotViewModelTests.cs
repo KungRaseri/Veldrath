@@ -22,13 +22,6 @@ public class EquipmentSlotViewModelTests : TestBase
     }
 
     [Fact]
-    public void SlotOpacity_Should_Be_Quarter_When_Empty()
-    {
-        var slot = new EquipmentSlotViewModel("MainHand", "Main Hand");
-        slot.SlotOpacity.Should().BeApproximately(0.25, 0.001);
-    }
-
-    [Fact]
     public void DisplayIcon_Should_Be_Null_When_No_Icons_Set()
     {
         var slot = new EquipmentSlotViewModel("MainHand", "Main Hand");
@@ -54,14 +47,6 @@ public class EquipmentSlotViewModelTests : TestBase
     }
 
     [Fact]
-    public void SlotOpacity_Should_Be_Full_When_Occupied()
-    {
-        var slot = new EquipmentSlotViewModel("MainHand", "Main Hand");
-        slot.ItemRef = "iron_sword";
-        slot.SlotOpacity.Should().BeApproximately(1.0, 0.001);
-    }
-
-    [Fact]
     public void IsOccupied_Is_Inverse_Of_IsEmpty()
     {
         var slot = new EquipmentSlotViewModel("Head", "Head");
@@ -81,7 +66,6 @@ public class EquipmentSlotViewModelTests : TestBase
         slot.ItemRef  = null;
 
         slot.IsEmpty.Should().BeTrue();
-        slot.SlotOpacity.Should().BeApproximately(0.25, 0.001);
         slot.DisplayIcon.Should().BeNull();
     }
 
@@ -109,18 +93,6 @@ public class EquipmentSlotViewModelTests : TestBase
         slot.ItemRef = "iron_sword";
 
         changes.Should().Contain(nameof(EquipmentSlotViewModel.IsOccupied));
-    }
-
-    [Fact]
-    public void Setting_ItemRef_Should_Raise_SlotOpacity_PropertyChanged()
-    {
-        var slot    = new EquipmentSlotViewModel("MainHand", "Main Hand");
-        var changes = new List<string>();
-        slot.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
-
-        slot.ItemRef = "iron_sword";
-
-        changes.Should().Contain(nameof(EquipmentSlotViewModel.SlotOpacity));
     }
 
     [Fact]

@@ -39,6 +39,12 @@ public class Character
     /// </summary>
     public string EquipmentBlob { get; set; } = "{}";
 
+    /// <summary>
+    /// JSON-serialised inventory snapshot as an array of <c>{ ItemRef, Quantity, Durability? }</c> objects.
+    /// Deserialised on demand. Empty array when the character carries no items.
+    /// </summary>
+    public string InventoryBlob { get; set; } = "[]";
+
     /// <summary>Zone the character starts in (fixed on creation).</summary>
     public string StartingZoneId { get; set; } = "fenwick-crossing";
 

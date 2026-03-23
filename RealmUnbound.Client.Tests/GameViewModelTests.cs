@@ -1294,4 +1294,103 @@ public class GameViewModelTests : TestBase
         await vm.ShowRegionViewCommand.Execute();
         vm.RegionName.Should().Be("Thornveil");
     }
+
+    // ── ToggleInventoryCommand ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ToggleInventoryCommand_When_Closed_Should_Send_GetInventory_To_Hub()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        await vm.ToggleInventoryCommand.Execute();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "GetInventory");
+    }
+
+    [Fact]
+    public async Task ToggleInventoryCommand_When_Open_Should_Close_Panel_Without_Server_Call()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+        vm.OnInventoryLoaded([]); // sets IsInventoryOpen = true
+
+        await vm.ToggleInventoryCommand.Execute();
+
+        vm.IsInventoryOpen.Should().BeFalse();
+        conn.SentCommands.Should().NotContain(c => c.Method == "GetInventory");
+    }
+
+    // ── OnInventoryLoaded ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnInventoryLoaded_Should_Set_IsInventoryOpen_True()
+    {
+        var vm = MakeVm();
+
+        vm.OnInventoryLoaded([]);
+
+        vm.IsInventoryOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnInventoryLoaded_Should_Populate_InventoryItems()
+    {
+        var vm = MakeVm();
+
+        vm.OnInventoryLoaded([
+            new InventoryItemEntry("iron_sword", 1, 80),
+            new InventoryItemEntry("health_potion", 3, null)
+        ]);
+
+        vm.InventoryItems.Should().HaveCount(2);
+        vm.InventoryItems[0].ItemRef.Should().Be("iron_sword");
+        vm.InventoryItems[1].ItemRef.Should().Be("health_potion");
+    }
+
+    [Fact]
+    public void OnInventoryLoaded_Should_Clear_Previous_Items_Before_Populating()
+    {
+        var vm = MakeVm();
+        vm.OnInventoryLoaded([new InventoryItemEntry("old_item", 1, null)]);
+
+        vm.OnInventoryLoaded([new InventoryItemEntry("new_item", 1, null)]);
+
+        vm.InventoryItems.Should().ContainSingle(i => i.ItemRef == "new_item");
+    }
+
+    // ── OnShopVisited (new state) ─────────────────────────────────────────────
+
+    [Fact]
+    public void OnShopVisited_Should_Set_IsShopOpen_True()
+    {
+        var vm = MakeVm();
+
+        vm.OnShopVisited("fenwick-crossing", "Fenwick's Crossing");
+
+        vm.IsShopOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnShopVisited_Should_Set_ShopZoneName()
+    {
+        var vm = MakeVm();
+
+        vm.OnShopVisited("fenwick-crossing", "Fenwick's Crossing");
+
+        vm.ShopZoneName.Should().Be("Fenwick's Crossing");
+    }
+
+    // ── CloseShopCommand ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CloseShopCommand_Should_Set_IsShopOpen_False()
+    {
+        var vm = MakeVm();
+        vm.OnShopVisited("fenwick-crossing", "Fenwick's Crossing"); // open it
+
+        await vm.CloseShopCommand.Execute();
+
+        vm.IsShopOpen.Should().BeFalse();
+    }
 }

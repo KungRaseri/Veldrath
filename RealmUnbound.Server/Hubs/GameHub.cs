@@ -831,6 +831,38 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>Fetches the active character's inventory and sends it back to the caller as <c>InventoryLoaded</c>.</summary>
+    public async Task GetInventory()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetInventory");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new GetInventoryHubCommand(characterId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load inventory");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("InventoryLoaded", new
+            {
+                CharacterId = characterId,
+                Items       = result.Items,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetInventory for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to load inventory");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
