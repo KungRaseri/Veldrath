@@ -28,6 +28,7 @@ public sealed class TestDbContextFactory : IDisposable
 
         var context = new ApplicationDbContext(options);
         context.Database.EnsureCreated();
+        DatabaseSeeder.SeedApplicationDataAsync(context).GetAwaiter().GetResult();
         return context;
     }
 

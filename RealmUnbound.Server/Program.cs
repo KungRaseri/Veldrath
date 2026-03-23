@@ -300,6 +300,7 @@ try
 
             await RepairStaleMigrationsAsync(appDb, app.Environment.IsDevelopment(), allKnown);
             await appDb.Database.MigrateAsync();
+            await DatabaseSeeder.SeedApplicationDataAsync(services);
 
             await RepairStaleMigrationsAsync(gameDb, app.Environment.IsDevelopment(), allKnown);
             await gameDb.Database.MigrateAsync();

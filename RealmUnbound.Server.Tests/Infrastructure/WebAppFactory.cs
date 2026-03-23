@@ -87,6 +87,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         // EnsureCreated is a no-op once any tables exist in the shared SQLite in-memory
         // database, so call CreateTables directly to create ContentDbContext's schema.
         sp.GetRequiredService<ContentDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
+        DatabaseSeeder.SeedApplicationDataAsync(sp).GetAwaiter().GetResult();
 
         return host;
     }
