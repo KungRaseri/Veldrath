@@ -173,18 +173,22 @@ public record SkillDto(
 
 // ── Item ──────────────────────────────────────────────────────────────────────
 
-/// <summary>A general-purpose catalog item (consumable, gem, rune, essence, etc.).</summary>
+/// <summary>A general-purpose catalog item (consumable, gem, rune, weapon, armor, etc.).</summary>
 /// <param name="Slug">Unique URL-safe identifier for this item.</param>
 /// <param name="DisplayName">Display name shown to players.</param>
-/// <param name="TypeKey">Category key grouping related items (e.g. "consumables", "gems").</param>
+/// <param name="TypeKey">Category key grouping related items (e.g. "consumables", "gems", "heavy-blades", "light").</param>
 /// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
+/// <param name="ItemType">Top-level item discriminator: "consumable" | "weapon" | "armor" | "gem" | etc. Null when not available.</param>
+/// <param name="WeaponType">Weapon sub-type (e.g. "sword", "bow"). Null for non-weapons.</param>
+/// <param name="ArmorType">Armor protection class (e.g. "light", "heavy", "shield"). Null for non-armor.</param>
 public record ItemDto(
     string Slug,
     string DisplayName,
     string TypeKey,
-    int RarityWeight);
-
-// ── Enchantment ───────────────────────────────────────────────────────────────
+    int RarityWeight,
+    string? ItemType = null,
+    string? WeaponType = null,
+    string? ArmorType = null);
 
 /// <summary>An enchantment that can be applied to equipment to grant bonuses.</summary>
 /// <param name="Slug">Unique URL-safe identifier for this enchantment.</param>
@@ -195,36 +199,6 @@ public record EnchantmentDto(
     string Slug,
     string DisplayName,
     string TypeKey,
-    int RarityWeight);
-
-// ── Weapon ────────────────────────────────────────────────────────────────────
-
-/// <summary>A weapon catalog entry with its combat category and weapon sub-type.</summary>
-/// <param name="Slug">Unique URL-safe identifier for this weapon.</param>
-/// <param name="DisplayName">Display name shown to players.</param>
-/// <param name="TypeKey">DB category key grouping related weapons (e.g. "swords", "axes", "bows").</param>
-/// <param name="WeaponType">Sub-type of the weapon (e.g. "sword", "axe", "bow").</param>
-/// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
-public record WeaponDto(
-    string Slug,
-    string DisplayName,
-    string TypeKey,
-    string WeaponType,
-    int RarityWeight);
-
-// ── Armor ─────────────────────────────────────────────────────────────────────
-
-/// <summary>An armor catalog entry with its protection class and equip slot.</summary>
-/// <param name="Slug">Unique URL-safe identifier for this armor piece.</param>
-/// <param name="DisplayName">Display name shown to players.</param>
-/// <param name="TypeKey">DB category key grouping related armor pieces (e.g. "chest", "helm", "boots").</param>
-/// <param name="ArmorType">Protection class of the armor (e.g. "light", "medium", "heavy", "shield").</param>
-/// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
-public record ArmorDto(
-    string Slug,
-    string DisplayName,
-    string TypeKey,
-    string ArmorType,
     int RarityWeight);
 
 // ── Material ──────────────────────────────────────────────────────────────────

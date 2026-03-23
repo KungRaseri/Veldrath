@@ -311,10 +311,6 @@ public class FakeContentService : IContentService
     public Task<ItemDto?>                 GetItemAsync(string slug)          => Task.FromResult<ItemDto?>(null);
     public Task<List<EnchantmentDto>>     GetEnchantmentsAsync()             => Task.FromResult(new List<EnchantmentDto>());
     public Task<EnchantmentDto?>          GetEnchantmentAsync(string slug)   => Task.FromResult<EnchantmentDto?>(null);
-    public Task<List<WeaponDto>>          GetWeaponsAsync()                  => Task.FromResult(new List<WeaponDto>());
-    public Task<WeaponDto?>               GetWeaponAsync(string slug)        => Task.FromResult<WeaponDto?>(null);
-    public Task<List<ArmorDto>>           GetArmorsAsync()                   => Task.FromResult(new List<ArmorDto>());
-    public Task<ArmorDto?>                GetArmorAsync(string slug)         => Task.FromResult<ArmorDto?>(null);
     public Task<List<MaterialDto>>        GetMaterialsAsync()                => Task.FromResult(new List<MaterialDto>());
     public Task<MaterialDto?>             GetMaterialAsync(string slug)      => Task.FromResult<MaterialDto?>(null);
 }

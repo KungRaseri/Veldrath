@@ -266,8 +266,6 @@ public class EntityEditorViewModel : ReactiveObject
         [typeof(ActorInstance)]   = "instance",
         [typeof(Background)]      = "background",
         [typeof(Skill)]           = "skill",
-        [typeof(Weapon)]          = "weapon",
-        [typeof(Armor)]           = "armor",
         [typeof(Item)]            = "item",
         [typeof(Material)]        = "material",
         [typeof(MaterialProperty)]= "materialproperty",

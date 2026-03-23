@@ -33,9 +33,8 @@ public class GetEquipmentForClassHandlerTests
 
     private static GetEquipmentForClassHandler BuildHandler(
         Mock<ICharacterClassRepository> classRepo,
-        Mock<IWeaponRepository> weaponRepo,
-        Mock<IArmorRepository> armorRepo) =>
-        new(classRepo.Object, weaponRepo.Object, armorRepo.Object,
+        Mock<IItemRepository> itemRepo) =>
+        new(classRepo.Object, itemRepo.Object,
             NullLogger<GetEquipmentForClassHandler>.Instance);
 
     // ── Class not found ─────────────────────────────────────────────
@@ -45,7 +44,7 @@ public class GetEquipmentForClassHandlerTests
     {
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("unknown")).Returns((CharacterClass?)null);
-        var handler = BuildHandler(classRepo, new Mock<IWeaponRepository>(), new Mock<IArmorRepository>());
+        var handler = BuildHandler(classRepo, new Mock<IItemRepository>());
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "unknown" }, CancellationToken.None);
@@ -62,11 +61,10 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("warrior")).Returns(
             MakeClass("warrior", ["swords"], ["heavy"]));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([]);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "warrior" }, CancellationToken.None);
@@ -85,15 +83,14 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("warrior")).Returns(
             MakeClass("warrior", ["swords"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("heavy-blades", "longsword"),   // "heavy-blades" → swords ✓
             MakeWeapon("bows",         "shortbow"),    // "bows" → bows  ✗
             MakeWeapon("axes",         "battleaxe"),   // "axes" → axes  ✗
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "warrior", EquipmentType = "weapons" }, CancellationToken.None);
@@ -108,15 +105,14 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("godclass")).Returns(
             MakeClass("godclass", ["all"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("heavy-blades", "longsword"),
             MakeWeapon("bows",         "shortbow"),
             MakeWeapon("staves",       "oak-staff"),
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "godclass", EquipmentType = "weapons" }, CancellationToken.None);
@@ -130,14 +126,13 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("warrior")).Returns(
             MakeClass("warrior", ["swords"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("heavy-blades", "longsword"),
             new Item { TypeKey = null, Slug = "mystery-blade", Type = ItemType.Weapon },
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "warrior", EquipmentType = "weapons" }, CancellationToken.None);
@@ -153,15 +148,14 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("rogue")).Returns(
             MakeClass("rogue", [], ["light"]));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([]);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([
             MakeArmor("light",  "leather-armor"),  // "light" → light ✓
             MakeArmor("heavy",  "plate-mail"),     // "heavy" → heavy ✗
             MakeArmor("shield", "buckler"),        // "shield" → shields ✗
         ]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "rogue", EquipmentType = "armor" }, CancellationToken.None);
@@ -177,14 +171,13 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("paladin")).Returns(
             MakeClass("paladin", [], ["shields"]));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([]);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([
             MakeArmor("shield", "tower-shield"),
             MakeArmor("heavy",  "plate-mail"),
         ]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "paladin", EquipmentType = "armor" }, CancellationToken.None);
@@ -200,11 +193,10 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("paladin")).Returns(
             MakeClass("paladin", ["swords"], ["heavy"]));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([MakeWeapon("heavy-blades", "longsword")]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([MakeArmor("heavy", "plate-mail")]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([MakeWeapon("heavy-blades", "longsword")]);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([MakeArmor("heavy", "plate-mail")]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "paladin", EquipmentType = null }, CancellationToken.None);
@@ -212,8 +204,8 @@ public class GetEquipmentForClassHandlerTests
         result.Success.Should().BeTrue();
         result.Weapons.Should().ContainSingle();
         result.Armor.Should().ContainSingle();
-        weaponRepo.Verify(r => r.GetAllAsync(), Times.Once);
-        armorRepo.Verify(r => r.GetAllAsync(), Times.Once);
+        itemRepo.Verify(r => r.GetByTypeAsync("weapon"), Times.Once);
+        itemRepo.Verify(r => r.GetByTypeAsync("armor"), Times.Once);
     }
 
     [Fact]
@@ -222,17 +214,16 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("archer")).Returns(
             MakeClass("archer", ["bows"], ["light"]));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([MakeWeapon("bows", "longbow")]);
-        var armorRepo = new Mock<IArmorRepository>();
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([MakeWeapon("bows", "longbow")]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "archer", EquipmentType = "weapons" }, CancellationToken.None);
 
         result.Weapons.Should().ContainSingle();
         result.Armor.Should().BeEmpty();
-        armorRepo.Verify(r => r.GetAllAsync(), Times.Never);
+        itemRepo.Verify(r => r.GetByTypeAsync("armor"), Times.Never);
     }
 
     [Fact]
@@ -241,20 +232,19 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("guardian")).Returns(
             MakeClass("guardian", ["swords"], ["heavy", "shields"]));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([
             MakeArmor("heavy",  "plate-mail"),
             MakeArmor("shield", "tower-shield"),
         ]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "guardian", EquipmentType = "armor" }, CancellationToken.None);
 
         result.Armor.Should().HaveCount(2);
         result.Weapons.Should().BeEmpty();
-        weaponRepo.Verify(r => r.GetAllAsync(), Times.Never);
+        itemRepo.Verify(r => r.GetByTypeAsync("weapon"), Times.Never);
     }
 
     // ── MaxItemsPerCategory ───────────────────────────────────────────
@@ -265,17 +255,16 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("mage")).Returns(
             MakeClass("mage", ["all"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("staves", "oak-staff"),
             MakeWeapon("wands",  "oak-wand"),
             MakeWeapon("staves", "golden-staff"),
             MakeWeapon("staves", "silver-staff"),
             MakeWeapon("wands",  "crystal-wand"),
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "mage", EquipmentType = "weapons", MaxItemsPerCategory = 2 },
@@ -290,15 +279,14 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("mage")).Returns(
             MakeClass("mage", ["all"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("staves", "oak-staff"),
             MakeWeapon("wands",  "oak-wand"),
             MakeWeapon("staves", "golden-staff"),
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "mage", EquipmentType = "weapons", MaxItemsPerCategory = 0 },
@@ -313,17 +301,16 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("ranger")).Returns(
             MakeClass("ranger", ["all"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("bows",       "longbow"),
             MakeWeapon("crossbows",  "light-crossbow"),
             MakeWeapon("light-blades", "shortsword"),
             MakeWeapon("bows",       "shortbow"),
             MakeWeapon("crossbows",  "heavy-crossbow"),
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery
@@ -346,11 +333,10 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("warrior")).Returns(
             MakeClass("warrior", ["swords"], []));
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ThrowsAsync(new InvalidOperationException("DB unavailable"));
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ThrowsAsync(new InvalidOperationException("DB unavailable"));
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([]);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "warrior" }, CancellationToken.None);
@@ -365,16 +351,15 @@ public class GetEquipmentForClassHandlerTests
         var classRepo = new Mock<ICharacterClassRepository>();
         classRepo.Setup(r => r.GetById("monk")).Returns(
             MakeClass("monk", ["unarmed"], ["cloth"]));   // proficiences not in any TypeKey mapping
-        var weaponRepo = new Mock<IWeaponRepository>();
-        weaponRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetByTypeAsync("weapon")).ReturnsAsync([
             MakeWeapon("heavy-blades", "longsword"),
             MakeWeapon("bows",         "shortbow"),
         ]);
-        var armorRepo = new Mock<IArmorRepository>();
-        armorRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([
+        itemRepo.Setup(r => r.GetByTypeAsync("armor")).ReturnsAsync([
             MakeArmor("heavy", "plate-mail"),
         ]);
-        var handler = BuildHandler(classRepo, weaponRepo, armorRepo);
+        var handler = BuildHandler(classRepo, itemRepo);
 
         var result = await handler.Handle(
             new GetEquipmentForClassQuery { ClassId = "monk" }, CancellationToken.None);

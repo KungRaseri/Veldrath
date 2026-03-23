@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
@@ -9,7 +9,7 @@ using RealmUnbound.Server.Tests.Infrastructure;
 namespace RealmUnbound.Server.Tests.Features;
 
 /// <summary>
-/// Seeds one <see cref="Weapon"/>, one <see cref="Armor"/>, and one <see cref="Material"/>
+/// Seeds two weapon <see cref="Item"/> rows, two armor <see cref="Item"/> rows, and one <see cref="Material"/>
 /// into a fresh in-memory database once, then provides a shared <see cref="HttpClient"/>
 /// for all tests in this fixture.
 /// </summary>
@@ -29,29 +29,32 @@ public sealed class ContentEquipmentEndpointsFixture : IAsyncLifetime
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
 
-        db.Weapons.Add(new Weapon
-        {
-            Slug        = "equip-iron-sword",
-            TypeKey     = "swords",
-            DisplayName = "Iron Sword",
-            IsActive    = true,
-            RarityWeight = 80,
-            WeaponType  = "sword",
-            DamageType  = "physical",
-            Stats       = new WeaponStats { DamageMin = 5, DamageMax = 10, Value = 25 },
-        });
-
-        db.Armors.Add(new Armor
-        {
-            Slug        = "equip-leather-chest",
-            TypeKey     = "chest",
-            DisplayName = "Leather Chest",
-            IsActive    = true,
-            RarityWeight = 80,
-            ArmorType   = "light",
-            EquipSlot   = "chest",
-            Stats       = new ArmorStats { ArmorRating = 5, Value = 20 },
-        });
+        db.Items.AddRange(
+            new Item
+            {
+                Slug         = "equip-iron-sword",
+                TypeKey      = "heavy-blades",
+                ItemType     = "weapon",
+                DisplayName  = "Iron Sword",
+                IsActive     = true,
+                RarityWeight = 80,
+                WeaponType   = "sword",
+                DamageType   = "physical",
+                HandsRequired = 1,
+                Stats        = new() { DamageMin = 5, DamageMax = 10, Value = 25 },
+            },
+            new Item
+            {
+                Slug         = "equip-leather-chest",
+                TypeKey      = "light",
+                ItemType     = "armor",
+                DisplayName  = "Leather Chest",
+                IsActive     = true,
+                RarityWeight = 80,
+                ArmorType    = "light",
+                EquipSlot    = "chest",
+                Stats        = new() { ArmorRating = 5, Value = 20 },
+            });
 
         db.Materials.Add(new Material
         {
@@ -76,8 +79,9 @@ public sealed class ContentEquipmentEndpointsFixture : IAsyncLifetime
 }
 
 /// <summary>
-/// Integration tests for the equipment catalog GET endpoints under <c>/api/content</c>:
-/// weapons, armors, and materials. All routes are anonymous.
+/// Integration tests for the equipment catalog GET endpoints under <c>/api/content/items</c>
+/// (filtered by <c>?type=weapon</c> or <c>?type=armor</c>) and <c>/api/content/materials</c>.
+/// All routes are anonymous.
 /// Each section includes a list test, a by-slug test, and a 404 test.
 /// </summary>
 [Trait("Category", "Integration")]
@@ -86,93 +90,95 @@ public class ContentEquipmentEndpointTests(ContentEquipmentEndpointsFixture fixt
 {
     private readonly HttpClient _client = fixture.Client;
 
-    // ── GET /api/content/weapons ──────────────────────────────────────────────
+    // â”€â”€ GET /api/content/items?type=weapon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
-    public async Task GetWeapons_Returns_OK_And_ContainsSeededWeapon()
+    public async Task GetWeaponItems_Returns_OK_And_ContainsSeededWeapon()
     {
-        var response = await _client.GetAsync("/api/content/weapons");
+        var response = await _client.GetAsync("/api/content/items?type=weapon");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<WeaponDto>>();
+        var items = await response.Content.ReadFromJsonAsync<List<ItemDto>>();
         items.Should().Contain(w => w.Slug == "equip-iron-sword");
     }
 
     [Fact]
-    public async Task GetWeapons_Does_Not_Require_Auth()
+    public async Task GetWeaponItems_Does_Not_Require_Auth()
     {
         using var anon = fixture.Factory.CreateClient();
-        var response = await anon.GetAsync("/api/content/weapons");
+        var response = await anon.GetAsync("/api/content/items?type=weapon");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task GetWeaponBySlug_Returns_Correct_Weapon()
+    public async Task GetItemBySlug_Returns_Correct_WeaponItem()
     {
-        var response = await _client.GetAsync("/api/content/weapons/equip-iron-sword");
+        var response = await _client.GetAsync("/api/content/items/equip-iron-sword");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var item = await response.Content.ReadFromJsonAsync<WeaponDto>();
+        var item = await response.Content.ReadFromJsonAsync<ItemDto>();
         item!.Slug.Should().Be("equip-iron-sword");
         item.DisplayName.Should().Be("Iron Sword");
-        item.TypeKey.Should().Be("swords");
+        item.TypeKey.Should().Be("heavy-blades");
+        item.ItemType.Should().Be("weapon");
         item.WeaponType.Should().Be("sword");
         item.RarityWeight.Should().Be(80);
     }
 
     [Fact]
-    public async Task GetWeaponBySlug_Returns_404_For_Unknown_Slug()
+    public async Task GetItemBySlug_Returns_404_For_Unknown_WeaponSlug()
     {
-        var response = await _client.GetAsync("/api/content/weapons/no-such-weapon");
+        var response = await _client.GetAsync("/api/content/items/no-such-weapon");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/armors ───────────────────────────────────────────────
+    // â”€â”€ GET /api/content/items?type=armor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
-    public async Task GetArmors_Returns_OK_And_ContainsSeededArmor()
+    public async Task GetArmorItems_Returns_OK_And_ContainsSeededArmor()
     {
-        var response = await _client.GetAsync("/api/content/armors");
+        var response = await _client.GetAsync("/api/content/items?type=armor");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<ArmorDto>>();
+        var items = await response.Content.ReadFromJsonAsync<List<ItemDto>>();
         items.Should().Contain(a => a.Slug == "equip-leather-chest");
     }
 
     [Fact]
-    public async Task GetArmors_Does_Not_Require_Auth()
+    public async Task GetArmorItems_Does_Not_Require_Auth()
     {
         using var anon = fixture.Factory.CreateClient();
-        var response = await anon.GetAsync("/api/content/armors");
+        var response = await anon.GetAsync("/api/content/items?type=armor");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task GetArmorBySlug_Returns_Correct_Armor()
+    public async Task GetItemBySlug_Returns_Correct_ArmorItem()
     {
-        var response = await _client.GetAsync("/api/content/armors/equip-leather-chest");
+        var response = await _client.GetAsync("/api/content/items/equip-leather-chest");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var item = await response.Content.ReadFromJsonAsync<ArmorDto>();
+        var item = await response.Content.ReadFromJsonAsync<ItemDto>();
         item!.Slug.Should().Be("equip-leather-chest");
         item.DisplayName.Should().Be("Leather Chest");
-        item.TypeKey.Should().Be("chest");
+        item.TypeKey.Should().Be("light");
+        item.ItemType.Should().Be("armor");
         item.ArmorType.Should().Be("light");
         item.RarityWeight.Should().Be(80);
     }
 
     [Fact]
-    public async Task GetArmorBySlug_Returns_404_For_Unknown_Slug()
+    public async Task GetItemBySlug_Returns_404_For_Unknown_ArmorSlug()
     {
-        var response = await _client.GetAsync("/api/content/armors/no-such-armor");
+        var response = await _client.GetAsync("/api/content/items/no-such-armor");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/materials ────────────────────────────────────────────
+    // â”€â”€ GET /api/content/materials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetMaterials_Returns_OK_And_ContainsSeededMaterial()

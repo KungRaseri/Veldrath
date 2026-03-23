@@ -45,6 +45,50 @@ Created: shared models, interfaces, EfCore repos, Program.cs registrations, Cont
 - `GET /api/content/weapons` (+slug), `GET /api/content/armors` (+slug), `GET /api/content/materials` (+slug) added to `ContentEndpoints.cs` — backed by `IWeaponRepository`, `IArmorRepository`, `IMaterialRepository` respectively
 - `ContentEquipmentEndpointTests.cs` added in `RealmUnbound.Server.Tests/Features/`: 12 integration tests for /weapons, /armors, /materials
 
-## What Remains (as of session-19)
-- Remaining unrepresented ContentDbContext tables (Organizations, WorldLocations, Dialogues, ActorInstances, MaterialProperties, TraitDefinitions) — no repos needed until a feature handler requires them
-- No content data is ever loaded from the filesystem — all DB-backed
+## What Was Done (session-21) — Weapon/Armor → Item consolidation
+
+**User directive: "Clean break, utilize /api/content/items?type=\*"**
+
+### Deleted
+- `Weapon.cs`, `Armor.cs` entities
+- `EfCoreWeaponRepository.cs`, `EfCoreArmorRepository.cs`, `InMemoryWeaponRepository.cs`, `InMemoryArmorRepository.cs`
+- `IWeaponRepository.cs`, `IArmorRepository.cs`
+- `WeaponsSeeder.cs`, `ArmorSeeder.cs`
+- `GetWeaponCatalogQuery.cs`, `GetArmorCatalogQuery.cs`
+- `WeaponDto`, `ArmorDto` from `ContentContracts.cs`
+
+### Expanded/Updated
+- `Item.cs` entity: added `WeaponType`, `DamageType`, `HandsRequired`, `ArmorType`, `EquipSlot` nullable columns; expanded `ItemStats` and `ItemTraits` owned JSON types with weapon/armor-specific fields
+- `ItemDto` now has `string? ItemType`, `string? WeaponType`, `string? ArmorType` optional params
+- `ItemsSeeder.cs`: 4 new rows for iron-sword (TypeKey="heavy-blades"), hunters-bow (TypeKey="bows"), leather-cap (TypeKey="light"), iron-chestplate (TypeKey="heavy")
+- `GetEquipmentForClassHandler`: replaced `IWeaponRepository`+`IArmorRepository` with single `IItemRepository`; `LoadWeapons()` calls `GetByTypeAsync("weapon")`, `LoadArmor()` calls `GetByTypeAsync("armor")`
+- `ContentEndpoints.cs`: `/items` and `/items/{slug}` endpoints updated; `/weapons`, `/armors` routes removed; `ToItemDto(DataItem i)` mapper uses entity directly
+- `CategoryDiscoveryService`: removed Weapons/Armors UNION queries from items domain
+- `ContentEditorService` (RealmForge): removed Weapons/Armors from KnownTables and all switch statements
+- `ContentService.cs` (client): removed `GetWeaponsAsync/GetWeaponAsync/GetArmorsAsync/GetArmorAsync`
+- All related tests updated accordingly
+- EF migration `CollapsedWeaponArmorIntoItem` created
+
+### Architecture Pattern
+Weapons and armor are now ordinary **Items** with `ItemType = "weapon"` or `"armor"`. Access via:
+- `GET /api/content/items?type=weapon`
+- `GET /api/content/items?type=armor`  
+- `GET /api/content/items/{slug}` (unified slug lookup)
+
+### Test Results (session-21)
+- Shared.Tests: 778 passed
+- Core.Tests: 1863 passed
+- Data.Tests: 215 passed
+- Client.Tests: 461 passed
+- Server.Tests: 425 passed
+- RealmForge.Tests: 8 passed
+- RealmFoundry.Tests: 48 passed
+- Assets.Tests: 10 passed
+- **All 0 failures**
+
+## What Remains (as of session-21)
+- No weapon/armor legacy code remains anywhere in the codebase
+- TypeKey values for weapons match `WeaponCategoryToProficiencies` keys in GetEquipmentForClassHandler ("heavy-blades", "bows", etc.)
+- TypeKey values for armor match `ArmorCategoryToProficiencies` keys ("light", "heavy", "shield")
+
+

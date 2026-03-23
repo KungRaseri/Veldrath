@@ -171,8 +171,6 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
             services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
             services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
-            services.AddScoped<IWeaponRepository, EfCoreWeaponRepository>();
-            services.AddScoped<IArmorRepository, EfCoreArmorRepository>();
             services.AddScoped<IEquipmentSetRepository, EfCoreEquipmentSetRepository>();
             services.AddScoped<IInventoryService, EfCoreInventoryService>();
         }
@@ -198,8 +196,6 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ISkillRepository, InMemorySkillRepository>();
             services.AddScoped<INamePatternRepository, InMemoryNamePatternRepository>();
             services.AddScoped<IMaterialRepository, InMemoryMaterialRepository>();
-            services.AddScoped<IWeaponRepository, InMemoryWeaponRepository>();
-            services.AddScoped<IArmorRepository, InMemoryArmorRepository>();
             services.AddScoped<IEquipmentSetRepository, InMemoryEquipmentSetRepository>();
             services.AddScoped<IInventoryService, InMemoryInventoryService>();
         }

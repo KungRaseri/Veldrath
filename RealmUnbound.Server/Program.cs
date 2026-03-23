@@ -219,10 +219,8 @@ try
     builder.Services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
     builder.Services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
     builder.Services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
-    builder.Services.AddScoped<IWeaponRepository, EfCoreWeaponRepository>();
     builder.Services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
     builder.Services.AddScoped<IInventoryService, EfCoreInventoryService>();
-    builder.Services.AddScoped<IArmorRepository, EfCoreArmorRepository>();
     builder.Services.AddScoped<IEquipmentSetRepository, EfCoreEquipmentSetRepository>();
     builder.Services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
     builder.Services.AddScoped<ISpeciesRepository, EfCoreSpeciesRepository>();

@@ -52,25 +52,14 @@ public class ItemDataService
     {
         var results = new List<ItemTemplate>();
 
-        foreach (var w in db.Weapons.AsNoTracking().Where(w => w.IsActive && w.TypeKey == category).ToList())
-        {
-            var rarity = GetRarity(w.RarityWeight);
-            if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
-            results.Add(new ItemTemplate { Slug = w.Slug, Name = w.DisplayName ?? w.TypeKey, Category = category, Type = w.WeaponType, RarityWeight = w.RarityWeight, BasePrice = w.Stats.Value ?? 0, Rarity = rarity });
-        }
-
-        foreach (var a in db.Armors.AsNoTracking().Where(a => a.IsActive && a.TypeKey == category).ToList())
-        {
-            var rarity = GetRarity(a.RarityWeight);
-            if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
-            results.Add(new ItemTemplate { Slug = a.Slug, Name = a.DisplayName ?? a.TypeKey, Category = category, Type = a.ArmorType, RarityWeight = a.RarityWeight, BasePrice = a.Stats.Value ?? 0, Rarity = rarity });
-        }
-
         foreach (var i in db.Items.AsNoTracking().Where(i => i.IsActive && i.TypeKey == category).ToList())
         {
             var rarity = GetRarity(i.RarityWeight);
             if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
-            results.Add(new ItemTemplate { Slug = i.Slug, Name = i.DisplayName ?? i.TypeKey, Category = category, Type = i.ItemType, RarityWeight = i.RarityWeight, BasePrice = i.Stats.Value ?? 0, Rarity = rarity });
+            var subType = i.ItemType == "weapon" ? (i.WeaponType ?? i.ItemType)
+                        : i.ItemType == "armor"  ? (i.ArmorType  ?? i.ItemType)
+                        : i.ItemType;
+            results.Add(new ItemTemplate { Slug = i.Slug, Name = i.DisplayName ?? i.TypeKey, Category = category, Type = subType, RarityWeight = i.RarityWeight, BasePrice = i.Stats.Value ?? 0, Rarity = rarity });
         }
 
         return results;

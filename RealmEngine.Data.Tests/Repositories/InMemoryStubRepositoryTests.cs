@@ -267,38 +267,6 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByContextAsync("dungeon")).Should().BeEmpty();
     }
 
-    // ── InMemoryArmorRepository ───────────────────────────────────────────
-
-    [Fact]
-    public async Task ArmorRepository_GetAllAsync_ReturnsEmptyList()
-    {
-        var repo = new InMemoryArmorRepository();
-        (await repo.GetAllAsync()).Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ArmorRepository_GetBySlugAsync_ReturnsNull()
-    {
-        var repo = new InMemoryArmorRepository();
-        (await repo.GetBySlugAsync("iron-plate")).Should().BeNull();
-    }
-
-    // ── InMemoryWeaponRepository ──────────────────────────────────────────
-
-    [Fact]
-    public async Task WeaponRepository_GetAllAsync_ReturnsEmptyList()
-    {
-        var repo = new InMemoryWeaponRepository();
-        (await repo.GetAllAsync()).Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task WeaponRepository_GetBySlugAsync_ReturnsNull()
-    {
-        var repo = new InMemoryWeaponRepository();
-        (await repo.GetBySlugAsync("iron-sword")).Should().BeNull();
-    }
-
     // ── InMemoryMaterialRepository ────────────────────────────────────────
 
     [Fact]
