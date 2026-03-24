@@ -454,4 +454,45 @@ public class CharacterRepositoryTests : IDisposable
 
         (await repo.NameExistsAsync("Recurring")).Should().BeTrue();
     }
+
+    // UpdateCurrentZoneLocationAsync
+    [Fact]
+    public async Task UpdateCurrentZoneLocationAsync_Should_Persist_LocationSlug()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var c = await repo.CreateAsync(MakeCharacter(accountId, "LocationMover", 1));
+
+        await repo.UpdateCurrentZoneLocationAsync(c.Id, "fenwick-market");
+
+        var updated = await repo.GetByIdAsync(c.Id);
+        updated!.CurrentZoneLocationSlug.Should().Be("fenwick-market");
+    }
+
+    [Fact]
+    public async Task UpdateCurrentZoneLocationAsync_Should_Allow_Null_To_Clear_Location()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new CharacterRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var c = await repo.CreateAsync(MakeCharacter(accountId, "LocationClearer", 1));
+        await repo.UpdateCurrentZoneLocationAsync(c.Id, "fenwick-market");
+        await repo.UpdateCurrentZoneLocationAsync(c.Id, null);
+
+        var updated = await repo.GetByIdAsync(c.Id);
+        updated!.CurrentZoneLocationSlug.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateCurrentZoneLocationAsync_Should_Silently_Ignore_Unknown_Id()
+    {
+        await using var db = _factory.CreateContext();
+        var repo = new CharacterRepository(db);
+
+        Func<Task> act = () => repo.UpdateCurrentZoneLocationAsync(Guid.NewGuid(), "some-slug");
+        await act.Should().NotThrowAsync();
+    }
 }

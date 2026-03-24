@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using RealmUnbound.Client.Services;
+using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Tests;
@@ -625,5 +626,33 @@ public class HttpZoneServiceTests : TestBase
         var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
         var result = await sut.GetWorldAsync("missing");
         result.Should().BeNull();
+    }
+
+    // GetZoneLocationsAsync
+    private static readonly ZoneLocationDto SampleLocation =
+        new("fenwick-market", "Fenwick Market", "locations", "fenwick-crossing", "location", 10, 1, 10);
+
+    [Fact]
+    public async Task GetZoneLocationsAsync_Should_Return_List_On_Success()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Json(new List<ZoneLocationDto> { SampleLocation }));
+        var result = await sut.GetZoneLocationsAsync("fenwick-crossing");
+        result.Should().ContainSingle(l => l.Slug == "fenwick-market");
+    }
+
+    [Fact]
+    public async Task GetZoneLocationsAsync_Should_Return_Empty_On_Error()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
+        var result = await sut.GetZoneLocationsAsync("fenwick-crossing");
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetZoneLocationsAsync_Should_Return_Empty_On_Network_Exception()
+    {
+        var sut    = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("offline")));
+        var result = await sut.GetZoneLocationsAsync("fenwick-crossing");
+        result.Should().BeEmpty();
     }
 }

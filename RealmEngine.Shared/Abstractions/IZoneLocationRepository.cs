@@ -13,4 +13,7 @@ public interface IZoneLocationRepository
 
     /// <summary>Returns all active zone locations with the given location type (e.g. "dungeon", "location", "environment").</summary>
     Task<List<ZoneLocationEntry>> GetByLocationTypeAsync(string locationType);
+
+    /// <summary>Returns all active zone locations that belong to the given zone.</summary>
+    Task<List<ZoneLocationEntry>> GetByZoneIdAsync(string zoneId);
 }

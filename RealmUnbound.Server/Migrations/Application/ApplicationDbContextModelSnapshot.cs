@@ -176,6 +176,9 @@ namespace RealmUnbound.Server.Migrations.Application
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("CurrentZoneLocationSlug")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 

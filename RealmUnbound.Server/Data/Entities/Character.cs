@@ -51,6 +51,9 @@ public class Character
     /// <summary>Zone the character is currently in (updated on EnterZone).</summary>
     public string CurrentZoneId { get; set; } = "fenwick-crossing";
 
+    /// <summary>Slug of the ZoneLocation the character is currently at within the zone, or <see langword="null"/> if not at a specific location.</summary>
+    public string? CurrentZoneLocationSlug { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset LastPlayedAt { get; set; } = DateTimeOffset.UtcNow;

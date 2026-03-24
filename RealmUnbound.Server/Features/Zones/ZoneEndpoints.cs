@@ -1,3 +1,5 @@
+using RealmEngine.Shared.Abstractions;
+using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Zones;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
@@ -52,6 +54,10 @@ public static class ZoneEndpoints
 
             return Results.Ok(all.Select(z => ToDto(z, counts.GetValueOrDefault(z.Id))));
         });
+
+        // Returns all zone locations within a specific zone.
+        group.MapGet("/{id}/locations", async (string id, IZoneLocationRepository locations) =>
+            Results.Ok((await locations.GetByZoneIdAsync(id)).Select(ToLocationDto)));
     }
 
     private static void MapRegions(IEndpointRouteBuilder app)
@@ -96,4 +102,7 @@ public static class ZoneEndpoints
 
     private static RegionDto ToDto(Region r) =>
         new(r.Id, r.Name, r.Description, r.Type.ToString(), r.MinLevel, r.MaxLevel, r.IsStarter, r.WorldId);
+
+    private static ZoneLocationDto ToLocationDto(RealmEngine.Shared.Models.ZoneLocationEntry e) =>
+        new(e.Slug, e.DisplayName, e.TypeKey, e.ZoneId, e.LocationType, e.RarityWeight, e.MinLevel, e.MaxLevel);
 }
