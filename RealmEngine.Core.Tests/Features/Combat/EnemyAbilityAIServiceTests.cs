@@ -6,13 +6,13 @@ using System.Collections.Generic;
 
 namespace RealmEngine.Core.Tests.Features.Combat;
 
-public class EnemyAbilityAIServiceTests
+public class EnemyPowerAIServiceTests
 {
-    private readonly EnemyAbilityAIService _aiService;
+    private readonly EnemyPowerAIService _aiService;
 
-    public EnemyAbilityAIServiceTests()
+    public EnemyPowerAIServiceTests()
     {
-        _aiService = new EnemyAbilityAIService();
+        _aiService = new EnemyPowerAIService();
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Goblin",
             Health = 50,
             MaxHealth = 50,
-            Abilities = new List<Ability>()
+            Abilities = new List<Power>()
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>();
@@ -40,18 +40,18 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Return_Null_When_All_Abilities_On_Cooldown()
     {
         // Arrange
-        var ability1 = new Ability
+        var ability1 = new Power
         {
             Id = "fireball",
             Name = "Fireball",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 3
         };
-        var ability2 = new Ability
+        var ability2 = new Power
         {
             Id = "heal",
             Name = "Heal",
-            Type = AbilityTypeEnum.Healing,
+            EffectType = PowerEffectType.Heal,
             Cooldown = 5
         };
 
@@ -60,7 +60,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Wizard",
             Health = 80,
             MaxHealth = 100,
-            Abilities = new List<Ability> { ability1, ability2 }
+            Abilities = new List<Power> { ability1, ability2 }
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>
@@ -80,19 +80,19 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Prefer_Defensive_Abilities_When_Low_Health()
     {
         // Arrange
-        var healAbility = new Ability
+        var healAbility = new Power
         {
             Id = "emergency-heal",
             Name = "Emergency Heal",
             Description = "Restore health to the caster",
-            Type = AbilityTypeEnum.Healing,
+            EffectType = PowerEffectType.Heal,
             Cooldown = 5
         };
-        var attackAbility = new Ability
+        var attackAbility = new Power
         {
             Id = "attack",
             Name = "Attack",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 0
         };
 
@@ -101,7 +101,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Cleric",
             Health = 15,  // 15% health
             MaxHealth = 100,
-            Abilities = new List<Ability> { healAbility, attackAbility }
+            Abilities = new List<Power> { healAbility, attackAbility }
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>();
@@ -125,19 +125,19 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Prefer_Offensive_Abilities_When_High_Health()
     {
         // Arrange
-        var attackAbility = new Ability
+        var attackAbility = new Power
         {
             Id = "fireball",
             Name = "Fireball",
             Description = "Deal massive damage",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 2
         };
-        var healAbility = new Ability
+        var healAbility = new Power
         {
             Id = "heal",
             Name = "Heal",
-            Type = AbilityTypeEnum.Healing,
+            EffectType = PowerEffectType.Heal,
             Cooldown = 5
         };
 
@@ -146,7 +146,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Wizard",
             Health = 90,  // 90% health
             MaxHealth = 100,
-            Abilities = new List<Ability> { attackAbility, healAbility }
+            Abilities = new List<Power> { attackAbility, healAbility }
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>();
@@ -170,19 +170,19 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Prefer_Buffs_At_Start_Of_Combat()
     {
         // Arrange
-        var buffAbility = new Ability
+        var buffAbility = new Power
         {
             Id = "strengthen",
             Name = "Strengthen",
             Description = "Increase attack power",
-            Type = AbilityTypeEnum.Buff,
+            EffectType = PowerEffectType.Buff,
             Cooldown = 0
         };
-        var attackAbility = new Ability
+        var attackAbility = new Power
         {
             Id = "slash",
             Name = "Slash",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 0
         };
 
@@ -191,7 +191,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Warrior",
             Health = 100,  // Full health
             MaxHealth = 100,
-            Abilities = new List<Ability> { buffAbility, attackAbility }
+            Abilities = new List<Power> { buffAbility, attackAbility }
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>();
@@ -215,12 +215,12 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Consider_Debuffs_When_Player_Strong()
     {
         // Arrange
-        var debuffAbility = new Ability
+        var debuffAbility = new Power
         {
             Id = "weaken",
             Name = "Weaken",
             Description = "Reduce enemy defense",
-            Type = AbilityTypeEnum.Debuff,
+            EffectType = PowerEffectType.Debuff,
             Cooldown = 3
         };
 
@@ -229,7 +229,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Necromancer",
             Health = 60,
             MaxHealth = 100,
-            Abilities = new List<Ability> { debuffAbility }
+            Abilities = new List<Power> { debuffAbility }
         };
         var player = new Character 
         { 
@@ -258,18 +258,18 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Skip_Abilities_On_Cooldown()
     {
         // Arrange
-        var onCooldownAbility = new Ability
+        var onCooldownAbility = new Power
         {
             Id = "big-spell",
             Name = "Big Spell",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 5
         };
-        var availableAbility = new Ability
+        var availableAbility = new Power
         {
             Id = "small-spell",
             Name = "Small Spell",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 1
         };
 
@@ -278,7 +278,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Mage",
             Health = 80,
             MaxHealth = 100,
-            Abilities = new List<Ability> { onCooldownAbility, availableAbility }
+            Abilities = new List<Power> { onCooldownAbility, availableAbility }
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>
@@ -302,11 +302,11 @@ public class EnemyAbilityAIServiceTests
     public void DecideAbilityUsage_Should_Sometimes_Use_Basic_Attack()
     {
         // Arrange
-        var ability = new Ability
+        var ability = new Power
         {
             Id = "weak-spell",
             Name = "Weak Spell",
-            Type = AbilityTypeEnum.Offensive,
+            EffectType = PowerEffectType.Damage,
             Cooldown = 1
         };
 
@@ -315,7 +315,7 @@ public class EnemyAbilityAIServiceTests
             Name = "Apprentice",
             Health = 50,
             MaxHealth = 100,
-            Abilities = new List<Ability> { ability }
+            Abilities = new List<Power> { ability }
         };
         var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
         var abilityStates = new Dictionary<string, int>();

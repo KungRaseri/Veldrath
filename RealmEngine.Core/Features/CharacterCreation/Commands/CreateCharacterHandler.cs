@@ -68,7 +68,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             }
 
             // Initialize starting spells
-            var spellsCommand = new InitializeStartingSpellsCommand
+            var spellsCommand = new InitializeStartingPowersCommand
             {
                 Character = character,
                 ClassName = request.CharacterClass.Name
@@ -99,7 +99,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             }
 
             _logger.LogInformation("Character creation complete: {CharacterName} with {AbilityCount} abilities, {SpellCount} spells, {EquipmentCount} equipment items",
-                request.CharacterName, abilitiesResult.AbilitiesLearned, spellsResult.SpellsLearned, equipment.Count);
+                request.CharacterName, abilitiesResult.AbilitiesLearned, spellsResult.PowersLearned, equipment.Count);
 
             return new CreateCharacterResult
             {
@@ -107,7 +107,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 Success = true,
                 Message = $"Character {request.CharacterName} created successfully",
                 AbilitiesLearned = abilitiesResult.AbilitiesLearned,
-                SpellsLearned = spellsResult.SpellsLearned,
+                SpellsLearned = spellsResult.PowersLearned,
                 EquipmentSelected = equipment,
                 StartingLocation = location,
                 BackgroundApplied = background

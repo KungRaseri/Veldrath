@@ -13,12 +13,12 @@ namespace RealmEngine.Core.Tests.Features.Progression.Commands;
 public class LearnSpellHandlerTests
 {
     private static async Task<SpellCastingService> CreateSpellCastingServiceAsync(
-        IEnumerable<Spell>? spells = null,
+        IEnumerable<Power>? spells = null,
         IEnumerable<SkillDefinition>? skills = null)
     {
-        var spellMockRepo = new Mock<ISpellRepository>();
+        var spellMockRepo = new Mock<IPowerRepository>();
         spellMockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((spells ?? []).ToList());
-        var spellDataSvc = new SpellDataService(spellMockRepo.Object);
+        var spellDataSvc = new PowerDataService(spellMockRepo.Object);
         await spellDataSvc.InitializeAsync();
 
         var skillMockRepo = new Mock<ISkillRepository>();
@@ -29,10 +29,10 @@ public class LearnSpellHandlerTests
         return new SpellCastingService(spellDataSvc, new SkillProgressionService(skillDataSvc));
     }
 
-    private static Spell MakeSpell(string id, MagicalTradition tradition = MagicalTradition.Arcane, int minSkillRank = 0, int manaCost = 10) =>
+    private static Power MakeSpell(string id, MagicalTradition tradition = MagicalTradition.Arcane, int minSkillRank = 0, int manaCost = 10) =>
         new()
         {
-            SpellId = id,
+        Id = id, Slug = id,
             Name = id,
             DisplayName = id,
             Description = id,
@@ -56,7 +56,7 @@ public class LearnSpellHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Unknown spell");
+        result.Message.Should().Contain("Unknown Power");
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class LearnSpellHandlerTests
     [Fact]
     public async Task Returns_Failure_WhenSkillRankTooLow()
     {
-        // Arrange - spell requires rank 30; character has arcane skill at rank 0 (0+20=20 < 30)
+        // Arrange - Power requires rank 30; character has arcane skill at rank 0 (0+20=20 < 30)
         var service = await CreateSpellCastingServiceAsync([MakeSpell("meteor", minSkillRank: 30)]);
         var handler = new LearnSpellHandler(service);
         var character = new Character { Name = "Hero" };
@@ -115,7 +115,7 @@ public class LearnSpellHandlerTests
     [Fact]
     public async Task Succeeds_WhenSkillMeetsMinimumRank()
     {
-        // Arrange - spell requires rank 5; character has rank 5
+        // Arrange - Power requires rank 5; character has rank 5
         var service = await CreateSpellCastingServiceAsync([MakeSpell("magic-bolt", minSkillRank: 5)]);
         var handler = new LearnSpellHandler(service);
         var character = new Character { Name = "Hero" };
@@ -129,14 +129,14 @@ public class LearnSpellHandlerTests
         result.Success.Should().BeTrue();
         character.LearnedSpells.Should().ContainKey("magic-bolt");
         result.SpellLearned.Should().NotBeNull();
-        result.SpellLearned!.SpellId.Should().Be("magic-bolt");
+        result.SpellLearned!.Id.Should().Be("magic-bolt");
     }
 
     [Fact]
     public async Task Succeeds_WithSkillTolerance_WhenRankSlightlyBelowRequirement()
     {
         // Arrange - tolerance is: can learn if character rank + 20 >= minSkillRank
-        // Spell needs rank 29; character has rank 10 (10+20=30 >= 29 → qualifies)
+        // Power needs rank 29; character has rank 10 (10+20=30 >= 29 → qualifies)
         var service = await CreateSpellCastingServiceAsync([MakeSpell("shadow-bolt", minSkillRank: 29)]);
         var handler = new LearnSpellHandler(service);
         var character = new Character { Name = "Hero" };
@@ -165,7 +165,7 @@ public class LearnSpellHandlerTests
 
         // Assert
         var learned = character.LearnedSpells["ice-shard"];
-        learned.TimesCast.Should().Be(0, "newly learned spell has no cast history");
+        learned.TimesCast.Should().Be(0, "newly learned Power has no cast history");
         learned.TimesFizzled.Should().Be(0);
         learned.IsFavorite.Should().BeFalse();
     }

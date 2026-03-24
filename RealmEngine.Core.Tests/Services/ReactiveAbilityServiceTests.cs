@@ -9,13 +9,13 @@ using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Tests.Services;
 
 [Trait("Category", "Service")]
-public class ReactiveAbilityServiceTests
+public class ReactivePowerServiceTests
 {
-    private static async Task<AbilityDataService> BuildAbilityDataService(IEnumerable<Ability> abilities)
+    private static async Task<PowerDataService> BuildPowerDataService(IEnumerable<Power> powers)
     {
-        var mockRepo = new Mock<IAbilityRepository>();
-        mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(abilities.ToList());
-        var svc = new AbilityDataService(mockRepo.Object);
+        var mockRepo = new Mock<IPowerRepository>();
+        mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(powers.ToList());
+        var svc = new PowerDataService(mockRepo.Object);
         await svc.InitializeAsync();
         return svc;
     }
@@ -23,7 +23,7 @@ public class ReactiveAbilityServiceTests
     /// <summary>
     /// Creates a reactive ability with string-format traits (the simpler path in IsReactiveAbility).
     /// </summary>
-    private static Ability MakeReactiveAbility(string id, string triggerCondition, int cooldown = 0) => new()
+    private static Power MakeReactiveAbility(string id, string triggerCondition, int cooldown = 0) => new()
     {
         Id = id,
         DisplayName = id,
@@ -48,7 +48,7 @@ public class ReactiveAbilityServiceTests
     [Fact]
     public void CheckAndTrigger_ReturnsFalse_WhenNoCatalogServiceProvided()
     {
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance);
         var character = new Character { Name = "Hero" };
 
         svc.CheckAndTriggerReactiveAbilities(character, "onDamageTaken").Should().BeFalse();
@@ -57,8 +57,8 @@ public class ReactiveAbilityServiceTests
     [Fact]
     public async Task CheckAndTrigger_ReturnsFalse_WhenCharacterHasNoLearnedAbilities()
     {
-        var abilitySvc = await BuildAbilityDataService([]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
         var character = new Character { Name = "Hero" };
 
         svc.CheckAndTriggerReactiveAbilities(character, "onDamageTaken").Should().BeFalse();
@@ -67,7 +67,7 @@ public class ReactiveAbilityServiceTests
     [Fact]
     public async Task CheckAndTrigger_ReturnsFalse_WhenAbilityIsNotReactive()
     {
-        var regularAbility = new Ability
+        var regularAbility = new Power
         {
             Id = "slash",
             DisplayName = "Slash",
@@ -76,8 +76,8 @@ public class ReactiveAbilityServiceTests
                 ["abilityClass"] = "active"
             }
         };
-        var abilitySvc = await BuildAbilityDataService([regularAbility]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([regularAbility]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
 
         svc.CheckAndTriggerReactiveAbilities(CharacterWithAbility("slash"), "onDamageTaken")
            .Should().BeFalse();
@@ -87,8 +87,8 @@ public class ReactiveAbilityServiceTests
     public async Task CheckAndTrigger_ReturnsFalse_WhenTriggerConditionDoesNotMatch()
     {
         var ability = MakeReactiveAbility("counter-attack", "onDodge");
-        var abilitySvc = await BuildAbilityDataService([ability]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([ability]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
 
         svc.CheckAndTriggerReactiveAbilities(CharacterWithAbility("counter-attack"), "onDamageTaken")
            .Should().BeFalse();
@@ -98,8 +98,8 @@ public class ReactiveAbilityServiceTests
     public async Task CheckAndTrigger_ReturnsTrue_WhenTriggerConditionMatches()
     {
         var ability = MakeReactiveAbility("pain-response", "onDamageTaken");
-        var abilitySvc = await BuildAbilityDataService([ability]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([ability]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
 
         svc.CheckAndTriggerReactiveAbilities(CharacterWithAbility("pain-response"), "onDamageTaken")
            .Should().BeTrue();
@@ -109,8 +109,8 @@ public class ReactiveAbilityServiceTests
     public async Task CheckAndTrigger_ReturnsFalse_WhenAbilityIsOnCooldown()
     {
         var ability = MakeReactiveAbility("pain-response", "onDamageTaken", cooldown: 3);
-        var abilitySvc = await BuildAbilityDataService([ability]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([ability]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
 
         // Set cooldown to 2 turns remaining
         var character = CharacterWithAbility("pain-response", cooldownRemaining: 2);
@@ -122,8 +122,8 @@ public class ReactiveAbilityServiceTests
     public async Task CheckAndTrigger_SetsCooldown_AfterTriggeringAbilityWithNonZeroCooldown()
     {
         var ability = MakeReactiveAbility("pain-response", "onDamageTaken", cooldown: 3);
-        var abilitySvc = await BuildAbilityDataService([ability]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([ability]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
         var character = CharacterWithAbility("pain-response");
 
         svc.CheckAndTriggerReactiveAbilities(character, "onDamageTaken");
@@ -135,7 +135,7 @@ public class ReactiveAbilityServiceTests
     public async Task CheckAndTrigger_HandlesDictionaryFormatTraits()
     {
         // Test the dictionary-format trait path (the alternative branch in IsReactiveAbility)
-        var ability = new Ability
+        var ability = new Power
         {
             Id = "riposte",
             DisplayName = "Riposte",
@@ -145,8 +145,8 @@ public class ReactiveAbilityServiceTests
                 ["triggerCondition"] = new Dictionary<string, object> { ["value"] = "onBlock" }
             }
         };
-        var abilitySvc = await BuildAbilityDataService([ability]);
-        var svc = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance, abilitySvc);
+        var abilitySvc = await BuildPowerDataService([ability]);
+        var svc = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance, abilitySvc);
 
         svc.CheckAndTriggerReactiveAbilities(CharacterWithAbility("riposte"), "onBlock")
            .Should().BeTrue();

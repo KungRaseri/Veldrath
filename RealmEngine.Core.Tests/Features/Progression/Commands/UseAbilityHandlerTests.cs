@@ -9,20 +9,20 @@ namespace RealmEngine.Core.Tests.Features.Progression.Commands;
 
 [Trait("Category", "Feature")]
 /// <summary>
-/// Tests for UseAbilityHandler.
+/// Tests for UsePowerHandler.
 /// </summary>
-public class UseAbilityHandlerTests
+public class UsePowerHandlerTests
 {
-    private static async Task<(UseAbilityHandler handler, AbilityDataService service)> CreateHandlerAsync(IEnumerable<Ability>? abilities = null)
+    private static async Task<(UsePowerHandler handler, PowerDataService service)> CreateHandlerAsync(IEnumerable<Power>? abilities = null)
     {
-        var mockRepo = new Mock<IAbilityRepository>();
+        var mockRepo = new Mock<IPowerRepository>();
         mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((abilities ?? []).ToList());
-        var abilitySvc = new AbilityDataService(mockRepo.Object);
+        var abilitySvc = new PowerDataService(mockRepo.Object);
         await abilitySvc.InitializeAsync();
-        return (new UseAbilityHandler(abilitySvc, NullLogger<UseAbilityHandler>.Instance), abilitySvc);
+        return (new UsePowerHandler(abilitySvc, NullLogger<UsePowerHandler>.Instance), abilitySvc);
     }
 
-    private static Ability MakeAbility(string id, int manaCost = 10, int cooldown = 0, string? baseDamage = null) =>
+    private static Power MakeAbility(string id, int manaCost = 10, int cooldown = 0, string? baseDamage = null) =>
         new()
         {
             Id = id,
@@ -43,7 +43,7 @@ public class UseAbilityHandlerTests
         // Arrange
         var (handler, _) = await CreateHandlerAsync([MakeAbility("fireball")]);
         var character = new Character { Name = "Hero", Mana = 100 }; // NOT learned "fireball"
-        var command = new UseAbilityCommand { User = character, AbilityId = "fireball" };
+        var command = new UsePowerCommand { User = character, PowerId = "fireball" };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -60,7 +60,7 @@ public class UseAbilityHandlerTests
         var (handler, _) = await CreateHandlerAsync([]); // empty catalog
         var character = new Character { Name = "Hero", Mana = 100 };
         character.LearnedAbilities["ghost-ability"] = new CharacterAbility { AbilityId = "ghost-ability" };
-        var command = new UseAbilityCommand { User = character, AbilityId = "ghost-ability" };
+        var command = new UsePowerCommand { User = character, PowerId = "ghost-ability" };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -78,7 +78,7 @@ public class UseAbilityHandlerTests
         var character = CreateCharacterWithAbility("shield-bash");
         character.AbilityCooldowns["shield-bash"] = 2; // still 2 turns remaining
 
-        var command = new UseAbilityCommand { User = character, AbilityId = "shield-bash" };
+        var command = new UsePowerCommand { User = character, PowerId = "shield-bash" };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -96,7 +96,7 @@ public class UseAbilityHandlerTests
         var (handler, _) = await CreateHandlerAsync([MakeAbility("meteor", manaCost: 50)]);
         var character = CreateCharacterWithAbility("meteor", mana: 20); // only 20 mana, needs 50
 
-        var command = new UseAbilityCommand { User = character, AbilityId = "meteor" };
+        var command = new UsePowerCommand { User = character, PowerId = "meteor" };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -113,7 +113,7 @@ public class UseAbilityHandlerTests
         // Arrange
         var (handler, _) = await CreateHandlerAsync([MakeAbility("slash", manaCost: 15)]);
         var character = CreateCharacterWithAbility("slash", mana: 100);
-        var command = new UseAbilityCommand { User = character, AbilityId = "slash" };
+        var command = new UsePowerCommand { User = character, PowerId = "slash" };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -130,7 +130,7 @@ public class UseAbilityHandlerTests
         // Arrange
         var (handler, _) = await CreateHandlerAsync([MakeAbility("power-strike", manaCost: 10, cooldown: 3)]);
         var character = CreateCharacterWithAbility("power-strike");
-        var command = new UseAbilityCommand { User = character, AbilityId = "power-strike" };
+        var command = new UsePowerCommand { User = character, PowerId = "power-strike" };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -146,7 +146,7 @@ public class UseAbilityHandlerTests
         // Arrange
         var (handler, _) = await CreateHandlerAsync([MakeAbility("quick-slash", manaCost: 5, cooldown: 0)]);
         var character = CreateCharacterWithAbility("quick-slash");
-        var command = new UseAbilityCommand { User = character, AbilityId = "quick-slash" };
+        var command = new UsePowerCommand { User = character, PowerId = "quick-slash" };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -162,7 +162,7 @@ public class UseAbilityHandlerTests
         var (handler, _) = await CreateHandlerAsync([MakeAbility("cleave", manaCost: 8)]);
         var character = CreateCharacterWithAbility("cleave");
         character.LearnedAbilities["cleave"].TimesUsed = 4;
-        var command = new UseAbilityCommand { User = character, AbilityId = "cleave" };
+        var command = new UsePowerCommand { User = character, PowerId = "cleave" };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -177,7 +177,7 @@ public class UseAbilityHandlerTests
         // Arrange
         var (handler, _) = await CreateHandlerAsync([MakeAbility("taunt", manaCost: 5, baseDamage: null)]);
         var character = CreateCharacterWithAbility("taunt");
-        var command = new UseAbilityCommand { User = character, AbilityId = "taunt" };
+        var command = new UsePowerCommand { User = character, PowerId = "taunt" };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -195,7 +195,7 @@ public class UseAbilityHandlerTests
         var (handler, _) = await CreateHandlerAsync([ability]);
         var character = CreateCharacterWithAbility("force-strike");
         var enemy = new Enemy { Name = "Goblin", Health = 50, MaxHealth = 50 };
-        var command = new UseAbilityCommand { User = character, AbilityId = "force-strike", TargetEnemy = enemy };
+        var command = new UsePowerCommand { User = character, PowerId = "force-strike", TargetEnemy = enemy };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);

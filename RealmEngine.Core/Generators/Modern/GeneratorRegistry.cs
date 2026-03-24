@@ -5,7 +5,7 @@ namespace RealmEngine.Core.Generators.Modern;
 /// Provides unified access to all generator types via dependency injection.
 /// </summary>
 public class GeneratorRegistry(
-    AbilityGenerator abilities,
+    PowerGenerator powers,
     CharacterClassGenerator classes,
     EnemyGenerator enemies,
     ItemGenerator items,
@@ -16,8 +16,8 @@ public class GeneratorRegistry(
     DialogueGenerator dialogue,
     EnchantmentGenerator enchantments)
 {
-    /// <summary>Gets the ability generator.</summary>
-    public AbilityGenerator Abilities => abilities;
+    /// <summary>Gets the power generator.</summary>
+    public PowerGenerator Powers => powers;
 
     /// <summary>Gets the character class generator.</summary>
     public CharacterClassGenerator Classes => classes;

@@ -4,18 +4,18 @@ using RealmEngine.Core.Features.Progression.Services;
 namespace RealmEngine.Core.Features.Combat.Services;
 
 /// <summary>
-/// Service for determining when and which abilities enemies should use in combat.
+/// Service for determining when and which powers enemies should use in combat.
 /// </summary>
-public class EnemyAbilityAIService
+public class EnemyPowerAIService
 {
     private readonly PowerDataService? _powerCatalogService;
     private readonly Random _random;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="EnemyAbilityAIService"/> class.
+    /// Initializes a new instance of the <see cref="EnemyPowerAIService"/> class.
     /// </summary>
     /// <param name="powerCatalogService">The power catalog service.</param>
-    public EnemyAbilityAIService(PowerDataService? powerCatalogService = null)
+    public EnemyPowerAIService(PowerDataService? powerCatalogService = null)
     {
         _powerCatalogService = powerCatalogService;
         _random = new Random();

@@ -27,9 +27,9 @@ public class HttpContentServiceTests : TestBase
     [Fact]
     public async Task GetAbilitiesAsync_Should_Return_List_On_Success()
     {
-        var expected = new List<AbilityDto>
+        var expected = new List<PowerDto>
         {
-            new("fireball", "Fireball", "Spell", "Launch a ball of fire", 20, 3, 5, 100, false, 1),
+            new("fireball", "Fireball", "Active", "Fire", "Launch a ball of fire", 20, 3, 5, 100, false, 1, 1, "Damage"),
         };
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
@@ -64,7 +64,7 @@ public class HttpContentServiceTests : TestBase
     [Fact]
     public async Task GetAbilityAsync_Should_Return_Dto_On_Success()
     {
-        var expected = new AbilityDto("fireball", "Fireball", "Spell", "Launch a ball of fire", 20, 3, 5, 100, false, 1);
+        var expected = new PowerDto("fireball", "Fireball", "Active", "Fire", "Launch a ball of fire", 20, 3, 5, 100, false, 1, 1, "Damage");
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
         var result = await sut.GetAbilityAsync("fireball");
@@ -352,16 +352,16 @@ public class HttpContentServiceTests : TestBase
     [Fact]
     public async Task GetSpellsAsync_Should_Return_List_On_Success()
     {
-        var expected = new List<SpellDto>
+        var expected = new List<PowerDto>
         {
-            new("fire-bolt", "Fire Bolt", "Fire Bolt", "Fire", 1, 10),
+            new("fire-bolt", "Fire Bolt", "Spell", "Fire", "A bolt of fire", 10, 0, 5, 100, false, 1, 1, "Damage"),
         };
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
         var result = await sut.GetSpellsAsync();
 
         result.Should().HaveCount(1);
-        result[0].SpellId.Should().Be("fire-bolt");
+        result[0].Slug.Should().Be("fire-bolt");
     }
 
     [Fact]
@@ -379,7 +379,7 @@ public class HttpContentServiceTests : TestBase
     [Fact]
     public async Task GetSpellAsync_Should_Return_Dto_On_Success()
     {
-        var expected = new SpellDto("fire-bolt", "Fire Bolt", "Fire Bolt", "Fire", 1, 10);
+        var expected = new PowerDto("fire-bolt", "Fire Bolt", "Spell", "Fire", "A bolt of fire", 10, 0, 5, 100, false, 1, 1, "Damage");
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
         var result = await sut.GetSpellAsync("fire-bolt");

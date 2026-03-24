@@ -23,8 +23,8 @@ public class CombatService
     private readonly ISaveGameService _saveGameService;
     private readonly IMediator _mediator;
     private readonly ILogger<CombatService> _logger;
-    private readonly ReactiveAbilityService _reactiveAbilityService;
-    private readonly EnemyAbilityAIService _enemyAbilityAI;
+    private readonly ReactivePowerService _reactivePowerService;
+    private readonly EnemyPowerAIService _enemyPowerAI;
     private readonly EnemySpellCastingService _enemySpellCastingAI;
     private readonly ItemGenerator? _itemGenerator;
 
@@ -42,8 +42,8 @@ public class CombatService
         _saveGameService = saveGameService;
         _mediator = mediator;
         _logger = logger;
-        _reactiveAbilityService = new ReactiveAbilityService(loggerFactory.CreateLogger<ReactiveAbilityService>(), powerCatalogService);
-        _enemyAbilityAI = new EnemyAbilityAIService(powerCatalogService);
+        _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
+        _enemyPowerAI = new EnemyPowerAIService(powerCatalogService);
         _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService);
         _itemGenerator = itemGenerator;
     }
@@ -56,8 +56,8 @@ public class CombatService
         _saveGameService = null!;
         _mediator = null!;
         _logger = NullLogger<CombatService>.Instance;
-        _reactiveAbilityService = new ReactiveAbilityService(NullLogger<ReactiveAbilityService>.Instance);
-        _enemyAbilityAI = new EnemyAbilityAIService();
+        _reactivePowerService = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance);
+        _enemyPowerAI = new EnemyPowerAIService();
         _enemySpellCastingAI = new EnemySpellCastingService();
     }
 
@@ -115,7 +115,7 @@ public class CombatService
         // Trigger reactive abilities on critical hit
         if (isCritical)
         {
-            _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onCrit");
+            _reactivePowerService.CheckAndTriggerReactiveAbilities(player, "onCrit");
         }
 
         // Determine weapon skill for XP awards (from item's skillReference trait)
@@ -295,7 +295,7 @@ public class CombatService
             result.Message = $"You dodged {enemy.Name}'s attack!";
 
             // Trigger reactive abilities on dodge
-            _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDodge");
+            _reactivePowerService.CheckAndTriggerReactiveAbilities(player, "onDodge");
 
             // Award acrobatics XP for successful dodge
             await _mediator.Send(new AwardSkillXPCommand
@@ -316,7 +316,7 @@ public class CombatService
             result.Message = $"You blocked {enemy.Name}'s attack!";
 
             // Trigger reactive abilities on block
-            _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onBlock");
+            _reactivePowerService.CheckAndTriggerReactiveAbilities(player, "onBlock");
 
             // Award block XP for successful block
             await _mediator.Send(new AwardSkillXPCommand
@@ -390,7 +390,7 @@ public class CombatService
         result.Damage = finalDamage;
 
         // Trigger reactive abilities on damage taken
-        _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
+        _reactivePowerService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
 
         // Award armor skill XP when taking damage (not defending)
         if (!isDefending && finalDamage > 0)
@@ -422,10 +422,10 @@ public class CombatService
     /// <param name="player">The target player</param>
     /// <param name="abilityStates">Dictionary tracking ability cooldowns (abilityId -> turns remaining)</param>
     /// <returns>Result of the ability usage, or null if no ability was used</returns>
-    public UseAbilityResult? ExecuteEnemyAbility(Enemy enemy, Character player, Dictionary<string, int> abilityStates)
+    public UsePowerResult? ExecuteEnemyAbility(Enemy enemy, Character player, Dictionary<string, int> abilityStates)
     {
         // AI decides whether to use an ability
-        var chosenAbilityId = _enemyAbilityAI.DecideAbilityUsage(enemy, player, abilityStates);
+        var chosenAbilityId = _enemyPowerAI.DecideAbilityUsage(enemy, player, abilityStates);
 
         if (chosenAbilityId == null)
         {
@@ -447,7 +447,7 @@ public class CombatService
         abilityStates[chosenAbilityId] = ability.Cooldown;
 
         // Execute ability effect
-        var result = new UseAbilityResult
+        var result = new UsePowerResult
         {
             Success = true,
             Message = $"{enemy.Name} used {ability.Name}!",
@@ -471,7 +471,7 @@ public class CombatService
                 };
 
                 // Trigger reactive abilities on damage taken
-                _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
+                _reactivePowerService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
                 break;
 
             case PowerEffectType.Protection:
@@ -553,7 +553,7 @@ public class CombatService
                 };
 
                 // Trigger reactive abilities (player takes damage)
-                _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
+                _reactivePowerService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
                 break;
 
             case PowerEffectType.Heal:

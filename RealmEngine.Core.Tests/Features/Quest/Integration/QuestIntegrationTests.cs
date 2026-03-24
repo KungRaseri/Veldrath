@@ -77,10 +77,9 @@ public class QuestIntegrationTests
             null, // ItemGenerator has ContentDbContext dependencies not available in integration tests
             sp.GetRequiredService<ILogger<QuestRewardService>>()));
         services.AddSingleton<QuestInitializationService>();
-        services.AddSingleton<IAbilityRepository, InMemoryAbilityRepository>();
-        services.AddSingleton<ISpellRepository, InMemorySpellRepository>();
-        services.AddSingleton(sp => new AbilityDataService(sp.GetRequiredService<IAbilityRepository>()));
-        services.AddSingleton(sp => new SpellDataService(sp.GetRequiredService<ISpellRepository>()));
+        services.AddSingleton<IPowerRepository, InMemoryPowerRepository>();
+        services.AddSingleton(sp => new PowerDataService(sp.GetRequiredService<IPowerRepository>()));
+        services.AddSingleton<SpellCastingService>();
         services.AddSingleton(mockSkillCatalog.Object);
         services.AddSingleton<SkillProgressionService>();
         services.AddSingleton<CombatService>();

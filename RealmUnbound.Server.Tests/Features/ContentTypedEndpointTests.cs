@@ -75,13 +75,13 @@ public sealed class ContentTypedEndpointsFixture : IAsyncLifetime
             TargetSlot  = "armor",
         });
 
-        db.Abilities.Add(new Ability
+        db.Powers.Add(new Power
         {
             Slug        = "typed-strike",
             TypeKey     = "offensive",
             DisplayName = "Typed Strike",
             IsActive    = true,
-            AbilityType = "active",
+            PowerType   = "active",
         });
 
         // Item entity: TypeKey = category; ItemType = sub-type used for filtering.
@@ -298,25 +298,25 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/abilities ────────────────────────────────────────────
+    // ── GET /api/content/powers ────────────────────────────────────────────
 
     [Fact]
     public async Task GetAbilities_Returns_OK_And_ContainsSeededAbility()
     {
-        var response = await _client.GetAsync("/api/content/abilities");
+        var response = await _client.GetAsync("/api/content/powers");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<AbilityDto>>();
+        var items = await response.Content.ReadFromJsonAsync<List<PowerDto>>();
         items.Should().Contain(a => a.Slug == "typed-strike");
     }
 
     [Fact]
     public async Task GetAbilityBySlug_Returns_Correct_Ability()
     {
-        var response = await _client.GetAsync("/api/content/abilities/typed-strike");
+        var response = await _client.GetAsync("/api/content/powers/typed-strike");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var item = await response.Content.ReadFromJsonAsync<AbilityDto>();
+        var item = await response.Content.ReadFromJsonAsync<PowerDto>();
         item!.Slug.Should().Be("typed-strike");
         item.DisplayName.Should().Be("Typed Strike");
     }
@@ -324,7 +324,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
     [Fact]
     public async Task GetAbilityBySlug_Returns_404_For_Unknown_Slug()
     {
-        var response = await _client.GetAsync("/api/content/abilities/no-such-ability");
+        var response = await _client.GetAsync("/api/content/powers/no-such-ability");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

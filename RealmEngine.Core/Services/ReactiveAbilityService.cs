@@ -7,17 +7,17 @@ namespace RealmEngine.Core.Services;
 /// <summary>
 /// Service for checking and triggering reactive abilities during combat.
 /// </summary>
-public class ReactiveAbilityService
+public class ReactivePowerService
 {
     private readonly PowerDataService? _powerCatalogService;
-    private readonly ILogger<ReactiveAbilityService> _logger;
+    private readonly ILogger<ReactivePowerService> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ReactiveAbilityService"/> class.
+    /// Initializes a new instance of the <see cref="ReactivePowerService"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="powerCatalogService">The power catalog service.</param>
-    public ReactiveAbilityService(ILogger<ReactiveAbilityService> logger, PowerDataService? powerCatalogService = null)
+    public ReactivePowerService(ILogger<ReactivePowerService> logger, PowerDataService? powerCatalogService = null)
     {
         _powerCatalogService = powerCatalogService;
         _logger = logger;

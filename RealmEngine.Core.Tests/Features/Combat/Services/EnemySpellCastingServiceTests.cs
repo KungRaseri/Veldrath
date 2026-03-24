@@ -155,9 +155,9 @@ public class EnemySpellCastingServiceTests
     {
         // Arrange
         var service = new EnemySpellCastingService();
-        var spell = new Spell
+        var spell = new Power
         {
-            SpellId = "fireball",
+            Id = "fireball",
             Name = "Fireball",
             ManaCost = 20
         };
@@ -180,9 +180,9 @@ public class EnemySpellCastingServiceTests
     {
         // Arrange
         var service = new EnemySpellCastingService();
-        var spell = new Spell
+        var spell = new Power
         {
-            SpellId = "cantrip",
+            Id = "cantrip",
             Name = "Cantrip",
             ManaCost = 1
         };

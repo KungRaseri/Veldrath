@@ -11,16 +11,16 @@ namespace RealmEngine.Core.Tests.Services;
 [Trait("Category", "Service")]
 public class PassiveBonusCalculatorTests
 {
-    private static async Task<AbilityDataService> BuildAbilityDataService(IEnumerable<Ability> abilities)
+    private static async Task<PowerDataService> BuildPowerDataService(IEnumerable<Power> powers)
     {
-        var mockRepo = new Mock<IAbilityRepository>();
-        mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(abilities.ToList());
-        var svc = new AbilityDataService(mockRepo.Object);
+        var mockRepo = new Mock<IPowerRepository>();
+        mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(powers.ToList());
+        var svc = new PowerDataService(mockRepo.Object);
         await svc.InitializeAsync();
         return svc;
     }
 
-    private static Ability MakePassiveAbility(string id, string traitCategory) => new()
+    private static Power MakePassiveAbility(string id, string traitCategory) => new()
     {
         Id = id,
         DisplayName = id,
@@ -43,7 +43,7 @@ public class PassiveBonusCalculatorTests
     [Fact]
     public async Task GetPhysicalDamageBonus_ReturnsZero_WhenCharacterHasNoAbilities()
     {
-        var svc = await BuildAbilityDataService([]);
+        var svc = await BuildPowerDataService([]);
         var calculator = new PassiveBonusCalculator(svc);
         var character = new Character { Name = "Hero" };
 
@@ -53,7 +53,7 @@ public class PassiveBonusCalculatorTests
     [Fact]
     public async Task GetPhysicalDamageBonus_ReturnsZero_WhenAbilityIsNotPassive()
     {
-        var activeAbility = new Ability
+        var activeAbility = new Power
         {
             Id = "charge",
             DisplayName = "Charge",
@@ -63,7 +63,7 @@ public class PassiveBonusCalculatorTests
                 ["category"] = new Dictionary<string, object> { ["value"] = "offensive_traits" }
             }
         };
-        var svc = await BuildAbilityDataService([activeAbility]);
+        var svc = await BuildPowerDataService([activeAbility]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetPhysicalDamageBonus(CharacterWithAbility("charge")).Should().Be(0);
@@ -76,7 +76,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetPhysicalDamageBonus_ReturnsBonus_ForCombatCategoryPassive(string category)
     {
         var ability = MakePassiveAbility("power-strike", category);
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetPhysicalDamageBonus(CharacterWithAbility("power-strike")).Should().Be(5);
@@ -87,7 +87,7 @@ public class PassiveBonusCalculatorTests
     {
         var a1 = MakePassiveAbility("a1", "combat");
         var a2 = MakePassiveAbility("a2", "offensive_traits");
-        var svc = await BuildAbilityDataService([a1, a2]);
+        var svc = await BuildPowerDataService([a1, a2]);
         var calculator = new PassiveBonusCalculator(svc);
         var character = new Character
         {
@@ -109,7 +109,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetMagicDamageBonus_ReturnsBonus_ForMagicCategoryPassive(string category)
     {
         var ability = MakePassiveAbility("fireball-mastery", category);
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetMagicDamageBonus(CharacterWithAbility("fireball-mastery")).Should().Be(5);
@@ -119,7 +119,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetMagicDamageBonus_ReturnsZero_ForPhysicalCategoryPassive()
     {
         var ability = MakePassiveAbility("shield-mastery", "combat");
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetMagicDamageBonus(CharacterWithAbility("shield-mastery")).Should().Be(0);
@@ -131,7 +131,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetCriticalChanceBonus_ReturnsBonus_ForOffensiveCategoryPassive(string category)
     {
         var ability = MakePassiveAbility("precision", category);
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetCriticalChanceBonus(CharacterWithAbility("precision")).Should().Be(2.0);
@@ -143,7 +143,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetDodgeChanceBonus_ReturnsBonus_ForDefensiveOrStealthPassive(string category)
     {
         var ability = MakePassiveAbility("evasion", category);
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetDodgeChanceBonus(CharacterWithAbility("evasion")).Should().Be(3.0);
@@ -155,7 +155,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetDefenseBonus_ReturnsBonus_ForDefensiveCombatPassive(string category)
     {
         var ability = MakePassiveAbility("thick-skin", category);
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetDefenseBonus(CharacterWithAbility("thick-skin")).Should().Be(5);
@@ -165,7 +165,7 @@ public class PassiveBonusCalculatorTests
     public async Task GetDefenseBonus_ReturnsZero_ForMagicPassive()
     {
         var ability = MakePassiveAbility("mana-shield", "magical");
-        var svc = await BuildAbilityDataService([ability]);
+        var svc = await BuildPowerDataService([ability]);
         var calculator = new PassiveBonusCalculator(svc);
 
         calculator.GetDefenseBonus(CharacterWithAbility("mana-shield")).Should().Be(0);

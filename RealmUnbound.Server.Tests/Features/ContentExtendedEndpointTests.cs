@@ -20,7 +20,7 @@ namespace RealmUnbound.Server.Tests.Features;
 /// <c>/api/content/npcs</c> responses.
 /// </para>
 /// <para>
-/// <c>SpellDto.School</c> is the mapped <see cref="MagicalTradition"/> string, not
+/// <c>PowerDto.School</c> is the mapped <see cref="MagicalTradition"/> string, not
 /// the raw entity school. <c>School="fire"</c> maps to <c>"Primal"</c>.
 /// </para>
 /// <para>
@@ -118,8 +118,8 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
             ],
         });
 
-        // Spell — School "fire" maps to MagicalTradition.Primal → SpellDto.School = "Primal".
-        db.Spells.Add(new Spell
+        // Power — School "fire" maps to MagicalTradition.Primal → PowerDto.School = "Primal".
+        db.Powers.Add(new Power
         {
             Slug        = "typed-fireball",
             TypeKey     = "fire",
@@ -127,7 +127,7 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
             IsActive    = true,
             School      = "fire",
             RarityWeight = 50,
-            Stats       = new SpellStats { ManaCost = 25, CastTime = 1.5f, Range = 20 },
+            Stats       = new PowerStats { ManaCost = 25, CastTime = 1.5f, Range = 20 },
         });
 
         await db.SaveChangesAsync();
@@ -341,26 +341,26 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/spells ───────────────────────────────────────────────
+    // ── GET /api/content/powers ───────────────────────────────────────────────
 
     [Fact]
     public async Task GetSpells_Returns_OK_And_ContainsSeededSpell()
     {
-        var response = await _client.GetAsync("/api/content/spells");
+        var response = await _client.GetAsync("/api/content/powers");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<SpellDto>>();
-        items.Should().Contain(s => s.SpellId == "typed-fireball");
+        var items = await response.Content.ReadFromJsonAsync<List<PowerDto>>();
+        items.Should().Contain(s => s.Slug == "typed-fireball");
     }
 
     [Fact]
     public async Task GetSpellBySlug_Returns_Correct_Spell()
     {
-        var response = await _client.GetAsync("/api/content/spells/typed-fireball");
+        var response = await _client.GetAsync("/api/content/powers/typed-fireball");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var item = await response.Content.ReadFromJsonAsync<SpellDto>();
-        item!.SpellId.Should().Be("typed-fireball");
+        var item = await response.Content.ReadFromJsonAsync<PowerDto>();
+        item!.Slug.Should().Be("typed-fireball");
         item.DisplayName.Should().Be("Fireball");
         // School "fire" → ParseTradition → MagicalTradition.Primal → "Primal"
         item.School.Should().Be("Primal");
@@ -371,7 +371,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
     [Fact]
     public async Task GetSpellBySlug_Returns_404_For_Unknown_Slug()
     {
-        var response = await _client.GetAsync("/api/content/spells/no-such-spell");
+        var response = await _client.GetAsync("/api/content/powers/no-such-spell");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

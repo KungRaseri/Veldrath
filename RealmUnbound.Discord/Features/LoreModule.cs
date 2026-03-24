@@ -4,10 +4,10 @@ using RealmEngine.Shared.Abstractions;
 
 namespace RealmUnbound.Discord.Features;
 
-/// <summary>Lore lookup commands for enemies, abilities, and character classes.</summary>
+/// <summary>Lore lookup commands for enemies, powers, and character classes.</summary>
 public sealed class LoreModule(
     IEnemyRepository enemies,
-    IAbilityRepository abilities,
+    IPowerRepository powers,
     ICharacterClassRepository classes) : InteractionModuleBase<SocketInteractionContext>
 {
     private static readonly Color EnemyColor   = new(0xAD1414);
@@ -62,16 +62,16 @@ public sealed class LoreModule(
     }
 
     // ──────────────────────────────────────────────────────────────
-    // /ability
+    // /power
     // ──────────────────────────────────────────────────────────────
 
-    [SlashCommand("ability", "Look up an ability from the arcane codex")]
-    public async Task AbilityAsync(
-        [Summary("name", "Ability name or keyword to search for")] string name)
+    [SlashCommand("power", "Look up a power from the arcane codex")]
+    public async Task PowerAsync(
+        [Summary("name", "Power name or keyword to search for")] string name)
     {
         await DeferAsync(ephemeral: true);
 
-        var all    = await abilities.GetAllAsync();
+        var all    = await powers.GetAllAsync();
         var needle = name.Trim().ToLowerInvariant();
         var match  = all.FirstOrDefault(a =>
             a.DisplayName.Contains(needle, StringComparison.OrdinalIgnoreCase) ||

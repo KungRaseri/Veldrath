@@ -13,26 +13,26 @@ namespace RealmEngine.Core.Tests.Features.Progression.Commands;
 public class CastSpellHandlerTests
 {
     private static async Task<SpellCastingService> CreateSpellCastingServiceAsync(
-        IEnumerable<Spell>? spells = null,
+        IEnumerable<Power>? powers = null,
         IEnumerable<SkillDefinition>? skills = null)
     {
-        var spellMockRepo = new Mock<ISpellRepository>();
-        spellMockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((spells ?? []).ToList());
-        var spellDataSvc = new SpellDataService(spellMockRepo.Object);
-        await spellDataSvc.InitializeAsync();
+        var powerMockRepo = new Mock<IPowerRepository>();
+        powerMockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((powers ?? []).ToList());
+        var powerDataSvc = new PowerDataService(powerMockRepo.Object);
+        await powerDataSvc.InitializeAsync();
 
         var skillMockRepo = new Mock<ISkillRepository>();
         skillMockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((skills ?? []).ToList());
         var skillDataSvc = new SkillDataService(skillMockRepo.Object);
         await skillDataSvc.InitializeAsync();
 
-        return new SpellCastingService(spellDataSvc, new SkillProgressionService(skillDataSvc));
+        return new SpellCastingService(powerDataSvc, new SkillProgressionService(skillDataSvc));
     }
 
-    private static Spell MakeSpell(string id, int manaCost = 10, int minSkillRank = 0, int cooldown = 0) =>
+    private static Power MakeSpell(string id, int manaCost = 10, int minSkillRank = 0, int cooldown = 0) =>
         new()
         {
-            SpellId = id,
+            Id = id,
             Name = id,
             DisplayName = id,
             Description = id,

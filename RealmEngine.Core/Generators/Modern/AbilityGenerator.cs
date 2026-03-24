@@ -5,7 +5,7 @@ using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Generators.Modern;
 
 /// <summary>Generates Power instances from the power catalog in the database.</summary>
-public class AbilityGenerator(IPowerRepository repository, ILogger<AbilityGenerator> logger)
+public class PowerGenerator(IPowerRepository repository, ILogger<PowerGenerator> logger)
 {
     private readonly Random _random = new();
 

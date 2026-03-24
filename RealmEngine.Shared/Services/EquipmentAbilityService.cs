@@ -3,16 +3,16 @@ using RealmEngine.Shared.Models;
 namespace RealmEngine.Shared.Services;
 
 /// <summary>
-/// Service for managing abilities granted by equipped items.
+/// Service for managing powers granted by equipped items.
 /// Handles activation/deactivation when equipment changes.
 /// </summary>
-public static class EquipmentAbilityService
+public static class EquipmentPowerService
 {
     /// <summary>
-    /// Recalculates all equipment-granted abilities based on currently equipped items.
+    /// Recalculates all equipment-granted powers based on currently equipped items.
     /// Call this after equipping/unequipping any item.
     /// </summary>
-    public static void RecalculateEquipmentAbilities(Character character)
+    public static void RecalculateEquipmentPowers(Character character)
     {
         // Clear existing equipment-granted abilities
         character.EquipmentGrantedAbilities.Clear();
@@ -20,14 +20,14 @@ public static class EquipmentAbilityService
         // Scan all equipped items for grantedAbilities trait
         foreach (var item in character.GetEquippedItems())
         {
-            GrantAbilitiesFromItem(character, item);
+            GrantPowersFromItem(character, item);
         }
     }
     
     /// <summary>
-    /// Grants abilities from a specific item to the character.
+    /// Grants powers from a specific item to the character.
     /// </summary>
-    public static void GrantAbilitiesFromItem(Character character, Item item)
+    public static void GrantPowersFromItem(Character character, Item item)
     {
         if (item == null)
             return;
@@ -49,7 +49,7 @@ public static class EquipmentAbilityService
             if (string.IsNullOrWhiteSpace(abilityRef))
                 continue;
                 
-            // Extract ability ID from reference (@abilities/category:ability-name -> category:ability-name)
+            // Extract ability ID from reference (@powers/category:power-attack -> category:power-attack)
             var abilityId = ExtractAbilityIdFromReference(abilityRef);
             
             // Don't override already-learned abilities
@@ -61,10 +61,10 @@ public static class EquipmentAbilityService
     }
     
     /// <summary>
-    /// Removes abilities granted by a specific item.
+    /// Removes powers granted by a specific item.
     /// Call this before unequipping an item.
     /// </summary>
-    public static void RevokeAbilitiesFromItem(Character character, Item item)
+    public static void RevokePowersFromItem(Character character, Item item)
     {
         if (item == null)
             return;
@@ -82,48 +82,50 @@ public static class EquipmentAbilityService
     }
     
     /// <summary>
-    /// Extracts ability ID from a JSON reference.
-    /// Example: @abilities/active/offensive:power-attack -> active/offensive:power-attack
+    /// Extracts power ID from a JSON reference.
+    /// Example: @powers/active/offensive:power-attack -> active/offensive:power-attack
     /// </summary>
     private static string ExtractAbilityIdFromReference(string reference)
     {
         if (string.IsNullOrWhiteSpace(reference))
             return string.Empty;
             
-        // Remove @abilities/ prefix if present
+        // Remove @powers/ prefix if present
+        if (reference.StartsWith("@powers/"))
+            return reference.Substring(8); // Skip "@powers/"
+
+        // Also handle legacy @abilities/ prefix
         if (reference.StartsWith("@abilities/"))
-        {
-            return reference.Substring(11); // Skip "@abilities/"
-        }
+            return reference.Substring(11);
         
         // If no @ prefix, assume it's already a clean ability ID
         return reference;
     }
     
     /// <summary>
-    /// Gets all abilities available to a character (learned + equipment-granted).
+    /// Gets all powers available to a character (learned + equipment-granted).
     /// </summary>
-    public static List<string> GetAllAvailableAbilities(Character character)
+    public static List<string> GetAllAvailablePowers(Character character)
     {
-        var allAbilities = new HashSet<string>(character.LearnedAbilities.Keys);
+        var allPowers = new HashSet<string>(character.LearnedAbilities.Keys);
         
         foreach (var abilityId in character.EquipmentGrantedAbilities.Keys)
         {
-            allAbilities.Add(abilityId);
+            allPowers.Add(abilityId);
         }
         
-        return allAbilities.ToList();
+        return allPowers.ToList();
     }
     
     /// <summary>
-    /// Gets the source of an ability (learned, or equipment item name).
+    /// Gets the source of a power (learned, or equipment item name).
     /// </summary>
-    public static string GetAbilitySource(Character character, string abilityId)
+    public static string GetPowerSource(Character character, string powerId)
     {
-        if (character.LearnedAbilities.ContainsKey(abilityId))
+        if (character.LearnedAbilities.ContainsKey(powerId))
             return "Learned";
             
-        if (character.EquipmentGrantedAbilities.TryGetValue(abilityId, out var itemId))
+        if (character.EquipmentGrantedAbilities.TryGetValue(powerId, out var itemId))
         {
             var item = character.GetEquippedItems().FirstOrDefault(i => i.Id == itemId);
             return item != null ? item.Name : "Equipment";

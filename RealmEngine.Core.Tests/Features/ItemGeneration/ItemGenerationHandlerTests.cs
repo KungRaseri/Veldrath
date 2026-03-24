@@ -67,20 +67,20 @@ public class GenerateNPCCommandHandlerTests
 }
 
 [Trait("Category", "Feature")]
-public class GenerateAbilityCommandHandlerTests
+public class GeneratePowerCommandHandlerTests
 {
-    private static GenerateAbilityCommandHandler CreateHandler()
+    private static GeneratePowerCommandHandler CreateHandler()
     {
-        var mockRepo = new Mock<IAbilityRepository>();
+        var mockRepo = new Mock<IPowerRepository>();
         mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
-        var generator = new AbilityGenerator(mockRepo.Object, NullLogger<AbilityGenerator>.Instance);
-        return new GenerateAbilityCommandHandler(generator, NullLogger<GenerateAbilityCommandHandler>.Instance);
+        var generator = new PowerGenerator(mockRepo.Object, NullLogger<PowerGenerator>.Instance);
+        return new GeneratePowerCommandHandler(generator, NullLogger<GeneratePowerCommandHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_ReturnsFailure_WhenCategoryIsEmpty()
     {
-        var command = new GenerateAbilityCommand { Category = "", Subcategory = "offensive" };
+        var command = new GeneratePowerCommand { Category = "", Subcategory = "offensive" };
         var result = await CreateHandler().Handle(command, default);
 
         result.Success.Should().BeFalse();
@@ -90,7 +90,7 @@ public class GenerateAbilityCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsFailure_WhenSubcategoryIsEmpty()
     {
-        var command = new GenerateAbilityCommand { Category = "active", Subcategory = "" };
+        var command = new GeneratePowerCommand { Category = "active", Subcategory = "" };
         var result = await CreateHandler().Handle(command, default);
 
         result.Success.Should().BeFalse();
