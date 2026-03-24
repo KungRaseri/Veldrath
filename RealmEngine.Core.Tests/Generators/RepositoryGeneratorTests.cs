@@ -9,14 +9,14 @@ using Xunit;
 namespace RealmEngine.Core.Tests.Generators;
 
 [Trait("Category", "Generators")]
-public class AbilityGeneratorTests
+public class PowerGeneratorTests
 {
-    private readonly Mock<IAbilityRepository> _repo = new();
+    private readonly Mock<IPowerRepository> _repo = new();
 
-    private AbilityGenerator CreateGenerator() =>
-        new(_repo.Object, NullLogger<AbilityGenerator>.Instance);
+    private PowerGenerator CreateGenerator() =>
+        new(_repo.Object, NullLogger<PowerGenerator>.Instance);
 
-    private static Ability MakeAbility(string slug = "fireball") =>
+    private static Power MakePower(string slug = "fireball") =>
         new() { Slug = slug, Name = slug, RarityWeight = 50 };
 
     [Fact]
@@ -28,10 +28,10 @@ public class AbilityGeneratorTests
     }
 
     [Fact]
-    public async Task GenerateAbilitiesAsync_WithAbilities_ReturnsRequestedCount()
+    public async Task GenerateAbilitiesAsync_WithPowers_ReturnsRequestedCount()
     {
-        var abilities = Enumerable.Range(0, 10).Select(i => MakeAbility($"ability-{i}")).ToList();
-        _repo.Setup(r => r.GetByTypeAsync(It.IsAny<string>())).ReturnsAsync(abilities);
+        var powers = Enumerable.Range(0, 10).Select(i => MakePower($"power-{i}")).ToList();
+        _repo.Setup(r => r.GetByTypeAsync(It.IsAny<string>())).ReturnsAsync(powers);
         var result = await CreateGenerator().GenerateAbilitiesAsync("active", "combat", count: 3);
         result.Should().HaveCount(3);
     }
@@ -45,10 +45,10 @@ public class AbilityGeneratorTests
     }
 
     [Fact]
-    public async Task GenerateAbilityByNameAsync_Found_ReturnsAbility()
+    public async Task GenerateAbilityByNameAsync_Found_ReturnsPower()
     {
-        var ability = MakeAbility("fireball");
-        _repo.Setup(r => r.GetBySlugAsync("fireball")).ReturnsAsync(ability);
+        var power = MakePower("fireball");
+        _repo.Setup(r => r.GetBySlugAsync("fireball")).ReturnsAsync(power);
         var result = await CreateGenerator().GenerateAbilityByNameAsync("active", "combat", "fireball");
         result.Should().NotBeNull();
         result!.Slug.Should().Be("fireball");
@@ -57,7 +57,7 @@ public class AbilityGeneratorTests
     [Fact]
     public async Task GenerateAbilityByNameAsync_NotFound_ReturnsNull()
     {
-        _repo.Setup(r => r.GetBySlugAsync(It.IsAny<string>())).ReturnsAsync((Ability?)null);
+        _repo.Setup(r => r.GetBySlugAsync(It.IsAny<string>())).ReturnsAsync((Power?)null);
         var result = await CreateGenerator().GenerateAbilityByNameAsync("active", "combat", "unknown");
         result.Should().BeNull();
     }

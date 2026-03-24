@@ -11,15 +11,15 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 
 [Trait("Category", "Feature")]
 /// <summary>
-/// Tests for InitializeStartingSpellsHandler.
+/// Tests for InitializeStartingPowersHandler.
 /// </summary>
-public class InitializeStartingSpellsHandlerTests
+public class InitializeStartingPowersHandlerTests
 {
     private static Mock<ICharacterClassRepository> BuildClassRepo(string className, List<string> spellIds)
     {
         var mock = new Mock<ICharacterClassRepository>();
         mock.Setup(r => r.GetByName(className))
-            .Returns(new CharacterClass { Name = className, StartingSpellIds = spellIds });
+            .Returns(new CharacterClass { Name = className, StartingPowerIds = spellIds });
         return mock;
     }
 
@@ -41,9 +41,9 @@ public class InitializeStartingSpellsHandlerTests
         
         var spellIds = Enumerable.Range(1, expectedCount).Select(i => $"spell-{i}").ToList();
         var classRepo = BuildClassRepo(className, spellIds);
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
+        var handler = new InitializeStartingPowersHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingPowersHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = className };
-        var command = new InitializeStartingSpellsCommand
+        var command = new InitializeStartingPowersCommand
         {
             Character = character,
             ClassName = className
@@ -55,8 +55,8 @@ public class InitializeStartingSpellsHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
-        result.SpellsLearned.Should().Be(expectedCount);
-        result.SpellIds.Should().HaveCount(expectedCount);
+        result.PowersLearned.Should().Be(expectedCount);
+        result.PowerIds.Should().HaveCount(expectedCount);
         
         // Verify LearnSpellCommand was called the correct number of times
         mockMediator.Verify(
@@ -80,9 +80,9 @@ public class InitializeStartingSpellsHandlerTests
             "@spells/arcane/defensive:shield"
         };
         var classRepo = BuildClassRepo("Mage", mageSpells);
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
+        var handler = new InitializeStartingPowersHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingPowersHandler>.Instance);
         var character = new Character { Name = "TestMage", ClassName = "Mage" };
-        var command = new InitializeStartingSpellsCommand
+        var command = new InitializeStartingPowersCommand
         {
             Character = character,
             ClassName = "Mage"
@@ -92,9 +92,9 @@ public class InitializeStartingSpellsHandlerTests
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.SpellIds.Should().Contain("@spells/arcane/offensive:magic-missile");
-        result.SpellIds.Should().Contain("@spells/arcane/offensive:fire-bolt");
-        result.SpellIds.Should().Contain("@spells/arcane/defensive:shield");
+        result.PowerIds.Should().Contain("@spells/arcane/offensive:magic-missile");
+        result.PowerIds.Should().Contain("@spells/arcane/offensive:fire-bolt");
+        result.PowerIds.Should().Contain("@spells/arcane/defensive:shield");
     }
 
     [Fact]
@@ -103,9 +103,9 @@ public class InitializeStartingSpellsHandlerTests
         // Arrange
         var mockMediator = new Mock<IMediator>();
         var classRepo = BuildClassRepo("Warrior", []);
-        var handler = new InitializeStartingSpellsHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingSpellsHandler>.Instance);
+        var handler = new InitializeStartingPowersHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingPowersHandler>.Instance);
         var character = new Character { Name = "TestWarrior", ClassName = "Warrior" };
-        var command = new InitializeStartingSpellsCommand
+        var command = new InitializeStartingPowersCommand
         {
             Character = character,
             ClassName = "Warrior"
@@ -117,8 +117,8 @@ public class InitializeStartingSpellsHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
-        result.SpellsLearned.Should().Be(0);
-        result.SpellIds.Should().BeEmpty();
+        result.PowersLearned.Should().Be(0);
+        result.PowerIds.Should().BeEmpty();
         result.Message.Should().Contain("No starting spells");
     }
 }

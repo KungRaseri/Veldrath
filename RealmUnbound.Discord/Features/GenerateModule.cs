@@ -230,21 +230,21 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
 
         // Split "active/offensive" → Category="active", Subcategory="offensive"
         var parts = type.Split('/', 2);
-        var result = await mediator.Send(new GenerateAbilityCommand
+        var result = await mediator.Send(new GeneratePowerCommand
         {
             Category    = parts[0],
             Subcategory = parts.Length > 1 ? parts[1] : string.Empty,
             Count       = 1,
         });
 
-        if (!result.Success || result.Abilities is null || result.Abilities.Count == 0)
+        if (!result.Success || result.Powers is null || result.Powers.Count == 0)
         {
             await FollowupAsync($"⚠️ The arcane scroll was blank. Could not generate a **{type}** ability." +
                                 (result.ErrorMessage is not null ? $"\n*{result.ErrorMessage}*" : ""));
             return;
         }
 
-        var ability = result.Abilities[0];
+        var ability = result.Powers[0];
         var name    = string.IsNullOrWhiteSpace(ability.DisplayName) ? ability.Name : ability.DisplayName;
         var desc    = string.IsNullOrWhiteSpace(ability.Description) ? null
                     : ability.Description.Length > 200 ? ability.Description[..200] + "…"

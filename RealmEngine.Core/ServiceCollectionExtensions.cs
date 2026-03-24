@@ -71,7 +71,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ItemGenerator>();
         services.AddScoped<EnemyGenerator>();
         services.AddScoped<NpcGenerator>();
-        services.AddScoped<AbilityGenerator>();
+        services.AddScoped<PowerGenerator>();
         services.AddScoped<CharacterClassGenerator>();
         services.AddScoped<LocationGenerator>();
         services.AddScoped<QuestGenerator>();
@@ -128,7 +128,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RarityConfigService>();
         services.AddScoped<DescriptiveTextService>();
         services.AddScoped<NodeSpawnerService>();
-        services.AddScoped<ReactiveAbilityService>();
+        services.AddScoped<ReactivePowerService>();
         services.AddScoped<PassiveBonusCalculator>();
         
         // Register catalog services (singletons for shared catalogs)
@@ -230,7 +230,7 @@ public static class ServiceCollectionExtensions
         
         // Register combat AI services
         services.AddScoped<EnemySpellCastingService>();
-        services.AddScoped<EnemyAbilityAIService>();
+        services.AddScoped<EnemyPowerAIService>();
         
         // Register additional feature services
         services.AddScoped<DungeonGeneratorService>();

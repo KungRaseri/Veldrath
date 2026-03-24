@@ -273,8 +273,8 @@ public class FakeContentService : IContentService
         new("rogue",   "Rogue",   "rogues",    8, "dexterity",    30),
     ];
 
-    public Task<List<AbilityDto>>    GetAbilitiesAsync()            => Task.FromResult(new List<AbilityDto>());
-    public Task<AbilityDto?>         GetAbilityAsync(string slug)   => Task.FromResult<AbilityDto?>(null);
+    public Task<List<PowerDto>>     GetAbilitiesAsync()            => Task.FromResult(new List<PowerDto>());
+    public Task<PowerDto?>           GetAbilityAsync(string slug)   => Task.FromResult<PowerDto?>(null);
     public Task<List<EnemyDto>>      GetEnemiesAsync()              => Task.FromResult(new List<EnemyDto>());
     public Task<EnemyDto?>           GetEnemyAsync(string slug)     => Task.FromResult<EnemyDto?>(null);
     public Task<List<NpcDto>>        GetNpcsAsync()                 => Task.FromResult(new List<NpcDto>());
@@ -285,8 +285,8 @@ public class FakeContentService : IContentService
     public Task<RecipeDto?>          GetRecipeAsync(string slug)    => Task.FromResult<RecipeDto?>(null);
     public Task<List<LootTableDto>>  GetLootTablesAsync()           => Task.FromResult(new List<LootTableDto>());
     public Task<LootTableDto?>       GetLootTableAsync(string slug) => Task.FromResult<LootTableDto?>(null);
-    public Task<List<SpellDto>>      GetSpellsAsync()               => Task.FromResult(new List<SpellDto>());
-    public Task<SpellDto?>           GetSpellAsync(string slug)     => Task.FromResult<SpellDto?>(null);
+    public Task<List<PowerDto>>      GetSpellsAsync()               => Task.FromResult(new List<PowerDto>());
+    public Task<PowerDto?>           GetSpellAsync(string slug)     => Task.FromResult<PowerDto?>(null);
     public Task<List<ActorClassDto>> GetClassesAsync()              => Task.FromResult(new List<ActorClassDto>(Classes));
     public Task<ActorClassDto?>      GetClassAsync(string slug)     => Task.FromResult(Classes.FirstOrDefault(c => c.Slug == slug));
     public Task<List<SpeciesDto>>    GetSpeciesAsync()              => Task.FromResult(new List<SpeciesDto>());

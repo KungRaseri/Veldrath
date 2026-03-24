@@ -10,13 +10,13 @@ namespace RealmUnbound.Client.Services;
 /// </summary>
 public class ContentCache(IContentService contentService, ILogger<ContentCache> logger)
 {
-    private List<AbilityDto>?     _abilities;
+    private List<PowerDto>?     _abilities;
     private List<EnemyDto>?       _enemies;
     private List<NpcDto>?         _npcs;
     private List<QuestDto>?       _quests;
     private List<RecipeDto>?      _recipes;
     private List<LootTableDto>?   _lootTables;
-    private List<SpellDto>?       _spells;
+    private List<PowerDto>?       _spells;
     private List<ActorClassDto>?  _classes;
     private List<SpeciesDto>?     _species;
     private List<BackgroundDto>?  _backgrounds;
@@ -24,7 +24,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
 
     // ── Catalog accessors (lazy-load) ─────────────────────────────────────────
 
-    public async Task<IReadOnlyList<AbilityDto>> GetAbilitiesAsync()
+    public async Task<IReadOnlyList<PowerDto>> GetAbilitiesAsync()
     {
         if (_abilities is null)
         {
@@ -84,7 +84,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
         return _lootTables;
     }
 
-    public async Task<IReadOnlyList<SpellDto>> GetSpellsAsync()
+    public async Task<IReadOnlyList<PowerDto>> GetSpellsAsync()
     {
         if (_spells is null)
         {
@@ -136,7 +136,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
 
     // ── Slug lookups ──────────────────────────────────────────────────────────
 
-    public async Task<AbilityDto?> GetAbilityAsync(string slug)
+    public async Task<PowerDto?> GetAbilityAsync(string slug)
     {
         var list = await GetAbilitiesAsync();
         return list.FirstOrDefault(a => a.Slug == slug)
@@ -178,10 +178,10 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
                ?? await contentService.GetLootTableAsync(slug);
     }
 
-    public async Task<SpellDto?> GetSpellAsync(string slug)
+    public async Task<PowerDto?> GetSpellAsync(string slug)
     {
         var list = await GetSpellsAsync();
-        return list.FirstOrDefault(s => s.SpellId == slug)
+        return list.FirstOrDefault(s => s.Slug == slug)
                ?? await contentService.GetSpellAsync(slug);
     }
 

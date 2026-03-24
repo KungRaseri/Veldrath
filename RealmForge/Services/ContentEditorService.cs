@@ -16,9 +16,9 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 {
     private static readonly HashSet<string> KnownTables = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Abilities", "Species", "ActorClasses", "ActorArchetypes", "ActorInstances",
+        "Powers", "Species", "ActorClasses", "ActorArchetypes", "ActorInstances",
         "Items", "Materials", "Enchantments",
-        "Skills", "Spells", "Backgrounds", "Quests", "Recipes",
+        "Skills", "Backgrounds", "Quests", "Recipes",
         "LootTables", "Organizations", "MaterialProperties", "WorldLocations", "Dialogues"
     };
 
@@ -37,7 +37,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
             return tableName switch
             {
-                "Abilities"          => await db.Abilities.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Powers"             => await db.Powers.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Species"            => await db.Species.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "ActorClasses"       => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "ActorArchetypes"    => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
@@ -46,7 +46,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "Materials"          => await db.Materials.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Enchantments"       => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Skills"             => await db.Skills.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Spells"             => await db.Spells.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                // Powers merged Spells — no separate Spells table key needed
                 "Backgrounds"        => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Quests"             => await db.Quests.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Recipes"            => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
@@ -147,7 +147,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
             var removed = tableName switch
             {
-                "Abilities"          => await RemoveFromSet<Ability>(db, entityId),
+                "Powers"             => await RemoveFromSet<Power>(db, entityId),
                 "Species"            => await RemoveFromSet<Species>(db, entityId),
                 "ActorClasses"       => await RemoveFromSet<ActorClass>(db, entityId),
                 "ActorArchetypes"    => await RemoveFromSet<ActorArchetype>(db, entityId),
@@ -156,7 +156,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "Materials"          => await RemoveFromSet<Material>(db, entityId),
                 "Enchantments"       => await RemoveFromSet<Enchantment>(db, entityId),
                 "Skills"             => await RemoveFromSet<Skill>(db, entityId),
-                "Spells"             => await RemoveFromSet<Spell>(db, entityId),
+                // Powers merged Spells — no separate Spells table key needed
                 "Backgrounds"        => await RemoveFromSet<Background>(db, entityId),
                 "Quests"             => await RemoveFromSet<Quest>(db, entityId),
                 "Recipes"            => await RemoveFromSet<Recipe>(db, entityId),
@@ -201,7 +201,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
     private static ContentBase NewEntityInstance(string tableName) => tableName switch
     {
-        "Abilities"          => new Ability(),
+        "Powers"             => new Power(),
         "Species"            => new Species(),
         "ActorClasses"       => new ActorClass(),
         "ActorArchetypes"    => new ActorArchetype(),
@@ -210,7 +210,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         "Materials"          => new Material(),
         "Enchantments"       => new Enchantment(),
         "Skills"             => new Skill(),
-        "Spells"             => new Spell(),
+        // "Spells" merged into Powers — use "Powers" table key
         "Backgrounds"        => new Background(),
         "Quests"             => new Quest(),
         "Recipes"            => new Recipe(),
@@ -226,7 +226,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
     {
         switch (tableName)
         {
-            case "Abilities":          db.Abilities.Add((Ability)entity);                       break;
+            case "Powers":             db.Powers.Add((Power)entity);                         break;
             case "Species":            db.Species.Add((Species)entity);                         break;
             case "ActorClasses":       db.ActorClasses.Add((ActorClass)entity);                 break;
             case "ActorArchetypes":    db.ActorArchetypes.Add((ActorArchetype)entity);           break;
@@ -235,7 +235,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             case "Materials":          db.Materials.Add((Material)entity);                      break;
             case "Enchantments":       db.Enchantments.Add((Enchantment)entity);                break;
             case "Skills":             db.Skills.Add((Skill)entity);                            break;
-            case "Spells":             db.Spells.Add((Spell)entity);                            break;
+            // case "Spells": merged into Powers
             case "Backgrounds":        db.Backgrounds.Add((Background)entity);                  break;
             case "Quests":             db.Quests.Add((Quest)entity);                            break;
             case "Recipes":            db.Recipes.Add((Recipe)entity);                          break;
@@ -272,7 +272,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
             return tableName switch
             {
-                "Abilities"          => await SelectRows(db.Abilities, typeKey),
+                "Powers"             => await SelectRows(db.Powers, typeKey),
                 "Species"            => await SelectRows(db.Species, typeKey),
                 "ActorClasses"       => await SelectRows(db.ActorClasses, typeKey),
                 "ActorArchetypes"    => await SelectRows(db.ActorArchetypes, typeKey),
@@ -281,7 +281,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "Materials"          => await SelectRows(db.Materials, typeKey),
                 "Enchantments"       => await SelectRows(db.Enchantments, typeKey),
                 "Skills"             => await SelectRows(db.Skills, typeKey),
-                "Spells"             => await SelectRows(db.Spells, typeKey),
+                // Powers merged Spells — no separate Spells table key needed
                 "Backgrounds"        => await SelectRows(db.Backgrounds, typeKey),
                 "Quests"             => await SelectRows(db.Quests, typeKey),
                 "Recipes"            => await SelectRows(db.Recipes, typeKey),
@@ -346,59 +346,59 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         catch (Exception ex) { logger.LogError(ex, "LoadRecipeIngredients {Id}", recipeId); return []; }
     }
 
-    public async Task<IReadOnlyList<SpeciesAbilityPool>> LoadSpeciesAbilityPoolAsync(Guid speciesId)
+    public async Task<IReadOnlyList<SpeciesPowerPool>> LoadSpeciesAbilityPoolAsync(Guid speciesId)
     {
         try
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return [];
-            return await db.SpeciesAbilityPools.AsNoTracking()
+            return await db.SpeciesPowerPools.AsNoTracking()
                 .Where(e => e.SpeciesId == speciesId).ToListAsync();
         }
         catch (Exception ex) { logger.LogError(ex, "LoadSpeciesAbilityPool {Id}", speciesId); return []; }
     }
 
-    public async Task<IReadOnlyList<InstanceAbilityPool>> LoadInstanceAbilityPoolAsync(Guid instanceId)
+    public async Task<IReadOnlyList<InstancePowerPool>> LoadInstanceAbilityPoolAsync(Guid instanceId)
     {
         try
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return [];
-            return await db.InstanceAbilityPools.AsNoTracking()
+            return await db.InstancePowerPools.AsNoTracking()
                 .Where(e => e.InstanceId == instanceId).ToListAsync();
         }
         catch (Exception ex) { logger.LogError(ex, "LoadInstanceAbilityPool {Id}", instanceId); return []; }
     }
 
-    public async Task<IReadOnlyList<ArchetypeAbilityPool>> LoadArchetypeAbilityPoolAsync(Guid archetypeId)
+    public async Task<IReadOnlyList<ArchetypePowerPool>> LoadArchetypeAbilityPoolAsync(Guid archetypeId)
     {
         try
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return [];
-            return await db.ArchetypeAbilityPools.AsNoTracking()
+            return await db.ArchetypePowerPools.AsNoTracking()
                 .Where(e => e.ArchetypeId == archetypeId).ToListAsync();
         }
         catch (Exception ex) { logger.LogError(ex, "LoadArchetypeAbilityPool {Id}", archetypeId); return []; }
     }
 
-    public async Task<IReadOnlyList<ClassAbilityUnlock>> LoadClassAbilityUnlocksAsync(Guid classId)
+    public async Task<IReadOnlyList<ClassPowerUnlock>> LoadClassAbilityUnlocksAsync(Guid classId)
     {
         try
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return [];
-            return await db.ClassAbilityUnlocks.AsNoTracking()
+            return await db.ClassPowerUnlocks.AsNoTracking()
                 .Where(e => e.ClassId == classId).ToListAsync();
         }
         catch (Exception ex) { logger.LogError(ex, "LoadClassAbilityUnlocks {Id}", classId); return []; }
     }
 
-    /// <summary>Returns a slug map for a batch of ability IDs — used to display slugs instead of raw GUIDs.</summary>
+    /// <summary>Returns a slug map for a batch of power IDs — used to display slugs instead of raw GUIDs.</summary>
     public async Task<IReadOnlyDictionary<Guid, string>> GetAbilitySlugsAsync(IEnumerable<Guid> abilityIds)
     {
         try
@@ -408,7 +408,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return new Dictionary<Guid, string>();
-            var pairs = await db.Abilities.AsNoTracking()
+            var pairs = await db.Powers.AsNoTracking()
                 .Where(a => ids.Contains(a.Id))
                 .Select(a => new { a.Id, a.Slug })
                 .ToListAsync();
@@ -458,13 +458,13 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return false;
-            var existing = await db.SpeciesAbilityPools.Where(e => e.SpeciesId == speciesId).ToListAsync();
-            db.SpeciesAbilityPools.RemoveRange(existing);
+            var existing = await db.SpeciesPowerPools.Where(e => e.SpeciesId == speciesId).ToListAsync();
+            db.SpeciesPowerPools.RemoveRange(existing);
             foreach (var slug in abilitySlugs)
             {
                 var id = await FindAbilityIdAsync(db, slug);
                 if (id is not null)
-                    db.SpeciesAbilityPools.Add(new SpeciesAbilityPool { SpeciesId = speciesId, AbilityId = id.Value });
+                    db.SpeciesPowerPools.Add(new SpeciesPowerPool { SpeciesId = speciesId, PowerId = id.Value });
             }
             await db.SaveChangesAsync();
             return true;
@@ -479,13 +479,13 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return false;
-            var existing = await db.InstanceAbilityPools.Where(e => e.InstanceId == instanceId).ToListAsync();
-            db.InstanceAbilityPools.RemoveRange(existing);
+            var existing = await db.InstancePowerPools.Where(e => e.InstanceId == instanceId).ToListAsync();
+            db.InstancePowerPools.RemoveRange(existing);
             foreach (var slug in abilitySlugs)
             {
                 var id = await FindAbilityIdAsync(db, slug);
                 if (id is not null)
-                    db.InstanceAbilityPools.Add(new InstanceAbilityPool { InstanceId = instanceId, AbilityId = id.Value });
+                    db.InstancePowerPools.Add(new InstancePowerPool { InstanceId = instanceId, PowerId = id.Value });
             }
             await db.SaveChangesAsync();
             return true;
@@ -501,14 +501,14 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return false;
-            var existing = await db.ArchetypeAbilityPools.Where(e => e.ArchetypeId == archetypeId).ToListAsync();
-            db.ArchetypeAbilityPools.RemoveRange(existing);
+            var existing = await db.ArchetypePowerPools.Where(e => e.ArchetypeId == archetypeId).ToListAsync();
+            db.ArchetypePowerPools.RemoveRange(existing);
             foreach (var (slug, useChance) in rows)
             {
                 var id = await FindAbilityIdAsync(db, slug);
                 if (id is not null)
-                    db.ArchetypeAbilityPools.Add(new ArchetypeAbilityPool
-                        { ArchetypeId = archetypeId, AbilityId = id.Value, UseChance = useChance });
+                    db.ArchetypePowerPools.Add(new ArchetypePowerPool
+                        { ArchetypeId = archetypeId, PowerId = id.Value, UseChance = useChance });
             }
             await db.SaveChangesAsync();
             return true;
@@ -524,14 +524,14 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetService<ContentDbContext>();
             if (db is null) return false;
-            var existing = await db.ClassAbilityUnlocks.Where(e => e.ClassId == classId).ToListAsync();
-            db.ClassAbilityUnlocks.RemoveRange(existing);
+            var existing = await db.ClassPowerUnlocks.Where(e => e.ClassId == classId).ToListAsync();
+            db.ClassPowerUnlocks.RemoveRange(existing);
             foreach (var (slug, level, rank) in rows)
             {
                 var id = await FindAbilityIdAsync(db, slug);
                 if (id is not null)
-                    db.ClassAbilityUnlocks.Add(new ClassAbilityUnlock
-                        { ClassId = classId, AbilityId = id.Value, LevelRequired = level, Rank = rank });
+                    db.ClassPowerUnlocks.Add(new ClassPowerUnlock
+                        { ClassId = classId, PowerId = id.Value, LevelRequired = level, Rank = rank });
             }
             await db.SaveChangesAsync();
             return true;
@@ -540,7 +540,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
     }
 
     private static async Task<Guid?> FindAbilityIdAsync(ContentDbContext db, string slug) =>
-        (await db.Abilities.AsNoTracking().FirstOrDefaultAsync(a => a.Slug == slug))?.Id;
+        (await db.Powers.AsNoTracking().FirstOrDefaultAsync(a => a.Slug == slug))?.Id;
 }
 
 

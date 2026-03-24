@@ -75,18 +75,18 @@ public class AwardSkillXPHandlerTests
 }
 
 [Trait("Category", "Feature")]
-public class LearnAbilityHandlerTests
+public class LearnPowerHandlerTests
 {
-    private static async Task<AbilityDataService> BuildAbilityDataService(IEnumerable<Ability> abilities)
+    private static async Task<PowerDataService> BuildPowerDataService(IEnumerable<Power> abilities)
     {
-        var mockRepo = new Mock<IAbilityRepository>();
+        var mockRepo = new Mock<IPowerRepository>();
         mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(abilities.ToList());
-        var svc = new AbilityDataService(mockRepo.Object);
+        var svc = new PowerDataService(mockRepo.Object);
         await svc.InitializeAsync();
         return svc;
     }
 
-    private static Ability MakeAbility(string id, int requiredLevel = 1, string? className = null) =>
+    private static Power MakeAbility(string id, int requiredLevel = 1, string? className = null) =>
         new()
         {
             Id = id,
@@ -99,11 +99,11 @@ public class LearnAbilityHandlerTests
     [Fact]
     public async Task Handle_ReturnsFailure_WhenAbilityUnknown()
     {
-        var abilitySvc = await BuildAbilityDataService([]);
-        var handler = new LearnAbilityHandler(abilitySvc);
+        var abilitySvc = await BuildPowerDataService([]);
+        var handler = new LearnPowerHandler(abilitySvc);
 
         var character = new Character { Name = "Hero", Level = 1 };
-        var result = await handler.Handle(new LearnAbilityCommand { Character = character, AbilityId = "fireball" }, default);
+        var result = await handler.Handle(new LearnPowerCommand { Character = character, PowerId = "fireball" }, default);
 
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("Unknown ability");
@@ -112,13 +112,13 @@ public class LearnAbilityHandlerTests
     [Fact]
     public async Task Handle_ReturnsFailure_WhenAlreadyLearned()
     {
-        var abilitySvc = await BuildAbilityDataService([MakeAbility("slash")]);
-        var handler = new LearnAbilityHandler(abilitySvc);
+        var abilitySvc = await BuildPowerDataService([MakeAbility("slash")]);
+        var handler = new LearnPowerHandler(abilitySvc);
 
         var character = new Character { Name = "Hero", Level = 5 };
         character.LearnedAbilities["slash"] = new CharacterAbility { AbilityId = "slash" };
 
-        var result = await handler.Handle(new LearnAbilityCommand { Character = character, AbilityId = "slash" }, default);
+        var result = await handler.Handle(new LearnPowerCommand { Character = character, PowerId = "slash" }, default);
 
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("already know");
@@ -127,11 +127,11 @@ public class LearnAbilityHandlerTests
     [Fact]
     public async Task Handle_ReturnsFailure_WhenLevelTooLow()
     {
-        var abilitySvc = await BuildAbilityDataService([MakeAbility("meteor", requiredLevel: 20)]);
-        var handler = new LearnAbilityHandler(abilitySvc);
+        var abilitySvc = await BuildPowerDataService([MakeAbility("meteor", requiredLevel: 20)]);
+        var handler = new LearnPowerHandler(abilitySvc);
 
         var character = new Character { Name = "Hero", Level = 5 };
-        var result = await handler.Handle(new LearnAbilityCommand { Character = character, AbilityId = "meteor" }, default);
+        var result = await handler.Handle(new LearnPowerCommand { Character = character, PowerId = "meteor" }, default);
 
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("20");
@@ -140,11 +140,11 @@ public class LearnAbilityHandlerTests
     [Fact]
     public async Task Handle_ReturnsFailure_WhenClassMismatch()
     {
-        var abilitySvc = await BuildAbilityDataService([MakeAbility("smite", className: "Paladin")]);
-        var handler = new LearnAbilityHandler(abilitySvc);
+        var abilitySvc = await BuildPowerDataService([MakeAbility("smite", className: "Paladin")]);
+        var handler = new LearnPowerHandler(abilitySvc);
 
         var character = new Character { Name = "Hero", Level = 10, ClassName = "Wizard" };
-        var result = await handler.Handle(new LearnAbilityCommand { Character = character, AbilityId = "smite" }, default);
+        var result = await handler.Handle(new LearnPowerCommand { Character = character, PowerId = "smite" }, default);
 
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("not available");
@@ -153,11 +153,11 @@ public class LearnAbilityHandlerTests
     [Fact]
     public async Task Handle_LearnsAbility_WhenAllConditionsMet()
     {
-        var abilitySvc = await BuildAbilityDataService([MakeAbility("fireball", requiredLevel: 5)]);
-        var handler = new LearnAbilityHandler(abilitySvc);
+        var abilitySvc = await BuildPowerDataService([MakeAbility("fireball", requiredLevel: 5)]);
+        var handler = new LearnPowerHandler(abilitySvc);
 
         var character = new Character { Name = "Hero", Level = 10 };
-        var result = await handler.Handle(new LearnAbilityCommand { Character = character, AbilityId = "fireball" }, default);
+        var result = await handler.Handle(new LearnPowerCommand { Character = character, PowerId = "fireball" }, default);
 
         result.Success.Should().BeTrue();
         character.LearnedAbilities.Should().ContainKey("fireball");

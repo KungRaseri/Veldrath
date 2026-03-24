@@ -47,12 +47,12 @@ public class CreateCharacterHandlerTests
             });
 
         // Setup mediator to return successful spell initialization (warriors don't get spells)
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult
             {
                 Success = true,
-                SpellsLearned = 0,
-                SpellIds = new List<string>(),
+                PowersLearned = 0,
+                PowerIds = new List<string>(),
                 Message = "No starting spells for Warrior"
             });
 
@@ -98,12 +98,12 @@ public class CreateCharacterHandlerTests
             });
 
         // Setup mediator to return successful spell initialization (mages get spells)
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult
             {
                 Success = true,
-                SpellsLearned = 5,
-                SpellIds = new List<string> { "spell1", "spell2", "spell3", "spell4", "spell5" },
+                PowersLearned = 5,
+                PowerIds = new List<string> { "spell1", "spell2", "spell3", "spell4", "spell5" },
                 Message = "Learned 5 starting spells"
             });
 
@@ -139,8 +139,8 @@ public class CreateCharacterHandlerTests
         _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InitializeStartingAbilitiesResult { Success = true, AbilitiesLearned = 0 });
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult { Success = true, SpellsLearned = 0 });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true, PowersLearned = 0 });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -166,8 +166,8 @@ public class CreateCharacterHandlerTests
         _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InitializeStartingAbilitiesResult { Success = true, AbilitiesLearned = 3 });
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult { Success = true, SpellsLearned = 0 });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true, PowersLearned = 0 });
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
@@ -181,7 +181,7 @@ public class CreateCharacterHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_Call_InitializeStartingSpellsCommand()
+    public async Task Handle_Should_Call_InitializeStartingPowersCommand()
     {
         // Arrange
         var command = new CreateCharacterCommand
@@ -193,15 +193,15 @@ public class CreateCharacterHandlerTests
         _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InitializeStartingAbilitiesResult { Success = true, AbilitiesLearned = 2 });
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult { Success = true, SpellsLearned = 5 });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true, PowersLearned = 5 });
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         _mediatorMock.Verify(m => m.Send(
-            It.Is<InitializeStartingSpellsCommand>(c => 
+            It.Is<InitializeStartingPowersCommand>(c => 
                 c.Character.Name == "TestMage" && 
                 c.ClassName == "Mage"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -225,8 +225,8 @@ public class CreateCharacterHandlerTests
                 Message = "Failed to initialize abilities"
             });
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult { Success = true, SpellsLearned = 0 });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true, PowersLearned = 0 });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -266,8 +266,8 @@ public class CreateCharacterHandlerTests
         _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InitializeStartingAbilitiesResult { Success = true, AbilitiesLearned = 0 });
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingSpellsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingSpellsResult { Success = true, SpellsLearned = 0 });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true, PowersLearned = 0 });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -320,3 +320,4 @@ public class CreateCharacterHandlerTests
         };
     }
 }
+

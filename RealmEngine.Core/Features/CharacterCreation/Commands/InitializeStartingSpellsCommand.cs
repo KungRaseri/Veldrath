@@ -4,15 +4,15 @@ using MediatR;
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
 /// <summary>
-/// Command to initialize starting spells for a new character based on their class.
+/// Command to initialize starting powers for a new character based on their class.
 /// </summary>
-public record InitializeStartingSpellsCommand : IRequest<InitializeStartingSpellsResult>
+public record InitializeStartingPowersCommand : IRequest<InitializeStartingPowersResult>
 {
     /// <summary>
-    /// Gets the character to initialize spells for.
+    /// Gets the character to initialize powers for.
     /// </summary>
     public required Character Character { get; init; }
-    
+
     /// <summary>
     /// Gets the name of the character class.
     /// </summary>
@@ -20,20 +20,19 @@ public record InitializeStartingSpellsCommand : IRequest<InitializeStartingSpell
 }
 
 /// <summary>
-/// Result of initializing starting spells.
+/// Result of initializing starting powers.
 /// </summary>
-public record InitializeStartingSpellsResult
+public record InitializeStartingPowersResult
 {
     /// <summary>
-    /// Gets the number of spells learned.
+    /// Gets the number of powers learned.
     /// </summary>
-    public int SpellsLearned { get; init; }
-    
+    public int PowersLearned { get; init; }
+
     /// <summary>
-    /// Gets the list of spell IDs that were learned.
+    /// Gets the list of power IDs that were learned.
     /// </summary>
-    public List<string> SpellIds { get; init; } = new();
-    
+    public List<string> PowerIds { get; init; } = new();
     /// <summary>
     /// Gets a value indicating whether the initialization was successful.
     /// </summary>

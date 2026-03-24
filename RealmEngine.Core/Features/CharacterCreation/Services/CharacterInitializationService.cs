@@ -24,7 +24,7 @@ public class CharacterInitializationService
     /// <param name="powerCatalogService">Catalog service for power lookup.</param>
     /// <param name="spellCastingService">Service for spell-casting rules.</param>
     /// <param name="classRepository">Repository that exposes <c>StartingPowerIds</c> from the DB.</param>
-    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnAbilityCommand"/> and <see cref="LearnSpellCommand"/>.</param>
+    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnPowerCommand"/> and <see cref="LearnSpellCommand"/>.</param>
     /// <param name="logger">Logger.</param>
     public CharacterInitializationService(
         PowerDataService powerCatalogService,
@@ -42,7 +42,7 @@ public class CharacterInitializationService
 
     /// <summary>
     /// Grants each level-1 power from the class definition to the character
-    /// by dispatching a <see cref="LearnAbilityCommand"/> per power. Power IDs
+    /// by dispatching a <see cref="LearnPowerCommand"/> per power. Power IDs
     /// are sourced from <see cref="ICharacterClassRepository"/> (<c>StartingPowerIds</c>),
     /// which reflect <c>ClassPowerUnlock</c> rows with <c>LevelRequired == 1</c>.
     /// </summary>
@@ -65,7 +65,7 @@ public class CharacterInitializationService
         {
             try
             {
-                var result = await _mediator.Send(new LearnAbilityCommand { Character = character, AbilityId = abilityId });
+                var result = await _mediator.Send(new LearnPowerCommand { Character = character, PowerId = abilityId });
                 if (result.Success)
                 {
                     abilitiesLearned++;

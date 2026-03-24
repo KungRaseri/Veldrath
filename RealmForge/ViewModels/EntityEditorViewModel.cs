@@ -259,7 +259,7 @@ public class EntityEditorViewModel : ReactiveObject
 
     private static readonly Dictionary<Type, string> _entityTypeToSchemaKey = new()
     {
-        [typeof(Ability)]         = "ability",
+        [typeof(Power)]             = "power",
         [typeof(Species)]         = "species",
         [typeof(ActorClass)]      = "class",
         [typeof(ActorArchetype)]  = "archetype",
@@ -270,7 +270,7 @@ public class EntityEditorViewModel : ReactiveObject
         [typeof(Material)]        = "material",
         [typeof(MaterialProperty)]= "materialproperty",
         [typeof(Enchantment)]     = "enchantment",
-        [typeof(Spell)]           = "spell",
+        // Power combines former ability and spell schema keys
         [typeof(Quest)]           = "quest",
         [typeof(Recipe)]          = "recipe",
         [typeof(LootTable)]       = "loottable",
@@ -350,9 +350,9 @@ public class EntityEditorViewModel : ReactiveObject
             {
                 IReadOnlyList<Guid> ids;
                 if (_entity is Species)
-                    ids = [.. (await _service.LoadSpeciesAbilityPoolAsync(editor.OwnerId)).Select(p => p.AbilityId)];
+                    ids = [.. (await _service.LoadSpeciesAbilityPoolAsync(editor.OwnerId)).Select(p => p.PowerId)];
                 else
-                    ids = [.. (await _service.LoadInstanceAbilityPoolAsync(editor.OwnerId)).Select(p => p.AbilityId)];
+                    ids = [.. (await _service.LoadInstanceAbilityPoolAsync(editor.OwnerId)).Select(p => p.PowerId)];
 
                 var slugs = await _service.GetAbilitySlugsAsync(ids);
                 editor.LoadRows(ids.Select(id => new JunctionRowViewModel(JunctionEditorType.AbilityPool)
@@ -364,11 +364,11 @@ public class EntityEditorViewModel : ReactiveObject
             case JunctionEditorType.ArchetypePool:
             {
                 var pools = await _service.LoadArchetypeAbilityPoolAsync(editor.OwnerId);
-                var ids   = pools.Select(p => p.AbilityId).Distinct().ToList();
+                var ids   = pools.Select(p => p.PowerId).Distinct().ToList();
                 var slugs = await _service.GetAbilitySlugsAsync(ids);
                 editor.LoadRows(pools.Select(p => new JunctionRowViewModel(JunctionEditorType.ArchetypePool)
                 {
-                    AbilitySlug = slugs.GetValueOrDefault(p.AbilityId, p.AbilityId.ToString()),
+                    AbilitySlug = slugs.GetValueOrDefault(p.PowerId, p.PowerId.ToString()),
                     UseChance   = (decimal)p.UseChance,
                 }));
                 break;
@@ -376,11 +376,11 @@ public class EntityEditorViewModel : ReactiveObject
             case JunctionEditorType.ClassUnlock:
             {
                 var unlocks = await _service.LoadClassAbilityUnlocksAsync(editor.OwnerId);
-                var ids     = unlocks.Select(u => u.AbilityId).Distinct().ToList();
+                var ids     = unlocks.Select(u => u.PowerId).Distinct().ToList();
                 var slugs   = await _service.GetAbilitySlugsAsync(ids);
                 editor.LoadRows(unlocks.Select(u => new JunctionRowViewModel(JunctionEditorType.ClassUnlock)
                 {
-                    AbilitySlug   = slugs.GetValueOrDefault(u.AbilityId, u.AbilityId.ToString()),
+                    AbilitySlug   = slugs.GetValueOrDefault(u.PowerId, u.PowerId.ToString()),
                     LevelRequired = u.LevelRequired,
                     Rank          = u.Rank,
                 }));

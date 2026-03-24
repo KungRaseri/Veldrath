@@ -4,30 +4,30 @@ using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Features.ItemGeneration.Commands;
 
 /// <summary>
-/// Command to generate abilities using the AbilityGenerator.
+/// Command to generate powers using the PowerGenerator.
 /// Supports category/subcategory selection and hydration options.
 /// </summary>
-public class GenerateAbilityCommand : IRequest<GenerateAbilityResult>
+public class GeneratePowerCommand : IRequest<GeneratePowerResult>
 {
     /// <summary>
-    /// The ability category (e.g., "active", "passive", "reactive", "ultimate").
+    /// The power category (e.g., "active", "passive", "reactive", "ultimate").
     /// </summary>
     public string Category { get; set; } = string.Empty;
 
     /// <summary>
-    /// The ability subcategory (e.g., "offensive", "defensive", "support", "utility").
+    /// The power subcategory (e.g., "offensive", "defensive", "support", "utility").
     /// </summary>
     public string Subcategory { get; set; } = string.Empty;
 
     /// <summary>
-    /// Specific ability name to generate (optional).
-    /// If provided, generates this specific ability instead of random selection.
+    /// Specific power name to generate (optional).
+    /// If provided, generates this specific power instead of random selection.
     /// </summary>
-    public string? AbilityName { get; set; }
+    public string? PowerName { get; set; }
 
     /// <summary>
-    /// Number of abilities to generate (default: 1).
-    /// Ignored if AbilityName is specified.
+    /// Number of powers to generate (default: 1).
+    /// Ignored if PowerName is specified.
     /// </summary>
     public int Count { get; set; } = 1;
 
@@ -38,9 +38,9 @@ public class GenerateAbilityCommand : IRequest<GenerateAbilityResult>
 }
 
 /// <summary>
-/// Result of ability generation command.
+/// Result of power generation command.
 /// </summary>
-public class GenerateAbilityResult
+public class GeneratePowerResult
 {
     /// <summary>
     /// True if generation succeeded.
@@ -48,14 +48,14 @@ public class GenerateAbilityResult
     public bool Success { get; set; }
 
     /// <summary>
-    /// Generated ability/power (for single generation or AbilityName requests).
+    /// Generated power (for single generation or PowerName requests).
     /// </summary>
-    public Power? Ability { get; set; }
+    public Power? Power { get; set; }
 
     /// <summary>
-    /// Generated abilities/powers (for multiple generation requests).
+    /// Generated powers (for multiple generation requests).
     /// </summary>
-    public List<Power> Abilities { get; set; } = new List<Power>();
+    public List<Power> Powers { get; set; } = new List<Power>();
 
     /// <summary>
     /// Error message if generation failed.

@@ -12,16 +12,16 @@ namespace RealmEngine.Core.Tests.Features.Progression.Queries;
 /// </summary>
 public class GetAvailableAbilitiesHandlerTests
 {
-    private static async Task<GetAvailableAbilitiesHandler> CreateHandlerAsync(IEnumerable<Ability>? abilities = null)
+    private static async Task<GetAvailableAbilitiesHandler> CreateHandlerAsync(IEnumerable<Power>? abilities = null)
     {
-        var mockRepo = new Mock<IAbilityRepository>();
+        var mockRepo = new Mock<IPowerRepository>();
         mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((abilities ?? []).ToList());
-        var abilitySvc = new AbilityDataService(mockRepo.Object);
+        var abilitySvc = new PowerDataService(mockRepo.Object);
         await abilitySvc.InitializeAsync();
         return new GetAvailableAbilitiesHandler(abilitySvc);
     }
 
-    private static Ability MakeAbility(string id, int requiredLevel = 1, string? className = null, int rarityWeight = 10) =>
+    private static Power MakeAbility(string id, int requiredLevel = 1, string? className = null, int rarityWeight = 10) =>
         new()
         {
             Id = id,
@@ -100,7 +100,7 @@ public class GetAvailableAbilitiesHandlerTests
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
 
-        // Assert - only tier 1 ability returned
+        // Assert - only tier 1 Power returned
         result.Abilities.Should().HaveCount(1);
         result.Abilities[0].Id.Should().Be("common-strike");
     }
@@ -154,8 +154,8 @@ public class GetAvailableAbilitiesHandlerTests
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
 
-            // Assert - unrestricted ability available to everyone
-            result.Abilities.Should().HaveCount(1, $"unrestricted ability should be available to {className}");
+            // Assert - unrestricted Power available to everyone
+            result.Abilities.Should().HaveCount(1, $"unrestricted Power should be available to {className}");
         }
     }
 }

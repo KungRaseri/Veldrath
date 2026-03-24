@@ -211,13 +211,13 @@ try
     builder.Services.AddSingleton<GameConfigService, DbGameConfigService>();
     builder.Services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
     builder.Services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
-    builder.Services.AddScoped<IAbilityRepository, EfCoreAbilityRepository>();
+    builder.Services.AddScoped<IPowerRepository, EfCorePowerRepository>();
     builder.Services.AddScoped<IEnemyRepository, EfCoreEnemyRepository>();
     builder.Services.AddScoped<INpcRepository, EfCoreNpcRepository>();
     builder.Services.AddScoped<IQuestRepository, EfCoreQuestRepository>();
     builder.Services.AddScoped<IRecipeRepository, EfCoreRecipeRepository>();
     builder.Services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
-    builder.Services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
+    // ISpellRepository merged into IPowerRepository above
     builder.Services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
     builder.Services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
     builder.Services.AddScoped<IInventoryService, EfCoreInventoryService>();

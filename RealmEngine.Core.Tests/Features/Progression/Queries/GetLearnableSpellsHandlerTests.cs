@@ -12,19 +12,19 @@ namespace RealmEngine.Core.Tests.Features.Progression.Queries;
 /// </summary>
 public class GetLearnableSpellsHandlerTests
 {
-    private static async Task<GetLearnableSpellsHandler> CreateHandlerAsync(IEnumerable<Spell>? spells = null)
+    private static async Task<GetLearnableSpellsHandler> CreateHandlerAsync(IEnumerable<Power>? spells = null)
     {
-        var mockRepo = new Mock<ISpellRepository>();
+        var mockRepo = new Mock<IPowerRepository>();
         mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((spells ?? []).ToList());
-        var spellDataSvc = new SpellDataService(mockRepo.Object);
+        var spellDataSvc = new PowerDataService(mockRepo.Object);
         await spellDataSvc.InitializeAsync();
         return new GetLearnableSpellsHandler(spellDataSvc);
     }
 
-    private static Spell MakeSpell(string id, MagicalTradition tradition = MagicalTradition.Arcane, int minSkillRank = 0) =>
+    private static Power MakeSpell(string id, MagicalTradition tradition = MagicalTradition.Arcane, int minSkillRank = 0) =>
         new()
         {
-            SpellId = id,
+            Id = id,
             Name = id,
             DisplayName = id,
             Description = id,
@@ -87,7 +87,7 @@ public class GetLearnableSpellsHandlerTests
 
         // Assert
         result.Spells.Should().HaveCount(1);
-        result.Spells[0].SpellId.Should().Be("fireball");
+        result.Spells[0].Id.Should().Be("fireball");
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class GetLearnableSpellsHandlerTests
 
         // Assert
         result.Spells.Should().HaveCount(2);
-        result.Spells.Select(s => s.SpellId).Should().BeEquivalentTo(["spark", "magic-bolt"]);
+        result.Spells.Select(s => s.Id).Should().BeEquivalentTo(["spark", "magic-bolt"]);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class GetLearnableSpellsHandlerTests
     public async Task Returns_SpellForEachTradition_WhenCharacterHasSkill(MagicalTradition tradition, string skillId)
     {
         // Arrange
-        var handler = await CreateHandlerAsync([MakeSpell("test-spell", tradition)]);
+        var handler = await CreateHandlerAsync([MakeSpell("test-Power", tradition)]);
         var character = new Character { Name = "Scholar" };
         character.Skills[skillId] = new CharacterSkill { SkillId = skillId, Name = skillId, Category = "magic", CurrentRank = 5, XPToNextRank = 300 };
 

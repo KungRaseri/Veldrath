@@ -31,7 +31,7 @@ public class EquipmentAbilityServiceTests
         };
 
         // Act
-        EquipmentAbilityService.GrantAbilitiesFromItem(character, item);
+        EquipmentPowerService.GrantPowersFromItem(character, item);
 
         // Assert
         character.EquipmentGrantedAbilities.Should().HaveCount(2);
@@ -71,7 +71,7 @@ public class EquipmentAbilityServiceTests
         };
 
         // Act
-        EquipmentAbilityService.GrantAbilitiesFromItem(character, item);
+        EquipmentPowerService.GrantPowersFromItem(character, item);
 
         // Assert
         character.EquipmentGrantedAbilities.Should().BeEmpty();
@@ -100,7 +100,7 @@ public class EquipmentAbilityServiceTests
         };
 
         // Act
-        EquipmentAbilityService.RevokeAbilitiesFromItem(character, item);
+        EquipmentPowerService.RevokePowersFromItem(character, item);
 
         // Assert
         character.EquipmentGrantedAbilities.Should().HaveCount(1);
@@ -143,7 +143,7 @@ public class EquipmentAbilityServiceTests
         };
 
         // Act
-        EquipmentAbilityService.RecalculateEquipmentAbilities(character);
+        EquipmentPowerService.RecalculateEquipmentPowers(character);
 
         // Assert
         character.EquipmentGrantedAbilities.Should().HaveCount(2);
@@ -209,7 +209,7 @@ public class EquipmentAbilityServiceTests
         };
 
         // Act
-        var source = EquipmentAbilityService.GetAbilitySource(character, "active/offensive:fireball");
+        var source = EquipmentPowerService.GetPowerSource(character, "active/offensive:fireball");
 
         // Assert
         source.Should().Be("Learned");
@@ -236,7 +236,7 @@ public class EquipmentAbilityServiceTests
         };
 
         // Act
-        var source = EquipmentAbilityService.GetAbilitySource(character, "active/offensive:divine-strike");
+        var source = EquipmentPowerService.GetPowerSource(character, "active/offensive:divine-strike");
 
         // Assert
         source.Should().Be("Legendary Sword");
@@ -250,7 +250,7 @@ public class EquipmentAbilityServiceTests
         var item = new Item { Name = "Plain Sword" };
 
         // Act
-        EquipmentAbilityService.GrantAbilitiesFromItem(character, item);
+        EquipmentPowerService.GrantPowersFromItem(character, item);
 
         // Assert
         character.EquipmentGrantedAbilities.Should().BeEmpty();
@@ -263,7 +263,7 @@ public class EquipmentAbilityServiceTests
         var character = new Character { Name = "Test Hero" };
 
         // Act
-        EquipmentAbilityService.GrantAbilitiesFromItem(character, null!);
+        EquipmentPowerService.GrantPowersFromItem(character, null!);
 
         // Assert
         character.EquipmentGrantedAbilities.Should().BeEmpty();

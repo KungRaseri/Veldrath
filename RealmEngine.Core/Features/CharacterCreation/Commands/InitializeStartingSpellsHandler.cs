@@ -6,24 +6,25 @@ using Microsoft.Extensions.Logging;
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
 /// <summary>
-/// Handles <see cref="InitializeStartingSpellsCommand"/>.
-/// Reads level-1 <see cref="ClassSpellUnlock"/> rows via <see cref="ICharacterClassRepository"/>
-/// and dispatches a <see cref="LearnSpellCommand"/> for each one. Non-spellcaster
-/// classes have no level-1 spell unlocks and return success with zero spells learned.
+/// Handles <see cref="InitializeStartingPowersCommand"/>.
+/// Reads level-1 <see cref="ClassPowerUnlock"/> rows via <see cref="ICharacterClassRepository"/>
+/// and dispatches a <see cref="LearnSpellCommand"/> for each tradition-based power, or
+/// <see cref="LearnPowerCommand"/> for non-spell powers.
+/// Non-spellcaster classes have no level-1 power unlocks and return success with zero powers learned.
 /// </summary>
-public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartingSpellsCommand, InitializeStartingSpellsResult>
+public class InitializeStartingPowersHandler : IRequestHandler<InitializeStartingPowersCommand, InitializeStartingPowersResult>
 {
     private readonly IMediator _mediator;
     private readonly ICharacterClassRepository _classRepository;
-    private readonly ILogger<InitializeStartingSpellsHandler> _logger;
+    private readonly ILogger<InitializeStartingPowersHandler> _logger;
 
-    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnSpellCommand"/>.</param>
+    /// <param name="mediator">MediatR dispatcher used to send learn commands.</param>
     /// <param name="classRepository">Repository that exposes <c>StartingPowerIds</c> from the DB.</param>
     /// <param name="logger">Logger.</param>
-    public InitializeStartingSpellsHandler(
+    public InitializeStartingPowersHandler(
         IMediator mediator,
         ICharacterClassRepository classRepository,
-        ILogger<InitializeStartingSpellsHandler> logger)
+        ILogger<InitializeStartingPowersHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _classRepository = classRepository ?? throw new ArgumentNullException(nameof(classRepository));
@@ -31,61 +32,61 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
     }
 
     /// <inheritdoc />
-    public async Task<InitializeStartingSpellsResult> Handle(InitializeStartingSpellsCommand request, CancellationToken cancellationToken)
+    public async Task<InitializeStartingPowersResult> Handle(InitializeStartingPowersCommand request, CancellationToken cancellationToken)
     {
-        var spellsLearned = 0;
-        var spellIds = new List<string>();
+        var powersLearned = 0;
+        var powerIds = new List<string>();
 
         var characterClass = _classRepository.GetByName(request.ClassName);
-        var startingSpells = characterClass?.StartingPowerIds ?? [];
+        var startingPowers = characterClass?.StartingPowerIds ?? [];
 
-        if (startingSpells.Count == 0)
+        if (startingPowers.Count == 0)
         {
-            _logger.LogDebug("No starting spells for class {ClassName} (non-spellcaster or none configured)", request.ClassName);
-            return new InitializeStartingSpellsResult
+            _logger.LogDebug("No starting powers for class {ClassName} (none configured)", request.ClassName);
+            return new InitializeStartingPowersResult
             {
                 Success = true,
-                SpellsLearned = 0,
-                Message = $"No starting spells for {request.ClassName}"
+                PowersLearned = 0,
+                Message = $"No starting powers for {request.ClassName}"
             };
         }
 
-        foreach (var spellId in startingSpells)
+        foreach (var powerId in startingPowers)
         {
             try
             {
                 var result = await _mediator.Send(new LearnSpellCommand
                 {
                     Character = request.Character,
-                    SpellId = spellId
+                    SpellId = powerId
                 }, cancellationToken);
 
                 if (result.Success)
                 {
-                    spellsLearned++;
-                    spellIds.Add(spellId);
-                    _logger.LogInformation("Character {CharacterName} learned starting spell: {SpellId}",
-                        request.Character.Name, spellId);
+                    powersLearned++;
+                    powerIds.Add(powerId);
+                    _logger.LogInformation("Character {CharacterName} learned starting power: {PowerId}",
+                        request.Character.Name, powerId);
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to teach starting spell {SpellId} to {CharacterName}: {Message}",
-                        spellId, request.Character.Name, result.Message);
+                    _logger.LogWarning("Failed to teach starting power {PowerId} to {CharacterName}: {Message}",
+                        powerId, request.Character.Name, result.Message);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error teaching starting spell {SpellId} to {CharacterName}",
-                    spellId, request.Character.Name);
+                _logger.LogError(ex, "Error teaching starting power {PowerId} to {CharacterName}",
+                    powerId, request.Character.Name);
             }
         }
 
-        return new InitializeStartingSpellsResult
+        return new InitializeStartingPowersResult
         {
             Success = true,
-            SpellsLearned = spellsLearned,
-            SpellIds = spellIds,
-            Message = $"Learned {spellsLearned} starting spells"
+            PowersLearned = powersLearned,
+            PowerIds = powerIds,
+            Message = $"Learned {powersLearned} starting powers"
         };
     }
 }

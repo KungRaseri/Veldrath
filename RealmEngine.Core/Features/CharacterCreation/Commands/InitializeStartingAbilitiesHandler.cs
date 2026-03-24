@@ -8,7 +8,7 @@ namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 /// <summary>
 /// Handles <see cref="InitializeStartingAbilitiesCommand"/>.
 /// Reads level-1 <see cref="ClassAbilityUnlock"/> rows via <see cref="ICharacterClassRepository"/>
-/// and dispatches a <see cref="LearnAbilityCommand"/> for each one.
+/// and dispatches a <see cref="LearnPowerCommand"/> for each one.
 /// </summary>
 public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStartingAbilitiesCommand, InitializeStartingAbilitiesResult>
 {
@@ -16,7 +16,7 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
     private readonly ICharacterClassRepository _classRepository;
     private readonly ILogger<InitializeStartingAbilitiesHandler> _logger;
 
-    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnAbilityCommand"/>.</param>
+    /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnPowerCommand"/>.</param>
     /// <param name="classRepository">Repository that exposes <c>StartingPowerIds</c> from the DB.</param>
     /// <param name="logger">Logger.</param>
     public InitializeStartingAbilitiesHandler(
@@ -53,10 +53,10 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
         {
             try
             {
-                var result = await _mediator.Send(new LearnAbilityCommand
+                var result = await _mediator.Send(new LearnPowerCommand
                 {
                     Character = request.Character,
-                    AbilityId = abilityId
+                    PowerId = abilityId
                 }, cancellationToken);
 
                 if (result.Success)

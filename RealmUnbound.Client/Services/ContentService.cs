@@ -9,8 +9,8 @@ namespace RealmUnbound.Client.Services;
 
 public interface IContentService
 {
-    Task<List<AbilityDto>> GetAbilitiesAsync();
-    Task<AbilityDto?> GetAbilityAsync(string slug);
+    Task<List<PowerDto>> GetAbilitiesAsync();
+    Task<PowerDto?> GetAbilityAsync(string slug);
 
     Task<List<EnemyDto>> GetEnemiesAsync();
     Task<EnemyDto?> GetEnemyAsync(string slug);
@@ -27,8 +27,8 @@ public interface IContentService
     Task<List<LootTableDto>> GetLootTablesAsync();
     Task<LootTableDto?> GetLootTableAsync(string slug);
 
-    Task<List<SpellDto>> GetSpellsAsync();
-    Task<SpellDto?> GetSpellAsync(string slug);
+    Task<List<PowerDto>> GetSpellsAsync();
+    Task<PowerDto?> GetSpellAsync(string slug);
 
     Task<List<ActorClassDto>> GetClassesAsync();
     Task<ActorClassDto?> GetClassAsync(string slug);
@@ -113,8 +113,8 @@ public class HttpContentService(
         }
     }
 
-    public Task<List<AbilityDto>> GetAbilitiesAsync()           => GetListAsync<AbilityDto>("api/content/abilities");
-    public Task<AbilityDto?> GetAbilityAsync(string slug)       => GetSingleAsync<AbilityDto>($"api/content/abilities/{slug}");
+    public Task<List<PowerDto>> GetAbilitiesAsync()           => GetListAsync<PowerDto>("api/content/powers");
+    public Task<PowerDto?> GetAbilityAsync(string slug)       => GetSingleAsync<PowerDto>($"api/content/powers/{slug}");
 
     public Task<List<EnemyDto>> GetEnemiesAsync()               => GetListAsync<EnemyDto>("api/content/enemies");
     public Task<EnemyDto?> GetEnemyAsync(string slug)           => GetSingleAsync<EnemyDto>($"api/content/enemies/{slug}");
@@ -131,8 +131,8 @@ public class HttpContentService(
     public Task<List<LootTableDto>> GetLootTablesAsync()        => GetListAsync<LootTableDto>("api/content/loot-tables");
     public Task<LootTableDto?> GetLootTableAsync(string slug)   => GetSingleAsync<LootTableDto>($"api/content/loot-tables/{slug}");
 
-    public Task<List<SpellDto>> GetSpellsAsync()                => GetListAsync<SpellDto>("api/content/spells");
-    public Task<SpellDto?> GetSpellAsync(string slug)           => GetSingleAsync<SpellDto>($"api/content/spells/{slug}");
+    public Task<List<PowerDto>> GetSpellsAsync()                => GetListAsync<PowerDto>("api/content/powers");
+    public Task<PowerDto?> GetSpellAsync(string slug)           => GetSingleAsync<PowerDto>($"api/content/powers/{slug}");
 
     public Task<List<ActorClassDto>> GetClassesAsync()                  => GetListAsync<ActorClassDto>("api/content/classes");
     public Task<ActorClassDto?> GetClassAsync(string slug)              => GetSingleAsync<ActorClassDto>($"api/content/classes/{slug}");

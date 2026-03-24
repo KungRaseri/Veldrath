@@ -4,14 +4,14 @@ using MediatR;
 namespace RealmEngine.Core.Features.Progression.Commands;
 
 /// <summary>
-/// Command to use an ability in combat or exploration.
+/// Command to use a power in combat or exploration.
 /// </summary>
-public record UseAbilityCommand : IRequest<UseAbilityResult>
+public record UsePowerCommand : IRequest<UsePowerResult>
 {
     /// <summary>Gets the character using the ability.</summary>
     public required Character User { get; init; }
     /// <summary>Gets the ability ID to use.</summary>
-    public required string AbilityId { get; init; }
+    public required string PowerId { get; init; }
     /// <summary>Gets the target character, if any.</summary>
     public Character? TargetCharacter { get; init; }
     /// <summary>Gets the target enemy, if any.</summary>
@@ -19,9 +19,9 @@ public record UseAbilityCommand : IRequest<UseAbilityResult>
 }
 
 /// <summary>
-/// Result of using an ability.
+/// Result of using a power.
 /// </summary>
-public record UseAbilityResult
+public record UsePowerResult
 {
     /// <summary>Gets a value indicating whether the ability use succeeded.</summary>
     public bool Success { get; init; }

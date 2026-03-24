@@ -6,35 +6,35 @@ using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Features.ItemGeneration.Commands;
 
 /// <summary>
-/// Handler for generating abilities via AbilityGenerator.
+/// Handler for generating powers via PowerGenerator.
 /// </summary>
-public class GenerateAbilityCommandHandler : IRequestHandler<GenerateAbilityCommand, GenerateAbilityResult>
+public class GeneratePowerCommandHandler : IRequestHandler<GeneratePowerCommand, GeneratePowerResult>
 {
-    private readonly AbilityGenerator _abilityGenerator;
-    private readonly ILogger<GenerateAbilityCommandHandler> _logger;
+    private readonly PowerGenerator _powerGenerator;
+    private readonly ILogger<GeneratePowerCommandHandler> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the GenerateAbilityCommandHandler class.
+    /// Initializes a new instance of the GeneratePowerCommandHandler class.
     /// </summary>
-    /// <param name="abilityGenerator">The ability generator.</param>
+    /// <param name="powerGenerator">The power generator.</param>
     /// <param name="logger">The logger instance.</param>
-    public GenerateAbilityCommandHandler(
-        AbilityGenerator abilityGenerator,
-        ILogger<GenerateAbilityCommandHandler> logger)
+    public GeneratePowerCommandHandler(
+        PowerGenerator powerGenerator,
+        ILogger<GeneratePowerCommandHandler> logger)
     {
-        _abilityGenerator = abilityGenerator ?? throw new ArgumentNullException(nameof(abilityGenerator));
+        _powerGenerator = powerGenerator ?? throw new ArgumentNullException(nameof(powerGenerator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc />
-    public async Task<GenerateAbilityResult> Handle(GenerateAbilityCommand request, CancellationToken cancellationToken)
+    public async Task<GeneratePowerResult> Handle(GeneratePowerCommand request, CancellationToken cancellationToken)
     {
         try
         {
             // Validate inputs
             if (string.IsNullOrWhiteSpace(request.Category))
             {
-                return new GenerateAbilityResult
+                return new GeneratePowerResult
                 {
                     Success = false,
                     ErrorMessage = "Category is required"
@@ -43,80 +43,80 @@ public class GenerateAbilityCommandHandler : IRequestHandler<GenerateAbilityComm
 
             if (string.IsNullOrWhiteSpace(request.Subcategory))
             {
-                return new GenerateAbilityResult
+                return new GeneratePowerResult
                 {
                     Success = false,
                     ErrorMessage = "Subcategory is required"
                 };
             }
 
-            // Generate specific ability by name
-            if (!string.IsNullOrWhiteSpace(request.AbilityName))
+            // Generate specific power by name
+            if (!string.IsNullOrWhiteSpace(request.PowerName))
             {
                 _logger.LogInformation(
-                    "Generating specific ability: {Category}/{Subcategory}/{AbilityName}",
-                    request.Category, request.Subcategory, request.AbilityName
+                    "Generating specific power: {Category}/{Subcategory}/{PowerName}",
+                    request.Category, request.Subcategory, request.PowerName
                 );
 
-                var ability = await _abilityGenerator.GenerateAbilityByNameAsync(
+                var power = await _powerGenerator.GenerateAbilityByNameAsync(
                     request.Category,
                     request.Subcategory,
-                    request.AbilityName,
+                    request.PowerName,
                     request.Hydrate
                 );
 
-                if (ability == null)
+                if (power == null)
                 {
-                    return new GenerateAbilityResult
+                    return new GeneratePowerResult
                     {
                         Success = false,
-                        ErrorMessage = $"Ability not found: {request.Category}/{request.Subcategory}/{request.AbilityName}"
+                        ErrorMessage = $"Power not found: {request.Category}/{request.Subcategory}/{request.PowerName}"
                     };
                 }
 
-                return new GenerateAbilityResult
+                return new GeneratePowerResult
                 {
                     Success = true,
-                    Ability = ability,
-                    Abilities = new List<Power> { ability }
+                    Power = power,
+                    Powers = new List<Power> { power }
                 };
             }
 
-            // Generate random abilities
+            // Generate random powers
             _logger.LogInformation(
-                "Generating {Count} random abilities from {Category}/{Subcategory}",
+                "Generating {Count} random powers from {Category}/{Subcategory}",
                 request.Count, request.Category, request.Subcategory
             );
 
-            var abilities = await _abilityGenerator.GenerateAbilitiesAsync(
+            var powers = await _powerGenerator.GenerateAbilitiesAsync(
                 request.Category,
                 request.Subcategory,
                 request.Count,
                 request.Hydrate
             );
 
-            if (abilities == null || !abilities.Any())
+            if (powers == null || !powers.Any())
             {
-                return new GenerateAbilityResult
+                return new GeneratePowerResult
                 {
                     Success = false,
-                    ErrorMessage = $"No abilities found in {request.Category}/{request.Subcategory}"
+                    ErrorMessage = $"No powers found in {request.Category}/{request.Subcategory}"
                 };
             }
 
-            return new GenerateAbilityResult
+            return new GeneratePowerResult
             {
                 Success = true,
-                Ability = abilities.FirstOrDefault(),
-                Abilities = abilities
+                Power = powers.FirstOrDefault(),
+                Powers = powers
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating abilities: {Category}/{Subcategory}",
+            _logger.LogError(ex, "Error generating powers: {Category}/{Subcategory}",
                 request.Category, request.Subcategory);
 
-            return new GenerateAbilityResult
+            return new GeneratePowerResult
             {
                 Success = false,
                 ErrorMessage = $"Generation failed: {ex.Message}"

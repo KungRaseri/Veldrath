@@ -260,20 +260,20 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AbilityCatalogService_Should_Be_Registered()
+    public void PowerCatalogService_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<AbilityDataService>();
+        var service = _serviceProvider.GetService<PowerDataService>();
 
         // Assert
-        service.Should().NotBeNull("AbilityCatalogService should be registered (required by GetAvailableAbilitiesHandler)");
+        service.Should().NotBeNull("PowerCatalogService should be registered (required by GetAvailableAbilitiesHandler)");
     }
 
     [Fact]
     public void SpellCatalogService_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<SpellDataService>();
+        var service = _serviceProvider.GetService<SpellCastingService>();
 
         // Assert
         service.Should().NotBeNull("SpellCatalogService should be registered as singleton (required by GetLearnableSpellsHandler)");
@@ -324,13 +324,13 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AbilityGenerator_Should_Be_Registered()
+    public void PowerGenerator_Should_Be_Registered()
     {
         // Act
-        var service = _serviceProvider.GetService<AbilityGenerator>();
+        var service = _serviceProvider.GetService<PowerGenerator>();
 
         // Assert
-        service.Should().NotBeNull("AbilityGenerator should be registered");
+        service.Should().NotBeNull("PowerGenerator should be registered");
     }
 
     [Fact]
@@ -471,7 +471,7 @@ public class ServiceRegistrationTests
     [Fact]
     public void GetAvailableAbilitiesHandler_Should_Resolve_With_Dependencies()
     {
-        // Arrange - This handler requires AbilityCatalogService
+        // Arrange - This handler requires PowerCatalogService
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
         // Act
@@ -481,7 +481,7 @@ public class ServiceRegistrationTests
         });
 
         // Assert
-        action.Should().NotThrowAsync<InvalidOperationException>("GetAvailableAbilitiesHandler should resolve all dependencies (AbilityCatalogService)");
+        action.Should().NotThrowAsync<InvalidOperationException>("GetAvailableAbilitiesHandler should resolve all dependencies (PowerCatalogService)");
     }
 
     [Fact]
@@ -534,7 +534,7 @@ public class ServiceRegistrationTests
             typeof(ItemGenerator),
             typeof(EnemyGenerator),
             typeof(NpcGenerator),
-            typeof(AbilityGenerator),
+            typeof(PowerGenerator),
             typeof(LocationGenerator),
             typeof(QuestGenerator),
             typeof(DialogueGenerator),

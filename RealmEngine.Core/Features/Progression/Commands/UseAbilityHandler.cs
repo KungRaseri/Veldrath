@@ -11,53 +11,53 @@ using RealmEngine.Core.Features.Combat.Commands;
 namespace RealmEngine.Core.Features.Progression.Commands;
 
 /// <summary>
-/// Handles using an ability.
+/// Handles using a power.
 /// </summary>
-public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityResult>
+public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
 {
     private readonly PowerDataService _powerCatalog;
-    private readonly ILogger<UseAbilityHandler> _logger;
+    private readonly ILogger<UsePowerHandler> _logger;
     private readonly IMediator? _mediator;
     private readonly Random _random = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UseAbilityHandler"/> class.
+    /// Initializes a new instance of the <see cref="UsePowerHandler"/> class.
     /// </summary>
     /// <param name="powerCatalog">The power catalog service.</param>
     /// <param name="logger">The logger.</param>
     /// <param name="mediator">The mediator for sending commands (optional for testing).</param>
-    public UseAbilityHandler(
+    public UsePowerHandler(
         PowerDataService powerCatalog,
-        ILogger<UseAbilityHandler>? logger = null,
+        ILogger<UsePowerHandler>? logger = null,
         IMediator? mediator = null)
     {
         _powerCatalog = powerCatalog ?? throw new ArgumentNullException(nameof(powerCatalog));
-        _logger = logger ?? NullLogger<UseAbilityHandler>.Instance;
+        _logger = logger ?? NullLogger<UsePowerHandler>.Instance;
         _mediator = mediator;
     }
 
     /// <summary>
-    /// Handles using an ability.
+    /// Handles using a power.
     /// </summary>
-    /// <param name="request">The use ability command.</param>
+    /// <param name="request">The use power command.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The use ability result.</returns>
-    public async Task<UseAbilityResult> Handle(UseAbilityCommand request, CancellationToken cancellationToken)
+    /// <returns>The use power result.</returns>
+    public async Task<UsePowerResult> Handle(UsePowerCommand request, CancellationToken cancellationToken)
     {
         // Verify ability is known
-        if (!request.User.LearnedAbilities.TryGetValue(request.AbilityId, out var learnedAbility))
+        if (!request.User.LearnedAbilities.TryGetValue(request.PowerId, out var learnedAbility))
         {
-            return new UseAbilityResult
+            return new UsePowerResult
             {
                 Success = false,
                 Message = "You don't know that ability!"
             };
         }
 
-        var ability = _powerCatalog.GetPower(request.AbilityId);
+        var ability = _powerCatalog.GetPower(request.PowerId);
         if (ability == null)
         {
-            return new UseAbilityResult
+            return new UsePowerResult
             {
                 Success = false,
                 Message = "Ability not found!"
@@ -65,9 +65,9 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
         }
 
         // Check cooldown
-        if (request.User.AbilityCooldowns.TryGetValue(request.AbilityId, out var cooldownRemaining) && cooldownRemaining > 0)
+        if (request.User.AbilityCooldowns.TryGetValue(request.PowerId, out var cooldownRemaining) && cooldownRemaining > 0)
         {
-            return new UseAbilityResult
+            return new UsePowerResult
             {
                 Success = false,
                 Message = $"{ability.DisplayName} is still cooling down ({cooldownRemaining} turns)."
@@ -77,7 +77,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
         // Check mana cost
         if (request.User.Mana < ability.ManaCost)
         {
-            return new UseAbilityResult
+            return new UsePowerResult
             {
                 Success = false,
                 Message = $"Not enough mana! {ability.DisplayName} requires {ability.ManaCost} mana."
@@ -135,7 +135,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
         // Apply cooldown
         if (ability.Cooldown > 0)
         {
-            request.User.AbilityCooldowns[request.AbilityId] = ability.Cooldown;
+            request.User.AbilityCooldowns[request.PowerId] = ability.Cooldown;
         }
 
         // Update usage statistics
@@ -155,7 +155,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
         if (healingDone > 0)
             message += $" Healed {healingDone} HP.";
 
-        return new UseAbilityResult
+        return new UsePowerResult
         {
             Success = true,
             Message = message,
@@ -169,7 +169,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
     /// <summary>
     /// Try to apply status effect from ability to target.
     /// </summary>
-    private async Task TryApplyStatusEffect(Power ability, UseAbilityCommand request)
+    private async Task TryApplyStatusEffect(Power ability, UsePowerCommand request)
     {
         if (_mediator == null)
             return;
