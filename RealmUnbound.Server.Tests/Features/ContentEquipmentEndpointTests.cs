@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
@@ -90,8 +90,7 @@ public class ContentEquipmentEndpointTests(ContentEquipmentEndpointsFixture fixt
 {
     private readonly HttpClient _client = fixture.Client;
 
-    // â”€â”€ GET /api/content/items?type=weapon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+    // GET /api/content/items?type=weapon
     [Fact]
     public async Task GetWeaponItems_Returns_OK_And_ContainsSeededWeapon()
     {
@@ -134,8 +133,7 @@ public class ContentEquipmentEndpointTests(ContentEquipmentEndpointsFixture fixt
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // â”€â”€ GET /api/content/items?type=armor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+    // GET /api/content/items?type=armor
     [Fact]
     public async Task GetArmorItems_Returns_OK_And_ContainsSeededArmor()
     {
@@ -178,8 +176,7 @@ public class ContentEquipmentEndpointTests(ContentEquipmentEndpointsFixture fixt
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // â”€â”€ GET /api/content/materials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+    // GET /api/content/materials
     [Fact]
     public async Task GetMaterials_Returns_OK_And_ContainsSeededMaterial()
     {

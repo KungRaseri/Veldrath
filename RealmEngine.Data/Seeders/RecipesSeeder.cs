@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 
@@ -16,7 +16,7 @@ public static class RecipesSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.Recipes.AddRange(
-            // â”€â”€ Weapon recipes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Weapon recipes
             new Recipe
             {
                 Slug             = "iron-sword-recipe",
@@ -77,7 +77,7 @@ public static class RecipesSeeder
                 },
             },
 
-            // â”€â”€ Armor recipes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Armor recipes
             new Recipe
             {
                 Slug             = "leather-cap-recipe",
@@ -137,7 +137,7 @@ public static class RecipesSeeder
                 },
             },
 
-            // â”€â”€ Item recipes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Item recipes
             new Recipe
             {
                 Slug             = "scroll-of-fireball-recipe",
