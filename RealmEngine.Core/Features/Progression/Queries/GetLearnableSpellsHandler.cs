@@ -8,15 +8,15 @@ namespace RealmEngine.Core.Features.Progression.Queries;
 /// </summary>
 public class GetLearnableSpellsHandler : IRequestHandler<GetLearnableSpellsQuery, GetLearnableSpellsResult>
 {
-    private readonly SpellDataService _spellService;
+    private readonly PowerDataService _powerService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetLearnableSpellsHandler"/> class.
     /// </summary>
-    /// <param name="spellService">The spell catalog service.</param>
-    public GetLearnableSpellsHandler(SpellDataService spellService)
+    /// <param name="powerService">The power catalog service.</param>
+    public GetLearnableSpellsHandler(PowerDataService powerService)
     {
-        _spellService = spellService ?? throw new ArgumentNullException(nameof(spellService));
+        _powerService = powerService ?? throw new ArgumentNullException(nameof(powerService));
     }
 
     /// <summary>
@@ -24,17 +24,17 @@ public class GetLearnableSpellsHandler : IRequestHandler<GetLearnableSpellsQuery
     /// </summary>
     /// <param name="request">The query request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The learnable spells result.</returns>
+    /// <returns>The learnable powers result.</returns>
     public Task<GetLearnableSpellsResult> Handle(GetLearnableSpellsQuery request, CancellationToken cancellationToken)
     {
-        var spells = request.Tradition.HasValue
-            ? _spellService.GetSpellsByTradition(request.Tradition.Value)
-            : _spellService.GetLearnableSpells(request.Character);
+        var powers = request.Tradition.HasValue
+            ? _powerService.GetPowersByTradition(request.Tradition.Value)
+            : _powerService.GetLearnablePowers(request.Character);
 
         return Task.FromResult(new GetLearnableSpellsResult
         {
-            Spells = spells,
-            TotalCount = spells.Count
+            Spells = powers,
+            TotalCount = powers.Count
         });
     }
 }

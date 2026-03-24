@@ -23,6 +23,6 @@ public record LearnSpellResult
     public bool Success { get; init; }
     /// <summary>Gets the result message.</summary>
     public required string Message { get; init; }
-    /// <summary>Gets the spell that was learned.</summary>
-    public Spell? SpellLearned { get; init; }
+    /// <summary>Gets the spell (power) that was learned.</summary>
+    public Power? SpellLearned { get; init; }
 }

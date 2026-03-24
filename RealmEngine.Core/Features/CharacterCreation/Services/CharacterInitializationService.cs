@@ -9,31 +9,31 @@ namespace RealmEngine.Core.Features.CharacterCreation.Services;
 
 /// <summary>
 /// Orchestrates the initial stat/ability/spell setup for a newly created character.
-/// Ability and spell IDs are sourced from <see cref="ICharacterClassRepository"/> —
-/// no hardcoded class mappings; all data is driven by <c>ClassAbilityUnlock</c>
-/// and <c>ClassSpellUnlock</c> rows in the content database.
+/// Power IDs are sourced from <see cref="ICharacterClassRepository"/> —
+/// no hardcoded class mappings; all data is driven by <c>ClassPowerUnlock</c>
+/// rows in the content database.
 /// </summary>
 public class CharacterInitializationService
 {
-    private readonly AbilityDataService _abilityCatalogService;
+    private readonly PowerDataService _powerCatalogService;
     private readonly SpellCastingService _spellCastingService;
     private readonly ICharacterClassRepository _classRepository;
     private readonly IMediator _mediator;
     private readonly ILogger<CharacterInitializationService> _logger;
 
-    /// <param name="abilityCatalogService">Catalog service for ability lookup (used by callers that need full <see cref="Ability"/> objects).</param>
+    /// <param name="powerCatalogService">Catalog service for power lookup.</param>
     /// <param name="spellCastingService">Service for spell-casting rules.</param>
-    /// <param name="classRepository">Repository that exposes <c>StartingAbilityIds</c> and <c>StartingSpellIds</c> from the DB.</param>
+    /// <param name="classRepository">Repository that exposes <c>StartingPowerIds</c> from the DB.</param>
     /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnAbilityCommand"/> and <see cref="LearnSpellCommand"/>.</param>
     /// <param name="logger">Logger.</param>
     public CharacterInitializationService(
-        AbilityDataService abilityCatalogService,
+        PowerDataService powerCatalogService,
         SpellCastingService spellCastingService,
         ICharacterClassRepository classRepository,
         IMediator mediator,
         ILogger<CharacterInitializationService> logger)
     {
-        _abilityCatalogService = abilityCatalogService ?? throw new ArgumentNullException(nameof(abilityCatalogService));
+        _powerCatalogService = powerCatalogService ?? throw new ArgumentNullException(nameof(powerCatalogService));
         _spellCastingService = spellCastingService ?? throw new ArgumentNullException(nameof(spellCastingService));
         _classRepository = classRepository ?? throw new ArgumentNullException(nameof(classRepository));
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
@@ -41,18 +41,18 @@ public class CharacterInitializationService
     }
 
     /// <summary>
-    /// Grants each level-1 ability from the class definition to the character
-    /// by dispatching a <see cref="LearnAbilityCommand"/> per ability. Ability IDs
-    /// are sourced from <see cref="ICharacterClassRepository"/> (<c>StartingAbilityIds</c>),
-    /// which reflect <c>ClassAbilityUnlock</c> rows with <c>LevelRequired == 1</c>.
+    /// Grants each level-1 power from the class definition to the character
+    /// by dispatching a <see cref="LearnAbilityCommand"/> per power. Power IDs
+    /// are sourced from <see cref="ICharacterClassRepository"/> (<c>StartingPowerIds</c>),
+    /// which reflect <c>ClassPowerUnlock</c> rows with <c>LevelRequired == 1</c>.
     /// </summary>
-    /// <returns>Number of abilities successfully learned.</returns>
+    /// <returns>Number of powers successfully learned.</returns>
     public async Task<int> InitializeStartingAbilitiesAsync(Character character, CharacterClass characterClass)
     {
         if (character == null) throw new ArgumentNullException(nameof(character));
         if (characterClass == null) throw new ArgumentNullException(nameof(characterClass));
 
-        var startingAbilityIds = _classRepository.GetByName(character.ClassName)?.StartingAbilityIds ?? [];
+        var startingAbilityIds = _classRepository.GetByName(character.ClassName)?.StartingPowerIds ?? [];
 
         if (startingAbilityIds.Count == 0)
         {
@@ -88,9 +88,9 @@ public class CharacterInitializationService
     /// <summary>
     /// Grants each level-1 spell from the class definition to the character
     /// by dispatching a <see cref="LearnSpellCommand"/> per spell. Spell IDs
-    /// are sourced from <see cref="ICharacterClassRepository"/> (<c>StartingSpellIds</c>),
-    /// which reflect <c>ClassSpellUnlock</c> rows with <c>LevelRequired == 1</c>.
-    /// Returns 0 for non-spellcaster classes (empty spell unlock list).
+    /// are sourced from <see cref="ICharacterClassRepository"/> (<c>StartingPowerIds</c>),
+    /// which reflect <c>ClassPowerUnlock</c> rows with <c>LevelRequired == 1</c>.
+    /// Returns 0 for non-spellcaster classes (empty power unlock list).
     /// </summary>
     /// <returns>Number of spells successfully learned.</returns>
     public async Task<int> InitializeStartingSpellsAsync(Character character, CharacterClass characterClass)
@@ -98,7 +98,7 @@ public class CharacterInitializationService
         if (character == null) throw new ArgumentNullException(nameof(character));
         if (characterClass == null) throw new ArgumentNullException(nameof(characterClass));
 
-        var startingSpellIds = _classRepository.GetByName(character.ClassName)?.StartingSpellIds ?? [];
+        var startingSpellIds = _classRepository.GetByName(character.ClassName)?.StartingPowerIds ?? [];
 
         if (startingSpellIds.Count == 0)
         {

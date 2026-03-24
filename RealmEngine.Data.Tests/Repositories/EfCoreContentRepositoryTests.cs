@@ -7,25 +7,25 @@ using RealmEngine.Data.Repositories;
 namespace RealmEngine.Data.Tests.Repositories;
 
 [Trait("Category", "Repository")]
-public class EfCoreAbilityRepositoryTests
+public class EfCorePowerRepositoryTests
 {
     private static ContentDbContext CreateDbContext() =>
         new(new DbContextOptionsBuilder<ContentDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
-    private static Ability MakeAbility(string slug, string type = "active", bool active = true) =>
-        new() { Slug = slug, AbilityType = type, IsActive = active, DisplayName = slug };
+    private static RealmEngine.Data.Entities.Power MakePower(string slug, string type = "active", bool active = true) =>
+        new() { Slug = slug, TypeKey = type, IsActive = active, DisplayName = slug };
 
     [Fact]
-    public async Task GetAllAsync_ReturnsOnlyActiveAbilities()
+    public async Task GetAllAsync_ReturnsOnlyActivePowers()
     {
         await using var db = CreateDbContext();
-        db.Abilities.AddRange(
-            MakeAbility("fireball", active: true),
-            MakeAbility("hidden", active: false));
+        db.Powers.AddRange(
+            MakePower("fireball", active: true),
+            MakePower("hidden", active: false));
         await db.SaveChangesAsync();
-        var repo = new EfCoreAbilityRepository(db, NullLogger<EfCoreAbilityRepository>.Instance);
+        var repo = new EfCorePowerRepository(db, NullLogger<EfCorePowerRepository>.Instance);
 
         var result = await repo.GetAllAsync();
 
@@ -36,9 +36,9 @@ public class EfCoreAbilityRepositoryTests
     public async Task GetBySlugAsync_ReturnsMapping_WhenActive()
     {
         await using var db = CreateDbContext();
-        db.Abilities.Add(MakeAbility("slash", "active"));
+        db.Powers.Add(MakePower("slash", "active"));
         await db.SaveChangesAsync();
-        var repo = new EfCoreAbilityRepository(db, NullLogger<EfCoreAbilityRepository>.Instance);
+        var repo = new EfCorePowerRepository(db, NullLogger<EfCorePowerRepository>.Instance);
 
         var result = await repo.GetBySlugAsync("slash");
 
@@ -50,23 +50,23 @@ public class EfCoreAbilityRepositoryTests
     public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
     {
         await using var db = CreateDbContext();
-        db.Abilities.Add(MakeAbility("disabled", active: false));
+        db.Powers.Add(MakePower("disabled", active: false));
         await db.SaveChangesAsync();
-        var repo = new EfCoreAbilityRepository(db, NullLogger<EfCoreAbilityRepository>.Instance);
+        var repo = new EfCorePowerRepository(db, NullLogger<EfCorePowerRepository>.Instance);
 
         (await repo.GetBySlugAsync("disabled")).Should().BeNull();
     }
 
     [Fact]
-    public async Task GetByTypeAsync_FiltersOnAbilityType()
+    public async Task GetByTypeAsync_FiltersOnTypeKey()
     {
         await using var db = CreateDbContext();
-        db.Abilities.AddRange(
-            MakeAbility("strike", "active"),
-            MakeAbility("regen", "passive"),
-            MakeAbility("dodge", "active"));
+        db.Powers.AddRange(
+            MakePower("strike", "active"),
+            MakePower("regen", "passive"),
+            MakePower("dodge", "active"));
         await db.SaveChangesAsync();
-        var repo = new EfCoreAbilityRepository(db, NullLogger<EfCoreAbilityRepository>.Instance);
+        var repo = new EfCorePowerRepository(db, NullLogger<EfCorePowerRepository>.Instance);
 
         var result = await repo.GetByTypeAsync("active");
 
@@ -576,69 +576,7 @@ public class EfCoreMaterialRepositoryTests
     }
 }
 
-[Trait("Category", "Repository")]
-public class EfCoreSpellRepositoryTests
-{
-    private static ContentDbContext CreateDbContext() =>
-        new(new DbContextOptionsBuilder<ContentDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options);
-
-    private static Spell MakeSpell(string slug, string school = "fire", bool active = true) =>
-        new() { Slug = slug, TypeKey = school, School = school, IsActive = active, DisplayName = slug };
-
-    [Fact]
-    public async Task GetAllAsync_ReturnsOnlyActiveSpells()
-    {
-        await using var db = CreateDbContext();
-        db.Spells.AddRange(MakeSpell("fireball"), MakeSpell("hidden", active: false));
-        await db.SaveChangesAsync();
-        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
-
-        (await repo.GetAllAsync()).Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task GetBySlugAsync_ReturnsMappedSpell()
-    {
-        await using var db = CreateDbContext();
-        db.Spells.Add(MakeSpell("fireball", "fire"));
-        await db.SaveChangesAsync();
-        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
-
-        var result = await repo.GetBySlugAsync("fireball");
-
-        result.Should().NotBeNull();
-        result!.SpellId.Should().Be("fireball");
-    }
-
-    [Fact]
-    public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
-    {
-        await using var db = CreateDbContext();
-        db.Spells.Add(MakeSpell("ghost-fire", active: false));
-        await db.SaveChangesAsync();
-        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
-
-        (await repo.GetBySlugAsync("ghost-fire")).Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetBySchoolAsync_FiltersOnSchool()
-    {
-        await using var db = CreateDbContext();
-        db.Spells.AddRange(
-            MakeSpell("fireball",   "fire"),
-            MakeSpell("heal",       "healing"),
-            MakeSpell("fire-storm", "fire"));
-        await db.SaveChangesAsync();
-        var repo = new EfCoreSpellRepository(db, NullLogger<EfCoreSpellRepository>.Instance);
-
-        var result = await repo.GetBySchoolAsync("fire");
-
-        result.Should().HaveCount(2).And.OnlyContain(s => s.SpellId != "heal");
-    }
-}
+// EfCoreSpellRepositoryTests removed — spells unified into EfCorePowerRepository above.
 
 [Trait("Category", "Repository")]
 public class EfCoreQuestRepositoryTests

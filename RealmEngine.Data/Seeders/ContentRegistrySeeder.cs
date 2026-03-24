@@ -24,8 +24,8 @@ public static class ContentRegistrySeeder
         foreach (var e in await db.ActorClasses.AsNoTracking().ToListAsync())
             Register(e.Id, "ActorClasses", "actors/classes", e.TypeKey, e.Slug);
 
-        foreach (var e in await db.Abilities.AsNoTracking().ToListAsync())
-            Register(e.Id, "Abilities", "abilities", e.TypeKey, e.Slug);
+        foreach (var e in await db.Powers.AsNoTracking().ToListAsync())
+            Register(e.Id, "Powers", "powers", e.TypeKey, e.Slug);
 
         foreach (var e in await db.Skills.AsNoTracking().ToListAsync())
             Register(e.Id, "Skills", "actors/skills", e.TypeKey, e.Slug);

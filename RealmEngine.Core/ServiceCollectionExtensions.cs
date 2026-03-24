@@ -133,11 +133,10 @@ public static class ServiceCollectionExtensions
         
         // Register catalog services (singletons for shared catalogs)
         // NOTE: These catalog services require InitializeAsync() to be called after DI container is built
-        // Example: await serviceProvider.GetRequiredService<AbilityCatalogService>().InitializeAsync();
+        // Example: await serviceProvider.GetRequiredService<PowerDataService>().InitializeAsync();
         // Factory lambdas are used to explicitly select the IServiceScopeFactory constructor,
         // avoiding ambiguity with the secondary test constructor that takes IXxxRepository.
-        services.AddSingleton(sp => new AbilityDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<AbilityDataService>>()));
-        services.AddSingleton(sp => new SpellDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SpellDataService>>()));
+        services.AddSingleton(sp => new PowerDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<PowerDataService>>()));
         services.AddSingleton(sp => new SkillDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SkillDataService>>()));
         services.AddSingleton(sp => new NamePatternService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<NamePatternService>>()));
         
@@ -161,13 +160,12 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IHallOfFameRepository, EfCoreHallOfFameRepository>();
             services.AddScoped<ICharacterClassRepository, EfCoreCharacterClassRepository>();
             services.AddScoped<IBackgroundRepository, EfCoreBackgroundRepository>();
-            services.AddScoped<IAbilityRepository, EfCoreAbilityRepository>();
+            services.AddScoped<IPowerRepository, EfCorePowerRepository>();
             services.AddScoped<IEnemyRepository, EfCoreEnemyRepository>();
             services.AddScoped<INpcRepository, EfCoreNpcRepository>();
             services.AddScoped<IQuestRepository, EfCoreQuestRepository>();
             services.AddScoped<IRecipeRepository, EfCoreRecipeRepository>();
             services.AddScoped<ILootTableRepository, EfCoreLootTableRepository>();
-            services.AddScoped<ISpellRepository, EfCoreSpellRepository>();
             services.AddScoped<ISkillRepository, EfCoreSkillRepository>();
             services.AddScoped<INamePatternRepository, EfCoreNamePatternRepository>();
             services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
@@ -186,13 +184,12 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IHallOfFameRepository, InMemoryHallOfFameRepository>();
             services.AddScoped<ICharacterClassRepository, InMemoryCharacterClassRepository>();
             services.AddScoped<IBackgroundRepository, InMemoryBackgroundRepository>();
-            services.AddScoped<IAbilityRepository, InMemoryAbilityRepository>();
+            services.AddScoped<IPowerRepository, InMemoryPowerRepository>();
             services.AddScoped<IEnemyRepository, InMemoryEnemyRepository>();
             services.AddScoped<INpcRepository, InMemoryNpcRepository>();
             services.AddScoped<IQuestRepository, InMemoryQuestRepository>();
             services.AddScoped<IRecipeRepository, InMemoryRecipeRepository>();
             services.AddScoped<ILootTableRepository, InMemoryLootTableRepository>();
-            services.AddScoped<ISpellRepository, InMemorySpellRepository>();
             services.AddScoped<ISkillRepository, InMemorySkillRepository>();
             services.AddScoped<INamePatternRepository, InMemoryNamePatternRepository>();
             services.AddScoped<IMaterialRepository, InMemoryMaterialRepository>();
@@ -251,7 +248,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Initializes the ability, spell, and skill catalog singletons.
+    /// Initializes the power and skill catalog singletons.
     /// Call this on the built <see cref="IServiceProvider"/> when not using the .NET Generic Host
     /// (e.g. standalone console apps or test hosts that bypass <see cref="IHostedService"/> startup).
     /// Generic Host consumers (ASP.NET Core, Blazor, Avalonia with IHost) do not need to call this —
@@ -263,8 +260,7 @@ public static class ServiceCollectionExtensions
         this IServiceProvider services,
         CancellationToken cancellationToken = default)
     {
-        await services.GetRequiredService<AbilityDataService>().InitializeAsync();
-        await services.GetRequiredService<SpellDataService>().InitializeAsync();
+        await services.GetRequiredService<PowerDataService>().InitializeAsync();
         await services.GetRequiredService<SkillDataService>().InitializeAsync();
     }
     

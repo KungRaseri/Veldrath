@@ -367,7 +367,7 @@ public class Quest : ITraitable
     /// </list>
     /// </remarks>
     [System.Text.Json.Serialization.JsonIgnore]
-    public List<Ability> AbilityRewards { get; set; } = new();
+    public List<Power> AbilityRewards { get; set; } = new();
 
     /// <summary>
     /// Fully resolved Location objects for quest objectives.

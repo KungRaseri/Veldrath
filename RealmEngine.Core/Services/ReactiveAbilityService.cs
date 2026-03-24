@@ -9,17 +9,17 @@ namespace RealmEngine.Core.Services;
 /// </summary>
 public class ReactiveAbilityService
 {
-    private readonly AbilityDataService? _abilityCatalogService;
+    private readonly PowerDataService? _powerCatalogService;
     private readonly ILogger<ReactiveAbilityService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReactiveAbilityService"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    /// <param name="abilityCatalogService">The ability catalog service.</param>
-    public ReactiveAbilityService(ILogger<ReactiveAbilityService> logger, AbilityDataService? abilityCatalogService = null)
+    /// <param name="powerCatalogService">The power catalog service.</param>
+    public ReactiveAbilityService(ILogger<ReactiveAbilityService> logger, PowerDataService? powerCatalogService = null)
     {
-        _abilityCatalogService = abilityCatalogService;
+        _powerCatalogService = powerCatalogService;
         _logger = logger;
     }
 
@@ -32,7 +32,7 @@ public class ReactiveAbilityService
     /// <returns>True if any reactive ability was triggered</returns>
     public bool CheckAndTriggerReactiveAbilities(Character character, string trigger, CombatLog? combatLog = null)
     {
-        if (_abilityCatalogService == null)
+        if (_powerCatalogService == null)
             return false; // No catalog service available (e.g., in tests)
 
         bool anyTriggered = false;
@@ -40,7 +40,7 @@ public class ReactiveAbilityService
         // Check all learned abilities for reactive ones matching the trigger
         foreach (var learnedAbility in character.LearnedAbilities.Values)
         {
-            var ability = _abilityCatalogService.GetAbility(learnedAbility.AbilityId);
+            var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null)
                 continue;
             
@@ -76,7 +76,7 @@ public class ReactiveAbilityService
     /// <summary>
     /// Checks if an ability is reactive (has abilityClass trait = "reactive").
     /// </summary>
-    private bool IsReactiveAbility(Ability ability)
+    private bool IsReactiveAbility(Power ability)
     {
         if (!ability.Traits.TryGetValue("abilityClass", out var classObj))
             return false;
@@ -97,7 +97,7 @@ public class ReactiveAbilityService
     /// <summary>
     /// Gets the trigger condition from an ability's traits.
     /// </summary>
-    private string? GetTriggerCondition(Ability ability)
+    private string? GetTriggerCondition(Power ability)
     {
         if (!ability.Traits.TryGetValue("triggerCondition", out var triggerObj))
             return null;

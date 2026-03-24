@@ -8,12 +8,12 @@ namespace RealmEngine.Core.Features.Combat.Services;
 public static class StatusEffectParser
 {
     /// <summary>
-    /// Parse status effect from ability traits and create a StatusEffect instance.
+    /// Parse status effect from power traits and create a StatusEffect instance.
     /// </summary>
-    /// <param name="ability">The ability with status effect traits.</param>
-    /// <param name="sourceName">Name of the ability source (for display purposes).</param>
+    /// <param name="ability">The power with status effect traits.</param>
+    /// <param name="sourceName">Name of the power source (for display purposes).</param>
     /// <returns>StatusEffect instance if traits are present, null otherwise.</returns>
-    public static StatusEffect? ParseStatusEffectFromAbility(Ability ability, string sourceName)
+    public static StatusEffect? ParseStatusEffectFromAbility(Power ability, string sourceName)
     {
         if (!ability.Traits.TryGetValue("statusEffect", out var statusEffectValue))
         {
@@ -130,9 +130,9 @@ public static class StatusEffectParser
     }
 
     /// <summary>
-    /// Get status effect application chance from ability traits (0-100).
+    /// Get status effect application chance from power traits (0-100).
     /// </summary>
-    public static int GetStatusEffectChance(Ability ability)
+    public static int GetStatusEffectChance(Power ability)
     {
         if (ability.Traits.TryGetValue("statusChance", out var chanceValue) &&
             int.TryParse(chanceValue?.ToString(), out int chance))
@@ -272,7 +272,7 @@ public static class StatusEffectParser
     /// <summary>
     /// Get stat modifiers for buff/debuff effects.
     /// </summary>
-    private static Dictionary<string, int> GetStatModifiers(StatusEffectType type, Ability ability)
+    private static Dictionary<string, int> GetStatModifiers(StatusEffectType type, Power ability)
     {
         var modifiers = new Dictionary<string, int>();
 

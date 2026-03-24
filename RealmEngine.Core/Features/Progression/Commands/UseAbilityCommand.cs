@@ -33,6 +33,6 @@ public record UseAbilityResult
     public int HealingDone { get; init; }
     /// <summary>Gets the mana cost of the ability.</summary>
     public int ManaCost { get; init; }
-    /// <summary>Gets the ability that was used.</summary>
-    public Ability? AbilityUsed { get; init; }
+    /// <summary>Gets the power that was used.</summary>
+    public Power? PowerUsed { get; init; }
 }

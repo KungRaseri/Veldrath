@@ -34,8 +34,7 @@ public class CombatService
     public CombatService(
         ISaveGameService saveGameService,
         IMediator mediator,
-        AbilityDataService abilityCatalogService,
-        SpellDataService spellCatalogService,
+        PowerDataService powerCatalogService,
         ILogger<CombatService> logger,
         ILoggerFactory loggerFactory,
         ItemGenerator? itemGenerator = null)
@@ -43,9 +42,9 @@ public class CombatService
         _saveGameService = saveGameService;
         _mediator = mediator;
         _logger = logger;
-        _reactiveAbilityService = new ReactiveAbilityService(loggerFactory.CreateLogger<ReactiveAbilityService>(), abilityCatalogService);
-        _enemyAbilityAI = new EnemyAbilityAIService(abilityCatalogService);
-        _enemySpellCastingAI = new EnemySpellCastingService(spellCatalogService);
+        _reactiveAbilityService = new ReactiveAbilityService(loggerFactory.CreateLogger<ReactiveAbilityService>(), powerCatalogService);
+        _enemyAbilityAI = new EnemyAbilityAIService(powerCatalogService);
+        _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService);
         _itemGenerator = itemGenerator;
     }
 
@@ -452,16 +451,16 @@ public class CombatService
         {
             Success = true,
             Message = $"{enemy.Name} used {ability.Name}!",
-            AbilityUsed = ability,
+            PowerUsed = ability,
             ManaCost = 0, // Enemies don't use mana for now
             DamageDealt = 0,
             HealingDone = 0
         };
 
         // Apply ability effects based on type
-        switch (ability.Type)
+        switch (ability.EffectType)
         {
-            case AbilityTypeEnum.Offensive:
+            case PowerEffectType.Damage:
                 // Calculate ability damage
                 int abilityDamage = CalculateAbilityDamage(enemy, ability);
                 player.Health = Math.Max(0, player.Health - abilityDamage);
@@ -475,8 +474,8 @@ public class CombatService
                 _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
                 break;
 
-            case AbilityTypeEnum.Defensive:
-            case AbilityTypeEnum.Healing:
+            case PowerEffectType.Protection:
+            case PowerEffectType.Heal:
                 // Healing ability
                 int healAmount = CalculateAbilityHealing(enemy, ability);
                 enemy.Health = Math.Min(enemy.MaxHealth, enemy.Health + healAmount);
@@ -487,18 +486,18 @@ public class CombatService
                 };
                 break;
 
-            case AbilityTypeEnum.Buff:
+            case PowerEffectType.Buff:
                 // Buff abilities (future enhancement - apply buffs to enemy)
                 result = result with { Message = $"{enemy.Name} used {ability.Name}!" };
                 break;
 
-            case AbilityTypeEnum.Debuff:
+            case PowerEffectType.Debuff:
                 // Debuff abilities (future enhancement - apply debuffs to player)
                 result = result with { Message = $"{enemy.Name} used {ability.Name} on you!" };
                 break;
         }
 
-        _logger.LogInformation($"Enemy {enemy.Name} used ability {ability.Name} (Type: {ability.Type})");
+        _logger.LogInformation($"Enemy {enemy.Name} used ability {ability.Name} (Type: {ability.EffectType})");
         return result;
     }
 
@@ -506,7 +505,7 @@ public class CombatService
     /// Execute spell casting by enemy using AI to decide which spell to use.
     /// Returns null if no spell was cast.
     /// </summary>
-    public CastSpellResult? ExecuteEnemySpell(Enemy enemy, Character player, SpellDataService spellCatalog)
+    public CastSpellResult? ExecuteEnemySpell(Enemy enemy, Character player, PowerDataService powerCatalog)
     {
         // AI decides which spell to cast (if any)
         string? chosenSpellId = _enemySpellCastingAI.DecideSpellCasting(enemy, player);
@@ -516,8 +515,8 @@ public class CombatService
             return null; // AI chose not to cast spell
         }
 
-        // Get spell from catalog
-        var spell = spellCatalog.GetSpell(chosenSpellId);
+        // Get power from catalog
+        var spell = powerCatalog.GetPower(chosenSpellId);
 
         if (spell == null)
         {
@@ -543,7 +542,7 @@ public class CombatService
         // Apply spell effects based on type
         switch (spell.EffectType)
         {
-            case SpellEffectType.Damage:
+            case PowerEffectType.Damage:
                 // Damage spell - apply damage to player
                 int spellDamage = CalculateSpellDamage(enemy, spell);
                 player.Health = Math.Max(0, player.Health - spellDamage);
@@ -557,7 +556,7 @@ public class CombatService
                 _reactiveAbilityService.CheckAndTriggerReactiveAbilities(player, "onDamageTaken");
                 break;
 
-            case SpellEffectType.Heal:
+            case PowerEffectType.Heal:
                 // Healing spell
                 int healAmount = CalculateSpellHealing(enemy, spell);
                 enemy.Health = Math.Min(enemy.MaxHealth, enemy.Health + healAmount);
@@ -568,33 +567,33 @@ public class CombatService
                 };
                 break;
 
-            case SpellEffectType.Buff:
-            case SpellEffectType.Protection:
+            case PowerEffectType.Buff:
+            case PowerEffectType.Protection:
                 // Defensive buff (future enhancement - apply buffs to enemy)
                 result = result with { Message = $"{enemy.Name} cast {spell.DisplayName}!" };
                 break;
 
-            case SpellEffectType.Debuff:
-            case SpellEffectType.Control:
+            case PowerEffectType.Debuff:
+            case PowerEffectType.Control:
                 // Debuff spell (future enhancement - apply debuffs to player)
                 result = result with { Message = $"{enemy.Name} cast {spell.DisplayName} on you!" };
                 break;
 
-            case SpellEffectType.Utility:
-            case SpellEffectType.Summon:
+            case PowerEffectType.Utility:
+            case PowerEffectType.Summon:
                 // Utility spell (future enhancement)
                 result = result with { Message = $"{enemy.Name} cast {spell.DisplayName}!" };
                 break;
         }
 
         // Set cooldown
-        if (!enemy.SpellCooldowns.ContainsKey(spell.SpellId))
+        if (!enemy.SpellCooldowns.ContainsKey(spell.Id))
         {
-            enemy.SpellCooldowns[spell.SpellId] = spell.Cooldown;
+            enemy.SpellCooldowns[spell.Id] = spell.Cooldown;
         }
         else
         {
-            enemy.SpellCooldowns[spell.SpellId] = spell.Cooldown;
+            enemy.SpellCooldowns[spell.Id] = spell.Cooldown;
         }
 
         _logger.LogInformation($"Enemy {enemy.Name} cast spell {spell.DisplayName} (Type: {spell.EffectType}, Mana: {manaCost})");
@@ -604,7 +603,7 @@ public class CombatService
     /// <summary>
     /// Calculate damage for an enemy ability.
     /// </summary>
-    private int CalculateAbilityDamage(Enemy enemy, Ability ability)
+    private int CalculateAbilityDamage(Enemy enemy, Power ability)
     {
         // Base damage from ability (if no BaseDamage string, use flat 10)
         int baseDamage = 10;
@@ -627,7 +626,7 @@ public class CombatService
     /// <summary>
     /// Calculate damage for an enemy spell.
     /// </summary>
-    private int CalculateSpellDamage(Enemy enemy, Spell spell)
+    private int CalculateSpellDamage(Enemy enemy, Power spell)
     {
         // Base damage from spell
         int baseDamage = 15; // Spells generally stronger than abilities
@@ -649,7 +648,7 @@ public class CombatService
     /// <summary>
     /// Calculate healing for an enemy ability.
     /// </summary>
-    private int CalculateAbilityHealing(Enemy enemy, Ability ability)
+    private int CalculateAbilityHealing(Enemy enemy, Power ability)
     {
         // Base healing from ability (if no BaseDamage string, use flat 10)
         int baseHealing = 10;
@@ -672,7 +671,7 @@ public class CombatService
     /// <summary>
     /// Calculate healing for an enemy spell.
     /// </summary>
-    private int CalculateSpellHealing(Enemy enemy, Spell spell)
+    private int CalculateSpellHealing(Enemy enemy, Power spell)
     {
         // Base healing from spell
         int baseHealing = 20; // Healing spells generally stronger
@@ -1323,3 +1322,4 @@ public class CombatService
     }
 
 }
+

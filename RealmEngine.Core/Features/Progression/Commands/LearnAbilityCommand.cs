@@ -23,6 +23,6 @@ public record LearnAbilityResult
     public bool Success { get; init; }
     /// <summary>Gets the result message.</summary>
     public required string Message { get; init; }
-    /// <summary>Gets the ability that was learned.</summary>
-    public Ability? AbilityLearned { get; init; }
+    /// <summary>Gets the power that was learned.</summary>
+    public Power? AbilityLearned { get; init; }
 }

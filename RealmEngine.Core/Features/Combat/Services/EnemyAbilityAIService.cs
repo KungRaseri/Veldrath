@@ -8,16 +8,16 @@ namespace RealmEngine.Core.Features.Combat.Services;
 /// </summary>
 public class EnemyAbilityAIService
 {
-    private readonly AbilityDataService? _abilityCatalogService;
+    private readonly PowerDataService? _powerCatalogService;
     private readonly Random _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnemyAbilityAIService"/> class.
     /// </summary>
-    /// <param name="abilityCatalogService">The ability catalog service.</param>
-    public EnemyAbilityAIService(AbilityDataService? abilityCatalogService = null)
+    /// <param name="powerCatalogService">The power catalog service.</param>
+    public EnemyAbilityAIService(PowerDataService? powerCatalogService = null)
     {
-        _abilityCatalogService = abilityCatalogService;
+        _powerCatalogService = powerCatalogService;
         _random = new Random();
     }
 
@@ -49,7 +49,7 @@ public class EnemyAbilityAIService
         double healthPercent = (double)enemy.Health / enemy.MaxHealth * 100;
 
         // Create priority list for abilities based on current situation
-        var abilityPriorities = new List<(Ability ability, int priority)>();
+        var abilityPriorities = new List<(Power ability, int priority)>();
 
         foreach (var ability in availableAbilities)
         {
@@ -106,7 +106,7 @@ public class EnemyAbilityAIService
     /// <summary>
     /// Checks if an ability is defensive/healing in nature.
     /// </summary>
-    private bool IsDefensiveAbility(Ability ability)
+    private bool IsDefensiveAbility(Power ability)
     {
         // Check if ability has defensive or healing effects
         var lowerName = ability.Name.ToLowerInvariant();
@@ -120,14 +120,14 @@ public class EnemyAbilityAIService
                lowerDesc.Contains("restore") ||
                lowerDesc.Contains("shield") ||
                lowerDesc.Contains("defense") ||
-               ability.Type == AbilityTypeEnum.Defensive ||
-               ability.Type == AbilityTypeEnum.Healing;
+               ability.EffectType == PowerEffectType.Heal ||
+               ability.EffectType == PowerEffectType.Protection;
     }
 
     /// <summary>
     /// Checks if an ability is offensive/damaging in nature.
     /// </summary>
-    private bool IsOffensiveAbility(Ability ability)
+    private bool IsOffensiveAbility(Power ability)
     {
         // Check if ability deals damage
         var lowerName = ability.Name.ToLowerInvariant();
@@ -140,13 +140,13 @@ public class EnemyAbilityAIService
                lowerName.Contains("bolt") ||
                lowerDesc.Contains("damage") ||
                lowerDesc.Contains("attack") ||
-               ability.Type == AbilityTypeEnum.Offensive;
+               ability.EffectType == PowerEffectType.Damage;
     }
 
     /// <summary>
     /// Checks if an ability is a buff (self-enhancement).
     /// </summary>
-    private bool IsBuffAbility(Ability ability)
+    private bool IsBuffAbility(Power ability)
     {
         var lowerName = ability.Name.ToLowerInvariant();
         var lowerDesc = ability.Description.ToLowerInvariant();
@@ -158,13 +158,13 @@ public class EnemyAbilityAIService
                lowerDesc.Contains("increase") ||
                lowerDesc.Contains("boost") ||
                lowerDesc.Contains("enhance") ||
-               ability.Type == AbilityTypeEnum.Buff;
+               ability.EffectType == PowerEffectType.Buff;
     }
 
     /// <summary>
     /// Checks if an ability is a debuff (weakening the opponent).
     /// </summary>
-    private bool IsDebuffAbility(Ability ability)
+    private bool IsDebuffAbility(Power ability)
     {
         var lowerName = ability.Name.ToLowerInvariant();
         var lowerDesc = ability.Description.ToLowerInvariant();
@@ -176,6 +176,6 @@ public class EnemyAbilityAIService
                lowerDesc.Contains("reduce") ||
                lowerDesc.Contains("weaken") ||
                lowerDesc.Contains("debuff") ||
-               ability.Type == AbilityTypeEnum.Debuff;
+               ability.EffectType == PowerEffectType.Debuff;
     }
 }

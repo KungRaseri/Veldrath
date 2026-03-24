@@ -28,20 +28,23 @@ public record ContentDetailDto(ContentSummaryDto Summary, JsonElement Payload);
 /// <summary>Top-level info about one content type — used by the schema listing endpoint.</summary>
 public record ContentTypeInfoDto(string ContentType, string DisplayLabel, string Description);
 
-// ── Ability ───────────────────────────────────────────────────────────────────
+// ── Power ─────────────────────────────────────────────────────────────────────
 
-/// <summary>A single active or passive ability available to player characters.</summary>
-public record AbilityDto(
+/// <summary>A unified power (ability, spell, talent, passive, etc.) available to characters.</summary>
+public record PowerDto(
     string Slug,
     string DisplayName,
-    string AbilityType,
+    string PowerType,
+    string? School,
     string Description,
     int ManaCost,
     int Cooldown,
     int Range,
     int RarityWeight,
     bool IsPassive,
-    int RequiredLevel);
+    int RequiredLevel,
+    int Rank,
+    string EffectType);
 
 // ── Enemy ─────────────────────────────────────────────────────────────────────
 
@@ -113,17 +116,6 @@ public record LootTableDto(
     bool IsChest,
     bool IsHarvesting,
     List<LootTableEntryDto> Entries);
-
-// ── Spell ─────────────────────────────────────────────────────────────────────
-
-/// <summary>A castable spell belonging to a particular school of magic.</summary>
-public record SpellDto(
-    string SpellId,
-    string Name,
-    string DisplayName,
-    string School,
-    int Rank,
-    int ManaCost);
 
 // ── ActorClass ────────────────────────────────────────────────────────────────
 

@@ -48,14 +48,14 @@ public class GenerateAbilityResult
     public bool Success { get; set; }
 
     /// <summary>
-    /// Generated ability (for single generation or AbilityName requests).
+    /// Generated ability/power (for single generation or AbilityName requests).
     /// </summary>
-    public Ability? Ability { get; set; }
+    public Power? Ability { get; set; }
 
     /// <summary>
-    /// Generated abilities (for multiple generation requests).
+    /// Generated abilities/powers (for multiple generation requests).
     /// </summary>
-    public List<Ability> Abilities { get; set; } = new List<Ability>();
+    public List<Power> Abilities { get; set; } = new List<Power>();
 
     /// <summary>
     /// Error message if generation failed.

@@ -85,35 +85,36 @@ public class CharacterClass
     public ClassProgression? Progression { get; set; }
 
     /// <summary>
-    /// Collection of starting ability reference IDs (v4.1 format) that characters of this class begin with.
-    /// Each ID is a JSON reference like "@abilities/active/offensive:basic-attack".
+    /// Collection of starting power reference IDs (v4.1 format) that characters of this class begin with.
+    /// Covers abilities, spells, talents, and passives — all unified under the Power model.
+    /// Each ID is a JSON reference like "@powers/active/offensive:basic-attack".
     /// </summary>
     /// <remarks>
     /// <para><strong>✅ HOW TO RESOLVE - Use ReferenceResolverService:</strong></para>
     /// <code>
-    /// // C# - Resolve each reference to a full Ability object
+    /// // C# - Resolve each reference to a full Power object
     /// var resolver = new ReferenceResolverService(dataCache);
-    /// var abilities = new List&lt;Ability&gt;();
-    /// foreach (var refId in characterClass.StartingAbilityIds)
+    /// var powers = new List&lt;Power&gt;();
+    /// foreach (var refId in characterClass.StartingPowerIds)
     /// {
-    ///     var abilityJson = await resolver.ResolveToObjectAsync(refId);
-    ///     var ability = abilityJson.ToObject&lt;Ability&gt;();
-    ///     abilities.Add(ability);
+    ///     var powerJson = await resolver.ResolveToObjectAsync(refId);
+    ///     var power = powerJson.ToObject&lt;Power&gt;();
+    ///     powers.Add(power);
     /// }
     /// </code>
     /// <code>
     /// // GDScript - Resolve references in Godot
     /// var resolver = ReferenceResolverService.new(data_cache)
-    /// var abilities = []
-    /// for ref_id in character_class.StartingAbilityIds:
-    ///     var ability_data = await resolver.ResolveToObjectAsync(ref_id)
-    ///     abilities.append(ability_data)
+    /// var powers = []
+    /// for ref_id in character_class.StartingPowerIds:
+    ///     var power_data = await resolver.ResolveToObjectAsync(ref_id)
+    ///     powers.append(power_data)
     /// </code>
     /// <para><strong>Why reference IDs instead of embedded objects?</strong></para>
     /// <list type="bullet">
-    /// <item><description>Memory efficiency - templates don't duplicate full ability data</description></item>
+    /// <item><description>Memory efficiency - templates don't duplicate full power data</description></item>
     /// <item><description>Lazy loading - resolve only when creating a character instance</description></item>
-    /// <item><description>Cross-domain references - abilities live in separate catalog files</description></item>
+    /// <item><description>Cross-domain references - powers live in separate catalog files</description></item>
     /// <item><description>Save file optimization - serialize IDs instead of full object graphs</description></item>
     /// </list>
     /// </remarks>
@@ -121,18 +122,19 @@ public class CharacterClass
     /// Example reference IDs:
     /// <code>
     /// [
-    ///   "@abilities/active/offensive:basic-attack",
-    ///   "@abilities/active/offensive:power-strike",
-    ///   "@abilities/passive/defensive:shield-mastery"
+    ///   "@powers/active/offensive:basic-attack",
+    ///   "@powers/active/offensive:power-strike",
+    ///   "@powers/passive/defensive:shield-mastery"
     /// ]
     /// </code>
     /// </example>
-    public List<string> StartingAbilityIds { get; set; } = new();
+    public List<string> StartingPowerIds { get; set; } = new();
 
     /// <summary>
     /// Spell reference IDs this class starts with (level-1 unlocks from ClassSpellUnlocks).
     /// Empty for non-spellcaster classes.
     /// </summary>
+    [Obsolete("Use StartingPowerIds — abilities and spells are unified under Power.")]
     public List<string> StartingSpellIds { get; set; } = new();
 
     /// <summary>
@@ -180,20 +182,20 @@ public class CharacterClass
     public List<string> StartingEquipmentIds { get; set; } = new();
 
     /// <summary>
-    /// Fully resolved Ability objects for this class's starting abilities.
+    /// Fully resolved Power objects for this class's starting powers.
     /// Populated by CharacterClassGenerator.GenerateAsync() when hydrating templates.
-    /// Not serialized to JSON (template IDs stored in StartingAbilityIds instead).
+    /// Not serialized to JSON (template IDs stored in StartingPowerIds instead).
     /// </summary>
     /// <remarks>
     /// <para><strong>For Runtime Use:</strong></para>
     /// <list type="bullet">
-    /// <item><description>Use this property during character creation to grant abilities</description></item>
+    /// <item><description>Use this property during character creation to grant powers</description></item>
     /// <item><description>Already resolved - no need to call ReferenceResolverService</description></item>
     /// <item><description>Null if class loaded from template without hydration</description></item>
     /// </list>
     /// </remarks>
     [System.Text.Json.Serialization.JsonIgnore]
-    public List<Ability> StartingAbilities { get; set; } = new();
+    public List<Power> StartingAbilities { get; set; } = new();
 
     /// <summary>
     /// Fully resolved Item objects for this class's starting equipment.

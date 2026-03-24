@@ -4,37 +4,37 @@ using MediatR;
 namespace RealmEngine.Core.Features.Progression.Queries;
 
 /// <summary>
-/// Handles getting available abilities for a character.
+/// Handles getting available powers for a character class and level.
 /// </summary>
 public class GetAvailableAbilitiesHandler : IRequestHandler<GetAvailableAbilitiesQuery, GetAvailableAbilitiesResult>
 {
-    private readonly AbilityDataService _abilityService;
+    private readonly PowerDataService _powerService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetAvailableAbilitiesHandler"/> class.
     /// </summary>
-    /// <param name="abilityService">The ability catalog service.</param>
-    public GetAvailableAbilitiesHandler(AbilityDataService abilityService)
+    /// <param name="powerService">The power catalog service.</param>
+    public GetAvailableAbilitiesHandler(PowerDataService powerService)
     {
-        _abilityService = abilityService ?? throw new ArgumentNullException(nameof(abilityService));
+        _powerService = powerService ?? throw new ArgumentNullException(nameof(powerService));
     }
 
     /// <summary>
-    /// Handles getting available abilities.
+    /// Handles getting available powers.
     /// </summary>
     /// <param name="request">The query request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The available abilities result.</returns>
+    /// <returns>The available powers result.</returns>
     public Task<GetAvailableAbilitiesResult> Handle(GetAvailableAbilitiesQuery request, CancellationToken cancellationToken)
     {
-        var abilities = request.Tier.HasValue
-            ? _abilityService.GetAbilitiesByTier(request.Tier.Value)
-            : _abilityService.GetUnlockableAbilities(request.ClassName, request.Level);
+        var powers = request.Tier.HasValue
+            ? _powerService.GetPowersByTier(request.Tier.Value)
+            : _powerService.GetUnlockablePowers(request.ClassName, request.Level);
 
         return Task.FromResult(new GetAvailableAbilitiesResult
         {
-            Abilities = abilities,
-            TotalCount = abilities.Count
+            Abilities = powers,
+            TotalCount = powers.Count
         });
     }
 }

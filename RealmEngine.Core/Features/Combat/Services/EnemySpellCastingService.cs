@@ -8,16 +8,16 @@ namespace RealmEngine.Core.Features.Combat.Services;
 /// </summary>
 public class EnemySpellCastingService
 {
-    private readonly SpellDataService? _spellCatalogService;
+    private readonly PowerDataService? _powerCatalogService;
     private readonly Random _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnemySpellCastingService"/> class.
     /// </summary>
-    /// <param name="spellCatalogService">The spell catalog service.</param>
-    public EnemySpellCastingService(SpellDataService? spellCatalogService = null)
+    /// <param name="powerCatalogService">The power catalog service.</param>
+    public EnemySpellCastingService(PowerDataService? powerCatalogService = null)
     {
-        _spellCatalogService = spellCatalogService;
+        _powerCatalogService = powerCatalogService;
         _random = new Random();
     }
 
@@ -29,7 +29,7 @@ public class EnemySpellCastingService
     /// <returns>Spell ID to cast, or null if should use basic attack/ability</returns>
     public string? DecideSpellCasting(Enemy enemy, Character player)
     {
-        if (_spellCatalogService == null || enemy.SpellIds.Count == 0)
+        if (_powerCatalogService == null || enemy.SpellIds.Count == 0)
         {
             return null; // No spells available or catalog not loaded
         }
@@ -42,10 +42,10 @@ public class EnemySpellCastingService
 
         // Get available spells (not on cooldown and within mana budget)
         var availableSpells = enemy.SpellIds
-            .Select(id => _spellCatalogService.GetSpell(id))
-            .Where(spell => spell != null && 
-                           (!enemy.SpellCooldowns.ContainsKey(spell.SpellId) || enemy.SpellCooldowns[spell.SpellId] == 0) &&
-                           spell.ManaCost <= enemy.Mana)
+            .Select(id => _powerCatalogService.GetPower(id))
+            .Where(power => power != null && 
+                           (!enemy.SpellCooldowns.ContainsKey(power.Id) || enemy.SpellCooldowns[power.Id] == 0) &&
+                           power.ManaCost <= enemy.Mana)
             .ToList();
 
         if (availableSpells.Count == 0)
@@ -58,7 +58,7 @@ public class EnemySpellCastingService
         double manaPercent = (double)enemy.Mana / enemy.MaxMana * 100;
 
         // Create priority list for spells based on current situation
-        var spellPriorities = new List<(Spell spell, int priority)>();
+        var spellPriorities = new List<(Power spell, int priority)>();
 
         foreach (var spell in availableSpells)
         {
@@ -67,17 +67,17 @@ public class EnemySpellCastingService
             int priority = 0;
 
             // Healing spells when health is low
-            if (healthPercent < 30 && spell.EffectType == SpellEffectType.Heal)
+            if (healthPercent < 30 && spell.EffectType == PowerEffectType.Heal)
             {
                 priority = 80; // Highest priority
             }
             // Defensive/buff spells when health is moderate
-            else if (healthPercent < 60 && (spell.EffectType == SpellEffectType.Buff || spell.EffectType == SpellEffectType.Protection))
+            else if (healthPercent < 60 && (spell.EffectType == PowerEffectType.Buff || spell.EffectType == PowerEffectType.Protection))
             {
                 priority = 60; // High priority
             }
             // Offensive spells when health is good
-            else if (healthPercent > 50 && spell.EffectType == SpellEffectType.Damage)
+            else if (healthPercent > 50 && spell.EffectType == PowerEffectType.Damage)
             {
                 // Prefer higher damage spells
                 if (spell.Rank >= 3)
@@ -90,13 +90,13 @@ public class EnemySpellCastingService
                 }
             }
             // Debuff spells when player is strong
-            else if (player.Health > player.MaxHealth * 0.7 && spell.EffectType == SpellEffectType.Debuff)
+            else if (player.Health > player.MaxHealth * 0.7 && spell.EffectType == PowerEffectType.Debuff)
             {
                 priority = 45; // Medium priority
             }
             // Utility spells (summons, control) in favorable situations
             else if (healthPercent > 60 && manaPercent > 50 && 
-                    (spell.EffectType == SpellEffectType.Summon || spell.EffectType == SpellEffectType.Control))
+                    (spell.EffectType == PowerEffectType.Summon || spell.EffectType == PowerEffectType.Control))
             {
                 priority = 40; // Medium priority
             }
@@ -120,7 +120,7 @@ public class EnemySpellCastingService
         {
             if (_random.Next(100) < priority)
             {
-                return spell.SpellId;
+                return spell.Id;
             }
         }
 
@@ -128,7 +128,7 @@ public class EnemySpellCastingService
         if (availableSpells.Count > 0 && _random.Next(100) < 15)
         {
             int randomIndex = _random.Next(availableSpells.Count);
-            return availableSpells[randomIndex]?.SpellId;
+            return availableSpells[randomIndex]?.Id;
         }
 
         // Default: don't cast a spell this turn
@@ -165,13 +165,13 @@ public class EnemySpellCastingService
     }
 
     /// <summary>
-    /// Calculates the final mana cost for a spell cast by an enemy.
+    /// Calculates the final mana cost for a spell (power) cast by an enemy.
     /// May be modified by enemy's Intelligence or traits.
     /// </summary>
-    /// <param name="spell">The spell being cast</param>
-    /// <param name="enemy">The enemy casting the spell</param>
-    /// <returns>Actual mana cost</returns>
-    public int CalculateManaCost(Spell spell, Enemy enemy)
+    /// <param name="spell">The power being cast.</param>
+    /// <param name="enemy">The enemy casting the spell.</param>
+    /// <returns>Actual mana cost.</returns>
+    public int CalculateManaCost(Power spell, Enemy enemy)
     {
         int baseCost = spell.ManaCost;
         

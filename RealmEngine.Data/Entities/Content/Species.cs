@@ -11,8 +11,8 @@ public class Species : ContentBase
     /// <summary>Boolean biological and physical trait flags.</summary>
     public SpeciesTraits Traits { get; set; } = new();
 
-    /// <summary>Natural / innate abilities shared by all actors of this species.</summary>
-    public ICollection<SpeciesAbilityPool> AbilityPool { get; set; } = [];
+    /// <summary>Natural / innate powers shared by all actors of this species.</summary>
+    public ICollection<SpeciesPowerPool> PowerPool { get; set; } = [];
     /// <summary>Archetypes that belong to this species.</summary>
     public ICollection<ActorArchetype> Archetypes { get; set; } = [];
 }

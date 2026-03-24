@@ -294,7 +294,7 @@ public class Enemy : ITraitable
     /// </list>
     /// </remarks>
     [System.Text.Json.Serialization.JsonIgnore]
-    public List<Ability> Abilities { get; set; } = new();
+    public List<Power> Abilities { get; set; } = new();
 
     /// <summary>
     /// Fully resolved Item objects for this enemy's loot table.

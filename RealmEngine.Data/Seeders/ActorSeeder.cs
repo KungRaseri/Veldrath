@@ -4,19 +4,16 @@ using RealmEngine.Data.Persistence;
 
 namespace RealmEngine.Data.Seeders;
 
-/// <summary>Seeds actor-related baseline rows (classes, abilities, skills, backgrounds, species, and their relationships) into <see cref="ContentDbContext"/>.</summary>
+/// <summary>Seeds actor-related baseline rows (classes, skills, backgrounds, species) into <see cref="ContentDbContext"/>.</summary>
 public static class ActorSeeder
 {
     /// <summary>Seeds all actor content rows (idempotent, ordered by dependency).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
         await SeedActorClassesAsync(db);
-        await SeedAbilitiesAsync(db);
         await SeedSkillsAsync(db);
         await SeedBackgroundsAsync(db);
         await SeedSpeciesAsync(db);
-        await SeedClassAbilityUnlocksAsync(db);
-        await SeedSpeciesAbilityPoolsAsync(db);
     }
 
     // ── Actor Classes ─────────────────────────────────────────────────────────
@@ -100,199 +97,9 @@ public static class ActorSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Abilities ─────────────────────────────────────────────────────────────
-
-    private static async Task SeedAbilitiesAsync(ContentDbContext db)
-    {
-        if (await db.Abilities.AnyAsync())
-            return;
-
-        var now = DateTimeOffset.UtcNow;
-
-        db.Abilities.AddRange(
-            // Warrior active — heavy melee strike
-            new Ability
-            {
-                Slug         = "power-strike",
-                TypeKey      = "active/offensive",
-                AbilityType  = "active",
-                DisplayName  = "Power Strike",
-                RarityWeight = 50,
-                IsActive     = true,
-                Version      = 1,
-                UpdatedAt    = now,
-                Stats = new AbilityStats
-                {
-                    Cooldown   = 6.0f,
-                    ManaCost   = 10,
-                    CastTime   = 0.5f,
-                    Range      = 2,
-                    DamageMin  = 15,
-                    DamageMax  = 25,
-                    MaxTargets = 1,
-                },
-                Effects = new AbilityEffects
-                {
-                    DamageType       = "physical",
-                    ConditionApplied = "staggered",
-                    ConditionChance  = 0.3f,
-                },
-                Traits = new AbilityTraits
-                {
-                    RequiresTarget = true,
-                    IsAoe          = false,
-                    HasCooldown    = true,
-                    IsInstant      = false,
-                    IsChanneled    = false,
-                    CanCrit        = true,
-                    IsPassive      = false,
-                    RequiresWeapon = true,
-                },
-            },
-            // Warrior passive — flat health bonus
-            new Ability
-            {
-                Slug         = "toughness",
-                TypeKey      = "passive/defensive",
-                AbilityType  = "passive",
-                DisplayName  = "Toughness",
-                RarityWeight = 50,
-                IsActive     = true,
-                Version      = 1,
-                UpdatedAt    = now,
-                Stats = new AbilityStats
-                {
-                    HealMin = 2,
-                    HealMax = 2,
-                },
-                Effects = new AbilityEffects(),
-                Traits = new AbilityTraits
-                {
-                    IsPassive      = true,
-                    RequiresTarget = false,
-                    IsAoe          = false,
-                    HasCooldown    = false,
-                    IsInstant      = false,
-                    IsChanneled    = false,
-                    CanCrit        = false,
-                    RequiresWeapon = false,
-                },
-            },
-            // Mage active — ranged fire AoE
-            new Ability
-            {
-                Slug         = "fireball",
-                TypeKey      = "active/offensive",
-                AbilityType  = "active",
-                DisplayName  = "Fireball",
-                RarityWeight = 45,
-                IsActive     = true,
-                Version      = 1,
-                UpdatedAt    = now,
-                Stats = new AbilityStats
-                {
-                    Cooldown   = 8.0f,
-                    ManaCost   = 30,
-                    CastTime   = 1.5f,
-                    Range      = 20,
-                    DamageMin  = 20,
-                    DamageMax  = 35,
-                    Radius     = 4,
-                    MaxTargets = 6,
-                    Duration   = 3.0f,
-                },
-                Effects = new AbilityEffects
-                {
-                    DamageType       = "fire",
-                    ConditionApplied = "burning",
-                    ConditionChance  = 0.5f,
-                },
-                Traits = new AbilityTraits
-                {
-                    RequiresTarget = false,
-                    IsAoe          = true,
-                    HasCooldown    = true,
-                    IsInstant      = false,
-                    IsChanneled    = false,
-                    CanCrit        = true,
-                    IsPassive      = false,
-                    RequiresWeapon = false,
-                },
-            },
-            // Mage passive — reduces mana cost
-            new Ability
-            {
-                Slug         = "arcane-focus",
-                TypeKey      = "passive/utility",
-                AbilityType  = "passive",
-                DisplayName  = "Arcane Focus",
-                RarityWeight = 45,
-                IsActive     = true,
-                Version      = 1,
-                UpdatedAt    = now,
-                Stats = new AbilityStats
-                {
-                    ManaCost = -5, // represents the flat mana reduction granted
-                },
-                Effects = new AbilityEffects(),
-                Traits = new AbilityTraits
-                {
-                    IsPassive      = true,
-                    RequiresTarget = false,
-                    IsAoe          = false,
-                    HasCooldown    = false,
-                    IsInstant      = false,
-                    IsChanneled    = false,
-                    CanCrit        = false,
-                    RequiresWeapon = false,
-                },
-            },
-            // Wolf innate — natural bite attack
-            new Ability
-            {
-                Slug         = "bite",
-                TypeKey      = "active/offensive",
-                AbilityType  = "active",
-                DisplayName  = "Bite",
-                RarityWeight = 60,
-                IsActive     = true,
-                Version      = 1,
-                UpdatedAt    = now,
-                Stats = new AbilityStats
-                {
-                    Cooldown   = 4.0f,
-                    ManaCost   = 0,
-                    CastTime   = 0.2f,
-                    Range      = 1,
-                    DamageMin  = 8,
-                    DamageMax  = 14,
-                    MaxTargets = 1,
-                },
-                Effects = new AbilityEffects
-                {
-                    DamageType       = "physical",
-                    ConditionApplied = "bleeding",
-                    ConditionChance  = 0.25f,
-                },
-                Traits = new AbilityTraits
-                {
-                    RequiresTarget = true,
-                    IsAoe          = false,
-                    HasCooldown    = true,
-                    IsInstant      = true,
-                    IsChanneled    = false,
-                    CanCrit        = true,
-                    IsPassive      = false,
-                    RequiresWeapon = false,
-                },
-            }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    // ── [Powers/ClassPowerUnlocks/SpeciesPowerPools moved to PowersSeeder] ─────
 
     // ── Skills ────────────────────────────────────────────────────────────────
-
     private static async Task SeedSkillsAsync(ContentDbContext db)
     {
         if (await db.Skills.AnyAsync())
@@ -504,53 +311,6 @@ public static class ActorSeeder
                 },
             }
         );
-
-        await db.SaveChangesAsync();
-    }
-
-    // ── Class Ability Unlocks ─────────────────────────────────────────────────
-
-    private static async Task SeedClassAbilityUnlocksAsync(ContentDbContext db)
-    {
-        if (await db.ClassAbilityUnlocks.AnyAsync())
-            return;
-
-        var warrior = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "warrior");
-        var mage    = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "mage");
-
-        var powerStrike = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "power-strike");
-        var toughness   = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "toughness");
-        var fireball    = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "fireball");
-        var arcaneFocus = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "arcane-focus");
-
-        if (warrior is null || mage is null || powerStrike is null ||
-            toughness is null || fireball is null || arcaneFocus is null)
-            return;
-
-        db.ClassAbilityUnlocks.AddRange(
-            new ClassAbilityUnlock { ClassId = warrior.Id, AbilityId = powerStrike.Id, LevelRequired = 1, Rank = 1 },
-            new ClassAbilityUnlock { ClassId = warrior.Id, AbilityId = toughness.Id,   LevelRequired = 1, Rank = 1 },
-            new ClassAbilityUnlock { ClassId = mage.Id,    AbilityId = fireball.Id,    LevelRequired = 1, Rank = 1 },
-            new ClassAbilityUnlock { ClassId = mage.Id,    AbilityId = arcaneFocus.Id, LevelRequired = 1, Rank = 1 }
-        );
-
-        await db.SaveChangesAsync();
-    }
-
-    // ── Species Ability Pools ─────────────────────────────────────────────────
-
-    private static async Task SeedSpeciesAbilityPoolsAsync(ContentDbContext db)
-    {
-        if (await db.SpeciesAbilityPools.AnyAsync())
-            return;
-
-        var wolf = await db.Species.FirstOrDefaultAsync(s => s.Slug == "wolf");
-        var bite = await db.Abilities.FirstOrDefaultAsync(a => a.Slug == "bite");
-
-        if (wolf is null || bite is null)
-            return;
-
-        db.SpeciesAbilityPools.Add(new SpeciesAbilityPool { SpeciesId = wolf.Id, AbilityId = bite.Id });
 
         await db.SaveChangesAsync();
     }
