@@ -86,12 +86,11 @@ public static class TraitDefinitionsSeeder
             new TraitDefinition { Key = "farewell",      ValueType = "bool", AppliesTo = "dialogues",     Description = "True if this is a farewell dialogue shown when leaving an NPC." },
 
             // ── World location traits ──────────────────────────────────────────
-            new TraitDefinition { Key = "isIndoor",       ValueType = "bool", AppliesTo = "worldlocations", Description = "True if the location is inside a building, cave, or enclosed space." },
-            new TraitDefinition { Key = "hasMerchant",    ValueType = "bool", AppliesTo = "worldlocations", Description = "True if a merchant NPC can be found at this location." },
-            new TraitDefinition { Key = "pvpEnabled",     ValueType = "bool", AppliesTo = "worldlocations", Description = "True if player-versus-player combat is allowed here." },
-            new TraitDefinition { Key = "isDiscoverable", ValueType = "bool", AppliesTo = "worldlocations", Description = "True if the location is hidden on the map until first visited." },
-            new TraitDefinition { Key = "isDungeon",      ValueType = "bool", AppliesTo = "worldlocations", Description = "True if this location is a structured dungeon encounter." },
-            new TraitDefinition { Key = "isTown",         ValueType = "bool", AppliesTo = "worldlocations", Description = "True if this location is a populated town or settlement." },
+            new TraitDefinition { Key = "isIndoor",       ValueType = "bool", AppliesTo = "zonelocations", Description = "True if the location is inside a building, cave, or enclosed space." },
+            new TraitDefinition { Key = "hasMerchant",    ValueType = "bool", AppliesTo = "zonelocations", Description = "True if a merchant NPC can be found at this location." },
+            new TraitDefinition { Key = "isDiscoverable", ValueType = "bool", AppliesTo = "zonelocations", Description = "True if the location is hidden on the map until first visited." },
+            new TraitDefinition { Key = "isDungeon",      ValueType = "bool", AppliesTo = "zonelocations", Description = "True if this location is a structured dungeon encounter." },
+            new TraitDefinition { Key = "isTown",         ValueType = "bool", AppliesTo = "zonelocations", Description = "True if this location is a populated town or settlement." },
 
             // ── Wildcard traits (apply to all entity types) ────────────────────
             new TraitDefinition { Key = "active",   ValueType = "bool", AppliesTo = "*", Description = "True if the record is published and visible in-game." }

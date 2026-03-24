@@ -45,8 +45,8 @@ public interface IContentService
     Task<List<OrganizationDto>> GetOrganizationsAsync();
     Task<OrganizationDto?> GetOrganizationAsync(string slug);
 
-    Task<List<WorldLocationDto>> GetWorldLocationsAsync();
-    Task<WorldLocationDto?> GetWorldLocationAsync(string slug);
+    Task<List<ZoneLocationDto>> GetZoneLocationsAsync();
+    Task<ZoneLocationDto?> GetZoneLocationAsync(string slug);
 
     Task<List<DialogueDto>> GetDialoguesAsync();
     Task<DialogueDto?> GetDialogueAsync(string slug);
@@ -149,8 +149,8 @@ public class HttpContentService(
     public Task<List<OrganizationDto>> GetOrganizationsAsync()            => GetListAsync<OrganizationDto>("api/content/organizations");
     public Task<OrganizationDto?> GetOrganizationAsync(string slug)       => GetSingleAsync<OrganizationDto>($"api/content/organizations/{slug}");
 
-    public Task<List<WorldLocationDto>> GetWorldLocationsAsync()          => GetListAsync<WorldLocationDto>("api/content/world-locations");
-    public Task<WorldLocationDto?> GetWorldLocationAsync(string slug)     => GetSingleAsync<WorldLocationDto>($"api/content/world-locations/{slug}");
+    public Task<List<ZoneLocationDto>> GetZoneLocationsAsync()         => GetListAsync<ZoneLocationDto>("api/content/zone-locations");
+    public Task<ZoneLocationDto?> GetZoneLocationAsync(string slug)    => GetSingleAsync<ZoneLocationDto>($"api/content/zone-locations/{slug}");
 
     public Task<List<DialogueDto>> GetDialoguesAsync()                    => GetListAsync<DialogueDto>("api/content/dialogues");
     public Task<DialogueDto?> GetDialogueAsync(string slug)               => GetSingleAsync<DialogueDto>($"api/content/dialogues/{slug}");

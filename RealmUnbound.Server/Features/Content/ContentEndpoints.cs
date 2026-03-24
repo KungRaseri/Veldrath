@@ -123,8 +123,8 @@ public static class ContentEndpoints
         group.MapGet("/organizations/{slug}",   GetOrganizationBySlugAsync);
 
         // World Locations
-        group.MapGet("/world-locations",          GetWorldLocationsAsync);
-        group.MapGet("/world-locations/{slug}",   GetWorldLocationBySlugAsync);
+        group.MapGet("/zone-locations",          GetZoneLocationsAsync);
+        group.MapGet("/zone-locations/{slug}",   GetZoneLocationBySlugAsync);
 
         // Dialogues
         group.MapGet("/dialogues",          GetDialoguesAsync);
@@ -183,7 +183,7 @@ public static class ContentEndpoints
             "recipe"           => await BrowseSet(db.Recipes,            type, search, resolvedPage, resolvedPageSize, ct),
             "loottable"        => await BrowseSet(db.LootTables,         type, search, resolvedPage, resolvedPageSize, ct),
             "organization"     => await BrowseSet(db.Organizations,      type, search, resolvedPage, resolvedPageSize, ct),
-            "worldlocation"    => await BrowseSet(db.WorldLocations,     type, search, resolvedPage, resolvedPageSize, ct),
+            "zonelocation"    => await BrowseSet(db.ZoneLocations,     type, search, resolvedPage, resolvedPageSize, ct),
             "dialogue"         => await BrowseSet(db.Dialogues,          type, search, resolvedPage, resolvedPageSize, ct),
             _                  => null,
         };
@@ -248,7 +248,7 @@ public static class ContentEndpoints
             "recipe"           => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "loottable"        => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "organization"     => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "worldlocation"    => await db.WorldLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "zonelocation"    => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "dialogue"         => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             _                  => null,
         };
@@ -609,24 +609,24 @@ public static class ContentEndpoints
     private static OrganizationDto ToOrganizationDto(OrganizationEntry o) =>
         new(o.Slug, o.DisplayName, o.TypeKey, o.OrgType, o.RarityWeight);
 
-    // ── World Locations ───────────────────────────────────────────────────────
+    // ── Zone Locations ────────────────────────────────────────────────
 
-    private static async Task<IResult> GetWorldLocationsAsync(IWorldLocationRepository repo, string? locationType = null)
+    private static async Task<IResult> GetZoneLocationsAsync(IZoneLocationRepository repo, string? locationType = null)
     {
         var items = locationType is not null
             ? await repo.GetByLocationTypeAsync(locationType)
             : await repo.GetAllAsync();
-        return Results.Ok(items.Select(ToWorldLocationDto));
+        return Results.Ok(items.Select(ToZoneLocationDto));
     }
 
-    private static async Task<IResult> GetWorldLocationBySlugAsync(string slug, IWorldLocationRepository repo)
+    private static async Task<IResult> GetZoneLocationBySlugAsync(string slug, IZoneLocationRepository repo)
     {
         var item = await repo.GetBySlugAsync(slug);
-        return item is null ? Results.NotFound() : Results.Ok(ToWorldLocationDto(item));
+        return item is null ? Results.NotFound() : Results.Ok(ToZoneLocationDto(item));
     }
 
-    private static WorldLocationDto ToWorldLocationDto(WorldLocationEntry w) =>
-        new(w.Slug, w.DisplayName, w.TypeKey, w.LocationType, w.RarityWeight, w.MinLevel, w.MaxLevel);
+    private static ZoneLocationDto ToZoneLocationDto(ZoneLocationEntry w) =>
+        new(w.Slug, w.DisplayName, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight, w.MinLevel, w.MaxLevel);
 
     // ── Dialogues ─────────────────────────────────────────────────────────────
 

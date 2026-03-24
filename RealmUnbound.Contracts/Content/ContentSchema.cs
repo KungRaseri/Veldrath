@@ -80,7 +80,7 @@ public static class ContentSchemaRegistry
             ["recipe"]           = RecipeSchema(),
             ["loottable"]        = LootTableSchema(),
             ["organization"]     = OrganizationSchema(),
-            ["worldlocation"]    = WorldLocationSchema(),
+            ["zonelocation"]    = ZoneLocationSchema(),
             ["dialogue"]         = DialogueSchema(),
         };
 
@@ -677,16 +677,18 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── WorldLocation ──────────────────────────────────────────────────────────
+    // ── ZoneLocation ──────────────────────────────────────────────────────────
 
-    private static ContentTypeSchema WorldLocationSchema() => new(
-        "worldlocation", "World Locations",
-        "A world location — environment, dungeon, town, or region.",
+    private static ContentTypeSchema ZoneLocationSchema() => new(
+        "zonelocation", "Zone Locations",
+        "A named location within a zone — dungeon, settlement, or environment used by the content pipeline.",
         [
             Identity(),
             new("Location", [
+                new("zoneId",      "Zone ID",      ContentFieldType.Text, Required: true,
+                    Hint: "Slug of the owning Zone (e.g. \"fenwick-crossing\")"),
                 new("locationType","Location Type",ContentFieldType.EnumString, Required: true,
-                    EnumValues: ["environment", "location", "region"]),
+                    EnumValues: ["dungeon", "location", "environment"]),
             ]),
             new("Stats", [
                 new("stats.size",       "Size (1–10)",       ContentFieldType.Integer, Min: 1, Max: 10),
@@ -698,7 +700,6 @@ public static class ContentSchemaRegistry
             new("Traits", [
                 new("traits.isIndoor",      "Indoor",       ContentFieldType.Boolean),
                 new("traits.hasMerchant",   "Has Merchant", ContentFieldType.Boolean),
-                new("traits.pvpEnabled",    "PvP Enabled",  ContentFieldType.Boolean),
                 new("traits.isDiscoverable","Discoverable", ContentFieldType.Boolean),
                 new("traits.isDungeon",     "Dungeon",      ContentFieldType.Boolean),
                 new("traits.isTown",        "Town",         ContentFieldType.Boolean),

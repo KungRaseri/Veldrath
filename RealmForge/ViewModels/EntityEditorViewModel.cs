@@ -275,7 +275,7 @@ public class EntityEditorViewModel : ReactiveObject
         [typeof(Recipe)]          = "recipe",
         [typeof(LootTable)]       = "loottable",
         [typeof(Organization)]    = "organization",
-        [typeof(WorldLocation)]   = "worldlocation",
+        [typeof(ZoneLocation)]   = "zonelocation",
         [typeof(Dialogue)]        = "dialogue",
     };
 

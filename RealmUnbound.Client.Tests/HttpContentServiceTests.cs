@@ -651,51 +651,51 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetWorldLocationsAsync ────────────────────────────────────────────────
+    // ── GetZoneLocationsAsync ─────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetWorldLocationsAsync_Should_Return_List_On_Success()
+    public async Task GetZoneLocationsAsync_Should_Return_List_On_Success()
     {
-        var expected = new List<WorldLocationDto>
+        var expected = new List<ZoneLocationDto>
         {
-            new("darkwood-forest", "Darkwood Forest", "environments", "environment", 60, 5, 15),
+            new("darkwood-forest", "Darkwood Forest", "environments", "greenveil-paths", "environment", 60, 5, 15),
         };
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
-        var result = await sut.GetWorldLocationsAsync();
+        var result = await sut.GetZoneLocationsAsync();
 
         result.Should().HaveCount(1);
         result[0].Slug.Should().Be("darkwood-forest");
     }
 
     [Fact]
-    public async Task GetWorldLocationsAsync_Should_Return_Empty_On_Error()
+    public async Task GetZoneLocationsAsync_Should_Return_Empty_On_Error()
     {
         var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.InternalServerError));
 
-        var result = await sut.GetWorldLocationsAsync();
+        var result = await sut.GetZoneLocationsAsync();
 
         result.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task GetWorldLocationAsync_Should_Return_Dto_On_Success()
+    public async Task GetZoneLocationAsync_Should_Return_Dto_On_Success()
     {
-        var expected = new WorldLocationDto("darkwood-forest", "Darkwood Forest", "environments", "environment", 60, 5, 15);
+        var expected = new ZoneLocationDto("darkwood-forest", "Darkwood Forest", "environments", "greenveil-paths", "environment", 60, 5, 15);
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
-        var result = await sut.GetWorldLocationAsync("darkwood-forest");
+        var result = await sut.GetZoneLocationAsync("darkwood-forest");
 
         result.Should().NotBeNull();
         result!.DisplayName.Should().Be("Darkwood Forest");
     }
 
     [Fact]
-    public async Task GetWorldLocationAsync_Should_Return_Null_On_Not_Found()
+    public async Task GetZoneLocationAsync_Should_Return_Null_On_Not_Found()
     {
         var sut = MakeSut(FakeHttpHandler.Text("Not Found", HttpStatusCode.NotFound));
 
-        var result = await sut.GetWorldLocationAsync("nonexistent");
+        var result = await sut.GetZoneLocationAsync("nonexistent");
 
         result.Should().BeNull();
     }

@@ -297,8 +297,8 @@ public class FakeContentService : IContentService
     public Task<SkillDto?>           GetSkillAsync(string slug)     => Task.FromResult<SkillDto?>(null);
     public Task<List<OrganizationDto>>    GetOrganizationsAsync()            => Task.FromResult(new List<OrganizationDto>());
     public Task<OrganizationDto?>         GetOrganizationAsync(string slug)  => Task.FromResult<OrganizationDto?>(null);
-    public Task<List<WorldLocationDto>>   GetWorldLocationsAsync()           => Task.FromResult(new List<WorldLocationDto>());
-    public Task<WorldLocationDto?>        GetWorldLocationAsync(string slug) => Task.FromResult<WorldLocationDto?>(null);
+    public Task<List<ZoneLocationDto>>    GetZoneLocationsAsync()            => Task.FromResult(new List<ZoneLocationDto>());
+    public Task<ZoneLocationDto?>         GetZoneLocationAsync(string slug)  => Task.FromResult<ZoneLocationDto?>(null);
     public Task<List<DialogueDto>>        GetDialoguesAsync()                => Task.FromResult(new List<DialogueDto>());
     public Task<DialogueDto?>             GetDialogueAsync(string slug)      => Task.FromResult<DialogueDto?>(null);
     public Task<List<ActorInstanceDto>>   GetActorInstancesAsync()           => Task.FromResult(new List<ActorInstanceDto>());

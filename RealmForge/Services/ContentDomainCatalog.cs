@@ -133,10 +133,10 @@ public static class ContentDomainCatalog
         new("items/consumables", "Items › Consumables", "items/consumables", "scrolls", "Items", "Scrolls"),
 
         // ── World › Locations ─────────────────────────────────────────────────
-        new("world/locations", "World › Locations", "world/locations", "towns",              "WorldLocations", "Towns"),
-        new("world/locations", "World › Locations", "world/locations", "dungeons",           "WorldLocations", "Dungeons"),
-        new("world/locations", "World › Locations", "world/locations", "wilderness",         "WorldLocations", "Wilderness"),
-        new("world/locations", "World › Locations", "world/locations", "points-of-interest", "WorldLocations", "Points of Interest"),
+        new("world/locations", "World › Locations", "world/locations", "towns",              "ZoneLocations", "Towns"),
+        new("world/locations", "World › Locations", "world/locations", "dungeons",           "ZoneLocations", "Dungeons"),
+        new("world/locations", "World › Locations", "world/locations", "wilderness",         "ZoneLocations", "Wilderness"),
+        new("world/locations", "World › Locations", "world/locations", "points-of-interest", "ZoneLocations", "Points of Interest"),
 
         // ── World › Organizations ─────────────────────────────────────────────
         new("world/organizations", "World › Organizations", "world/organizations", "factions",         "Organizations", "Factions"),

@@ -26,7 +26,7 @@ public class LocationGenerator
     {
         try
         {
-            var all = await _db.WorldLocations.AsNoTracking()
+            var all = await _db.ZoneLocations.AsNoTracking()
                 .Where(l => l.IsActive && l.LocationType == locationType)
                 .ToListAsync();
 
@@ -52,7 +52,7 @@ public class LocationGenerator
     {
         try
         {
-            var entity = await _db.WorldLocations.AsNoTracking()
+            var entity = await _db.ZoneLocations.AsNoTracking()
                 .Where(l => l.IsActive && l.Slug == locationName)
                 .FirstOrDefaultAsync();
 
@@ -97,7 +97,7 @@ public class LocationGenerator
         };
     }
 
-    private static Location MapToModel(Data.Entities.WorldLocation e) => new()
+    private static Location MapToModel(Data.Entities.ZoneLocation e) => new()
     {
         Id = e.Slug,
         Name = e.DisplayName ?? e.Slug,

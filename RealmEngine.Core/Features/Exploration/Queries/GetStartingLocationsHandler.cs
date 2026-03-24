@@ -35,12 +35,12 @@ public class GetStartingLocationsHandler : IRequestHandler<GetStartingLocationsQ
         using var db = _dbFactory.CreateDbContext();
 
         // Towns are safe starting zones; fallback to all active locations if none exist
-        var raw = await db.WorldLocations
+        var raw = await db.ZoneLocations
             .Where(l => l.IsActive && l.Traits.IsTown == true)
             .ToListAsync(cancellationToken);
 
         if (raw.Count == 0)
-            raw = await db.WorldLocations.Where(l => l.IsActive).ToListAsync(cancellationToken);
+            raw = await db.ZoneLocations.Where(l => l.IsActive).ToListAsync(cancellationToken);
 
         var locations = raw
             .Select(l => new Location

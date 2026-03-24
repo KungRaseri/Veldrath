@@ -32,35 +32,37 @@ public class GetStartingLocationsHandlerTests : IDisposable
     private GetStartingLocationsHandler CreateHandler() =>
         new(_bgRepo.Object, _dbFactory.Object, NullLogger<GetStartingLocationsHandler>.Instance);
 
-    private async Task SeedAsync(params WorldLocation[] locations)
+    private async Task SeedAsync(params ZoneLocation[] locations)
     {
         await using var db = CreateDb();
-        db.WorldLocations.AddRange(locations);
+        db.ZoneLocations.AddRange(locations);
         await db.SaveChangesAsync();
     }
 
-    private static WorldLocation MakeTown(string slug, string type = "towns") =>
+    private static ZoneLocation MakeTown(string slug, string type = "towns") =>
         new()
         {
             Slug = slug,
             TypeKey = type,
             DisplayName = slug,
+            ZoneId = "test-zone",
             LocationType = "settlement",
             IsActive = true,
-            Traits = new WorldLocationTraits { IsTown = true, HasMerchant = true },
-            Stats = new WorldLocationStats { MinLevel = 1, DangerLevel = 0 }
+            Traits = new ZoneLocationTraits { IsTown = true, HasMerchant = true },
+            Stats = new ZoneLocationStats { MinLevel = 1, DangerLevel = 0 }
         };
 
-    private static WorldLocation MakeWilderness(string slug, int minLevel = 5) =>
+    private static ZoneLocation MakeWilderness(string slug, int minLevel = 5) =>
         new()
         {
             Slug = slug,
             TypeKey = "wilderness",
             DisplayName = slug,
+            ZoneId = "test-zone",
             LocationType = "wilderness",
             IsActive = true,
-            Traits = new WorldLocationTraits { IsTown = false },
-            Stats = new WorldLocationStats { MinLevel = minLevel, DangerLevel = 3 }
+            Traits = new ZoneLocationTraits { IsTown = false },
+            Stats = new ZoneLocationStats { MinLevel = minLevel, DangerLevel = 3 }
         };
 
     [Fact]

@@ -51,7 +51,7 @@ public class CategoryDiscoveryService
         DiscoverDomain(db, "recipes", () => db.Recipes.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "enchantments", () => db.Enchantments.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "classes", () => db.ActorClasses.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
-        DiscoverDomain(db, "locations", () => db.WorldLocations.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
+        DiscoverDomain(db, "locations", () => db.ZoneLocations.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "organizations", () => db.Organizations.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
         DiscoverDomain(db, "dialogues", () => db.Dialogues.AsNoTracking().Where(i => i.IsActive).Select(i => i.TypeKey));
 

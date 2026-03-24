@@ -35,7 +35,7 @@ public static class DatabaseSeeder
         await RecipesSeeder.SeedAsync(db);
         await LootTablesSeeder.SeedAsync(db);
         await QuestsSeeder.SeedAsync(db);
-        await WorldLocationsSeeder.SeedAsync(db);
+        await ZoneLocationsSeeder.SeedAsync(db);
         await ActorInstancesSeeder.SeedAsync(db);
         await OrganizationsSeeder.SeedAsync(db);
         await DialogueSeeder.SeedAsync(db);
