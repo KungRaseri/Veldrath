@@ -80,4 +80,14 @@ public class CharacterRepository : ICharacterRepository
         character.LastPlayedAt   = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
+
+    /// <inheritdoc />
+    public async Task UpdateCurrentZoneLocationAsync(Guid id, string? locationSlug, CancellationToken ct = default)
+    {
+        var character = await _db.Characters.FindAsync([id], ct);
+        if (character is null) return;
+        character.CurrentZoneLocationSlug = locationSlug;
+        character.LastPlayedAt            = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync(ct);
+    }
 }

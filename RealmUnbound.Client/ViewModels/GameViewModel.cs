@@ -24,6 +24,7 @@ public class GameViewModel : ViewModelBase
     private string _characterName = string.Empty;
     private string _statusMessage = string.Empty;
     private string _currentZoneId = string.Empty;
+    private string? _currentZoneLocationSlug;
 
     public string ZoneName
     {
@@ -47,6 +48,13 @@ public class GameViewModel : ViewModelBase
     {
         get => _statusMessage;
         set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+    }
+
+    /// <summary>Slug of the zone location the character is currently at, or <see langword="null"/> if not at a specific location.</summary>
+    public string? CurrentZoneLocationSlug
+    {
+        get => _currentZoneLocationSlug;
+        private set => this.RaiseAndSetIfChanged(ref _currentZoneLocationSlug, value);
     }
 
     // Character stats
@@ -367,6 +375,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Open the merchant shop available in zones with a merchant.</summary>
     public ReactiveCommand<Unit, Unit> VisitShopCommand { get; }
 
+    /// <summary>Navigate to a specific location within the current zone by slug.</summary>
+    public ReactiveCommand<string, Unit> NavigateToLocationCommand { get; }
+
     /// <summary>Switches the centre panel to the zone detail view.</summary>
     public ReactiveCommand<Unit, Unit> ShowZoneViewCommand { get; }
 
@@ -432,6 +443,7 @@ public class GameViewModel : ViewModelBase
         CraftItemCommand = ReactiveCommand.CreateFromTask<string>(DoCraftItemAsync);
         EnterDungeonCommand = ReactiveCommand.CreateFromTask<string>(DoEnterDungeonAsync);
         VisitShopCommand = ReactiveCommand.CreateFromTask(DoVisitShopAsync);
+        NavigateToLocationCommand = ReactiveCommand.CreateFromTask<string>(DoNavigateToLocationAsync);
 
         ShowZoneViewCommand = ReactiveCommand.Create(() => { ZoneViewMode = "Zone"; });
         ShowRegionViewCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -860,6 +872,28 @@ public class GameViewModel : ViewModelBase
         {
             AppendLog($"Shop visit failed: {ex.Message}");
         }
+    }
+
+    private async Task DoNavigateToLocationAsync(string locationSlug)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("NavigateToLocation", new { LocationSlug = locationSlug });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Navigation failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Called from hub when the server confirms the character has entered a zone location.</summary>
+    /// <param name="locationSlug">The slug of the location entered.</param>
+    /// <param name="locationDisplayName">The display name of the location.</param>
+    /// <param name="locationType">The type of location (e.g. "dungeon", "location", "environment").</param>
+    public void OnLocationEntered(string locationSlug, string locationDisplayName, string locationType)
+    {
+        CurrentZoneLocationSlug = locationSlug;
+        AppendLog($"Arrived at {locationDisplayName} ({locationType}).");
     }
 
     /// <summary>Handles the ShopVisited hub event: opens the shop panel for the given zone.</summary>

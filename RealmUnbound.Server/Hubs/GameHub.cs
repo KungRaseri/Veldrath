@@ -8,6 +8,7 @@ using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.LevelUp;
+using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 
 namespace RealmUnbound.Server.Hubs;
@@ -826,6 +827,55 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Moves the active character to a specific location within their current zone.
+    /// Broadcasts <c>LocationEntered</c> to the zone group (or back to the caller when not in a zone).
+    /// </summary>
+    /// <param name="request">Request containing the slug of the target zone location.</param>
+    public async Task NavigateToLocation(NavigateToLocationHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before NavigateToLocation");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new NavigateToLocationHubCommand(characterId, request.LocationSlug, zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to navigate to location");
+                return;
+            }
+
+            var payload = new
+            {
+                CharacterId         = characterId,
+                LocationSlug        = result.LocationSlug,
+                LocationDisplayName = result.LocationDisplayName,
+                LocationType        = result.LocationType,
+            };
+
+            if (!string.IsNullOrEmpty(zoneId))
+                await Clients.Group(ZoneGroup(zoneId)).SendAsync("LocationEntered", payload);
+            else
+                await Clients.Caller.SendAsync("LocationEntered", payload);
+
+            _logger.LogInformation(
+                "Character {CharacterId} navigated to {LocationSlug} in zone {ZoneId}",
+                characterId, result.LocationSlug, zoneId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in NavigateToLocation for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to navigate to location");
+        }
+    }
+
     /// <summary>Fetches the active character's inventory and sends it back to the caller as <c>InventoryLoaded</c>.</summary>
     public async Task GetInventory()
     {
@@ -951,4 +1001,8 @@ public record TakeDamageHubRequest(int DamageAmount, string? Source = null);
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.VisitShop"/>.</summary>
 /// <param name="ZoneId">ID of the zone whose merchant to visit.</param>
 public record VisitShopHubRequest(string ZoneId);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.NavigateToLocation"/>.</summary>
+/// <param name="LocationSlug">Slug of the target zone location (e.g. <c>"fenwick-market"</c>).</param>
+public record NavigateToLocationHubRequest(string LocationSlug);
 

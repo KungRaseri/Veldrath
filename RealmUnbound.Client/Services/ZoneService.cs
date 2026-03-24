@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Services;
@@ -11,6 +12,11 @@ public interface IZoneService
     Task<List<ZoneDto>> GetZonesAsync();
     Task<ZoneDto?> GetZoneAsync(string zoneId);
     Task<List<ZoneDto>> GetZonesByRegionAsync(string regionId);
+
+    /// <summary>
+    /// Fetches all zone locations available within the given zone.
+    /// </summary>
+    Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId);
 
     Task<List<RegionDto>> GetRegionsAsync();
     Task<RegionDto?> GetRegionAsync(string regionId);
@@ -161,6 +167,23 @@ public class HttpZoneService(
         {
             logger.LogError(ex, "Failed to fetch world {WorldId}", worldId);
             return null;
+        }
+    }
+
+    public async Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/zones/{zoneId}/locations");
+            request.Headers.Authorization = BearerHeader;
+            var response = await http.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<ZoneLocationDto>>() ?? [];
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch locations for zone {ZoneId}", zoneId);
+            return [];
         }
     }
 }

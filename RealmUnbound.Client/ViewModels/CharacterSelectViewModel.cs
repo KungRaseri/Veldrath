@@ -49,6 +49,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _shopVisitedSub;
     private IDisposable? _zoneLeftSub;
     private IDisposable? _inventoryLoadedSub;
+    private IDisposable? _locationEnteredSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -246,6 +247,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _shopVisitedSub?.Dispose();
             _zoneLeftSub?.Dispose();
             _inventoryLoadedSub?.Dispose();
+            _locationEnteredSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -317,6 +319,8 @@ public class CharacterSelectViewModel : ViewModelBase
 
             _inventoryLoadedSub = _connection.On<InventoryLoadedPayload>("InventoryLoaded", payload =>
                 _gameVm.OnInventoryLoaded(payload.Items));
+            _locationEnteredSub = _connection.On<LocationEnteredPayload>("LocationEntered", payload =>
+                _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -361,6 +365,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
     internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items);
+    internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

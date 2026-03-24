@@ -46,8 +46,9 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | `CraftItem` | `CraftItemHubCommand` | 2026-03-20 session-13 |
 | `EnterDungeon` | `EnterDungeonHubCommand` | 2026-03-20 session-13 |
 | `VisitShop` | `VisitShopHubCommand` | 2026-03-21 session-17 |
+| `NavigateToLocation` | `NavigateToLocationHubCommand` | 2026-03-24 session-current |
 
-> **Note**: All 11 bridges above are server-side complete and fully wired end-to-end.
+> **Note**: All 12 bridges above are server-side complete and fully wired end-to-end.
 
 ## Character Attributes JSON Blob Schema
 

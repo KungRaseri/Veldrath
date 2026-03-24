@@ -3,11 +3,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Data.Entities;
+using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Repositories;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Characters;
+using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Hubs;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Tests.Infrastructure;
@@ -3354,6 +3359,212 @@ public class GameHubTests : IDisposable
 
         var result = await handler.Handle(
             new VisitShopHubCommand(accountId, ""),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
+
+    // NavigateToLocation hub method
+    [Fact]
+    public async Task NavigateToLocation_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Should_Dispatch_Command_To_ISender()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<NavigateToLocationHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", LocationType = "location" });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+
+        await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<NavigateToLocationHubCommand>(
+                c => c.CharacterId == character.Id && c.LocationSlug == "fenwick-market"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Should_Send_LocationEntered_On_Success()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<NavigateToLocationHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", LocationType = "location" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+
+        await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
+
+        clients.GroupProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "LocationEntered");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Should_Send_Error_On_Handler_Failure()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<NavigateToLocationHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NavigateToLocationHubResult { Success = false, ErrorMessage = "Location not available in zone" });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+
+        await hub.NavigateToLocation(new NavigateToLocationHubRequest("nonexistent-slug"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Should_Send_Error_When_Mediator_Throws()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<NavigateToLocationHubResult>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+
+        await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    // NavigateToLocationHubCommandHandler
+    private static ContentDbContext CreateContentDbContext() =>
+        new(new DbContextOptionsBuilder<ContentDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static ZoneLocation MakeZoneLocation(string slug, string zoneId, string locationType = "location") =>
+        new() { Slug = slug, ZoneId = zoneId, LocationType = locationType, IsActive = true, DisplayName = slug };
+
+    [Fact]
+    public async Task NavigateToLocation_Handler_Should_Persist_Location_And_Return_Info()
+    {
+        await using var contentDb  = CreateContentDbContext();
+        await using var db         = _factory.CreateContext();
+        var accountId              = await SeedAccountAsync(db);
+        var character              = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocations.Add(MakeZoneLocation("fenwick-market", "fenwick-crossing"));
+        await contentDb.SaveChangesAsync();
+
+        var handler = new NavigateToLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<NavigateToLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new NavigateToLocationHubCommand(character.Id, "fenwick-market", "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().Be("fenwick-market");
+        result.LocationType.Should().Be("location");
+
+        var updated = await new CharacterRepository(db).GetByIdAsync(character.Id);
+        updated!.CurrentZoneLocationSlug.Should().Be("fenwick-market");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Handler_Should_Fail_When_Location_Not_In_Zone()
+    {
+        await using var contentDb  = CreateContentDbContext();
+        await using var db         = _factory.CreateContext();
+        var accountId              = await SeedAccountAsync(db);
+        var character              = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocations.Add(MakeZoneLocation("other-location", "different-zone"));
+        await contentDb.SaveChangesAsync();
+
+        var handler = new NavigateToLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<NavigateToLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new NavigateToLocationHubCommand(character.Id, "other-location", "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not available");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Handler_Should_Fail_When_Location_Slug_Is_Empty()
+    {
+        await using var contentDb  = CreateContentDbContext();
+        await using var db         = _factory.CreateContext();
+        var accountId              = await SeedAccountAsync(db);
+
+        var handler = new NavigateToLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<NavigateToLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new NavigateToLocationHubCommand(accountId, "", "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("empty");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Handler_Should_Fail_When_Zone_Id_Is_Empty()
+    {
+        await using var contentDb  = CreateContentDbContext();
+        await using var db         = _factory.CreateContext();
+        var accountId              = await SeedAccountAsync(db);
+
+        var handler = new NavigateToLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<NavigateToLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new NavigateToLocationHubCommand(accountId, "fenwick-market", ""),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();

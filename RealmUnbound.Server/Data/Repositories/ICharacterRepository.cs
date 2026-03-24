@@ -31,4 +31,7 @@ public interface ICharacterRepository
 
     /// <summary>Updates <see cref="Character.CurrentZoneId"/> without loading the full entity.</summary>
     Task UpdateCurrentZoneAsync(Guid id, string zoneId, CancellationToken ct = default);
+
+    /// <summary>Updates <see cref="Character.CurrentZoneLocationSlug"/> without loading the full entity.</summary>
+    Task UpdateCurrentZoneLocationAsync(Guid id, string? locationSlug, CancellationToken ct = default);
 }
