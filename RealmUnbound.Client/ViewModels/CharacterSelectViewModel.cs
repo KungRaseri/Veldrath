@@ -50,6 +50,9 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _zoneLeftSub;
     private IDisposable? _inventoryLoadedSub;
     private IDisposable? _locationEnteredSub;
+    private IDisposable? _zoneLocationUnlockedSub;
+    private IDisposable? _areaSearchedSub;
+    private IDisposable? _connectionTraversedSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -248,6 +251,9 @@ public class CharacterSelectViewModel : ViewModelBase
             _zoneLeftSub?.Dispose();
             _inventoryLoadedSub?.Dispose();
             _locationEnteredSub?.Dispose();
+            _zoneLocationUnlockedSub?.Dispose();
+            _areaSearchedSub?.Dispose();
+            _connectionTraversedSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -321,6 +327,12 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnInventoryLoaded(payload.Items));
             _locationEnteredSub = _connection.On<LocationEnteredPayload>("LocationEntered", payload =>
                 _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType));
+            _zoneLocationUnlockedSub = _connection.On<ZoneLocationUnlockedPayload>("ZoneLocationUnlocked", payload =>
+                _gameVm.OnZoneLocationUnlocked(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType, payload.UnlockSource));
+            _areaSearchedSub = _connection.On<AreaSearchedPayload>("AreaSearched", payload =>
+                _gameVm.OnAreaSearched(payload.RollValue, payload.AnyFound));
+            _connectionTraversedSub = _connection.On<ConnectionTraversedPayload>("ConnectionTraversed", payload =>
+                _gameVm.OnConnectionTraversed(payload.ToLocationSlug, payload.ToZoneId, payload.IsCrossZone));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -366,6 +378,9 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
     internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items);
     internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType);
+    internal record ZoneLocationUnlockedPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType, string UnlockSource);
+    internal record AreaSearchedPayload(Guid CharacterId, int RollValue, bool AnyFound, IReadOnlyList<object> Discovered);
+    internal record ConnectionTraversedPayload(Guid CharacterId, string FromLocation, string? ToLocationSlug, string? ToZoneId, bool IsCrossZone, string? ConnectionType);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

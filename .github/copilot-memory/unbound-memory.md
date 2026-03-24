@@ -46,9 +46,12 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | `CraftItem` | `CraftItemHubCommand` | 2026-03-20 session-13 |
 | `EnterDungeon` | `EnterDungeonHubCommand` | 2026-03-20 session-13 |
 | `VisitShop` | `VisitShopHubCommand` | 2026-03-21 session-17 |
-| `NavigateToLocation` | `NavigateToLocationHubCommand` | 2026-03-24 session-current |
+| `NavigateToLocation` | `NavigateToLocationHubCommand` | 2026-03-24 session-18 |
+| `UnlockZoneLocation` | `UnlockZoneLocationHubCommand` | 2026-03-24 session-18 |
+| `SearchArea` | `SearchAreaHubCommand` | 2026-03-24 session-18 |
+| `TraverseConnection` | `TraverseConnectionHubCommand` | 2026-03-24 session-18 |
 
-> **Note**: All 12 bridges above are server-side complete and fully wired end-to-end.
+> **Note**: All 15 bridges above are server-side complete and fully wired end-to-end.
 
 ## Character Attributes JSON Blob Schema
 
@@ -120,6 +123,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-15 (2026-03-21) | **340** | **416** | **756** |
 | Session-16 (2026-03-21) | **362** | **416** | **778** |
 | Session-17 (2026-03-21) | **401** | **425** | **826** |
+| Session-18 (2026-03-24) | **466** | **461** | **927** |
 
 ## P3 Stubs Status
 
@@ -414,4 +418,50 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 - Added 9 server tests (5 hub dispatch + 4 handler) + 2 GameViewModel tests + 1 CharacterSelectViewModel test
 - Key fix: subscription test used non-existent `MakeConnectedVmAsync` helper + `conn.Subscriptions` property — rewritten to follow `DungeonEntered` event-fire pattern; assertion changed to `Contain(msg => msg.Contains("Welcome to the shop at Fenwick Crossing"))` since zone name appears in multiple log entries
 - Final count: **401 client + 425 server = 826 total passing**
+
+### Session-18 (2026-03-24) — Hidden ZoneLocations + Discovery System
+
+**Feature**: Hidden ZoneLocations, passive/active discovery, zone-to-zone traversal connections.
+
+**Data model additions:**
+- `ZoneLocationTraits` gained 4 fields: `IsHidden bool?`, `UnlockType string?`, `UnlockKey string?`, `DiscoverThreshold int?` (all in owned JSON column — backward compatible)
+- `ZoneLocationConnection` new content entity: `Id PK`, `FromLocationSlug`, `ToLocationSlug?`, `ToZoneId?`, `ConnectionType`, `IsTraversable` — in `ContentDbContext.ZoneLocationConnections`
+- `CharacterUnlockedLocation` new application entity: `Id PK`, `CharacterId Guid FK`, `LocationSlug`, `UnlockedAt`, `UnlockSource` — unique index on `(CharacterId, LocationSlug)`, cascade delete
+- EF migrations generated: `AddZoneLocationConnectionsAndHiddenTraits` (Content), `AddCharacterUnlockedLocations` (Application)
+
+**Repository layer:**
+- `IZoneLocationRepository.GetByZoneIdAsync(zoneId)` now filters `IsHidden != true` (null = not hidden → backward compatible)
+- `IZoneLocationRepository.GetByZoneIdAsync(zoneId, unlockedSlugs)` — character-aware overload
+- `IZoneLocationRepository.GetHiddenByZoneIdAsync(zoneId)` — only `IsHidden == true` rows
+- `IZoneLocationRepository.GetConnectionsFromAsync(locationSlug)` — queries `ZoneLocationConnections`
+- `ICharacterUnlockedLocationRepository` + `CharacterUnlockedLocationRepository` — 3 methods: `GetUnlockedSlugsAsync`, `IsUnlockedAsync`, `AddUnlockAsync` (deduplication guard)
+
+**Hub commands:**
+- `NavigateToLocationHubCommand` — updated handler: uses `GetByZoneIdAsync(zoneId, unlockedSlugs)`, loads connections, runs passive discovery sweep; result gains `AvailableConnections` + `PassiveDiscoveries`
+- `UnlockZoneLocationHubCommand` — explicit unlock (quest/item/manual); validates location is hidden; `WasAlreadyUnlocked` flag for idempotency
+- `SearchAreaHubCommand` — active roll: `characterLevel + Random.Shared.Next(-5, 10)` checked against `DiscoverThreshold` for `skill_check_active` hidden locations
+- `TraverseConnectionHubCommand` — validates connection edge, checks `IsTraversable`, persists new location (cross-zone: updates both `CurrentZoneId` + `CurrentZoneLocationSlug`)
+
+**Hub methods added:**
+- `GameHub.UnlockZoneLocation(UnlockZoneLocationHubRequest)` — broadcasts `ZoneLocationUnlocked` to Caller
+- `GameHub.SearchArea()` — zero-arg; broadcasts `AreaSearched` + `ZoneLocationUnlocked` per discovery
+- `GameHub.TraverseConnection(TraverseConnectionHubRequest)` — handles SignalR group management for cross-zone; broadcasts `ConnectionTraversed`
+- `GameHub.NavigateToLocation` — enriched: also broadcasts `ZoneLocationUnlocked` per passive discovery
+
+**Client wiring:**
+- `IZoneService.GetZoneLocationsAsync` gained optional `Guid? characterId = null`; URL appends `?characterId=` when set
+- `GameViewModel`: `SearchAreaCommand`, `TraverseConnectionCommand`, `OnZoneLocationUnlocked`, `OnAreaSearched`, `OnConnectionTraversed` added
+- `CharacterSelectViewModel`: 3 new subscriptions (`_zoneLocationUnlockedSub`, `_areaSearchedSub`, `_connectionTraversedSub`), 3 payload records (`ZoneLocationUnlockedPayload`, `AreaSearchedPayload`, `ConnectionTraversedPayload`)
+
+**Tests added:**
+- `EfCoreZoneLocationRepositoryTests`: 8 new tests (hidden filtering, unlocked-slug overload, `GetHiddenByZoneIdAsync`, `GetConnectionsFromAsync`)
+- `CharacterUnlockedLocationRepositoryTests`: 8 new tests (new file in `RealmUnbound.Server.Tests/Data/`)
+- `GameHubTests`: 16 new tests (hub methods + all 3 new handlers + updated NavigateToLocation handler with passive discovery)
+- `HttpServiceTests`: 2 new tests for `GetZoneLocationsAsync` with/without `characterId`
+- **Fixed**: 4 existing `NavigateToLocation_Handler_*` tests that broke when handler constructor gained `ICharacterUnlockedLocationRepository` arg
+- **Fixed**: duplicate class definitions in `NavigateToLocationHubCommand.cs` (old unedited body left at bottom of file — removed)
+
+**Key gotcha**: `TraverseConnection` hub method checks BOTH `TryGetCharacterId` AND `TryGetCharacterName`; tests must set `ctx.Items["CharacterName"]` or the hub returns Error before dispatching to mediator.
+
+**Final count: 466 client + 461 server = 927 total passing**
 

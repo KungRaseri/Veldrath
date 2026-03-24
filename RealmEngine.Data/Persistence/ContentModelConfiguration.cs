@@ -271,6 +271,17 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
+        // Zone location traversal edges
+        builder.Entity<ZoneLocationConnection>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.FromLocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(x => x.ToLocationSlug).HasMaxLength(128);
+            e.Property(x => x.ToZoneId).HasMaxLength(128);
+            e.Property(x => x.ConnectionType).HasMaxLength(32).IsRequired();
+            e.HasIndex(x => x.FromLocationSlug);
+        });
+
         // Dialogue
         builder.Entity<Dialogue>(e =>
         {

@@ -9,4 +9,16 @@ public record ZoneLocationEntry(
     string LocationType,
     int RarityWeight,
     int? MinLevel,
-    int? MaxLevel);
+    int? MaxLevel,
+    bool IsHidden = false,
+    string? UnlockType = null,
+    string? UnlockKey = null,
+    int? DiscoverThreshold = null);
+
+/// <summary>A traversal edge linking one ZoneLocation to another location or zone.</summary>
+public record ZoneLocationConnectionEntry(
+    string FromLocationSlug,
+    string? ToLocationSlug,
+    string? ToZoneId,
+    string ConnectionType,
+    bool IsTraversable);

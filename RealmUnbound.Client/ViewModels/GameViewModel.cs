@@ -378,6 +378,12 @@ public class GameViewModel : ViewModelBase
     /// <summary>Navigate to a specific location within the current zone by slug.</summary>
     public ReactiveCommand<string, Unit> NavigateToLocationCommand { get; }
 
+    /// <summary>Actively search the current zone area for hidden locations.</summary>
+    public ReactiveCommand<Unit, Unit> SearchAreaCommand { get; }
+
+    /// <summary>Traverse a connection from the current location. Parameter is the connection type (e.g. "path").</summary>
+    public ReactiveCommand<(string FromSlug, string ConnectionType), Unit> TraverseConnectionCommand { get; }
+
     /// <summary>Switches the centre panel to the zone detail view.</summary>
     public ReactiveCommand<Unit, Unit> ShowZoneViewCommand { get; }
 
@@ -444,6 +450,8 @@ public class GameViewModel : ViewModelBase
         EnterDungeonCommand = ReactiveCommand.CreateFromTask<string>(DoEnterDungeonAsync);
         VisitShopCommand = ReactiveCommand.CreateFromTask(DoVisitShopAsync);
         NavigateToLocationCommand = ReactiveCommand.CreateFromTask<string>(DoNavigateToLocationAsync);
+        SearchAreaCommand = ReactiveCommand.CreateFromTask(DoSearchAreaAsync);
+        TraverseConnectionCommand = ReactiveCommand.CreateFromTask<(string, string)>(t => DoTraverseConnectionAsync(t.Item1, t.Item2));
 
         ShowZoneViewCommand = ReactiveCommand.Create(() => { ZoneViewMode = "Zone"; });
         ShowRegionViewCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -886,6 +894,31 @@ public class GameViewModel : ViewModelBase
         }
     }
 
+    private async Task DoSearchAreaAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("SearchArea");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Area search failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoTraverseConnectionAsync(string fromLocationSlug, string connectionType)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("TraverseConnection",
+                new { FromLocationSlug = fromLocationSlug, ConnectionType = connectionType });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Traversal failed: {ex.Message}");
+        }
+    }
+
     /// <summary>Called from hub when the server confirms the character has entered a zone location.</summary>
     /// <param name="locationSlug">The slug of the location entered.</param>
     /// <param name="locationDisplayName">The display name of the location.</param>
@@ -894,6 +927,46 @@ public class GameViewModel : ViewModelBase
     {
         CurrentZoneLocationSlug = locationSlug;
         AppendLog($"Arrived at {locationDisplayName} ({locationType}).");
+    }
+
+    /// <summary>Called from hub when a hidden zone location has been newly unlocked for this character.</summary>
+    /// <param name="locationSlug">The slug of the unlocked location.</param>
+    /// <param name="locationDisplayName">The display name of the unlocked location.</param>
+    /// <param name="locationType">The location type.</param>
+    /// <param name="unlockSource">How the location was unlocked (e.g. "skill_check_passive", "quest").</param>
+    public void OnZoneLocationUnlocked(string locationSlug, string locationDisplayName, string locationType, string unlockSource)
+    {
+        var sourceLabel = unlockSource switch
+        {
+            "skill_check_passive" => "You notice something nearby",
+            "skill_check_active"  => "Your search reveals",
+            "quest"               => "Quest reward",
+            "item"                => "An item reveals",
+            _                     => "Discovered",
+        };
+        AppendLog($"{sourceLabel}: {locationDisplayName} ({locationType}).");
+    }
+
+    /// <summary>Called from hub when an active area search completes.</summary>
+    /// <param name="rollValue">The search roll result.</param>
+    /// <param name="anyFound">Whether at least one hidden location was discovered.</param>
+    public void OnAreaSearched(int rollValue, bool anyFound)
+    {
+        AppendLog(anyFound
+            ? $"[{rollValue:+0;-0}] You find something hidden nearby!"
+            : $"[{rollValue:+0;-0}] Your search turns up nothing new.");
+    }
+
+    /// <summary>Called from hub when the server confirms a connection traversal has completed.</summary>
+    /// <param name="toLocationSlug">The slug of the destination location, or <see langword="null"/> for zone-entry connections.</param>
+    /// <param name="toZoneId">The destination zone ID when this was a cross-zone traversal, otherwise <see langword="null"/>.</param>
+    /// <param name="isCrossZone">Whether traversal moved the character into a different zone.</param>
+    public void OnConnectionTraversed(string? toLocationSlug, string? toZoneId, bool isCrossZone)
+    {
+        if (isCrossZone && toZoneId is not null)
+            AppendLog($"You travel to {toZoneId}.");
+        else if (toLocationSlug is not null)
+            AppendLog($"You move to {toLocationSlug}.");
     }
 
     /// <summary>Handles the ShopVisited hub event: opens the shop panel for the given zone.</summary>

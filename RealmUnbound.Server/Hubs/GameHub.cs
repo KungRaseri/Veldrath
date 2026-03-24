@@ -829,7 +829,8 @@ public class GameHub : Hub
 
     /// <summary>
     /// Moves the active character to a specific location within their current zone.
-    /// Broadcasts <c>LocationEntered</c> to the zone group (or back to the caller when not in a zone).
+    /// Broadcasts <c>LocationEntered</c> to the zone group including available connections.
+    /// Broadcasts <c>ZoneLocationUnlocked</c> to the caller for each passively discovered hidden location.
     /// </summary>
     /// <param name="request">Request containing the slug of the target zone location.</param>
     public async Task NavigateToLocation(NavigateToLocationHubRequest request)
@@ -854,16 +855,33 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId         = characterId,
-                LocationSlug        = result.LocationSlug,
-                LocationDisplayName = result.LocationDisplayName,
-                LocationType        = result.LocationType,
+                CharacterId          = characterId,
+                LocationSlug         = result.LocationSlug,
+                LocationDisplayName  = result.LocationDisplayName,
+                LocationType         = result.LocationType,
+                AvailableConnections = result.AvailableConnections.Select(c => new
+                {
+                    c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable,
+                }),
             };
 
             if (!string.IsNullOrEmpty(zoneId))
                 await Clients.Group(ZoneGroup(zoneId)).SendAsync("LocationEntered", payload);
             else
                 await Clients.Caller.SendAsync("LocationEntered", payload);
+
+            // Notify the caller about each passively discovered location.
+            foreach (var discovery in result.PassiveDiscoveries)
+            {
+                await Clients.Caller.SendAsync("ZoneLocationUnlocked", new
+                {
+                    CharacterId         = characterId,
+                    LocationSlug        = discovery.Slug,
+                    LocationDisplayName = discovery.DisplayName,
+                    LocationType        = discovery.LocationType,
+                    UnlockSource        = "skill_check_passive",
+                });
+            }
 
             _logger.LogInformation(
                 "Character {CharacterId} navigated to {LocationSlug} in zone {ZoneId}",
@@ -873,6 +891,187 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in NavigateToLocation for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to navigate to location");
+        }
+    }
+
+    /// <summary>
+    /// Explicitly unlocks a hidden zone location for the active character.
+    /// Broadcasts <c>ZoneLocationUnlocked</c> to the caller on success.
+    /// </summary>
+    /// <param name="request">Request containing the location slug and unlock source.</param>
+    public async Task UnlockZoneLocation(UnlockZoneLocationHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before UnlockZoneLocation");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new UnlockZoneLocationHubCommand(characterId, request.LocationSlug, request.UnlockSource));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to unlock location");
+                return;
+            }
+
+            if (!result.WasAlreadyUnlocked)
+            {
+                await Clients.Caller.SendAsync("ZoneLocationUnlocked", new
+                {
+                    CharacterId         = characterId,
+                    LocationSlug        = result.LocationSlug,
+                    LocationDisplayName = result.LocationDisplayName,
+                    LocationType        = result.LocationType,
+                    UnlockSource        = request.UnlockSource,
+                });
+            }
+
+            _logger.LogInformation(
+                "Character {CharacterId} unlocked location {LocationSlug} via {UnlockSource}",
+                characterId, result.LocationSlug, request.UnlockSource);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in UnlockZoneLocation for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to unlock location");
+        }
+    }
+
+    /// <summary>
+    /// Performs an active area search in the character's current zone, rolling for hidden locations
+    /// with <c>UnlockType = "skill_check_active"</c>.
+    /// Broadcasts <c>AreaSearched</c> to the caller with the roll result and any discoveries.
+    /// Broadcasts <c>ZoneLocationUnlocked</c> to the caller for each newly found location.
+    /// </summary>
+    public async Task SearchArea()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SearchArea");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before SearchArea");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new SearchAreaHubCommand(characterId, zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Search failed");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("AreaSearched", new
+            {
+                CharacterId = characterId,
+                result.RollValue,
+                result.AnyFound,
+                Discovered  = result.Discovered.Select(d => new { d.Slug, d.DisplayName, d.LocationType }),
+            });
+
+            foreach (var discovery in result.Discovered)
+            {
+                await Clients.Caller.SendAsync("ZoneLocationUnlocked", new
+                {
+                    CharacterId         = characterId,
+                    LocationSlug        = discovery.Slug,
+                    LocationDisplayName = discovery.DisplayName,
+                    LocationType        = discovery.LocationType,
+                    UnlockSource        = "skill_check_active",
+                });
+            }
+
+            _logger.LogInformation(
+                "Character {CharacterId} searched area in zone {ZoneId} — roll {Roll}, found {Count}",
+                characterId, zoneId, result.RollValue, result.Discovered.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SearchArea for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Area search failed");
+        }
+    }
+
+    /// <summary>
+    /// Traverses a connection from the character's current ZoneLocation to a destination
+    /// location or zone. Handles cross-zone transitions including SignalR group management.
+    /// Broadcasts <c>ConnectionTraversed</c> to the caller on success.
+    /// Broadcasts zone entry/exit events when the destination is a different zone.
+    /// </summary>
+    /// <param name="request">Request containing the origin location slug and connection type.</param>
+    public async Task TraverseConnection(TraverseConnectionHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TraverseConnection");
+            return;
+        }
+
+        if (!TryGetCharacterName(out var characterName))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TraverseConnection");
+            return;
+        }
+
+        var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string sz ? sz : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new TraverseConnectionHubCommand(
+                characterId, request.FromLocationSlug, request.ConnectionType));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Traversal failed");
+                return;
+            }
+
+            if (result.IsCrossZone && result.ToZoneId is not null)
+            {
+                // Leave the current zone group and join the destination zone group.
+                await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
+
+                var newZoneGroup = ZoneGroup(result.ToZoneId);
+                await Groups.AddToGroupAsync(Context.ConnectionId, newZoneGroup);
+                Context.Items["CurrentZoneId"] = result.ToZoneId;
+
+                await Clients.Group(newZoneGroup).SendAsync("PlayerEntered", new
+                {
+                    CharacterId   = characterId,
+                    CharacterName = characterName,
+                    ZoneId        = result.ToZoneId,
+                });
+
+                _logger.LogInformation(
+                    "Character {Name} crossed zone boundary into {ZoneId} via {ConnectionType}",
+                    characterName, result.ToZoneId, result.ConnectionType);
+            }
+
+            await Clients.Caller.SendAsync("ConnectionTraversed", new
+            {
+                CharacterId    = characterId,
+                FromLocation   = request.FromLocationSlug,
+                result.ToLocationSlug,
+                result.ToZoneId,
+                result.IsCrossZone,
+                result.ConnectionType,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in TraverseConnection for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Connection traversal failed");
         }
     }
 
@@ -1005,4 +1204,14 @@ public record VisitShopHubRequest(string ZoneId);
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.NavigateToLocation"/>.</summary>
 /// <param name="LocationSlug">Slug of the target zone location (e.g. <c>"fenwick-market"</c>).</param>
 public record NavigateToLocationHubRequest(string LocationSlug);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.UnlockZoneLocation"/>.</summary>
+/// <param name="LocationSlug">Slug of the hidden location to unlock.</param>
+/// <param name="UnlockSource">How the unlock was triggered (e.g. <c>"quest"</c>, <c>"item"</c>, <c>"manual"</c>).</param>
+public record UnlockZoneLocationHubRequest(string LocationSlug, string UnlockSource);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.TraverseConnection"/>.</summary>
+/// <param name="FromLocationSlug">Slug of the ZoneLocation the character is departing from.</param>
+/// <param name="ConnectionType">Type of the connection to use (e.g. <c>"path"</c>, <c>"portal"</c>).</param>
+public record TraverseConnectionHubRequest(string FromLocationSlug, string ConnectionType);
 

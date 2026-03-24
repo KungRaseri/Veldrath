@@ -46,13 +46,48 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
     public async Task<List<ZoneLocationEntry>> GetByZoneIdAsync(string zoneId)
     {
         var entities = await db.ZoneLocations.AsNoTracking()
-            .Where(w => w.IsActive && w.ZoneId == zoneId)
+            .Where(w => w.IsActive && w.ZoneId == zoneId && w.Traits.IsHidden != true)
             .ToListAsync();
 
         return entities.Select(MapToModel).ToList();
     }
 
+    /// <inheritdoc />
+    public async Task<List<ZoneLocationEntry>> GetByZoneIdAsync(string zoneId, IEnumerable<string> unlockedSlugs)
+    {
+        var unlocked = unlockedSlugs.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var entities = await db.ZoneLocations.AsNoTracking()
+            .Where(w => w.IsActive && w.ZoneId == zoneId
+                        && (w.Traits.IsHidden != true || unlocked.Contains(w.Slug)))
+            .ToListAsync();
+
+        return entities.Select(MapToModel).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<ZoneLocationEntry>> GetHiddenByZoneIdAsync(string zoneId)
+    {
+        var entities = await db.ZoneLocations.AsNoTracking()
+            .Where(w => w.IsActive && w.ZoneId == zoneId && w.Traits.IsHidden == true)
+            .ToListAsync();
+
+        return entities.Select(MapToModel).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug)
+    {
+        var entities = await db.ZoneLocationConnections.AsNoTracking()
+            .Where(c => c.FromLocationSlug == locationSlug)
+            .ToListAsync();
+
+        return entities.Select(c => new ZoneLocationConnectionEntry(
+            c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable))
+            .ToList();
+    }
+
     private static ZoneLocationEntry MapToModel(Entities.ZoneLocation w) =>
         new(w.Slug, w.DisplayName ?? w.Slug, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight,
-            w.Stats.MinLevel, w.Stats.MaxLevel);
+            w.Stats.MinLevel, w.Stats.MaxLevel,
+            w.Traits.IsHidden ?? false, w.Traits.UnlockType, w.Traits.UnlockKey, w.Traits.DiscoverThreshold);
 }
