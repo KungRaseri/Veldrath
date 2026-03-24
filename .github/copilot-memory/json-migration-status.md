@@ -86,9 +86,38 @@ Weapons and armor are now ordinary **Items** with `ItemType = "weapon"` or `"arm
 - Assets.Tests: 10 passed
 - **All 0 failures**
 
-## What Remains (as of session-21)
-- No weapon/armor legacy code remains anywhere in the codebase
-- TypeKey values for weapons match `WeaponCategoryToProficiencies` keys in GetEquipmentForClassHandler ("heavy-blades", "bows", etc.)
-- TypeKey values for armor match `ArmorCategoryToProficiencies` keys ("light", "heavy", "shield")
+## What Was Done (session-23) — Database Seeder completion + Power unification bug fixes
+
+### New Seeders Added (all in `RealmEngine.Data/Seeders/`)
+- `LootTablesSeeder.cs`: 4 loot tables — `goblin-common-drops`, `wolf-common-drops` (enemy drops), `forest-chest-loot` (chest), `bandit-boss-drops` (boss rare)
+- `QuestsSeeder.cs`: 3 quests — `clear-the-forest` (kill/repeatable), `gather-mushrooms` (collect/repeatable), `the-lost-shipment` (story/multi-objective)
+- `WorldLocationsSeeder.cs`: 5 locations — `thornveil-village`, `ironhollow-keep` (towns), `darkwood-forest`, `ashveil-highlands` (environments), `goblin-warrens` (dungeon)
+- `ActorInstancesSeeder.cs`: 2 instances — `elder-goblin-chief` (boss, FK→goblin-scout), `captain-blackthorn` (story, FK→bandit-ruffian)
+- `TraitDefinitionsSeeder.cs`: 56 trait vocabulary rows covering enemy/NPC, power, item, enchantment, loot table, recipe, organization, dialogue, world location, and wildcard (`*`) trait keys
+
+### Updated Files
+- `DatabaseSeeder.cs`: Added calls for all 5 new seeders in dependency order (`LootTables` → `Quests` → `WorldLocations` → `ActorInstances` → ... → `TraitDefinitions`)
+- `ContentRegistrySeeder.cs`: Added registration loops for `WorldLocations`, `ActorInstances`, `Quests`, `LootTables` (TraitDefinitions excluded — no Slug field)
+
+### Bug Fixes (Power Unification Stragglers)
+- `EfCoreContentRepositoryTests.cs` — `MakePower` factory helper: added `PowerType = type` (was only setting `TypeKey`, but `EfCorePowerRepository.GetByTypeAsync` filters on `PowerType`)
+- `LearnSpellHandlerTests.cs` — Reverted `result.Message.Should().Contain("Unknown Power")` back to `"Unknown spell"` (`SpellCastingService` was intentionally kept and still returns "Unknown spell:")
+- `InitializeStartingSpellsHandlerTests.cs` — Updated `"No starting spells"` → `"No starting powers"` to match `InitializeStartingPowersHandler`'s actual return message
+- `ContentExtendedEndpointTests.cs` — Updated School assertion from `"Primal"` to `"fire"` — `EfCorePowerRepository` returns raw school; no tradition mapping (see engine-codebase.md note)
+
+### Test Counts (session-23)
+- RealmEngine.Shared.Tests: **778 passing**
+- RealmEngine.Core.Tests: **1,859 passing**
+- RealmEngine.Data.Tests: **208 passing**
+- RealmUnbound.Client.Tests: **461 passing**
+- RealmUnbound.Server.Tests: **425 passing**
+- RealmFoundry.Tests: **48 passing**
+- RealmUnbound.Assets.Tests: **10 passing**
+- **All 0 failures** ✅
+
+## What Remains
+- All `ContentDbContext` tables now have baseline seed data
+- No known open gaps in seeding
+- Potential future work: seeder tests (unit tests verifying seeder idempotency); seeded data expansion
 
 

@@ -33,8 +33,13 @@ public static class DatabaseSeeder
         await ItemsSeeder.SeedAsync(db);
         await ArchetypeSeeder.SeedAsync(db);
         await RecipesSeeder.SeedAsync(db);
+        await LootTablesSeeder.SeedAsync(db);
+        await QuestsSeeder.SeedAsync(db);
+        await WorldLocationsSeeder.SeedAsync(db);
+        await ActorInstancesSeeder.SeedAsync(db);
         await OrganizationsSeeder.SeedAsync(db);
         await DialogueSeeder.SeedAsync(db);
+        await TraitDefinitionsSeeder.SeedAsync(db);
         await ContentRegistrySeeder.SeedAsync(db);
     }
 

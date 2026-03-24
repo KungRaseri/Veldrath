@@ -56,7 +56,7 @@ public class LearnSpellHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Unknown Power");
+        result.Message.Should().Contain("Unknown spell");
     }
 
     [Fact]

@@ -60,6 +60,18 @@ public static class ContentRegistrySeeder
         foreach (var e in await db.Dialogues.AsNoTracking().ToListAsync())
             Register(e.Id, "Dialogues", "world/dialogue", e.TypeKey, e.Slug);
 
+        foreach (var e in await db.WorldLocations.AsNoTracking().ToListAsync())
+            Register(e.Id, "WorldLocations", "world/locations", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.ActorInstances.AsNoTracking().ToListAsync())
+            Register(e.Id, "ActorInstances", "actors/instances", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.Quests.AsNoTracking().ToListAsync())
+            Register(e.Id, "Quests", "quests", e.TypeKey, e.Slug);
+
+        foreach (var e in await db.LootTables.AsNoTracking().ToListAsync())
+            Register(e.Id, "LootTables", "loot/tables", e.TypeKey, e.Slug);
+
         if (entries.Count > 0)
         {
             db.ContentRegistry.AddRange(entries);

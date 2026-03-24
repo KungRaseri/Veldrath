@@ -20,8 +20,8 @@ namespace RealmUnbound.Server.Tests.Features;
 /// <c>/api/content/npcs</c> responses.
 /// </para>
 /// <para>
-/// <c>PowerDto.School</c> is the mapped <see cref="MagicalTradition"/> string, not
-/// the raw entity school. <c>School="fire"</c> maps to <c>"Primal"</c>.
+/// <c>PowerDto.School</c> is the raw entity school string returned by
+/// <see cref="EfCorePowerRepository"/> — no tradition mapping is applied.
 /// </para>
 /// <para>
 /// <c>QuestDto.QuestType</c> is always an empty string because
@@ -362,8 +362,8 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         var item = await response.Content.ReadFromJsonAsync<PowerDto>();
         item!.Slug.Should().Be("typed-fireball");
         item.DisplayName.Should().Be("Fireball");
-        // School "fire" → ParseTradition → MagicalTradition.Primal → "Primal"
-        item.School.Should().Be("Primal");
+        // EfCorePowerRepository returns the raw entity school — no tradition mapping.
+        item.School.Should().Be("fire");
         item.ManaCost.Should().Be(25);
         item.Rank.Should().Be(50);   // RarityWeight
     }

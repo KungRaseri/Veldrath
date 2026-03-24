@@ -1,10 +1,10 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of session-22)
-- RealmEngine.Core.Tests: **1,867 passing** (+17 from session-22: DungeonGeneratorService tests)
+## Test Counts (as of session-23)
+- RealmEngine.Core.Tests: **1,859 passing**
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **227 passing**
-- RealmUnbound.Client.Tests: **401 passing**
+- RealmEngine.Data.Tests: **208 passing**
+- RealmUnbound.Client.Tests: **461 passing**
 - RealmUnbound.Server.Tests: **425 passing**
 
 ## Key Model Facts
@@ -63,8 +63,10 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 ### Enemy / NPC Dual-Archetype Behavior
 - `EfCoreEnemyRepository` and `EfCoreNpcRepository` **both** query `db.ActorArchetypes` without any hostility/role filter. A single seeded `ActorArchetype` row therefore appears in both `/api/content/enemies` and `/api/content/npcs` responses. This is by design — hostility is a trait flag, not a filter applied by the repos.
 
-### SpellDto.School Is a Mapped Tradition, Not the Raw Entity School
-- `EfCoreSpellRepository.ParseTradition(school)` maps entity granular schools to 4 broad traditions. `"fire"` → `MagicalTradition.Primal` → `SpellDto.School = "Primal"`. Other mappings: `"arcane"/"force"/"transmutation"` → `"Arcane"`, `"divine"/"holy"/"sacred"/"light"/"healing"` → `"Divine"`, `"shadow"/"occult"/"psychic"/"dark"/"void"` → `"Occult"`.
+### PowerDto.School Is the Raw Entity School (no tradition mapping)
+- `EfCorePowerRepository` returns `Power.School` directly (e.g. `"fire"`, `"arcane"`). No tradition mapping is applied.
+- The old `EfCoreSpellRepository.ParseTradition` logic (mapping `"fire"` → `MagicalTradition.Primal` → `"Primal"`) was NOT carried over to `EfCorePowerRepository`. `SpellDto` is gone; `PowerDto.School` is raw.
+- Tests asserting on `PowerDto.School` should check raw values (`"fire"`, `"arcane"`, etc.), not broad traditions.
 
 ### QuestDto — Partially-Unmapped Fields
 - `EfCoreQuestRepository.MapToModel` does **not** set `QuestType` or `Difficulty` on the shared `Quest` model. Those fields default to empty string. Only `Slug`, `Title` (= DisplayName), `DisplayName`, and `RarityWeight` are populated from the entity.

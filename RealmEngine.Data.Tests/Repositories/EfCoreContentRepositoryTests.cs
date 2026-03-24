@@ -15,7 +15,7 @@ public class EfCorePowerRepositoryTests
             .Options);
 
     private static RealmEngine.Data.Entities.Power MakePower(string slug, string type = "active", bool active = true) =>
-        new() { Slug = slug, TypeKey = type, IsActive = active, DisplayName = slug };
+        new() { Slug = slug, TypeKey = type, PowerType = type, IsActive = active, DisplayName = slug };
 
     [Fact]
     public async Task GetAllAsync_ReturnsOnlyActivePowers()
