@@ -1,0 +1,254 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.MapView"
+             x:DataType="vm:MapViewModel"
+             Background="{DynamicResource GameBackground0Brush}">
+
+    <UserControl.Styles>
+        <!-- Node border base -->
+        <Style Selector="Border.map-node">
+            <Setter Property="Width" Value="80" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="BoxShadow" Value="0 2 8 0 #30000000" />
+        </Style>
+        <Style Selector="Border.map-node:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.map-node.current">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+        </Style>
+        <Style Selector="Border.map-node.hidden-node">
+            <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GameMutedBrush}" />
+            <Setter Property="Opacity" Value="0.6" />
+        </Style>
+        <Style Selector="Border.map-node.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentLightBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <!-- Level tab buttons -->
+        <Style Selector="Button.level-tab">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource GameMutedBrush}" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.level-tab.active">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Row 0: Header bar ─────────────────────────────────────────── -->
+        <Border Grid.Row="0" Classes="panel-topbar">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                <!-- Left: back button + level tabs -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Button Content="← Back"
+                            Classes="ghost"
+                            IsVisible="{Binding CanDrillOut}"
+                            Command="{Binding DrillOutCommand}"
+                            Padding="8,4" FontSize="12" />
+                    <Button Content="World"
+                            Classes="level-tab"
+                            Classes.active="{Binding IsWorldLevel}"
+                            Command="{Binding DrillOutCommand}"
+                            IsEnabled="{Binding CanDrillOut}" />
+                </StackPanel>
+
+                <!-- Centre: Title -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Title}"
+                           FontSize="16" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{DynamicResource GameTextPrimaryBrush}" />
+
+                <!-- Right: Close button -->
+                <Button Grid.Column="2"
+                        Content="✕ Close"
+                        Classes="ghost danger"
+                        Command="{Binding CloseCommand}"
+                        VerticalAlignment="Center" Margin="0,0,8,0" />
+            </Grid>
+        </Border>
+
+        <!-- ── Row 1: Canvas graph ───────────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,220">
+
+            <!-- Graph canvas -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource GameBackground1Brush}"
+                    Margin="0" ClipToBounds="True">
+
+                <Panel>
+                    <!-- Loading overlay -->
+                    <Border IsVisible="{Binding IsLoading}"
+                            Background="#88000000"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            ZIndex="10">
+                        <TextBlock Text="Loading…"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="16"
+                                   Foreground="{DynamicResource GameTextMutedBrush}" />
+                    </Border>
+
+                    <!-- Edge layer (lines drawn in code-behind, refreshed on collection change) -->
+                    <Canvas x:Name="EdgeCanvas"
+                            Width="{Binding CanvasWidth}"
+                            Height="{Binding CanvasHeight}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            ZIndex="0" />
+
+                    <!-- Node layer -->
+                    <ItemsControl ItemsSource="{Binding Nodes}"
+                                  Width="{Binding CanvasWidth}"
+                                  Height="{Binding CanvasHeight}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  ZIndex="1">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MapNodeViewModel">
+                                <Border Classes="map-node"
+                                        Classes.current="{Binding IsCurrent}"
+                                        Classes.hidden-node="{Binding IsHidden}"
+                                        Canvas.Left="{Binding X}"
+                                        Canvas.Top="{Binding Y}"
+                                        ToolTip.Tip="{Binding Label}"
+                                        PointerPressed="OnNodePointerPressed"
+                                        DoubleTapped="OnNodeDoubleTapped">
+                                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Label}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextPrimaryBrush}"
+                                                   TextWrapping="Wrap"
+                                                   MaxWidth="68"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding SubType}"
+                                                   FontSize="9"
+                                                   Foreground="{DynamicResource GameTextMutedBrush}"
+                                                   IsVisible="{Binding SubType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Panel>
+            </Border>
+
+            <!-- ── Right detail panel ─────────────────────────────────────── -->
+            <Border Grid.Column="1"
+                    Background="{DynamicResource GameBackground2Brush}"
+                    BorderBrush="{DynamicResource GameBorderBrush}"
+                    BorderThickness="1,0,0,0"
+                    Padding="12">
+                <ScrollViewer>
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Details"
+                                   Classes="caption"
+                                   Foreground="{DynamicResource GameTextMutedBrush}" />
+                        <Border Classes="separator" />
+
+                        <!-- No selection state -->
+                        <TextBlock Text="Click a node to select it. Double-click to zoom in."
+                                   TextWrapping="Wrap"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource GameTextMutedBrush}"
+                                   IsVisible="{Binding SelectedNode, Converter={x:Static ObjectConverters.IsNull}}" />
+
+                        <!-- Selected node details -->
+                        <StackPanel IsVisible="{Binding SelectedNode, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    Spacing="6">
+                            <TextBlock Text="{Binding SelectedNode.Label}"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource GameTextPrimaryBrush}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding SelectedNode.SubType}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource GameTextMutedBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="4"
+                                        IsVisible="{Binding SelectedNode.MinLevel, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <TextBlock Text="Min level:" FontSize="11"
+                                           Foreground="{DynamicResource GameTextMutedBrush}" />
+                                <TextBlock Text="{Binding SelectedNode.MinLevel}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource GameAccentBrush}" />
+                            </StackPanel>
+
+                            <Border Classes="separator" Margin="0,4" />
+
+                            <!-- "You are here" badge -->
+                            <Border Background="{DynamicResource GameSuccessMutedBrush}"
+                                    BorderBrush="{DynamicResource GameSuccessBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4" Padding="6,3"
+                                    IsVisible="{Binding SelectedNode.IsCurrent}">
+                                <TextBlock Text="You are here"
+                                           FontSize="10"
+                                           Foreground="{DynamicResource GameSuccessBrush}" />
+                            </Border>
+
+                            <!-- Drill-in button (not shown at Zone level) -->
+                            <Button Content="Zoom In →"
+                                    Classes="accent"
+                                    IsVisible="{Binding !IsZoneLevel}"
+                                    Command="{Binding DrillIntoCommand}"
+                                    CommandParameter="{Binding SelectedNode}"
+                                    HorizontalAlignment="Stretch" />
+                        </StackPanel>
+
+                        <Border Classes="separator" Margin="0,12,0,4" />
+
+                        <!-- Level info -->
+                        <TextBlock Text="Levels"
+                                   Classes="caption"
+                                   Foreground="{DynamicResource GameTextMutedBrush}" />
+                        <StackPanel Spacing="4">
+                            <Button Content="World"
+                                    Classes="ghost"
+                                    Classes.accent="{Binding IsWorldLevel}"
+                                    Command="{Binding DrillOutCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="{Binding CanDrillOut}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- ── Row 2: Status bar ─────────────────────────────────────────── -->
+        <Border Grid.Row="2" Classes="panel-statusbar">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Single-click to select  •  Double-click to zoom in"
+                           FontSize="11"
+                           Foreground="{DynamicResource GameTextMutedBrush}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

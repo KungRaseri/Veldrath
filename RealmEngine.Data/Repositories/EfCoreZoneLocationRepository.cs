@@ -86,6 +86,23 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
             .ToList();
     }
 
+    /// <inheritdoc />
+    public async Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId)
+    {
+        var slugs = await db.ZoneLocations.AsNoTracking()
+            .Where(l => l.IsActive && l.ZoneId == zoneId)
+            .Select(l => l.Slug)
+            .ToListAsync();
+
+        var entities = await db.ZoneLocationConnections.AsNoTracking()
+            .Where(c => slugs.Contains(c.FromLocationSlug))
+            .ToListAsync();
+
+        return entities.Select(c => new ZoneLocationConnectionEntry(
+            c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable))
+            .ToList();
+    }
+
     private static ZoneLocationEntry MapToModel(Entities.ZoneLocation w) =>
         new(w.Slug, w.DisplayName ?? w.Slug, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight,
             w.Stats.MinLevel, w.Stats.MaxLevel,

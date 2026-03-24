@@ -25,6 +25,7 @@ public class GameViewModel : ViewModelBase
     private string _statusMessage = string.Empty;
     private string _currentZoneId = string.Empty;
     private string? _currentZoneLocationSlug;
+    private Guid? _characterId;
 
     public string ZoneName
     {
@@ -399,6 +400,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Load a specific region's zone details in the Region panel and switch to that view.</summary>
     public ReactiveCommand<string, Unit> ViewRegionCommand { get; }
 
+    /// <summary>Open the traversal-graph map screen.</summary>
+    public ReactiveCommand<Unit, Unit> OpenMapCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -464,6 +468,7 @@ public class GameViewModel : ViewModelBase
         ShowWorldViewCommand = ReactiveCommand.Create(() => { ZoneViewMode = "World"; });
         TravelToZoneCommand = ReactiveCommand.CreateFromTask<string>(DoTravelToZoneAsync);
         ViewRegionCommand = ReactiveCommand.CreateFromTask<string>(DoShowRegionDetailsAsync);
+        OpenMapCommand = ReactiveCommand.Create(DoOpenMap);
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -725,11 +730,13 @@ public class GameViewModel : ViewModelBase
     /// <param name="maxMana">Maximum mana points.</param>
     /// <param name="gold">Gold held.</param>
     /// <param name="unspentAttributePoints">Attribute points not yet allocated.</param>
+    /// <param name="characterId">The character's unique identifier, used for hidden-location filtering.</param>
     public void SeedInitialStats(
         int level, long experience,
         int currentHealth, int maxHealth,
         int currentMana, int maxMana,
-        int gold, int unspentAttributePoints)
+        int gold, int unspentAttributePoints,
+        Guid? characterId = null)
     {
         Level = level;
         Experience = experience;
@@ -739,6 +746,8 @@ public class GameViewModel : ViewModelBase
         MaxMana = maxMana;
         Gold = gold;
         UnspentAttributePoints = unspentAttributePoints;
+        if (characterId.HasValue)
+            _characterId = characterId;
     }
 
     private async Task DoLogoutAsync()
@@ -748,6 +757,12 @@ public class GameViewModel : ViewModelBase
         _audioPlayer?.StopMusic();
         await _connection.DisconnectAsync();
         _navigation.NavigateTo<MainMenuViewModel>();
+    }
+
+    private void DoOpenMap()
+    {
+        var mapVm = new MapViewModel(_zoneService, _currentZoneId, _regionId, _characterId);
+        _navigation.NavigateTo(mapVm);
     }
 
     private async Task DoRestAtLocationAsync()
