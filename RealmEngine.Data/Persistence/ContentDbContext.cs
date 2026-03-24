@@ -52,7 +52,7 @@ public class ContentDbContext : DbContext
     /// <summary>Material property definitions.</summary>
     public DbSet<MaterialProperty> MaterialProperties => Set<MaterialProperty>();
     /// <summary>World locations and regions.</summary>
-    public DbSet<WorldLocation> WorldLocations => Set<WorldLocation>();
+    public DbSet<ZoneLocation> ZoneLocations => Set<ZoneLocation>();
     /// <summary>NPC dialogue trees.</summary>
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
 

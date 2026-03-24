@@ -19,7 +19,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         "Powers", "Species", "ActorClasses", "ActorArchetypes", "ActorInstances",
         "Items", "Materials", "Enchantments",
         "Skills", "Backgrounds", "Quests", "Recipes",
-        "LootTables", "Organizations", "MaterialProperties", "WorldLocations", "Dialogues"
+        "LootTables", "Organizations", "MaterialProperties", "ZoneLocations", "Dialogues"
     };
 
     /// <summary>
@@ -53,7 +53,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "LootTables"         => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Organizations"      => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "MaterialProperties" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "WorldLocations"     => await db.WorldLocations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ZoneLocations"     => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "Dialogues"          => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 _                    => null
             };
@@ -163,7 +163,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "LootTables"         => await RemoveFromSet<LootTable>(db, entityId),
                 "Organizations"      => await RemoveFromSet<Organization>(db, entityId),
                 "MaterialProperties" => await RemoveFromSet<MaterialProperty>(db, entityId),
-                "WorldLocations"     => await RemoveFromSet<WorldLocation>(db, entityId),
+                "ZoneLocations"     => await RemoveFromSet<ZoneLocation>(db, entityId),
                 "Dialogues"          => await RemoveFromSet<Dialogue>(db, entityId),
                 _                    => false
             };
@@ -217,7 +217,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         "LootTables"         => new LootTable(),
         "Organizations"      => new Organization(),
         "MaterialProperties" => new MaterialProperty(),
-        "WorldLocations"     => new WorldLocation(),
+        "ZoneLocations"     => new ZoneLocation(),
         "Dialogues"          => new Dialogue(),
         _                    => throw new ArgumentException($"Unknown table: {tableName}")
     };
@@ -242,7 +242,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             case "LootTables":         db.LootTables.Add((LootTable)entity);                    break;
             case "Organizations":      db.Organizations.Add((Organization)entity);              break;
             case "MaterialProperties": db.MaterialProperties.Add((MaterialProperty)entity);     break;
-            case "WorldLocations":     db.WorldLocations.Add((WorldLocation)entity);            break;
+            case "ZoneLocations":     db.ZoneLocations.Add((ZoneLocation)entity);            break;
             case "Dialogues":          db.Dialogues.Add((Dialogue)entity);                      break;
         }
     }
@@ -288,7 +288,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 "LootTables"         => await SelectRows(db.LootTables, typeKey),
                 "Organizations"      => await SelectRows(db.Organizations, typeKey),
                 "MaterialProperties" => await SelectRows(db.MaterialProperties, typeKey),
-                "WorldLocations"     => await SelectRows(db.WorldLocations, typeKey),
+                "ZoneLocations"     => await SelectRows(db.ZoneLocations, typeKey),
                 "Dialogues"          => await SelectRows(db.Dialogues, typeKey),
                 _                    => []
             };

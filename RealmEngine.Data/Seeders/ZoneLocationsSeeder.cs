@@ -4,30 +4,31 @@ using RealmEngine.Data.Persistence;
 
 namespace RealmEngine.Data.Seeders;
 
-/// <summary>Seeds baseline <see cref="WorldLocation"/> rows into <see cref="ContentDbContext"/>.</summary>
-public static class WorldLocationsSeeder
+/// <summary>Seeds baseline <see cref="ZoneLocation"/> rows into <see cref="ContentDbContext"/>.</summary>
+public static class ZoneLocationsSeeder
 {
-    /// <summary>Seeds all world location rows (idempotent).</summary>
+    /// <summary>Seeds all zone location rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.WorldLocations.AnyAsync())
+        if (await db.ZoneLocations.AnyAsync())
             return;
 
         var now = DateTimeOffset.UtcNow;
 
-        db.WorldLocations.AddRange(
-            // ── Settlements ───────────────────────────────────────────────────
-            new WorldLocation
+        db.ZoneLocations.AddRange(
+            // â”€â”€ Settlements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            new ZoneLocation
             {
                 Slug         = "thornveil-village",
                 TypeKey      = "locations",
                 DisplayName  = "Thornveil Village",
+                ZoneId       = "fenwick-crossing",
                 LocationType = "location",
                 RarityWeight = 100,
                 IsActive     = true,
                 Version      = 1,
                 UpdatedAt    = now,
-                Stats = new WorldLocationStats
+                Stats = new ZoneLocationStats
                 {
                     Size        = 3,
                     DangerLevel = 1,
@@ -35,28 +36,28 @@ public static class WorldLocationsSeeder
                     MinLevel    = 1,
                     MaxLevel    = null,
                 },
-                Traits = new WorldLocationTraits
+                Traits = new ZoneLocationTraits
                 {
                     IsTown        = true,
                     IsIndoor      = false,
                     HasMerchant   = true,
-                    PvpEnabled    = false,
                     IsDiscoverable = false,
                     IsDungeon     = false,
                 },
             },
 
-            new WorldLocation
+            new ZoneLocation
             {
                 Slug         = "ironhollow-keep",
                 TypeKey      = "locations",
                 DisplayName  = "Ironhollow Keep",
+                ZoneId       = "aldenmere",
                 LocationType = "location",
                 RarityWeight = 60,
                 IsActive     = true,
                 Version      = 1,
                 UpdatedAt    = now,
-                Stats = new WorldLocationStats
+                Stats = new ZoneLocationStats
                 {
                     Size        = 5,
                     DangerLevel = 4,
@@ -64,29 +65,29 @@ public static class WorldLocationsSeeder
                     MinLevel    = 5,
                     MaxLevel    = 12,
                 },
-                Traits = new WorldLocationTraits
+                Traits = new ZoneLocationTraits
                 {
                     IsTown        = true,
                     IsIndoor      = false,
                     HasMerchant   = true,
-                    PvpEnabled    = false,
                     IsDiscoverable = false,
                     IsDungeon     = false,
                 },
             },
 
-            // ── Wilderness environments ───────────────────────────────────────
-            new WorldLocation
+            // â”€â”€ Wilderness environments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            new ZoneLocation
             {
                 Slug         = "darkwood-forest",
                 TypeKey      = "environments",
                 DisplayName  = "Darkwood Forest",
+                ZoneId       = "greenveil-paths",
                 LocationType = "environment",
                 RarityWeight = 80,
                 IsActive     = true,
                 Version      = 1,
                 UpdatedAt    = now,
-                Stats = new WorldLocationStats
+                Stats = new ZoneLocationStats
                 {
                     Size        = 8,
                     DangerLevel = 3,
@@ -94,28 +95,28 @@ public static class WorldLocationsSeeder
                     MinLevel    = 1,
                     MaxLevel    = 6,
                 },
-                Traits = new WorldLocationTraits
+                Traits = new ZoneLocationTraits
                 {
                     IsTown        = false,
                     IsIndoor      = false,
                     HasMerchant   = false,
-                    PvpEnabled    = false,
                     IsDiscoverable = false,
                     IsDungeon     = false,
                 },
             },
 
-            new WorldLocation
+            new ZoneLocation
             {
                 Slug         = "ashveil-highlands",
                 TypeKey      = "environments",
                 DisplayName  = "Ashveil Highlands",
+                ZoneId       = "pale-moor",
                 LocationType = "environment",
                 RarityWeight = 50,
                 IsActive     = true,
                 Version      = 1,
                 UpdatedAt    = now,
-                Stats = new WorldLocationStats
+                Stats = new ZoneLocationStats
                 {
                     Size        = 7,
                     DangerLevel = 5,
@@ -123,29 +124,29 @@ public static class WorldLocationsSeeder
                     MinLevel    = 8,
                     MaxLevel    = 15,
                 },
-                Traits = new WorldLocationTraits
+                Traits = new ZoneLocationTraits
                 {
                     IsTown        = false,
                     IsIndoor      = false,
                     HasMerchant   = false,
-                    PvpEnabled    = true,
                     IsDiscoverable = true,
                     IsDungeon     = false,
                 },
             },
 
-            // ── Dungeons ──────────────────────────────────────────────────────
-            new WorldLocation
+            // â”€â”€ Dungeons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            new ZoneLocation
             {
                 Slug         = "goblin-warrens",
                 TypeKey      = "dungeons",
                 DisplayName  = "Goblin Warrens",
-                LocationType = "region",
+                ZoneId       = "thornveil-hollow",
+                LocationType = "dungeon",
                 RarityWeight = 70,
                 IsActive     = true,
                 Version      = 1,
                 UpdatedAt    = now,
-                Stats = new WorldLocationStats
+                Stats = new ZoneLocationStats
                 {
                     Size        = 4,
                     DangerLevel = 3,
@@ -153,12 +154,11 @@ public static class WorldLocationsSeeder
                     MinLevel    = 2,
                     MaxLevel    = 5,
                 },
-                Traits = new WorldLocationTraits
+                Traits = new ZoneLocationTraits
                 {
                     IsTown        = false,
                     IsIndoor      = true,
                     HasMerchant   = false,
-                    PvpEnabled    = false,
                     IsDiscoverable = true,
                     IsDungeon     = true,
                 },

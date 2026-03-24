@@ -7,25 +7,25 @@ using RealmEngine.Data.Repositories;
 namespace RealmEngine.Data.Tests.Repositories;
 
 [Trait("Category", "Repository")]
-public class EfCoreWorldLocationRepositoryTests
+public class EfCoreZoneLocationRepositoryTests
 {
     private static ContentDbContext CreateDbContext() =>
         new(new DbContextOptionsBuilder<ContentDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
-    private static WorldLocation MakeLoc(string slug, string locationType = "dungeon", bool active = true) =>
-        new() { Slug = slug, LocationType = locationType, IsActive = active, DisplayName = slug };
+    private static ZoneLocation MakeLoc(string slug, string locationType = "dungeon", bool active = true) =>
+        new() { Slug = slug, ZoneId = "fenwick-crossing", LocationType = locationType, IsActive = active, DisplayName = slug };
 
     [Fact]
     public async Task GetAllAsync_ReturnsOnlyActiveLocations()
     {
         await using var db = CreateDbContext();
-        db.WorldLocations.AddRange(
+        db.ZoneLocations.AddRange(
             MakeLoc("darkwood-forest", active: true),
             MakeLoc("destroyed-village", active: false));
         await db.SaveChangesAsync();
-        var repo = new EfCoreWorldLocationRepository(db, NullLogger<EfCoreWorldLocationRepository>.Instance);
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
         var result = await repo.GetAllAsync();
 
@@ -36,9 +36,9 @@ public class EfCoreWorldLocationRepositoryTests
     public async Task GetBySlugAsync_ReturnsEntry_WhenActive()
     {
         await using var db = CreateDbContext();
-        db.WorldLocations.Add(MakeLoc("iron-keep", "dungeon"));
+        db.ZoneLocations.Add(MakeLoc("iron-keep", "dungeon"));
         await db.SaveChangesAsync();
-        var repo = new EfCoreWorldLocationRepository(db, NullLogger<EfCoreWorldLocationRepository>.Instance);
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
         var result = await repo.GetBySlugAsync("iron-keep");
 
@@ -50,9 +50,9 @@ public class EfCoreWorldLocationRepositoryTests
     public async Task GetBySlugAsync_ReturnsNull_WhenInactive()
     {
         await using var db = CreateDbContext();
-        db.WorldLocations.Add(MakeLoc("old-ruins", active: false));
+        db.ZoneLocations.Add(MakeLoc("old-ruins", active: false));
         await db.SaveChangesAsync();
-        var repo = new EfCoreWorldLocationRepository(db, NullLogger<EfCoreWorldLocationRepository>.Instance);
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
         (await repo.GetBySlugAsync("old-ruins")).Should().BeNull();
     }
@@ -61,12 +61,12 @@ public class EfCoreWorldLocationRepositoryTests
     public async Task GetByLocationTypeAsync_FiltersOnLocationType()
     {
         await using var db = CreateDbContext();
-        db.WorldLocations.AddRange(
+        db.ZoneLocations.AddRange(
             MakeLoc("crystal-cave", "dungeon"),
-            MakeLoc("market-town", "town"),
+            MakeLoc("market-town", "location"),
             MakeLoc("spider-lair", "dungeon"));
         await db.SaveChangesAsync();
-        var repo = new EfCoreWorldLocationRepository(db, NullLogger<EfCoreWorldLocationRepository>.Instance);
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
         var result = await repo.GetByLocationTypeAsync("dungeon");
 

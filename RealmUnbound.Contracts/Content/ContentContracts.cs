@@ -215,17 +215,18 @@ public record MaterialDto(
 /// <param name="RarityWeight">Selection weight for random draws.</param>
 public record OrganizationDto(string Slug, string DisplayName, string TypeKey, string OrgType, int RarityWeight);
 
-// ── WorldLocation ─────────────────────────────────────────────────────────────
-/// <summary>A world location catalog entry (environment, location, or region).</summary>
+// ── ZoneLocation ─────────────────────────────────────────────────────
+/// <summary>A zone location catalog entry (dungeon, settlement, or environment within a zone).</summary>
 /// <param name="Slug">URL-safe identifier.</param>
 /// <param name="DisplayName">Human-readable name.</param>
-/// <param name="TypeKey">Domain type key (e.g. "environments", "locations", "regions").</param>
-/// <param name="LocationType">Location sub-type: "environment", "location", or "region".</param>
+/// <param name="TypeKey">Domain type key (e.g. "dungeons", "locations", "environments").</param>
+/// <param name="ZoneId">The Zone this location belongs to.</param>
+/// <param name="LocationType">Location sub-type: "dungeon", "location", or "environment".</param>
 /// <param name="RarityWeight">Selection weight for random draws.</param>
 /// <param name="MinLevel">Minimum recommended character level, or <see langword="null"/> if unconstrained.</param>
 /// <param name="MaxLevel">Maximum recommended character level, or <see langword="null"/> if unconstrained.</param>
-public record WorldLocationDto(string Slug, string DisplayName, string TypeKey,
-    string LocationType, int RarityWeight, int? MinLevel, int? MaxLevel);
+public record ZoneLocationDto(string Slug, string DisplayName, string TypeKey,
+    string ZoneId, string LocationType, int RarityWeight, int? MinLevel, int? MaxLevel);
 
 // ── Dialogue ──────────────────────────────────────────────────────────────────
 /// <summary>A dialogue catalog entry belonging to a speaker type.</summary>

@@ -276,11 +276,12 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── World locations ───────────────────────────────────────────────────
+        // ── Zone locations ────────────────────────────────────────────────────
 
-        builder.Entity<WorldLocation>(e =>
+        builder.Entity<ZoneLocation>(e =>
         {
             ConfigureContent(e);
+            e.Property(x => x.ZoneId).HasMaxLength(128).IsRequired();
             e.Property(x => x.LocationType).HasMaxLength(32).IsRequired();
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
