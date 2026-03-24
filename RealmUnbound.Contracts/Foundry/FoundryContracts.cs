@@ -1,7 +1,6 @@
 namespace RealmUnbound.Contracts.Foundry;
 
-// ── Requests ──────────────────────────────────────────────────────────────
-
+// Requests
 public record CreateSubmissionRequest(
     /// <summary>See <c>FoundryContentType</c> enum values: Item, Spell, Ability, Npc, Quest, Recipe, LootTable.</summary>
     string ContentType,
@@ -19,8 +18,7 @@ public record ReviewRequest(
     bool Approved,
     string? Notes = null);
 
-// ── Responses ─────────────────────────────────────────────────────────────
-
+// Responses
 public record FoundrySubmissionSummaryDto(
     Guid     Id,
     string   ContentType,

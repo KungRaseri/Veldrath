@@ -20,8 +20,7 @@ public class GameViewModelTests : TestBase
             nav    ?? new FakeNavigationService());
     }
 
-    // ── Initial state ─────────────────────────────────────────────────────────
-
+    // Initial state
     [Fact]
     public void CharacterName_Should_Default_To_Adventurer_When_Token_Not_Set()
     {
@@ -54,8 +53,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().BeEmpty();
     }
 
-    // ── InitializeAsync ───────────────────────────────────────────────────────
-
+    // InitializeAsync
     [Fact]
     public async Task InitializeAsync_Should_Set_CharacterName()
     {
@@ -112,8 +110,7 @@ public class GameViewModelTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // ── OnPlayerEntered ───────────────────────────────────────────────────────
-
+    // OnPlayerEntered
     [Fact]
     public void OnPlayerEntered_Should_Add_Player_To_OnlinePlayers()
     {
@@ -139,8 +136,7 @@ public class GameViewModelTests : TestBase
         vm.OnlinePlayers.Should().ContainSingle();
     }
 
-    // ── OnPlayerLeft ──────────────────────────────────────────────────────────
-
+    // OnPlayerLeft
     [Fact]
     public void OnPlayerLeft_Should_Remove_Player_From_OnlinePlayers()
     {
@@ -159,8 +155,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().Contain(msg => msg.Contains("Legolas") && msg.Contains("left"));
     }
 
-    // ── SetOccupants ──────────────────────────────────────────────────────────
-
+    // SetOccupants
     [Fact]
     public async Task SetOccupants_Should_Populate_OnlinePlayers_Excluding_Self()
     {
@@ -184,8 +179,7 @@ public class GameViewModelTests : TestBase
         vm.OnlinePlayers.Should().Contain("Alice");
     }
 
-    // ── ActionLog capacity ────────────────────────────────────────────────────
-
+    // ActionLog capacity
     [Fact]
     public void ActionLog_Should_Not_Exceed_100_Entries()
     {
@@ -196,8 +190,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Count.Should().BeLessThanOrEqualTo(100);
     }
 
-    // ── Logout ────────────────────────────────────────────────────────────────
-
+    // Logout
     [Fact]
     public async Task LogoutCommand_Should_Navigate_To_MainMenu()
     {
@@ -220,8 +213,7 @@ public class GameViewModelTests : TestBase
         conn.State.Should().Be(ConnectionState.Disconnected);
     }
 
-    // ── StatusMessage property ────────────────────────────────────────────────
-
+    // StatusMessage property
     [Fact]
     public void StatusMessage_Should_DefaultToEmpty()
     {
@@ -242,8 +234,7 @@ public class GameViewModelTests : TestBase
         changes.Should().Contain(nameof(GameViewModel.StatusMessage));
     }
 
-    // ── RestAtLocationCommand ─────────────────────────────────────────────────
-
+    // RestAtLocationCommand
     [Fact]
     public async Task RestAtLocationCommand_Should_Send_RestAtLocation_To_Hub()
     {
@@ -282,8 +273,7 @@ public class GameViewModelTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // ── AllocateAttributePointsCommand ────────────────────────────────────────
-
+    // AllocateAttributePointsCommand
     [Fact]
     public async Task AllocateAttributePointsCommand_Should_Send_AllocateAttributePoints_To_Hub()
     {
@@ -311,8 +301,7 @@ public class GameViewModelTests : TestBase
         dict["Dexterity"].Should().Be(2);
     }
 
-    // ── OnAttributePointsAllocated ────────────────────────────────────────────
-
+    // OnAttributePointsAllocated
     [Fact]
     public void OnAttributePointsAllocated_Should_Update_UnspentAttributePoints()
     {
@@ -331,8 +320,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("5"));
     }
 
-    // ── OnCharacterRested ─────────────────────────────────────────────────────
-
+    // OnCharacterRested
     [Fact]
     public void OnCharacterRested_Should_Update_Health_Properties()
     {
@@ -363,8 +351,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Rested"));
     }
 
-    // ── UseAbilityCommand ─────────────────────────────────────────────────────
-
+    // UseAbilityCommand
     [Fact]
     public async Task UseAbilityCommand_Should_Send_UseAbility_To_Hub()
     {
@@ -388,8 +375,7 @@ public class GameViewModelTests : TestBase
             .Should().ContainSingle(c => c.Method == "UseAbility" && (string?)c.Arg == "minor_heal");
     }
 
-    // ── OnAbilityUsed ─────────────────────────────────────────────────────────
-
+    // OnAbilityUsed
     [Fact]
     public void OnAbilityUsed_Should_Update_CurrentMana()
     {
@@ -430,8 +416,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("fireball"));
     }
 
-    // ── AwardSkillXpCommand ───────────────────────────────────────────────────
-
+    // AwardSkillXpCommand
     [Fact]
     public async Task AwardSkillXpCommand_Should_Send_AwardSkillXp_To_Hub()
     {
@@ -443,8 +428,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "AwardSkillXp");
     }
 
-    // ── OnSkillXpGained ───────────────────────────────────────────────────────
-
+    // OnSkillXpGained
     [Fact]
     public void OnSkillXpGained_Should_Append_To_ActionLog()
     {
@@ -474,8 +458,7 @@ public class GameViewModelTests : TestBase
             msg.Contains("herbalism") && msg.Contains("40"));
     }
 
-    // ── EquipItemCommand ──────────────────────────────────────────────────────
-
+    // EquipItemCommand
     [Fact]
     public async Task EquipItemCommand_Should_Send_EquipItem_To_Hub()
     {
@@ -487,8 +470,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "EquipItem");
     }
 
-    // ── OnItemEquipped ────────────────────────────────────────────────────────
-
+    // OnItemEquipped
     [Fact]
     public void OnItemEquipped_Should_Append_Equip_Message_To_ActionLog()
     {
@@ -556,8 +538,7 @@ public class GameViewModelTests : TestBase
         vm.EquipmentSlots.Single(s => s.SlotName == "Chest").ItemIcon.Should().BeNull();
     }
 
-    // ── OnZoneLeft ────────────────────────────────────────────────────────────
-
+    // OnZoneLeft
     [Fact]
     public void OnZoneLeft_Should_Append_Zone_Departure_Message_To_ActionLog()
     {
@@ -567,8 +548,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("zone") || msg.Contains("Zone"));
     }
 
-    // ── AddGoldCommand ────────────────────────────────────────────────────────
-
+    // AddGoldCommand
     [Fact]
     public async Task AddGoldCommand_Should_Send_AddGold_To_Hub()
     {
@@ -580,8 +560,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "AddGold");
     }
 
-    // ── OnGoldChanged ─────────────────────────────────────────────────────────
-
+    // OnGoldChanged
     [Fact]
     public void OnGoldChanged_Should_Update_Gold_Property()
     {
@@ -611,8 +590,7 @@ public class GameViewModelTests : TestBase
             msg.Contains("Spent") && msg.Contains("30") && msg.Contains("70"));
     }
 
-    // ── TakeDamageCommand ───────────────────────────────────────────────────────
-
+    // TakeDamageCommand
     [Fact]
     public async Task TakeDamageCommand_Should_Send_TakeDamage_To_Hub()
     {
@@ -624,8 +602,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "TakeDamage");
     }
 
-    // ── OnDamageTaken ──────────────────────────────────────────────────────────
-
+    // OnDamageTaken
     [Fact]
     public void OnDamageTaken_Should_Update_CurrentHealth_Property()
     {
@@ -655,8 +632,7 @@ public class GameViewModelTests : TestBase
             msg.Contains("died") || msg.Contains("Dead") || msg.Contains("0"));
     }
 
-    // ── SeedInitialStats ────────────────────────────────────────────────────
-
+    // SeedInitialStats
     [Fact]
     public void SeedInitialStats_Should_Set_All_Properties()
     {
@@ -685,8 +661,7 @@ public class GameViewModelTests : TestBase
         act.Should().NotThrow();
     }
 
-    // ── GainExperienceCommand ───────────────────────────────────────────────────
-
+    // GainExperienceCommand
     [Fact]
     public async Task GainExperienceCommand_Should_Send_GainExperience_To_Hub()
     {
@@ -698,8 +673,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "GainExperience");
     }
 
-    // ── OnExperienceGained ─────────────────────────────────────────────────────
-
+    // OnExperienceGained
     [Fact]
     public void OnExperienceGained_Should_Update_Level_Property()
     {
@@ -738,8 +712,7 @@ public class GameViewModelTests : TestBase
             msg.Contains("2") && msg.Contains("50"));
     }
 
-    // ── OnItemCrafted ───────────────────────────────────────────────────────────────
-
+    // OnItemCrafted
     [Fact]
     public void OnItemCrafted_Should_Update_Gold_To_RemainingGold()
     {
@@ -756,8 +729,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("magic-staff"));
     }
 
-    // ── OnDungeonEntered ────────────────────────────────────────────────────────────
-
+    // OnDungeonEntered
     [Fact]
     public void OnDungeonEntered_Should_Append_Log_With_Dungeon_Id()
     {
@@ -791,8 +763,7 @@ public class GameViewModelTests : TestBase
         vm.ZoneName.Should().Be("Grotto of Echoes");
     }
 
-    // ── CraftItemCommand ────────────────────────────────────────────────────────────
-
+    // CraftItemCommand
     [Fact]
     public async Task CraftItemCommand_Should_Send_CraftItem_To_Hub()
     {
@@ -804,8 +775,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "CraftItem");
     }
 
-    // ── EnterDungeonCommand ─────────────────────────────────────────────────────────
-
+    // EnterDungeonCommand
     [Fact]
     public async Task EnterDungeonCommand_Should_Send_EnterDungeon_To_Hub()
     {
@@ -817,8 +787,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "EnterDungeon");
     }
 
-    // ── VisitShopCommand ──────────────────────────────────────────────────────
-
+    // VisitShopCommand
     [Fact]
     public async Task VisitShopCommand_Should_Send_VisitShop_To_Hub()
     {
@@ -840,8 +809,7 @@ public class GameViewModelTests : TestBase
         vm.ActionLog.Should().ContainSingle(msg => msg.Contains("Fenwick's Crossing"));
     }
 
-    // ── IsLeftPanelOpen + ToggleLeftPanelCommand ──────────────────────────────
-
+    // IsLeftPanelOpen + ToggleLeftPanelCommand
     [Fact]
     public void IsLeftPanelOpen_Should_Default_To_True()
     {
@@ -894,8 +862,7 @@ public class GameViewModelTests : TestBase
         changes.Should().Contain(nameof(GameViewModel.LeftPanelToggleIcon));
     }
 
-    // ── Zone context flags (HasInn, HasMerchant, ZoneType) ───────────────────
-
+    // Zone context flags (HasInn, HasMerchant, ZoneType)
     [Fact]
     public void HasInn_Should_Default_To_False()
     {
@@ -980,8 +947,7 @@ public class GameViewModelTests : TestBase
         vm.HasMerchant.Should().BeTrue();
     }
 
-    // ── HasUnspentPoints ──────────────────────────────────────────────────────
-
+    // HasUnspentPoints
     [Fact]
     public void HasUnspentPoints_Should_Be_False_When_Zero()
     {
@@ -1010,8 +976,7 @@ public class GameViewModelTests : TestBase
         changes.Should().Contain(nameof(GameViewModel.HasUnspentPoints));
     }
 
-    // ── ExperienceToNextLevel ────────────────────────────────────────────────
-
+    // ExperienceToNextLevel
     [Fact]
     public void ExperienceToNextLevel_Should_Scale_With_Level()
     {
@@ -1044,8 +1009,7 @@ public class GameViewModelTests : TestBase
         changes.Should().Contain(nameof(GameViewModel.ExperienceToNextLevel));
     }
 
-    // ── Dev commands ──────────────────────────────────────────────────────────
-
+    // Dev commands
     [Fact]
     public async Task DevGainXpCommand_Should_Send_GainExperience_To_Hub()
     {
@@ -1079,8 +1043,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "TakeDamage");
     }
 
-    // ── Zone view mode ────────────────────────────────────────────────────────
-
+    // Zone view mode
     [Fact]
     public void ZoneViewMode_Should_Default_To_Zone()
     {
@@ -1132,8 +1095,7 @@ public class GameViewModelTests : TestBase
         vm.ZoneViewMode.Should().Be("Zone");
     }
 
-    // ── World context loading ─────────────────────────────────────────────────
-
+    // World context loading
     [Fact]
     public async Task InitializeAsync_Should_Populate_RegionZones_And_Mark_Current()
     {
@@ -1185,8 +1147,7 @@ public class GameViewModelTests : TestBase
         vm.WorldEra.Should().Be("The Age of Embers");
     }
 
-    // ── Zone travel ───────────────────────────────────────────────────────────
-
+    // Zone travel
     [Fact]
     public async Task TravelToZoneCommand_Should_Send_EnterZone_Hub_Command()
     {
@@ -1295,8 +1256,7 @@ public class GameViewModelTests : TestBase
         vm.RegionName.Should().Be("Thornveil");
     }
 
-    // ── ToggleInventoryCommand ────────────────────────────────────────────────
-
+    // ToggleInventoryCommand
     [Fact]
     public async Task ToggleInventoryCommand_When_Closed_Should_Send_GetInventory_To_Hub()
     {
@@ -1321,8 +1281,7 @@ public class GameViewModelTests : TestBase
         conn.SentCommands.Should().NotContain(c => c.Method == "GetInventory");
     }
 
-    // ── OnInventoryLoaded ─────────────────────────────────────────────────────
-
+    // OnInventoryLoaded
     [Fact]
     public void OnInventoryLoaded_Should_Set_IsInventoryOpen_True()
     {
@@ -1359,8 +1318,7 @@ public class GameViewModelTests : TestBase
         vm.InventoryItems.Should().ContainSingle(i => i.ItemRef == "new_item");
     }
 
-    // ── OnShopVisited (new state) ─────────────────────────────────────────────
-
+    // OnShopVisited (new state)
     [Fact]
     public void OnShopVisited_Should_Set_IsShopOpen_True()
     {
@@ -1381,8 +1339,7 @@ public class GameViewModelTests : TestBase
         vm.ShopZoneName.Should().Be("Fenwick's Crossing");
     }
 
-    // ── CloseShopCommand ──────────────────────────────────────────────────────
-
+    // CloseShopCommand
     [Fact]
     public async Task CloseShopCommand_Should_Set_IsShopOpen_False()
     {

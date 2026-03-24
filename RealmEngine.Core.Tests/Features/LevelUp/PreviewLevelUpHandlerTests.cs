@@ -29,8 +29,7 @@ public class PreviewLevelUpHandlerTests
     private static SaveGame SaveWith(string name = "Hero", int level = 1, int xp = 0, string className = "Warrior") =>
         new() { Character = new Character { Name = name, Level = level, Experience = xp, ClassName = className } };
 
-    // ── Validation ────────────────────────────────────────────────────────────
-
+    // Validation
     [Fact]
     public async Task Handle_ReturnsFailure_WhenCharacterNameEmpty()
     {
@@ -66,8 +65,7 @@ public class PreviewLevelUpHandlerTests
         result.ErrorMessage.Should().Contain("not found");
     }
 
-    // ── Happy paths ───────────────────────────────────────────────────────────
-
+    // Happy paths
     [Fact]
     public async Task Handle_ReturnsCorrectLevels_ForLevel1Character()
     {

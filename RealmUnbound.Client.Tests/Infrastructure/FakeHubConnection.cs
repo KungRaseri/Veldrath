@@ -7,21 +7,21 @@ namespace RealmUnbound.Client.Tests.Infrastructure;
 /// </summary>
 public class FakeHubConnection : IHubConnection
 {
-    // ── Behaviour controls ────────────────────────────────────────────────────
+    // Behaviour controls
     public bool StartShouldThrow    { get; set; }
     public Exception? StartException { get; set; } = new InvalidOperationException("Simulated connect failure");
 
-    // ── Call tracking ─────────────────────────────────────────────────────────
+    // Call tracking
     public int  StartCallCount    { get; private set; }
     public int  StopCallCount     { get; private set; }
     public int  DisposeCallCount  { get; private set; }
 
-    // ── Stored handlers ───────────────────────────────────────────────────────
+    // Stored handlers
     private readonly Dictionary<string, object>         _onHandlers = new();
     private          Func<Exception?, Task>?            _closedHandler;
     private          Func<string?, Task>?               _reconnectedHandler;
 
-    // ── Events ────────────────────────────────────────────────────────────────
+    // Events
     public event Func<Exception?, Task>? Closed
     {
         add    => _closedHandler += value;
@@ -34,7 +34,7 @@ public class FakeHubConnection : IHubConnection
         remove => _reconnectedHandler -= value;
     }
 
-    // ── IHubConnection methods ────────────────────────────────────────────────
+    // IHubConnection methods
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
         StartCallCount++;
@@ -72,8 +72,7 @@ public class FakeHubConnection : IHubConnection
         return ValueTask.CompletedTask;
     }
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
-
+    // Test helpers
     /// <summary>Simulates the server closing the connection.</summary>
     public Task SimulateClosedAsync(Exception? error = null)
         => _closedHandler?.Invoke(error) ?? Task.CompletedTask;

@@ -11,8 +11,7 @@ public class ApocalypseTimerTests
     private static ApocalypseTimer CreateTimer() =>
         new(NullLogger<ApocalypseTimer>.Instance);
 
-    // ── Start / initial state ──────────────────────────────────────────────
-
+    // Start / initial state
     [Fact]
     public void Start_JustStarted_RemainingMinutesNearFourHours()
     {
@@ -29,8 +28,7 @@ public class ApocalypseTimerTests
         timer.IsExpired().Should().BeFalse();
     }
 
-    // ── StartFromSave ──────────────────────────────────────────────────────
-
+    // StartFromSave
     [Fact]
     public void StartFromSave_TimerElapsedBeyondLimit_IsExpired()
     {
@@ -49,8 +47,7 @@ public class ApocalypseTimerTests
         timer.GetRemainingMinutes().Should().BeInRange(38, 42);
     }
 
-    // ── Pause / Resume ─────────────────────────────────────────────────────
-
+    // Pause / Resume
     [Fact]
     public void GetRemainingMinutes_WhilePaused_DoesNotAdvance()
     {
@@ -84,8 +81,7 @@ public class ApocalypseTimerTests
         act.Should().NotThrow();
     }
 
-    // ── AddBonusTime ───────────────────────────────────────────────────────
-
+    // AddBonusTime
     [Fact]
     public void AddBonusTime_IncreasesRemainingMinutes()
     {
@@ -130,8 +126,7 @@ public class ApocalypseTimerTests
         timer.IsExpired().Should().BeFalse();
     }
 
-    // ── GetFormattedTimeRemaining ──────────────────────────────────────────
-
+    // GetFormattedTimeRemaining
     [Theory]
     [InlineData(-120, "2h 0m")]   // 240 - 120 = 120 min remaining
     [InlineData(-150, "1h 30m")]  // 240 - 150 = 90 min remaining
@@ -146,8 +141,7 @@ public class ApocalypseTimerTests
         timer.GetFormattedTimeRemaining().Should().Be(expected);
     }
 
-    // ── GetColoredTimeDisplay ──────────────────────────────────────────────
-
+    // GetColoredTimeDisplay
     [Fact]
     public void GetColoredTimeDisplay_OverSixtyMinutes_IsGreen()
     {
@@ -189,8 +183,7 @@ public class ApocalypseTimerTests
         timer.GetColoredTimeDisplay().Should().Contain("2h 0m");
     }
 
-    // ── CheckTimeWarnings ─────────────────────────────────────────────────
-
+    // CheckTimeWarnings
     [Fact]
     public void CheckTimeWarnings_FreshTimer_ReturnsNull()
     {

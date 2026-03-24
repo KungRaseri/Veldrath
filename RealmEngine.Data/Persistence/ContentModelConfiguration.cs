@@ -17,8 +17,7 @@ public static class ContentModelConfiguration
     /// <param name="builder">The model builder to configure.</param>
     public static void Configure(ModelBuilder builder)
     {
-        // ── Support tables ────────────────────────────────────────────────────
-
+        // Support tables
         builder.Entity<ContentRegistry>(e =>
         {
             e.HasKey(cr => new { cr.Domain, cr.TypeKey, cr.Slug });
@@ -38,8 +37,7 @@ public static class ContentModelConfiguration
             e.Property(td => td.AppliesTo).HasMaxLength(256);
         });
 
-        // ── Powers ──────────────────────────────────────────────────────
-
+        // Powers
         builder.Entity<Power>(e =>
         {
             ConfigureContent(e);
@@ -51,8 +49,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Species ───────────────────────────────────────────────────────────
-
+        // Species
         builder.Entity<Species>(e =>
         {
             ConfigureContent(e);
@@ -69,8 +66,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Actor Archetypes ──────────────────────────────────────────────────
-
+        // Actor Archetypes
         builder.Entity<ActorArchetype>(e =>
         {
             ConfigureContent(e);
@@ -95,8 +91,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Actor Instances ───────────────────────────────────────────────────
-
+        // Actor Instances
         builder.Entity<ActorInstance>(e =>
         {
             ConfigureContent(e);
@@ -117,8 +112,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Items (consumables, gems, weapons, armor, and all other equipment) ──
-
+        // Items (consumables, gems, weapons, armor, and all other equipment)
         builder.Entity<Item>(e =>
         {
             ConfigureContent(e);
@@ -131,8 +125,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Materials ─────────────────────────────────────────────────────────
-
+        // Materials
         builder.Entity<Material>(e =>
         {
             ConfigureContent(e);
@@ -141,8 +134,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Enchantments ──────────────────────────────────────────────────────
-
+        // Enchantments
         builder.Entity<Enchantment>(e =>
         {
             ConfigureContent(e);
@@ -151,8 +143,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Skills ────────────────────────────────────────────────────────────
-
+        // Skills
         builder.Entity<Skill>(e =>
         {
             ConfigureContent(e);
@@ -161,8 +152,7 @@ public static class ContentModelConfiguration
         });
 
 
-        // ── Actor Classes ─────────────────────────────────────────────────────
-
+        // Actor Classes
         builder.Entity<ActorClass>(e =>
         {
             ConfigureContent(e);
@@ -180,7 +170,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Equipment sets ──────────────────────────────────────────────────
+        // Equipment sets
         builder.Entity<EquipmentSetEntry>(e =>
         {
             ConfigureContent(e);
@@ -199,8 +189,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Quests ────────────────────────────────────────────────────────────
-
+        // Quests
         builder.Entity<Quest>(e =>
         {
             ConfigureContent(e);
@@ -218,8 +207,7 @@ public static class ContentModelConfiguration
             });
         });
 
-        // ── Recipes ───────────────────────────────────────────────────────────
-
+        // Recipes
         builder.Entity<Recipe>(e =>
         {
             ConfigureContent(e);
@@ -238,8 +226,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.RecipeId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Loot tables ───────────────────────────────────────────────────────
-
+        // Loot tables
         builder.Entity<LootTable>(e =>
         {
             ConfigureContent(e);
@@ -256,8 +243,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.LootTableId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Organizations ─────────────────────────────────────────────────────
-
+        // Organizations
         builder.Entity<Organization>(e =>
         {
             ConfigureContent(e);
@@ -266,8 +252,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Material properties ───────────────────────────────────────────────
-
+        // Material properties
         builder.Entity<MaterialProperty>(e =>
         {
             ConfigureContent(e);
@@ -276,8 +261,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Zone locations ────────────────────────────────────────────────────
-
+        // Zone locations
         builder.Entity<ZoneLocation>(e =>
         {
             ConfigureContent(e);
@@ -287,8 +271,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Dialogue ──────────────────────────────────────────────────────────
-
+        // Dialogue
         builder.Entity<Dialogue>(e =>
         {
             ConfigureContent(e);
@@ -301,8 +284,7 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Name patterns ─────────────────────────────────────────────────────
-
+        // Name patterns
         builder.Entity<NamePatternSet>(e =>
         {
             e.HasKey(x => x.Id);
@@ -329,8 +311,7 @@ public static class ContentModelConfiguration
              .HasForeignKey(x => x.SetId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── System configuration ──────────────────────────────────────────────
-
+        // System configuration
         builder.Entity<GameConfig>(e =>
         {
             e.HasKey(x => x.ConfigKey);

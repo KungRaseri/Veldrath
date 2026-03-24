@@ -105,8 +105,7 @@ public static class CharacterEndpoints
         return Results.NoContent();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Helpers
     private static Guid GetAccountId(ClaimsPrincipal user)
     {
         var value = user.FindFirstValue(JwtRegisteredClaimNames.Sub)

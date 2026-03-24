@@ -18,8 +18,7 @@ public class NameComposerTests
         _composer = new NameComposer(NullLogger<NameComposer>.Instance);
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
-
+    // helpers
     private static NamePatternSet BuildSet(string entityPath, string template, params (string key, string value, int weight)[] components)
     {
         var set = new NamePatternSet
@@ -41,8 +40,7 @@ public class NameComposerTests
         return set;
     }
 
-    // ── ComposeName ───────────────────────────────────────────────────────────
-
+    // ComposeName
     [Fact]
     public void ComposeName_SimpleBase_ReturnsBaseValue()
     {
@@ -109,8 +107,7 @@ public class NameComposerTests
         values.Should().BeEmpty();
     }
 
-    // ── SelectPattern ─────────────────────────────────────────────────────────
-
+    // SelectPattern
     [Fact]
     public void SelectPattern_SinglePattern_AlwaysReturnsThatPattern()
     {
@@ -128,8 +125,7 @@ public class NameComposerTests
         result.Should().BeNull();
     }
 
-    // ── SelectWeightedComponent ───────────────────────────────────────────────
-
+    // SelectWeightedComponent
     [Fact]
     public void SelectWeightedComponent_SingleEntry_AlwaysReturnsThatEntry()
     {
@@ -147,8 +143,7 @@ public class NameComposerTests
         result.Should().BeNull();
     }
 
-    // ── ComposeFromTemplate ───────────────────────────────────────────────────
-
+    // ComposeFromTemplate
     [Fact]
     public void ComposeFromTemplate_TemplateAndComponents_SubstitutesTokens()
     {
@@ -165,8 +160,7 @@ public class NameComposerTests
         values["noun"].Should().Be("Flame");
     }
 
-    // ── ComposeNameStructured ─────────────────────────────────────────────────
-
+    // ComposeNameStructured
     [Fact]
     public void ComposeNameStructured_PrefixBaseAndSuffix_CategorisedCorrectly()
     {
@@ -184,8 +178,7 @@ public class NameComposerTests
         suffixes.Should().ContainSingle().Which.Should().Be("of Doom");
     }
 
-    // ── Weight distribution (statistical) ────────────────────────────────────
-
+    // Weight distribution (statistical)
     [Fact]
     public void SelectWeightedComponent_HighWeight_SelectedMoreOften()
     {

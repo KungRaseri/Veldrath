@@ -39,8 +39,7 @@ public class GetMerchantInfoQueryHandlerTests
             shopSvc ?? FakeShopService(),
             NullLogger<GetMerchantInfoQueryHandler>.Instance);
 
-    // ── Failure paths ──────────────────────────────────────────────────────────
-
+    // Failure paths
     [Fact]
     public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
@@ -83,8 +82,7 @@ public class GetMerchantInfoQueryHandlerTests
         result.ErrorMessage.Should().Contain("not a merchant");
     }
 
-    // ── Success paths ──────────────────────────────────────────────────────────
-
+    // Success paths
     [Fact]
     public async Task Handle_ReturnsSuccess_WithMerchantDetails()
     {

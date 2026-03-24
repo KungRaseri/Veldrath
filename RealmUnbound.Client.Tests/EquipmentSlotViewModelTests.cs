@@ -5,8 +5,7 @@ namespace RealmUnbound.Client.Tests;
 
 public class EquipmentSlotViewModelTests : TestBase
 {
-    // ── Initial state ─────────────────────────────────────────────────────────
-
+    // Initial state
     [Fact]
     public void IsEmpty_Should_Be_True_When_No_ItemRef_Set()
     {
@@ -28,8 +27,7 @@ public class EquipmentSlotViewModelTests : TestBase
         slot.DisplayIcon.Should().BeNull();
     }
 
-    // ── After setting ItemRef ─────────────────────────────────────────────────
-
+    // After setting ItemRef
     [Fact]
     public void IsEmpty_Should_Be_False_When_ItemRef_Set()
     {
@@ -56,8 +54,7 @@ public class EquipmentSlotViewModelTests : TestBase
         slot.IsEmpty.Should().Be(!slot.IsOccupied);
     }
 
-    // ── Clearing ItemRef resets state ─────────────────────────────────────────
-
+    // Clearing ItemRef resets state
     [Fact]
     public void Clearing_ItemRef_Should_Return_Slot_To_Empty_State()
     {
@@ -69,8 +66,7 @@ public class EquipmentSlotViewModelTests : TestBase
         slot.DisplayIcon.Should().BeNull();
     }
 
-    // ── PropertyChanged notifications ─────────────────────────────────────────
-
+    // PropertyChanged notifications
     [Fact]
     public void Setting_ItemRef_Should_Raise_IsEmpty_PropertyChanged()
     {
@@ -122,8 +118,7 @@ public class EquipmentSlotViewModelTests : TestBase
         changes.Should().Contain(nameof(EquipmentSlotViewModel.DisplayIcon));
     }
 
-    // ── SlotName / Label initialisation ──────────────────────────────────────
-
+    // SlotName / Label initialisation
     [Fact]
     public void SlotName_And_Label_Should_Be_Set_From_Constructor()
     {

@@ -9,8 +9,7 @@ namespace RealmEngine.Core.Tests.Services;
 [Trait("Category", "Services")]
 public class BudgetConfigFactoryTests
 {
-    // ── Stub infrastructure ────────────────────────────────────────────────
-
+    // Stub infrastructure
     /// <summary>Returns the provided JSON for any key; records the last key requested.</summary>
     private sealed class StubConfigService(string? json = null) : GameConfigService
     {
@@ -24,8 +23,7 @@ public class BudgetConfigFactoryTests
         return new BudgetConfigFactory(stub, NullLogger<BudgetConfigFactory>.Instance);
     }
 
-    // ── Returns type defaults when config is absent ────────────────────────
-
+    // Returns type defaults when config is absent
     [Fact]
     public void GetBudgetConfig_WhenKeyAbsent_ReturnsNonNullDefault()
     {
@@ -69,8 +67,7 @@ public class BudgetConfigFactoryTests
         config.SocketTypeWeights.Should().BeEmpty();
     }
 
-    // ── Each method requests the correct config key ────────────────────────
-
+    // Each method requests the correct config key
     [Theory]
     [InlineData("budget-config")]
     public void GetBudgetConfig_RequestsCorrectKey(string expectedKey)
@@ -131,8 +128,7 @@ public class BudgetConfigFactoryTests
         stub.RequestedKeys.Should().Contain(expectedKey);
     }
 
-    // ── Falls back to type defaults on invalid JSON ────────────────────────
-
+    // Falls back to type defaults on invalid JSON
     [Fact]
     public void GetBudgetConfig_InvalidJson_ReturnsTypeDefault()
     {
@@ -145,8 +141,7 @@ public class BudgetConfigFactoryTests
         CreateFactory(json: "{not valid!!").GetSocketConfig().SocketCounts.Should().BeEmpty();
     }
 
-    // ── Deserializes valid JSON ────────────────────────────────────────────
-
+    // Deserializes valid JSON
     [Fact]
     public void GetBudgetConfig_ValidJson_DeserializesPatternCosts()
     {

@@ -9,7 +9,7 @@ namespace RealmUnbound.Assets.Manifest;
 /// </summary>
 public static class CraftingAssets
 {
-    // ── Mining ────────────────────────────────────────────────────────────────
+    // Mining
     /// <summary>Mining icon 01 (transparent).</summary>
     public const string Mining01 = "crafting/mining/MiningIcons_01_t.PNG";
     /// <summary>Mining icon 02 (transparent).</summary>
@@ -21,7 +21,7 @@ public static class CraftingAssets
     /// <summary>Mining icon 05 (transparent).</summary>
     public const string Mining05 = "crafting/mining/MiningIcons_05_t.PNG";
 
-    // ── Fishing ───────────────────────────────────────────────────────────────
+    // Fishing
     /// <summary>Fishing icon 01 (transparent).</summary>
     public const string Fishing01 = "crafting/fishing/fishing_01_t.png";
     /// <summary>Fishing icon 02 (transparent).</summary>
@@ -33,7 +33,7 @@ public static class CraftingAssets
     /// <summary>Fishing icon 05 (transparent).</summary>
     public const string Fishing05 = "crafting/fishing/fishing_05_t.PNG";
 
-    // ── Hunting ───────────────────────────────────────────────────────────────
+    // Hunting
     /// <summary>Hunting icon 01 (transparent).</summary>
     public const string Hunting01 = "crafting/hunting/HuntingIcons_01_t.png";
     /// <summary>Hunting icon 02 (transparent).</summary>
@@ -45,7 +45,7 @@ public static class CraftingAssets
     /// <summary>Hunting icon 05 (transparent).</summary>
     public const string Hunting05 = "crafting/hunting/HuntingIcons_05_t.PNG";
 
-    // ── Forest ────────────────────────────────────────────────────────────────
+    // Forest
     /// <summary>Forest icon 01 (transparent).</summary>
     public const string Forest01 = "crafting/forest/ForestIcons_01_t.png";
     /// <summary>Forest icon 02 (transparent).</summary>

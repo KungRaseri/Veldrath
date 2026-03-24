@@ -64,7 +64,7 @@ try
                   .AllowCredentials());
     });
 
-    // ── Database (PostgreSQL — design-time and runtime both target Postgres) ──
+    // Database (PostgreSQL — design-time and runtime both target Postgres)
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -76,7 +76,7 @@ try
     builder.Services.AddDbContext<GameDbContext>(options =>
         options.UseNpgsql(connectionString));
 
-    // ── ASP.NET Core Identity ─────────────────────────────────────────────────
+    // ASP.NET Core Identity
     builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
         {
             options.Password.RequireDigit = true;
@@ -90,7 +90,7 @@ try
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-    // ── JWT authentication ────────────────────────────────────────────────────
+    // JWT authentication
     var jwtKey = builder.Configuration["Jwt:Key"]
         ?? throw new InvalidOperationException("Jwt:Key is not configured.");
 
@@ -140,7 +140,7 @@ try
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
 
-    // ── OAuth providers ───────────────────────────────────────────────────────
+    // OAuth providers
     // Registered conditionally so the server starts cleanly when credentials are
     // absent (CI, local dev without OAuth app registrations).
     // SignInScheme must be explicitly set to IdentityConstants.ExternalScheme so
@@ -186,7 +186,7 @@ try
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<FoundryService>();
 
-    // ── Repositories ──────────────────────────────────────────────────────────
+    // Repositories
     builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
     builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
     builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -199,7 +199,7 @@ try
     builder.Services.AddScoped<IWorldRepository, WorldRepository>();
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
 
-    // ── RealmEngine services ─────────────────────────────────────────────────
+    // RealmEngine services
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
@@ -234,7 +234,7 @@ try
     builder.Services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();
     builder.Services.AddScoped<ITraitDefinitionRepository, EfCoreTraitDefinitionRepository>();
 
-    // ── Cookie policy ──────────────────────────────────────────────────────────
+    // Cookie policy
     // When running on plain HTTP (Docker dev, CI), browsers reject SameSite=None
     // cookies without the Secure flag, and will not send Secure cookies over HTTP.
     // That breaks the OAuth correlation cookie and makes GetExternalLoginInfoAsync
@@ -251,14 +251,14 @@ try
         };
     });
 
-    // ── DataProtection key persistence ────────────────────────────────────────
+    // DataProtection key persistence
     // Keys are used to encrypt OAuth correlation and external cookies.
     // Persisting to a mounted volume prevents key loss on container restart.
     builder.Services.AddDataProtection()
         .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
         .SetApplicationName("RealmUnbound.Server");
 
-    // ── Health checks ─────────────────────────────────────────────────────────
+    // Health checks
     builder.Services.AddHealthChecks()
         .AddNpgSql(connectionString, name: "database", tags: ["db", "postgres"])
         .AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);

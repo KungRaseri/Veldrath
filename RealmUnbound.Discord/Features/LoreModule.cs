@@ -14,11 +14,8 @@ public sealed class LoreModule(
     private static readonly Color AbilityColor = new(0x1E5FA3);
     private static readonly Color ClassColor   = new(0x2D8A4E);
 
-    // ──────────────────────────────────────────────────────────────
-    // /enemy
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("enemy", "Look up a creature from the realm's bestiary")]
+    // // /enemy
+    // [SlashCommand("enemy", "Look up a creature from the realm's bestiary")]
     public async Task EnemyAsync(
         [Summary("name", "Creature name or keyword to search for")] string name)
     {
@@ -61,11 +58,8 @@ public sealed class LoreModule(
         await FollowupAsync(embed: embed);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // /power
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("power", "Look up a power from the arcane codex")]
+    // // /power
+    // [SlashCommand("power", "Look up a power from the arcane codex")]
     public async Task PowerAsync(
         [Summary("name", "Power name or keyword to search for")] string name)
     {
@@ -110,11 +104,8 @@ public sealed class LoreModule(
         await FollowupAsync(embed: embed.Build());
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // /class
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("class", "Browse the character classes of Realm Unbound")]
+    // // /class
+    // [SlashCommand("class", "Browse the character classes of Realm Unbound")]
     public async Task ClassAsync(
         [Summary("name", "Class name to look up (leave blank to list all base classes)")] string? name = null)
     {

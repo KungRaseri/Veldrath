@@ -15,8 +15,7 @@ public class SessionStoreTests : TestBase
 
     private static SessionStore MakeStore() => MakeStore(out _);
 
-    // ── Initial state ─────────────────────────────────────────────────────────
-
+    // Initial state
     [Fact]
     public void HasSavedEmail_Should_Be_False_On_Fresh_Store()
     {
@@ -31,8 +30,7 @@ public class SessionStoreTests : TestBase
         store.SavedEmail.Should().BeNull();
     }
 
-    // ── SaveEmail ─────────────────────────────────────────────────────────────
-
+    // SaveEmail
     [Fact]
     public void SaveEmail_Should_Set_SavedEmail()
     {
@@ -58,8 +56,7 @@ public class SessionStoreTests : TestBase
         store.SavedEmail.Should().Be("second@example.com");
     }
 
-    // ── ClearEmail ────────────────────────────────────────────────────────────
-
+    // ClearEmail
     [Fact]
     public void ClearEmail_Should_Remove_SavedEmail()
     {
@@ -90,8 +87,7 @@ public class SessionStoreTests : TestBase
         act.Should().NotThrow();
     }
 
-    // ── Persist round-trip ────────────────────────────────────────────────────
-
+    // Persist round-trip
     [Fact]
     public void SaveEmail_Should_Persist_To_Disk_And_Load_On_Next_Construction()
     {
@@ -127,8 +123,7 @@ public class SessionStoreTests : TestBase
         store.SavedEmail.Should().BeNull();
     }
 
-    // ── Error resilience ──────────────────────────────────────────────────────
-
+    // Error resilience
     [Fact]
     public void Load_Should_Not_Throw_When_File_Contains_Invalid_Json()
     {
@@ -155,8 +150,7 @@ public class SessionStoreTests : TestBase
         store.SavedEmail.Should().Be("test@example.com");
     }
 
-    // ── Default file path ────────────────────────────────────────────────────
-
+    // Default file path
     [Fact]
     public void Constructor_Should_Use_DefaultFilePath_When_No_Path_Provided()
     {

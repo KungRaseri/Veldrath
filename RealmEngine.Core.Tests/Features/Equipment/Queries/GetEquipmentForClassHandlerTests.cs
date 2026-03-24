@@ -37,8 +37,7 @@ public class GetEquipmentForClassHandlerTests
         new(classRepo.Object, itemRepo.Object,
             NullLogger<GetEquipmentForClassHandler>.Instance);
 
-    // ── Class not found ─────────────────────────────────────────────
-
+    // Class not found
     [Fact]
     public async Task Handle_Should_Return_Failure_When_Class_Not_Found()
     {
@@ -53,8 +52,7 @@ public class GetEquipmentForClassHandlerTests
         result.ErrorMessage.Should().Contain("unknown");
     }
 
-    // ── Result shape ─────────────────────────────────────────────────
-
+    // Result shape
     [Fact]
     public async Task Handle_Should_Return_ClassName_And_Proficiencies_In_Result()
     {
@@ -75,8 +73,7 @@ public class GetEquipmentForClassHandlerTests
         result.ArmorProficiencies.Should().Contain("heavy");
     }
 
-    // ── Weapon proficiency filtering ─────────────────────────────────
-
+    // Weapon proficiency filtering
     [Fact]
     public async Task Handle_Should_Return_Weapons_Matching_Proficiency()
     {
@@ -140,8 +137,7 @@ public class GetEquipmentForClassHandlerTests
         result.Weapons.Should().ContainSingle(w => w.Slug == "longsword");
     }
 
-    // ── Armor proficiency filtering ───────────────────────────────────
-
+    // Armor proficiency filtering
     [Fact]
     public async Task Handle_Should_Return_Armor_Matching_Proficiency()
     {
@@ -185,8 +181,7 @@ public class GetEquipmentForClassHandlerTests
         result.Armor.Should().ContainSingle(a => a.Slug == "tower-shield");
     }
 
-    // ── EquipmentType routing ─────────────────────────────────────────
-
+    // EquipmentType routing
     [Fact]
     public async Task Handle_Should_Query_Both_Repos_When_EquipmentType_Is_Null()
     {
@@ -247,8 +242,7 @@ public class GetEquipmentForClassHandlerTests
         itemRepo.Verify(r => r.GetByTypeAsync("weapon"), Times.Never);
     }
 
-    // ── MaxItemsPerCategory ───────────────────────────────────────────
-
+    // MaxItemsPerCategory
     [Fact]
     public async Task Handle_Should_Respect_MaxItemsPerCategory_Limit()
     {
@@ -325,8 +319,7 @@ public class GetEquipmentForClassHandlerTests
         result.Weapons.Should().HaveCount(3);
     }
 
-    // ── Exception handling ────────────────────────────────────────────
-
+    // Exception handling
     [Fact]
     public async Task Handle_Should_Return_Failure_When_Repository_Throws()
     {

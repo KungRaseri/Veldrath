@@ -37,8 +37,7 @@ public class SettingsViewModel : ViewModelBase
     /// <summary>Navigates back to the main menu and persists the current settings to disk.</summary>
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> BackCommand { get; }
 
-    // ── Audio ──────────────────────────────────────────────────────────────────
-
+    // Audio
     /// <summary>Gets or sets the master volume (0–100).</summary>
     public int MasterVolume
     {
@@ -85,8 +84,7 @@ public class SettingsViewModel : ViewModelBase
         }
     }
 
-    // ── Display ────────────────────────────────────────────────────────────────
-
+    // Display
     /// <summary>Gets or sets whether the game runs in full-screen mode.</summary>
     public bool FullScreen
     {

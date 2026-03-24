@@ -18,7 +18,7 @@ public class GameViewModel : ViewModelBase
     private readonly IAssetStore? _assetStore;
     private readonly IAudioPlayer? _audioPlayer;
 
-    // ── Zone state ────────────────────────────────────────────────────────────
+    // Zone state
     private string _zoneName = string.Empty;
     private string _zoneDescription = string.Empty;
     private string _characterName = string.Empty;
@@ -49,7 +49,7 @@ public class GameViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
     }
 
-    // ── Character stats ───────────────────────────────────────────────────────
+    // Character stats
     private int _unspentAttributePoints;
     private int _currentHealth;
     private int _maxHealth;
@@ -129,7 +129,7 @@ public class GameViewModel : ViewModelBase
     /// <summary>Whether the active character has unspent attribute points to allocate.</summary>
     public bool HasUnspentPoints => UnspentAttributePoints > 0;
 
-    // ── Left panel state ──────────────────────────────────────────────────────
+    // Left panel state
     private bool _isLeftPanelOpen = true;
 
     /// <summary>Whether the collapsible left stats/log panel is expanded.</summary>
@@ -146,7 +146,7 @@ public class GameViewModel : ViewModelBase
     /// <summary>Icon text for the left panel toggle button: <c>◀</c> when open, <c>▶</c> when collapsed.</summary>
     public string LeftPanelToggleIcon => IsLeftPanelOpen ? "◀" : "▶";
 
-    // ── Overlay panel state ───────────────────────────────────────────────────
+    // Overlay panel state
     private bool _isInventoryOpen;
     private bool _isShopOpen;
     private string _shopZoneName = string.Empty;
@@ -172,24 +172,24 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _shopZoneName, value);
     }
 
-    // ── Zone context flags ────────────────────────────────────────────────────
+    // Zone context flags
     private bool _hasInn;
     private bool _hasMerchant;
     private string _zoneType = string.Empty;
     private int _zoneMinLevel;
     private string _regionId = string.Empty;
 
-    // ── Zone view mode (Zone | Region | World) ────────────────────────────────
+    // Zone view mode (Zone | Region | World)
     private string _zoneViewMode = "Zone";
 
-    // ── Region state ──────────────────────────────────────────────────────────
+    // Region state
     private string _regionName = string.Empty;
     private string _regionDescription = string.Empty;
     private string _regionType = string.Empty;
     private int _regionMinLevel;
     private int _regionMaxLevel;
 
-    // ── World state ───────────────────────────────────────────────────────────
+    // World state
     private string _worldName = string.Empty;
     private string _worldEra = string.Empty;
 
@@ -221,8 +221,7 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _zoneMinLevel, value);
     }
 
-    // ── Zone view mode ────────────────────────────────────────────────────────
-
+    // Zone view mode
     /// <summary>Active centre-panel view: <c>Zone</c>, <c>Region</c>, or <c>World</c>.</summary>
     public string ZoneViewMode
     {
@@ -245,8 +244,7 @@ public class GameViewModel : ViewModelBase
     /// <summary>Whether the world overview panel is currently active.</summary>
     public bool IsWorldViewActive => ZoneViewMode == "World";
 
-    // ── Region state ──────────────────────────────────────────────────────────
-
+    // Region state
     /// <summary>Name of the region the current zone belongs to.</summary>
     public string RegionName
     {
@@ -282,8 +280,7 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _regionMaxLevel, value);
     }
 
-    // ── World state ───────────────────────────────────────────────────────────
-
+    // World state
     /// <summary>Name of the world the current zone belongs to.</summary>
     public string WorldName
     {

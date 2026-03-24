@@ -16,8 +16,7 @@ public class RegisterViewModelTests : TestBase
             nav  ?? new FakeNavigationService());
     }
 
-    // ── CanExecute behaviour ──────────────────────────────────────────────────
-
+    // CanExecute behaviour
     [Fact]
     public void RegisterCommand_Should_Be_Disabled_When_All_Fields_Empty()
     {
@@ -70,8 +69,7 @@ public class RegisterViewModelTests : TestBase
         canExecute.Should().BeFalse();
     }
 
-    // ── Successful registration ───────────────────────────────────────────────
-
+    // Successful registration
     [Fact]
     public async Task RegisterCommand_Should_Call_AuthService_RegisterAsync()
     {
@@ -148,8 +146,7 @@ public class RegisterViewModelTests : TestBase
         vm.IsBusy.Should().BeFalse();
     }
 
-    // ── Back navigation ───────────────────────────────────────────────────────
-
+    // Back navigation
     [Fact]
     public async Task BackCommand_Should_Navigate_To_MainMenu()
     {
@@ -161,8 +158,7 @@ public class RegisterViewModelTests : TestBase
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
-    // ── Field validation ──────────────────────────────────────────────────────
-
+    // Field validation
     [Fact]
     public void RegisterCommand_Disabled_When_Only_Email_Missing()
     {
@@ -189,8 +185,7 @@ public class RegisterViewModelTests : TestBase
         canExecute.Should().BeFalse();
     }
 
-    // ── DoRegisterAsync defensive guard (bypasses CanExecute) ─────────────────
-
+    // DoRegisterAsync defensive guard (bypasses CanExecute)
     [Fact]
     public async Task DoRegisterAsync_Should_Set_ErrorMessage_When_Passwords_Do_Not_Match()
     {

@@ -11,8 +11,7 @@ public class InMemorySaveGameRepositoryTests
     private static SaveGame MakeSave(string id, string playerName = "Hero", DateTime? saveDate = null) =>
         new() { Id = id, PlayerName = playerName, SaveDate = saveDate ?? DateTime.Now };
 
-    // ── SaveGame / GetById ─────────────────────────────────────────────────
-
+    // SaveGame / GetById
     [Fact]
     public void SaveGame_And_GetById_ShouldRoundTrip()
     {
@@ -37,8 +36,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.GetById("missing").Should().BeNull();
     }
 
-    // ── LoadGame ──────────────────────────────────────────────────────────
-
+    // LoadGame
     [Fact]
     public void LoadGame_BySlot_FindsSaveWhoseIdMatchesSlotString()
     {
@@ -53,8 +51,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.LoadGame(99).Should().BeNull();
     }
 
-    // ── GetMostRecent ────────────────────────────────────────────────────
-
+    // GetMostRecent
     [Fact]
     public void GetMostRecent_ReturnsLatestBySaveDate()
     {
@@ -73,8 +70,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.GetMostRecent().Should().BeNull();
     }
 
-    // ── GetAll ────────────────────────────────────────────────────────────
-
+    // GetAll
     [Fact]
     public void GetAll_ReturnsAllSavedGames()
     {
@@ -90,8 +86,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.GetAll().Should().BeEmpty();
     }
 
-    // ── GetByPlayerName ──────────────────────────────────────────────────
-
+    // GetByPlayerName
     [Fact]
     public void GetByPlayerName_ReturnsOnlyMatchingSaves()
     {
@@ -110,8 +105,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.GetByPlayerName("Alice").Should().BeEmpty();
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────
-
+    // Delete
     [Fact]
     public void Delete_RemovesEntry_AndReturnsTrue()
     {
@@ -126,8 +120,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.Delete("no-such-id").Should().BeFalse();
     }
 
-    // ── DeleteSave ────────────────────────────────────────────────────────
-
+    // DeleteSave
     [Fact]
     public void DeleteSave_RemovesBySlotString_AndReturnsTrue()
     {
@@ -142,8 +135,7 @@ public class InMemorySaveGameRepositoryTests
         _repository.DeleteSave(42).Should().BeFalse();
     }
 
-    // ── SaveExists ────────────────────────────────────────────────────────
-
+    // SaveExists
     [Fact]
     public void SaveExists_ReturnsTrue_WhenSlotExists()
     {

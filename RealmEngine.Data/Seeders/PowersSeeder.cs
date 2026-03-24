@@ -15,8 +15,7 @@ public static class PowersSeeder
         await SeedSpeciesPowerPoolsAsync(db);
     }
 
-    // ── Powers ────────────────────────────────────────────────────────────────
-
+    // Powers
     private static async Task SeedPowersAsync(ContentDbContext db)
     {
         if (await db.Powers.AnyAsync())
@@ -203,8 +202,7 @@ public static class PowersSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Class Power Unlocks ───────────────────────────────────────────────────
-
+    // Class Power Unlocks
     private static async Task SeedClassPowerUnlocksAsync(ContentDbContext db)
     {
         if (await db.ClassPowerUnlocks.AnyAsync())
@@ -232,8 +230,7 @@ public static class PowersSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Species Power Pools ───────────────────────────────────────────────────
-
+    // Species Power Pools
     private static async Task SeedSpeciesPowerPoolsAsync(ContentDbContext db)
     {
         if (await db.SpeciesPowerPools.AnyAsync())

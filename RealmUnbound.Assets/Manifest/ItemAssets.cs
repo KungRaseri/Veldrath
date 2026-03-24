@@ -8,7 +8,7 @@ namespace RealmUnbound.Assets.Manifest;
 /// </summary>
 public static class ItemAssets
 {
-    // ── Weapons ──────────────────────────────────────────────────────────────
+    // Weapons
     /// <summary>Weapon icon 01.</summary>
     public const string Weapon01 = "items/weapons/Weapon_01.png";
     /// <summary>Weapon icon 02.</summary>
@@ -30,7 +30,7 @@ public static class ItemAssets
     /// <summary>Weapon icon 10.</summary>
     public const string Weapon10 = "items/weapons/Weapon_10.png";
 
-    // ── Armour ───────────────────────────────────────────────────────────────
+    // Armour
     /// <summary>Armour icon 01.</summary>
     public const string Armor01 = "items/armor/Armor_01.png";
     /// <summary>Armour icon 02.</summary>
@@ -52,7 +52,7 @@ public static class ItemAssets
     /// <summary>Armour icon 10.</summary>
     public const string Armor10 = "items/armor/Armor_10.png";
 
-    // ── Potions ───────────────────────────────────────────────────────────────
+    // Potions
     /// <summary>Potion icon 01.</summary>
     public const string Potion01 = "items/potions/Potion_01.png";
     /// <summary>Potion icon 02.</summary>
@@ -74,7 +74,7 @@ public static class ItemAssets
     /// <summary>Potion icon 10.</summary>
     public const string Potion10 = "items/potions/Potion_10.png";
 
-    // ── Accessories ───────────────────────────────────────────────────────────
+    // Accessories
     /// <summary>Accessory icon 01.</summary>
     public const string Accessory01 = "items/accessories/Accessory_01.png";
     /// <summary>Accessory icon 02.</summary>
@@ -126,7 +126,7 @@ public static class ItemAssets
     /// <summary>Accessory icon 25.</summary>
     public const string Accessory25 = "items/accessories/Accessory_25.png";
 
-    // ── Shields ───────────────────────────────────────────────────────────────
+    // Shields
     /// <summary>Shield icon 01.</summary>
     public const string Shield01 = "items/shields/Shield_01.png";
     /// <summary>Shield icon 02.</summary>
@@ -182,7 +182,7 @@ public static class ItemAssets
     /// <summary>Shield icon 27.</summary>
     public const string Shield27 = "items/shields/Shield_27.png";
 
-    // ── Food ──────────────────────────────────────────────────────────────────
+    // Food
     /// <summary>Food icon 01.</summary>
     public const string Food01 = "items/food/Food_01.png";
     /// <summary>Food icon 02.</summary>
@@ -286,7 +286,7 @@ public static class ItemAssets
     /// <summary>Food icon 51.</summary>
     public const string Food51 = "items/food/Food_51.png";
 
-    // ── Misc ──────────────────────────────────────────────────────────────────
+    // Misc
     /// <summary>Miscellaneous item icon 01.</summary>
     public const string Misc01 = "items/misc/Misc_01.png";
     /// <summary>Miscellaneous item icon 02.</summary>
@@ -464,7 +464,7 @@ public static class ItemAssets
     /// <summary>Miscellaneous item icon 90.</summary>
     public const string Misc90 = "items/misc/Misc_90.png";
 
-    // ── Crafting Ingredients ──────────────────────────────────────────────────
+    // Crafting Ingredients
     /// <summary>Crafting ingredient icon 01.</summary>
     public const string Crafting01 = "items/crafting-ingredients/Crafting_01.png";
     /// <summary>Crafting ingredient icon 02.</summary>
@@ -704,7 +704,7 @@ public static class ItemAssets
     /// <summary>Crafting ingredient icon 119.</summary>
     public const string Crafting119 = "items/crafting-ingredients/Crafting_119.png";
 
-    // ── Crafting Dust ─────────────────────────────────────────────────────────
+    // Crafting Dust
     /// <summary>Crafting dust icon 01.</summary>
     public const string CraftingDust01 = "items/crafting-ingredients/CraftingDust_01.png";
     /// <summary>Crafting dust icon 02.</summary>

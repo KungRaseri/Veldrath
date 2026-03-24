@@ -63,15 +63,13 @@ public class EntityEditorViewModel : ReactiveObject
             .Subscribe(ex => Log.Error(ex, "Discard error"));
     }
 
-    // ── Identity (read-only) ────────────────────────────────────────────
-
+    // Identity (read-only)
     public Guid EntityId => _entity.Id;
     public string TableName { get; }
     public string EntityHeading { get; private set; }
     public string TypeKey { get; private set; }
 
-    // ── Common ContentBase fields ───────────────────────────────────────
-
+    // Common ContentBase fields
     public string Slug
     {
         get => _slug;
@@ -96,8 +94,7 @@ public class EntityEditorViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isActive, value);
     }
 
-    // ── Status ──────────────────────────────────────────────────────────
-
+    // Status
     public bool IsDirty
     {
         get => _isDirty;
@@ -116,19 +113,15 @@ public class EntityEditorViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
     }
 
-    // ── Type-specific field groups (Stats, Traits, Effects, …) ─────────
-
+    // Type-specific field groups (Stats, Traits, Effects, …)
     public IReadOnlyList<FieldGroupViewModel> FieldGroups { get; private set; }
-    // ── Junction sub-editors (LootTable entries, RecipeIngredients, AbilityPools…) ──
-
+    // Junction sub-editors (LootTable entries, RecipeIngredients, AbilityPools…)
     public IReadOnlyList<JunctionEditorViewModel>? JunctionEditors { get; private set; }
-    // ── Commands ────────────────────────────────────────────────────────
-
+    // Commands
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
     public ReactiveCommand<Unit, Unit> DiscardCommand { get; }
 
-    // ── Internals ───────────────────────────────────────────────────────
-
+    // Internals
     private async Task SaveAsync()
     {
         IsSaving = true;
@@ -255,8 +248,7 @@ public class EntityEditorViewModel : ReactiveObject
         System.Text.RegularExpressions.Regex
             .Replace(name, "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ");
 
-    // ── Entity type → ContentSchemaRegistry key map ─────────────────────────────────────────
-
+    // Entity type → ContentSchemaRegistry key map
     private static readonly Dictionary<Type, string> _entityTypeToSchemaKey = new()
     {
         [typeof(Power)]             = "power",
@@ -279,8 +271,7 @@ public class EntityEditorViewModel : ReactiveObject
         [typeof(Dialogue)]        = "dialogue",
     };
 
-    // ── Junction editor infrastructure ───────────────────────────────────────────────────
-
+    // Junction editor infrastructure
     private IReadOnlyList<JunctionEditorViewModel>? BuildJunctionEditors(ContentBase entity)
     {
         var editors = new List<JunctionEditorViewModel>();

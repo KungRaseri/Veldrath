@@ -23,8 +23,7 @@ public class RecipeDataServiceTests
         new Recipe { Id = "recipe_003", Name = "Steel Axe",     Slug = "steel-axe",     Category = "weapons", RequiredSkillLevel = 20 },
     ];
 
-    // ── LoadAllRecipes ─────────────────────────────────────────────────────
-
+    // LoadAllRecipes
     [Fact]
     public void LoadAllRecipes_EmptyRepository_ReturnsEmpty()
     {
@@ -59,8 +58,7 @@ public class RecipeDataServiceTests
         CreateService().LoadAllRecipes().Should().BeEmpty();
     }
 
-    // ── LoadRecipesByCategory ──────────────────────────────────────────────
-
+    // LoadRecipesByCategory
     [Fact]
     public void LoadRecipesByCategory_KnownCategory_ReturnsMatchingSubset()
     {
@@ -88,8 +86,7 @@ public class RecipeDataServiceTests
         _repoMock.Verify(r => r.GetAllAsync(), Times.Once);
     }
 
-    // ── GetRecipeById ──────────────────────────────────────────────────────
-
+    // GetRecipeById
     [Fact]
     public void GetRecipeById_ById_ReturnsCorrectRecipe()
     {
@@ -115,8 +112,7 @@ public class RecipeDataServiceTests
         CreateService().GetRecipeById("recipe_999").Should().BeNull();
     }
 
-    // ── GetAvailableRecipes ────────────────────────────────────────────────
-
+    // GetAvailableRecipes
     [Fact]
     public void GetAvailableRecipes_SkillLevelTen_ExcludesHigherLevelRecipes()
     {
@@ -160,8 +156,7 @@ public class RecipeDataServiceTests
         result[0].Id.Should().Be("recipe_001");
     }
 
-    // ── ClearCache ─────────────────────────────────────────────────────────
-
+    // ClearCache
     [Fact]
     public void ClearCache_AfterLoad_ForcesRepositoryReload()
     {

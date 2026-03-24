@@ -92,7 +92,7 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
     /// <inheritdoc/>
     public bool SaveExists(int slot) => _db.SaveGames.Any(s => s.SlotIndex == slot);
 
-    // ── helpers ──────────────────────────────────────────────────────────────
+    // helpers
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static SaveGameRecord ToRecord(SaveGame sg) => new()

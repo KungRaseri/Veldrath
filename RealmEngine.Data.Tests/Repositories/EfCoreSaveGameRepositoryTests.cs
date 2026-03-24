@@ -31,8 +31,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
             Character = new Character { Name = playerName }
         };
 
-    // ── SaveGame / GetById ────────────────────────────────────────────────
-
+    // SaveGame / GetById
     [Fact]
     public void SaveGame_PersistsRecord_RetrievableById()
     {
@@ -62,8 +61,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.GetById("no-such").Should().BeNull();
     }
 
-    // ── LoadGame ──────────────────────────────────────────────────────────
-
+    // LoadGame
     [Fact]
     public void LoadGame_FindsBySlotIndex()
     {
@@ -90,8 +88,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.LoadGame(99).Should().BeNull();
     }
 
-    // ── GetMostRecent ─────────────────────────────────────────────────────
-
+    // GetMostRecent
     [Fact]
     public void GetMostRecent_ReturnsLatestBySaveDate()
     {
@@ -108,8 +105,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.GetMostRecent().Should().BeNull();
     }
 
-    // ── GetAll ────────────────────────────────────────────────────────────
-
+    // GetAll
     [Fact]
     public void GetAll_ReturnsAllSaves()
     {
@@ -119,8 +115,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.GetAll().Should().HaveCount(3);
     }
 
-    // ── GetByPlayerName ───────────────────────────────────────────────────
-
+    // GetByPlayerName
     [Fact]
     public void GetByPlayerName_FiltersCorrectly()
     {
@@ -139,8 +134,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.GetByPlayerName("NoOne").Should().BeEmpty();
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────
-
+    // Delete
     [Fact]
     public void Delete_RemovesRecord_ReturnsTrue()
     {
@@ -155,8 +149,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.Delete("ghost").Should().BeFalse();
     }
 
-    // ── DeleteSave ────────────────────────────────────────────────────────
-
+    // DeleteSave
     [Fact]
     public void DeleteSave_RemovesBySlot_ReturnsTrue()
     {
@@ -180,8 +173,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.DeleteSave(42).Should().BeFalse();
     }
 
-    // ── SaveExists ────────────────────────────────────────────────────────
-
+    // SaveExists
     [Fact]
     public void SaveExists_ReturnsTrue_WhenSlotExists()
     {
@@ -196,8 +188,7 @@ public class EfCoreSaveGameRepositoryTests : IDisposable
         _repository.SaveExists(99).Should().BeFalse();
     }
 
-    // ── JSON round-trip ───────────────────────────────────────────────────
-
+    // JSON round-trip
     [Fact]
     public void SaveGame_SerializesCharacterName_RoundTrip()
     {

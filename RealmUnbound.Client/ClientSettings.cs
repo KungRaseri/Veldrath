@@ -29,8 +29,7 @@ public class ClientSettings : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _serverBaseUrl, value);
     }
 
-    // ── Audio ──────────────────────────────────────────────────────────────────
-
+    // Audio
     /// <summary>Gets or sets the master volume (0–100).</summary>
     public int MasterVolume
     {
@@ -59,8 +58,7 @@ public class ClientSettings : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _muted, value);
     }
 
-    // ── Display ────────────────────────────────────────────────────────────────
-
+    // Display
     /// <summary>Gets or sets whether the game runs in full-screen mode.</summary>
     public bool FullScreen
     {

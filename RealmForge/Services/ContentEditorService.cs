@@ -186,8 +186,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         }
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
-
+    // Helpers
     private static void NullNavigationCollections(ContentBase entity)
     {
         foreach (var prop in entity.GetType()
@@ -318,8 +317,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             .ToListAsync();
     }
 
-    // ── Junction load methods ────────────────────────────────────────────────
-
+    // Junction load methods
     public async Task<IReadOnlyList<LootTableEntry>> LoadLootTableEntriesAsync(Guid tableId)
     {
         try
@@ -417,8 +415,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
         catch (Exception ex) { logger.LogError(ex, "GetAbilitySlugs"); return new Dictionary<Guid, string>(); }
     }
 
-    // ── Junction save methods (replace-all per owner) ────────────────────────
-
+    // Junction save methods (replace-all per owner)
     public async Task<bool> SaveLootTableEntriesAsync(Guid tableId, IReadOnlyList<LootTableEntry> entries)
     {
         try

@@ -9,8 +9,7 @@ namespace RealmEngine.Core.Tests.Services;
 [Trait("Category", "Services")]
 public class HarvestingConfigServiceTests
 {
-    // ── Stub infrastructure ────────────────────────────────────────────────
-
+    // Stub infrastructure
     private sealed class StubConfigService(string? json) : GameConfigService
     {
         public override string? GetData(string key) => json;
@@ -67,8 +66,7 @@ public class HarvestingConfigServiceTests
         }
         """;
 
-    // ── LoadConfig — defaults ──────────────────────────────────────────────
-
+    // LoadConfig — defaults
     [Fact]
     public void LoadConfig_WhenConfigNotInDb_ReturnsDefaultValues()
     {
@@ -85,8 +83,7 @@ public class HarvestingConfigServiceTests
         config.BaseDurabilityLoss.Should().Be(1);
     }
 
-    // ── LoadConfig — JSON mapping ──────────────────────────────────────────
-
+    // LoadConfig — JSON mapping
     [Fact]
     public void LoadConfig_ValidJson_MapsNodeHealthSection()
     {
@@ -155,8 +152,7 @@ public class HarvestingConfigServiceTests
         config.ToolHardness.Should().ContainKey("iron").WhoseValue.Should().Be(0.8);
     }
 
-    // ── LoadConfig — caching ───────────────────────────────────────────────
-
+    // LoadConfig — caching
     [Fact]
     public void LoadConfig_CachesResult_OnSubsequentCalls()
     {
@@ -186,8 +182,7 @@ public class HarvestingConfigServiceTests
         callCount.Should().Be(2, "config should be reloaded after cache is cleared");
     }
 
-    // ── LoadConfig — error handling ────────────────────────────────────────
-
+    // LoadConfig — error handling
     [Fact]
     public void LoadConfig_InvalidJson_FallsBackToDefaults()
     {

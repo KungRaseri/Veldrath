@@ -71,7 +71,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ─ World Configuration ─
+        // World Configuration
         builder.Entity<World>(e =>
         {
             e.HasKey(w => w.Id);
@@ -79,7 +79,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(w => w.Name).HasMaxLength(128);
         });
 
-        // ─ Region Configuration ─
+        // Region Configuration
         builder.Entity<Region>(e =>
         {
             e.HasKey(r => r.Id);
@@ -92,7 +92,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ─ RegionConnection Configuration ─
+        // RegionConnection Configuration
         builder.Entity<RegionConnection>(e =>
         {
             e.HasKey(rc => new { rc.FromRegionId, rc.ToRegionId });
@@ -106,7 +106,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // ─ Zone Configuration ─
+        // Zone Configuration
         builder.Entity<Zone>(e =>
         {
             e.HasKey(z => z.Id);
@@ -122,7 +122,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ─ ZoneConnection Configuration ─
+        // ZoneConnection Configuration
         builder.Entity<ZoneConnection>(e =>
         {
             e.HasKey(zc => new { zc.FromZoneId, zc.ToZoneId });

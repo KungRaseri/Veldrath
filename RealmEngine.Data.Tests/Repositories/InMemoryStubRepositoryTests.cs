@@ -9,8 +9,7 @@ namespace RealmEngine.Data.Tests.Repositories;
 [Trait("Category", "Repository")]
 public class InMemoryStubRepositoryTests
 {
-    // ── InMemoryQuestRepository ───────────────────────────────────────────
-
+    // InMemoryQuestRepository
     [Fact]
     public async Task QuestRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -32,8 +31,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByTypeKeyAsync("main")).Should().BeEmpty();
     }
 
-    // ── InMemoryRecipeRepository ──────────────────────────────────────────
-
+    // InMemoryRecipeRepository
     [Fact]
     public async Task RecipeRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -55,8 +53,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByCraftingSkillAsync("blacksmithing")).Should().BeEmpty();
     }
 
-    // ── InMemoryPowerRepository ───────────────────────────────────────────
-
+    // InMemoryPowerRepository
     [Fact]
     public async Task PowerRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -78,8 +75,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByTypeAsync("active")).Should().BeEmpty();
     }
 
-    // ── InMemorySkillRepository ───────────────────────────────────────────
-
+    // InMemorySkillRepository
     [Fact]
     public async Task SkillRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -101,10 +97,8 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByCategoryAsync("crafting")).Should().BeEmpty();
     }
 
-    // ── InMemorySpellRepository removed — spells unified into InMemoryPowerRepository ──
-
-    // ── InMemoryBackgroundRepository ──────────────────────────────────────
-
+    // InMemorySpellRepository removed — spells unified into InMemoryPowerRepository
+    // InMemoryBackgroundRepository
     [Fact]
     public async Task BackgroundRepository_GetAllBackgroundsAsync_ReturnsEmptyList()
     {
@@ -126,8 +120,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetBackgroundsByAttributeAsync("strength")).Should().BeEmpty();
     }
 
-    // ── InMemoryCharacterClassRepository ─────────────────────────────────
-
+    // InMemoryCharacterClassRepository
     [Fact]
     public void CharacterClassRepository_GetAll_ReturnsEmptyList()
     {
@@ -177,8 +170,7 @@ public class InMemoryStubRepositoryTests
         repo.GetSubclassesForParent("warrior").Should().BeEmpty();
     }
 
-    // ── InMemoryEnemyRepository ───────────────────────────────────────────
-
+    // InMemoryEnemyRepository
     [Fact]
     public async Task EnemyRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -200,8 +192,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByFamilyAsync("humanoid")).Should().BeEmpty();
     }
 
-    // ── InMemoryNpcRepository ────────────────────────────────────────────
-
+    // InMemoryNpcRepository
     [Fact]
     public async Task NpcRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -223,8 +214,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByCategoryAsync("merchant")).Should().BeEmpty();
     }
 
-    // ── InMemoryLootTableRepository ───────────────────────────────────────
-
+    // InMemoryLootTableRepository
     [Fact]
     public async Task LootTableRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -246,8 +236,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByContextAsync("dungeon")).Should().BeEmpty();
     }
 
-    // ── InMemoryMaterialRepository ────────────────────────────────────────
-
+    // InMemoryMaterialRepository
     [Fact]
     public async Task MaterialRepository_GetAllAsync_ReturnsEmptyList()
     {
@@ -269,8 +258,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetBySlugAsync("iron-ingot")).Should().BeNull();
     }
 
-    // ── InMemoryEquipmentSetRepository (hardcoded data) ───────────────────
-
+    // InMemoryEquipmentSetRepository (hardcoded data)
     [Fact]
     public void EquipmentSetRepository_GetAllSets_ReturnsFiveSets()
     {

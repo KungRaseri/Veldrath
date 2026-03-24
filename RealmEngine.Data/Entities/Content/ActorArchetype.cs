@@ -7,8 +7,7 @@ namespace RealmEngine.Data.Entities;
 /// </summary>
 public class ActorArchetype : ContentBase
 {
-    // ── Definition references ─────────────────────────────────────────────────
-
+    // Definition references
     /// <summary>FK to the species that provides biological base stats. Nullable = species-agnostic archetype.</summary>
     public Guid? SpeciesId { get; set; }
     /// <summary>FK to the actor class that drives growth curves and combat style.</summary>
@@ -16,27 +15,23 @@ public class ActorArchetype : ContentBase
     /// <summary>FK to the background that grants origin bonuses.</summary>
     public Guid? BackgroundId { get; set; }
 
-    // ── Level range ───────────────────────────────────────────────────────────
-
+    // Level range
     /// <summary>Minimum level at which this archetype spawns or is available.</summary>
     public int MinLevel { get; set; }
     /// <summary>Maximum level for this archetype.</summary>
     public int MaxLevel { get; set; }
 
-    // ── Authored stats + traits ───────────────────────────────────────────────
-
+    // Authored stats + traits
     /// <summary>Flat authored combat and reward statistics for this archetype.</summary>
     public ArchetypeStats Stats { get; set; } = new();
     /// <summary>Behaviour and role trait flags (replaces separate Hostile/Shopkeeper/etc. tables).</summary>
     public ArchetypeTraits Traits { get; set; } = new();
 
-    // ── Loot ──────────────────────────────────────────────────────────────────
-
+    // Loot
     /// <summary>FK to the loot table dropped on defeat or interaction. Nullable = no loot.</summary>
     public Guid? LootTableId { get; set; }
 
-    // ── Navigation properties ─────────────────────────────────────────────────
-
+    // Navigation properties
     /// <summary>Navigation property for the species definition.</summary>
     public Species? Species { get; set; }
     /// <summary>Navigation property for the actor class definition.</summary>
@@ -88,8 +83,7 @@ public class ArchetypeStats
 /// <summary>Behaviour and role trait flags for an ActorArchetype.</summary>
 public class ArchetypeTraits
 {
-    // ── Hostility flags ────────────────────────────────────────────────────
-
+    // Hostility flags
     /// <summary>True if this actor is hostile and attacks on sight.</summary>
     public bool? Hostile { get; set; }
     /// <summary>True if this actor attacks without provocation.</summary>
@@ -97,8 +91,7 @@ public class ArchetypeTraits
     /// <summary>True if this actor calls nearby allies when engaged.</summary>
     public bool? PackHunter { get; set; }
 
-    // ── NPC role flags ─────────────────────────────────────────────────────
-
+    // NPC role flags
     /// <summary>True if this actor operates a shop.</summary>
     public bool? Shopkeeper { get; set; }
     /// <summary>True if this actor can offer quests.</summary>
@@ -110,22 +103,19 @@ public class ArchetypeTraits
     /// <summary>True if this actor moves through the world on a schedule.</summary>
     public bool? Wanderer { get; set; }
 
-    // ── Tier flags ─────────────────────────────────────────────────────────
-
+    // Tier flags
     /// <summary>True if this is a boss-tier actor.</summary>
     public bool? Boss { get; set; }
     /// <summary>True if this is an elite-tier actor.</summary>
     public bool? Elite { get; set; }
 
-    // ── Combat style flags ─────────────────────────────────────────────────
-
+    // Combat style flags
     /// <summary>True if this actor uses ranged attacks.</summary>
     public bool? Ranged { get; set; }
     /// <summary>True if this actor can cast spells.</summary>
     public bool? Caster { get; set; }
 
-    // ── Immunity flags ─────────────────────────────────────────────────────
-
+    // Immunity flags
     /// <summary>True if this actor is immune to fire damage.</summary>
     public bool? FireImmune { get; set; }
     /// <summary>True if this actor is immune to cold damage.</summary>

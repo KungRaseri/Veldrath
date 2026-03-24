@@ -15,8 +15,7 @@ public class BudgetHelperServiceTests
         return new BudgetHelperService(calc, NullLogger<BudgetHelperService>.Instance);
     }
 
-    // ── GetBudgetForEnemyLoot ──────────────────────────────────────────────────
-
+    // GetBudgetForEnemyLoot
     [Fact]
     public void GetBudgetForEnemyLoot_AppliesNoMultiplier_ForNormalEnemy()
     {
@@ -34,8 +33,7 @@ public class BudgetHelperServiceTests
         CreateService().GetBudgetForEnemyLoot(enemyType, level).Should().Be(expected);
     }
 
-    // ── GetBudgetForChest ──────────────────────────────────────────────────────
-
+    // GetBudgetForChest
     [Theory]
     [InlineData(RarityTier.Common,    10, 40)]   // 10*5 * 0.8 = 40
     [InlineData(RarityTier.Uncommon,  10, 60)]   // 10*5 * 1.2 = 60
@@ -54,8 +52,7 @@ public class BudgetHelperServiceTests
         CreateService().GetBudgetForChest(RarityTier.Common, 1).Should().Be(10);
     }
 
-    // ── GetBudgetForShopItem ───────────────────────────────────────────────────
-
+    // GetBudgetForShopItem
     [Theory]
     [InlineData(100, 1, 50)]   // 100 * 0.5
     [InlineData(100, 2, 100)]  // 100 * 1.0
@@ -72,8 +69,7 @@ public class BudgetHelperServiceTests
         CreateService().GetBudgetForShopItem(10, 1).Should().Be(20);
     }
 
-    // ── GetCraftingSuccessChance ───────────────────────────────────────────────
-
+    // GetCraftingSuccessChance
     [Fact]
     public void GetCraftingSuccessChance_Returns50Percent_WhenSkillEqualsRequirement()
     {
@@ -99,8 +95,7 @@ public class BudgetHelperServiceTests
         CreateService().GetCraftingSuccessChance(200, 1).Should().Be(99);
     }
 
-    // ── GetCraftingCriticalChance ──────────────────────────────────────────────
-
+    // GetCraftingCriticalChance
     [Fact]
     public void GetCraftingCriticalChance_Returns5Percent_WhenSkillEqualsRequirement()
     {
@@ -120,8 +115,7 @@ public class BudgetHelperServiceTests
         CreateService().GetCraftingCriticalChance(500, 0).Should().Be(20);
     }
 
-    // ── GetCraftingQualityBonus ────────────────────────────────────────────────
-
+    // GetCraftingQualityBonus
     [Fact]
     public void GetCraftingQualityBonus_Returns0_WhenSkillEqualsRequirement()
     {
@@ -147,8 +141,7 @@ public class BudgetHelperServiceTests
         CreateService().GetCraftingQualityBonus(200, 0).Should().Be(3);
     }
 
-    // ── GetCraftingFailureSeverity ─────────────────────────────────────────────
-
+    // GetCraftingFailureSeverity
     [Fact]
     public void GetCraftingFailureSeverity_Returns0_OnSuccess()
     {
@@ -164,8 +157,7 @@ public class BudgetHelperServiceTests
         CreateService().GetCraftingFailureSeverity(roll, chance).Should().Be(expected);
     }
 
-    // ── GetQualityReductionForFailure ──────────────────────────────────────────
-
+    // GetQualityReductionForFailure
     [Theory]
     [InlineData(0, 0)]
     [InlineData(1, 1)]
@@ -176,8 +168,7 @@ public class BudgetHelperServiceTests
         CreateService().GetQualityReductionForFailure(severity).Should().Be(expected);
     }
 
-    // ── GetMaterialRefundPercentage ────────────────────────────────────────────
-
+    // GetMaterialRefundPercentage
     [Fact]
     public void GetMaterialRefundPercentage_Returns50_ForCriticalFailure()
     {
@@ -193,8 +184,7 @@ public class BudgetHelperServiceTests
         CreateService().GetMaterialRefundPercentage(severity).Should().Be(0);
     }
 
-    // ── GetBudgetRangeForQuestReward ───────────────────────────────────────────
-
+    // GetBudgetRangeForQuestReward
     [Theory]
     [InlineData("easy",      10, 40,  60)]  // 50 * [0.8, 1.2]
     [InlineData("normal",    10, 50,  75)]  // 50 * [1.0, 1.5]
@@ -217,8 +207,7 @@ public class BudgetHelperServiceTests
         max.Should().Be(30);
     }
 
-    // ── GetBudgetForEventReward ────────────────────────────────────────────────
-
+    // GetBudgetForEventReward
     [Theory]
     [InlineData("world_boss",        10, 320)]   // 10*8 * 4.0
     [InlineData("dungeon_completion", 10, 200)]  // 10*8 * 2.5
@@ -235,8 +224,7 @@ public class BudgetHelperServiceTests
         CreateService().GetBudgetForEventReward("world_boss", 1).Should().Be(50);
     }
 
-    // ── GetBudgetForItemUpgrade ────────────────────────────────────────────────
-
+    // GetBudgetForItemUpgrade
     [Theory]
     [InlineData(100, 1, 25)]   // +25%
     [InlineData(100, 2, 50)]   // +50%

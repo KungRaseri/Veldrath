@@ -27,8 +27,7 @@ public class GainExperienceHandlerTests
     private static SaveGame SaveWith(string name = "Hero", int level = 1, int xp = 0) =>
         new() { Character = new Character { Name = name, Level = level, Experience = xp } };
 
-    // ── Validation ────────────────────────────────────────────────────────────
-
+    // Validation
     [Fact]
     public async Task Handle_ReturnsFailure_WhenCharacterNameEmpty()
     {
@@ -72,8 +71,7 @@ public class GainExperienceHandlerTests
         result.ErrorMessage.Should().Contain("not found");
     }
 
-    // ── Happy paths ───────────────────────────────────────────────────────────
-
+    // Happy paths
     [Fact]
     public async Task Handle_AwardsExperience_WithoutLevelUp()
     {

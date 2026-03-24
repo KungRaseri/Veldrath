@@ -10,8 +10,7 @@ public class Item : ContentBase
     /// <summary>Top-level item discriminator — "consumable" | "crystal" | "gem" | "rune" | "essence" | "orb" | "weapon" | "armor".</summary>
     public string ItemType { get; set; } = string.Empty;
 
-    // ── Weapon-specific columns (null for non-weapons) ────────────────────────
-
+    // Weapon-specific columns (null for non-weapons)
     /// <summary>Weapon sub-type: "sword" | "axe" | "bow" | "staff" | etc. Null for non-weapons.</summary>
     public string? WeaponType { get; set; }
     /// <summary>Damage type: "physical" | "magic" | "fire" | etc. Null for non-weapons.</summary>
@@ -19,15 +18,13 @@ public class Item : ContentBase
     /// <summary>Number of hands required to wield (1 or 2). Null for non-weapons.</summary>
     public int? HandsRequired { get; set; }
 
-    // ── Armor-specific columns (null for non-armor) ───────────────────────────
-
+    // Armor-specific columns (null for non-armor)
     /// <summary>Armor protection class: "light" | "medium" | "heavy" | "shield". Null for non-armor.</summary>
     public string? ArmorType { get; set; }
     /// <summary>Equipment slot: "head" | "chest" | "hands" | "feet" | etc. Null for non-armor.</summary>
     public string? EquipSlot { get; set; }
 
-    // ── Owned types ────────────────────────────────────────────────────────────
-
+    // Owned types
     /// <summary>Numeric stats stored as JSON — used for all item types.</summary>
     public ItemStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags stored as JSON — used for all item types.</summary>
@@ -37,7 +34,7 @@ public class Item : ContentBase
 /// <summary>Numeric stats owned by an Item, serialised as a JSON column.</summary>
 public class ItemStats
 {
-    // ── Shared across item types
+    // Shared across item types
     /// <summary>Item weight in lbs — affects encumbrance.</summary>
     public float? Weight { get; set; }
     /// <summary>Maximum number of identical items that can occupy one inventory slot.</summary>
@@ -49,7 +46,7 @@ public class ItemStats
     /// <summary>Duration of the item's effect in seconds.</summary>
     public float? Duration { get; set; }
 
-    // ── Weapon stats
+    // Weapon stats
     /// <summary>Minimum damage roll. Null for non-weapons.</summary>
     public int? DamageMin { get; set; }
     /// <summary>Maximum damage roll. Null for non-weapons.</summary>
@@ -63,7 +60,7 @@ public class ItemStats
     /// <summary>Maximum durability points (shared with armor). Null when not applicable.</summary>
     public int? Durability { get; set; }
 
-    // ── Armor stats
+    // Armor stats
     /// <summary>Base armor rating. Null for non-armor.</summary>
     public int? ArmorRating { get; set; }
     /// <summary>Magic resistance rating. Null for non-armor.</summary>
@@ -75,7 +72,7 @@ public class ItemStats
 /// <summary>Boolean trait flags owned by an Item, serialised as a JSON column.</summary>
 public class ItemTraits
 {
-    // ── Shared flags
+    // Shared flags
     /// <summary>True if multiple of this item can occupy a single inventory slot.</summary>
     public bool? Stackable { get; set; }
     /// <summary>True if this item is required by a quest and cannot be discarded.</summary>
@@ -89,7 +86,7 @@ public class ItemTraits
     /// <summary>True if the item has a magical effect.</summary>
     public bool? Magical { get; set; }
 
-    // ── Weapon flags
+    // Weapon flags
     /// <summary>True if the weapon requires both hands to wield.</summary>
     public bool? TwoHanded { get; set; }
     /// <summary>True if the weapon can be thrown.</summary>
@@ -103,7 +100,7 @@ public class ItemTraits
     /// <summary>True if the weapon is versatile (can be used one- or two-handed).</summary>
     public bool? Versatile { get; set; }
 
-    // ── Armor flags
+    // Armor flags
     /// <summary>True if wearing this armor imposes disadvantage on stealth checks.</summary>
     public bool? StealthPenalty { get; set; }
     /// <summary>True if the armor provides fire resistance.</summary>

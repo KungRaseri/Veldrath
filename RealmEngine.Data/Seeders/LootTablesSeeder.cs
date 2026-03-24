@@ -16,7 +16,7 @@ public static class LootTablesSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.LootTables.AddRange(
-            // ── Enemy drops ───────────────────────────────────────────────────
+            // Enemy drops
             new LootTable
             {
                 Slug         = "goblin-common-drops",
@@ -99,7 +99,7 @@ public static class LootTablesSeeder
                 ],
             },
 
-            // ── Chest loot ────────────────────────────────────────────────────
+            // Chest loot
             new LootTable
             {
                 Slug         = "forest-chest-loot",
@@ -150,7 +150,7 @@ public static class LootTablesSeeder
                 ],
             },
 
-            // ── Boss drops ────────────────────────────────────────────────────
+            // Boss drops
             new LootTable
             {
                 Slug         = "bandit-boss-drops",

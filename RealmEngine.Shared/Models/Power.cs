@@ -30,8 +30,7 @@ public class Power
     /// <summary>Description of what the power does.</summary>
     public string Description { get; set; } = string.Empty;
 
-    // ── Classification ────────────────────────────────────────────────────────
-
+    // Classification
     /// <summary>How the power is acquired or activated.</summary>
     public PowerType Type { get; set; } = PowerType.Talent;
 
@@ -53,8 +52,7 @@ public class Power
     /// </summary>
     public PowerEffectType EffectType { get; set; } = PowerEffectType.None;
 
-    // ── Stats ─────────────────────────────────────────────────────────────────
-
+    // Stats
     /// <summary>Cooldown in turns/seconds.</summary>
     public int Cooldown { get; set; }
 
@@ -82,8 +80,7 @@ public class Power
     /// <summary>Level requirement to unlock this power.</summary>
     public int RequiredLevel { get; set; } = 1;
 
-    // ── Spell-system fields ───────────────────────────────────────────────────
-
+    // Spell-system fields
     /// <summary>
     /// Spell rank: 0 (Cantrip) through 10. Defaults to 0 for non-spell powers.
     /// In the spell-learning system, higher ranks require higher tradition skill.
@@ -106,13 +103,11 @@ public class Power
     /// </summary>
     public string? BaseEffectValue { get; set; }
 
-    // ── Ability-system fields ─────────────────────────────────────────────────
-
+    // Ability-system fields
     /// <summary>Base damage dice for ability-style powers (e.g. "2d6", "4d8+2").</summary>
     public string? BaseDamage { get; set; }
 
-    // ── Effects ───────────────────────────────────────────────────────────────
-
+    // Effects
     /// <summary>Elemental or physical damage type applied.</summary>
     public string? DamageType { get; set; }
 
@@ -125,8 +120,7 @@ public class Power
     /// <summary>Debuff effect slug applied to the target.</summary>
     public string? DebuffApplied { get; set; }
 
-    // ── Requirements ──────────────────────────────────────────────────────────
-
+    // Requirements
     /// <summary>
     /// Optional item type required to use this power.
     /// "staff" | "wand" | "focus" | "catalyst" | "weapon" | "shield" | null.
@@ -145,13 +139,11 @@ public class Power
     /// <summary>Power reference IDs that must be learned first (prerequisites).</summary>
     public List<string> RequiredPowerIds { get; set; } = [];
 
-    // ── Traits ────────────────────────────────────────────────────────────────
-
+    // Traits
     /// <summary>Traits/properties specific to this power (arbitrary key-value pairs).</summary>
     public Dictionary<string, object> Traits { get; set; } = new();
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Helpers
     /// <summary>Gets the value of a specific prefix component by token name.</summary>
     public string? GetPrefixValue(string token) =>
         Prefixes.FirstOrDefault(p => p.Token == token)?.Value;
@@ -165,8 +157,7 @@ public class Power
     }
 }
 
-// ── Enums ─────────────────────────────────────────────────────────────────────
-
+// Enums
 /// <summary>
 /// How a power is acquired or activated. Replaces the former <c>AbilityTypeEnum</c>
 /// and the ability/spell categorical split.

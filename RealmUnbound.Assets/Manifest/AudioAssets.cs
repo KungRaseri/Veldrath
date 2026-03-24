@@ -7,7 +7,7 @@ namespace RealmUnbound.Assets.Manifest;
 /// </summary>
 public static class AudioAssets
 {
-    // ── RPG Ambient Effects ───────────────────────────────────────────────────
+    // RPG Ambient Effects
     /// <summary>Book open sound.</summary>
     public const string BookOpen = "audio/rpg/bookOpen.ogg";
     /// <summary>Book close sound.</summary>
@@ -49,7 +49,7 @@ public static class AudioAssets
     /// <summary>Footstep sound 01.</summary>
     public const string Footstep01 = "audio/rpg/footstep01.ogg";
 
-    // ── UI Interface Sounds ───────────────────────────────────────────────────
+    // UI Interface Sounds
     /// <summary>Button click, variant 1.</summary>
     public const string Click1 = "audio/interface/click_001.ogg";
     /// <summary>Button click, variant 2.</summary>
@@ -75,7 +75,7 @@ public static class AudioAssets
     /// <summary>Scroll list sound, variant 1.</summary>
     public const string Scroll1 = "audio/interface/scroll_001.ogg";
 
-    // ── Impact Sounds ─────────────────────────────────────────────────────────
+    // Impact Sounds
     /// <summary>Heavy metal impact, variant 1.</summary>
     public const string ImpactMetalHeavy1 = "audio/impact/impactMetal_heavy_000.ogg";
     /// <summary>Medium metal impact, variant 1.</summary>
@@ -91,7 +91,7 @@ public static class AudioAssets
     /// <summary>Mining strike sound, variant 1.</summary>
     public const string ImpactMining1 = "audio/impact/impactMining_000.ogg";
 
-    // ── Background Music ──────────────────────────────────────────────────────
+    // Background Music
     /// <summary>Dungeon / cave ambient loop — "Infinite Descent".</summary>
     public const string MusicDungeon = "audio/music/Infinite Descent.ogg";
     /// <summary>Town melancholic loop — "Sad Town".</summary>

@@ -10,8 +10,7 @@ public class ViewLocatorTests
 {
     private readonly ViewLocator _sut = new();
 
-    // ── Match ─────────────────────────────────────────────────────────────────
-
+    // Match
     [Fact]
     public void Match_Should_Return_True_For_ViewModelBase()
     {
@@ -30,16 +29,14 @@ public class ViewLocatorTests
         _sut.Match(null).Should().BeFalse();
     }
 
-    // ── Build (null – no Avalonia runtime needed) ─────────────────────────────
-
+    // Build (null – no Avalonia runtime needed)
     [Fact]
     public void Build_Should_Return_Null_When_Data_Is_Null()
     {
         _sut.Build(null).Should().BeNull();
     }
 
-    // ── Build (requires Avalonia runtime) ─────────────────────────────────────
-
+    // Build (requires Avalonia runtime)
     [AvaloniaFact]
     public void Build_Should_Return_TextBlock_When_View_Not_Found()
     {

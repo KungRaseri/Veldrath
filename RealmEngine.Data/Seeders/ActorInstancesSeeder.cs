@@ -27,7 +27,7 @@ public static class ActorInstancesSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.ActorInstances.AddRange(
-            // ── Boss instances ────────────────────────────────────────────────
+            // Boss instances
             new ActorInstance
             {
                 Slug            = "elder-goblin-chief",
@@ -54,7 +54,7 @@ public static class ActorInstancesSeeder
                 },
             },
 
-            // ── Story instances ───────────────────────────────────────────────
+            // Story instances
             new ActorInstance
             {
                 Slug            = "captain-blackthorn",

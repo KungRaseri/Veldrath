@@ -6,8 +6,7 @@ namespace RealmUnbound.Server.Tests.Features;
 
 public class HealthCheckTests
 {
-    // ── GameEngineHealthCheck ─────────────────────────────────────────────────
-
+    // GameEngineHealthCheck
     [Fact]
     public async Task GameEngineHealthCheck_Should_Return_Healthy()
     {
@@ -36,8 +35,7 @@ public class HealthCheckTests
         result.Description.Should().NotBeNullOrWhiteSpace();
     }
 
-    // ── HealthCheckResponseWriter ─────────────────────────────────────────────
-
+    // HealthCheckResponseWriter
     [Fact]
     public async Task WriteResponse_Should_Set_ContentType_To_Json()
     {

@@ -38,14 +38,14 @@ try
 
     builder.Services.AddScoped<AuthStateService>();
 
-    // ── DataProtection key persistence ────────────────────────────────────────
+    // DataProtection key persistence
     // Persisting to a mounted volume prevents antiforgery token failures on
     // container restart caused by ephemeral in-memory keys.
     builder.Services.AddDataProtection()
         .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
         .SetApplicationName("RealmFoundry");
 
-    // ── Antiforgery ───────────────────────────────────────────────────────────
+    // Antiforgery
     // Use a fixed cookie name so stale cookies from before a key rotation are
     // easily identified, and set SameSite=Strict + no Secure flag for HTTP dev.
     builder.Services.AddAntiforgery(options =>

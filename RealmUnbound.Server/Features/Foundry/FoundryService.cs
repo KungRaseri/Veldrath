@@ -8,8 +8,7 @@ namespace RealmUnbound.Server.Features.Foundry;
 
 public class FoundryService(ApplicationDbContext db)
 {
-    // ── Submissions ───────────────────────────────────────────────────────
-
+    // Submissions
     public async Task<(FoundrySubmissionDto? Dto, string? Error)> CreateSubmissionAsync(
         CreateSubmissionRequest request, Guid submitterId, CancellationToken ct)
     {
@@ -73,8 +72,7 @@ public class FoundryService(ApplicationDbContext db)
         return submission is null ? null : MapToDto(submission);
     }
 
-    // ── Voting ────────────────────────────────────────────────────────────
-
+    // Voting
     public async Task<(FoundrySubmissionSummaryDto? Dto, string? Error)> VoteAsync(
         Guid submissionId, Guid voterId, int value, CancellationToken ct)
     {
@@ -109,8 +107,7 @@ public class FoundryService(ApplicationDbContext db)
         return (MapToSummary(submission), null);
     }
 
-    // ── Review ────────────────────────────────────────────────────────────
-
+    // Review
     public async Task<(FoundrySubmissionDto? Dto, string? Error)> ReviewAsync(
         Guid submissionId, Guid reviewerId, ReviewRequest request, CancellationToken ct)
     {
@@ -148,8 +145,7 @@ public class FoundryService(ApplicationDbContext db)
         return (MapToDto(submission), null);
     }
 
-    // ── Notifications ─────────────────────────────────────────────────────
-
+    // Notifications
     public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(Guid accountId, CancellationToken ct) =>
         await db.FoundryNotifications
             .Include(n => n.Submission)
@@ -178,8 +174,7 @@ public class FoundryService(ApplicationDbContext db)
         return true;
     }
 
-    // ── Mapping helpers ───────────────────────────────────────────────────
-
+    // Mapping helpers
     private static FoundrySubmissionSummaryDto MapToSummary(FoundrySubmission s) => new(
         s.Id,
         s.ContentType.ToString(),

@@ -7,8 +7,7 @@ namespace RealmFoundry.Tests.Services;
 
 public class AuthStateServiceTests
 {
-    // ── helpers ───────────────────────────────────────────────────────────────
-
+    // helpers
     private static Mock<IJSRuntime> BuildJs(Dictionary<string, string?> sessionStorage)
     {
         var js = new Mock<IJSRuntime>();
@@ -60,8 +59,7 @@ public class AuthStateServiceTests
             DateTimeOffset.UtcNow.AddHours(1),
             Guid.NewGuid(), username, isCurator);
 
-    // ── InitialiseAsync ───────────────────────────────────────────────────────
-
+    // InitialiseAsync
     [Fact]
     public async Task InitialiseAsync_DoesNothing_WhenSessionStorageIsEmpty()
     {
@@ -144,8 +142,7 @@ public class AuthStateServiceTests
         svc.IsLoggedIn.Should().BeFalse();
     }
 
-    // ── SetTokensAsync ────────────────────────────────────────────────────────
-
+    // SetTokensAsync
     [Fact]
     public async Task SetTokensAsync_SetsIsLoggedIn()
     {
@@ -195,8 +192,7 @@ public class AuthStateServiceTests
         fired.Should().BeTrue();
     }
 
-    // ── TokenExpiresSoon ──────────────────────────────────────────────────────
-
+    // TokenExpiresSoon
     [Fact]
     public async Task TokenExpiresSoon_ReturnsTrue_WhenExpiryIsWithinTwoMinutes()
     {
@@ -214,8 +210,7 @@ public class AuthStateServiceTests
         svc.TokenExpiresSoon.Should().BeFalse();
     }
 
-    // ── TryRefreshAsync ───────────────────────────────────────────────────────
-
+    // TryRefreshAsync
     [Fact]
     public async Task TryRefreshAsync_ReturnsFalse_WhenNoRefreshToken()
     {
@@ -249,8 +244,7 @@ public class AuthStateServiceTests
         svc.Username.Should().Be("refreshed-user");
     }
 
-    // ── LogOutAsync ───────────────────────────────────────────────────────────
-
+    // LogOutAsync
     [Fact]
     public async Task LogOutAsync_ClearsIsLoggedIn()
     {

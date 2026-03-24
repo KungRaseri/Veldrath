@@ -105,8 +105,7 @@ public class AuthService(
             await refreshTokenRepo.RevokeAsync(stored.Id, clientIp, null, ct);
     }
 
-    // ── Internals ─────────────────────────────────────────────────────────────
-
+    // Internals
     public async Task<(AuthResponse? Response, string? Error)> ExternalLoginOrRegisterAsync(
         string provider, string providerKey, string? email, string? displayName,
         string clientIp, CancellationToken ct = default)
@@ -148,8 +147,7 @@ public class AuthService(
         return (await IssueTokenPairAsync(user, clientIp, ct), null);
     }
 
-    // ── Internals ─────────────────────────────────────────────────────────────
-
+    // Internals
     private async Task<AuthResponse> IssueTokenPairAsync(
         PlayerAccount user, string clientIp, CancellationToken ct)
     {

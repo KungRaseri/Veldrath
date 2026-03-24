@@ -14,8 +14,7 @@ using RealmUnbound.Server.Tests.Infrastructure;
 
 namespace RealmUnbound.Server.Tests.Features;
 
-// ── Fake SignalR client proxy ─────────────────────────────────────────────────
-
+// Fake SignalR client proxy
 public class FakeClientProxy : IClientProxy
 {
     public List<(string Method, object?[] Args)> SentMessages { get; } = [];
@@ -27,8 +26,7 @@ public class FakeClientProxy : IClientProxy
     }
 }
 
-// ── Fake IHubCallerClients ────────────────────────────────────────────────────
-
+// Fake IHubCallerClients
 public class FakeHubCallerClients : IHubCallerClients
 {
     private readonly FakeClientProxy _noop = new();
@@ -53,8 +51,7 @@ public class FakeHubCallerClients : IHubCallerClients
     public IClientProxy Users(IReadOnlyList<string> userIds)       => _noop;
 }
 
-// ── Fake IGroupManager ────────────────────────────────────────────────────────
-
+// Fake IGroupManager
 public class FakeGroupManager : IGroupManager
 {
     public List<string> AddedGroups    { get; } = [];
@@ -73,8 +70,7 @@ public class FakeGroupManager : IGroupManager
     }
 }
 
-// ── Fake HubCallerContext ─────────────────────────────────────────────────────
-
+// Fake HubCallerContext
 public sealed class FakeHubCallerContext : HubCallerContext
 {
     private readonly Dictionary<object, object?> _items = new();
@@ -95,15 +91,13 @@ public sealed class FakeHubCallerContext : HubCallerContext
     public override void Abort() { }
 }
 
-// ── GameHubTests ──────────────────────────────────────────────────────────────
-
+// GameHubTests
 public class GameHubTests : IDisposable
 {
     private readonly TestDbContextFactory _factory = new();
     public void Dispose() => _factory.Dispose();
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Helpers
     private static ClaimsPrincipal MakeUser(Guid accountId, string username = "TestUser") =>
         new(new ClaimsIdentity(new[]
         {
@@ -154,8 +148,7 @@ public class GameHubTests : IDisposable
         return (hub, clients, groups, ctx);
     }
 
-    // ── OnConnectedAsync ──────────────────────────────────────────────────────
-
+    // OnConnectedAsync
     [Fact]
     public async Task OnConnectedAsync_Should_Send_Connected_To_Caller()
     {
@@ -169,8 +162,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Connected");
     }
 
-    // ── OnDisconnectedAsync ───────────────────────────────────────────────────
-
+    // OnDisconnectedAsync
     [Fact]
     public async Task OnDisconnectedAsync_Should_Complete_When_No_Session_Exists()
     {
@@ -207,8 +199,7 @@ public class GameHubTests : IDisposable
         groups.RemovedGroups.Should().Contain("zone:fenwick-crossing");
     }
 
-    // ── SelectCharacter ───────────────────────────────────────────────────────
-
+    // SelectCharacter
     [Fact]
     public async Task SelectCharacter_Should_Send_Error_When_Character_Not_Found()
     {
@@ -360,8 +351,7 @@ public class GameHubTests : IDisposable
         doc.RootElement.GetProperty("CurrentHealth").GetInt32().Should().Be(30);  // defaults to MaxHealth
     }
 
-    // ── EnterZone ─────────────────────────────────────────────────────────────
-
+    // EnterZone
     [Fact]
     public async Task EnterZone_Should_Send_Error_When_SelectCharacter_Not_Called()
     {
@@ -443,8 +433,7 @@ public class GameHubTests : IDisposable
         db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "conn-enter");
     }
 
-    // ── LeaveZone ─────────────────────────────────────────────────────────────
-
+    // LeaveZone
     [Fact]
     public async Task LeaveZone_Should_Send_ZoneLeft_To_Caller()
     {
@@ -482,8 +471,7 @@ public class GameHubTests : IDisposable
         groups.RemovedGroups.Should().Contain("zone:fenwick-crossing");
     }
 
-    // ── EnterZone with stale session handling ─────────────────────────────────
-
+    // EnterZone with stale session handling
     [Fact]
     public async Task EnterZone_Should_Remove_Stale_Session_For_Character()
     {
@@ -511,8 +499,7 @@ public class GameHubTests : IDisposable
         db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "new-conn");
     }
 
-    // ── TryGetCharacterName false branch ─────────────────────────────────────
-
+    // TryGetCharacterName false branch
     [Fact]
     public async Task EnterZone_Should_Send_Error_When_CharacterName_Missing_From_Context()
     {
@@ -531,8 +518,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── GainExperience ────────────────────────────────────────────────────────
-
+    // GainExperience
     [Fact]
     public async Task GainExperience_Should_Send_Error_When_No_Character_Selected()
     {
@@ -653,8 +639,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "ExperienceGained");
     }
 
-    // ── AllocateAttributePoints ───────────────────────────────────────────────
-
+    // AllocateAttributePoints
     private static async Task<Character> SeedCharacterWithAttributePointsAsync(
         ApplicationDbContext db, Guid accountId, int unspent, Dictionary<string, int>? extra = null)
     {
@@ -891,8 +876,7 @@ public class GameHubTests : IDisposable
         result.ErrorMessage.Should().Contain("not found");
     }
 
-    // ── RestAtLocation ────────────────────────────────────────────────────────
-
+    // RestAtLocation
     private static async Task<Character> SeedCharacterWithGoldAsync(
         ApplicationDbContext db, Guid accountId, int gold, int level = 1)
     {
@@ -1152,8 +1136,7 @@ public class GameHubTests : IDisposable
         result.MaxMana.Should().Be(20);   // level 4 * 5
     }
 
-    // ── UseAbility ────────────────────────────────────────────────────────────
-
+    // UseAbility
     private static async Task<Character> SeedCharacterWithManaAsync(
         ApplicationDbContext db, Guid accountId, int currentMana, int maxMana, Dictionary<string, int>? extra = null)
     {
@@ -1437,8 +1420,7 @@ public class GameHubTests : IDisposable
         result.RemainingMana.Should().Be(10); // 20 - 10 (DefaultManaCost)
     }
 
-    // ── GetActiveCharacters ───────────────────────────────────────────────────
-
+    // GetActiveCharacters
     [Fact]
     public async Task GetActiveCharacters_Should_Return_Empty_When_No_Characters_Selected()
     {
@@ -1508,8 +1490,7 @@ public class GameHubTests : IDisposable
         result.Should().Contain(charA.Id).And.Contain(charB.Id);
     }
 
-    // ── AwardSkillXp ─────────────────────────────────────────────────────────
-
+    // AwardSkillXp
     [Fact]
     public async Task AwardSkillXp_Should_Send_Error_When_No_Character_Selected()
     {
@@ -1766,8 +1747,7 @@ public class GameHubTests : IDisposable
         result.ErrorMessage.Should().Contain("positive");
     }
 
-    // ── SelectCharacter — missing paths ───────────────────────────────────────
-
+    // SelectCharacter — missing paths
     [Fact]
     public async Task SelectCharacter_Should_Send_CharacterAlreadyActive_When_Already_Claimed()
     {
@@ -1801,8 +1781,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "CharacterStatusChanged");
     }
 
-    // ── OnDisconnectedAsync — missing paths ───────────────────────────────────
-
+    // OnDisconnectedAsync — missing paths
     [Fact]
     public async Task OnDisconnectedAsync_Should_Broadcast_CharacterStatusChanged_Offline_When_Character_Was_Active()
     {
@@ -1824,8 +1803,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "CharacterStatusChanged");
     }
 
-    // ── Catch-block tests (mediator throws) ───────────────────────────────────
-
+    // Catch-block tests (mediator throws)
     [Fact]
     public async Task GainExperience_Should_Send_Error_When_Mediator_Throws()
     {
@@ -1931,8 +1909,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── EquipItem hub method ──────────────────────────────────────────────────
-
+    // EquipItem hub method
     [Fact]
     public async Task EquipItem_Should_Send_Error_When_No_Character_Selected()
     {
@@ -2062,8 +2039,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── EquipItemHubCommandHandler ────────────────────────────────────────────
-
+    // EquipItemHubCommandHandler
     [Fact]
     public async Task EquipItem_Handler_Should_Equip_Item_In_Named_Slot()
     {
@@ -2202,8 +2178,7 @@ public class GameHubTests : IDisposable
         result.ErrorMessage.Should().Contain("not found");
     }
 
-    // ── AddGold helpers ──────────────────────────────────────────────────────────
-
+    // AddGold helpers
     private static async Task<Character> SeedCharacterWithGoldAsync(
         ApplicationDbContext db, Guid accountId, int gold)
     {
@@ -2221,8 +2196,7 @@ public class GameHubTests : IDisposable
         return c;
     }
 
-    // ── AddGold hub method ─────────────────────────────────────────────────────
-
+    // AddGold hub method
     [Fact]
     public async Task AddGold_Should_Send_Error_When_No_Character_Selected()
     {
@@ -2346,8 +2320,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── AddGoldHubCommandHandler ────────────────────────────────────────────────────
-
+    // AddGoldHubCommandHandler
     [Fact]
     public async Task AddGold_Handler_Should_Add_Gold_To_Character()
     {
@@ -2499,8 +2472,7 @@ public class GameHubTests : IDisposable
         attrs["Gold"].Should().Be(300);
     }
 
-    // ── TakeDamage helpers ───────────────────────────────────────────────────────
-
+    // TakeDamage helpers
     private static async Task<Character> SeedCharacterWithHealthAsync(
         ApplicationDbContext db, Guid accountId, int currentHealth, int maxHealth)
     {
@@ -2522,8 +2494,7 @@ public class GameHubTests : IDisposable
         return c;
     }
 
-    // ── TakeDamage hub method ────────────────────────────────────────────────────
-
+    // TakeDamage hub method
     [Fact]
     public async Task TakeDamage_Should_Send_Error_When_No_Character_Selected()
     {
@@ -2647,8 +2618,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── TakeDamageHubCommandHandler ─────────────────────────────────────────────────
-
+    // TakeDamageHubCommandHandler
     [Fact]
     public async Task TakeDamage_Handler_Should_Reduce_CurrentHealth_By_DamageAmount()
     {
@@ -2781,8 +2751,7 @@ public class GameHubTests : IDisposable
         attrs["CurrentHealth"].Should().Be(60);
     }
 
-    // ── CraftItem helpers ──────────────────────────────────────────────────────────
-
+    // CraftItem helpers
     private static async Task<Character> SeedCharacterWithCraftingGoldAsync(
         ApplicationDbContext db, Guid accountId, int gold)
     {
@@ -2800,8 +2769,7 @@ public class GameHubTests : IDisposable
         return c;
     }
 
-    // ── CraftItem hub method ───────────────────────────────────────────────────
-
+    // CraftItem hub method
     [Fact]
     public async Task CraftItem_Should_Send_Error_When_No_Character_Selected()
     {
@@ -2924,8 +2892,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── CraftItemHubCommandHandler ──────────────────────────────────────────────────
-
+    // CraftItemHubCommandHandler
     [Fact]
     public async Task CraftItem_Handler_Should_Deduct_Gold_And_Return_Crafted_Item()
     {
@@ -3022,8 +2989,7 @@ public class GameHubTests : IDisposable
         attrs["Gold"].Should().Be(250);
     }
 
-    // ── EnterDungeon hub method ───────────────────────────────────────────────
-
+    // EnterDungeon hub method
     [Fact]
     public async Task EnterDungeon_Should_Send_Error_When_No_Character_Selected()
     {
@@ -3146,8 +3112,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── EnterDungeonHubCommandHandler ───────────────────────────────────────────────
-
+    // EnterDungeonHubCommandHandler
     [Fact]
     public async Task EnterDungeon_Handler_Should_Return_DungeonId_For_Valid_Dungeon()
     {
@@ -3220,8 +3185,7 @@ public class GameHubTests : IDisposable
         result.ErrorMessage.Should().Contain("empty");
     }
 
-    // ── VisitShop hub method ──────────────────────────────────────────────────
-
+    // VisitShop hub method
     [Fact]
     public async Task VisitShop_Should_Send_Error_When_No_Character_Selected()
     {
@@ -3322,8 +3286,7 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // ── VisitShopHubCommandHandler ────────────────────────────────────────────
-
+    // VisitShopHubCommandHandler
     [Fact]
     public async Task VisitShop_Handler_Should_Return_Zone_Info_For_Merchant_Zone()
     {

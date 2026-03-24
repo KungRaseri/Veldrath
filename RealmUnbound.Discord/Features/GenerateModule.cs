@@ -17,11 +17,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
     private static readonly Color NpcColor     = new(0xC47A00);
     private static readonly Color AbilityColor = new(0x1E5FA3);
 
-    // ──────────────────────────────────────────────────────────────
-    // /generate item
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("item", "Forge a random item from the catalog")]
+    // // /generate item
+    // [SlashCommand("item", "Forge a random item from the catalog")]
     public async Task ItemAsync(
         [Summary("category", "Item category to generate from")]
         [Choice("Sword",          "weapons/swords")]
@@ -89,11 +86,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
         await FollowupAsync(embed: embed.Build());
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // /generate enemy
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("enemy", "Summon a random creature from the bestiary")]
+    // // /generate enemy
+    // [SlashCommand("enemy", "Summon a random creature from the bestiary")]
     public async Task EnemyAsync(
         [Summary("family", "Enemy family to generate from")]
         [Choice("Beasts",      "beasts")]
@@ -153,11 +147,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
         await FollowupAsync(embed: embed.Build());
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // /generate npc
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("npc", "Conjure a random denizen of the realm")]
+    // // /generate npc
+    // [SlashCommand("npc", "Conjure a random denizen of the realm")]
     public async Task NpcAsync(
         [Summary("category", "NPC profession to generate")]
         [Choice("Merchant",    "merchants")]
@@ -210,11 +201,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
         await FollowupAsync(embed: embed.Build());
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // /generate ability
-    // ──────────────────────────────────────────────────────────────
-
-    [SlashCommand("ability", "Discover a random ability from the arcane codex")]
+    // // /generate ability
+    // [SlashCommand("ability", "Discover a random ability from the arcane codex")]
     public async Task AbilityAsync(
         [Summary("type", "Ability category to generate from")]
         [Choice("Offensive",  "active/offensive")]
@@ -274,11 +262,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
         await FollowupAsync(embed: embed.Build());
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Helpers
-    // ──────────────────────────────────────────────────────────────
-
-    private static Color RarityColor(string rarity) => rarity switch
+    // // Helpers
+    // private static Color RarityColor(string rarity) => rarity switch
     {
         "Common"    => new Color(0xAAAAAA),
         "Uncommon"  => new Color(0x1EFF00),

@@ -4,8 +4,7 @@ namespace RealmUnbound.Client.Tests;
 
 public class InventoryItemViewModelTests : TestBase
 {
-    // ── DisplayName ───────────────────────────────────────────────────────────
-
+    // DisplayName
     [Fact]
     public void DisplayName_Converts_Underscore_Slug_To_Human_Readable()
     {
@@ -34,8 +33,7 @@ public class InventoryItemViewModelTests : TestBase
         vm.DisplayName.Should().Be("potion");
     }
 
-    // ── QuantityText ─────────────────────────────────────────────────────────
-
+    // QuantityText
     [Fact]
     public void QuantityText_Is_Empty_For_Single_Item()
     {
@@ -61,8 +59,7 @@ public class InventoryItemViewModelTests : TestBase
         monitor.Should().RaisePropertyChangeFor(x => x.QuantityText);
     }
 
-    // ── DurabilityText ────────────────────────────────────────────────────────
-
+    // DurabilityText
     [Fact]
     public void DurabilityText_Is_Empty_When_Durability_Is_Null()
     {
@@ -95,8 +92,7 @@ public class InventoryItemViewModelTests : TestBase
         monitor.Should().RaisePropertyChangeFor(x => x.DurabilityText);
     }
 
-    // ── HasDurability ─────────────────────────────────────────────────────────
-
+    // HasDurability
     [Fact]
     public void HasDurability_Is_False_When_Durability_Is_Null()
     {
@@ -122,8 +118,7 @@ public class InventoryItemViewModelTests : TestBase
         monitor.Should().RaisePropertyChangeFor(x => x.HasDurability);
     }
 
-    // ── ItemRef ───────────────────────────────────────────────────────────────
-
+    // ItemRef
     [Fact]
     public void ItemRef_Is_Set_From_Constructor()
     {

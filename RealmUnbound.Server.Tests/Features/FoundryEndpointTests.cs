@@ -13,8 +13,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
 {
     private readonly HttpClient _client = factory.CreateClient();
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Helpers
     private async Task<string> GetTokenAsync(string username)
     {
         var email = $"{username.ToLower()}@test.com";
@@ -59,8 +58,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         return (await response.Content.ReadFromJsonAsync<FoundrySubmissionDto>())!;
     }
 
-    // ── Create ────────────────────────────────────────────────────────────────
-
+    // Create
     [Fact]
     public async Task CreateSubmission_Should_Return_201_With_Submission_Details()
     {
@@ -116,8 +114,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         response.Headers.Location!.ToString().Should().Contain("/api/foundry/submissions/");
     }
 
-    // ── List ──────────────────────────────────────────────────────────────────
-
+    // List
     [Fact]
     public async Task ListSubmissions_Should_Return_Paged_Result()
     {
@@ -197,8 +194,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         notFound!.Items.Should().NotContain(s => s.Title == "FndSearch_FireStrike");
     }
 
-    // ── Get ───────────────────────────────────────────────────────────────────
-
+    // Get
     [Fact]
     public async Task GetSubmission_Should_Return_Full_Detail()
     {
@@ -226,8 +222,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── Vote ──────────────────────────────────────────────────────────────────
-
+    // Vote
     [Fact]
     public async Task Vote_Should_Upvote_Submission()
     {
@@ -331,8 +326,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         dto!.VoteScore.Should().Be(-1);
     }
 
-    // ── Review ────────────────────────────────────────────────────────────────
-
+    // Review
     [Fact]
     public async Task Review_Should_Approve_Submission()
     {
@@ -476,8 +470,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         notif.Message.Should().Contain("Not balanced.");
     }
 
-    // ── Notifications ─────────────────────────────────────────────────────────
-
+    // Notifications
     [Fact]
     public async Task GetNotifications_Should_Return_Empty_For_New_Account()
     {
@@ -500,8 +493,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── Mark Read ─────────────────────────────────────────────────────────────
-
+    // Mark Read
     [Fact]
     public async Task MarkNotificationRead_Should_Return_NoContent_And_Mark_IsRead()
     {

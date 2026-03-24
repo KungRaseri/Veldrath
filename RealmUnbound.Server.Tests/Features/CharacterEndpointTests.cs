@@ -277,8 +277,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
         list.Should().NotContain(c => c.Name == "IsolA_Char");
     }
 
-    // ── Lifecycle: create → delete → recreate ─────────────────────────────────
-
+    // Lifecycle: create → delete → recreate
     [Fact]
     public async Task CreateCharacter_AfterDeletingSameNamedChar_Succeeds()
     {
