@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -13,8 +13,7 @@ namespace RealmEngine.Core.Tests.Services;
 [Trait("Category", "Services")]
 public class ItemDataServiceTests
 {
-    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+    // Helpers
     private static ContentDbContext CreateDb(string dbName) =>
         new(new DbContextOptionsBuilder<ContentDbContext>()
             .UseInMemoryDatabase(dbName)
@@ -202,8 +201,7 @@ public class ItemDataServiceTests
         service.LoadCatalog("swords").Should().BeEmpty();
     }
 
-    // â”€â”€ LoadMultipleCategories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+    // LoadMultipleCategories
     [Fact]
     public void LoadMultipleCategories_AggregatesAllCategories()
     {
@@ -231,8 +229,7 @@ public class ItemDataServiceTests
             .Should().BeEmpty();
     }
 
-    // â”€â”€ ClearCache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+    // ClearCache
     [Fact]
     public void ClearCache_ForcesReload_OnNextCall()
     {

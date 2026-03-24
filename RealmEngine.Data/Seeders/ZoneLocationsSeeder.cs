@@ -16,7 +16,7 @@ public static class ZoneLocationsSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.ZoneLocations.AddRange(
-            // â”€â”€ Settlements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Settlements
             new ZoneLocation
             {
                 Slug         = "thornveil-village",
@@ -75,7 +75,7 @@ public static class ZoneLocationsSeeder
                 },
             },
 
-            // â”€â”€ Wilderness environments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Wilderness environments
             new ZoneLocation
             {
                 Slug         = "darkwood-forest",
@@ -134,7 +134,7 @@ public static class ZoneLocationsSeeder
                 },
             },
 
-            // â”€â”€ Dungeons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Dungeons
             new ZoneLocation
             {
                 Slug         = "goblin-warrens",
