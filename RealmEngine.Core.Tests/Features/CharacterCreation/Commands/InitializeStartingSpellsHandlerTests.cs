@@ -119,6 +119,6 @@ public class InitializeStartingPowersHandlerTests
         result.Success.Should().BeTrue();
         result.PowersLearned.Should().Be(0);
         result.PowerIds.Should().BeEmpty();
-        result.Message.Should().Contain("No starting spells");
+        result.Message.Should().Contain("No starting powers");
     }
 }
