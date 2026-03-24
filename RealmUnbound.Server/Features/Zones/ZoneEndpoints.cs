@@ -55,9 +55,20 @@ public static class ZoneEndpoints
             return Results.Ok(all.Select(z => ToDto(z, counts.GetValueOrDefault(z.Id))));
         });
 
-        // Returns all zone locations within a specific zone.
-        group.MapGet("/{id}/locations", async (string id, IZoneLocationRepository locations) =>
-            Results.Ok((await locations.GetByZoneIdAsync(id)).Select(ToLocationDto)));
+        // Returns all zone locations within a specific zone, filtered by character unlock state when characterId is supplied.
+        group.MapGet("/{id}/locations", async (
+            string id,
+            Guid? characterId,
+            IZoneLocationRepository locations,
+            ICharacterUnlockedLocationRepository? unlockedRepo) =>
+        {
+            if (characterId.HasValue && unlockedRepo is not null)
+            {
+                var unlocked = await unlockedRepo.GetUnlockedSlugsAsync(characterId.Value);
+                return Results.Ok((await locations.GetByZoneIdAsync(id, unlocked)).Select(ToLocationDto));
+            }
+            return Results.Ok((await locations.GetByZoneIdAsync(id)).Select(ToLocationDto));
+        });
     }
 
     private static void MapRegions(IEndpointRouteBuilder app)

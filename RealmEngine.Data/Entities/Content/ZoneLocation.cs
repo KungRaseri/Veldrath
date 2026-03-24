@@ -46,4 +46,34 @@ public class ZoneLocationTraits
     public bool? IsDungeon { get; set; }
     /// <summary>True if this location is a populated settlement.</summary>
     public bool? IsTown { get; set; }
+    /// <summary>True if this location is completely hidden until an unlock condition is met.</summary>
+    public bool? IsHidden { get; set; }
+    /// <summary>Unlock trigger type: "skill_check_passive" | "skill_check_active" | "quest" | "item" | "achievement" | "manual".</summary>
+    public string? UnlockType { get; set; }
+    /// <summary>Slug or identifier of the quest, item, or achievement required to unlock this location.</summary>
+    public string? UnlockKey { get; set; }
+    /// <summary>Character level threshold required for passive skill-check discovery (and target DC for active search rolls).</summary>
+    public int? DiscoverThreshold { get; set; }
+}
+
+/// <summary>A directed traversal edge linking one ZoneLocation to another location or zone.</summary>
+public class ZoneLocationConnection
+{
+    /// <summary>Primary key.</summary>
+    public int Id { get; set; }
+
+    /// <summary>Slug of the ZoneLocation that contains this exit.</summary>
+    public string FromLocationSlug { get; set; } = string.Empty;
+
+    /// <summary>Slug of the destination ZoneLocation, or <see langword="null"/> when the destination is a whole zone.</summary>
+    public string? ToLocationSlug { get; set; }
+
+    /// <summary>Zone slug to enter when this connection is traversed (set when the destination is an entire zone).</summary>
+    public string? ToZoneId { get; set; }
+
+    /// <summary>"path" | "portal" | "dungeon_entrance" | "secret_passage"</summary>
+    public string ConnectionType { get; set; } = "path";
+
+    /// <summary>False when the connection is temporarily blocked (quest gate, locked door, etc.).</summary>
+    public bool IsTraversable { get; set; } = true;
 }

@@ -1,13 +1,15 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using RealmUnbound.Server.Data.Repositories;
 
 namespace RealmUnbound.Server.Features.Zones;
 
 /// <summary>
-/// Hub command that moves a character to a specific <see cref="Data.Entities.ZoneLocation"/>
+/// Hub command that moves a character to a specific <see cref="RealmEngine.Data.Entities.ZoneLocation"/>
 /// within their current zone, validating that the location exists and belongs to that zone.
+/// Also performs a passive skill-check discovery sweep for any hidden locations in the zone.
 /// </summary>
 /// <param name="CharacterId">The ID of the character navigating.</param>
 /// <param name="LocationSlug">The slug of the target zone location.</param>
@@ -32,31 +34,44 @@ public record NavigateToLocationHubResult
 
     /// <summary>Gets the location type (e.g. "dungeon", "location", "environment"), or <see langword="null"/> on failure.</summary>
     public string? LocationType { get; init; }
+
+    /// <summary>Gets the traversal edges available from the arrived location.</summary>
+    public IReadOnlyList<ZoneLocationConnectionEntry> AvailableConnections { get; init; } = [];
+
+    /// <summary>Gets hidden locations newly discovered by the passive skill-check sweep.</summary>
+    public IReadOnlyList<ZoneLocationEntry> PassiveDiscoveries { get; init; } = [];
 }
 
 /// <summary>
 /// Handles <see cref="NavigateToLocationHubCommand"/> by verifying the location exists within the
-/// character's current zone via <see cref="IZoneLocationRepository"/>, then persisting the new
-/// current location via <see cref="ICharacterRepository"/>.
+/// character's current zone via <see cref="IZoneLocationRepository"/>, persisting the new current
+/// location via <see cref="ICharacterRepository"/>, loading available connections from the arrived
+/// location, and running a passive discovery sweep for hidden locations in the zone.
 /// </summary>
 public class NavigateToLocationHubCommandHandler
     : IRequestHandler<NavigateToLocationHubCommand, NavigateToLocationHubResult>
 {
+    private const string PassiveCheckType = "skill_check_passive";
+
     private readonly IZoneLocationRepository _locationRepo;
     private readonly ICharacterRepository _characterRepo;
+    private readonly ICharacterUnlockedLocationRepository _unlockedRepo;
     private readonly ILogger<NavigateToLocationHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="NavigateToLocationHubCommandHandler"/>.</summary>
     /// <param name="locationRepo">Repository used to look up zone location catalog entries.</param>
     /// <param name="characterRepo">Repository used to persist the character's current location.</param>
+    /// <param name="unlockedRepo">Repository used to persist passive discovery unlock records.</param>
     /// <param name="logger">Logger instance.</param>
     public NavigateToLocationHubCommandHandler(
         IZoneLocationRepository locationRepo,
         ICharacterRepository characterRepo,
+        ICharacterUnlockedLocationRepository unlockedRepo,
         ILogger<NavigateToLocationHubCommandHandler> logger)
     {
         _locationRepo  = locationRepo;
         _characterRepo = characterRepo;
+        _unlockedRepo  = unlockedRepo;
         _logger        = logger;
     }
 
@@ -74,7 +89,10 @@ public class NavigateToLocationHubCommandHandler
         if (string.IsNullOrWhiteSpace(request.ZoneId))
             return new NavigateToLocationHubResult { Success = false, ErrorMessage = "Zone ID cannot be empty" };
 
-        var locationsInZone = await _locationRepo.GetByZoneIdAsync(request.ZoneId);
+        // Determine which locations are visible to this character (non-hidden + unlocked hidden).
+        var unlockedSlugs = await _unlockedRepo.GetUnlockedSlugsAsync(request.CharacterId, cancellationToken);
+        var locationsInZone = await _locationRepo.GetByZoneIdAsync(request.ZoneId, unlockedSlugs);
+
         var location = locationsInZone.FirstOrDefault(l =>
             l.Slug.Equals(request.LocationSlug, StringComparison.OrdinalIgnoreCase));
 
@@ -91,12 +109,55 @@ public class NavigateToLocationHubCommandHandler
             "Character {CharacterIdPrefix} navigated to {LocationSlug} in zone {ZoneId}",
             request.CharacterId.ToString()[..8], location.Slug, request.ZoneId);
 
+        // Load connections from the arrived location.
+        var connections = await _locationRepo.GetConnectionsFromAsync(location.Slug);
+
+        // Passive discovery sweep: unlock hidden locations the character is high-level enough to notice.
+        var passiveDiscoveries = await RunPassiveDiscoveryAsync(
+            request.CharacterId, request.ZoneId, unlockedSlugs, cancellationToken);
+
         return new NavigateToLocationHubResult
         {
-            Success             = true,
-            LocationSlug        = location.Slug,
-            LocationDisplayName = location.DisplayName,
-            LocationType        = location.LocationType,
+            Success              = true,
+            LocationSlug         = location.Slug,
+            LocationDisplayName  = location.DisplayName,
+            LocationType         = location.LocationType,
+            AvailableConnections = connections,
+            PassiveDiscoveries   = passiveDiscoveries,
         };
     }
+
+    private async Task<IReadOnlyList<ZoneLocationEntry>> RunPassiveDiscoveryAsync(
+        Guid characterId,
+        string zoneId,
+        HashSet<string> alreadyUnlocked,
+        CancellationToken cancellationToken)
+    {
+        var character = await _characterRepo.GetByIdAsync(characterId, cancellationToken);
+        if (character is null) return [];
+
+        var hiddenLocations = await _locationRepo.GetHiddenByZoneIdAsync(zoneId);
+        var candidates = hiddenLocations
+            .Where(l => string.Equals(l.UnlockType, PassiveCheckType, StringComparison.OrdinalIgnoreCase)
+                        && !alreadyUnlocked.Contains(l.Slug))
+            .ToList();
+
+        var discovered = new List<ZoneLocationEntry>();
+
+        foreach (var loc in candidates)
+        {
+            var threshold = loc.DiscoverThreshold.GetValueOrDefault(int.MaxValue);
+            if (character.Level < threshold) continue;
+
+            await _unlockedRepo.AddUnlockAsync(characterId, loc.Slug, PassiveCheckType, cancellationToken);
+            discovered.Add(loc);
+
+            _logger.LogInformation(
+                "Character {CharacterIdPrefix} passively discovered {LocationSlug} (level {Level} >= threshold {Threshold})",
+                characterId.ToString()[..8], loc.Slug, character.Level, threshold);
+        }
+
+        return discovered;
+    }
 }
+

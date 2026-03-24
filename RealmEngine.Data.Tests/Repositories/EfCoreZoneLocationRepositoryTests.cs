@@ -114,4 +114,102 @@ public class EfCoreZoneLocationRepositoryTests
 
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task GetByZoneIdAsync_ExcludesHiddenLocations()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.AddRange(
+            new ZoneLocation { Slug = "visible-loc", ZoneId = "fenwick-crossing", LocationType = "location", IsActive = true, DisplayName = "Visible" },
+            new ZoneLocation { Slug = "hidden-loc",  ZoneId = "fenwick-crossing", LocationType = "dungeon",  IsActive = true, DisplayName = "Hidden",
+                Traits = new ZoneLocationTraits { IsHidden = true } });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetByZoneIdAsync("fenwick-crossing");
+
+        result.Should().ContainSingle(l => l.Slug == "visible-loc");
+        result.Should().NotContain(l => l.Slug == "hidden-loc");
+    }
+
+    [Fact]
+    public async Task GetByZoneIdAsync_WithUnlockedSlugs_IncludesUnlockedHiddenLocations()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.AddRange(
+            new ZoneLocation { Slug = "visible-loc",      ZoneId = "fenwick-crossing", LocationType = "location", IsActive = true, DisplayName = "Visible" },
+            new ZoneLocation { Slug = "hidden-unlocked",  ZoneId = "fenwick-crossing", LocationType = "dungeon",  IsActive = true, DisplayName = "Secret Lair",
+                Traits = new ZoneLocationTraits { IsHidden = true } },
+            new ZoneLocation { Slug = "hidden-locked",    ZoneId = "fenwick-crossing", LocationType = "dungeon",  IsActive = true, DisplayName = "Still Hidden",
+                Traits = new ZoneLocationTraits { IsHidden = true } });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetByZoneIdAsync("fenwick-crossing", ["hidden-unlocked"]);
+
+        result.Should().HaveCount(2);
+        result.Should().Contain(l => l.Slug == "visible-loc");
+        result.Should().Contain(l => l.Slug == "hidden-unlocked");
+        result.Should().NotContain(l => l.Slug == "hidden-locked");
+    }
+
+    [Fact]
+    public async Task GetHiddenByZoneIdAsync_ReturnsOnlyHiddenLocations()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.AddRange(
+            new ZoneLocation { Slug = "visible-loc", ZoneId = "fenwick-crossing", LocationType = "location", IsActive = true, DisplayName = "Visible" },
+            new ZoneLocation { Slug = "hidden-loc",  ZoneId = "fenwick-crossing", LocationType = "dungeon",  IsActive = true, DisplayName = "Secret Passage",
+                Traits = new ZoneLocationTraits { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 } });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetHiddenByZoneIdAsync("fenwick-crossing");
+
+        result.Should().ContainSingle(l => l.Slug == "hidden-loc");
+        result.Single().IsHidden.Should().BeTrue();
+        result.Single().UnlockType.Should().Be("skill_check_passive");
+        result.Single().DiscoverThreshold.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetHiddenByZoneIdAsync_ReturnsEmpty_WhenNoHiddenLocationsExist()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.Add(MakeLoc("visible-loc"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetHiddenByZoneIdAsync("fenwick-crossing");
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetConnectionsFromAsync_ReturnsConnectionsForSlug()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocationConnections.AddRange(
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-market", ToLocationSlug = "fenwick-inn",    ConnectionType = "path",   IsTraversable = true  },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-market", ToZoneId        = "greenveil-paths", ConnectionType = "portal", IsTraversable = false },
+            new ZoneLocationConnection { FromLocationSlug = "other-place",    ToLocationSlug = "somewhere",      ConnectionType = "path",   IsTraversable = true  });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetConnectionsFromAsync("fenwick-market");
+
+        result.Should().HaveCount(2);
+        result.Should().OnlyContain(c => c.FromLocationSlug == "fenwick-market");
+    }
+
+    [Fact]
+    public async Task GetConnectionsFromAsync_ReturnsEmpty_WhenNoConnectionsExist()
+    {
+        await using var db = CreateDbContext();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetConnectionsFromAsync("nonexistent-location");
+
+        result.Should().BeEmpty();
+    }
 }

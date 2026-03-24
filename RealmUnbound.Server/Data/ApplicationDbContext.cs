@@ -21,6 +21,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
 
     /// <summary>Game characters owned by player accounts.</summary>
     public DbSet<Entities.Character> Characters => Set<Entities.Character>();
+    /// <summary>Zone locations that characters have unlocked through discovery or quests.</summary>
+    public DbSet<CharacterUnlockedLocation> CharacterUnlockedLocations => Set<CharacterUnlockedLocation>();
     /// <summary>JWT refresh tokens.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     /// <summary>Top-level world containers (currently only Draveth).</summary>
@@ -58,6 +60,19 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasOne(c => c.Account)
              .WithMany()
              .HasForeignKey(c => c.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CharacterUnlockedLocation>(e =>
+        {
+            e.HasKey(u => u.Id);
+            // One row per character-location combination.
+            e.HasIndex(u => new { u.CharacterId, u.LocationSlug }).IsUnique();
+            e.Property(u => u.LocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(u => u.UnlockSource).HasMaxLength(64).IsRequired();
+            e.HasOne(u => u.Character)
+             .WithMany()
+             .HasForeignKey(u => u.CharacterId)
              .OnDelete(DeleteBehavior.Cascade);
         });
 

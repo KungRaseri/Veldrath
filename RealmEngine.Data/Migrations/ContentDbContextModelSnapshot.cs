@@ -1237,6 +1237,42 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("ZoneLocations");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocationConnection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ConnectionType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("FromLocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("IsTraversable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ToLocationSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ToZoneId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromLocationSlug");
+
+                    b.ToTable("ZoneLocationConnections");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
                 {
                     b.HasOne("RealmEngine.Data.Entities.Background", "Background")
@@ -2589,15 +2625,23 @@ namespace RealmEngine.Data.Migrations
                         {
                             b1.Property<Guid>("ZoneLocationId");
 
+                            b1.Property<int?>("DiscoverThreshold");
+
                             b1.Property<bool?>("HasMerchant");
 
                             b1.Property<bool?>("IsDiscoverable");
 
                             b1.Property<bool?>("IsDungeon");
 
+                            b1.Property<bool?>("IsHidden");
+
                             b1.Property<bool?>("IsIndoor");
 
                             b1.Property<bool?>("IsTown");
+
+                            b1.Property<string>("UnlockKey");
+
+                            b1.Property<string>("UnlockType");
 
                             b1.HasKey("ZoneLocationId");
 

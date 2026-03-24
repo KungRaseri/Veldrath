@@ -655,4 +655,43 @@ public class HttpZoneServiceTests : TestBase
         var result = await sut.GetZoneLocationsAsync("fenwick-crossing");
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task GetZoneLocationsAsync_WithCharacterId_Should_Include_QueryParam()
+    {
+        string? capturedUrl = null;
+        var characterId     = Guid.Parse("12345678-0000-0000-0000-000000000000");
+        var handler         = new FakeHttpHandler(req =>
+        {
+            capturedUrl = req.RequestUri?.ToString();
+            return new System.Net.Http.HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = System.Net.Http.Json.JsonContent.Create(new List<ZoneLocationDto>())
+            };
+        });
+
+        var sut = MakeSut(handler);
+        await sut.GetZoneLocationsAsync("fenwick-crossing", characterId);
+
+        capturedUrl.Should().Contain("characterId=12345678-0000-0000-0000-000000000000");
+    }
+
+    [Fact]
+    public async Task GetZoneLocationsAsync_WithoutCharacterId_Should_Not_Include_QueryParam()
+    {
+        string? capturedUrl = null;
+        var handler         = new FakeHttpHandler(req =>
+        {
+            capturedUrl = req.RequestUri?.ToString();
+            return new System.Net.Http.HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = System.Net.Http.Json.JsonContent.Create(new List<ZoneLocationDto>())
+            };
+        });
+
+        var sut = MakeSut(handler);
+        await sut.GetZoneLocationsAsync("fenwick-crossing");
+
+        capturedUrl.Should().NotContain("characterId");
+    }
 }

@@ -223,6 +223,38 @@ namespace RealmUnbound.Server.Migrations.Application
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("UnlockSource")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UnlockedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId", "LocationSlug")
+                        .IsUnique();
+
+                    b.ToTable("CharacterUnlockedLocations");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryNotification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -705,6 +737,17 @@ namespace RealmUnbound.Server.Migrations.Application
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryNotification", b =>

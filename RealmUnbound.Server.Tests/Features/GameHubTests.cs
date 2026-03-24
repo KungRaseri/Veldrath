@@ -3493,6 +3493,7 @@ public class GameHubTests : IDisposable
         var handler = new NavigateToLocationHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3521,6 +3522,7 @@ public class GameHubTests : IDisposable
         var handler = new NavigateToLocationHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3541,6 +3543,7 @@ public class GameHubTests : IDisposable
         var handler = new NavigateToLocationHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3561,6 +3564,7 @@ public class GameHubTests : IDisposable
         var handler = new NavigateToLocationHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3569,6 +3573,462 @@ public class GameHubTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("empty");
+    }
+
+    [Fact]
+    public async Task NavigateToLocation_Handler_Should_PersistPassiveDiscovery_WhenLevelMeetsThreshold()
+    {
+        await using var contentDb  = CreateContentDbContext();
+        await using var db         = _factory.CreateContext();
+        var accountId              = await SeedAccountAsync(db);
+        var character              = new Character
+        {
+            AccountId = accountId,
+            Name      = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level     = 10,
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        // A visible location to navigate to, plus a hidden passive-check location
+        contentDb.ZoneLocations.AddRange(
+            MakeZoneLocation("fenwick-market", "fenwick-crossing"),
+            new RealmEngine.Data.Entities.ZoneLocation
+            {
+                Slug         = "hidden-grotto",
+                ZoneId       = "fenwick-crossing",
+                LocationType = "dungeon",
+                IsActive     = true,
+                DisplayName  = "Hidden Grotto",
+                Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits
+                {
+                    IsHidden          = true,
+                    UnlockType        = "skill_check_passive",
+                    DiscoverThreshold = 5,  // level 10 >= 5 → should trigger
+                },
+            });
+        await contentDb.SaveChangesAsync();
+
+        var handler = new NavigateToLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
+            NullLogger<NavigateToLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new NavigateToLocationHubCommand(character.Id, "fenwick-market", "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.PassiveDiscoveries.Should().ContainSingle(l => l.Slug == "hidden-grotto");
+        db.CharacterUnlockedLocations.Should().ContainSingle(u =>
+            u.CharacterId == character.Id && u.LocationSlug == "hidden-grotto");
+    }
+
+    // UnlockZoneLocation hub method
+    [Fact]
+    public async Task UnlockZoneLocation_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.UnlockZoneLocation(new UnlockZoneLocationHubRequest("secret-cave", "quest"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task UnlockZoneLocation_Should_Dispatch_Command_And_Broadcast_ZoneLocationUnlocked()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<UnlockZoneLocationHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UnlockZoneLocationHubResult
+            {
+                Success             = true,
+                LocationSlug        = "secret-cave",
+                LocationDisplayName = "Secret Cave",
+                LocationType        = "dungeon",
+                WasAlreadyUnlocked  = false,
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.UnlockZoneLocation(new UnlockZoneLocationHubRequest("secret-cave", "quest"));
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<UnlockZoneLocationHubCommand>(
+                c => c.LocationSlug == "secret-cave" && c.UnlockSource == "quest"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        clients.CallerProxy.SentMessages
+            .Should().Contain(m => m.Method == "ZoneLocationUnlocked");
+    }
+
+    // SearchArea hub method
+    [Fact]
+    public async Task SearchArea_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.SearchArea();
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task SearchArea_Should_Send_Error_When_Not_In_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+        var (hub, clients, _, ctx) = CreateHub(db, accountId);
+        ctx.Items["CharacterId"] = character.Id;
+        // No "CurrentZoneId" in context items
+
+        await hub.SearchArea();
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task SearchArea_Should_Dispatch_Command_And_Broadcast_AreaSearched()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<SearchAreaHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SearchAreaHubResult { Success = true, RollValue = 7, AnyFound = false, Discovered = [] });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+
+        await hub.SearchArea();
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<SearchAreaHubCommand>(
+                c => c.CharacterId == character.Id && c.ZoneId == "fenwick-crossing"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        clients.CallerProxy.SentMessages
+            .Should().Contain(m => m.Method == "AreaSearched");
+    }
+
+    // TraverseConnection hub method
+    [Fact]
+    public async Task TraverseConnection_Should_Send_Error_When_No_Character_Selected()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+
+        await hub.TraverseConnection(new TraverseConnectionHubRequest("fenwick-market", "path"));
+
+        clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "Error");
+    }
+
+    [Fact]
+    public async Task TraverseConnection_Should_Dispatch_Command_And_Broadcast_ConnectionTraversed()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+        var character      = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<TraverseConnectionHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TraverseConnectionHubResult
+            {
+                Success        = true,
+                ToLocationSlug = "fenwick-inn",
+                ToZoneId       = null,
+                IsCrossZone    = false,
+                ConnectionType = "path",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+        ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+
+        await hub.TraverseConnection(new TraverseConnectionHubRequest("fenwick-market", "path"));
+
+        mediatorMock.Verify(
+            m => m.Send(It.Is<TraverseConnectionHubCommand>(
+                c => c.CharacterId == character.Id && c.FromLocationSlug == "fenwick-market"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        clients.CallerProxy.SentMessages
+            .Should().Contain(m => m.Method == "ConnectionTraversed");
+    }
+
+    // UnlockZoneLocationHubCommandHandler
+    [Fact]
+    public async Task UnlockZoneLocation_Handler_Should_Unlock_And_Return_Info()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocations.Add(new RealmEngine.Data.Entities.ZoneLocation
+        {
+            Slug         = "secret-cave",
+            ZoneId       = "fenwick-crossing",
+            LocationType = "dungeon",
+            IsActive     = true,
+            DisplayName  = "Secret Cave",
+            Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
+        });
+        await contentDb.SaveChangesAsync();
+
+        var handler = new UnlockZoneLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterUnlockedLocationRepository(db),
+            NullLogger<UnlockZoneLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UnlockZoneLocationHubCommand(character.Id, "secret-cave", "quest"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.LocationSlug.Should().Be("secret-cave");
+        result.WasAlreadyUnlocked.Should().BeFalse();
+        db.CharacterUnlockedLocations.Should().ContainSingle(u =>
+            u.CharacterId == character.Id && u.LocationSlug == "secret-cave");
+    }
+
+    [Fact]
+    public async Task UnlockZoneLocation_Handler_Should_Return_WasAlreadyUnlocked_When_Duplicate()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocations.Add(new RealmEngine.Data.Entities.ZoneLocation
+        {
+            Slug         = "secret-cave",
+            ZoneId       = "fenwick-crossing",
+            LocationType = "dungeon",
+            IsActive     = true,
+            DisplayName  = "Secret Cave",
+            Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
+        });
+        await contentDb.SaveChangesAsync();
+
+        var unlockedRepo = new CharacterUnlockedLocationRepository(db);
+        await unlockedRepo.AddUnlockAsync(character.Id, "secret-cave", "quest");
+
+        var handler = new UnlockZoneLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            unlockedRepo,
+            NullLogger<UnlockZoneLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UnlockZoneLocationHubCommand(character.Id, "secret-cave", "quest"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.WasAlreadyUnlocked.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task UnlockZoneLocation_Handler_Should_Fail_For_NonHiddenLocation()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocations.Add(MakeZoneLocation("visible-market", "fenwick-crossing"));
+        await contentDb.SaveChangesAsync();
+
+        var handler = new UnlockZoneLocationHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterUnlockedLocationRepository(db),
+            NullLogger<UnlockZoneLocationHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UnlockZoneLocationHubCommand(character.Id, "visible-market", "quest"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not a hidden location");
+    }
+
+    // TraverseConnectionHubCommandHandler
+    [Fact]
+    public async Task TraverseConnection_Handler_Should_Traverse_SameZone_Connection()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocationConnections.Add(new RealmEngine.Data.Entities.ZoneLocationConnection
+        {
+            FromLocationSlug = "fenwick-market",
+            ToLocationSlug   = "fenwick-inn",
+            ConnectionType   = "path",
+            IsTraversable    = true,
+        });
+        await contentDb.SaveChangesAsync();
+
+        var handler = new TraverseConnectionHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<TraverseConnectionHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new TraverseConnectionHubCommand(character.Id, "fenwick-market", "path"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ToLocationSlug.Should().Be("fenwick-inn");
+        result.IsCrossZone.Should().BeFalse();
+        var updated = await new CharacterRepository(db).GetByIdAsync(character.Id);
+        updated!.CurrentZoneLocationSlug.Should().Be("fenwick-inn");
+    }
+
+    [Fact]
+    public async Task TraverseConnection_Handler_Should_Fail_When_Connection_Is_Blocked()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = await SeedCharacterAsync(db, accountId);
+
+        contentDb.ZoneLocationConnections.Add(new RealmEngine.Data.Entities.ZoneLocationConnection
+        {
+            FromLocationSlug = "fenwick-market",
+            ToLocationSlug   = "locked-gate",
+            ConnectionType   = "gate",
+            IsTraversable    = false,
+        });
+        await contentDb.SaveChangesAsync();
+
+        var handler = new TraverseConnectionHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<TraverseConnectionHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new TraverseConnectionHubCommand(character.Id, "fenwick-market", "gate"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("blocked");
+    }
+
+    [Fact]
+    public async Task TraverseConnection_Handler_Should_Fail_When_No_Connection_Exists()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = await SeedCharacterAsync(db, accountId);
+
+        var handler = new TraverseConnectionHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            NullLogger<TraverseConnectionHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new TraverseConnectionHubCommand(character.Id, "nonexistent-spot", "path"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("No connection");
+    }
+
+    // SearchAreaHubCommandHandler
+    [Fact]
+    public async Task SearchArea_Handler_Should_Return_Error_When_Character_Not_Found()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+
+        var handler = new SearchAreaHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
+            NullLogger<SearchAreaHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new SearchAreaHubCommand(Guid.NewGuid(), "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Character not found");
+    }
+
+    [Fact]
+    public async Task SearchArea_Handler_Should_Unlock_Active_Locations_When_Roll_Meets_Threshold()
+    {
+        await using var contentDb = CreateContentDbContext();
+        await using var db        = _factory.CreateContext();
+        var accountId             = await SeedAccountAsync(db);
+        var character             = new Character
+        {
+            AccountId = accountId,
+            Name      = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level     = 10,
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        contentDb.ZoneLocations.Add(new RealmEngine.Data.Entities.ZoneLocation
+        {
+            Slug         = "hidden-altar",
+            ZoneId       = "fenwick-crossing",
+            LocationType = "location",
+            IsActive     = true,
+            DisplayName  = "Hidden Altar",
+            Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits
+            {
+                IsHidden          = true,
+                UnlockType        = "skill_check_active",
+                DiscoverThreshold = 1,  // level 10 + even worst roll (-5) = 5 >= 1 → always found
+            },
+        });
+        await contentDb.SaveChangesAsync();
+
+        var handler = new SearchAreaHubCommandHandler(
+            new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
+            new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
+            NullLogger<SearchAreaHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new SearchAreaHubCommand(character.Id, "fenwick-crossing"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.AnyFound.Should().BeTrue();
+        result.Discovered.Should().ContainSingle(d => d.Slug == "hidden-altar");
+        db.CharacterUnlockedLocations.Should().ContainSingle(u =>
+            u.CharacterId == character.Id && u.LocationSlug == "hidden-altar");
     }
 }
 

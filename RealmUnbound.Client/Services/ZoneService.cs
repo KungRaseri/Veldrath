@@ -14,9 +14,10 @@ public interface IZoneService
     Task<List<ZoneDto>> GetZonesByRegionAsync(string regionId);
 
     /// <summary>
-    /// Fetches all zone locations available within the given zone.
+    /// Fetches all zone locations visible to the given character within the specified zone.
+    /// When <paramref name="characterId"/> is provided, unlocked hidden locations are included.
     /// </summary>
-    Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId);
+    Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId, Guid? characterId = null);
 
     Task<List<RegionDto>> GetRegionsAsync();
     Task<RegionDto?> GetRegionAsync(string regionId);
@@ -170,11 +171,14 @@ public class HttpZoneService(
         }
     }
 
-    public async Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId)
+    public async Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId, Guid? characterId = null)
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/zones/{zoneId}/locations");
+            var url = characterId.HasValue
+                ? $"api/zones/{zoneId}/locations?characterId={characterId.Value}"
+                : $"api/zones/{zoneId}/locations";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = BearerHeader;
             var response = await http.SendAsync(request);
             response.EnsureSuccessStatusCode();

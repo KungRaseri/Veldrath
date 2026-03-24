@@ -249,7 +249,7 @@ public class FakeZoneService : IZoneService
     public Task<WorldDto?> GetWorldAsync(string worldId)
         => Task.FromResult(Worlds.FirstOrDefault(w => w.Id == worldId));
 
-    public Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId)
+    public Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId, Guid? characterId = null)
         => Task.FromResult(new List<ZoneLocationDto>());
 }
 
