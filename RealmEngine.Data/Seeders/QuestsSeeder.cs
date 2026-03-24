@@ -16,7 +16,7 @@ public static class QuestsSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.Quests.AddRange(
-            // ── Combat quest ──────────────────────────────────────────────────
+            // Combat quest
             new Quest
             {
                 Slug         = "clear-the-forest",
@@ -64,7 +64,7 @@ public static class QuestsSeeder
                 },
             },
 
-            // ── Gathering quest ───────────────────────────────────────────────
+            // Gathering quest
             new Quest
             {
                 Slug         = "gather-mushrooms",
@@ -113,7 +113,7 @@ public static class QuestsSeeder
                 },
             },
 
-            // ── Story quest ───────────────────────────────────────────────────
+            // Story quest
             new Quest
             {
                 Slug         = "the-lost-shipment",

@@ -26,7 +26,7 @@ public static class ContentDomainCatalog
 
     public static IReadOnlyList<DomainEntry> All { get; } =
     [
-        // ── Abilities ────────────────────────────────────────────────────────
+        // Abilities
         new("abilities", "Abilities", "abilities", "active/offensive",  "Abilities", "Active — Offensive"),
         new("abilities", "Abilities", "abilities", "active/defensive",  "Abilities", "Active — Defensive"),
         new("abilities", "Abilities", "abilities", "active/support",    "Abilities", "Active — Support"),
@@ -36,14 +36,14 @@ public static class ContentDomainCatalog
         new("abilities", "Abilities", "abilities", "reactive",          "Abilities", "Reactive"),
         new("abilities", "Abilities", "abilities", "ultimate",          "Abilities", "Ultimate"),
 
-        // ── Spells ───────────────────────────────────────────────────────────
+        // Spells
         new("spells", "Spells", "spells", "offensive", "Spells", "Offensive"),
         new("spells", "Spells", "spells", "defensive", "Spells", "Defensive"),
         new("spells", "Spells", "spells", "utility",   "Spells", "Utility"),
         new("spells", "Spells", "spells", "healing",   "Spells", "Healing"),
         new("spells", "Spells", "spells", "summoning", "Spells", "Summoning"),
 
-        // ── Actor › Species ────────────────────────────────────────────────
+        // Actor › Species
         new("actors/species", "Actors › Species", "actors/species", "humanoid",  "Species", "Humanoid"),
         new("actors/species", "Actors › Species", "actors/species", "beast",     "Species", "Beast"),
         new("actors/species", "Actors › Species", "actors/species", "undead",    "Species", "Undead"),
@@ -52,26 +52,26 @@ public static class ContentDomainCatalog
         new("actors/species", "Actors › Species", "actors/species", "elemental", "Species", "Elemental"),
         new("actors/species", "Actors › Species", "actors/species", "construct", "Species", "Construct"),
 
-        // ── Actor › Classes ────────────────────────────────────────────────
+        // Actor › Classes
         new("actors/classes", "Actors › Classes", "actors/classes", "warriors", "ActorClasses", "Warriors"),
         new("actors/classes", "Actors › Classes", "actors/classes", "rogues",   "ActorClasses", "Rogues"),
         new("actors/classes", "Actors › Classes", "actors/classes", "casters",  "ActorClasses", "Casters"),
         new("actors/classes", "Actors › Classes", "actors/classes", "hybrids",  "ActorClasses", "Hybrids"),
 
-        // ── Actor › Backgrounds ────────────────────────────────────────────
+        // Actor › Backgrounds
         new("actors/backgrounds", "Actors › Backgrounds", "actors/backgrounds", "common",    "Backgrounds", "Common"),
         new("actors/backgrounds", "Actors › Backgrounds", "actors/backgrounds", "noble",     "Backgrounds", "Noble"),
         new("actors/backgrounds", "Actors › Backgrounds", "actors/backgrounds", "outlander", "Backgrounds", "Outlander"),
         new("actors/backgrounds", "Actors › Backgrounds", "actors/backgrounds", "criminal",  "Backgrounds", "Criminal"),
         new("actors/backgrounds", "Actors › Backgrounds", "actors/backgrounds", "scholar",   "Backgrounds", "Scholar"),
 
-        // ── Actor › Skills ─────────────────────────────────────────────────
+        // Actor › Skills
         new("actors/skills", "Actors › Skills", "actors/skills", "combat",      "Skills", "Combat"),
         new("actors/skills", "Actors › Skills", "actors/skills", "crafting",    "Skills", "Crafting"),
         new("actors/skills", "Actors › Skills", "actors/skills", "social",      "Skills", "Social"),
         new("actors/skills", "Actors › Skills", "actors/skills", "exploration", "Skills", "Exploration"),
 
-        // ── Actor › Archetypes ─────────────────────────────────────────────
+        // Actor › Archetypes
         new("actors/archetypes", "Actors › Archetypes", "actors/archetypes", "humanoids/bandits",   "ActorArchetypes", "Humanoids — Bandits"),
         new("actors/archetypes", "Actors › Archetypes", "actors/archetypes", "humanoids/soldiers",  "ActorArchetypes", "Humanoids — Soldiers"),
         new("actors/archetypes", "Actors › Archetypes", "actors/archetypes", "beasts/wolves",       "ActorArchetypes", "Beasts — Wolves"),
@@ -86,12 +86,12 @@ public static class ContentDomainCatalog
         new("actors/archetypes", "Actors › Archetypes", "actors/archetypes", "guards",              "ActorArchetypes", "Guards"),
         new("actors/archetypes", "Actors › Archetypes", "actors/archetypes", "wanderers",           "ActorArchetypes", "Wanderers"),
 
-        // ── Actor › Instances ──────────────────────────────────────────────
+        // Actor › Instances
         new("actors/instances", "Actors › Instances", "actors/instances", "boss",   "ActorInstances", "Bosses"),
         new("actors/instances", "Actors › Instances", "actors/instances", "story",  "ActorInstances", "Story Characters"),
         new("actors/instances", "Actors › Instances", "actors/instances", "unique", "ActorInstances", "Unique"),
 
-        // ── Items › Weapons ───────────────────────────────────────────────────
+        // Items › Weapons
         new("items/weapons", "Items › Weapons", "items/weapons", "swords",    "Weapons", "Swords"),
         new("items/weapons", "Items › Weapons", "items/weapons", "axes",      "Weapons", "Axes"),
         new("items/weapons", "Items › Weapons", "items/weapons", "bows",      "Weapons", "Bows"),
@@ -101,68 +101,68 @@ public static class ContentDomainCatalog
         new("items/weapons", "Items › Weapons", "items/weapons", "spears",    "Weapons", "Spears"),
         new("items/weapons", "Items › Weapons", "items/weapons", "crossbows", "Weapons", "Crossbows"),
 
-        // ── Items › Armor ─────────────────────────────────────────────────────
+        // Items › Armor
         new("items/armor", "Items › Armor", "items/armor", "light",   "Armors", "Light"),
         new("items/armor", "Items › Armor", "items/armor", "medium",  "Armors", "Medium"),
         new("items/armor", "Items › Armor", "items/armor", "heavy",   "Armors", "Heavy"),
         new("items/armor", "Items › Armor", "items/armor", "shields", "Armors", "Shields"),
 
-        // ── Items › Materials ─────────────────────────────────────────────────
+        // Items › Materials
         new("items/materials", "Items › Materials", "items/materials", "metals",   "Materials", "Metals"),
         new("items/materials", "Items › Materials", "items/materials", "woods",    "Materials", "Woods"),
         new("items/materials", "Items › Materials", "items/materials", "fabrics",  "Materials", "Fabrics"),
         new("items/materials", "Items › Materials", "items/materials", "gems",     "Materials", "Gems"),
         new("items/materials", "Items › Materials", "items/materials", "leathers", "Materials", "Leathers"),
 
-        // ── Items › Material Properties ───────────────────────────────────────
+        // Items › Material Properties
         new("items/material-properties", "Items › Material Properties", "items/material-properties", "metals",   "MaterialProperties", "Metals"),
         new("items/material-properties", "Items › Material Properties", "items/material-properties", "woods",    "MaterialProperties", "Woods"),
         new("items/material-properties", "Items › Material Properties", "items/material-properties", "fabrics",  "MaterialProperties", "Fabrics"),
         new("items/material-properties", "Items › Material Properties", "items/material-properties", "gems",     "MaterialProperties", "Gems"),
         new("items/material-properties", "Items › Material Properties", "items/material-properties", "leathers", "MaterialProperties", "Leathers"),
 
-        // ── Items › Enchantments ──────────────────────────────────────────────
+        // Items › Enchantments
         new("items/enchantments", "Items › Enchantments", "items/enchantments", "weapon",  "Enchantments", "Weapon"),
         new("items/enchantments", "Items › Enchantments", "items/enchantments", "armor",   "Enchantments", "Armor"),
         new("items/enchantments", "Items › Enchantments", "items/enchantments", "utility", "Enchantments", "Utility"),
         new("items/enchantments", "Items › Enchantments", "items/enchantments", "cursed",  "Enchantments", "Cursed"),
 
-        // ── Items › Consumables ───────────────────────────────────────────────
+        // Items › Consumables
         new("items/consumables", "Items › Consumables", "items/consumables", "potions", "Items", "Potions"),
         new("items/consumables", "Items › Consumables", "items/consumables", "food",    "Items", "Food"),
         new("items/consumables", "Items › Consumables", "items/consumables", "scrolls", "Items", "Scrolls"),
 
-        // ── World › Locations ─────────────────────────────────────────────────
+        // World › Locations
         new("world/locations", "World › Locations", "world/locations", "towns",              "ZoneLocations", "Towns"),
         new("world/locations", "World › Locations", "world/locations", "dungeons",           "ZoneLocations", "Dungeons"),
         new("world/locations", "World › Locations", "world/locations", "wilderness",         "ZoneLocations", "Wilderness"),
         new("world/locations", "World › Locations", "world/locations", "points-of-interest", "ZoneLocations", "Points of Interest"),
 
-        // ── World › Organizations ─────────────────────────────────────────────
+        // World › Organizations
         new("world/organizations", "World › Organizations", "world/organizations", "factions",         "Organizations", "Factions"),
         new("world/organizations", "World › Organizations", "world/organizations", "guilds",           "Organizations", "Guilds"),
         new("world/organizations", "World › Organizations", "world/organizations", "cults",            "Organizations", "Cults"),
         new("world/organizations", "World › Organizations", "world/organizations", "merchant-leagues", "Organizations", "Merchant Leagues"),
 
-        // ── World › Quests ────────────────────────────────────────────────────
+        // World › Quests
         new("world/quests", "World › Quests", "world/quests", "main-story",  "Quests", "Main Story"),
         new("world/quests", "World › Quests", "world/quests", "side-quests", "Quests", "Side Quests"),
         new("world/quests", "World › Quests", "world/quests", "daily",       "Quests", "Daily"),
         new("world/quests", "World › Quests", "world/quests", "guild",       "Quests", "Guild"),
 
-        // ── World › Dialogues ─────────────────────────────────────────────────
+        // World › Dialogues
         new("world/dialogues", "World › Dialogues", "world/dialogues", "merchants",   "Dialogues", "Merchants"),
         new("world/dialogues", "World › Dialogues", "world/dialogues", "questgivers", "Dialogues", "Quest Givers"),
         new("world/dialogues", "World › Dialogues", "world/dialogues", "story",       "Dialogues", "Story"),
         new("world/dialogues", "World › Dialogues", "world/dialogues", "ambient",     "Dialogues", "Ambient"),
 
-        // ── Loot Tables ───────────────────────────────────────────────────────
+        // Loot Tables
         new("loot-tables", "Loot Tables", "loot-tables", "actors",   "LootTables", "Actors"),
         new("loot-tables", "Loot Tables", "loot-tables", "treasure", "LootTables", "Treasure"),
         new("loot-tables", "Loot Tables", "loot-tables", "vendors",  "LootTables", "Vendors"),
         new("loot-tables", "Loot Tables", "loot-tables", "events",   "LootTables", "Events"),
 
-        // ── Recipes ───────────────────────────────────────────────────────────
+        // Recipes
         new("recipes", "Recipes", "recipes", "crafting", "Recipes", "Crafting"),
         new("recipes", "Recipes", "recipes", "alchemy",  "Recipes", "Alchemy"),
         new("recipes", "Recipes", "recipes", "cooking",  "Recipes", "Cooking"),

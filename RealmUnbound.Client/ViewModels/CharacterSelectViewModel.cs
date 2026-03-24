@@ -343,7 +343,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _navigation.NavigateTo<MainMenuViewModel>();
     }
 
-    // ── Payload shapes (matching server hub broadcasts) ────────────────────────
+    // Payload shapes (matching server hub broadcasts)
     internal record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt);
     internal record ZoneEnteredPayload(string Id, string Name, string Description, string ZoneType, IEnumerable<OccupantInfo> Occupants);
     internal record PlayerEventPayload(string CharacterName);

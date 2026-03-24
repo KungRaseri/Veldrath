@@ -16,8 +16,7 @@ public static class ActorSeeder
         await SeedSpeciesAsync(db);
     }
 
-    // ── Actor Classes ─────────────────────────────────────────────────────────
-
+    // Actor Classes
     private static async Task SeedActorClassesAsync(ContentDbContext db)
     {
         if (await db.ActorClasses.AnyAsync())
@@ -97,9 +96,8 @@ public static class ActorSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── [Powers/ClassPowerUnlocks/SpeciesPowerPools moved to PowersSeeder] ─────
-
-    // ── Skills ────────────────────────────────────────────────────────────────
+    // [Powers/ClassPowerUnlocks/SpeciesPowerPools moved to PowersSeeder]
+    // Skills
     private static async Task SeedSkillsAsync(ContentDbContext db)
     {
         if (await db.Skills.AnyAsync())
@@ -165,8 +163,7 @@ public static class ActorSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Backgrounds ───────────────────────────────────────────────────────────
-
+    // Backgrounds
     private static async Task SeedBackgroundsAsync(ContentDbContext db)
     {
         if (await db.Backgrounds.AnyAsync())
@@ -232,8 +229,7 @@ public static class ActorSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Species ───────────────────────────────────────────────────────────────
-
+    // Species
     private static async Task SeedSpeciesAsync(ContentDbContext db)
     {
         if (await db.Species.AnyAsync())

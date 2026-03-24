@@ -4,7 +4,7 @@ using RealmUnbound.Server.Data.Repositories;
 
 namespace RealmUnbound.Server.Features.Zones;
 
-// ── Endpoint map ──────────────────────────────────────────────────────────────
+// Endpoint map
 /// <summary>Minimal-API endpoint registrations for zone, region, and world catalog queries.</summary>
 public static class ZoneEndpoints
 {

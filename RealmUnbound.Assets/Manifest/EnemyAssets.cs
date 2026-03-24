@@ -7,7 +7,7 @@ namespace RealmUnbound.Assets.Manifest;
 /// </summary>
 public static class EnemyAssets
 {
-    // ── Undead ───────────────────────────────────────────────────────────────
+    // Undead
     /// <summary>Ancient vampire portrait.</summary>
     public const string AncientVampire = "enemies/ancient_vampire.png";
     /// <summary>Skeleton variant 1.</summary>
@@ -43,7 +43,7 @@ public static class EnemyAssets
     /// <summary>Bone beast portrait.</summary>
     public const string BoneBeast = "enemies/bone_beast.png";
 
-    // ── Demons ───────────────────────────────────────────────────────────────
+    // Demons
     /// <summary>Demon variant 1.</summary>
     public const string Demon1 = "enemies/demon_01.png";
     /// <summary>Demon variant 2.</summary>
@@ -61,7 +61,7 @@ public static class EnemyAssets
     /// <summary>Demon variant 8.</summary>
     public const string Demon8 = "enemies/demon_08.png";
 
-    // ── Dragons ───────────────────────────────────────────────────────────────
+    // Dragons
     /// <summary>Dragon variant 1.</summary>
     public const string Dragon1 = "enemies/dragon_01.png";
     /// <summary>Dragon variant 2.</summary>
@@ -89,7 +89,7 @@ public static class EnemyAssets
     /// <summary>Dragon variant 13.</summary>
     public const string Dragon13 = "enemies/dragon_13.png";
 
-    // ── Goblins & Orcs ───────────────────────────────────────────────────────
+    // Goblins & Orcs
     /// <summary>Goblin variant 1.</summary>
     public const string Goblin1 = "enemies/goblin_01.png";
     /// <summary>Goblin variant 2.</summary>
@@ -115,7 +115,7 @@ public static class EnemyAssets
     /// <summary>Troll portrait.</summary>
     public const string Troll = "enemies/troll_01.png";
 
-    // ── Golems & Constructs ───────────────────────────────────────────────────
+    // Golems & Constructs
     /// <summary>Golem variant 1.</summary>
     public const string Golem1 = "enemies/golem_01.png";
     /// <summary>Golem variant 1 (alt).</summary>
@@ -137,7 +137,7 @@ public static class EnemyAssets
     /// <summary>Living armour variant 4.</summary>
     public const string LivingArmor4 = "enemies/living_armor_04.png";
 
-    // ── Dark Knights ─────────────────────────────────────────────────────────
+    // Dark Knights
     /// <summary>Dark knight variant 1.</summary>
     public const string DarkKnight1 = "enemies/dark_knight_01.png";
     /// <summary>Dark knight variant 2.</summary>
@@ -147,7 +147,7 @@ public static class EnemyAssets
     /// <summary>Dark knight variant 4.</summary>
     public const string DarkKnight4 = "enemies/dark_knight_04.png";
 
-    // ── Beasts & Creatures ────────────────────────────────────────────────────
+    // Beasts & Creatures
     /// <summary>Werewolf portrait.</summary>
     public const string Werewolf = "enemies/werewolf_01.png";
     /// <summary>Frost giant portrait.</summary>

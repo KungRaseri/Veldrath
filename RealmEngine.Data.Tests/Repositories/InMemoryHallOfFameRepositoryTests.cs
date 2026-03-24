@@ -20,8 +20,7 @@ public class InMemoryHallOfFameRepositoryTests
             DeathCount = deaths
         };
 
-    // ── AddEntry ─────────────────────────────────────────────────────────
-
+    // AddEntry
     [Fact]
     public void AddEntry_CalculatesFameScore_OnInsert()
     {
@@ -39,8 +38,7 @@ public class InMemoryHallOfFameRepositoryTests
         _repository.GetAllEntries().Should().HaveCount(3);
     }
 
-    // ── GetAllEntries ─────────────────────────────────────────────────────
-
+    // GetAllEntries
     [Fact]
     public void GetAllEntries_ReturnsSortedByFameScoreDescending()
     {
@@ -78,8 +76,7 @@ public class InMemoryHallOfFameRepositoryTests
         _repository.GetAllEntries().Should().BeEmpty();
     }
 
-    // ── GetTopHeroes ─────────────────────────────────────────────────────
-
+    // GetTopHeroes
     [Fact]
     public void GetTopHeroes_ReturnsTopNByFameScore()
     {

@@ -29,8 +29,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
             TotalEnemiesDefeated = 50,
         };
 
-    // ── AddEntry ──────────────────────────────────────────────────────────────
-
+    // AddEntry
     [Fact]
     public void AddEntry_Should_Persist_Entry()
     {
@@ -54,8 +53,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
         saved.FameScore.Should().BeGreaterThan(0);
     }
 
-    // ── GetAllEntries ─────────────────────────────────────────────────────────
-
+    // GetAllEntries
     [Fact]
     public void GetAllEntries_Should_Return_Entries_Ordered_By_Fame_Score_Descending()
     {
@@ -89,8 +87,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
         repo.GetAllEntries().Should().BeEmpty();
     }
 
-    // ── GetTopHeroes ──────────────────────────────────────────────────────────
-
+    // GetTopHeroes
     [Fact]
     public void GetTopHeroes_Should_Return_Top_N_By_Fame_Score()
     {
@@ -115,8 +112,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
         top.Should().ContainSingle(e => e.CharacterName == "Elite");
     }
 
-    // ── Error handling ────────────────────────────────────────────────────────
-
+    // Error handling
     [Fact]
     public void AddEntry_Should_Swallow_Exception_When_Db_Fails()
     {
@@ -130,8 +126,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
         act.Should().NotThrow();
     }
 
-    // ── Dispose ───────────────────────────────────────────────────────────────
-
+    // Dispose
     [Fact]
     public void Dispose_Should_Not_Throw()
     {
@@ -170,8 +165,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         };
     }
 
-    // ── Save (new) ────────────────────────────────────────────────────────────
-
+    // Save (new)
     [Fact]
     public void Save_Should_Persist_New_SaveGame()
     {
@@ -200,8 +194,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         db.SaveGames.Single().PlayerName.Should().Be("Samwise");
     }
 
-    // ── GetById ───────────────────────────────────────────────────────────────
-
+    // GetById
     [Fact]
     public void GetById_Should_Return_SaveGame_When_Found()
     {
@@ -222,8 +215,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         repo.GetById("nonexistent").Should().BeNull();
     }
 
-    // ── GetMostRecent ─────────────────────────────────────────────────────────
-
+    // GetMostRecent
     [Fact]
     public void GetMostRecent_Should_Return_Latest_Save()
     {
@@ -260,8 +252,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         repo.GetMostRecent().Should().BeNull();
     }
 
-    // ── GetAll / GetAllSaves ──────────────────────────────────────────────────
-
+    // GetAll / GetAllSaves
     [Fact]
     public void GetAll_Should_Return_All_Saves()
     {
@@ -281,8 +272,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         repo.GetAllSaves().Should().HaveCount(1);
     }
 
-    // ── GetByPlayerName ───────────────────────────────────────────────────────
-
+    // GetByPlayerName
     [Fact]
     public void GetByPlayerName_Should_Return_Saves_For_Player()
     {
@@ -303,8 +293,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         repo.GetByPlayerName("Ghost").Should().BeEmpty();
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
-
+    // Delete
     [Fact]
     public void Delete_Should_Return_True_And_Remove_Record()
     {
@@ -327,8 +316,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         repo.Delete("nonexistent").Should().BeFalse();
     }
 
-    // ── LoadGame / DeleteSave / SaveExists ────────────────────────────────────
-
+    // LoadGame / DeleteSave / SaveExists
     [Fact]
     public void LoadGame_Should_Return_Save_For_Slot()
     {
@@ -417,8 +405,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
         repo.SaveExists(99).Should().BeFalse();
     }
 
-    // ── Dispose ───────────────────────────────────────────────────────────────
-
+    // Dispose
     [Fact]
     public void Dispose_Should_Not_Throw()
     {

@@ -20,8 +20,7 @@ public class NamePatternServiceTests
         return mock;
     }
 
-    // ── Before initialization ──────────────────────────────────────────────────
-
+    // Before initialization
     [Fact]
     public void GetPatternSet_ReturnsNull_BeforeInitialization()
     {
@@ -38,8 +37,7 @@ public class NamePatternServiceTests
         svc.HasPatternSet("enemies/wolves").Should().BeFalse();
     }
 
-    // ── After initialization ───────────────────────────────────────────────────
-
+    // After initialization
     [Fact]
     public async Task InitializeAsync_LoadsPatternSetsFromRepository()
     {
@@ -106,8 +104,7 @@ public class NamePatternServiceTests
         svc.HasPatternSet("c").Should().BeTrue();
     }
 
-    // ── Double-init guard ──────────────────────────────────────────────────────
-
+    // Double-init guard
     [Fact]
     public async Task InitializeAsync_SecondCall_IsNoOp_RepositoryCalledOnce()
     {
@@ -120,8 +117,7 @@ public class NamePatternServiceTests
         mock.Verify(r => r.GetAllAsync(), Times.Once);
     }
 
-    // ── Exception propagation ──────────────────────────────────────────────────
-
+    // Exception propagation
     [Fact]
     public async Task InitializeAsync_Throws_WhenRepositoryFails()
     {

@@ -5,7 +5,7 @@ using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Services;
 
-// ── Interface ──────────────────────────────────────────────────────────────────
+// Interface
 public interface IZoneService
 {
     Task<List<ZoneDto>> GetZonesAsync();
@@ -20,7 +20,7 @@ public interface IZoneService
     Task<WorldDto?> GetWorldAsync(string worldId);
 }
 
-// ── Implementation ─────────────────────────────────────────────────────────────
+// Implementation
 public class HttpZoneService(
     HttpClient http,
     TokenStore tokens,

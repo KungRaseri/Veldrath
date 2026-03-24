@@ -44,8 +44,7 @@ public class CharacterSelectViewModelTests : TestBase
             new ClientSettings("http://localhost:8080"));
     }
 
-    // ── Initial load ──────────────────────────────────────────────────────────
-
+    // Initial load
     [Fact]
     public async Task Characters_Should_Be_Loaded_On_Construction()
     {
@@ -111,8 +110,7 @@ public class CharacterSelectViewModelTests : TestBase
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
-    // ── ShowCreate / CancelCreate ─────────────────────────────────────────────
-
+    // ShowCreate / CancelCreate
     [Fact]
     public async Task ShowCreateCommand_Should_Set_IsCreating_True()
     {
@@ -145,8 +143,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().BeEmpty();
     }
 
-    // ── CreateCommand CanExecute ──────────────────────────────────────────────
-
+    // CreateCommand CanExecute
     [Fact]
     public void CreateCommand_Should_Be_Disabled_When_Name_Is_Empty()
     {
@@ -178,8 +175,7 @@ public class CharacterSelectViewModelTests : TestBase
         canExecute.Should().BeFalse();
     }
 
-    // ── Character creation ────────────────────────────────────────────────────
-
+    // Character creation
     [Fact]
     public async Task CreateCommand_Should_Add_Character_To_List_On_Success()
     {
@@ -247,8 +243,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.IsBusy.Should().BeFalse();
     }
 
-    // ── Character deletion ────────────────────────────────────────────────────
-
+    // Character deletion
     [Fact]
     public async Task DeleteCommand_Should_Remove_Character_On_Success()
     {
@@ -283,8 +278,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().Be("Character not found");
     }
 
-    // ── Select character (connection error) ───────────────────────────────────
-
+    // Select character (connection error)
     [Fact]
     public async Task SelectCommand_Should_Show_Error_When_Connection_Fails()
     {
@@ -313,8 +307,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.IsBusy.Should().BeFalse();
     }
 
-    // ── SelectCommand happy-path hub callbacks ────────────────────────────────
-
+    // SelectCommand happy-path hub callbacks
     [Fact]
     public async Task SelectCommand_Should_Navigate_To_GameViewModel_When_ZoneEntered_Fires()
     {
@@ -415,8 +408,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().BeEmpty();
     }
 
-    // ── Lifecycle: create → delete → recreate ─────────────────────────────────
-
+    // Lifecycle: create → delete → recreate
     [Fact]
     public async Task CreateCommand_ThenDeleteCommand_RemovesCharacterFromList()
     {
@@ -559,8 +551,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.Characters.Should().HaveCount(3);
     }
 
-    // ── LogoutCommand ─────────────────────────────────────────────────────────
-
+    // LogoutCommand
     [Fact]
     public async Task LogoutCommand_Should_Call_AuthService_LogoutAsync()
     {
@@ -597,8 +588,7 @@ public class CharacterSelectViewModelTests : TestBase
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
-    // ── PanelTitle ────────────────────────────────────────────────────────────
-
+    // PanelTitle
     [Fact]
     public async Task PanelTitle_Should_Be_SelectYourCharacter_By_Default()
     {
@@ -614,8 +604,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.PanelTitle.Should().Be("New Character");
     }
 
-    // ── SelectedClass / AvailableClasses ──────────────────────────────────────
-
+    // SelectedClass / AvailableClasses
     [Fact]
     public async Task CancelCreateCommand_Should_Reset_SelectedClass()
     {
@@ -636,8 +625,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.AvailableClasses.Should().Contain("Warrior");
     }
 
-    // ── Hub Error event ───────────────────────────────────────────────────────
-
+    // Hub Error event
     [Fact]
     public async Task SelectCommand_Should_Set_ErrorMessage_When_Hub_Sends_Error()
     {
@@ -672,8 +660,7 @@ public class CharacterSelectViewModelTests : TestBase
         nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
     }
 
-    // ── AvailableClasses — content catalog loading ────────────────────────────
-
+    // AvailableClasses — content catalog loading
     [Fact]
     public async Task AvailableClasses_Should_Be_Populated_From_Content_Catalog()
     {
@@ -703,8 +690,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.AvailableClasses.Should().NotBeEmpty();
     }
 
-    // ── Hub callbacks — GoldChanged ─────────────────────────────────────────────────
-
+    // Hub callbacks — GoldChanged
     [Fact]
     public async Task SelectCommand_Should_Update_Gold_When_GoldChanged_Fires()
     {
@@ -739,8 +725,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // ── Hub callbacks — DamageTaken ─────────────────────────────────────────────────
-
+    // Hub callbacks — DamageTaken
     [Fact]
     public async Task SelectCommand_Should_Update_Health_When_DamageTaken_Fires()
     {
@@ -775,8 +760,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // ── Hub callbacks — ExperienceGained ─────────────────────────────────────────────
-
+    // Hub callbacks — ExperienceGained
     [Fact]
     public async Task SelectCommand_Should_Update_Level_When_ExperienceGained_Fires()
     {
@@ -828,8 +812,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // ── Hub callbacks — CharacterSelected (initial stat seeding) ─────────────────────
-
+    // Hub callbacks — CharacterSelected (initial stat seeding)
     [Fact]
     public async Task SelectCommand_Should_Seed_All_Stats_When_CharacterSelected_Fires()
     {
@@ -886,8 +869,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.Experience.Should().Be(300L);
     }
 
-    // ── Hub callbacks — ItemCrafted ─────────────────────────────────────────────────
-
+    // Hub callbacks — ItemCrafted
     [Fact]
     public async Task SelectCommand_Should_Update_Gold_When_ItemCrafted_Fires()
     {
@@ -922,8 +904,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("magic-staff"));
     }
 
-    // ── Hub callbacks — DungeonEntered ─────────────────────────────────────────────────
-
+    // Hub callbacks — DungeonEntered
     [Fact]
     public async Task SelectCommand_Should_Append_Log_When_DungeonEntered_Fires()
     {
@@ -941,8 +922,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("dungeon-grotto"));
     }
 
-    // ── GetActiveCharacters on load ──────────────────────────────────────────
-
+    // GetActiveCharacters on load
     [Fact]
     public async Task LoadAsync_Should_Call_GetActiveCharacters_On_Hub()
     {
@@ -972,8 +952,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.Characters.Should().ContainSingle(e => e.Character.Id == charId && e.IsOnline);
     }
 
-    // ── Hub callbacks – ShopVisited ───────────────────────────────────────────
-
+    // Hub callbacks – ShopVisited
     [Fact]
     public async Task SelectCommand_Should_Append_Log_When_ShopVisited_Fires()
     {

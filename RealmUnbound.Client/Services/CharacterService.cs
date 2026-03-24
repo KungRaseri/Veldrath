@@ -5,7 +5,7 @@ using RealmUnbound.Contracts.Characters;
 
 namespace RealmUnbound.Client.Services;
 
-// ── Interface ──────────────────────────────────────────────────────────────────
+// Interface
 public interface ICharacterService
 {
     Task<List<CharacterDto>> GetCharactersAsync();
@@ -13,7 +13,7 @@ public interface ICharacterService
     Task<AppError?> DeleteCharacterAsync(Guid id);
 }
 
-// ── Implementation ─────────────────────────────────────────────────────────────
+// Implementation
 public class HttpCharacterService(
     HttpClient http,
     TokenStore tokens,

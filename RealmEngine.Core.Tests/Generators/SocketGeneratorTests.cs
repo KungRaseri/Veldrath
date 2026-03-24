@@ -13,8 +13,7 @@ public class SocketGeneratorTests
     private static SocketGenerator CreateGenerator(SocketConfig? config = null) =>
         new(config ?? new SocketConfig(), NullLogger<SocketGenerator>.Instance);
 
-    // ── Fallback (empty config) ────────────────────────────────────────────
-
+    // Fallback (empty config)
     [Theory]
     [InlineData(ItemRarity.Common)]
     [InlineData(ItemRarity.Uncommon)]
@@ -50,8 +49,7 @@ public class SocketGeneratorTests
         }
     }
 
-    // ── Config-driven deterministic counts ────────────────────────────────
-
+    // Config-driven deterministic counts
     [Fact]
     public void GenerateSockets_ConfigForcesZeroSockets_ReturnsEmpty()
     {
@@ -97,8 +95,7 @@ public class SocketGeneratorTests
         result.Values.Sum(v => v.Count).Should().Be(2);
     }
 
-    // ── Return type shape ─────────────────────────────────────────────────
-
+    // Return type shape
     [Fact]
     public void GenerateSockets_ReturnsOnlyKnownSocketTypes()
     {

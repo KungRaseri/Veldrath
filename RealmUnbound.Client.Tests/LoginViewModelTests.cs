@@ -18,8 +18,7 @@ public class LoginViewModelTests : TestBase
             SessionStoreFactory.Create());
     }
 
-    // ── CanExecute behaviour ──────────────────────────────────────────────────
-
+    // CanExecute behaviour
     [Fact]
     public void LoginCommand_Should_Be_Disabled_When_Email_Is_Empty()
     {
@@ -54,8 +53,7 @@ public class LoginViewModelTests : TestBase
         canExecute.Should().BeTrue();
     }
 
-    // ── Successful login ──────────────────────────────────────────────────────
-
+    // Successful login
     [Fact]
     public async Task LoginCommand_Should_Call_AuthService_LoginAsync()
     {
@@ -139,8 +137,7 @@ public class LoginViewModelTests : TestBase
         vm.IsBusy.Should().BeFalse();
     }
 
-    // ── Back navigation ───────────────────────────────────────────────────────
-
+    // Back navigation
     [Fact]
     public async Task BackCommand_Should_Navigate_To_MainMenu()
     {
@@ -152,8 +149,7 @@ public class LoginViewModelTests : TestBase
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
-    // ── Property change notifications ─────────────────────────────────────────
-
+    // Property change notifications
     [Fact]
     public void Email_Should_Raise_PropertyChanged()
     {
@@ -178,8 +174,7 @@ public class LoginViewModelTests : TestBase
         changes.Should().Contain(nameof(vm.Password));
     }
 
-    // ── SessionStore integration (pre-fill & remember-me) ─────────────────────
-
+    // SessionStore integration (pre-fill & remember-me)
     [Fact]
     public void Email_Should_Be_Prefilled_When_SessionStore_HasSavedEmail()
     {

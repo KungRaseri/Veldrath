@@ -4,8 +4,7 @@ namespace RealmUnbound.Client.Tests;
 
 public class TokenStoreTests
 {
-    // ── Set ───────────────────────────────────────────────────────────────────
-
+    // Set
     [Fact]
     public void Set_Should_Store_All_Values()
     {
@@ -34,8 +33,7 @@ public class TokenStoreTests
         store.AccountId.Should().Be(newId);
     }
 
-    // ── Clear ─────────────────────────────────────────────────────────────────
-
+    // Clear
     [Fact]
     public void Clear_Should_Null_All_Values()
     {
@@ -50,8 +48,7 @@ public class TokenStoreTests
         store.AccountId.Should().BeNull();
     }
 
-    // ── IsAuthenticated ───────────────────────────────────────────────────────
-
+    // IsAuthenticated
     [Fact]
     public void IsAuthenticated_Should_Be_False_Initially()
     {
@@ -76,8 +73,7 @@ public class TokenStoreTests
         store.IsAuthenticated.Should().BeFalse();
     }
 
-    // ── Default state ─────────────────────────────────────────────────────────
-
+    // Default state
     [Fact]
     public void All_Fields_Should_Be_Null_Initially()
     {

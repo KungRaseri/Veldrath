@@ -38,8 +38,7 @@ public class ViewDataBindingTests
         return window;
     }
 
-    // ── CharacterSelectView — character list DataTemplate ─────────────────────
-
+    // CharacterSelectView — character list DataTemplate
     [AvaloniaFact]
     public async Task CharacterSelectView_Should_Render_Character_List_DataTemplate()
     {
@@ -56,8 +55,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── CharacterSelectView — create panel (IsCreating = true) ────────────────
-
+    // CharacterSelectView — create panel (IsCreating = true)
     [AvaloniaFact]
     public async Task CharacterSelectView_Should_Show_Create_Panel_When_IsCreating_True()
     {
@@ -71,8 +69,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── CharacterSelectView — busy overlay (IsBusy = true) ────────────────────
-
+    // CharacterSelectView — busy overlay (IsBusy = true)
     [AvaloniaFact]
     public async Task CharacterSelectView_Should_Show_Busy_Overlay_When_IsBusy_True()
     {
@@ -86,8 +83,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── CharacterSelectView — error message visibility ────────────────────────
-
+    // CharacterSelectView — error message visibility
     [AvaloniaFact]
     public async Task CharacterSelectView_Should_Display_Error_Message_When_Set()
     {
@@ -101,8 +97,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── CharacterSelectView — error in create panel ───────────────────────────
-
+    // CharacterSelectView — error in create panel
     [AvaloniaFact]
     public async Task CharacterSelectView_Should_Display_Error_In_Create_Panel()
     {
@@ -118,8 +113,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── GameView — OnlinePlayers DataTemplate ─────────────────────────────────
-
+    // GameView — OnlinePlayers DataTemplate
     [AvaloniaFact]
     public void GameView_Should_Render_OnlinePlayers_DataTemplate()
     {
@@ -133,8 +127,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── GameView — ActionLog DataTemplate ─────────────────────────────────────
-
+    // GameView — ActionLog DataTemplate
     [AvaloniaFact]
     public void GameView_Should_Render_ActionLog_DataTemplate()
     {
@@ -148,8 +141,7 @@ public class ViewDataBindingTests
         window.Close();
     }
 
-    // ── GameView — both collections populated together ───────────────────────
-
+    // GameView — both collections populated together
     [AvaloniaFact]
     public void GameView_Should_Render_With_Players_And_Log_Together()
     {

@@ -14,8 +14,7 @@ public static class ArchetypeSeeder
         await SeedNpcsAsync(db);
     }
 
-    // ── Enemies ───────────────────────────────────────────────────────────────
-
+    // Enemies
     private static async Task SeedEnemiesAsync(ContentDbContext db)
     {
         if (await db.ActorArchetypes.AnyAsync(a => a.Traits != null && a.Traits.Hostile == true))
@@ -118,8 +117,7 @@ public static class ArchetypeSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── NPCs ──────────────────────────────────────────────────────────────────
-
+    // NPCs
     private static async Task SeedNpcsAsync(ContentDbContext db)
     {
         if (await db.ActorArchetypes.AnyAsync(a => a.Traits != null && a.Traits.Shopkeeper == true))

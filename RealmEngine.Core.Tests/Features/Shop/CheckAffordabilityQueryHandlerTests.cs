@@ -33,8 +33,7 @@ public class CheckAffordabilityQueryHandlerTests
             shopSvc ?? FakeShopService(),
             NullLogger<CheckAffordabilityQueryHandler>.Instance);
 
-    // ── Failure paths ──────────────────────────────────────────────────────────
-
+    // Failure paths
     [Fact]
     public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
@@ -80,8 +79,7 @@ public class CheckAffordabilityQueryHandlerTests
         result.ErrorMessage.Should().Contain("not found");
     }
 
-    // ── Affordability logic ────────────────────────────────────────────────────
-
+    // Affordability logic
     [Fact]
     public async Task Handle_ReturnsCanAfford_WhenPlayerHasEnoughGold()
     {

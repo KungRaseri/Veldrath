@@ -14,8 +14,7 @@ public static class MaterialsSeeder
         await SeedMaterialPropertiesAsync(db);
     }
 
-    // ── Factory helpers ───────────────────────────────────────────────────────
-
+    // Factory helpers
     // MaterialStats:         hardness, weight, conductivity, magicAffinity, value
     private static MaterialStats MS(float? h, float? w, float? c, float? m, int? v) =>
         new() { Hardness = h, Weight = w, Conductivity = c, MagicAffinity = m, Value = v };
@@ -32,8 +31,7 @@ public static class MaterialsSeeder
     private static MaterialPropertyTraits MPT(bool? co, bool? br, bool? mg, bool? fl, bool? tr, bool? fp, bool? en) =>
         new() { Conducting = co, Brittle = br, Magical = mg, Flexible = fl, Transparent = tr, Fireproof = fp, Enchantable = en };
 
-    // ── Materials ─────────────────────────────────────────────────────────────
-
+    // Materials
     private static async Task SeedMaterialsAsync(ContentDbContext db)
     {
         if (await db.Materials.AnyAsync())
@@ -120,8 +118,7 @@ public static class MaterialsSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Material Properties ───────────────────────────────────────────────────
-
+    // Material Properties
     private static async Task SeedMaterialPropertiesAsync(ContentDbContext db)
     {
         if (await db.MaterialProperties.AnyAsync())

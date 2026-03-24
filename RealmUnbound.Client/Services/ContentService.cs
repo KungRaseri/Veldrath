@@ -5,8 +5,7 @@ using RealmUnbound.Contracts.Content;
 
 namespace RealmUnbound.Client.Services;
 
-// ── Interface ──────────────────────────────────────────────────────────────────
-
+// Interface
 public interface IContentService
 {
     Task<List<PowerDto>> GetAbilitiesAsync();
@@ -70,8 +69,7 @@ public interface IContentService
     Task<MaterialDto?> GetMaterialAsync(string slug);
 }
 
-// ── Implementation ─────────────────────────────────────────────────────────────
-
+// Implementation
 public class HttpContentService(
     HttpClient http,
     TokenStore tokens,

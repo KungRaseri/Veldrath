@@ -12,8 +12,7 @@ public class ZoneRepositoryTests : IDisposable
 
     public void Dispose() => _factory.Dispose();
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Helpers
     private static Zone MakeZone(string id, string name, bool isStarter = false) =>
         new()
         {
@@ -46,8 +45,7 @@ public class ZoneRepositoryTests : IDisposable
         return character;
     }
 
-    // ── ZoneRepository ────────────────────────────────────────────────────────
-
+    // ZoneRepository
     [Fact]
     public async Task GetAllAsync_Should_Return_All_Zones()
     {
@@ -145,8 +143,7 @@ public class ZoneRepositoryTests : IDisposable
         result[2].MinLevel.Should().BeLessThanOrEqualTo(result[3].MinLevel);
     }
 
-    // ── ZoneSessionRepository ─────────────────────────────────────────────────
-
+    // ZoneSessionRepository
     [Fact]
     public async Task AddAsync_Should_Persist_Session()
     {

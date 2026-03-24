@@ -9,8 +9,7 @@ using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Tests.Infrastructure;
 
-// ── Auth service stub ─────────────────────────────────────────────────────────
-
+// Auth service stub
 /// <summary>
 /// Configurable stub for <see cref="IAuthService"/>.
 /// Default behaviour: returns success with a fake token.
@@ -59,8 +58,7 @@ public class FakeAuthService : IAuthService
     }
 }
 
-// ── Character service stub ────────────────────────────────────────────────────
-
+// Character service stub
 public class FakeCharacterService : ICharacterService
 {
     public List<CharacterDto> Characters { get; set; } = [];
@@ -98,8 +96,7 @@ public class FakeCharacterService : ICharacterService
     }
 }
 
-// ── Navigation service stub ───────────────────────────────────────────────────
-
+// Navigation service stub
 public class FakeNavigationService : INavigationService
 {
     public List<Type> NavigationLog { get; } = [];
@@ -121,8 +118,7 @@ public class FakeNavigationService : INavigationService
     }
 }
 
-// ── Server connection service stub ────────────────────────────────────────────
-
+// Server connection service stub
 public class FakeServerConnectionService : IServerConnectionService
 {
     private ConnectionState _state = ConnectionState.Disconnected;
@@ -208,8 +204,7 @@ public class FakeServerConnectionService : IServerConnectionService
     }
 }
 
-// ── Session store helper ────────────────────────────────────────────────────────
-
+// Session store helper
 public static class SessionStoreFactory
 {
     /// <summary>Creates a <see cref="SessionStore"/> backed by a NullLogger and an isolated temp file for use in unit tests.</summary>
@@ -219,8 +214,7 @@ public static class SessionStoreFactory
             Path.Combine(Path.GetTempPath(), $"realm-test-{Guid.NewGuid()}.json"));
 }
 
-// ── Zone service stub ─────────────────────────────────────────────────────────
-
+// Zone service stub
 public class FakeZoneService : IZoneService
 {
     public ZoneDto? ZoneToReturn { get; set; } =
@@ -256,8 +250,7 @@ public class FakeZoneService : IZoneService
         => Task.FromResult(Worlds.FirstOrDefault(w => w.Id == worldId));
 }
 
-// ── Content service stub ──────────────────────────────────────────────────────
-
+// Content service stub
 /// <summary>
 /// Configurable stub for <see cref="IContentService"/>.
 /// Default behaviour: returns empty lists for all catalog queries.
@@ -324,8 +317,7 @@ public static class FakeContentCache
         new(service ?? new FakeContentService(), NullLogger<ContentCache>.Instance);
 }
 
-// ── Audio player stub ─────────────────────────────────────────────────────────
-
+// Audio player stub
 /// <summary>Configurable stub for <see cref="IAudioPlayer"/>. Records calls for test assertions.</summary>
 public class FakeAudioPlayer : IAudioPlayer
 {
@@ -360,8 +352,7 @@ public class FakeAudioPlayer : IAudioPlayer
     public void Dispose() => GC.SuppressFinalize(this);
 }
 
-// ── Asset store stub ──────────────────────────────────────────────────────────
-
+// Asset store stub
 /// <summary>
 /// No-op stub for <see cref="IAssetStore"/>.
 /// Returns <see langword="null"/> for images, <see langword="null"/> for audio paths,

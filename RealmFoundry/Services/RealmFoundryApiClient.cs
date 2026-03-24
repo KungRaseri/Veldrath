@@ -18,23 +18,20 @@ public class RealmFoundryApiClient(HttpClient http)
     public void ClearBearerToken() =>
         http.DefaultRequestHeaders.Authorization = null;
 
-    // ── Health ────────────────────────────────────────────────────────────
-
+    // Health
     public Task<bool> IsServerReachableAsync(CancellationToken ct = default) =>
         http.GetAsync("/health", ct)
             .ContinueWith(t => t.IsCompletedSuccessfully && t.Result.IsSuccessStatusCode, ct,
                 TaskContinuationOptions.None, TaskScheduler.Default);
 
-    // ── Auth ──────────────────────────────────────────────────────────────
-
+    // Auth
     public virtual async Task<AuthResponse?> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         var resp = await http.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = refreshToken }, ct);
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
     }
 
-    // ── Submissions ───────────────────────────────────────────────────────
-
+    // Submissions
     public async Task<PagedResult<FoundrySubmissionSummaryDto>> GetSubmissionsAsync(
         string? status = null, string? contentType = null,
         string? search = null, int page = 1, int pageSize = 20,
@@ -102,8 +99,7 @@ public class RealmFoundryApiClient(HttpClient http)
         return (null, body);
     }
 
-    // ── Content Browse (public, no auth required) ─────────────────────
-
+    // Content Browse (public, no auth required)
     public async Task<IReadOnlyList<ContentTypeInfoDto>> GetContentTypesAsync(CancellationToken ct = default)
     {
         var resp = await http.GetAsync("/api/content/schema", ct);
@@ -141,8 +137,7 @@ public class RealmFoundryApiClient(HttpClient http)
             : null;
     }
 
-    // ── Notifications ──────────────────────────────────────────────────
-
+    // Notifications
     public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(CancellationToken ct = default)    {
         var resp = await http.GetAsync("/api/foundry/notifications", ct);
         return resp.IsSuccessStatusCode
@@ -156,8 +151,7 @@ public class RealmFoundryApiClient(HttpClient http)
         return resp.IsSuccessStatusCode;
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────
-
+    // Helpers
     private static string BuildQuery(params (string Key, string? Value)[] pairs)
     {
         var parts = pairs

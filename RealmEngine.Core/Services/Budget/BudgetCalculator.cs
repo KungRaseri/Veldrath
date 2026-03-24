@@ -84,8 +84,7 @@ public class BudgetCalculator
         return 0;
     }
 
-    // ── Typed overloads for entity-based generation ──────────────────────────
-
+    // Typed overloads for entity-based generation
     /// <summary>Calculates the cost of an <see cref="ItemTemplate"/> using its <c>RarityWeight</c>.</summary>
     public int CalculateMaterialCost(ItemTemplate item)
     {

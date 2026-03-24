@@ -153,8 +153,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
 {
     private readonly HttpClient _client = fixture.Client;
 
-    // ── GET /api/content/enemies ──────────────────────────────────────────────
-
+    // GET /api/content/enemies
     [Fact]
     public async Task GetEnemies_Returns_OK_And_ContainsSeededArchetype()
     {
@@ -196,7 +195,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/npcs ─────────────────────────────────────────────────
+    // GET /api/content/npcs
     // Note: same ActorArchetype table — "typed-bandit" appears in both /enemies and /npcs.
 
     [Fact]
@@ -230,8 +229,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/quests ───────────────────────────────────────────────
-
+    // GET /api/content/quests
     [Fact]
     public async Task GetQuests_Returns_OK_And_ContainsSeededQuest()
     {
@@ -264,8 +262,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/recipes ──────────────────────────────────────────────
-
+    // GET /api/content/recipes
     [Fact]
     public async Task GetRecipes_Returns_OK_And_ContainsSeededRecipe()
     {
@@ -301,8 +298,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/loot-tables ─────────────────────────────────────────
-
+    // GET /api/content/loot-tables
     [Fact]
     public async Task GetLootTables_Returns_OK_And_ContainsSeededTable()
     {
@@ -341,8 +337,7 @@ public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixtur
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/powers ───────────────────────────────────────────────
-
+    // GET /api/content/powers
     [Fact]
     public async Task GetSpells_Returns_OK_And_ContainsSeededSpell()
     {

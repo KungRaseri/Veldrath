@@ -9,8 +9,7 @@ namespace RealmFoundry.Tests.Services;
 
 public class AuthRefreshHandlerTests
 {
-    // ── helpers ───────────────────────────────────────────────────────────────
-
+    // helpers
     private static (HttpClient Client, Mock<HttpMessageHandler> InnerHandler, AuthStateService Auth)
         Build(bool isLoggedIn, bool tokenExpiresSoon)
     {
@@ -81,8 +80,7 @@ public class AuthRefreshHandlerTests
         return (client, innerHandler, auth);
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
-
+    // tests
     [Fact]
     public async Task SendAsync_ForwardsRequest_WhenUserIsNotLoggedIn()
     {

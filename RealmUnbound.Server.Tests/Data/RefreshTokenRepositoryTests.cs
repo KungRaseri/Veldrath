@@ -32,8 +32,7 @@ public class RefreshTokenRepositoryTests : IDisposable
             CreatedByIp  = "127.0.0.1",
         };
 
-    // ── CreateAsync ───────────────────────────────────────────────────────────
-
+    // CreateAsync
     [Fact]
     public async Task CreateAsync_Should_Persist_Token()
     {
@@ -47,8 +46,7 @@ public class RefreshTokenRepositoryTests : IDisposable
         token.TokenHash.Should().Be("hash_abc");
     }
 
-    // ── GetByTokenHashAsync ───────────────────────────────────────────────────
-
+    // GetByTokenHashAsync
     [Fact]
     public async Task GetByTokenHashAsync_Should_Return_Token_By_Hash()
     {
@@ -73,8 +71,7 @@ public class RefreshTokenRepositoryTests : IDisposable
         result.Should().BeNull();
     }
 
-    // ── IsActive ─────────────────────────────────────────────────────────────
-
+    // IsActive
     [Fact]
     public async Task Token_Should_Be_Active_When_Not_Revoked_And_Not_Expired()
     {
@@ -97,8 +94,7 @@ public class RefreshTokenRepositoryTests : IDisposable
         token.IsActive.Should().BeFalse();
     }
 
-    // ── RevokeAsync ───────────────────────────────────────────────────────────
-
+    // RevokeAsync
     [Fact]
     public async Task RevokeAsync_Should_Mark_Token_Revoked()
     {
@@ -155,8 +151,7 @@ public class RefreshTokenRepositoryTests : IDisposable
         await act.Should().NotThrowAsync();
     }
 
-    // ── RevokeAllForAccountAsync ──────────────────────────────────────────────
-
+    // RevokeAllForAccountAsync
     [Fact]
     public async Task RevokeAllForAccountAsync_Should_Revoke_All_Active_Tokens()
     {

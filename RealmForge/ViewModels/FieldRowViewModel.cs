@@ -39,7 +39,7 @@ public partial class FieldRowViewModel : ReactiveObject
     public FieldKind Kind     { get; }
     public bool IsNullable    { get; }
 
-    // ── Schema-driven metadata (falls back to safe defaults when no descriptor) ──
+    // Schema-driven metadata (falls back to safe defaults when no descriptor)
     public decimal Min        => _descriptor?.Min is double lo ? (decimal)lo : decimal.MinValue;
     public decimal Max        => _descriptor?.Max is double hi ? (decimal)hi : decimal.MaxValue;
     public string? Hint       => _descriptor?.Hint;
@@ -49,8 +49,7 @@ public partial class FieldRowViewModel : ReactiveObject
     public bool IsNumber => Kind == FieldKind.Number;
     public bool IsBool   => Kind == FieldKind.Bool;
 
-    // ── Typed accessors (one is active per Kind) ─────────────────────────
-
+    // Typed accessors (one is active per Kind)
     public string? StringValue
     {
         get => _prop.GetValue(_owner) as string;
@@ -108,8 +107,7 @@ public partial class FieldRowViewModel : ReactiveObject
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
-
+    // Helpers
     private static string FormatLabel(string name) =>
         string.Join(" ", SplitWords().Split(name).Where(s => !string.IsNullOrEmpty(s)));
 

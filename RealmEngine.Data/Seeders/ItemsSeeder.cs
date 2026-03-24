@@ -14,8 +14,7 @@ public static class ItemsSeeder
         await SeedEnchantmentsAsync(db);
     }
 
-    // ── Factory helpers ───────────────────────────────────────────────────────
-
+    // Factory helpers
     // ItemStats: weight, stackSize, value, effectPower, duration
     private static ItemStats ISt(float? w, int? ss, int? v, float? ep, float? d) =>
         new() { Weight = w, StackSize = ss, Value = v, EffectPower = ep, Duration = d };
@@ -28,8 +27,7 @@ public static class ItemsSeeder
     private static EnchantmentTraits ETr(bool? st, bool? ex, bool? rmi, bool? cu, bool? pe) =>
         new() { Stackable = st, Exclusive = ex, RequiresMagicItem = rmi, Cursed = cu, Permanent = pe };
 
-    // ── Items ─────────────────────────────────────────────────────────────────
-
+    // Items
     private static async Task SeedItemsAsync(ContentDbContext db)
     {
         if (await db.Items.AnyAsync())
@@ -115,8 +113,7 @@ public static class ItemsSeeder
         await db.SaveChangesAsync();
     }
 
-    // ── Enchantments ──────────────────────────────────────────────────────────
-
+    // Enchantments
     private static async Task SeedEnchantmentsAsync(ContentDbContext db)
     {
         if (await db.Enchantments.AnyAsync())

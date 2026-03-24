@@ -22,8 +22,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
     private List<BackgroundDto>?  _backgrounds;
     private List<SkillDto>?       _skills;
 
-    // ── Catalog accessors (lazy-load) ─────────────────────────────────────────
-
+    // Catalog accessors (lazy-load)
     public async Task<IReadOnlyList<PowerDto>> GetAbilitiesAsync()
     {
         if (_abilities is null)
@@ -134,8 +133,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
         return _skills;
     }
 
-    // ── Slug lookups ──────────────────────────────────────────────────────────
-
+    // Slug lookups
     public async Task<PowerDto?> GetAbilityAsync(string slug)
     {
         var list = await GetAbilitiesAsync();
@@ -213,8 +211,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
                ?? await contentService.GetSkillAsync(slug);
     }
 
-    // ── Cache management ──────────────────────────────────────────────────────
-
+    // Cache management
     /// <summary>Clears all cached catalogs so they are re-fetched on next access.</summary>
     public Task InvalidateAsync()
     {

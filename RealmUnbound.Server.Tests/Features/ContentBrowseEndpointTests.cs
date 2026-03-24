@@ -56,8 +56,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
 {
     private readonly HttpClient _client = fixture.Client;
 
-    // ── GET /api/content/schema ──────────────────────────────────────────────
-
+    // GET /api/content/schema
     [Fact]
     public async Task GetSchema_Returns_All_20_Types()
     {
@@ -102,8 +101,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
         });
     }
 
-    // ── GET /api/content/browse ──────────────────────────────────────────────
-
+    // GET /api/content/browse
     [Fact]
     public async Task Browse_Returns_OK_For_Known_Type()
     {
@@ -192,8 +190,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
         result.Items.Should().NotContain(s => s.IsActive == false);
     }
 
-    // ── GET /api/content/browse/{type}/{slug} ────────────────────────────────
-
+    // GET /api/content/browse/{type}/{slug}
     [Fact]
     public async Task BrowseDetail_Returns_OK_And_Detail_For_Seeded_Skill()
     {
@@ -258,8 +255,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
         detail!.Payload.TryGetProperty("slug", out _).Should().BeTrue();
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
+    // Helpers
     private async Task<PagedResult<ContentSummaryDto>?> BrowseSkillsAsync() =>
         await (await _client.GetAsync("/api/content/browse?type=skill"))
               .Content

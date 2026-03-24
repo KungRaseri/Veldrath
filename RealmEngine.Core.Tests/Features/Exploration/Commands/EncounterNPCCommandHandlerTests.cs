@@ -28,8 +28,7 @@ public class EncounterNPCCommandHandlerTests
         return (handler, mock);
     }
 
-    // ── No active save ─────────────────────────────────────────────────────────
-
+    // No active save
     [Fact]
     public async Task Handle_ReturnsFailure_WhenNoActiveSave()
     {
@@ -41,8 +40,7 @@ public class EncounterNPCCommandHandlerTests
         result.ErrorMessage.Should().NotBeNullOrEmpty();
     }
 
-    // ── MeetNPC called ─────────────────────────────────────────────────────────
-
+    // MeetNPC called
     [Fact]
     public async Task Handle_CallsMeetNPC_WhenNpcFound()
     {
@@ -55,8 +53,7 @@ public class EncounterNPCCommandHandlerTests
         mockSvc.Verify(s => s.MeetNPC(npc), Times.Once);
     }
 
-    // ── Quest giver ────────────────────────────────────────────────────────────
-
+    // Quest giver
     [Fact]
     public async Task Handle_IncludesQuestAction_WhenIsQuestGiverTraitIsTrue()
     {
@@ -73,8 +70,7 @@ public class EncounterNPCCommandHandlerTests
         result.AvailableActions.Should().Contain("Quest");
     }
 
-    // ── Trainer ────────────────────────────────────────────────────────────────
-
+    // Trainer
     [Fact]
     public async Task Handle_IncludesTrainAction_WhenIsTrainerTraitIsTrue()
     {
@@ -91,8 +87,7 @@ public class EncounterNPCCommandHandlerTests
         result.AvailableActions.Should().Contain("Train");
     }
 
-    // ── Always-present actions ─────────────────────────────────────────────────
-
+    // Always-present actions
     [Fact]
     public async Task Handle_AlwaysIncludesTalkAndLeave_ForAnyNpc()
     {

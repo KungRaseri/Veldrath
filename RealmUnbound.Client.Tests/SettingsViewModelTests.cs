@@ -20,8 +20,7 @@ public class SettingsViewModelTests : TestBase
         return (vm, a, s);
     }
 
-    // ── BackCommand ───────────────────────────────────────────────────────────
-
+    // BackCommand
     [Fact]
     public async Task BackCommand_Should_Navigate_To_MainMenuViewModel()
     {
@@ -50,8 +49,7 @@ public class SettingsViewModelTests : TestBase
         loaded.ServerBaseUrl.Should().Be("http://testserver:9090");
     }
 
-    // ── Audio — volume properties ──────────────────────────────────────────────
-
+    // Audio — volume properties
     [Fact]
     public void MasterVolume_Should_Reflect_ClientSettings_Default()
     {
@@ -111,8 +109,7 @@ public class SettingsViewModelTests : TestBase
         audio.SfxVolume.Should().Be(50);
     }
 
-    // ── Audio — mute ──────────────────────────────────────────────────────────
-
+    // Audio — mute
     [Fact]
     public void Muted_DefaultsTo_False()
     {
@@ -141,8 +138,7 @@ public class SettingsViewModelTests : TestBase
         audio.Muted.Should().BeFalse();
     }
 
-    // ── Display ───────────────────────────────────────────────────────────────
-
+    // Display
     [Fact]
     public void FullScreen_DefaultsTo_False()
     {

@@ -138,8 +138,7 @@ public class GetEnchantmentCostHandlerTests
             Traits = []
         };
 
-    // ── ApplyEnchantment ──────────────────────────────────────────────────────
-
+    // ApplyEnchantment
     [Fact]
     public async Task Handle_Apply_IsPossible_WhenSlotAvailable()
     {
@@ -173,8 +172,7 @@ public class GetEnchantmentCostHandlerTests
         result.SuccessRate.Should().Be(100.0);
     }
 
-    // ── RemoveEnchantment ─────────────────────────────────────────────────────
-
+    // RemoveEnchantment
     [Fact]
     public async Task Handle_Remove_IsNotPossible_WhenNoPlayerEnchantments()
     {
@@ -199,8 +197,7 @@ public class GetEnchantmentCostHandlerTests
         result.SuccessRate.Should().Be(100.0);
     }
 
-    // ── UnlockSlot ────────────────────────────────────────────────────────────
-
+    // UnlockSlot
     [Fact]
     public async Task Handle_UnlockSlot_IsPossible_WithSufficientSkill()
     {

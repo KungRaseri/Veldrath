@@ -22,8 +22,7 @@ public class InMemoryNodeRepositoryTests
             LastHarvestedAt = DateTime.MinValue
         };
 
-    // ── SpawnNodeAsync ────────────────────────────────────────────────────
-
+    // SpawnNodeAsync
     [Fact]
     public async Task SpawnNodeAsync_WithExplicitId_StoresNodeUnderThatId()
     {
@@ -58,8 +57,7 @@ public class InMemoryNodeRepositoryTests
         nodes.Should().ContainSingle(n => n.NodeId == "n1");
     }
 
-    // ── GetNodeByIdAsync ──────────────────────────────────────────────────
-
+    // GetNodeByIdAsync
     [Fact]
     public async Task GetNodeByIdAsync_ReturnsNull_WhenMissing()
     {
@@ -73,8 +71,7 @@ public class InMemoryNodeRepositoryTests
         (await _repository.GetNodeByIdAsync("n-get")).Should().NotBeNull();
     }
 
-    // ── GetNodesByLocationAsync ───────────────────────────────────────────
-
+    // GetNodesByLocationAsync
     [Fact]
     public async Task GetNodesByLocationAsync_ReturnsOnlyMatchingLocation()
     {
@@ -93,8 +90,7 @@ public class InMemoryNodeRepositoryTests
         result.Should().BeEmpty();
     }
 
-    // ── GetNearbyNodesAsync ───────────────────────────────────────────────
-
+    // GetNearbyNodesAsync
     [Fact]
     public async Task GetNearbyNodesAsync_DelegatesToLocation()
     {
@@ -103,8 +99,7 @@ public class InMemoryNodeRepositoryTests
         result.Should().ContainSingle(n => n.NodeId == "n1");
     }
 
-    // ── SaveNodeAsync ─────────────────────────────────────────────────────
-
+    // SaveNodeAsync
     [Fact]
     public async Task SaveNodeAsync_UpsertsExistingNode()
     {
@@ -137,8 +132,7 @@ public class InMemoryNodeRepositoryTests
         nodes.Should().ContainSingle(); // no duplicate entries
     }
 
-    // ── UpdateNodeHealthAsync ─────────────────────────────────────────────
-
+    // UpdateNodeHealthAsync
     [Fact]
     public async Task UpdateNodeHealthAsync_UpdatesHealth_ReturnsTrue()
     {
@@ -155,8 +149,7 @@ public class InMemoryNodeRepositoryTests
         (await _repository.UpdateNodeHealthAsync("no-node", 50)).Should().BeFalse();
     }
 
-    // ── RemoveNodeAsync ───────────────────────────────────────────────────
-
+    // RemoveNodeAsync
     [Fact]
     public async Task RemoveNodeAsync_RemovesNode_ReturnsTrue()
     {
@@ -182,8 +175,7 @@ public class InMemoryNodeRepositoryTests
         (await _repository.RemoveNodeAsync("ghost")).Should().BeFalse();
     }
 
-    // ── GetNodesReadyForRegenerationAsync ─────────────────────────────────
-
+    // GetNodesReadyForRegenerationAsync
     [Fact]
     public async Task GetNodesReadyForRegen_ReturnsNodes_WhenDepleted_And60sElapsed()
     {
@@ -217,8 +209,7 @@ public class InMemoryNodeRepositoryTests
         ready.Should().BeEmpty();
     }
 
-    // ── Clear ────────────────────────────────────────────────────────────
-
+    // Clear
     [Fact]
     public async Task Clear_RemovesAllNodesAndResetsCounter()
     {

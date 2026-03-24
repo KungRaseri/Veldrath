@@ -17,8 +17,7 @@ public class NodeSpawnerServiceTests
     private static NodeSpawnerService CreateService(IMaterialRepository repo) =>
         new(NullLogger<NodeSpawnerService>.Instance, repo);
 
-    // ── SpawnNodesAsync validation ─────────────────────────────────────────────
-
+    // SpawnNodesAsync validation
     [Fact]
     public async Task SpawnNodesAsync_ThrowsArgumentException_WhenLocationIdIsEmpty()
     {
@@ -101,8 +100,7 @@ public class NodeSpawnerServiceTests
         result.Should().BeEmpty();
     }
 
-    // ── RespawnNode ────────────────────────────────────────────────────────────
-
+    // RespawnNode
     [Fact]
     public void RespawnNode_ThrowsArgumentNullException_WhenNodeIsNull()
     {

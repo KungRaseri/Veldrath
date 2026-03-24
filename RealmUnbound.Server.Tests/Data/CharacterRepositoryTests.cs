@@ -25,8 +25,7 @@ public class CharacterRepositoryTests : IDisposable
     private static Character MakeCharacter(Guid accountId, string name, int slot = 1) =>
         new() { AccountId = accountId, Name = name, ClassName = "Warrior", SlotIndex = slot };
 
-    // ── GetByAccountIdAsync ───────────────────────────────────────────────────
-
+    // GetByAccountIdAsync
     [Fact]
     public async Task GetByAccountIdAsync_Should_Return_Empty_For_New_Account()
     {
@@ -84,8 +83,7 @@ public class CharacterRepositoryTests : IDisposable
         result.Single().Name.Should().Be("A_Char");
     }
 
-    // ── GetByIdAsync ──────────────────────────────────────────────────────────
-
+    // GetByIdAsync
     [Fact]
     public async Task GetByIdAsync_Should_Return_Character_By_Id()
     {
@@ -124,8 +122,7 @@ public class CharacterRepositoryTests : IDisposable
         result.Should().BeNull();
     }
 
-    // ── GetLastPlayedAsync ───────────────────────────────────────────────────
-
+    // GetLastPlayedAsync
     [Fact]
     public async Task GetLastPlayedAsync_Should_Return_Null_For_Empty_Account()
     {
@@ -155,8 +152,7 @@ public class CharacterRepositoryTests : IDisposable
         last!.Name.Should().Be("RecentChar");
     }
 
-    // ── NameExistsAsync ───────────────────────────────────────────────────────
-
+    // NameExistsAsync
     [Fact]
     public async Task NameExistsAsync_Should_Return_True_For_Existing_Name()
     {
@@ -192,8 +188,7 @@ public class CharacterRepositoryTests : IDisposable
         (await repo.NameExistsAsync("ReclaimableName")).Should().BeFalse();
     }
 
-    // ── GetActiveCountAsync ───────────────────────────────────────────────────
-
+    // GetActiveCountAsync
     [Fact]
     public async Task GetActiveCountAsync_Should_Return_Zero_For_New_Account()
     {
@@ -218,8 +213,7 @@ public class CharacterRepositoryTests : IDisposable
         (await repo.GetActiveCountAsync(accountId)).Should().Be(1);
     }
 
-    // ── SoftDeleteAsync ───────────────────────────────────────────────────────
-
+    // SoftDeleteAsync
     [Fact]
     public async Task SoftDeleteAsync_Should_Set_DeletedAt()
     {
@@ -262,8 +256,7 @@ public class CharacterRepositoryTests : IDisposable
         await act.Should().NotThrowAsync();
     }
 
-    // ── UpdateCurrentZoneAsync ───────────────────────────────────────────────
-
+    // UpdateCurrentZoneAsync
     [Fact]
     public async Task UpdateCurrentZoneAsync_Should_Update_Zone_And_LastPlayedAt()
     {
@@ -292,8 +285,7 @@ public class CharacterRepositoryTests : IDisposable
         await act.Should().NotThrowAsync();
     }
 
-    // ── UpdateAsync ───────────────────────────────────────────────────────────
-
+    // UpdateAsync
     [Fact]
     public async Task UpdateAsync_Should_Persist_Changes()
     {
@@ -311,8 +303,7 @@ public class CharacterRepositoryTests : IDisposable
         found.Experience.Should().Be(1234);
     }
 
-    // ── Lifecycle: create → delete → recreate ─────────────────────────────────
-
+    // Lifecycle: create → delete → recreate
     [Fact]
     public async Task CreateAsync_AfterSoftDelete_SameNameSucceeds()
     {

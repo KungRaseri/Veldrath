@@ -6,8 +6,7 @@ using RealmUnbound.Contracts.Zones;
 
 namespace RealmUnbound.Client.Tests;
 
-// ── Mock HttpMessageHandler ───────────────────────────────────────────────────
-
+// Mock HttpMessageHandler
 /// <summary>
 /// A configurable HttpMessageHandler stub that returns pre-built responses without
 /// making actual network calls.
@@ -42,8 +41,7 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
         => new(_ => throw ex);
 }
 
-// ── HttpAuthService tests ─────────────────────────────────────────────────────
-
+// HttpAuthService tests
 public class HttpAuthServiceTests : TestBase
 {
     private static readonly AuthResponse SampleAuth = new(
@@ -58,8 +56,7 @@ public class HttpAuthServiceTests : TestBase
         return new HttpAuthService(http, tokens, new TokenPersistenceService(), NullLogger<HttpAuthService>.Instance);
     }
 
-    // ── RegisterAsync ─────────────────────────────────────────────────────────
-
+    // RegisterAsync
     [Fact]
     public async Task RegisterAsync_Should_Return_Auth_Response_On_Success()
     {
@@ -106,8 +103,7 @@ public class HttpAuthServiceTests : TestBase
         error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
-    // ── LoginAsync ────────────────────────────────────────────────────────────
-
+    // LoginAsync
     [Fact]
     public async Task LoginAsync_Should_Return_Auth_Response_On_Success()
     {
@@ -153,8 +149,7 @@ public class HttpAuthServiceTests : TestBase
         error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
-    // ── RefreshAsync ──────────────────────────────────────────────────────────
-
+    // RefreshAsync
     [Fact]
     public async Task RefreshAsync_Should_Return_False_When_No_RefreshToken()
     {
@@ -233,8 +228,7 @@ public class HttpAuthServiceTests : TestBase
         result.Should().BeFalse();
     }
 
-    // ── LogoutAsync ───────────────────────────────────────────────────────────
-
+    // LogoutAsync
     [Fact]
     public async Task LogoutAsync_Should_Clear_TokenStore()
     {
@@ -269,8 +263,7 @@ public class HttpAuthServiceTests : TestBase
     }
 }
 
-// ── HttpCharacterService tests ────────────────────────────────────────────────
-
+// HttpCharacterService tests
 public class HttpCharacterServiceTests : TestBase
 {
     private static readonly CharacterDto SampleChar = new(
@@ -285,8 +278,7 @@ public class HttpCharacterServiceTests : TestBase
         return new HttpCharacterService(http, tokens, NullLogger<HttpCharacterService>.Instance);
     }
 
-    // ── GetCharactersAsync ────────────────────────────────────────────────────
-
+    // GetCharactersAsync
     [Fact]
     public async Task GetCharactersAsync_Should_Return_List_On_Success()
     {
@@ -317,8 +309,7 @@ public class HttpCharacterServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── CreateCharacterAsync ──────────────────────────────────────────────────
-
+    // CreateCharacterAsync
     [Fact]
     public async Task CreateCharacterAsync_Should_Return_Character_On_Success()
     {
@@ -353,8 +344,7 @@ public class HttpCharacterServiceTests : TestBase
         error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
-    // ── DeleteCharacterAsync ──────────────────────────────────────────────────
-
+    // DeleteCharacterAsync
     [Fact]
     public async Task DeleteCharacterAsync_Should_Return_Null_Error_On_Success()
     {
@@ -386,8 +376,7 @@ public class HttpCharacterServiceTests : TestBase
         error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
-    // ── Lifecycle / edge-case ─────────────────────────────────────────────────
-
+    // Lifecycle / edge-case
     [Fact]
     public async Task CreateCharacterAsync_Returns409_WithFriendlyNameTakenMessage()
     {
@@ -438,8 +427,7 @@ public class HttpCharacterServiceTests : TestBase
     }
 }
 
-// ── HttpZoneService tests ─────────────────────────────────────────────────────
-
+// HttpZoneService tests
 public class HttpZoneServiceTests : TestBase
 {
     private static readonly ZoneDto SampleZone = new(
@@ -457,8 +445,7 @@ public class HttpZoneServiceTests : TestBase
         return new HttpZoneService(http, tokens, NullLogger<HttpZoneService>.Instance);
     }
 
-    // ── GetZonesAsync ─────────────────────────────────────────────────────────
-
+    // GetZonesAsync
     [Fact]
     public async Task GetZonesAsync_Should_Return_List_On_Success()
     {
@@ -504,8 +491,7 @@ public class HttpZoneServiceTests : TestBase
         capturedAuth.Should().Be("my-token");
     }
 
-    // ── GetZoneAsync ──────────────────────────────────────────────────────────
-
+    // GetZoneAsync
     [Fact]
     public async Task GetZoneAsync_Should_Return_Zone_On_Success()
     {
@@ -537,8 +523,7 @@ public class HttpZoneServiceTests : TestBase
     private static readonly WorldDto SampleWorld =
         new("aethoria", "Aethoria", "The main world.", "Modern");
 
-    // ── GetZonesByRegionAsync ─────────────────────────────────────────────────
-
+    // GetZonesByRegionAsync
     [Fact]
     public async Task GetZonesByRegionAsync_Should_Return_List_On_Success()
     {
@@ -555,8 +540,7 @@ public class HttpZoneServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetRegionsAsync ───────────────────────────────────────────────────────
-
+    // GetRegionsAsync
     [Fact]
     public async Task GetRegionsAsync_Should_Return_List_On_Success()
     {
@@ -573,8 +557,7 @@ public class HttpZoneServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetRegionAsync ────────────────────────────────────────────────────────
-
+    // GetRegionAsync
     [Fact]
     public async Task GetRegionAsync_Should_Return_Dto_On_Success()
     {
@@ -592,8 +575,7 @@ public class HttpZoneServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetRegionConnectionsAsync ─────────────────────────────────────────────
-
+    // GetRegionConnectionsAsync
     [Fact]
     public async Task GetRegionConnectionsAsync_Should_Return_List_On_Success()
     {
@@ -610,8 +592,7 @@ public class HttpZoneServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetWorldsAsync ────────────────────────────────────────────────────────
-
+    // GetWorldsAsync
     [Fact]
     public async Task GetWorldsAsync_Should_Return_List_On_Success()
     {
@@ -628,8 +609,7 @@ public class HttpZoneServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetWorldAsync ─────────────────────────────────────────────────────────
-
+    // GetWorldAsync
     [Fact]
     public async Task GetWorldAsync_Should_Return_Dto_On_Success()
     {

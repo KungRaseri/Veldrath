@@ -2,8 +2,7 @@ using System.Text.Json;
 
 namespace RealmUnbound.Contracts.Content;
 
-// ── Content Browse ─────────────────────────────────────────────────────────────
-
+// Content Browse
 /// <summary>
 /// Lightweight summary row used in paged content browse lists.
 /// Returned by <c>GET /api/content/browse?type=…</c>.
@@ -28,8 +27,7 @@ public record ContentDetailDto(ContentSummaryDto Summary, JsonElement Payload);
 /// <summary>Top-level info about one content type — used by the schema listing endpoint.</summary>
 public record ContentTypeInfoDto(string ContentType, string DisplayLabel, string Description);
 
-// ── Power ─────────────────────────────────────────────────────────────────────
-
+// Power
 /// <summary>A unified power (ability, spell, talent, passive, etc.) available to characters.</summary>
 public record PowerDto(
     string Slug,
@@ -46,8 +44,7 @@ public record PowerDto(
     int Rank,
     string EffectType);
 
-// ── Enemy ─────────────────────────────────────────────────────────────────────
-
+// Enemy
 /// <summary>An enemy entity that players can encounter in zones.</summary>
 public record EnemyDto(
     string Slug,
@@ -57,8 +54,7 @@ public record EnemyDto(
     string Family,
     Dictionary<string, int> Attributes);
 
-// ── NPC ───────────────────────────────────────────────────────────────────────
-
+// NPC
 /// <summary>A non-player character present in zones (vendors, quest-givers, etc.).</summary>
 public record NpcDto(
     string Slug,
@@ -66,8 +62,7 @@ public record NpcDto(
     string DisplayName,
     string Category);
 
-// ── Quest ─────────────────────────────────────────────────────────────────────
-
+// Quest
 /// <summary>A quest available for player characters to accept and complete.</summary>
 public record QuestDto(
     string Slug,
@@ -78,8 +73,7 @@ public record QuestDto(
     int RarityWeight,
     string Description);
 
-// ── Recipe ────────────────────────────────────────────────────────────────────
-
+// Recipe
 /// <summary>A single material ingredient used in a crafting <see cref="RecipeDto"/>.</summary>
 public record RecipeMaterialDto(
     string ItemReference,
@@ -96,8 +90,7 @@ public record RecipeDto(
     string OutputItemReference,
     int OutputQuantity);
 
-// ── LootTable ─────────────────────────────────────────────────────────────────
-
+// LootTable
 /// <summary>A single entry in a loot table, describing one possible item drop.</summary>
 public record LootTableEntryDto(
     string ItemDomain,
@@ -117,8 +110,7 @@ public record LootTableDto(
     bool IsHarvesting,
     List<LootTableEntryDto> Entries);
 
-// ── ActorClass ────────────────────────────────────────────────────────────────
-
+// ActorClass
 /// <summary>A playable character class (e.g. Fighter, Wizard) with its core mechanical properties.</summary>
 /// <param name="Slug">Unique URL-safe identifier for this class.</param>
 /// <param name="DisplayName">Display name shown to players (e.g. "Warrior", "Mage").</param>
@@ -134,8 +126,7 @@ public record ActorClassDto(
     string PrimaryStat,
     int RarityWeight);
 
-// ── Species ───────────────────────────────────────────────────────────────────
-
+// Species
 /// <summary>A playable species (e.g. Human, Elf) selectable during character creation.</summary>
 public record SpeciesDto(
     string Slug,
@@ -143,8 +134,7 @@ public record SpeciesDto(
     string TypeKey,
     int RarityWeight);
 
-// ── Background ────────────────────────────────────────────────────────────────
-
+// Background
 /// <summary>A character background (e.g. Soldier, Sage) that provides starting bonuses.</summary>
 public record BackgroundDto(
     string Slug,
@@ -152,8 +142,7 @@ public record BackgroundDto(
     string TypeKey,
     int RarityWeight);
 
-// ── Skill ─────────────────────────────────────────────────────────────────────
-
+// Skill
 /// <summary>A learnable skill that grants bonuses as its rank increases.</summary>
 public record SkillDto(
     string Slug,
@@ -163,8 +152,7 @@ public record SkillDto(
     string? GoverningAttribute,
     int RarityWeight);
 
-// ── Item ──────────────────────────────────────────────────────────────────────
-
+// Item
 /// <summary>A general-purpose catalog item (consumable, gem, rune, weapon, armor, etc.).</summary>
 /// <param name="Slug">Unique URL-safe identifier for this item.</param>
 /// <param name="DisplayName">Display name shown to players.</param>
@@ -193,8 +181,7 @@ public record EnchantmentDto(
     string TypeKey,
     int RarityWeight);
 
-// ── Material ──────────────────────────────────────────────────────────────────
-
+// Material
 /// <summary>A crafting material belonging to a material family (metals, woods, leathers, etc.).</summary>
 /// <param name="Slug">Unique URL-safe identifier for this material.</param>
 /// <param name="DisplayName">Display name shown to players.</param>
@@ -206,7 +193,7 @@ public record MaterialDto(
     string MaterialFamily,
     int RarityWeight);
 
-// ── Organization ──────────────────────────────────────────────────────────────
+// Organization
 /// <summary>An organization catalog entry (faction, guild, business, or shop).</summary>
 /// <param name="Slug">URL-safe identifier.</param>
 /// <param name="DisplayName">Human-readable name.</param>
@@ -215,7 +202,7 @@ public record MaterialDto(
 /// <param name="RarityWeight">Selection weight for random draws.</param>
 public record OrganizationDto(string Slug, string DisplayName, string TypeKey, string OrgType, int RarityWeight);
 
-// ── ZoneLocation ─────────────────────────────────────────────────────
+// ZoneLocation
 /// <summary>A zone location catalog entry (dungeon, settlement, or environment within a zone).</summary>
 /// <param name="Slug">URL-safe identifier.</param>
 /// <param name="DisplayName">Human-readable name.</param>
@@ -228,7 +215,7 @@ public record OrganizationDto(string Slug, string DisplayName, string TypeKey, s
 public record ZoneLocationDto(string Slug, string DisplayName, string TypeKey,
     string ZoneId, string LocationType, int RarityWeight, int? MinLevel, int? MaxLevel);
 
-// ── Dialogue ──────────────────────────────────────────────────────────────────
+// Dialogue
 /// <summary>A dialogue catalog entry belonging to a speaker type.</summary>
 /// <param name="Slug">URL-safe identifier.</param>
 /// <param name="DisplayName">Human-readable name.</param>
@@ -239,7 +226,7 @@ public record ZoneLocationDto(string Slug, string DisplayName, string TypeKey,
 public record DialogueDto(string Slug, string DisplayName, string TypeKey,
     string? Speaker, int RarityWeight, List<string> Lines);
 
-// ── ActorInstance ─────────────────────────────────────────────────────────────
+// ActorInstance
 /// <summary>A named actor instance that overrides an archetype for quest-critical or unique actors.</summary>
 /// <param name="Slug">URL-safe identifier.</param>
 /// <param name="DisplayName">Human-readable name.</param>
@@ -251,7 +238,7 @@ public record DialogueDto(string Slug, string DisplayName, string TypeKey,
 public record ActorInstanceDto(string Slug, string DisplayName, string TypeKey,
     Guid ArchetypeId, int? LevelOverride, string? FactionOverride, int RarityWeight);
 
-// ── MaterialProperty ──────────────────────────────────────────────────────────
+// MaterialProperty
 /// <summary>A material property definition describing the physical characteristics of a material family.</summary>
 /// <param name="Slug">URL-safe identifier.</param>
 /// <param name="DisplayName">Human-readable name.</param>
@@ -262,7 +249,7 @@ public record ActorInstanceDto(string Slug, string DisplayName, string TypeKey,
 public record MaterialPropertyDto(string Slug, string DisplayName, string TypeKey,
     string MaterialFamily, float CostScale, int RarityWeight);
 
-// ── TraitDefinition ───────────────────────────────────────────────────────────
+// TraitDefinition
 /// <summary>A trait vocabulary entry defining a known trait key and its value type.</summary>
 /// <param name="Key">Trait key used in entity Traits columns (e.g. "aggressive", "fireResist").</param>
 /// <param name="ValueType">Value type: "bool", "int", "float", or "string".</param>

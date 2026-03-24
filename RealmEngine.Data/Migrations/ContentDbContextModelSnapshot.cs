@@ -1185,7 +1185,7 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("TraitDefinitions");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.WorldLocation", b =>
+            modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1222,6 +1222,11 @@ namespace RealmEngine.Data.Migrations
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TypeKey");
@@ -1229,7 +1234,7 @@ namespace RealmEngine.Data.Migrations
                     b.HasIndex("TypeKey", "Slug")
                         .IsUnique();
 
-                    b.ToTable("WorldLocations");
+                    b.ToTable("ZoneLocations");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
@@ -2554,11 +2559,11 @@ namespace RealmEngine.Data.Migrations
                     b.Navigation("Species");
                 });
 
-            modelBuilder.Entity("RealmEngine.Data.Entities.WorldLocation", b =>
+            modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocation", b =>
                 {
-                    b.OwnsOne("RealmEngine.Data.Entities.WorldLocationStats", "Stats", b1 =>
+                    b.OwnsOne("RealmEngine.Data.Entities.ZoneLocationStats", "Stats", b1 =>
                         {
-                            b1.Property<Guid>("WorldLocationId");
+                            b1.Property<Guid>("ZoneLocationId");
 
                             b1.Property<int?>("DangerLevel");
 
@@ -2570,19 +2575,19 @@ namespace RealmEngine.Data.Migrations
 
                             b1.Property<int?>("Size");
 
-                            b1.HasKey("WorldLocationId");
+                            b1.HasKey("ZoneLocationId");
 
-                            b1.ToTable("WorldLocations");
+                            b1.ToTable("ZoneLocations");
 
                             b1.ToJson("Stats");
 
                             b1.WithOwner()
-                                .HasForeignKey("WorldLocationId");
+                                .HasForeignKey("ZoneLocationId");
                         });
 
-                    b.OwnsOne("RealmEngine.Data.Entities.WorldLocationTraits", "Traits", b1 =>
+                    b.OwnsOne("RealmEngine.Data.Entities.ZoneLocationTraits", "Traits", b1 =>
                         {
-                            b1.Property<Guid>("WorldLocationId");
+                            b1.Property<Guid>("ZoneLocationId");
 
                             b1.Property<bool?>("HasMerchant");
 
@@ -2594,16 +2599,14 @@ namespace RealmEngine.Data.Migrations
 
                             b1.Property<bool?>("IsTown");
 
-                            b1.Property<bool?>("PvpEnabled");
+                            b1.HasKey("ZoneLocationId");
 
-                            b1.HasKey("WorldLocationId");
-
-                            b1.ToTable("WorldLocations");
+                            b1.ToTable("ZoneLocations");
 
                             b1.ToJson("Traits");
 
                             b1.WithOwner()
-                                .HasForeignKey("WorldLocationId");
+                                .HasForeignKey("ZoneLocationId");
                         });
 
                     b.Navigation("Stats")

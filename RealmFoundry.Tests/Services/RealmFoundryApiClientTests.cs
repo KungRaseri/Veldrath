@@ -9,8 +9,7 @@ namespace RealmFoundry.Tests.Services;
 
 public class RealmFoundryApiClientTests
 {
-    // ── helpers ───────────────────────────────────────────────────────────────
-
+    // helpers
     private static (RealmFoundryApiClient Client, Mock<HttpMessageHandler> Handler) Build()
     {
         var handler = new Mock<HttpMessageHandler>();
@@ -39,8 +38,7 @@ public class RealmFoundryApiClientTests
                .ReturnsAsync(response);
     }
 
-    // ── SetBearerToken / ClearBearerToken ─────────────────────────────────────
-
+    // SetBearerToken / ClearBearerToken
     [Fact]
     public void SetBearerToken_SetsAuthorizationHeader()
     {
@@ -70,8 +68,7 @@ public class RealmFoundryApiClientTests
         http.DefaultRequestHeaders.Authorization.Should().BeNull();
     }
 
-    // ── IsServerReachableAsync ────────────────────────────────────────────────
-
+    // IsServerReachableAsync
     [Fact]
     public async Task IsServerReachableAsync_ReturnsTrue_WhenHealthEndpointSucceeds()
     {
@@ -90,8 +87,7 @@ public class RealmFoundryApiClientTests
         result.Should().BeFalse();
     }
 
-    // ── RefreshTokenAsync ─────────────────────────────────────────────────────
-
+    // RefreshTokenAsync
     [Fact]
     public async Task RefreshTokenAsync_ReturnsAuthResponse_WhenSuccessful()
     {
@@ -118,8 +114,7 @@ public class RealmFoundryApiClientTests
         result.Should().BeNull();
     }
 
-    // ── GetSubmissionsAsync ───────────────────────────────────────────────────
-
+    // GetSubmissionsAsync
     [Fact]
     public async Task GetSubmissionsAsync_ReturnsPage_WhenSuccessful()
     {
@@ -147,8 +142,7 @@ public class RealmFoundryApiClientTests
         result.TotalCount.Should().Be(0);
     }
 
-    // ── GetSubmissionAsync ────────────────────────────────────────────────────
-
+    // GetSubmissionAsync
     [Fact]
     public async Task GetSubmissionAsync_ReturnsDto_WhenSuccessful()
     {
@@ -176,8 +170,7 @@ public class RealmFoundryApiClientTests
         result.Should().BeNull();
     }
 
-    // ── CreateSubmissionAsync ─────────────────────────────────────────────────
-
+    // CreateSubmissionAsync
     [Fact]
     public async Task CreateSubmissionAsync_ReturnsDto_WhenSuccessful()
     {
@@ -209,8 +202,7 @@ public class RealmFoundryApiClientTests
         error.Should().Be("Title is required.");
     }
 
-    // ── VoteAsync ─────────────────────────────────────────────────────────────
-
+    // VoteAsync
     [Fact]
     public async Task VoteAsync_ReturnsSummary_WhenSuccessful()
     {
@@ -238,8 +230,7 @@ public class RealmFoundryApiClientTests
         error.Should().Be("Login required.");
     }
 
-    // ── ReviewAsync ───────────────────────────────────────────────────────────
-
+    // ReviewAsync
     [Fact]
     public async Task ReviewAsync_ReturnsDto_WhenApproved()
     {
@@ -269,8 +260,7 @@ public class RealmFoundryApiClientTests
         error.Should().Be("Curators only.");
     }
 
-    // ── GetNotificationsAsync ─────────────────────────────────────────────────
-
+    // GetNotificationsAsync
     [Fact]
     public async Task GetNotificationsAsync_ReturnsList_WhenSuccessful()
     {
@@ -295,8 +285,7 @@ public class RealmFoundryApiClientTests
         result.Should().BeEmpty();
     }
 
-    // ── MarkNotificationReadAsync ─────────────────────────────────────────────
-
+    // MarkNotificationReadAsync
     [Fact]
     public async Task MarkNotificationReadAsync_ReturnsTrue_WhenSuccessful()
     {

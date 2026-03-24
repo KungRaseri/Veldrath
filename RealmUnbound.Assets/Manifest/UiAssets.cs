@@ -5,13 +5,13 @@ namespace RealmUnbound.Assets.Manifest;
 /// </summary>
 public static class UiAssets
 {
-    // ── Backgrounds ───────────────────────────────────────────────────────────
+    // Backgrounds
     /// <summary>Wooden background tile, variant 1.</summary>
     public const string Background1 = "ui/bg_01_01.png";
     /// <summary>Wooden background tile, variant 2.</summary>
     public const string Background2 = "ui/bg_01_02.png";
 
-    // ── Panels & Boards ───────────────────────────────────────────────────────
+    // Panels & Boards
     /// <summary>Wooden board panel (for stat blocks / descriptions).</summary>
     public const string Board = "ui/board.png";
     /// <summary>Wooden book / grimoire panel.</summary>
@@ -19,7 +19,7 @@ public static class UiAssets
     /// <summary>Title banner ornament.</summary>
     public const string Title = "ui/title.png";
 
-    // ── Buttons ───────────────────────────────────────────────────────────────
+    // Buttons
     /// <summary>Button style 1, normal state.</summary>
     public const string Button1Normal = "ui/button_01_01.png";
     /// <summary>Button style 1, hover state.</summary>
@@ -27,7 +27,7 @@ public static class UiAssets
     /// <summary>Button style 1, pressed state.</summary>
     public const string Button1Pressed = "ui/button_01_03.png";
 
-    // ── Frames ────────────────────────────────────────────────────────────────
+    // Frames
     /// <summary>Standard rectangular frame.</summary>
     public const string Frame = "ui/frame.png";
     /// <summary>Blue-tinted frame (quest / special).</summary>
@@ -39,7 +39,7 @@ public static class UiAssets
     /// <summary>Violet-tinted frame (magic / enchanted).</summary>
     public const string FrameViolet = "ui/frame_violet.png";
 
-    // ── Checkboxes ────────────────────────────────────────────────────────────
+    // Checkboxes
     /// <summary>Checkbox, unchecked state.</summary>
     public const string CheckboxUnchecked = "ui/checkbox_bg.png";
     /// <summary>Checkbox, checked state (variant 1).</summary>
@@ -47,7 +47,7 @@ public static class UiAssets
     /// <summary>Checkbox, checked state (variant 2).</summary>
     public const string CheckboxChecked2 = "ui/checkbox_02.png";
 
-    // ── Planks ────────────────────────────────────────────────────────────────
+    // Planks
     /// <summary>Wooden plank label, variant 1.</summary>
     public const string Plank1 = "ui/Plank_01.png";
     /// <summary>Wooden plank label, variant 2.</summary>
@@ -59,13 +59,13 @@ public static class UiAssets
     /// <summary>Wooden plank label, variant 5.</summary>
     public const string Plank5 = "ui/Plank_05.png";
 
-    // ── Navigation Arrows ─────────────────────────────────────────────────────
+    // Navigation Arrows
     /// <summary>Left navigation arrow.</summary>
     public const string ArrowLeft = "ui/arrow_left.png";
     /// <summary>Right navigation arrow.</summary>
     public const string ArrowRight = "ui/arrow_right.png";
 
-    // ── decorative ────────────────────────────────────────────────────────────
+    // decorative
     /// <summary>Skull decoration, variant 1.</summary>
     public const string Skull1 = "ui/skull_01.png";
     /// <summary>Skull decoration, variant 2.</summary>

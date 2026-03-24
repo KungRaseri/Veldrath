@@ -14,13 +14,13 @@ public class ContentDbContext : DbContext
     /// <summary>Initialises a new <see cref="ContentDbContext"/> with the given options.</summary>
     public ContentDbContext(DbContextOptions<ContentDbContext> options) : base(options) { }
 
-    // ── Support tables ────────────────────────────────────────────────────────
+    // Support tables
     /// <summary>Cross-domain registry mapping slugs to their owning entity rows.</summary>
     public DbSet<ContentRegistry> ContentRegistry => Set<ContentRegistry>();
     /// <summary>Vocabulary of trait keys and their expected value types.</summary>
     public DbSet<TraitDefinition> TraitDefinitions => Set<TraitDefinition>();
 
-    // ── Catalog content ───────────────────────────────────────────────────────
+    // Catalog content
     /// <summary>Character and monster powers — abilities, spells, talents, and cantrips.</summary>
     public DbSet<Power> Powers => Set<Power>();
     /// <summary>Biological species definitions.</summary>
@@ -56,7 +56,7 @@ public class ContentDbContext : DbContext
     /// <summary>NPC dialogue trees.</summary>
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
 
-    // ── Junction tables ───────────────────────────────────────────────────────
+    // Junction tables
     /// <summary>Many-to-many: species ↔ innate powers.</summary>
     public DbSet<SpeciesPowerPool> SpeciesPowerPools => Set<SpeciesPowerPool>();
     /// <summary>Many-to-many: actor archetypes ↔ powers.</summary>
@@ -72,7 +72,7 @@ public class ContentDbContext : DbContext
     /// <summary>Recipe ingredient lines.</summary>
     public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
 
-    // ── Name patterns ─────────────────────────────────────────────────────────
+    // Name patterns
     /// <summary>Named sets of procedural name-generation patterns.</summary>
     public DbSet<NamePatternSet> NamePatternSets => Set<NamePatternSet>();
     /// <summary>Individual pattern templates within a set.</summary>
@@ -80,7 +80,7 @@ public class ContentDbContext : DbContext
     /// <summary>Individual name component values (prefixes, suffixes, etc.).</summary>
     public DbSet<NameComponent> NameComponents => Set<NameComponent>();
 
-    // ── System configuration ──────────────────────────────────────────────────
+    // System configuration
     /// <summary>Key-value JSON configuration blobs for game tuning.</summary>
     public DbSet<GameConfig> GameConfigs => Set<GameConfig>();
 

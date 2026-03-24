@@ -59,7 +59,7 @@ public static class ContentEndpoints
             .WithTags("Content")
             .AllowAnonymous();
 
-        // ── Public schema + browse (no auth, no player session required) ───────
+        // Public schema + browse (no auth, no player session required)
         group.MapGet("/schema",                   GetSchemaAsync);
         group.MapGet("/browse",                   BrowseAsync);
         group.MapGet("/browse/{type}/{slug}",     BrowseDetailAsync);
@@ -145,14 +145,12 @@ public static class ContentEndpoints
         return app;
     }
 
-    // ── Schema ────────────────────────────────────────────────────────────────
-
+    // Schema
     private static IResult GetSchemaAsync() =>
         Results.Ok(ContentSchemaRegistry.All.Values.Select(s =>
             new ContentTypeInfoDto(s.ContentType, s.DisplayLabel, s.Description)));
 
-    // ── Generic browse (paged summary list) ───────────────────────────────────
-
+    // Generic browse (paged summary list)
     private static async Task<IResult> BrowseAsync(
         string type,
         string? search,
@@ -218,8 +216,7 @@ public static class ContentEndpoints
         return new PagedResult<ContentSummaryDto>(items, total, page, pageSize);
     }
 
-    // ── Generic browse (full entity detail) ───────────────────────────────────
-
+    // Generic browse (full entity detail)
     private static async Task<IResult> BrowseDetailAsync(
         string type,
         string slug,
@@ -259,8 +256,7 @@ public static class ContentEndpoints
         return Results.Ok(new ContentDetailDto(Summary(entity, type), payload));
     }
 
-    // ── Powers ────────────────────────────────────────────────────────────────
-
+    // Powers
     private static async Task<IResult> GetPowersAsync(IPowerRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -273,8 +269,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Enemies ───────────────────────────────────────────────────────────────
-
+    // Enemies
     private static async Task<IResult> GetEnemiesAsync(IEnemyRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -287,8 +282,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── NPCs ──────────────────────────────────────────────────────────────────
-
+    // NPCs
     private static async Task<IResult> GetNpcsAsync(INpcRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -301,8 +295,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Quests ────────────────────────────────────────────────────────────────
-
+    // Quests
     private static async Task<IResult> GetQuestsAsync(IQuestRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -315,8 +308,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Recipes ───────────────────────────────────────────────────────────────
-
+    // Recipes
     private static async Task<IResult> GetRecipesAsync(IRecipeRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -329,8 +321,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Loot Tables ───────────────────────────────────────────────────────────
-
+    // Loot Tables
     private static async Task<IResult> GetLootTablesAsync(ILootTableRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -343,10 +334,8 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Spells section removed — merged into /powers ──────────────────────────
-
-    // ── Mapping helpers ───────────────────────────────────────────────────────
-
+    // Spells section removed — merged into /powers
+    // Mapping helpers
     private static PowerDto ToDto(SharedPower p) => new(
         Slug:          p.Slug,
         DisplayName:   p.DisplayName,
@@ -405,8 +394,7 @@ public static class ContentEndpoints
         Entries:      t.Entries.Select(e => new LootTableEntryDto(
             e.ItemDomain, e.ItemSlug, e.DropWeight, e.QuantityMin, e.QuantityMax, e.IsGuaranteed)).ToList());
 
-    // ── Actor Classes ─────────────────────────────────────────────────────────
-
+    // Actor Classes
     private static async Task<IResult> GetClassesAsync(ContentDbContext db)
     {
         var items = await db.ActorClasses
@@ -425,8 +413,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Species ───────────────────────────────────────────────────────────────
-
+    // Species
     private static async Task<IResult> GetSpeciesAsync(ContentDbContext db)
     {
         var items = await db.Species
@@ -445,8 +432,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Backgrounds ───────────────────────────────────────────────────────────
-
+    // Backgrounds
     private static async Task<IResult> GetBackgroundsAsync(ContentDbContext db)
     {
         var items = await db.Backgrounds
@@ -465,8 +451,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Skills ────────────────────────────────────────────────────────────────
-
+    // Skills
     private static async Task<IResult> GetSkillsAsync(ContentDbContext db)
     {
         var items = await db.Skills
@@ -485,8 +470,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Mapping helpers (new content types) ───────────────────────────────────
-
+    // Mapping helpers (new content types)
     private static ActorClassDto ToDto(RealmEngine.Data.Entities.ActorClass c) => new(
         Slug:        c.Slug,
         DisplayName: c.DisplayName ?? c.Slug,
@@ -515,8 +499,7 @@ public static class ContentEndpoints
         GoverningAttribute: s.GoverningAttribute,
         RarityWeight:       s.RarityWeight);
 
-    // ── Items ──────────────────────────────────────────────────────────────────
-
+    // Items
     private static async Task<IResult> GetItemsAsync(string? type, ContentDbContext db, CancellationToken ct)
     {
         var query = db.Items.Where(i => i.IsActive).AsNoTracking();
@@ -535,8 +518,7 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToItemDto(item));
     }
 
-    // ── Enchantments ───────────────────────────────────────────────────────────
-
+    // Enchantments
     private static async Task<IResult> GetEnchantmentsAsync(string? targetSlot, ContentDbContext db, CancellationToken ct)
     {
         var query = db.Enchantments.Where(e => e.IsActive).AsNoTracking();
@@ -570,8 +552,7 @@ public static class ContentEndpoints
         TypeKey:      e.TypeKey,
         RarityWeight: e.RarityWeight);
 
-    // ── Materials ─────────────────────────────────────────────────────────────
-
+    // Materials
     private static async Task<IResult> GetMaterialsAsync(IMaterialRepository repo)
     {
         var items = await repo.GetAllAsync();
@@ -590,8 +571,7 @@ public static class ContentEndpoints
         MaterialFamily: m.MaterialFamily,
         RarityWeight:   (int)m.RarityWeight);
 
-    // ── Organizations ─────────────────────────────────────────────────────────
-
+    // Organizations
     private static async Task<IResult> GetOrganizationsAsync(IOrganizationRepository repo, string? orgType = null)
     {
         var items = orgType is not null
@@ -609,8 +589,7 @@ public static class ContentEndpoints
     private static OrganizationDto ToOrganizationDto(OrganizationEntry o) =>
         new(o.Slug, o.DisplayName, o.TypeKey, o.OrgType, o.RarityWeight);
 
-    // ── Zone Locations ────────────────────────────────────────────────
-
+    // Zone Locations
     private static async Task<IResult> GetZoneLocationsAsync(IZoneLocationRepository repo, string? locationType = null)
     {
         var items = locationType is not null
@@ -628,8 +607,7 @@ public static class ContentEndpoints
     private static ZoneLocationDto ToZoneLocationDto(ZoneLocationEntry w) =>
         new(w.Slug, w.DisplayName, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight, w.MinLevel, w.MaxLevel);
 
-    // ── Dialogues ─────────────────────────────────────────────────────────────
-
+    // Dialogues
     private static async Task<IResult> GetDialoguesAsync(IDialogueRepository repo, string? speaker = null)
     {
         var items = speaker is not null
@@ -647,8 +625,7 @@ public static class ContentEndpoints
     private static DialogueDto ToDialogueDto(DialogueEntry d) =>
         new(d.Slug, d.DisplayName, d.TypeKey, d.Speaker, d.RarityWeight, d.Lines);
 
-    // ── Actor Instances ───────────────────────────────────────────────────────
-
+    // Actor Instances
     private static async Task<IResult> GetActorInstancesAsync(IActorInstanceRepository repo, string? typeKey = null)
     {
         var items = typeKey is not null
@@ -666,8 +643,7 @@ public static class ContentEndpoints
     private static ActorInstanceDto ToActorInstanceDto(ActorInstanceEntry a) =>
         new(a.Slug, a.DisplayName, a.TypeKey, a.ArchetypeId, a.LevelOverride, a.FactionOverride, a.RarityWeight);
 
-    // ── Material Properties ───────────────────────────────────────────────────
-
+    // Material Properties
     private static async Task<IResult> GetMaterialPropertiesAsync(IMaterialPropertyRepository repo, string? family = null)
     {
         var items = family is not null
@@ -685,8 +661,7 @@ public static class ContentEndpoints
     private static MaterialPropertyDto ToMaterialPropertyDto(MaterialPropertyEntry m) =>
         new(m.Slug, m.DisplayName, m.TypeKey, m.MaterialFamily, m.CostScale, m.RarityWeight);
 
-    // ── Trait Definitions ─────────────────────────────────────────────────────
-
+    // Trait Definitions
     private static async Task<IResult> GetTraitsAsync(ITraitDefinitionRepository repo, string? appliesTo = null)
     {
         var items = appliesTo is not null

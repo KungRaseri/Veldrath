@@ -44,8 +44,7 @@ public class JunctionRowViewModel : ReactiveObject
         RemoveCommand = ReactiveCommand.Create(() => { });
     }
 
-    // ── Column visibility ─────────────────────────────────────────────────
-
+    // Column visibility
     public bool ShowAbilitySlug   => _type is JunctionEditorType.AbilityPool
                                           or JunctionEditorType.ArchetypePool
                                           or JunctionEditorType.ClassUnlock;
@@ -62,8 +61,7 @@ public class JunctionRowViewModel : ReactiveObject
     public bool ShowQuantity      => _type == JunctionEditorType.RecipeIngredient;
     public bool ShowIsOptional    => _type == JunctionEditorType.RecipeIngredient;
 
-    // ── Data fields ───────────────────────────────────────────────────────
-
+    // Data fields
     public string  AbilitySlug   { get => _abilitySlug;   set { this.RaiseAndSetIfChanged(ref _abilitySlug,   value); Fire(); } }
     public string  ItemDomain    { get => _itemDomain;    set { this.RaiseAndSetIfChanged(ref _itemDomain,    value); Fire(); } }
     public string  ItemSlug      { get => _itemSlug;      set { this.RaiseAndSetIfChanged(ref _itemSlug,      value); Fire(); } }
@@ -99,8 +97,7 @@ public class JunctionEditorViewModel : ReactiveObject
 
     public event EventHandler? DataChanged;
 
-    // ── Column header visibility (mirrors row ShowXxx) ────────────────────
-
+    // Column header visibility (mirrors row ShowXxx)
     public bool ShowAbilitySlug   => EditorType is JunctionEditorType.AbilityPool
                                                or JunctionEditorType.ArchetypePool
                                                or JunctionEditorType.ClassUnlock;

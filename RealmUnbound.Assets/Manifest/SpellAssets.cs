@@ -17,31 +17,31 @@ namespace RealmUnbound.Assets.Manifest;
 /// </summary>
 public static class SpellAssets
 {
-    // ── Arcane (violet) ───────────────────────────────────────────────────────
+    // Arcane (violet)
     /// <summary>Arcane spell icon, violet palette, slot 01.</summary>
     public const string Arcane01 = "spells/violet/violet_01.PNG";
 
-    // ── Divine (yellow) ───────────────────────────────────────────────────────
+    // Divine (yellow)
     /// <summary>Divine spell icon, yellow palette, slot 01.</summary>
     public const string Divine01 = "spells/yellow/yellow_01.PNG";
 
-    // ── Primal (green) ────────────────────────────────────────────────────────
+    // Primal (green)
     /// <summary>Primal spell icon, green palette, slot 01.</summary>
     public const string Primal01 = "spells/green/green_01.PNG";
 
-    // ── Occult (red) ──────────────────────────────────────────────────────────
+    // Occult (red)
     /// <summary>Occult spell icon, red palette, slot 01.</summary>
     public const string Occult01 = "spells/red/red_01.PNG";
 
-    // ── Utility (blue) ────────────────────────────────────────────────────────
+    // Utility (blue)
     /// <summary>Utility spell icon, blue palette, slot 01.</summary>
     public const string Utility01 = "spells/blue/blue_01.png";
 
-    // ── Healing (emerald) ─────────────────────────────────────────────────────
+    // Healing (emerald)
     /// <summary>Healing spell icon, emerald palette, slot 01.</summary>
     public const string Heal01 = "spells/emerald/emerald_01.PNG";
 
-    // ── Passive (gray) ────────────────────────────────────────────────────────
+    // Passive (gray)
     /// <summary>Passive skill icon, gray palette, slot 01.</summary>
     public const string Passive01 = "spells/gray/gray_01.png";
 

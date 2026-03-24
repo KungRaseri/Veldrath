@@ -8,7 +8,7 @@ using RealmUnbound.Contracts.Auth;
 
 namespace RealmUnbound.Client.Services;
 
-// ── Interface ──────────────────────────────────────────────────────────────────
+// Interface
 public interface IAuthService
 {
     Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password);
@@ -18,7 +18,7 @@ public interface IAuthService
     Task LogoutAsync();
 }
 
-// ── Implementation ─────────────────────────────────────────────────────────────
+// Implementation
 public class HttpAuthService(
     HttpClient http,
     TokenStore tokens,

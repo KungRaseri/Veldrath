@@ -115,8 +115,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
 {
     private readonly HttpClient _client = fixture.Client;
 
-    // ── GET /api/content/classes ──────────────────────────────────────────────
-
+    // GET /api/content/classes
     [Fact]
     public async Task GetClasses_Returns_OK_And_ContainsSeededClass()
     {
@@ -157,8 +156,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/species ──────────────────────────────────────────────
-
+    // GET /api/content/species
     [Fact]
     public async Task GetSpecies_Returns_OK_And_ContainsSeededSpecies()
     {
@@ -189,8 +187,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/backgrounds ─────────────────────────────────────────
-
+    // GET /api/content/backgrounds
     [Fact]
     public async Task GetBackgrounds_Returns_OK_And_ContainsSeededBackground()
     {
@@ -221,8 +218,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/skills ───────────────────────────────────────────────
-
+    // GET /api/content/skills
     [Fact]
     public async Task GetSkills_Returns_OK_And_ContainsSeededSkill()
     {
@@ -253,8 +249,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/enchantments ─────────────────────────────────────────
-
+    // GET /api/content/enchantments
     [Fact]
     public async Task GetEnchantments_Returns_OK_And_All_Active_Enchantments()
     {
@@ -298,8 +293,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/powers ────────────────────────────────────────────
-
+    // GET /api/content/powers
     [Fact]
     public async Task GetAbilities_Returns_OK_And_ContainsSeededAbility()
     {
@@ -329,8 +323,7 @@ public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── GET /api/content/items ────────────────────────────────────────────────
-
+    // GET /api/content/items
     [Fact]
     public async Task GetItems_Returns_OK_And_ContainsSeededItem()
     {

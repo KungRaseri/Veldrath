@@ -16,7 +16,7 @@ public static class DialogueSeeder
         var now = DateTimeOffset.UtcNow;
 
         db.Dialogues.AddRange(
-            // ── Village Blacksmith ────────────────────────────────────────────
+            // Village Blacksmith
             new Dialogue
             {
                 Slug         = "blacksmith-greeting",
@@ -80,7 +80,7 @@ public static class DialogueSeeder
                 },
             },
 
-            // ── Tavern Keeper ─────────────────────────────────────────────────
+            // Tavern Keeper
             new Dialogue
             {
                 Slug         = "tavernkeeper-greeting",

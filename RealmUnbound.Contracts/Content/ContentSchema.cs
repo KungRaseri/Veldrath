@@ -94,8 +94,7 @@ public static class ContentSchemaRegistry
     /// <summary>All registered content type keys in alphabetical order.</summary>
     public static IReadOnlyList<string> AllTypes => [.. _schemas.Keys.Order()];
 
-    // ── Shared helpers ─────────────────────────────────────────────────────────
-
+    // Shared helpers
     private static ContentFieldGroup Identity() => new("Identity", [
         new("displayName", "Display Name", ContentFieldType.Text,    Required: true),
         new("slug",        "Slug",         ContentFieldType.Slug,    Required: true,
@@ -105,8 +104,7 @@ public static class ContentSchemaRegistry
         new("isActive",    "Active",        ContentFieldType.Boolean, Default: "true"),
     ]);
 
-    // ── Ability ────────────────────────────────────────────────────────────────
-
+    // Ability
     private static ContentTypeSchema AbilitySchema() => new(
         "ability", "Abilities",
         "An active, passive, reactive, or ultimate ability that actors can use.",
@@ -152,8 +150,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Species ────────────────────────────────────────────────────────────────
-
+    // Species
     private static ContentTypeSchema SpeciesSchema() => new(
         "species", "Species",
         "A biological species definition providing innate stat ranges and trait flags.",
@@ -184,8 +181,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── ActorClass ─────────────────────────────────────────────────────────────
-
+    // ActorClass
     private static ContentTypeSchema ClassSchema() => new(
         "class", "Classes",
         "A class definition shaping an actor's combat style and stat growth curves.",
@@ -218,8 +214,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── ActorArchetype ─────────────────────────────────────────────────────────
-
+    // ActorArchetype
     private static ContentTypeSchema ArchetypeSchema() => new(
         "archetype", "Actor Archetypes",
         "A composed actor template covering both enemies and NPCs. Combines species, class, and authored flat stats.",
@@ -264,8 +259,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── ActorInstance ──────────────────────────────────────────────────────────
-
+    // ActorInstance
     private static ContentTypeSchema InstanceSchema() => new(
         "instance", "Actor Instances",
         "A named unique actor that overrides a base archetype for quest-critical or boss encounters.",
@@ -295,8 +289,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Background ─────────────────────────────────────────────────────────────
-
+    // Background
     private static ContentTypeSchema BackgroundSchema() => new(
         "background", "Backgrounds",
         "A character background providing origin bonuses to stats and starting conditions.",
@@ -323,8 +316,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Skill ──────────────────────────────────────────────────────────────────
-
+    // Skill
     private static ContentTypeSchema SkillSchema() => new(
         "skill", "Skills",
         "A learnable skill that grants bonuses as rank increases.",
@@ -350,8 +342,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Weapon ─────────────────────────────────────────────────────────────────
-
+    // Weapon
     private static ContentTypeSchema WeaponSchema() => new(
         "weapon", "Weapons",
         "A weapon item with damage, speed, and critical hit characteristics.",
@@ -387,8 +378,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Armor ──────────────────────────────────────────────────────────────────
-
+    // Armor
     private static ContentTypeSchema ArmorSchema() => new(
         "armor", "Armors",
         "A piece of armor providing physical and magical damage reduction.",
@@ -418,8 +408,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Item ───────────────────────────────────────────────────────────────────
-
+    // Item
     private static ContentTypeSchema ItemSchema() => new(
         "item", "Items",
         "A consumable, gem, rune, crystal, or general inventory item.",
@@ -446,8 +435,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Material ───────────────────────────────────────────────────────────────
-
+    // Material
     private static ContentTypeSchema MaterialSchema() => new(
         "material", "Materials",
         "A craftable material used in item recipes, with physical and magical properties.",
@@ -476,8 +464,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── MaterialProperty ───────────────────────────────────────────────────────
-
+    // MaterialProperty
     private static ContentTypeSchema MaterialPropertySchema() => new(
         "materialproperty", "Material Properties",
         "A material property variant defining additional physical and magical characteristics.",
@@ -507,8 +494,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Enchantment ────────────────────────────────────────────────────────────
-
+    // Enchantment
     private static ContentTypeSchema EnchantmentSchema() => new(
         "enchantment", "Enchantments",
         "An enchantment applied to weapons or armor, granting bonus stats.",
@@ -538,8 +524,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Spell ──────────────────────────────────────────────────────────────────
-
+    // Spell
     private static ContentTypeSchema SpellSchema() => new(
         "spell", "Spells",
         "A learnable magic spell cast using mana, associated with a school of magic.",
@@ -570,8 +555,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Quest ──────────────────────────────────────────────────────────────────
-
+    // Quest
     private static ContentTypeSchema QuestSchema() => new(
         "quest", "Quests",
         "A quest with objectives and rewards that drives player progression.",
@@ -600,8 +584,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Recipe ─────────────────────────────────────────────────────────────────
-
+    // Recipe
     private static ContentTypeSchema RecipeSchema() => new(
         "recipe", "Recipes",
         "A crafting recipe that consumes ingredients to produce a single output item.",
@@ -630,8 +613,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── LootTable ──────────────────────────────────────────────────────────────
-
+    // LootTable
     private static ContentTypeSchema LootTableSchema() => new(
         "loottable", "Loot Tables",
         "A loot table defining what items drop from enemies, chests, or resource nodes.",
@@ -651,8 +633,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Organization ───────────────────────────────────────────────────────────
-
+    // Organization
     private static ContentTypeSchema OrganizationSchema() => new(
         "organization", "Organizations",
         "A faction, guild, business, or shop that affects world politics and player reputation.",
@@ -677,8 +658,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── ZoneLocation ──────────────────────────────────────────────────────────
-
+    // ZoneLocation
     private static ContentTypeSchema ZoneLocationSchema() => new(
         "zonelocation", "Zone Locations",
         "A named location within a zone — dungeon, settlement, or environment used by the content pipeline.",
@@ -706,8 +686,7 @@ public static class ContentSchemaRegistry
             ]),
         ]);
 
-    // ── Dialogue ───────────────────────────────────────────────────────────────
-
+    // Dialogue
     private static ContentTypeSchema DialogueSchema() => new(
         "dialogue", "Dialogues",
         "A dialogue entry defining lines, tone, and context for NPC speech.",

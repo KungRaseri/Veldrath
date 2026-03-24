@@ -6,7 +6,7 @@ using RealmUnbound.Contracts.Content;
 
 namespace RealmUnbound.Client.Tests;
 
-// ── HttpContentService tests ──────────────────────────────────────────────────
+// HttpContentService tests
 // HttpContentService delegates all work to two private helpers:
 //   GetListAsync<T>  – returns List<T> on success, [] on error/exception.
 //   GetSingleAsync<T>– returns T? on success, null on 4xx/5xx or exception.
@@ -22,8 +22,7 @@ public class HttpContentServiceTests : TestBase
         return new HttpContentService(http, tokens, NullLogger<HttpContentService>.Instance);
     }
 
-    // ── GetAbilitiesAsync ─────────────────────────────────────────────────────
-
+    // GetAbilitiesAsync
     [Fact]
     public async Task GetAbilitiesAsync_Should_Return_List_On_Success()
     {
@@ -59,8 +58,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetAbilityAsync ───────────────────────────────────────────────────────
-
+    // GetAbilityAsync
     [Fact]
     public async Task GetAbilityAsync_Should_Return_Dto_On_Success()
     {
@@ -93,8 +91,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetEnemiesAsync ───────────────────────────────────────────────────────
-
+    // GetEnemiesAsync
     [Fact]
     public async Task GetEnemiesAsync_Should_Return_List_On_Success()
     {
@@ -120,8 +117,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetEnemyAsync ─────────────────────────────────────────────────────────
-
+    // GetEnemyAsync
     [Fact]
     public async Task GetEnemyAsync_Should_Return_Dto_On_Success()
     {
@@ -144,8 +140,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetNpcsAsync ──────────────────────────────────────────────────────────
-
+    // GetNpcsAsync
     [Fact]
     public async Task GetNpcsAsync_Should_Return_List_On_Success()
     {
@@ -168,8 +163,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetNpcAsync ───────────────────────────────────────────────────────────
-
+    // GetNpcAsync
     [Fact]
     public async Task GetNpcAsync_Should_Return_Dto_On_Success()
     {
@@ -192,8 +186,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetQuestsAsync ────────────────────────────────────────────────────────
-
+    // GetQuestsAsync
     [Fact]
     public async Task GetQuestsAsync_Should_Return_List_On_Success()
     {
@@ -219,8 +212,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetQuestAsync ─────────────────────────────────────────────────────────
-
+    // GetQuestAsync
     [Fact]
     public async Task GetQuestAsync_Should_Return_Dto_On_Success()
     {
@@ -243,8 +235,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetRecipesAsync ───────────────────────────────────────────────────────
-
+    // GetRecipesAsync
     [Fact]
     public async Task GetRecipesAsync_Should_Return_List_On_Success()
     {
@@ -271,8 +262,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetRecipeAsync ────────────────────────────────────────────────────────
-
+    // GetRecipeAsync
     [Fact]
     public async Task GetRecipeAsync_Should_Return_Dto_On_Success()
     {
@@ -295,8 +285,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetLootTablesAsync ────────────────────────────────────────────────────
-
+    // GetLootTablesAsync
     [Fact]
     public async Task GetLootTablesAsync_Should_Return_List_On_Success()
     {
@@ -323,8 +312,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetLootTableAsync ─────────────────────────────────────────────────────
-
+    // GetLootTableAsync
     [Fact]
     public async Task GetLootTableAsync_Should_Return_Dto_On_Success()
     {
@@ -347,8 +335,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetSpellsAsync ────────────────────────────────────────────────────────
-
+    // GetSpellsAsync
     [Fact]
     public async Task GetSpellsAsync_Should_Return_List_On_Success()
     {
@@ -374,8 +361,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetSpellAsync ─────────────────────────────────────────────────────────
-
+    // GetSpellAsync
     [Fact]
     public async Task GetSpellAsync_Should_Return_Dto_On_Success()
     {
@@ -398,8 +384,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetClassesAsync ───────────────────────────────────────────────────────
-
+    // GetClassesAsync
     [Fact]
     public async Task GetClassesAsync_Should_Return_List_On_Success()
     {
@@ -425,8 +410,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetClassAsync ─────────────────────────────────────────────────────────
-
+    // GetClassAsync
     [Fact]
     public async Task GetClassAsync_Should_Return_Dto_On_Success()
     {
@@ -449,8 +433,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetSpeciesAsync (list) ────────────────────────────────────────────────
-
+    // GetSpeciesAsync (list)
     [Fact]
     public async Task GetSpeciesAsync_List_Should_Return_List_On_Success()
     {
@@ -476,8 +459,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetSpeciesAsync (single) ──────────────────────────────────────────────
-
+    // GetSpeciesAsync (single)
     [Fact]
     public async Task GetSpeciesAsync_Single_Should_Return_Dto_On_Success()
     {
@@ -500,8 +482,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetBackgroundsAsync ───────────────────────────────────────────────────
-
+    // GetBackgroundsAsync
     [Fact]
     public async Task GetBackgroundsAsync_Should_Return_List_On_Success()
     {
@@ -527,8 +508,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetBackgroundAsync ────────────────────────────────────────────────────
-
+    // GetBackgroundAsync
     [Fact]
     public async Task GetBackgroundAsync_Should_Return_Dto_On_Success()
     {
@@ -551,8 +531,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetSkillsAsync ────────────────────────────────────────────────────────
-
+    // GetSkillsAsync
     [Fact]
     public async Task GetSkillsAsync_Should_Return_List_On_Success()
     {
@@ -578,8 +557,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeEmpty();
     }
 
-    // ── GetSkillAsync ─────────────────────────────────────────────────────────
-
+    // GetSkillAsync
     [Fact]
     public async Task GetSkillAsync_Should_Return_Dto_On_Success()
     {
@@ -602,8 +580,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetOrganizationsAsync ─────────────────────────────────────────────────
-
+    // GetOrganizationsAsync
     [Fact]
     public async Task GetOrganizationsAsync_Should_Return_List_On_Success()
     {
@@ -651,8 +628,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetZoneLocationsAsync ─────────────────────────────────────────────────
-
+    // GetZoneLocationsAsync
     [Fact]
     public async Task GetZoneLocationsAsync_Should_Return_List_On_Success()
     {
@@ -700,8 +676,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetDialoguesAsync ─────────────────────────────────────────────────────
-
+    // GetDialoguesAsync
     [Fact]
     public async Task GetDialoguesAsync_Should_Return_List_On_Success()
     {
@@ -749,8 +724,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetActorInstancesAsync ────────────────────────────────────────────────
-
+    // GetActorInstancesAsync
     [Fact]
     public async Task GetActorInstancesAsync_Should_Return_List_On_Success()
     {
@@ -800,8 +774,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetMaterialPropertiesAsync ────────────────────────────────────────────
-
+    // GetMaterialPropertiesAsync
     [Fact]
     public async Task GetMaterialPropertiesAsync_Should_Return_List_On_Success()
     {
@@ -849,8 +822,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetTraitDefinitionsAsync ──────────────────────────────────────────────
-
+    // GetTraitDefinitionsAsync
     [Fact]
     public async Task GetTraitDefinitionsAsync_Should_Return_List_On_Success()
     {
@@ -898,8 +870,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetItemsAsync ─────────────────────────────────────────────────────────
-
+    // GetItemsAsync
     [Fact]
     public async Task GetItemsAsync_Should_Return_List_On_Success()
     {
@@ -944,8 +915,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetEnchantmentsAsync ──────────────────────────────────────────────────
-
+    // GetEnchantmentsAsync
     [Fact]
     public async Task GetEnchantmentsAsync_Should_Return_List_On_Success()
     {
@@ -990,8 +960,7 @@ public class HttpContentServiceTests : TestBase
         result.Should().BeNull();
     }
 
-    // ── GetMaterialsAsync ─────────────────────────────────────────────────────
-
+    // GetMaterialsAsync
     [Fact]
     public async Task GetMaterialsAsync_Should_Return_List_On_Success()
     {

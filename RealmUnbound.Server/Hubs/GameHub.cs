@@ -85,8 +85,7 @@ public class GameHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    // ── Character selection ───────────────────────────────────────────────────
-
+    // Character selection
     /// <summary>
     /// Attach a character to this connection. Must be called before <see cref="EnterZone"/>.
     /// Only one active connection may hold a given character at a time; attempting to claim
@@ -166,8 +165,7 @@ public class GameHub : Hub
     public Task<IEnumerable<Guid>> GetActiveCharacters() =>
         Task.FromResult(_activeCharacters.GetActiveCharacterIds().AsEnumerable());
 
-    // ── Zone management ───────────────────────────────────────────────────────
-
+    // Zone management
     /// <summary>
     /// Join a zone. Broadcasts <c>PlayerEntered</c> to all existing members of the zone,
     /// and sends <c>ZoneState</c> (current occupants) back to the caller.
@@ -246,8 +244,7 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync("ZoneLeft");
     }
 
-    // ── Game actions ────────────────────────────────────────────────────────
-
+    // Game actions
     /// <summary>
     /// Award experience points to the caller's active character.
     /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
@@ -305,8 +302,7 @@ public class GameHub : Hub
         }
     }
 
-    // ── Character progression ──────────────────────────────────────────────
-
+    // Character progression
     /// <summary>
     /// Spend a character's unallocated attribute points.
     /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
@@ -363,8 +359,7 @@ public class GameHub : Hub
         }
     }
 
-    // ── Rest / Recovery ───────────────────────────────────────────────────────
-
+    // Rest / Recovery
     /// <summary>
     /// Rest at an inn or rest point, restoring the caller's active character to full health
     /// and mana in exchange for a gold cost stored in the character's attributes blob.
@@ -863,8 +858,7 @@ public class GameHub : Hub
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Helpers
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
     {
         var session = await _zoneSessionRepo.GetByConnectionIdAsync(connectionId);

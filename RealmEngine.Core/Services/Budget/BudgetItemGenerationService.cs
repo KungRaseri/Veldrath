@@ -164,8 +164,7 @@ public class BudgetItemGenerationService
         }
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
+    // Private helpers
     private Task<Material?> GetFallbackMaterialAsync(string materialType)
         => _materialPoolService.SelectMaterialAsync(materialType, int.MaxValue);
 

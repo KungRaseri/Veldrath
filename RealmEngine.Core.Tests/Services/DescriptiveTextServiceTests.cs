@@ -50,8 +50,7 @@ public class DescriptiveTextServiceTests
         }
         """;
 
-    // ── Fallback paths (null config) ───────────────────────────────────────────
-
+    // Fallback paths (null config)
     [Fact]
     public void GetAdjective_ReturnsFallback_WhenConfigIsNull()
         => CreateNull().GetAdjective("positive").Should().Be("strange");
@@ -89,8 +88,7 @@ public class DescriptiveTextServiceTests
     public void GetTimeOfDay_ReturnsFallback_WhenConfigIsNull()
         => CreateNull().GetTimeOfDay("dawn").Should().Be("midday sun");
 
-    // ── Valid config paths ─────────────────────────────────────────────────────
-
+    // Valid config paths
     [Theory]
     [InlineData("positive")]
     [InlineData("negative")]
@@ -159,8 +157,7 @@ public class DescriptiveTextServiceTests
         new[] { "first light", "morning glow" }.Should().Contain(svc.GetTimeOfDay("dawn"));
     }
 
-    // ── Composite methods ──────────────────────────────────────────────────────
-
+    // Composite methods
     [Fact]
     public void GenerateAtmosphere_ReturnsNonEmptyString()
     {

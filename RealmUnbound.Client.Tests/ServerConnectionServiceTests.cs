@@ -18,8 +18,7 @@ public class ServerConnectionServiceTests : TestBase
         return (svc, factory);
     }
 
-    // ── Initial state ─────────────────────────────────────────────────────────
-
+    // Initial state
     [Fact]
     public void State_Should_Start_As_Disconnected()
     {
@@ -28,8 +27,7 @@ public class ServerConnectionServiceTests : TestBase
         svc.State.Should().Be(ConnectionState.Disconnected);
     }
 
-    // ── ConnectAsync ──────────────────────────────────────────────────────────
-
+    // ConnectAsync
     [Fact]
     public async Task ConnectAsync_Should_Set_State_To_Connected_On_Success()
     {
@@ -108,8 +106,7 @@ public class ServerConnectionServiceTests : TestBase
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("bang");
     }
 
-    // ── Closed / Reconnected event callbacks ──────────────────────────────────
-
+    // Closed / Reconnected event callbacks
     [Fact]
     public async Task State_Should_Become_Disconnected_When_Connection_Closes()
     {
@@ -133,8 +130,7 @@ public class ServerConnectionServiceTests : TestBase
         svc.State.Should().Be(ConnectionState.Connected);
     }
 
-    // ── DisconnectAsync ───────────────────────────────────────────────────────
-
+    // DisconnectAsync
     [Fact]
     public async Task DisconnectAsync_Should_Call_StopAsync_On_Connection()
     {
@@ -167,8 +163,7 @@ public class ServerConnectionServiceTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // ── SendCommandAsync ──────────────────────────────────────────────────────
-
+    // SendCommandAsync
     [Fact]
     public async Task SendCommandAsync_Should_Throw_When_Not_Connected()
     {
@@ -190,8 +185,7 @@ public class ServerConnectionServiceTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // ── On<T> ─────────────────────────────────────────────────────────────────
-
+    // On<T>
     [Fact]
     public async Task On_Should_Throw_When_Not_Connected()
     {
@@ -213,8 +207,7 @@ public class ServerConnectionServiceTests : TestBase
         registration.Should().NotBeNull();
     }
 
-    // ── DisposeAsync ──────────────────────────────────────────────────────────
-
+    // DisposeAsync
     [Fact]
     public async Task DisposeAsync_Should_Dispose_Underlying_Connection()
     {
@@ -236,8 +229,7 @@ public class ServerConnectionServiceTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // ── AccessTokenProvider — silent refresh ──────────────────────────────────
-
+    // AccessTokenProvider — silent refresh
     [Fact]
     public async Task AccessTokenProvider_Should_Call_RefreshAsync_When_Token_Is_Expiring()
     {
