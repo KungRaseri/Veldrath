@@ -874,6 +874,11 @@
                         CommandParameter="fireball"
                         Height="36"
                         FontSize="13" />
+                <Button Content="Map"
+                        Classes="ghost"
+                        Command="{Binding OpenMapCommand}"
+                        Height="36"
+                        FontSize="13" />
 
             </StackPanel>
         </Border>

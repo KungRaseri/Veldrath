@@ -25,4 +25,7 @@ public interface IZoneLocationRepository
 
     /// <summary>Returns all traversal edges originating from the given location slug.</summary>
     Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug);
+
+    /// <summary>Returns all traversal edges for every location within the given zone.</summary>
+    Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId);
 }

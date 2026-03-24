@@ -69,6 +69,16 @@ public static class ZoneEndpoints
             }
             return Results.Ok((await locations.GetByZoneIdAsync(id)).Select(ToLocationDto));
         });
+
+        // Returns all zone-to-zone travel edges originating from the given zone.
+        group.MapGet("/{id}/connections", async (string id, IZoneRepository zones) =>
+            Results.Ok((await zones.GetConnectionsAsync(id))
+                .Select(c => new ZoneConnectionDto(c.FromZoneId, c.ToZoneId))));
+
+        // Returns all location-to-location traversal edges for every location within the given zone.
+        group.MapGet("/{id}/location-connections", async (string id, IZoneLocationRepository locations) =>
+            Results.Ok((await locations.GetAllConnectionsForZoneAsync(id))
+                .Select(c => new ZoneLocationConnectionDto(c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable))));
     }
 
     private static void MapRegions(IEndpointRouteBuilder app)

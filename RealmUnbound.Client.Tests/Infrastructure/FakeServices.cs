@@ -224,6 +224,8 @@ public class FakeZoneService : IZoneService
     public List<ZoneDto> Zones { get; set; } = [];
     public List<RegionDto> Regions { get; set; } = [];
     public List<WorldDto> Worlds { get; set; } = [];
+    public List<ZoneLocationDto> Locations { get; set; } = [];
+    public List<ZoneLocationConnectionDto> LocationConnections { get; set; } = [];
 
     public Task<List<ZoneDto>> GetZonesAsync()
         => Task.FromResult(new List<ZoneDto>(Zones));
@@ -250,7 +252,13 @@ public class FakeZoneService : IZoneService
         => Task.FromResult(Worlds.FirstOrDefault(w => w.Id == worldId));
 
     public Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId, Guid? characterId = null)
-        => Task.FromResult(new List<ZoneLocationDto>());
+        => Task.FromResult(Locations.Where(l => l.ZoneId == zoneId).ToList());
+
+    public Task<List<ZoneConnectionDto>> GetZoneConnectionsAsync(string zoneId)
+        => Task.FromResult(new List<ZoneConnectionDto>());
+
+    public Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId)
+        => Task.FromResult(LocationConnections.Where(c => Locations.Any(l => l.ZoneId == zoneId && l.Slug == c.FromLocationSlug)).ToList());
 }
 
 // Content service stub

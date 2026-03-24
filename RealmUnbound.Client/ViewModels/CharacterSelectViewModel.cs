@@ -310,7 +310,8 @@ public class CharacterSelectViewModel : ViewModelBase
                     payload.Level, payload.Experience,
                     payload.CurrentHealth, payload.MaxHealth,
                     payload.CurrentMana, payload.MaxMana,
-                    payload.Gold, payload.UnspentAttributePoints));
+                    payload.Gold, payload.UnspentAttributePoints,
+                    payload.Id));
 
             _itemCraftedSub = _connection.On<ItemCraftedPayload>("ItemCrafted", payload =>
                 _gameVm.OnItemCrafted(payload.RecipeSlug, payload.GoldSpent, payload.RemainingGold));

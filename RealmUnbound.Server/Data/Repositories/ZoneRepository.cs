@@ -16,6 +16,10 @@ public class ZoneRepository(ApplicationDbContext db) : IZoneRepository
     /// <inheritdoc/>
     public Task<List<Zone>> GetByRegionIdAsync(string regionId) =>
         db.Zones.Where(z => z.RegionId == regionId).OrderBy(z => z.MinLevel).ThenBy(z => z.Name).ToListAsync();
+
+    /// <inheritdoc/>
+    public Task<List<ZoneConnection>> GetConnectionsAsync(string zoneId) =>
+        db.ZoneConnections.Where(c => c.FromZoneId == zoneId).ToListAsync();
 }
 
 public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionRepository
