@@ -17,12 +17,12 @@ public record GetAvailableAbilitiesQuery : IRequest<GetAvailableAbilitiesResult>
 }
 
 /// <summary>
-/// Result containing available abilities.
+/// Result containing available powers.
 /// </summary>
 public record GetAvailableAbilitiesResult
 {
-    /// <summary>Gets the list of available abilities.</summary>
-    public required List<Ability> Abilities { get; init; }
-    /// <summary>Gets the total count of abilities.</summary>
+    /// <summary>Gets the list of available powers.</summary>
+    public required List<Power> Abilities { get; init; }
+    /// <summary>Gets the total count of powers.</summary>
     public int TotalCount { get; init; }
 }

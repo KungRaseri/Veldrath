@@ -17,7 +17,7 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
     private readonly ILogger<InitializeStartingAbilitiesHandler> _logger;
 
     /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnAbilityCommand"/>.</param>
-    /// <param name="classRepository">Repository that exposes <c>StartingAbilityIds</c> from the DB.</param>
+    /// <param name="classRepository">Repository that exposes <c>StartingPowerIds</c> from the DB.</param>
     /// <param name="logger">Logger.</param>
     public InitializeStartingAbilitiesHandler(
         IMediator mediator,
@@ -36,7 +36,7 @@ public class InitializeStartingAbilitiesHandler : IRequestHandler<InitializeStar
         var abilityIds = new List<string>();
 
         var characterClass = _classRepository.GetByName(request.ClassName);
-        var startingAbilities = characterClass?.StartingAbilityIds ?? [];
+        var startingAbilities = characterClass?.StartingPowerIds ?? [];
 
         if (startingAbilities.Count == 0)
         {

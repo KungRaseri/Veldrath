@@ -10,22 +10,22 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// </summary>
 public class SpellCastingService
 {
-    private readonly SpellDataService _spellCatalog;
+    private readonly PowerDataService _powerCatalog;
     private readonly SkillProgressionService _skillProgression;
     private readonly ILogger<SpellCastingService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SpellCastingService"/> class.
     /// </summary>
-    /// <param name="spellCatalog">The spell catalog service.</param>
+    /// <param name="powerCatalog">The power catalog service.</param>
     /// <param name="skillProgression">The skill progression service.</param>
     /// <param name="logger">Optional logger instance.</param>
     public SpellCastingService(
-        SpellDataService spellCatalog,
+        PowerDataService powerCatalog,
         SkillProgressionService skillProgression,
         ILogger<SpellCastingService>? logger = null)
     {
-        _spellCatalog = spellCatalog ?? throw new ArgumentNullException(nameof(spellCatalog));
+        _powerCatalog = powerCatalog ?? throw new ArgumentNullException(nameof(powerCatalog));
         _skillProgression = skillProgression ?? throw new ArgumentNullException(nameof(skillProgression));
         _logger = logger ?? NullLogger<SpellCastingService>.Instance;
     }
@@ -36,8 +36,8 @@ public class SpellCastingService
     /// </summary>
     public SpellLearningResult LearnSpell(Character character, string spellId)
     {
-        var spell = _spellCatalog.GetSpell(spellId);
-        if (spell == null)
+        var power = _powerCatalog.GetPower(spellId);
+        if (power == null)
         {
             return new SpellLearningResult
             {
@@ -52,28 +52,37 @@ public class SpellCastingService
             return new SpellLearningResult
             {
                 Success = false,
-                Message = $"You already know {spell.DisplayName}!"
+                Message = $"You already know {power.DisplayName}!"
             };
         }
 
         // Check tradition skill requirement
-        var traditionSkillId = _spellCatalog.GetTraditionSkillId(spell.Tradition);
+        if (!power.Tradition.HasValue)
+        {
+            return new SpellLearningResult
+            {
+                Success = false,
+                Message = $"{power.DisplayName} has no tradition — it cannot be learned from a spellbook."
+            };
+        }
+
+        var traditionSkillId = _powerCatalog.GetTraditionSkillId(power.Tradition.Value);
         if (!character.Skills.TryGetValue(traditionSkillId, out var traditionSkill))
         {
             return new SpellLearningResult
             {
                 Success = false,
-                Message = $"You need {spell.Tradition} magic skill to learn this spell."
+                Message = $"You need {power.Tradition} magic skill to learn this spell."
             };
         }
 
         // Can learn if within reasonable range of skill rank
-        if (traditionSkill.CurrentRank + 20 < spell.MinimumSkillRank)
+        if (traditionSkill.CurrentRank + 20 < power.MinimumSkillRank)
         {
             return new SpellLearningResult
             {
                 Success = false,
-                Message = $"Your {spell.Tradition} skill (rank {traditionSkill.CurrentRank}) is too low. Requires rank {spell.MinimumSkillRank}."
+                Message = $"Your {power.Tradition} skill (rank {traditionSkill.CurrentRank}) is too low. Requires rank {power.MinimumSkillRank}."
             };
         }
 
@@ -87,13 +96,13 @@ public class SpellCastingService
             IsFavorite = false
         };
 
-        _logger.LogInformation("Character {Character} learned spell {Spell}", character.Name, spell.DisplayName);
+        _logger.LogInformation("Character {Character} learned spell {Spell}", character.Name, power.DisplayName);
 
         return new SpellLearningResult
         {
             Success = true,
-            Message = $"You have learned {spell.DisplayName}!",
-            SpellLearned = spell
+            Message = $"You have learned {power.DisplayName}!",
+            SpellLearned = power
         };
     }
 
@@ -113,8 +122,8 @@ public class SpellCastingService
             };
         }
 
-        var spell = _spellCatalog.GetSpell(spellId);
-        if (spell == null)
+        var power = _powerCatalog.GetPower(spellId);
+        if (power == null)
         {
             return new SpellCastResult
             {
@@ -129,23 +138,28 @@ public class SpellCastingService
             return new SpellCastResult
             {
                 Success = false,
-                Message = $"{spell.DisplayName} is still cooling down ({cooldownRemaining} turns)."
+                Message = $"{power.DisplayName} is still cooling down ({cooldownRemaining} turns)."
             };
         }
 
         // Get magic skill
-        var traditionSkillId = _spellCatalog.GetTraditionSkillId(spell.Tradition);
+        if (!power.Tradition.HasValue)
+        {
+            return new SpellCastResult { Success = false, Message = $"{power.DisplayName} has no tradition!" };
+        }
+
+        var traditionSkillId = _powerCatalog.GetTraditionSkillId(power.Tradition.Value);
         if (!caster.Skills.TryGetValue(traditionSkillId, out var magicSkill))
         {
             return new SpellCastResult
             {
                 Success = false,
-                Message = $"You lack the {spell.Tradition} magic skill!"
+                Message = $"You lack the {power.Tradition} magic skill!"
             };
         }
 
         // Calculate actual mana cost (reduced by skill)
-        var actualManaCost = CalculateManaCost(spell, magicSkill);
+        var actualManaCost = CalculateManaCost(power, magicSkill);
 
         // Check mana
         if (caster.Mana < actualManaCost)
@@ -153,7 +167,7 @@ public class SpellCastingService
             return new SpellCastResult
             {
                 Success = false,
-                Message = $"Not enough mana! {spell.DisplayName} requires {actualManaCost} mana."
+                Message = $"Not enough mana! {power.DisplayName} requires {actualManaCost} mana."
             };
         }
 
@@ -161,7 +175,7 @@ public class SpellCastingService
         caster.Mana -= actualManaCost;
 
         // Success check (based on skill vs requirement)
-        var castCheck = CheckCastSuccess(magicSkill, spell);
+        var castCheck = CheckCastSuccess(magicSkill, power);
         
         if (!castCheck.Success)
         {
@@ -169,38 +183,38 @@ public class SpellCastingService
             learnedSpell.TimesFizzled++;
             
             _logger.LogInformation("Character {Character} fizzled {Spell} (success rate: {Rate:P0})",
-                caster.Name, spell.DisplayName, castCheck.SuccessRate);
+                caster.Name, power.DisplayName, castCheck.SuccessRate);
 
             return new SpellCastResult
             {
                 Success = false,
-                Message = $"{spell.DisplayName} fizzled! (Success rate was {castCheck.SuccessRate:P0})",
+                Message = $"{power.DisplayName} fizzled! (Success rate was {castCheck.SuccessRate:P0})",
                 ManaCostPaid = actualManaCost,
                 WasFizzle = true
             };
         }
 
         // Successful cast - calculate effect value
-        var effectValue = CalculateSpellEffect(spell, magicSkill, caster);
+        var effectValue = CalculateSpellEffect(power, magicSkill, caster);
 
         // Apply effect
-        var effectResult = ApplySpellEffect(spell, effectValue, caster, target);
+        var effectResult = ApplySpellEffect(power, effectValue, caster, target);
 
         // Update statistics
         learnedSpell.TimesCast++;
 
         // Award skill XP
-        var xpAmount = CalculateSpellXP(spell);
+        var xpAmount = CalculateSpellXP(power);
         _skillProgression.AwardSkillXP(caster, traditionSkillId, xpAmount, $"cast_{spellId}");
 
         // Apply cooldown
-        if (spell.Cooldown > 0)
+        if (power.Cooldown > 0)
         {
-            caster.SpellCooldowns[spellId] = spell.Cooldown;
+            caster.SpellCooldowns[spellId] = power.Cooldown;
         }
 
         _logger.LogInformation("Character {Character} cast {Spell} for {Effect}",
-            caster.Name, spell.DisplayName, effectValue);
+            caster.Name, power.DisplayName, effectValue);
 
         return new SpellCastResult
         {
@@ -208,7 +222,7 @@ public class SpellCastingService
             Message = effectResult,
             ManaCostPaid = actualManaCost,
             EffectValue = effectValue,
-            SpellCast = spell
+            SpellCast = power
         };
     }
 
@@ -243,20 +257,20 @@ public class SpellCastingService
     /// Calculate mana cost with skill efficiency reduction.
     /// Higher skill = lower mana cost (max 50% reduction at rank 100).
     /// </summary>
-    private int CalculateManaCost(Spell spell, CharacterSkill magicSkill)
+    private int CalculateManaCost(Power power, CharacterSkill magicSkill)
     {
-        var ranksAboveRequirement = Math.Max(0, magicSkill.CurrentRank - spell.MinimumSkillRank);
+        var ranksAboveRequirement = Math.Max(0, magicSkill.CurrentRank - power.MinimumSkillRank);
         var costReduction = Math.Min(0.5, ranksAboveRequirement * 0.005); // -0.5% per rank, max 50%
 
-        return (int)(spell.ManaCost * (1.0 - costReduction));
+        return (int)(power.ManaCost * (1.0 - costReduction));
     }
 
     /// <summary>
     /// Check if spell cast succeeds based on skill.
     /// </summary>
-    private CastSuccessResult CheckCastSuccess(CharacterSkill magicSkill, Spell spell)
+    private CastSuccessResult CheckCastSuccess(CharacterSkill magicSkill, Power power)
     {
-        var rankDifference = magicSkill.CurrentRank - spell.MinimumSkillRank;
+        var rankDifference = magicSkill.CurrentRank - power.MinimumSkillRank;
 
         // Success rate formula:
         // - At minimum rank: 90% success
@@ -279,10 +293,11 @@ public class SpellCastingService
     /// <summary>
     /// Calculate spell effect value scaling with skill.
     /// </summary>
-    private string CalculateSpellEffect(Spell spell, CharacterSkill magicSkill, Character caster)
+    private string CalculateSpellEffect(Power power, CharacterSkill magicSkill, Character caster)
     {
+        var baseEffectValue = power.BaseEffectValue ?? "0";
         // If base effect is a number, scale with skill level
-        if (int.TryParse(spell.BaseEffectValue, out int baseValue))
+        if (int.TryParse(baseEffectValue, out int baseValue))
         {
             // Add skill-based scaling: +1 per 5 skill ranks
             int skillBonus = magicSkill.CurrentRank / 5;
@@ -290,7 +305,7 @@ public class SpellCastingService
         }
         
         // If it's dice notation, return as-is for now (will be rolled in ApplySpellEffect)
-        return spell.BaseEffectValue;
+        return baseEffectValue;
     }
 
     /// <summary>
@@ -331,21 +346,21 @@ public class SpellCastingService
     /// <summary>
     /// Apply spell effect to target.
     /// </summary>
-    private string ApplySpellEffect(Spell spell, string effectValue, Character caster, Character? target)
+    private string ApplySpellEffect(Power power, string effectValue, Character caster, Character? target)
     {
-        switch (spell.EffectType)
+        switch (power.EffectType)
         {
-            case SpellEffectType.Damage:
+            case PowerEffectType.Damage:
                 if (target != null)
                 {
                     // Parse dice notation or use direct value
                     int damage = ParseDiceOrValue(effectValue);
                     target.Health = Math.Max(0, target.Health - damage);
-                    return $"Dealt {damage} {spell.Traits.GetValueOrDefault("damageType", "magic")} damage to {target.Name}!";
+                    return $"Dealt {damage} {power.DamageType ?? "magic"} damage to {target.Name}!";
                 }
                 return "No valid target!";
 
-            case SpellEffectType.Heal:
+            case PowerEffectType.Heal:
                 // Parse dice notation or use direct value
                 int healing = ParseDiceOrValue(effectValue);
                 int maxHealth = caster.GetMaxHealth();
@@ -353,27 +368,27 @@ public class SpellCastingService
                 caster.Health = Math.Min(maxHealth, caster.Health + healing);
                 return $"Restored {actualHealing} health!";
 
-            case SpellEffectType.Buff:
-                return $"Applied {spell.DisplayName} buff!";
+            case PowerEffectType.Buff:
+                return $"Applied {power.DisplayName} buff!";
 
-            case SpellEffectType.Debuff:
+            case PowerEffectType.Debuff:
                 if (target != null)
                 {
-                    return $"Applied {spell.DisplayName} debuff to {target.Name}!";
+                    return $"Applied {power.DisplayName} debuff to {target.Name}!";
                 }
                 return "No valid target!";
 
             default:
-                return $"Cast {spell.DisplayName}!";
+                return $"Cast {power.DisplayName}!";
         }
     }
 
     /// <summary>
     /// Calculate spell XP award based on rank.
     /// </summary>
-    private int CalculateSpellXP(Spell spell)
+    private int CalculateSpellXP(Power power)
     {
-        return spell.Rank switch
+        return power.Rank switch
         {
             0 => 5,   // Cantrips
             1 => 8,
@@ -400,8 +415,8 @@ public class SpellLearningResult
     public bool Success { get; set; }
     /// <summary>Gets or sets the result message.</summary>
     public required string Message { get; set; }
-    /// <summary>Gets or sets the spell that was learned.</summary>
-    public Spell? SpellLearned { get; set; }
+    /// <summary>Gets or sets the spell (power) that was learned.</summary>
+    public Power? SpellLearned { get; set; }
 }
 
 /// <summary>
@@ -419,8 +434,8 @@ public class SpellCastResult
     public string EffectValue { get; set; } = string.Empty;
     /// <summary>Gets or sets a value indicating whether the spell fizzled.</summary>
     public bool WasFizzle { get; set; }
-    /// <summary>Gets or sets the spell that was cast.</summary>
-    public Spell? SpellCast { get; set; }
+    /// <summary>Gets or sets the spell (power) that was cast.</summary>
+    public Power? SpellCast { get; set; }
 }
 
 /// <summary>

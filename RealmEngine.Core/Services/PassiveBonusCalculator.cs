@@ -9,15 +9,15 @@ namespace RealmEngine.Core.Services;
 /// </summary>
 public class PassiveBonusCalculator : IPassiveBonusCalculator
 {
-    private readonly AbilityDataService _abilityCatalogService;
+    private readonly PowerDataService _powerCatalogService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PassiveBonusCalculator"/> class.
     /// </summary>
-    /// <param name="abilityCatalogService">The ability catalog service.</param>
-    public PassiveBonusCalculator(AbilityDataService abilityCatalogService)
+    /// <param name="powerCatalogService">The power catalog service.</param>
+    public PassiveBonusCalculator(PowerDataService powerCatalogService)
     {
-        _abilityCatalogService = abilityCatalogService;
+        _powerCatalogService = powerCatalogService;
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ public class PassiveBonusCalculator : IPassiveBonusCalculator
 
         foreach (var learnedAbility in character.LearnedAbilities.Values)
         {
-            var ability = _abilityCatalogService.GetAbility(learnedAbility.AbilityId);
+            var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null || !ability.IsPassive)
                 continue;
 
@@ -64,7 +64,7 @@ public class PassiveBonusCalculator : IPassiveBonusCalculator
 
         foreach (var learnedAbility in character.LearnedAbilities.Values)
         {
-            var ability = _abilityCatalogService.GetAbility(learnedAbility.AbilityId);
+            var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null || !ability.IsPassive)
                 continue;
 
@@ -94,7 +94,7 @@ public class PassiveBonusCalculator : IPassiveBonusCalculator
 
         foreach (var learnedAbility in character.LearnedAbilities.Values)
         {
-            var ability = _abilityCatalogService.GetAbility(learnedAbility.AbilityId);
+            var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null || !ability.IsPassive)
                 continue;
 
@@ -126,7 +126,7 @@ public class PassiveBonusCalculator : IPassiveBonusCalculator
 
         foreach (var learnedAbility in character.LearnedAbilities.Values)
         {
-            var ability = _abilityCatalogService.GetAbility(learnedAbility.AbilityId);
+            var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null || !ability.IsPassive)
                 continue;
 
@@ -158,7 +158,7 @@ public class PassiveBonusCalculator : IPassiveBonusCalculator
 
         foreach (var learnedAbility in character.LearnedAbilities.Values)
         {
-            var ability = _abilityCatalogService.GetAbility(learnedAbility.AbilityId);
+            var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null || !ability.IsPassive)
                 continue;
 

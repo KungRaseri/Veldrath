@@ -78,7 +78,7 @@ public class GenerateAbilityCommandHandler : IRequestHandler<GenerateAbilityComm
                 {
                     Success = true,
                     Ability = ability,
-                    Abilities = new List<Ability> { ability }
+                    Abilities = new List<Power> { ability }
                 };
             }
 

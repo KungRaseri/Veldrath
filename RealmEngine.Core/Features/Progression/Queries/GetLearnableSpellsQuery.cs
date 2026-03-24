@@ -15,12 +15,12 @@ public record GetLearnableSpellsQuery : IRequest<GetLearnableSpellsResult>
 }
 
 /// <summary>
-/// Result containing learnable spells.
+/// Result containing learnable spells (returned as <see cref="Power"/> records).
 /// </summary>
 public record GetLearnableSpellsResult
 {
-    /// <summary>Gets the list of learnable spells.</summary>
-    public required List<Spell> Spells { get; init; }
-    /// <summary>Gets the total count of spells.</summary>
+    /// <summary>Gets the list of learnable powers.</summary>
+    public required List<Power> Spells { get; init; }
+    /// <summary>Gets the total count of powers.</summary>
     public int TotalCount { get; init; }
 }

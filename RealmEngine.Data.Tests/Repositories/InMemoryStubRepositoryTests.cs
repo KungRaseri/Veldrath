@@ -55,26 +55,26 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByCraftingSkillAsync("blacksmithing")).Should().BeEmpty();
     }
 
-    // ── InMemoryAbilityRepository ─────────────────────────────────────────
+    // ── InMemoryPowerRepository ───────────────────────────────────────────
 
     [Fact]
-    public async Task AbilityRepository_GetAllAsync_ReturnsEmptyList()
+    public async Task PowerRepository_GetAllAsync_ReturnsEmptyList()
     {
-        var repo = new InMemoryAbilityRepository();
+        var repo = new InMemoryPowerRepository();
         (await repo.GetAllAsync()).Should().BeEmpty();
     }
 
     [Fact]
-    public async Task AbilityRepository_GetBySlugAsync_ReturnsNull()
+    public async Task PowerRepository_GetBySlugAsync_ReturnsNull()
     {
-        var repo = new InMemoryAbilityRepository();
+        var repo = new InMemoryPowerRepository();
         (await repo.GetBySlugAsync("power-strike")).Should().BeNull();
     }
 
     [Fact]
-    public async Task AbilityRepository_GetByTypeAsync_ReturnsEmptyList()
+    public async Task PowerRepository_GetByTypeAsync_ReturnsEmptyList()
     {
-        var repo = new InMemoryAbilityRepository();
+        var repo = new InMemoryPowerRepository();
         (await repo.GetByTypeAsync("active")).Should().BeEmpty();
     }
 
@@ -101,28 +101,7 @@ public class InMemoryStubRepositoryTests
         (await repo.GetByCategoryAsync("crafting")).Should().BeEmpty();
     }
 
-    // ── InMemorySpellRepository ───────────────────────────────────────────
-
-    [Fact]
-    public async Task SpellRepository_GetAllAsync_ReturnsEmptyList()
-    {
-        var repo = new InMemorySpellRepository();
-        (await repo.GetAllAsync()).Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task SpellRepository_GetBySlugAsync_ReturnsNull()
-    {
-        var repo = new InMemorySpellRepository();
-        (await repo.GetBySlugAsync("fireball")).Should().BeNull();
-    }
-
-    [Fact]
-    public async Task SpellRepository_GetBySchoolAsync_ReturnsEmptyList()
-    {
-        var repo = new InMemorySpellRepository();
-        (await repo.GetBySchoolAsync("fire")).Should().BeEmpty();
-    }
+    // ── InMemorySpellRepository removed — spells unified into InMemoryPowerRepository ──
 
     // ── InMemoryBackgroundRepository ──────────────────────────────────────
 

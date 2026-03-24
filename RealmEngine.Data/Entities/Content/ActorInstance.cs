@@ -25,8 +25,8 @@ public class ActorInstance : ContentBase
     /// <summary>Navigation property for the override loot table.</summary>
     public LootTable? LootTable { get; set; }
 
-    /// <summary>Additional abilities specific to this instance, on top of the archetype pool.</summary>
-    public ICollection<InstanceAbilityPool> AbilityPool { get; set; } = [];
+    /// <summary>Additional powers specific to this instance, on top of the archetype pool.</summary>
+    public ICollection<InstancePowerPool> PowerPool { get; set; } = [];
 }
 
 /// <summary>

@@ -9,15 +9,15 @@ namespace RealmEngine.Core.Features.Progression.Commands;
 /// </summary>
 public class LearnAbilityHandler : IRequestHandler<LearnAbilityCommand, LearnAbilityResult>
 {
-    private readonly AbilityDataService _abilityCatalog;
+    private readonly PowerDataService _powerCatalog;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LearnAbilityHandler"/> class.
     /// </summary>
-    /// <param name="abilityCatalog">The ability catalog service.</param>
-    public LearnAbilityHandler(AbilityDataService abilityCatalog)
+    /// <param name="powerCatalog">The power catalog service.</param>
+    public LearnAbilityHandler(PowerDataService powerCatalog)
     {
-        _abilityCatalog = abilityCatalog ?? throw new ArgumentNullException(nameof(abilityCatalog));
+        _powerCatalog = powerCatalog ?? throw new ArgumentNullException(nameof(powerCatalog));
     }
 
     /// <summary>
@@ -28,8 +28,8 @@ public class LearnAbilityHandler : IRequestHandler<LearnAbilityCommand, LearnAbi
     /// <returns>The learn ability result.</returns>
     public Task<LearnAbilityResult> Handle(LearnAbilityCommand request, CancellationToken cancellationToken)
     {
-        var ability = _abilityCatalog.GetAbility(request.AbilityId);
-        if (ability == null)
+        var power = _powerCatalog.GetPower(request.AbilityId);
+        if (power == null)
         {
             return Task.FromResult(new LearnAbilityResult
             {
@@ -44,28 +44,28 @@ public class LearnAbilityHandler : IRequestHandler<LearnAbilityCommand, LearnAbi
             return Task.FromResult(new LearnAbilityResult
             {
                 Success = false,
-                Message = $"You already know {ability.DisplayName}!"
+                Message = $"You already know {power.DisplayName}!"
             });
         }
 
         // Check level requirement
-        if (request.Character.Level < ability.RequiredLevel)
+        if (request.Character.Level < power.RequiredLevel)
         {
             return Task.FromResult(new LearnAbilityResult
             {
                 Success = false,
-                Message = $"You must be level {ability.RequiredLevel} to learn {ability.DisplayName}."
+                Message = $"You must be level {power.RequiredLevel} to learn {power.DisplayName}."
             });
         }
 
         // Check class restrictions
-        if (ability.AllowedClasses.Count > 0 && 
-            !ability.AllowedClasses.Contains(request.Character.ClassName))
+        if (power.AllowedClasses.Count > 0 &&
+            !power.AllowedClasses.Contains(request.Character.ClassName))
         {
             return Task.FromResult(new LearnAbilityResult
             {
                 Success = false,
-                Message = $"{ability.DisplayName} is not available to your class."
+                Message = $"{power.DisplayName} is not available to your class."
             });
         }
 
@@ -80,8 +80,8 @@ public class LearnAbilityHandler : IRequestHandler<LearnAbilityCommand, LearnAbi
         return Task.FromResult(new LearnAbilityResult
         {
             Success = true,
-            Message = $"You have learned {ability.DisplayName}!",
-            AbilityLearned = ability
+            Message = $"You have learned {power.DisplayName}!",
+            AbilityLearned = power
         });
     }
 }

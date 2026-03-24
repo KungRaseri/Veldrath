@@ -17,10 +17,8 @@ public class ActorClass : ContentBase
     /// <summary>Boolean trait flags classifying this class's playstyle.</summary>
     public ActorClassTraits Traits { get; set; } = new();
 
-    /// <summary>Abilities unlocked as the actor levels in this class.</summary>
-    public ICollection<ClassAbilityUnlock> AbilityUnlocks { get; set; } = [];
-    /// <summary>Spells unlocked as the actor levels in this class.</summary>
-    public ICollection<ClassSpellUnlock> SpellUnlocks { get; set; } = [];
+    /// <summary>Powers (abilities, spells, talents) unlocked as the actor levels in this class.</summary>
+    public ICollection<ClassPowerUnlock> PowerUnlocks { get; set; } = [];
     /// <summary>Archetypes that use this class.</summary>
     public ICollection<ActorArchetype> Archetypes { get; set; } = [];
 }

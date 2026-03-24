@@ -21,8 +21,8 @@ public class ContentDbContext : DbContext
     public DbSet<TraitDefinition> TraitDefinitions => Set<TraitDefinition>();
 
     // ── Catalog content ───────────────────────────────────────────────────────
-    /// <summary>Active and passive character abilities.</summary>
-    public DbSet<Ability> Abilities => Set<Ability>();
+    /// <summary>Character and monster powers — abilities, spells, talents, and cantrips.</summary>
+    public DbSet<Power> Powers => Set<Power>();
     /// <summary>Biological species definitions.</summary>
     public DbSet<Species> Species => Set<Species>();
     /// <summary>Actor class definitions (replaces CharacterClasses).</summary>
@@ -39,8 +39,6 @@ public class ContentDbContext : DbContext
     public DbSet<Enchantment> Enchantments => Set<Enchantment>();
     /// <summary>Character skills.</summary>
     public DbSet<Skill> Skills => Set<Skill>();
-    /// <summary>Magic spells.</summary>
-    public DbSet<Spell> Spells => Set<Spell>();
     /// <summary>Character background origins.</summary>
     public DbSet<Background> Backgrounds => Set<Background>();
     /// <summary>Quests.</summary>
@@ -59,16 +57,14 @@ public class ContentDbContext : DbContext
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
 
     // ── Junction tables ───────────────────────────────────────────────────────
-    /// <summary>Many-to-many: species ↔ innate abilities.</summary>
-    public DbSet<SpeciesAbilityPool> SpeciesAbilityPools => Set<SpeciesAbilityPool>();
-    /// <summary>Many-to-many: actor archetypes ↔ abilities.</summary>
-    public DbSet<ArchetypeAbilityPool> ArchetypeAbilityPools => Set<ArchetypeAbilityPool>();
-    /// <summary>Many-to-many: actor instances ↔ override abilities.</summary>
-    public DbSet<InstanceAbilityPool> InstanceAbilityPools => Set<InstanceAbilityPool>();
-    /// <summary>Many-to-many: actor classes ↔ ability unlocks.</summary>
-    public DbSet<ClassAbilityUnlock> ClassAbilityUnlocks => Set<ClassAbilityUnlock>();
-    /// <summary>Many-to-many: actor classes ↔ spell unlocks.</summary>
-    public DbSet<ClassSpellUnlock> ClassSpellUnlocks => Set<ClassSpellUnlock>();
+    /// <summary>Many-to-many: species ↔ innate powers.</summary>
+    public DbSet<SpeciesPowerPool> SpeciesPowerPools => Set<SpeciesPowerPool>();
+    /// <summary>Many-to-many: actor archetypes ↔ powers.</summary>
+    public DbSet<ArchetypePowerPool> ArchetypePowerPools => Set<ArchetypePowerPool>();
+    /// <summary>Many-to-many: actor instances ↔ override powers.</summary>
+    public DbSet<InstancePowerPool> InstancePowerPools => Set<InstancePowerPool>();
+    /// <summary>Many-to-many: actor classes ↔ power unlocks.</summary>
+    public DbSet<ClassPowerUnlock> ClassPowerUnlocks => Set<ClassPowerUnlock>();
     /// <summary>Equipment set definitions.</summary>
     public DbSet<EquipmentSetEntry> EquipmentSets => Set<EquipmentSetEntry>();
     /// <summary>Loot table line items.</summary>

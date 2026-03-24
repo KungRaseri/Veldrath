@@ -46,8 +46,8 @@ public class ActorArchetype : ContentBase
     /// <summary>Navigation property for the assigned loot table.</summary>
     public LootTable? LootTable { get; set; }
 
-    /// <summary>Abilities in this archetype's combat pool.</summary>
-    public ICollection<ArchetypeAbilityPool> AbilityPool { get; set; } = [];
+    /// <summary>Powers in this archetype's combat pool.</summary>
+    public ICollection<ArchetypePowerPool> PowerPool { get; set; } = [];
     /// <summary>Named actor instances that override this archetype.</summary>
     public ICollection<ActorInstance> Instances { get; set; } = [];
 }

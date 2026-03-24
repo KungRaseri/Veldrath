@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace RealmEngine.Core.Features.Progression.Services;
 
 /// <summary>
-/// Hosted service that initializes the ability, spell, and skill catalog singletons
+/// Hosted service that initializes the power, and skill catalog singletons
 /// on application startup. Registers automatically when <c>AddRealmEngineCore()</c> is called.
 /// </summary>
 /// <remarks>
@@ -21,20 +21,17 @@ namespace RealmEngine.Core.Features.Progression.Services;
 /// </remarks>
 public sealed class CatalogInitializationService : IHostedService
 {
-    private readonly AbilityDataService _abilities;
-    private readonly SpellDataService _spells;
+    private readonly PowerDataService _powers;
     private readonly SkillDataService _skills;
     private readonly ILogger<CatalogInitializationService> _logger;
 
     /// <summary>Initializes a new instance of <see cref="CatalogInitializationService"/>.</summary>
     public CatalogInitializationService(
-        AbilityDataService abilities,
-        SpellDataService spells,
+        PowerDataService powers,
         SkillDataService skills,
         ILogger<CatalogInitializationService>? logger = null)
     {
-        _abilities = abilities;
-        _spells    = spells;
+        _powers = powers;
         _skills    = skills;
         _logger    = logger ?? NullLogger<CatalogInitializationService>.Instance;
     }
@@ -43,8 +40,7 @@ public sealed class CatalogInitializationService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Initializing game catalogs…");
-        await _abilities.InitializeAsync();
-        await _spells.InitializeAsync();
+        await _powers.InitializeAsync();
         await _skills.InitializeAsync();
         _logger.LogInformation("Game catalogs initialized.");
     }

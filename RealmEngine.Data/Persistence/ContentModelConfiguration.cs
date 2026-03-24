@@ -38,12 +38,14 @@ public static class ContentModelConfiguration
             e.Property(td => td.AppliesTo).HasMaxLength(256);
         });
 
-        // ── Abilities ─────────────────────────────────────────────────────────
+        // ── Powers ──────────────────────────────────────────────────────
 
-        builder.Entity<Ability>(e =>
+        builder.Entity<Power>(e =>
         {
             ConfigureContent(e);
-            e.Property(x => x.AbilityType).HasMaxLength(32).IsRequired();
+            e.Property(x => x.PowerType).HasMaxLength(32).IsRequired();
+            e.Property(x => x.School).HasMaxLength(32);
+            e.Property(x => x.RequiresItem).HasMaxLength(64);
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Effects, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
@@ -58,13 +60,13 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        builder.Entity<SpeciesAbilityPool>(e =>
+        builder.Entity<SpeciesPowerPool>(e =>
         {
-            e.HasKey(x => new { x.SpeciesId, x.AbilityId });
-            e.HasOne(x => x.Species).WithMany(s => s.AbilityPool)
+            e.HasKey(x => new { x.SpeciesId, x.PowerId });
+            e.HasOne(x => x.Species).WithMany(s => s.PowerPool)
              .HasForeignKey(x => x.SpeciesId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Ability).WithMany(a => a.SpeciesPool)
-             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Power).WithMany(p => p.SpeciesPool)
+             .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Actor Archetypes ──────────────────────────────────────────────────
@@ -84,13 +86,13 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        builder.Entity<ArchetypeAbilityPool>(e =>
+        builder.Entity<ArchetypePowerPool>(e =>
         {
-            e.HasKey(x => new { x.ArchetypeId, x.AbilityId });
-            e.HasOne(x => x.Archetype).WithMany(a => a.AbilityPool)
+            e.HasKey(x => new { x.ArchetypeId, x.PowerId });
+            e.HasOne(x => x.Archetype).WithMany(a => a.PowerPool)
              .HasForeignKey(x => x.ArchetypeId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Ability).WithMany(a => a.ArchetypePool)
-             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Power).WithMany(p => p.ArchetypePool)
+             .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Actor Instances ───────────────────────────────────────────────────
@@ -106,13 +108,13 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.StatOverrides, o => o.ToJson());
         });
 
-        builder.Entity<InstanceAbilityPool>(e =>
+        builder.Entity<InstancePowerPool>(e =>
         {
-            e.HasKey(x => new { x.InstanceId, x.AbilityId });
-            e.HasOne(x => x.Instance).WithMany(i => i.AbilityPool)
+            e.HasKey(x => new { x.InstanceId, x.PowerId });
+            e.HasOne(x => x.Instance).WithMany(i => i.PowerPool)
              .HasForeignKey(x => x.InstanceId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Ability).WithMany(a => a.InstancePool)
-             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Power).WithMany(p => p.InstancePool)
+             .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Items (consumables, gems, weapons, armor, and all other equipment) ──
@@ -158,15 +160,6 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        // ── Spells ────────────────────────────────────────────────────────────
-
-        builder.Entity<Spell>(e =>
-        {
-            ConfigureContent(e);
-            e.Property(x => x.School).HasMaxLength(32).IsRequired();
-            e.OwnsOne(x => x.Stats, o => o.ToJson());
-            e.OwnsOne(x => x.Traits, o => o.ToJson());
-        });
 
         // ── Actor Classes ─────────────────────────────────────────────────────
 
@@ -178,22 +171,13 @@ public static class ContentModelConfiguration
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
 
-        builder.Entity<ClassAbilityUnlock>(e =>
+        builder.Entity<ClassPowerUnlock>(e =>
         {
-            e.HasKey(x => new { x.ClassId, x.AbilityId });
-            e.HasOne(x => x.Class).WithMany(c => c.AbilityUnlocks)
+            e.HasKey(x => new { x.ClassId, x.PowerId });
+            e.HasOne(x => x.Class).WithMany(c => c.PowerUnlocks)
              .HasForeignKey(x => x.ClassId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Ability).WithMany(a => a.ClassUnlocks)
-             .HasForeignKey(x => x.AbilityId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        builder.Entity<ClassSpellUnlock>(e =>
-        {
-            e.HasKey(x => new { x.ClassId, x.SpellId });
-            e.HasOne(x => x.Class).WithMany(c => c.SpellUnlocks)
-             .HasForeignKey(x => x.ClassId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Spell).WithMany()
-             .HasForeignKey(x => x.SpellId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Power).WithMany(p => p.ClassUnlocks)
+             .HasForeignKey(x => x.PowerId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Equipment sets ──────────────────────────────────────────────────

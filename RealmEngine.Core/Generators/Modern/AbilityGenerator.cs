@@ -4,19 +4,19 @@ using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Generators.Modern;
 
-/// <summary>Generates Ability instances from the ability catalog in the database.</summary>
-public class AbilityGenerator(IAbilityRepository repository, ILogger<AbilityGenerator> logger)
+/// <summary>Generates Power instances from the power catalog in the database.</summary>
+public class AbilityGenerator(IPowerRepository repository, ILogger<AbilityGenerator> logger)
 {
     private readonly Random _random = new();
 
-    /// <summary>Generates a list of random abilities from a specific category and subcategory.</summary>
-    public async Task<List<Ability>> GenerateAbilitiesAsync(string category, string subcategory, int count = 5, bool hydrate = true)
+    /// <summary>Generates a list of random powers from a specific category and subcategory.</summary>
+    public async Task<List<Power>> GenerateAbilitiesAsync(string category, string subcategory, int count = 5, bool hydrate = true)
     {
         try
         {
             var all = await repository.GetByTypeAsync($"{category}/{subcategory}");
             if (all.Count == 0) return [];
-            var result = new List<Ability>(count);
+            var result = new List<Power>(count);
             for (int i = 0; i < count; i++)
             {
                 var item = SelectWeighted(all);
@@ -31,8 +31,8 @@ public class AbilityGenerator(IAbilityRepository repository, ILogger<AbilityGene
         }
     }
 
-    /// <summary>Generates a specific ability by name (slug) from the database.</summary>
-    public async Task<Ability?> GenerateAbilityByNameAsync(string category, string subcategory, string abilityName, bool hydrate = true)
+    /// <summary>Generates a specific power by name (slug) from the database.</summary>
+    public async Task<Power?> GenerateAbilityByNameAsync(string category, string subcategory, string abilityName, bool hydrate = true)
     {
         try
         {
@@ -45,7 +45,7 @@ public class AbilityGenerator(IAbilityRepository repository, ILogger<AbilityGene
         }
     }
 
-    private Ability? SelectWeighted(List<Ability> items)
+    private Power? SelectWeighted(List<Power> items)
     {
         if (items.Count == 0) return null;
         var total = items.Sum(i => i.RarityWeight > 0 ? i.RarityWeight : 1);

@@ -31,6 +31,6 @@ public record CastSpellResult
     public string EffectValue { get; init; } = string.Empty;
     /// <summary>Gets a value indicating whether the spell fizzled.</summary>
     public bool WasFizzle { get; init; }
-    /// <summary>Gets the spell that was cast.</summary>
-    public Spell? SpellCast { get; init; }
+    /// <summary>Gets the spell (power) that was cast.</summary>
+    public Power? SpellCast { get; init; }
 }

@@ -29,6 +29,7 @@ public static class DatabaseSeeder
         var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
         await MaterialsSeeder.SeedAsync(db);
         await ActorSeeder.SeedAsync(db);
+        await PowersSeeder.SeedAsync(db);
         await ItemsSeeder.SeedAsync(db);
         await ArchetypeSeeder.SeedAsync(db);
         await RecipesSeeder.SeedAsync(db);

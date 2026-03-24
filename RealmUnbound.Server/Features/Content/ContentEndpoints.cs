@@ -6,10 +6,9 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Foundry;
-using SharedAbility     = RealmEngine.Shared.Models.Ability;
+using SharedPower       = RealmEngine.Shared.Models.Power;
 using SharedQuest       = RealmEngine.Shared.Models.Quest;
 using SharedRecipe      = RealmEngine.Shared.Models.Recipe;
-using SharedSpell       = RealmEngine.Shared.Models.Spell;
 using DataItem          = RealmEngine.Data.Entities.Item;
 
 namespace RealmUnbound.Server.Features.Content;
@@ -18,8 +17,8 @@ namespace RealmUnbound.Server.Features.Content;
 /// Read-only catalog endpoints for game content data.
 /// Returns pre-mapped contract DTOs from the content repositories.
 ///
-/// GET /api/content/abilities             — all active abilities
-/// GET /api/content/abilities/{slug}      — single ability
+/// GET /api/content/powers                 — all active powers
+/// GET /api/content/powers/{slug}           — single power
 /// GET /api/content/enemies               — all active enemies
 /// GET /api/content/enemies/{slug}        — single enemy
 /// GET /api/content/npcs                  — all active NPCs
@@ -65,9 +64,9 @@ public static class ContentEndpoints
         group.MapGet("/browse",                   BrowseAsync);
         group.MapGet("/browse/{type}/{slug}",     BrowseDetailAsync);
 
-        // Abilities
-        group.MapGet("/abilities",        GetAbilitiesAsync);
-        group.MapGet("/abilities/{slug}", GetAbilityBySlugAsync);
+        // Powers
+        group.MapGet("/powers",        GetPowersAsync);
+        group.MapGet("/powers/{slug}", GetPowerBySlugAsync);
 
         // Enemies
         group.MapGet("/enemies",          GetEnemiesAsync);
@@ -89,9 +88,7 @@ public static class ContentEndpoints
         group.MapGet("/loot-tables",           GetLootTablesAsync);
         group.MapGet("/loot-tables/{slug}",    GetLootTableBySlugAsync);
 
-        // Spells
-        group.MapGet("/spells",           GetSpellsAsync);
-        group.MapGet("/spells/{slug}",    GetSpellBySlugAsync);
+        // Powers replace the former /spells and /abilities endpoints
 
         // Actor classes
         group.MapGet("/classes",          GetClassesAsync);
@@ -169,7 +166,8 @@ public static class ContentEndpoints
 
         var result = type.ToLowerInvariant() switch
         {
-            "ability"          => await BrowseSet(db.Abilities,          type, search, resolvedPage, resolvedPageSize, ct),
+            "power"            => await BrowseSet(db.Powers,             type, search, resolvedPage, resolvedPageSize, ct),
+            "ability"          => await BrowseSet(db.Powers,             type, search, resolvedPage, resolvedPageSize, ct),
             "species"          => await BrowseSet(db.Species,            type, search, resolvedPage, resolvedPageSize, ct),
             "class"            => await BrowseSet(db.ActorClasses,       type, search, resolvedPage, resolvedPageSize, ct),
             "archetype"        => await BrowseSet(db.ActorArchetypes,    type, search, resolvedPage, resolvedPageSize, ct),
@@ -180,7 +178,7 @@ public static class ContentEndpoints
             "material"         => await BrowseSet(db.Materials,          type, search, resolvedPage, resolvedPageSize, ct),
             "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, resolvedPage, resolvedPageSize, ct),
             "enchantment"      => await BrowseSet(db.Enchantments,       type, search, resolvedPage, resolvedPageSize, ct),
-            "spell"            => await BrowseSet(db.Spells,             type, search, resolvedPage, resolvedPageSize, ct),
+            "spell"            => await BrowseSet(db.Powers,             type, search, resolvedPage, resolvedPageSize, ct),
             "quest"            => await BrowseSet(db.Quests,             type, search, resolvedPage, resolvedPageSize, ct),
             "recipe"           => await BrowseSet(db.Recipes,            type, search, resolvedPage, resolvedPageSize, ct),
             "loottable"        => await BrowseSet(db.LootTables,         type, search, resolvedPage, resolvedPageSize, ct),
@@ -233,7 +231,8 @@ public static class ContentEndpoints
 
         ContentBase? entity = type.ToLowerInvariant() switch
         {
-            "ability"          => await db.Abilities.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "power"            => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "ability"          => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "species"          => await db.Species.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "class"            => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "archetype"        => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
@@ -244,7 +243,7 @@ public static class ContentEndpoints
             "material"         => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "materialproperty" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "enchantment"      => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "spell"            => await db.Spells.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "spell"            => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "quest"            => await db.Quests.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "recipe"           => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "loottable"        => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
@@ -260,15 +259,15 @@ public static class ContentEndpoints
         return Results.Ok(new ContentDetailDto(Summary(entity, type), payload));
     }
 
-    // ── Abilities ─────────────────────────────────────────────────────────────
+    // ── Powers ────────────────────────────────────────────────────────────────
 
-    private static async Task<IResult> GetAbilitiesAsync(IAbilityRepository repo)
+    private static async Task<IResult> GetPowersAsync(IPowerRepository repo)
     {
         var items = await repo.GetAllAsync();
         return Results.Ok(items.Select(ToDto));
     }
 
-    private static async Task<IResult> GetAbilityBySlugAsync(string slug, IAbilityRepository repo)
+    private static async Task<IResult> GetPowerBySlugAsync(string slug, IPowerRepository repo)
     {
         var item = await repo.GetBySlugAsync(slug);
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
@@ -344,33 +343,24 @@ public static class ContentEndpoints
         return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
     }
 
-    // ── Spells ────────────────────────────────────────────────────────────────
-
-    private static async Task<IResult> GetSpellsAsync(ISpellRepository repo)
-    {
-        var items = await repo.GetAllAsync();
-        return Results.Ok(items.Select(ToDto));
-    }
-
-    private static async Task<IResult> GetSpellBySlugAsync(string slug, ISpellRepository repo)
-    {
-        var item = await repo.GetBySlugAsync(slug);
-        return item is null ? Results.NotFound() : Results.Ok(ToDto(item));
-    }
+    // ── Spells section removed — merged into /powers ──────────────────────────
 
     // ── Mapping helpers ───────────────────────────────────────────────────────
 
-    private static AbilityDto ToDto(SharedAbility a) => new(
-        Slug:          a.Slug,
-        DisplayName:   a.DisplayName,
-        AbilityType:   a.Type.ToString(),
-        Description:   a.Description,
-        ManaCost:      a.ManaCost,
-        Cooldown:      a.Cooldown,
-        Range:         a.Range ?? 0,
-        RarityWeight:  a.RarityWeight,
-        IsPassive:     a.IsPassive,
-        RequiredLevel: a.RequiredLevel);
+    private static PowerDto ToDto(SharedPower p) => new(
+        Slug:          p.Slug,
+        DisplayName:   p.DisplayName,
+        PowerType:     p.Type.ToString(),
+        School:        p.School,
+        Description:   p.Description,
+        ManaCost:      p.ManaCost,
+        Cooldown:      p.Cooldown,
+        Range:         p.Range ?? 0,
+        RarityWeight:  p.RarityWeight,
+        IsPassive:     p.IsPassive,
+        RequiredLevel: p.RequiredLevel,
+        Rank:          p.Rank,
+        EffectType:    p.EffectType.ToString());
 
     private static EnemyDto ToDto(Enemy e) => new(
         Slug:       e.Slug,
@@ -414,14 +404,6 @@ public static class ContentEndpoints
         IsHarvesting: t.IsHarvesting,
         Entries:      t.Entries.Select(e => new LootTableEntryDto(
             e.ItemDomain, e.ItemSlug, e.DropWeight, e.QuantityMin, e.QuantityMax, e.IsGuaranteed)).ToList());
-
-    private static SpellDto ToDto(SharedSpell s) => new(
-        SpellId:     s.SpellId,
-        Name:        s.Name,
-        DisplayName: s.DisplayName,
-        School:      s.Tradition.ToString(),
-        Rank:        s.Rank,
-        ManaCost:    s.ManaCost);
 
     // ── Actor Classes ─────────────────────────────────────────────────────────
 

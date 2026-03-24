@@ -15,7 +15,7 @@ namespace RealmEngine.Core.Features.Progression.Commands;
 /// </summary>
 public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityResult>
 {
-    private readonly AbilityDataService _abilityCatalog;
+    private readonly PowerDataService _powerCatalog;
     private readonly ILogger<UseAbilityHandler> _logger;
     private readonly IMediator? _mediator;
     private readonly Random _random = new();
@@ -23,15 +23,15 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
     /// <summary>
     /// Initializes a new instance of the <see cref="UseAbilityHandler"/> class.
     /// </summary>
-    /// <param name="abilityCatalog">The ability catalog service.</param>
+    /// <param name="powerCatalog">The power catalog service.</param>
     /// <param name="logger">The logger.</param>
     /// <param name="mediator">The mediator for sending commands (optional for testing).</param>
     public UseAbilityHandler(
-        AbilityDataService abilityCatalog,
+        PowerDataService powerCatalog,
         ILogger<UseAbilityHandler>? logger = null,
         IMediator? mediator = null)
     {
-        _abilityCatalog = abilityCatalog ?? throw new ArgumentNullException(nameof(abilityCatalog));
+        _powerCatalog = powerCatalog ?? throw new ArgumentNullException(nameof(powerCatalog));
         _logger = logger ?? NullLogger<UseAbilityHandler>.Instance;
         _mediator = mediator;
     }
@@ -54,7 +54,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
             };
         }
 
-        var ability = _abilityCatalog.GetAbility(request.AbilityId);
+        var ability = _powerCatalog.GetPower(request.AbilityId);
         if (ability == null)
         {
             return new UseAbilityResult
@@ -118,7 +118,7 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
         }
 
         // Check for healing abilities
-        if (ability.Type == AbilityTypeEnum.Healing || 
+        if (ability.EffectType == PowerEffectType.Heal || 
             (ability.Traits.ContainsKey("effect") && 
              ability.Traits["effect"]?.ToString()?.Contains("heal", StringComparison.OrdinalIgnoreCase) == true))
         {
@@ -162,14 +162,14 @@ public class UseAbilityHandler : IRequestHandler<UseAbilityCommand, UseAbilityRe
             DamageDealt = damageDealt,
             HealingDone = healingDone,
             ManaCost = ability.ManaCost,
-            AbilityUsed = ability
+            PowerUsed = ability
         };
     }
 
     /// <summary>
     /// Try to apply status effect from ability to target.
     /// </summary>
-    private async Task TryApplyStatusEffect(Ability ability, UseAbilityCommand request)
+    private async Task TryApplyStatusEffect(Power ability, UseAbilityCommand request)
     {
         if (_mediator == null)
             return;

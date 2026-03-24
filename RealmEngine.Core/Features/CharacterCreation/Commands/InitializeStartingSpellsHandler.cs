@@ -18,7 +18,7 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
     private readonly ILogger<InitializeStartingSpellsHandler> _logger;
 
     /// <param name="mediator">MediatR dispatcher used to send <see cref="LearnSpellCommand"/>.</param>
-    /// <param name="classRepository">Repository that exposes <c>StartingSpellIds</c> from the DB.</param>
+    /// <param name="classRepository">Repository that exposes <c>StartingPowerIds</c> from the DB.</param>
     /// <param name="logger">Logger.</param>
     public InitializeStartingSpellsHandler(
         IMediator mediator,
@@ -37,7 +37,7 @@ public class InitializeStartingSpellsHandler : IRequestHandler<InitializeStartin
         var spellIds = new List<string>();
 
         var characterClass = _classRepository.GetByName(request.ClassName);
-        var startingSpells = characterClass?.StartingSpellIds ?? [];
+        var startingSpells = characterClass?.StartingPowerIds ?? [];
 
         if (startingSpells.Count == 0)
         {
