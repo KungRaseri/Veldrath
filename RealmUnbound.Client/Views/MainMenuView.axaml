@@ -9,10 +9,29 @@
              x:Class="RealmUnbound.Client.Views.MainMenuView"
              x:DataType="vm:MainMenuViewModel">
 
-    <Grid ColumnDefinitions="280,*,280">
+    <Grid RowDefinitions="Auto,*">
         <Grid.Background>
             <ImageBrush Source="{DynamicResource UiBg1}" Stretch="UniformToFill" Opacity="0.4" />
         </Grid.Background>
+
+        <!-- Row 0: Full-width title header -->
+        <StackPanel Grid.Row="0"
+                    HorizontalAlignment="Center"
+                    Margin="0,48,0,24">
+            <TextBlock Text="{Binding Title}"
+                       Classes="title-large"
+                       FontSize="72"
+                       LetterSpacing="6"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding Subtitle}"
+                       Classes="subtitle"
+                       FontSize="18"
+                       HorizontalAlignment="Center"
+                       Margin="0,4,0,0" />
+        </StackPanel>
+
+        <!-- Row 1: 3-column layout -->
+        <Grid Grid.Row="1" ColumnDefinitions="280,*,280">
 
         <!-- Left: News &amp; Updates panel -->
         <Border Grid.Column="0"
@@ -88,24 +107,12 @@
             </StackPanel>
         </Border>
 
-        <!-- Centre: Title + Buttons -->
+        <!-- Centre: Buttons -->
         <StackPanel Grid.Column="1"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     Spacing="12"
                     Width="280">
-
-            <TextBlock Text="{Binding Title}"
-                       Classes="title-large"
-                       FontSize="72"
-                       LetterSpacing="6"
-                       HorizontalAlignment="Center" />
-
-            <TextBlock Text="{Binding Subtitle}"
-                       Classes="subtitle"
-                       FontSize="18"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,48" />
 
             <!-- Guest buttons: shown when NOT logged in -->
             <Button Content="Register"
@@ -163,6 +170,7 @@
 
         </StackPanel>
 
+        </Grid>
     </Grid>
 
 </UserControl>
