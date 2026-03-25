@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using ReactiveUI;
 using RealmUnbound.Assets;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
+using RealmUnbound.Contracts.Announcements;
 using RealmUnbound.Contracts.Auth;
 using RealmUnbound.Contracts.Characters;
 using RealmUnbound.Contracts.Content;
@@ -383,4 +385,46 @@ public class FakeAssetStore : IAssetStore
 
     /// <inheritdoc />
     public bool Exists(string relativePath) => false;
+}
+
+/// <summary>
+/// Configurable stub for <see cref="IServerStatusService"/>.
+/// Default behaviour: reports server as online.
+/// Set <see cref="IsOnline"/> to <see langword="false"/> to simulate an offline server.
+/// </summary>
+public class FakeServerStatusService : ReactiveObject, IServerStatusService
+{
+    private bool _isOnline = true;
+
+    /// <summary>Gets or sets whether the stub reports the server as online.</summary>
+    public bool IsOnline
+    {
+        get => _isOnline;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isOnline, value);
+            this.RaisePropertyChanged(nameof(Status));
+            this.RaisePropertyChanged(nameof(StatusMessage));
+        }
+    }
+
+    /// <inheritdoc/>
+    public ServerStatus Status => IsOnline ? ServerStatus.Online : ServerStatus.Offline;
+
+    /// <inheritdoc/>
+    public string StatusMessage => IsOnline ? string.Empty : "Server offline";
+
+    /// <inheritdoc/>
+    public Task CheckAsync(string serverUrl, CancellationToken ct = default) => Task.CompletedTask;
+}
+
+/// <summary>Configurable stub for <see cref="IAnnouncementService"/>.</summary>
+public class FakeAnnouncementService : IAnnouncementService
+{
+    /// <summary>Gets or sets the list of announcements returned by <see cref="GetAnnouncementsAsync"/>.</summary>
+    public List<AnnouncementDto> Announcements { get; set; } = [];
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<AnnouncementDto>> GetAnnouncementsAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<AnnouncementDto>>(Announcements);
 }
