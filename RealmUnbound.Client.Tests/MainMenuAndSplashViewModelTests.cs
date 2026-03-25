@@ -2,13 +2,24 @@ using System.Reactive.Linq;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
+using RealmUnbound.Contracts.Announcements;
 
 namespace RealmUnbound.Client.Tests;
 
 public class MainMenuViewModelTests : TestBase
 {
-    private static MainMenuViewModel MakeVm(FakeNavigationService? nav = null, Action? exit = null)
-        => new MainMenuViewModel(nav ?? new FakeNavigationService(), new TokenStore(), new FakeAuthService(), exit);
+    private static MainMenuViewModel MakeVm(
+        FakeNavigationService?    nav    = null,
+        Action?                   exit   = null,
+        FakeServerStatusService?  status = null,
+        FakeAnnouncementService?  ann    = null)
+        => new MainMenuViewModel(
+            nav ?? new FakeNavigationService(),
+            new TokenStore(),
+            new FakeAuthService(),
+            exit,
+            serverStatus: status,
+            announcementService: ann);
 
     [Fact]
     public void Title_Should_Be_RealmUnbound()
@@ -73,8 +84,10 @@ public class MainMenuViewModelTests : TestBase
     [Fact]
     public async Task SelectCharacterCommand_Should_Navigate_To_CharacterSelectViewModel()
     {
-        var nav = new FakeNavigationService();
-        var vm  = MakeVm(nav);
+        var nav    = new FakeNavigationService();
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid());
+        var vm = new MainMenuViewModel(nav, tokens, new FakeAuthService(), serverStatus: new FakeServerStatusService { IsOnline = true });
 
         await ((ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.SelectCharacterCommand).Execute();
 
@@ -125,6 +138,122 @@ public class MainMenuViewModelTests : TestBase
         tokens.Clear();
         vm.IsLoggedIn.Should().BeFalse();
     }
+
+    // ── Server status ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void IsServerOnline_Should_Default_To_True_When_No_Status_Service_Provided()
+    {
+        var vm = MakeVm();
+        vm.IsServerOnline.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsServerOnline_Should_Be_False_When_Service_Reports_Offline()
+    {
+        var vm = MakeVm(status: new FakeServerStatusService { IsOnline = false });
+        vm.IsServerOnline.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsServerOnline_Should_React_To_Status_Service_Changes()
+    {
+        var status = new FakeServerStatusService { IsOnline = true };
+        var vm     = MakeVm(status: status);
+
+        status.IsOnline = false;
+
+        vm.IsServerOnline.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RegisterCommand_Should_Be_Disabled_When_Server_Is_Offline()
+    {
+        var status = new FakeServerStatusService { IsOnline = false };
+        var vm     = MakeVm(status: status);
+        var cmd    = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.RegisterCommand;
+
+        var canExecute = await cmd.CanExecute.FirstAsync();
+
+        canExecute.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoginCommand_Should_Be_Disabled_When_Server_Is_Offline()
+    {
+        var status = new FakeServerStatusService { IsOnline = false };
+        var vm     = MakeVm(status: status);
+        var cmd    = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.LoginCommand;
+
+        var canExecute = await cmd.CanExecute.FirstAsync();
+
+        canExecute.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SelectCharacterCommand_Should_Be_Disabled_When_Server_Is_Offline()
+    {
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid());
+        var status = new FakeServerStatusService { IsOnline = false };
+        var vm     = new MainMenuViewModel(new FakeNavigationService(), tokens, new FakeAuthService(), serverStatus: status);
+        var cmd    = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.SelectCharacterCommand;
+
+        var canExecute = await cmd.CanExecute.FirstAsync();
+
+        canExecute.Should().BeFalse();
+    }
+
+    // ── Announcements ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Announcements_Should_Be_Empty_Initially()
+    {
+        var vm = MakeVm();
+        vm.Announcements.Should().BeEmpty();
+        vm.HasAnnouncements.Should().BeFalse();
+    }
+
+    [Fact]
+    public void NewsPlaceholderText_Should_Mention_Server_When_Offline()
+    {
+        var status = new FakeServerStatusService { IsOnline = false };
+        var vm     = MakeVm(status: status);
+
+        vm.NewsPlaceholderText.Should().Contain("server");
+    }
+
+    [Fact]
+    public void NewsPlaceholderText_Should_Say_No_Announcements_When_Online_And_Empty()
+    {
+        var status = new FakeServerStatusService { IsOnline = true };
+        var vm     = MakeVm(status: status);
+
+        vm.NewsPlaceholderText.Should().NotContain("server").And.NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task Announcements_Should_Be_Populated_After_Load_When_Service_Returns_Data()
+    {
+        var ann = new FakeAnnouncementService
+        {
+            Announcements =
+            [
+                new AnnouncementDto(1, "Test", "Body text", "News", false, DateTimeOffset.UtcNow)
+            ]
+        };
+        var status = new FakeServerStatusService { IsOnline = true };
+        var vm     = MakeVm(status: status, ann: ann);
+
+        // Announcements are loaded asynchronously; poll briefly.
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (!vm.HasAnnouncements && DateTimeOffset.UtcNow < deadline)
+            await Task.Delay(10);
+
+        vm.HasAnnouncements.Should().BeTrue();
+        vm.Announcements.Should().HaveCount(1);
+        vm.Announcements[0].Title.Should().Be("Test");
+    }
 }
 
 public class SplashViewModelTests : TestBase
@@ -132,12 +261,14 @@ public class SplashViewModelTests : TestBase
     private static SplashViewModel MakeVm(
         FakeNavigationService? nav  = null,
         TokenStore?            tokens = null,
-        FakeAuthService?       auth   = null)
+        FakeAuthService?       auth   = null,
+        FakeServerStatusService? status = null)
         => new SplashViewModel(
             nav    ?? new FakeNavigationService(),
             new FakeAssetStore(),
             tokens ?? new TokenStore(),
-            auth   ?? new FakeAuthService());
+            auth   ?? new FakeAuthService(),
+            status);
 
     [Fact]
     public void Title_Should_Be_RealmUnbound()
@@ -172,15 +303,52 @@ public class SplashViewModelTests : TestBase
         var tokens = new TokenStore();
         tokens.Set("access", "refresh", "User", Guid.NewGuid(),
                    expiry: DateTimeOffset.UtcNow.AddHours(1));
-        var auth = new FakeAuthService { RefreshResult = true };
+        var auth   = new FakeAuthService { RefreshResult = true };
+        var status = new FakeServerStatusService { IsOnline = true };
 
-        var vm = MakeVm(nav, tokens, auth);
+        var vm = MakeVm(nav, tokens, auth, status);
         await vm.SplashTask;
 
-        // Refresh is always called when authenticated — regardless of expiry.
         auth.RefreshCallCount.Should().Be(1);
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
         nav.NavigationLog.Should().NotContain(typeof(CharacterSelectViewModel));
+    }
+
+    [Fact]
+    public async Task SplashViewModel_Should_Logout_When_Server_Is_Offline_And_Token_Is_Present()
+    {
+        var nav    = new FakeNavigationService();
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddHours(1));
+        var auth   = new FakeAuthService();
+        var status = new FakeServerStatusService { IsOnline = false };
+
+        var vm = MakeVm(nav, tokens, auth, status);
+        await vm.SplashTask;
+
+        // Server down — must call LogoutAsync to clear local state; must NOT call RefreshAsync.
+        auth.LogoutCallCount.Should().Be(1);
+        auth.RefreshCallCount.Should().Be(0);
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+    }
+
+    [Fact]
+    public async Task SplashViewModel_Should_Logout_When_Refresh_Fails()
+    {
+        var nav    = new FakeNavigationService();
+        var tokens = new TokenStore();
+        tokens.Set("access", "refresh", "User", Guid.NewGuid(),
+                   expiry: DateTimeOffset.UtcNow.AddMinutes(-5));
+        var auth   = new FakeAuthService { RefreshResult = false };
+        var status = new FakeServerStatusService { IsOnline = true };
+
+        var vm = MakeVm(nav, tokens, auth, status);
+        await vm.SplashTask;
+
+        auth.RefreshCallCount.Should().Be(1);
+        auth.LogoutCallCount.Should().Be(1);
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
     [Fact]
@@ -195,7 +363,6 @@ public class SplashViewModelTests : TestBase
         var vm = MakeVm(nav, tokens, auth);
         await vm.SplashTask;
 
-        auth.RefreshCallCount.Should().Be(1);
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
         nav.NavigationLog.Should().NotContain(typeof(CharacterSelectViewModel));
     }

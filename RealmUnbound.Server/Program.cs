@@ -21,6 +21,7 @@ using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Auth;
+using RealmUnbound.Server.Features.Announcements;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Content;
 using RealmUnbound.Server.Features.Foundry;
@@ -190,6 +191,7 @@ try
     builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
     builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
     builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+    builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
     // Engine interfaces backed by the server's own ApplicationDbContext:
     builder.Services.AddScoped<ISaveGameRepository, ServerSaveGameRepository>();
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
@@ -323,6 +325,7 @@ try
     // Auth, character, zone & content catalog endpoints
     app.MapAuthEndpoints();
     app.MapExternalAuthEndpoints();
+    app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();
     app.MapCharacterEndpoints();
     app.MapZoneEndpoints();

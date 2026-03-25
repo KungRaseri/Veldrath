@@ -136,11 +136,14 @@ public partial class App : Application
             client.BaseAddress = new Uri(serverBaseUrl));
         services.AddHttpClient<IContentService, HttpContentService>(client =>
             client.BaseAddress = new Uri(serverBaseUrl));
+        services.AddHttpClient<IAnnouncementService, HttpAnnouncementService>(client =>
+            client.BaseAddress = new Uri(serverBaseUrl));
 
         // App services
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IHubConnectionFactory, HubConnectionFactory>();
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
+        services.AddSingleton<IServerStatusService, ServerStatusService>();
         services.AddSingleton<ContentCache>();
         services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')));
 

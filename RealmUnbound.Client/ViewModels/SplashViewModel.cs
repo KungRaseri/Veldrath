@@ -27,6 +27,8 @@ public class SplashViewModel : ViewModelBase
     private readonly IAssetStore _assetStore;
     private readonly TokenStore _tokens;
     private readonly IAuthService _auth;
+    private readonly IServerStatusService? _serverStatus;
+    private readonly ClientSettings? _settings;
     private double _progress;
     private string _statusText = "Initializing...";
 
@@ -57,13 +59,15 @@ public class SplashViewModel : ViewModelBase
     public Task SplashTask { get; }
 
     /// <summary>Initializes a new instance of <see cref="SplashViewModel"/>.</summary>
-    public SplashViewModel(INavigationService navigation, IAssetStore assetStore, TokenStore tokens, IAuthService auth)
+    public SplashViewModel(INavigationService navigation, IAssetStore assetStore, TokenStore tokens, IAuthService auth, IServerStatusService? serverStatus = null, ClientSettings? settings = null)
     {
-        _navigation = navigation;
-        _assetStore = assetStore;
-        _tokens     = tokens;
-        _auth       = auth;
-        SplashTask  = RunSplashAsync();
+        _navigation    = navigation;
+        _assetStore    = assetStore;
+        _tokens        = tokens;
+        _auth          = auth;
+        _serverStatus  = serverStatus;
+        _settings      = settings;
+        SplashTask     = RunSplashAsync();
     }
 
     private async Task RunSplashAsync()
@@ -102,16 +106,37 @@ public class SplashViewModel : ViewModelBase
         await AnimateProgressTo(100, step: 2, delayMs: 18);
         await Task.Delay(300);
 
-        // Always exchange the stored refresh token for a fresh access token on launch.
-        // This avoids relying on expiry estimation, which is vulnerable to clock skew
-        // between the client and the server. The refresh token (30-day lifetime) handles
-        // the common case of the short-lived access token (15 min) having aged out.
-        // If the refresh fails the server rejects the session; tokens.Clear() fires and
-        // MainMenuViewModel will show the logged-out state.
+        // Check server reachability before attempting session restore.
+        // This sets ServerStatusService.Status so the main menu banner is accurate from
+        // the moment the user lands on it.
+        if (_serverStatus is not null && _settings is not null)
+        {
+            StatusText = "Checking server...";
+            await _serverStatus.CheckAsync(_settings.ServerBaseUrl);
+        }
+
+        // Attempt to exchange the stored refresh token for a fresh access token.
+        // If the server is unreachable or the token is invalid, soft-logout so the
+        // main menu shows the guest state rather than a half-authenticated limbo.
         if (_tokens.IsAuthenticated)
         {
-            StatusText = "Restoring session...";
-            await _auth.RefreshAsync();
+            if (_serverStatus is not null && !_serverStatus.IsOnline)
+            {
+                // Server is down — clear local state immediately without attempting a
+                // network call (which would just fail and log a warning anyway).
+                StatusText = "Server unavailable. Continuing as guest...";
+                await _auth.LogoutAsync();
+            }
+            else
+            {
+                StatusText = "Restoring session...";
+                var refreshed = await _auth.RefreshAsync();
+                if (!refreshed)
+                {
+                    // Token invalid or server rejected it — clear local state.
+                    await _auth.LogoutAsync();
+                }
+            }
         }
 
         _navigation.NavigateTo<MainMenuViewModel>();

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:contracts="using:RealmUnbound.Contracts.Announcements"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -8,15 +9,91 @@
              x:Class="RealmUnbound.Client.Views.MainMenuView"
              x:DataType="vm:MainMenuViewModel">
 
-    <Grid RowDefinitions="*,Auto,*">
+    <Grid ColumnDefinitions="280,*,280">
         <Grid.Background>
             <ImageBrush Source="{DynamicResource UiBg1}" Stretch="UniformToFill" Opacity="0.4" />
         </Grid.Background>
 
-        <!-- Title block -->
-        <StackPanel Grid.Row="1"
+        <!-- Left: News &amp; Updates panel -->
+        <Border Grid.Column="0"
+                VerticalAlignment="Center"
+                Margin="20,0,0,0"
+                Background="#1a1a2e"
+                CornerRadius="8"
+                Opacity="0.92">
+            <StackPanel Spacing="0">
+
+                <!-- Panel header -->
+                <Border Background="#16213e"
+                        CornerRadius="8,8,0,0"
+                        Padding="14,10">
+                    <TextBlock Text="News &amp; Updates"
+                               FontWeight="SemiBold"
+                               FontSize="13"
+                               Foreground="#b0b0c8" />
+                </Border>
+
+                <!-- Announcement list / offline placeholder -->
+                <ScrollViewer MaxHeight="380" Padding="14">
+                    <StackPanel>
+
+                        <!-- Announcement items (shown when server is online and has announcements) -->
+                        <ItemsControl ItemsSource="{Binding Announcements}"
+                                      IsVisible="{Binding HasAnnouncements}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="contracts:AnnouncementDto">
+                                    <Border Margin="0,0,0,12"
+                                            Padding="10"
+                                            Background="#11112a"
+                                            CornerRadius="4">
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Border Background="#2a2a50"
+                                                        CornerRadius="3"
+                                                        Padding="5,2">
+                                                    <TextBlock Text="{Binding Category}"
+                                                               FontSize="10"
+                                                               Foreground="#8888cc"
+                                                               FontWeight="SemiBold" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="13"
+                                                       Foreground="#e0e0f0"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding Body}"
+                                                       FontSize="11"
+                                                       Foreground="#9090a8"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding PublishedAt, StringFormat='{}{0:MMM d, yyyy}'}"
+                                                       FontSize="10"
+                                                       Foreground="#505060" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Placeholder shown when offline or no announcements -->
+                        <TextBlock Text="{Binding NewsPlaceholderText}"
+                                   IsVisible="{Binding !HasAnnouncements}"
+                                   FontSize="12"
+                                   Foreground="#606070"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+
+                    </StackPanel>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <!-- Centre: Title + Buttons -->
+        <StackPanel Grid.Column="1"
+                    VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    Spacing="12">
+                    Spacing="12"
+                    Width="280">
 
             <TextBlock Text="{Binding Title}"
                        Classes="title-large"
@@ -83,6 +160,7 @@
                     HorizontalContentAlignment="Center"
                     Height="48"
                     FontSize="16" />
+
         </StackPanel>
 
     </Grid>

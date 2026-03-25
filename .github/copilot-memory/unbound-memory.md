@@ -124,6 +124,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-16 (2026-03-21) | **362** | **416** | **778** |
 | Session-17 (2026-03-21) | **401** | **425** | **826** |
 | Session-18 (2026-03-24) | **466** | **461** | **927** |
+| Session-19 (server-offline UX) | **511** | **468** | **979** |
 
 ## P3 Stubs Status
 
@@ -132,6 +133,35 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 3. ~~`SettingsViewModel` placeholder~~ — FIXED session-5: has real `ServerUrl` property + `ClientSettings` injection
 4. ~~`ItemEquipped` hub subscription missing from `CharacterSelectViewModel`~~ — FIXED session-9: added `_itemEquippedSub` field, disposal, subscription, and `ItemEquippedPayload` record
 5. ~~`DoVisitShopAsync` stub logging "Shop coming in M5."~~ — FIXED session-17: full hub bridge implemented (`VisitShopHubCommand` + handler + `GameHub.VisitShop` + client wiring)
+6. ~~Server-offline UX: no feedback when server unreachable at launch~~ — FIXED session-19: full server-status + announcement system (see below)
+
+## Server-Offline UX (session-19)
+
+**Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
+
+**New components**:
+- `RealmUnbound.Contracts/Announcements/AnnouncementContracts.cs` — `AnnouncementDto(int Id, string Title, string Body, string Category, bool IsPinned, DateTimeOffset PublishedAt)` shared between server and client
+- `RealmUnbound.Server/Data/Entities/Announcement.cs` — EF entity with `IsActive`, `ExpiresAt?`, `IsPinned`, `PublishedAt`
+- `RealmUnbound.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository` + impl; `GetActiveAsync()` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)`, orders `IsPinned DESC, PublishedAt DESC`. **Must use `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in LINQ expressions.
+- `RealmUnbound.Server/Features/Announcements/AnnouncementEndpoints.cs` — `GET /api/announcements`, `AllowAnonymous`, returns `AnnouncementDto[]`
+- `RealmUnbound.Client/Services/ServerStatusService.cs` — `IServerStatusService : INotifyPropertyChanged` singleton; pings `/health`; `IsOnline`, `StatusMessage`, `Status` (enum); `CheckAsync(serverUrl)`.  **Interface must extend `System.ComponentModel.INotifyPropertyChanged`** so `WhenAnyValue(s => s.Status)` works on the interface type.
+- `RealmUnbound.Client/Services/AnnouncementService.cs` — `IAnnouncementService` + `HttpAnnouncementService`; uses typed `HttpClient` registered via `AddHttpClient<IAnnouncementService, HttpAnnouncementService>` with base address set in DI
+
+**Key architectural note — `LoadAnnouncementsAsync` guard**: Only guard on `announcementService is not null`. Do NOT also guard on `settings is not null` — the HttpClient base address is already set in DI; no need to pass `serverUrl` to the method.
+
+**SplashViewModel soft-logout fix**: In `RunSplashAsync` Phase 3, check server health first. If server offline and tokens present → call `LogoutAsync()` to clear local state. If server online and tokens present → `await RefreshAsync()`; if that returns `false` → call `LogoutAsync()`. This prevents redirect loops and stale auth state.
+
+**MainWindowViewModel**: Added `IServerStatusService` (required parameter). Exposes `IsServerOnline` and `ServerStatusMessage` reactive properties; subscribes to `serverStatus.WhenAnyValue(s => s.Status)`.
+
+**MainWindow.axaml**: Wraps content in 2-row `Grid`. Row 0 = dark-red `Border` banner (`IsVisible="{Binding !IsServerOnline}"`). Row 1 = `ContentControl` for page navigation.
+
+**MainMenuViewModel disabled commands**: `RegisterCommand` and `LoginCommand` gated on `serverOnline` observable; `SelectCharacterCommand` gated on `canEnterGame = IsLoggedIn && IsServerOnline`. Commands are auto-disabled (greyed out) when server is offline.
+
+**MainMenuView.axaml news panel**: 3-column grid (`280,*,280`). Column 0 = news panel with `ScrollViewer > StackPanel > [ItemsControl | placeholder TextBlock]`. **ScrollViewer is a ContentControl (single child only)** — wrap multiple children in a `StackPanel` inside the `ScrollViewer`.
+
+**EF migration**: `AddAnnouncements` — in `RealmUnbound.Server/Data/Migrations/Application/`
+
+**Test structure — announcement integration tests**: Follow the `IAsyncLifetime` fixture pattern (same as other server integration tests). Use a `AnnouncementsFixture` that seeds all data in `InitializeAsync`. Tests needing a clean/empty DB must be in a **separate class with their own `WebAppFactory` instance** (`AnnouncementEmptyEndpointTests : IAsyncLifetime`). Using `IClassFixture<WebAppFactory>` directly with per-test seeding causes the "empty list" test to fail when it runs after seeding tests.
 
 ## P4 XML Doc Gaps
 
