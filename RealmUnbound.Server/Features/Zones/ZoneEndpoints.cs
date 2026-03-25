@@ -125,5 +125,5 @@ public static class ZoneEndpoints
         new(r.Id, r.Name, r.Description, r.Type.ToString(), r.MinLevel, r.MaxLevel, r.IsStarter, r.WorldId);
 
     private static ZoneLocationDto ToLocationDto(RealmEngine.Shared.Models.ZoneLocationEntry e) =>
-        new(e.Slug, e.DisplayName, e.TypeKey, e.ZoneId, e.LocationType, e.RarityWeight, e.MinLevel, e.MaxLevel);
+        new(e.Slug, e.DisplayName, e.TypeKey, e.ZoneId, e.LocationType, e.RarityWeight, e.MinLevel, e.MaxLevel, e.IsHidden);
 }

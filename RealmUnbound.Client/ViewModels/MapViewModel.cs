@@ -27,11 +27,13 @@ public class MapViewModel : ViewModelBase
     private readonly IZoneService _zoneService;
     private readonly string? _currentZoneId;
     private readonly string? _currentRegionId;
+    private readonly string? _currentZoneLocationSlug;
     private readonly Guid? _characterId;
 
     // Drill-down breadcrumb
     private string? _focusedRegionId;
-    private string? _focusedZoneId;
+    private string? _focusedRegionName;
+    private string? _focusedZoneName;
 
     private MapLevel _mapLevel = MapLevel.World;
     private string _title = "Map";
@@ -48,16 +50,19 @@ public class MapViewModel : ViewModelBase
     /// <param name="zoneService">HTTP service for zone/region/world data.</param>
     /// <param name="currentZoneId">The zone the character is currently in.</param>
     /// <param name="currentRegionId">The region the character is currently in.</param>
+    /// <param name="currentZoneLocationSlug">The specific ZoneLocation the character is standing at, if any.</param>
     /// <param name="characterId">Character ID for hidden-location filtering.</param>
     public MapViewModel(
         IZoneService zoneService,
         string? currentZoneId = null,
         string? currentRegionId = null,
+        string? currentZoneLocationSlug = null,
         Guid? characterId = null)
     {
         _zoneService = zoneService;
         _currentZoneId = currentZoneId;
         _currentRegionId = currentRegionId;
+        _currentZoneLocationSlug = currentZoneLocationSlug;
         _characterId = characterId;
 
         Nodes = [];
@@ -65,6 +70,8 @@ public class MapViewModel : ViewModelBase
 
         DrillIntoCommand = ReactiveCommand.CreateFromTask<MapNodeViewModel>(DoDrillIntoAsync);
         DrillOutCommand = ReactiveCommand.CreateFromTask(DoDrillOutAsync);
+        GoToWorldCommand = ReactiveCommand.CreateFromTask(LoadWorldLevelAsync);
+        GoToRegionCommand = ReactiveCommand.CreateFromTask(DoGoToRegionAsync);
         CloseCommand = ReactiveCommand.Create(() => { /* handled externally by navigation */ });
         SelectNodeCommand = ReactiveCommand.Create<MapNodeViewModel>(node => SelectedNode = node);
 
@@ -92,6 +99,9 @@ public class MapViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(IsRegionLevel));
             this.RaisePropertyChanged(nameof(IsZoneLevel));
             this.RaisePropertyChanged(nameof(CanDrillOut));
+            this.RaisePropertyChanged(nameof(StatusText));
+            this.RaisePropertyChanged(nameof(NullSelectionHint));
+            this.RaisePropertyChanged(nameof(DrillInLabel));
         }
     }
 
@@ -106,7 +116,12 @@ public class MapViewModel : ViewModelBase
     public MapNodeViewModel? SelectedNode
     {
         get => _selectedNode;
-        private set => this.RaiseAndSetIfChanged(ref _selectedNode, value);
+        private set
+        {
+            if (_selectedNode is not null) _selectedNode.IsSelected = false;
+            this.RaiseAndSetIfChanged(ref _selectedNode, value);
+            if (_selectedNode is not null) _selectedNode.IsSelected = true;
+        }
     }
 
     /// <summary>Whether a data fetch is in progress.</summary>
@@ -128,6 +143,33 @@ public class MapViewModel : ViewModelBase
     /// <summary>Whether the user can navigate back to the previous level.</summary>
     public bool CanDrillOut => MapLevel != MapLevel.World;
 
+    /// <summary>Region name currently in focus (set when drilling into a region; null at world level).</summary>
+    public string? FocusedRegionName
+    {
+        get => _focusedRegionName;
+        private set => this.RaiseAndSetIfChanged(ref _focusedRegionName, value);
+    }
+
+    /// <summary>Zone name currently in focus (set when drilling into a zone; null above zone level).</summary>
+    public string? FocusedZoneName
+    {
+        get => _focusedZoneName;
+        private set => this.RaiseAndSetIfChanged(ref _focusedZoneName, value);
+    }
+
+    /// <summary>Contextual status-bar hint text for the current map level.</summary>
+    public string StatusText => MapLevel == MapLevel.Zone
+        ? "Single-click to select a location"
+        : "Single-click to select  •  Double-click to zoom in";
+
+    /// <summary>Hint shown in the detail panel when no node is selected; adapts to current level.</summary>
+    public string NullSelectionHint => MapLevel == MapLevel.Zone
+        ? "Click a location to view its details."
+        : "Click a node to select it. Double-click to zoom in.";
+
+    /// <summary>Label for the drill-in button in the detail panel; varies by current level.</summary>
+    public string DrillInLabel => MapLevel == MapLevel.World ? "View Region →" : "View Locations →";
+
     // ── Commands ────────────────────────────────────────────────────────────
 
     /// <summary>Drill in to the selected node's detail level.</summary>
@@ -135,6 +177,12 @@ public class MapViewModel : ViewModelBase
 
     /// <summary>Drill back out to the previous map level.</summary>
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> DrillOutCommand { get; }
+
+    /// <summary>Jump directly to the World map level from any level.</summary>
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> GoToWorldCommand { get; }
+
+    /// <summary>Jump directly to the currently focused region level.</summary>
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> GoToRegionCommand { get; }
 
     /// <summary>Close the map screen and return to the game view.</summary>
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> CloseCommand { get; }
@@ -159,6 +207,7 @@ public class MapViewModel : ViewModelBase
                     IsCurrent = r.Id == _currentRegionId,
                 });
 
+            SelectedNode = null;
             Nodes.Clear();
             Edges.Clear();
             foreach (var node in nodeMap.Values) Nodes.Add(node);
@@ -183,6 +232,8 @@ public class MapViewModel : ViewModelBase
             RunLayout();
             MapLevel = MapLevel.World;
             Title = "World Map";
+            FocusedRegionName = null;
+            FocusedZoneName = null;
         }
         finally { IsLoading = false; }
     }
@@ -202,6 +253,7 @@ public class MapViewModel : ViewModelBase
                     IsCurrent = z.Id == _currentZoneId,
                 });
 
+            SelectedNode = null;
             Nodes.Clear();
             Edges.Clear();
             foreach (var node in nodeMap.Values) Nodes.Add(node);
@@ -227,7 +279,10 @@ public class MapViewModel : ViewModelBase
             MapLevel = MapLevel.Region;
 
             var region = await _zoneService.GetRegionAsync(regionId);
-            Title = region is not null ? $"{region.Name}" : "Region Map";
+            var regionName = region?.Name ?? "Region";
+            Title = regionName;
+            FocusedRegionName = regionName;
+            FocusedZoneName = null;
         }
         finally { IsLoading = false; }
     }
@@ -246,9 +301,11 @@ public class MapViewModel : ViewModelBase
                 {
                     SubType = l.LocationType,
                     MinLevel = l.MinLevel,
-                    IsCurrent = l.Slug == _currentZoneId,   // reuse _currentZoneId as current location slug
+                    IsCurrent = l.Slug == _currentZoneLocationSlug,
+                    IsHidden = l.IsHidden,
                 });
 
+            SelectedNode = null;
             Nodes.Clear();
             Edges.Clear();
             foreach (var node in nodeMap.Values) Nodes.Add(node);
@@ -265,7 +322,9 @@ public class MapViewModel : ViewModelBase
             MapLevel = MapLevel.Zone;
 
             var zone = await _zoneService.GetZoneAsync(zoneId);
+            var zoneName = zone?.Name ?? "Zone";
             Title = zone is not null ? $"{zone.Name} — Locations" : "Zone Map";
+            FocusedZoneName = zoneName;
         }
         finally { IsLoading = false; }
     }
@@ -280,7 +339,6 @@ public class MapViewModel : ViewModelBase
                 await LoadRegionLevelAsync(node.Id);
                 break;
             case MapLevel.Region:
-                _focusedZoneId = node.Id;
                 await LoadZoneLevelAsync(node.Id);
                 break;
         }
@@ -301,6 +359,9 @@ public class MapViewModel : ViewModelBase
                 break;
         }
     }
+
+    private Task DoGoToRegionAsync() =>
+        _focusedRegionId is not null ? LoadRegionLevelAsync(_focusedRegionId) : Task.CompletedTask;
 
     private void RunLayout() =>
         GraphLayout.Compute(Nodes, Edges, CanvasWidth, CanvasHeight);
