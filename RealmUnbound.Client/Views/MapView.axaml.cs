@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -41,17 +40,11 @@ public partial class MapView : UserControl
     }
 
     /// <inheritdoc/>
-    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
-    {
-        base.OnApplyTemplate(e);
-        _edgeCanvas = this.FindControl<Canvas>("EdgeCanvas");
-    }
-
-    /// <inheritdoc/>
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         _edgeCanvas = this.FindControl<Canvas>("EdgeCanvas");
+        RedrawEdges();
     }
 
     private void OnGraphChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
@@ -65,10 +58,10 @@ public partial class MapView : UserControl
 
         foreach (var edge in _vm.Edges)
         {
-            // Centre of each node (node border is 80×56, anchored at top-left)
-            double x1 = edge.From.X + 40;
+            // Centre of each node (node border is 96×56, anchored at top-left)
+            double x1 = edge.From.X + 48;
             double y1 = edge.From.Y + 28;
-            double x2 = edge.To.X + 40;
+            double x2 = edge.To.X + 48;
             double y2 = edge.To.Y + 28;
 
             var (stroke, dash) = EdgeStyle(edge.EdgeType, edge.IsTraversable);

@@ -12,7 +12,7 @@
     <UserControl.Styles>
         <!-- Node border base -->
         <Style Selector="Border.map-node">
-            <Setter Property="Width" Value="80" />
+            <Setter Property="Width" Value="96" />
             <Setter Property="Height" Value="56" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
@@ -61,7 +61,7 @@
         <Border Grid.Row="0" Classes="panel-topbar">
             <Grid ColumnDefinitions="Auto,*,Auto">
 
-                <!-- Left: back button + level tabs -->
+                <!-- Left: back button + level breadcrumb tabs -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                     <Button Content="← Back"
                             Classes="ghost"
@@ -71,8 +71,25 @@
                     <Button Content="World"
                             Classes="level-tab"
                             Classes.active="{Binding IsWorldLevel}"
-                            Command="{Binding DrillOutCommand}"
-                            IsEnabled="{Binding CanDrillOut}" />
+                            Command="{Binding GoToWorldCommand}" />
+                    <TextBlock Text="›"
+                               IsVisible="{Binding FocusedRegionName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               VerticalAlignment="Center" Margin="2,0"
+                               Foreground="{DynamicResource GameTextMutedBrush}" FontSize="14" />
+                    <Button Content="{Binding FocusedRegionName}"
+                            Classes="level-tab"
+                            Classes.active="{Binding IsRegionLevel}"
+                            IsVisible="{Binding FocusedRegionName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            IsEnabled="{Binding IsZoneLevel}"
+                            Command="{Binding GoToRegionCommand}" />
+                    <TextBlock Text="›"
+                               IsVisible="{Binding FocusedZoneName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               VerticalAlignment="Center" Margin="2,0"
+                               Foreground="{DynamicResource GameTextMutedBrush}" FontSize="14" />
+                    <TextBlock Text="{Binding FocusedZoneName}"
+                               IsVisible="{Binding FocusedZoneName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               VerticalAlignment="Center"
+                               FontSize="13" Foreground="{DynamicResource GameAccentBrush}" />
                 </StackPanel>
 
                 <!-- Centre: Title -->
@@ -136,17 +153,18 @@
                                 <Border Classes="map-node"
                                         Classes.current="{Binding IsCurrent}"
                                         Classes.hidden-node="{Binding IsHidden}"
+                                        Classes.selected="{Binding IsSelected}"
                                         Canvas.Left="{Binding X}"
                                         Canvas.Top="{Binding Y}"
-                                        ToolTip.Tip="{Binding Label}"
+                                        ToolTip.Tip="{Binding DisplayLabel}"
                                         PointerPressed="OnNodePointerPressed"
                                         DoubleTapped="OnNodeDoubleTapped">
                                     <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Label}"
+                                        <TextBlock Text="{Binding DisplayLabel}"
                                                    FontSize="11" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource GameTextPrimaryBrush}"
                                                    TextWrapping="Wrap"
-                                                   MaxWidth="68"
+                                                   MaxWidth="84"
                                                    TextTrimming="CharacterEllipsis" />
                                         <TextBlock Text="{Binding SubType}"
                                                    FontSize="9"
@@ -174,7 +192,7 @@
                         <Border Classes="separator" />
 
                         <!-- No selection state -->
-                        <TextBlock Text="Click a node to select it. Double-click to zoom in."
+                        <TextBlock Text="{Binding NullSelectionHint}"
                                    TextWrapping="Wrap"
                                    FontSize="11"
                                    Foreground="{DynamicResource GameTextMutedBrush}"
@@ -183,13 +201,14 @@
                         <!-- Selected node details -->
                         <StackPanel IsVisible="{Binding SelectedNode, Converter={x:Static ObjectConverters.IsNotNull}}"
                                     Spacing="6">
-                            <TextBlock Text="{Binding SelectedNode.Label}"
+                            <TextBlock Text="{Binding SelectedNode.DisplayLabel}"
                                        FontSize="14" FontWeight="SemiBold"
                                        Foreground="{DynamicResource GameTextPrimaryBrush}"
                                        TextWrapping="Wrap" />
                             <TextBlock Text="{Binding SelectedNode.SubType}"
                                        FontSize="11"
-                                       Foreground="{DynamicResource GameTextMutedBrush}" />
+                                       Foreground="{DynamicResource GameTextMutedBrush}"
+                                       IsVisible="{Binding SelectedNode.SubType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                             <StackPanel Orientation="Horizontal" Spacing="4"
                                         IsVisible="{Binding SelectedNode.MinLevel, Converter={x:Static ObjectConverters.IsNotNull}}">
                                 <TextBlock Text="Min level:" FontSize="11"
@@ -213,7 +232,7 @@
                             </Border>
 
                             <!-- Drill-in button (not shown at Zone level) -->
-                            <Button Content="Zoom In →"
+                            <Button Content="{Binding DrillInLabel}"
                                     Classes="accent"
                                     IsVisible="{Binding !IsZoneLevel}"
                                     Command="{Binding DrillIntoCommand}"
@@ -231,9 +250,20 @@
                             <Button Content="World"
                                     Classes="ghost"
                                     Classes.accent="{Binding IsWorldLevel}"
-                                    Command="{Binding DrillOutCommand}"
-                                    HorizontalAlignment="Stretch"
-                                    IsEnabled="{Binding CanDrillOut}" />
+                                    Command="{Binding GoToWorldCommand}"
+                                    HorizontalAlignment="Stretch" />
+                            <Button Content="{Binding FocusedRegionName}"
+                                    Classes="ghost"
+                                    Classes.accent="{Binding IsRegionLevel}"
+                                    IsVisible="{Binding FocusedRegionName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                    IsEnabled="{Binding IsZoneLevel}"
+                                    Command="{Binding GoToRegionCommand}"
+                                    HorizontalAlignment="Stretch" />
+                            <Button Content="{Binding FocusedZoneName}"
+                                    Classes="ghost accent"
+                                    IsVisible="{Binding FocusedZoneName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                    IsEnabled="False"
+                                    HorizontalAlignment="Stretch" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -243,7 +273,7 @@
         <!-- ── Row 2: Status bar ─────────────────────────────────────────── -->
         <Border Grid.Row="2" Classes="panel-statusbar">
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="Single-click to select  •  Double-click to zoom in"
+                <TextBlock Text="{Binding StatusText}"
                            FontSize="11"
                            Foreground="{DynamicResource GameTextMutedBrush}"
                            VerticalAlignment="Center" />

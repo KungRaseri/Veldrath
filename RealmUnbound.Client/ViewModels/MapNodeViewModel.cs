@@ -8,6 +8,7 @@ public class MapNodeViewModel : ViewModelBase
     private double _x;
     private double _y;
     private bool _isCurrent;
+    private bool _isSelected;
 
     /// <summary>Initializes a new instance of <see cref="MapNodeViewModel"/>.</summary>
     public MapNodeViewModel(string id, string label, string nodeType)
@@ -33,8 +34,18 @@ public class MapNodeViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isCurrent, value);
     }
 
+    /// <summary>Whether this node is currently selected by the user.</summary>
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => this.RaiseAndSetIfChanged(ref _isSelected, value);
+    }
+
     /// <summary>Whether this node represents an undiscovered hidden location (rendered as <c>?</c>).</summary>
     public bool IsHidden { get; init; }
+
+    /// <summary>The label displayed on the node canvas; returns <c>"???"</c> for hidden undiscovered locations.</summary>
+    public string DisplayLabel => IsHidden ? "???" : Label;
 
     /// <summary>Optional sub-type label (e.g. zone type, region type, location type).</summary>
     public string? SubType { get; init; }

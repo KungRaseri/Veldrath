@@ -25,9 +25,9 @@ public class GraphLayoutTests : TestBase
         GraphLayout.Compute([node], [], 860, 560);
 
         // Single node should be placed near the center (within 10 px)
-        node.X.Should().BeApproximately((860 - 80) / 2.0, 10.0,
+        node.X.Should().BeApproximately((860 - 96) / 2.0, 10.0,
             "a single node should be centered horizontally");
-        node.Y.Should().BeApproximately((560 - 80) / 2.0, 10.0,
+        node.Y.Should().BeApproximately((560 - 56) / 2.0, 10.0,
             "a single node should be centered vertically");
     }
 
