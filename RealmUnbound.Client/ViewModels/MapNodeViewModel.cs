@@ -47,6 +47,9 @@ public class MapNodeViewModel : ViewModelBase
     /// <summary>The label displayed on the node canvas; returns <c>"???"</c> for hidden undiscovered locations.</summary>
     public string DisplayLabel => IsHidden ? "???" : Label;
 
+    /// <summary>Whether this node represents a Region in the world hierarchy.</summary>
+    public bool IsRegionNode => NodeType == "region";
+
     /// <summary>Optional sub-type label (e.g. zone type, region type, location type).</summary>
     public string? SubType { get; init; }
 

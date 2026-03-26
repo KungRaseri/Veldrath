@@ -46,7 +46,7 @@ public static class GraphLayout
         PlaceNodes(layers, canvasWidth, canvasHeight);
     }
 
-    // ── BFS layering ─────────────────────────────────────────────────────────
+    // ── BFS layering ───────────────────────────────────────────────────────────────
 
     private static List<List<ViewModels.MapNodeViewModel>> BuildLayers(
         IReadOnlyList<ViewModels.MapNodeViewModel> nodes,
@@ -163,5 +163,139 @@ public static class GraphLayout
             }
         }
     }
-}
 
+    // ── Hierarchical cluster layout ───────────────────────────────────────
+
+    /// <summary>
+    /// Computes 2-D positions for a two-tier world graph: region nodes form a horizontal row
+    /// at the top of the canvas; zone nodes cluster below their parent region in a 2-column grid.
+    /// Region-region connections and region-zone membership are encoded in <paramref name="edges"/>.
+    /// Falls back to <see cref="Compute"/> when no region/zone distinction is present.
+    /// </summary>
+    /// <param name="nodes">All nodes (regions + zones).</param>
+    /// <param name="edges">All edges (region_exit + zone_membership).</param>
+    /// <param name="canvasWidth">Width of the drawing area in pixels.</param>
+    /// <param name="canvasHeight">Height of the drawing area in pixels.</param>
+    public static void ComputeHierarchical(
+        IReadOnlyList<ViewModels.MapNodeViewModel> nodes,
+        IReadOnlyList<ViewModels.MapEdgeViewModel> edges,
+        double canvasWidth,
+        double canvasHeight)
+    {
+        var regionNodes = nodes.Where(n => n.NodeType == "region").ToList();
+        var zoneNodes   = nodes.Where(n => n.NodeType == "zone").ToList();
+
+        if (regionNodes.Count == 0)
+        {
+            Compute(nodes, edges, canvasWidth, canvasHeight);
+            return;
+        }
+
+        // Map zone ID → parent region from zone_membership edges.
+        var zoneParent = new Dictionary<string, ViewModels.MapNodeViewModel>();
+        foreach (var e in edges)
+            if (e.EdgeType == "zone_membership")
+                zoneParent[e.To.Id] = e.From;
+
+        // Group zone nodes by parent region ID.
+        var zonesByRegion = new Dictionary<string, List<ViewModels.MapNodeViewModel>>();
+        foreach (var z in zoneNodes)
+        {
+            if (!zoneParent.TryGetValue(z.Id, out var parent)) continue;
+            if (!zonesByRegion.TryGetValue(parent.Id, out var list))
+                zonesByRegion[parent.Id] = list = [];
+            list.Add(z);
+        }
+
+        // Build undirected region adjacency from region_exit edges.
+        var regionAdj = regionNodes.ToDictionary(r => r.Id, _ => new List<ViewModels.MapNodeViewModel>());
+        foreach (var e in edges)
+        {
+            if (e.EdgeType != "region_exit") continue;
+            if (regionAdj.ContainsKey(e.From.Id)) regionAdj[e.From.Id].Add(e.To);
+            if (regionAdj.ContainsKey(e.To.Id))   regionAdj[e.To.Id].Add(e.From);
+        }
+
+        // BFS-ordered list of regions (root = current region or first region).
+        var root           = regionNodes.FirstOrDefault(r => r.IsCurrent) ?? regionNodes[0];
+        var orderedRegions = HierarchicalBfsOrder(regionNodes, regionAdj, root);
+
+        // Layout constants.
+        const int    ZoneCols        = 2;
+        const double RegionToZoneGap = 52.0;
+        const double ZoneRowGap      = 20.0;
+        const double InterRegionGap  = 48.0;
+
+        // Slot width = min width needed to lay out this region's zone cluster (2 per row).
+        double SlotWidth(ViewModels.MapNodeViewModel r)
+        {
+            if (!zonesByRegion.TryGetValue(r.Id, out var zz) || zz.Count == 0)
+                return NodeWidth;
+            int cols = Math.Min(zz.Count, ZoneCols);
+            return cols * NodeWidth + (cols - 1) * HGap;
+        }
+
+        double totalNeeded = orderedRegions.Sum(SlotWidth) + (orderedRegions.Count - 1) * InterRegionGap;
+        double available   = canvasWidth - 2 * MarginX;
+        double scale       = totalNeeded <= available ? 1.0 : available / totalNeeded;
+
+        double regionY  = MarginY;
+        double cursorX  = MarginX;
+
+        foreach (var region in orderedRegions)
+        {
+            double slotW = SlotWidth(region) * scale;
+
+            // Centre region node over its zone cluster.
+            region.X = cursorX + (slotW - NodeWidth) / 2.0;
+            region.Y = regionY;
+
+            // Position zone nodes in a 2-column grid below the region.
+            if (zonesByRegion.TryGetValue(region.Id, out var zones))
+            {
+                double gridLeft = cursorX;
+                for (int i = 0; i < zones.Count; i++)
+                {
+                    int col = i % ZoneCols;
+                    int row = i / ZoneCols;
+                    zones[i].X = gridLeft + col * (NodeWidth + HGap) * scale;
+                    zones[i].Y = regionY + NodeHeight + RegionToZoneGap + row * (NodeHeight + ZoneRowGap);
+                }
+            }
+
+            cursorX += slotW + InterRegionGap * scale;
+        }
+    }
+
+    private static List<ViewModels.MapNodeViewModel> HierarchicalBfsOrder(
+        List<ViewModels.MapNodeViewModel> all,
+        Dictionary<string, List<ViewModels.MapNodeViewModel>> adj,
+        ViewModels.MapNodeViewModel root)
+    {
+        var visited = new HashSet<string> { root.Id };
+        var queue   = new Queue<ViewModels.MapNodeViewModel>();
+        var result  = new List<ViewModels.MapNodeViewModel> { root };
+        queue.Enqueue(root);
+
+        while (queue.Count > 0)
+        {
+            var cur = queue.Dequeue();
+            if (!adj.TryGetValue(cur.Id, out var neighbours)) continue;
+            foreach (var nb in neighbours)
+            {
+                if (visited.Add(nb.Id))
+                {
+                    result.Add(nb);
+                    queue.Enqueue(nb);
+                }
+            }
+        }
+
+        // Orphan regions (not reachable from root via region_exit edges) appended at the end.
+        foreach (var n in all)
+            if (visited.Add(n.Id))
+                result.Add(n);
+
+        return result;
+    }
+}

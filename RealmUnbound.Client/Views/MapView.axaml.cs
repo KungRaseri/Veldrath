@@ -21,12 +21,12 @@ public partial class MapView : UserControl
             Vm?.SelectNodeCommand.Execute(node).Subscribe();
     }
 
-    /// <summary>Double tap — drill into the node.</summary>
+    /// <summary>Double tap — also select the node (drill-down removed in flat graph view).</summary>
     internal void OnNodeDoubleTapped(object? sender, TappedEventArgs e)
     {
         var node = GetNodeFromSender(sender);
         if (node is not null)
-            Vm?.DrillIntoCommand.Execute(node).Subscribe();
+            Vm?.SelectNodeCommand.Execute(node).Subscribe();
     }
 
     private static MapNodeViewModel? GetNodeFromSender(object? sender) =>
