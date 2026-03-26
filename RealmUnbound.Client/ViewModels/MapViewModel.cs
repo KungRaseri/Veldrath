@@ -5,16 +5,15 @@ using RealmUnbound.Client.Services;
 namespace RealmUnbound.Client.ViewModels;
 
 /// <summary>
-/// ViewModel for the full world-graph map screen.  Loads all regions and their zones in a single
-/// pass and lays them out as a two-tier hierarchical graph (regions along the top, zones clustered
-/// below each region) using <see cref="GraphLayout.ComputeHierarchical"/>.
+/// ViewModel for the full world-graph map screen.  Loads all regions and their zones,
+/// renders region names as non-interactive header labels, and connects zones with
+/// zone-exit edges using <see cref="GraphLayout.ComputeGroupedZones"/>.
 /// </summary>
 public class MapViewModel : ViewModelBase
 {
     private readonly IZoneService _zoneService;
     private readonly string? _currentZoneId;
     private readonly string? _currentRegionId;
-    private readonly Guid? _characterId;
 
     private string _title = "World Map";
     private MapNodeViewModel? _selectedNode;
@@ -42,7 +41,6 @@ public class MapViewModel : ViewModelBase
         _zoneService = zoneService;
         _currentZoneId = currentZoneId;
         _currentRegionId = currentRegionId;
-        _characterId = characterId;
 
         Nodes = [];
         Edges = [];
@@ -112,38 +110,22 @@ public class MapViewModel : ViewModelBase
         {
             var regions = await _zoneService.GetRegionsAsync();
 
-            var regionNodeMap = regions.ToDictionary(
-                r => r.Id,
-                r => new MapNodeViewModel(r.Id, r.Name, "region")
-                {
-                    SubType    = r.Type,
-                    MinLevel   = r.MinLevel,
-                    IsCurrent  = r.Id == _currentRegionId,
-                });
-
             SelectedNode = null;
             Nodes.Clear();
             Edges.Clear();
-            foreach (var node in regionNodeMap.Values) Nodes.Add(node);
 
-            // Region-region edges (deduplicated; connections are returned as directed pairs)
-            var seenRegionEdges = new HashSet<(string, string)>();
-            foreach (var region in regions)
-            {
-                var connected = await _zoneService.GetRegionConnectionsAsync(region.Id);
-                foreach (var adj in connected)
+            // Region header labels — non-interactive, used only for visual grouping
+            var regionHeaderMap = regions.ToDictionary(
+                r => r.Id,
+                r => new MapNodeViewModel(r.Id, r.Name, "region_header")
                 {
-                    var a   = region.Id;
-                    var b   = adj.Id;
-                    var key = string.Compare(a, b, StringComparison.Ordinal) < 0 ? (a, b) : (b, a);
-                    if (!seenRegionEdges.Add(key)) continue;
-                    if (regionNodeMap.TryGetValue(a, out var fromNode) &&
-                        regionNodeMap.TryGetValue(b, out var toNode))
-                        Edges.Add(new MapEdgeViewModel(fromNode, toNode, "region_exit"));
-                }
-            }
+                    SubType   = r.Type,
+                    IsCurrent = r.Id == _currentRegionId,
+                });
+            foreach (var node in regionHeaderMap.Values) Nodes.Add(node);
 
-            // Zone nodes — one per zone; zone_membership edges link each zone to its parent region
+            // Zone nodes — grouped under their parent region header
+            var zoneNodeMap = new Dictionary<string, MapNodeViewModel>();
             foreach (var region in regions)
             {
                 var zones = await _zoneService.GetZonesByRegionAsync(region.Id);
@@ -151,16 +133,34 @@ public class MapViewModel : ViewModelBase
                 {
                     var zoneNode = new MapNodeViewModel(zone.Id, zone.Name, "zone")
                     {
-                        SubType   = zone.Type,
-                        MinLevel  = zone.MinLevel,
-                        IsCurrent = zone.Id == _currentZoneId,
+                        SubType      = zone.Type,
+                        MinLevel     = zone.MinLevel,
+                        IsCurrent    = zone.Id == _currentZoneId,
+                        RegionId     = region.Id,
+                        RegionLabel  = region.Name,
                     };
+                    zoneNodeMap[zone.Id] = zoneNode;
                     Nodes.Add(zoneNode);
-                    Edges.Add(new MapEdgeViewModel(regionNodeMap[region.Id], zoneNode, "zone_membership"));
                 }
             }
 
-            GraphLayout.ComputeHierarchical(Nodes, Edges, CanvasWidth, CanvasHeight);
+            // Zone-exit edges — deduplicated undirected pairs
+            var seenZoneEdges = new HashSet<(string, string)>();
+            foreach (var zoneNode in zoneNodeMap.Values)
+            {
+                var connections = await _zoneService.GetZoneConnectionsAsync(zoneNode.Id);
+                foreach (var conn in connections)
+                {
+                    if (!zoneNodeMap.TryGetValue(conn.ToZoneId, out var toNode)) continue;
+                    var a   = conn.FromZoneId;
+                    var b   = conn.ToZoneId;
+                    var key = string.Compare(a, b, StringComparison.Ordinal) < 0 ? (a, b) : (b, a);
+                    if (!seenZoneEdges.Add(key)) continue;
+                    Edges.Add(new MapEdgeViewModel(zoneNode, toNode, "zone_exit"));
+                }
+            }
+
+            GraphLayout.ComputeGroupedZones(Nodes, Edges, CanvasWidth, CanvasHeight);
             Title = "World Map";
         }
         finally { IsLoading = false; }

@@ -56,6 +56,15 @@ public class MapNodeViewModel : ViewModelBase
     /// <summary>Minimum recommended level for this node, or <see langword="null"/> if not applicable.</summary>
     public int? MinLevel { get; init; }
 
+    /// <summary>Region ID this zone node belongs to; <see langword="null"/> for region header nodes and standalone nodes.</summary>
+    public string? RegionId { get; init; }
+
+    /// <summary>Display name of the parent region, used by the layout algorithm when grouping zone clusters.</summary>
+    public string? RegionLabel { get; init; }
+
+    /// <summary>Whether this node is a non-interactive region header label rendered above a zone cluster.</summary>
+    public bool IsRegionHeader => NodeType == "region_header";
+
     /// <summary>Canvas X position assigned by the layout algorithm.</summary>
     public double X
     {
