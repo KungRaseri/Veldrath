@@ -125,6 +125,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-17 (2026-03-21) | **401** | **425** | **826** |
 | Session-18 (2026-03-24) | **466** | **461** | **927** |
 | Session-19 (server-offline UX) | **511** | **468** | **979** |
+| Session-20 (server reconnect polling) | **518** | **468** | **986** |
 
 ## P3 Stubs Status
 
@@ -135,7 +136,17 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 5. ~~`DoVisitShopAsync` stub logging "Shop coming in M5."~~ — FIXED session-17: full hub bridge implemented (`VisitShopHubCommand` + handler + `GameHub.VisitShop` + client wiring)
 6. ~~Server-offline UX: no feedback when server unreachable at launch~~ — FIXED session-19: full server-status + announcement system (see below)
 
-## Server-Offline UX (session-19)
+## Server Reconnect Polling (session-20)
+
+**`IServerStatusService.StartPollingAsync(Func<string> getServerUrl, CancellationToken ct)`** — background loop that calls `CheckAsync` periodically:
+- Waits `OfflinePollInterval` (5 s default) between checks when offline; `OnlinePollInterval` (30 s default) when online
+- Kicked off in `App.axaml.cs` `OnFrameworkInitializationCompleted` after DI is built: `_ = serverStatus.StartPollingAsync(() => clientSettings.ServerBaseUrl)`
+- `OperationCanceledException` from `CheckAsync` is re-thrown (not treated as server failure) — prevents a shutdown cancellation from flipping Status to Offline
+- Both intervals are `internal` fields on `ServerStatusService` for test override (set to 10 ms in tests)
+- `FakeServerStatusService` has a no-op `StartPollingAsync` implementation
+- `ServerStatusServiceTests` uses event-based (`TaskCompletionSource`) assertions, not wall-clock timeouts, to avoid flakiness under parallel test runs
+
+
 
 **Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
 

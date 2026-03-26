@@ -12,6 +12,7 @@ public class MainMenuViewModel : ViewModelBase
 {
     private bool _isLoggedIn;
     private bool _isServerOnline;
+    private bool _isChecking;
     private IReadOnlyList<AnnouncementDto> _announcements = [];
 
     public string Title    => "RealmUnbound";
@@ -29,6 +30,13 @@ public class MainMenuViewModel : ViewModelBase
     {
         get => _isServerOnline;
         private set => this.RaiseAndSetIfChanged(ref _isServerOnline, value);
+    }
+
+    /// <summary>True while a live server health check is in progress; all server-gated buttons are disabled during this time.</summary>
+    public bool IsChecking
+    {
+        get => _isChecking;
+        private set => this.RaiseAndSetIfChanged(ref _isChecking, value);
     }
 
     /// <summary>Active announcements fetched from the server; empty list when offline.</summary>
@@ -49,7 +57,7 @@ public class MainMenuViewModel : ViewModelBase
     /// <summary>Placeholder text shown in the news panel when there are no announcements.</summary>
     public string NewsPlaceholderText => IsServerOnline
         ? "No announcements at this time."
-        : "Unable to connect to the server.\nCheck that the server is running and try again.";
+        : "Unable to connect to the server.";
 
     // Guest buttons (shown when not logged in)
     public ICommand RegisterCommand { get; }
@@ -85,20 +93,50 @@ public class MainMenuViewModel : ViewModelBase
         // when constructed without the service (e.g. in tests).
         IsServerOnline = serverStatus?.IsOnline ?? true;
         serverStatus?.WhenAnyValue(s => s.Status)
-            .Subscribe(_ =>
+            .Subscribe(status =>
             {
+                var wasOffline = !IsServerOnline;
                 IsServerOnline = serverStatus.IsOnline;
                 this.RaisePropertyChanged(nameof(NewsPlaceholderText));
+
+                // Re-fetch announcements whenever the server comes back online so the
+                // news panel reflects current content rather than the stale offline state.
+                if (wasOffline && serverStatus.IsOnline && announcementService is not null)
+                    _ = LoadAnnouncementsAsync(announcementService);
             });
 
-        // Commands that require the server to be reachable are gated on IsServerOnline.
-        var serverOnline = this.WhenAnyValue(x => x.IsServerOnline);
-        var canEnterGame = this.WhenAnyValue(x => x.IsLoggedIn, x => x.IsServerOnline,
-                               (loggedIn, online) => loggedIn && online);
+        // Commands that require the server to be reachable are gated on IsServerOnline AND not currently
+        // mid-check, so that pressing one button disables all server-gated buttons for the check duration.
+        var serverOnline = this.WhenAnyValue(x => x.IsServerOnline, x => x.IsChecking,
+                               (online, checking) => online && !checking);
+        var canEnterGame = this.WhenAnyValue(x => x.IsLoggedIn, x => x.IsServerOnline, x => x.IsChecking,
+                               (loggedIn, online, checking) => loggedIn && online && !checking);
 
-        RegisterCommand        = ReactiveCommand.Create(() => navigation.NavigateTo<RegisterViewModel>(), serverOnline);
-        LoginCommand           = ReactiveCommand.Create(() => navigation.NavigateTo<LoginViewModel>(), serverOnline);
-        SelectCharacterCommand = ReactiveCommand.Create(() => navigation.NavigateTo<CharacterSelectViewModel>(), canEnterGame);
+        // Performs a live health check immediately before any server-dependent navigation.
+        // This catches the case where the server went offline after the last polling tick
+        // (up to 30 s could have passed). If the check comes back offline, IsServerOnline
+        // updates reactively and we skip navigation rather than sending the user to a broken page.
+        async Task CheckThenNavigate<TViewModel>() where TViewModel : ViewModelBase
+        {
+            if (serverStatus is not null)
+            {
+                IsChecking = true;
+                try
+                {
+                    await serverStatus.CheckAsync(settings?.ServerBaseUrl ?? "http://localhost:8080/");
+                }
+                finally
+                {
+                    IsChecking = false;
+                }
+            }
+            if (IsServerOnline)
+                navigation.NavigateTo<TViewModel>();
+        }
+
+        RegisterCommand        = ReactiveCommand.CreateFromTask(CheckThenNavigate<RegisterViewModel>, serverOnline);
+        LoginCommand           = ReactiveCommand.CreateFromTask(CheckThenNavigate<LoginViewModel>, serverOnline);
+        SelectCharacterCommand = ReactiveCommand.CreateFromTask(CheckThenNavigate<CharacterSelectViewModel>, canEnterGame);
         LogoutCommand          = ReactiveCommand.CreateFromTask(async () =>
         {
             await auth.LogoutAsync();
@@ -114,8 +152,10 @@ public class MainMenuViewModel : ViewModelBase
                 _ = audioPlayer.PlayMusicAsync(townMusicPath);
         }
 
-        // Load announcements asynchronously; silently no-ops if service is not provided.
-        if (announcementService is not null)
+        // Load announcements asynchronously only when the server is reachable.
+        // When offline, announcements will be fetched automatically once the server comes back
+        // via the WhenAnyValue subscription above.
+        if (announcementService is not null && (serverStatus?.IsOnline ?? true))
             _ = LoadAnnouncementsAsync(announcementService);
     }
 

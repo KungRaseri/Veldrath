@@ -32,6 +32,15 @@ public interface IServerStatusService : System.ComponentModel.INotifyPropertyCha
 
     /// <summary>Pings the server health endpoint and updates <see cref="Status"/>.</summary>
     Task CheckAsync(string serverUrl, CancellationToken ct = default);
+
+    /// <summary>
+    /// Starts a background polling loop that calls <see cref="CheckAsync"/> at a regular cadence
+    /// until <paramref name="ct"/> is cancelled. Uses a shorter interval when the server is
+    /// offline so reconnection is detected quickly.
+    /// </summary>
+    /// <param name="getServerUrl">Delegate called each iteration to obtain the current server base URL.</param>
+    /// <param name="ct">Token used to stop the loop.</param>
+    Task StartPollingAsync(Func<string> getServerUrl, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -43,6 +52,10 @@ public class ServerStatusService(IHttpClientFactory httpClientFactory, ILogger<S
     : ReactiveObject, IServerStatusService
 {
     private ServerStatus _status = ServerStatus.Unknown;
+
+    // Configurable for testing — default values are appropriate for production use.
+    internal TimeSpan OnlinePollInterval  = TimeSpan.FromSeconds(30);
+    internal TimeSpan OfflinePollInterval = TimeSpan.FromSeconds(5);
 
     /// <inheritdoc/>
     public ServerStatus Status
@@ -76,10 +89,44 @@ public class ServerStatusService(IHttpClientFactory httpClientFactory, ILogger<S
             var response = await client.GetAsync($"{serverUrl.TrimEnd('/')}/health", ct);
             Status = response.IsSuccessStatusCode ? ServerStatus.Online : ServerStatus.Offline;
         }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is expected during shutdown — do not treat it as a server failure.
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Server health check failed for {Url}", serverUrl);
             Status = ServerStatus.Offline;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task StartPollingAsync(Func<string> getServerUrl, CancellationToken ct = default)
+    {
+        while (true)
+        {
+            var delay = IsOnline ? OnlinePollInterval : OfflinePollInterval;
+            try
+            {
+                await Task.Delay(delay, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (ct.IsCancellationRequested)
+                return;
+
+            try
+            {
+                await CheckAsync(getServerUrl(), ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
         }
     }
 }

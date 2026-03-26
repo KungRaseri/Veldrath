@@ -84,6 +84,11 @@ public partial class App : Application
 
         _ = LoadUiChromeAsync();
 
+        // Start background server-status polling so the offline banner and reactive commands
+        // update automatically whenever the server goes offline or comes back online.
+        var serverStatus = Services.GetRequiredService<IServerStatusService>();
+        _ = serverStatus.StartPollingAsync(() => clientSettings.ServerBaseUrl);
+
         // Pre-warm IAudioPlayer on a background thread so VLC native libs are loaded
         // before the first navigation event (avoids a visible freeze on the UI thread).
         _ = Task.Run(() => Services.GetRequiredService<IAudioPlayer>());
