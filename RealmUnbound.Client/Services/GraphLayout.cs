@@ -357,8 +357,9 @@ public static class GraphLayout
         double regionY = MarginY;
         double cursorX = MarginX;
 
-        foreach (var header in headerNodes)
+        for (int hi = 0; hi < headerNodes.Count; hi++)
         {
+            var header = headerNodes[hi];
             double slotW = SlotWidth(header) * scale;
 
             // Centre the header label horizontally over its zone cluster.
@@ -366,15 +367,48 @@ public static class GraphLayout
             header.Y = regionY;
 
             // Position zone nodes in a 2-column grid below the header.
+            // Zones that have zone_exit edges into ANY region to their right are placed
+            // in the right column so cross-region edges are visually shorter.
             if (zonesByRegion.TryGetValue(header.Id, out var zones))
             {
+                // Collect zone IDs belonging to ALL regions to the right of the current one.
+                var rightRegionZoneIds = new HashSet<string>();
+                for (int rhi = hi + 1; rhi < headerNodes.Count; rhi++)
+                    if (zonesByRegion.TryGetValue(headerNodes[rhi].Id, out var rz))
+                        foreach (var z in rz) rightRegionZoneIds.Add(z.Id);
+
+                // Find which of this region's zones exit rightward.
+                var rightEdgeIds = new HashSet<string>();
+                foreach (var edge in edges.Where(e => e.EdgeType == "zone_exit"))
+                {
+                    if (zones.Any(z => z.Id == edge.From.Id) && rightRegionZoneIds.Contains(edge.To.Id))
+                        rightEdgeIds.Add(edge.From.Id);
+                    if (zones.Any(z => z.Id == edge.To.Id) && rightRegionZoneIds.Contains(edge.From.Id))
+                        rightEdgeIds.Add(edge.To.Id);
+                }
+
+                // Build grid order: right-exit zones fill col 1 (odd positions);
+                // all other zones fill col 0 (even positions); overflow spills sequentially.
+                var leftCol  = zones.Where(z => !rightEdgeIds.Contains(z.Id)).ToList();
+                var rightCol = zones.Where(z =>  rightEdgeIds.Contains(z.Id)).ToList();
+
+                var gridOrder = new List<ViewModels.MapNodeViewModel>(zones.Count);
+                int li = 0, ri = 0;
+                for (int pos = 0; pos < zones.Count; pos++)
+                {
+                    if (pos % 2 == 0) // left column slot
+                        gridOrder.Add(li < leftCol.Count  ? leftCol[li++]  : rightCol[ri++]);
+                    else               // right column slot
+                        gridOrder.Add(ri < rightCol.Count ? rightCol[ri++] : leftCol[li++]);
+                }
+
                 double gridLeft = cursorX;
-                for (int i = 0; i < zones.Count; i++)
+                for (int i = 0; i < gridOrder.Count; i++)
                 {
                     int col = i % ZoneCols;
                     int row = i / ZoneCols;
-                    zones[i].X = gridLeft + col * (NodeWidth + HGap) * scale;
-                    zones[i].Y = regionY + NodeHeight + RegionToZoneGap + row * (NodeHeight + ZoneRowGap);
+                    gridOrder[i].X = gridLeft + col * (NodeWidth + HGap) * scale;
+                    gridOrder[i].Y = regionY + NodeHeight + RegionToZoneGap + row * (NodeHeight + ZoneRowGap);
                 }
             }
 

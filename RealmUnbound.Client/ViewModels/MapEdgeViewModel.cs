@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Media;
 using ReactiveUI;
@@ -9,11 +8,12 @@ namespace RealmUnbound.Client.ViewModels;
 /// <summary>Represents a directed edge between two <see cref="MapNodeViewModel"/> instances on the traversal-graph map canvas.</summary>
 public class MapEdgeViewModel : ViewModelBase
 {
-    private const double NodeHalfW = 48.0; // 96 / 2
-    private const double NodeHalfH = 28.0; // 56 / 2
+    private const double NodeHalfW    = 48.0; // 96 / 2
+    private const double NodeHalfH    = 28.0; // 56 / 2
+    /// <summary>Horizontal distance beyond which the edge routes orthogonally around the node grid.</summary>
+    private const double ArcThreshold = 280.0;
 
-    private Point _startPoint;
-    private Point _endPoint;
+    private string _pathData = string.Empty;
 
     /// <summary>Initializes a new instance of <see cref="MapEdgeViewModel"/>.</summary>
     public MapEdgeViewModel(MapNodeViewModel from, MapNodeViewModel to, string edgeType, bool isTraversable = true)
@@ -25,13 +25,30 @@ public class MapEdgeViewModel : ViewModelBase
 
         (Stroke, StrokeDash, StrokeThickness, Opacity) = ComputeStyle(edgeType, isTraversable);
 
-        // Keep line endpoints in sync with node canvas positions.
+        // Keep the path geometry in sync with node canvas positions.
         from.WhenAnyValue(n => n.X, n => n.Y, (x, y) => (x, y))
             .CombineLatest(to.WhenAnyValue(n => n.X, n => n.Y, (x, y) => (x, y)))
             .Subscribe(p =>
             {
-                StartPoint = new Point(p.First.x + NodeHalfW,  p.First.y  + NodeHalfH);
-                EndPoint   = new Point(p.Second.x + NodeHalfW, p.Second.y + NodeHalfH);
+                double x1 = p.First.x  + NodeHalfW;
+                double y1 = p.First.y  + NodeHalfH;
+                double x2 = p.Second.x + NodeHalfW;
+                double y2 = p.Second.y + NodeHalfH;
+
+                double dx = Math.Abs(x2 - x1);
+                if (dx > ArcThreshold)
+                {
+                    // Orthogonal routing: right → up/down → right
+                    // The vertical segment runs at the left edge of the destination node,
+                    // which sits in the inter-region gap just before the destination's group panel.
+                    double gapX = x2 - NodeHalfW;
+                    PathData = FormattableString.Invariant(
+                        $"M {x1:F1},{y1:F1} L {gapX:F1},{y1:F1} L {gapX:F1},{y2:F1} L {x2:F1},{y2:F1}");
+                }
+                else
+                {
+                    PathData = FormattableString.Invariant($"M {x1:F1},{y1:F1} L {x2:F1},{y2:F1}");
+                }
             });
     }
 
@@ -51,18 +68,12 @@ public class MapEdgeViewModel : ViewModelBase
     /// <summary>Whether the player can currently traverse this edge.</summary>
     public bool IsTraversable { get; }
 
-    /// <summary>Canvas position of the origin node centre; updates automatically when the node moves.</summary>
-    public Point StartPoint
+    /// <summary>Avalonia path markup data for rendering this edge — a straight <c>L</c> segment for
+    /// short edges, or a quadratic-bezier <c>Q</c> arc above the node grid for long-range edges.</summary>
+    public string PathData
     {
-        get => _startPoint;
-        private set => this.RaiseAndSetIfChanged(ref _startPoint, value);
-    }
-
-    /// <summary>Canvas position of the destination node centre; updates automatically when the node moves.</summary>
-    public Point EndPoint
-    {
-        get => _endPoint;
-        private set => this.RaiseAndSetIfChanged(ref _endPoint, value);
+        get => _pathData;
+        private set => this.RaiseAndSetIfChanged(ref _pathData, value);
     }
 
     /// <summary>Stroke brush for the edge line.</summary>
