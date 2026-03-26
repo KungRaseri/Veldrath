@@ -1,22 +1,28 @@
 namespace RealmUnbound.Client.Services;
 
 /// <summary>
-/// Computes 2-D positions for graph nodes using a Fruchterman–Reingold spring-layout algorithm.
+/// Computes 2-D positions for graph nodes using a deterministic top-to-bottom BFS layered layout.
+/// The root node (the character's current location, or the first node when none is marked current)
+/// is placed at layer 0.  Nodes reachable from the root in BFS order fill subsequent layers.
+/// Disconnected nodes are collected into a shared final layer.  All positions are clamped to the
+/// drawing area.
 /// Writes the resulting <see cref="ViewModels.MapNodeViewModel.X"/> and
 /// <see cref="ViewModels.MapNodeViewModel.Y"/> values directly onto each node.
 /// </summary>
 public static class GraphLayout
 {
-    private const int Iterations = 200;
-    private const double NodeWidth = 96.0;
+    private const double NodeWidth  = 96.0;
     private const double NodeHeight = 56.0;
-    private const double LayoutMargin = 6.0;
+    private const double HGap       = 24.0;   // preferred horizontal gap between siblings in the same layer
+    private const double VStep      = 120.0;  // preferred vertical step between consecutive layers (top-to-top)
+    private const double MarginX    = 20.0;
+    private const double MarginY    = 32.0;
 
     /// <summary>
     /// Runs the layout algorithm and assigns canvas positions to every node in <paramref name="nodes"/>.
     /// </summary>
     /// <param name="nodes">Nodes to position.</param>
-    /// <param name="edges">Edges defining attraction between nodes.</param>
+    /// <param name="edges">Edges defining the connections between nodes.</param>
     /// <param name="canvasWidth">Width of the drawing area in pixels.</param>
     /// <param name="canvasHeight">Height of the drawing area in pixels.</param>
     public static void Compute(
@@ -30,90 +36,132 @@ public static class GraphLayout
 
         if (n == 1)
         {
-            nodes[0].X = (canvasWidth - NodeWidth) / 2;
+            nodes[0].X = (canvasWidth  - NodeWidth)  / 2;
             nodes[0].Y = (canvasHeight - NodeHeight) / 2;
             return;
         }
 
-        double area = canvasWidth * canvasHeight;
-        double k = Math.Sqrt(area / n);
-        double temperature = canvasWidth / 10.0;
-        double cooling = temperature / (Iterations + 1);
+        var root   = nodes.FirstOrDefault(nd => nd.IsCurrent) ?? nodes[0];
+        var layers = BuildLayers(nodes, edges, root);
+        PlaceNodes(layers, canvasWidth, canvasHeight);
+    }
 
-        // Seed positions on a circle so we always start from a deterministic, non-degenerate layout.
-        // Use the node centre (top-left + half-size) for the circle then shift to top-left origin.
-        double cx = canvasWidth / 2.0;
-        double cy = canvasHeight / 2.0;
-        double radius = Math.Min(canvasWidth, canvasHeight) * 0.35;
+    // ── BFS layering ─────────────────────────────────────────────────────────
 
-        var dx = new double[n];
-        var dy = new double[n];
+    private static List<List<ViewModels.MapNodeViewModel>> BuildLayers(
+        IReadOnlyList<ViewModels.MapNodeViewModel> nodes,
+        IReadOnlyList<ViewModels.MapEdgeViewModel> edges,
+        ViewModels.MapNodeViewModel root)
+    {
+        // Build an undirected adjacency list (edges are directional for traversal but
+        // treated as undirected for layout purposes so the graph looks symmetric).
+        var adj = nodes.ToDictionary(
+            nd => nd,
+            _ => new List<ViewModels.MapNodeViewModel>());
 
-        for (int i = 0; i < n; i++)
+        foreach (var e in edges)
         {
-            double angle = 2 * Math.PI * i / n;
-            nodes[i].X = cx + radius * Math.Cos(angle) - NodeWidth / 2;
-            nodes[i].Y = cy + radius * Math.Sin(angle) - NodeHeight / 2;
+            if (adj.ContainsKey(e.From)) adj[e.From].Add(e.To);
+            if (adj.ContainsKey(e.To))   adj[e.To].Add(e.From);
         }
 
-        for (int iter = 0; iter < Iterations; iter++)
-        {
-            for (int i = 0; i < n; i++) { dx[i] = 0; dy[i] = 0; }
+        // BFS from root — assigns each reachable node its layer depth.
+        var depth = new Dictionary<ViewModels.MapNodeViewModel, int> { [root] = 0 };
+        var queue = new Queue<ViewModels.MapNodeViewModel>();
+        queue.Enqueue(root);
 
-            // Repulsion: every pair
-            for (int i = 0; i < n; i++)
+        while (queue.Count > 0)
+        {
+            var cur = queue.Dequeue();
+            foreach (var nb in adj[cur])
             {
-                for (int j = i + 1; j < n; j++)
+                if (!depth.ContainsKey(nb))
                 {
-                    double diffX = nodes[i].X - nodes[j].X;
-                    double diffY = nodes[i].Y - nodes[j].Y;
-                    double dist = Math.Max(Math.Sqrt(diffX * diffX + diffY * diffY), 0.01);
-                    double force = k * k / dist;
-                    double ux = diffX / dist;
-                    double uy = diffY / dist;
-                    dx[i] += ux * force;
-                    dy[i] += uy * force;
-                    dx[j] -= ux * force;
-                    dy[j] -= uy * force;
+                    depth[nb] = depth[cur] + 1;
+                    queue.Enqueue(nb);
+                }
+            }
+        }
+
+        // Disconnected nodes (not reachable from root) are collected into one final layer
+        // so they render as a row rather than all stacking on top of each other.
+        int orphanLayer = depth.Count > 0 ? depth.Values.Max() + 1 : 0;
+        foreach (var nd in nodes)
+        {
+            if (!depth.ContainsKey(nd))
+                depth[nd] = orphanLayer;
+        }
+
+        int maxDepth = depth.Values.Max();
+        var result   = Enumerable.Range(0, maxDepth + 1)
+            .Select(_ => new List<ViewModels.MapNodeViewModel>())
+            .ToList();
+
+        foreach (var nd in nodes)
+            result[depth[nd]].Add(nd);
+
+        return result;
+    }
+
+    // ── Node placement ────────────────────────────────────────────────────────
+
+    private static void PlaceNodes(
+        List<List<ViewModels.MapNodeViewModel>> layers,
+        double canvasWidth,
+        double canvasHeight)
+    {
+        int layerCount = layers.Count;
+
+        // Scale VStep down when there are many layers so everything still fits vertically.
+        double vStep;
+        if (layerCount <= 1)
+        {
+            vStep = 0;
+        }
+        else
+        {
+            double availH = canvasHeight - 2 * MarginY - NodeHeight;
+            vStep = Math.Min(VStep, availH / (layerCount - 1));
+        }
+
+        double totalH  = NodeHeight + (layerCount - 1) * vStep;
+        double originY = Math.Max(MarginY, (canvasHeight - totalH) / 2.0);
+
+        for (int li = 0; li < layerCount; li++)
+        {
+            var layer = layers[li];
+            int nc    = layer.Count;
+            double y  = originY + li * vStep;
+
+            double startX, nodeStep;
+            if (nc == 1)
+            {
+                startX   = (canvasWidth - NodeWidth) / 2.0;
+                nodeStep = 0;
+            }
+            else
+            {
+                double totalW = nc * NodeWidth + (nc - 1) * HGap;
+                if (totalW <= canvasWidth - 2 * MarginX)
+                {
+                    // Fits comfortably — centre the row.
+                    startX   = (canvasWidth - totalW) / 2.0;
+                    nodeStep = NodeWidth + HGap;
+                }
+                else
+                {
+                    // Too many nodes — scale the step down so the row stays within the canvas.
+                    startX   = MarginX;
+                    nodeStep = (canvasWidth - 2 * MarginX - NodeWidth) / (nc - 1);
                 }
             }
 
-            // Attraction: connected pairs
-            foreach (var edge in edges)
+            for (int ni = 0; ni < nc; ni++)
             {
-                int si = IndexOf(nodes, edge.From);
-                int ti = IndexOf(nodes, edge.To);
-                if (si < 0 || ti < 0) continue;
-
-                double diffX = nodes[si].X - nodes[ti].X;
-                double diffY = nodes[si].Y - nodes[ti].Y;
-                double dist = Math.Max(Math.Sqrt(diffX * diffX + diffY * diffY), 0.01);
-                double force = dist * dist / k;
-                double ux = diffX / dist;
-                double uy = diffY / dist;
-                dx[si] -= ux * force;
-                dy[si] -= uy * force;
-                dx[ti] += ux * force;
-                dy[ti] += uy * force;
+                layer[ni].X = startX + ni * nodeStep;
+                layer[ni].Y = y;
             }
-
-            // Apply displacements capped by temperature, clamped to canvas with margin
-            for (int i = 0; i < n; i++)
-            {
-                double mag = Math.Max(Math.Sqrt(dx[i] * dx[i] + dy[i] * dy[i]), 0.01);
-                double capped = Math.Min(mag, temperature);
-                nodes[i].X = Math.Clamp(nodes[i].X + dx[i] / mag * capped, LayoutMargin, canvasWidth - NodeWidth - LayoutMargin);
-                nodes[i].Y = Math.Clamp(nodes[i].Y + dy[i] / mag * capped, LayoutMargin, canvasHeight - NodeHeight - LayoutMargin);
-            }
-
-            temperature = Math.Max(temperature - cooling, 0.01);
         }
     }
-
-    private static int IndexOf(IReadOnlyList<ViewModels.MapNodeViewModel> nodes, ViewModels.MapNodeViewModel node)
-    {
-        for (int i = 0; i < nodes.Count; i++)
-            if (ReferenceEquals(nodes[i], node)) return i;
-        return -1;
-    }
 }
+
