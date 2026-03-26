@@ -298,4 +298,87 @@ public static class GraphLayout
 
         return result;
     }
+
+    // ── Zone-grouped layout ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Computes 2-D positions for a zone-centric world graph: non-interactive <c>region_header</c>
+    /// label nodes are positioned above clusters of zone nodes grouped by
+    /// <see cref="ViewModels.MapNodeViewModel.RegionId"/>.  Zone-to-zone edges render as direct
+    /// lines between zone nodes; region header nodes carry no edges.
+    /// Falls back to <see cref="Compute"/> when no zone nodes carry a <c>RegionId</c>.
+    /// </summary>
+    /// <param name="nodes">All nodes (<c>region_header</c> labels and <c>zone</c> nodes).</param>
+    /// <param name="edges">Zone-to-zone traversal edges used to update reactive line endpoints.</param>
+    /// <param name="canvasWidth">Width of the drawing area in pixels.</param>
+    /// <param name="canvasHeight">Height of the drawing area in pixels.</param>
+    public static void ComputeGroupedZones(
+        IReadOnlyList<ViewModels.MapNodeViewModel> nodes,
+        IReadOnlyList<ViewModels.MapEdgeViewModel> edges,
+        double canvasWidth,
+        double canvasHeight)
+    {
+        var headerNodes = nodes.Where(n => n.NodeType == "region_header").ToList();
+        var zoneNodes   = nodes.Where(n => n.NodeType == "zone").ToList();
+
+        if (headerNodes.Count == 0)
+        {
+            Compute(nodes, edges, canvasWidth, canvasHeight);
+            return;
+        }
+
+        // Group zone nodes by RegionId, preserving the order regions appear in headerNodes.
+        var zonesByRegion = new Dictionary<string, List<ViewModels.MapNodeViewModel>>();
+        foreach (var z in zoneNodes)
+        {
+            if (string.IsNullOrEmpty(z.RegionId)) continue;
+            if (!zonesByRegion.TryGetValue(z.RegionId, out var list))
+                zonesByRegion[z.RegionId] = list = [];
+            list.Add(z);
+        }
+
+        const int    ZoneCols        = 2;
+        const double RegionToZoneGap = 52.0;
+        const double ZoneRowGap      = 20.0;
+        const double InterRegionGap  = 48.0;
+
+        double SlotWidth(ViewModels.MapNodeViewModel header)
+        {
+            if (!zonesByRegion.TryGetValue(header.Id, out var zz) || zz.Count == 0)
+                return NodeWidth;
+            int cols = Math.Min(zz.Count, ZoneCols);
+            return cols * NodeWidth + (cols - 1) * HGap;
+        }
+
+        double totalNeeded = headerNodes.Sum(SlotWidth) + (headerNodes.Count - 1) * InterRegionGap;
+        double available   = canvasWidth - 2 * MarginX;
+        double scale       = totalNeeded <= available ? 1.0 : available / totalNeeded;
+
+        double regionY = MarginY;
+        double cursorX = MarginX;
+
+        foreach (var header in headerNodes)
+        {
+            double slotW = SlotWidth(header) * scale;
+
+            // Centre the header label horizontally over its zone cluster.
+            header.X = cursorX + (slotW - NodeWidth) / 2.0;
+            header.Y = regionY;
+
+            // Position zone nodes in a 2-column grid below the header.
+            if (zonesByRegion.TryGetValue(header.Id, out var zones))
+            {
+                double gridLeft = cursorX;
+                for (int i = 0; i < zones.Count; i++)
+                {
+                    int col = i % ZoneCols;
+                    int row = i / ZoneCols;
+                    zones[i].X = gridLeft + col * (NodeWidth + HGap) * scale;
+                    zones[i].Y = regionY + NodeHeight + RegionToZoneGap + row * (NodeHeight + ZoneRowGap);
+                }
+            }
+
+            cursorX += slotW + InterRegionGap * scale;
+        }
+    }
 }

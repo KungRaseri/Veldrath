@@ -34,7 +34,7 @@ public class MapViewModelTests : TestBase
 
         // 1 region + 2 zones = 3 nodes
         vm.Nodes.Should().HaveCount(3);
-        vm.Nodes.Select(n => n.Id).Should().BeEquivalentTo(["everwood", "fenwick-crossing", "darkwood-hollow"]);
+        vm.Nodes.Select(n => n.Id).Should().BeEquivalentTo("everwood", "fenwick-crossing", "darkwood-hollow");
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class MapViewModelTests : TestBase
         var vm = MakeVm(zones);
         await Task.Yield();
 
-        vm.Nodes.Single(n => n.Id == "everwood").NodeType.Should().Be("region");
+        vm.Nodes.Single(n => n.Id == "everwood").NodeType.Should().Be("region_header");
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class MapViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task ZoneMembershipEdges_Connect_Each_Region_To_Its_Zones()
+    public async Task ZoneExitEdges_Connect_Adjacent_Zones()
     {
         var zones = new FakeZoneService
         {
@@ -76,40 +76,39 @@ public class MapViewModelTests : TestBase
             [
                 new("fenwick-crossing", "Fenwick Crossing", "desc", "Town",       1, 50, true,  0, "everwood"),
                 new("darkwood-hollow",  "Darkwood Hollow",  "desc", "Wilderness", 2, 20, false, 0, "everwood"),
-            ]
+            ],
+            ZoneConnections = new Dictionary<string, List<string>>
+            {
+                ["fenwick-crossing"] = ["darkwood-hollow"],
+                ["darkwood-hollow"]  = ["fenwick-crossing"],
+            }
         };
 
         var vm = MakeVm(zones);
         await Task.Yield();
 
-        var membership = vm.Edges.Where(e => e.EdgeType == "zone_membership").ToList();
-        membership.Should().HaveCount(2);
-        membership.All(e => e.From.Id == "everwood").Should().BeTrue();
-        membership.Select(e => e.To.Id).Should().BeEquivalentTo(["fenwick-crossing", "darkwood-hollow"]);
+        // Deduplication should leave exactly one edge for the bidirectional pair.
+        var exitEdges = vm.Edges.Where(e => e.EdgeType == "zone_exit").ToList();
+        exitEdges.Should().HaveCount(1);
+        exitEdges[0].From.Id.Should().BeOneOf("fenwick-crossing", "darkwood-hollow");
+        exitEdges[0].To.Id.Should().BeOneOf("fenwick-crossing", "darkwood-hollow");
     }
 
     [Fact]
-    public async Task RegionConnectionEdges_Are_Created_For_Connected_Regions()
+    public async Task ZoneNodes_Carry_RegionId_And_RegionLabel()
     {
-        var fakeZones = new FakeZoneService
+        var zones = new FakeZoneService
         {
-            Regions =
-            [
-                new("everwood",   "Everwood",   "desc", "Forest",   1,  10, true,  "draveth"),
-                new("stormreach", "Stormreach", "desc", "Highland", 5,  15, false, "draveth"),
-            ],
-            RegionConnections = new Dictionary<string, List<string>>
-            {
-                ["everwood"]   = ["stormreach"],
-                ["stormreach"] = ["everwood"],
-            }
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")],
+            Zones   = [new("fenwick-crossing", "Fenwick Crossing", "desc", "Town", 1, 50, true, 0, "everwood")],
         };
 
-        var vm = MakeVm(fakeZones);
+        var vm = MakeVm(zones);
         await Task.Yield();
 
-        // Deduplication should leave exactly one edge for the bidirectional pair.
-        vm.Edges.Where(e => e.EdgeType == "region_exit").Should().HaveCount(1);
+        var zoneNode = vm.Nodes.Single(n => n.NodeType == "zone");
+        zoneNode.RegionId.Should().Be("everwood");
+        zoneNode.RegionLabel.Should().Be("Everwood");
     }
 
     [Fact]
@@ -173,7 +172,7 @@ public class MapViewModelTests : TestBase
         var vm = MakeVm(zones);
         await Task.Yield();
 
-        var node = vm.Nodes.Single(n => n.NodeType == "region");
+        var node = vm.Nodes.Single(n => n.NodeType == "region_header");
         await vm.SelectNodeCommand.Execute(node);
 
         vm.SelectedNode.Should().Be(node);

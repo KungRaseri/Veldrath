@@ -45,18 +45,12 @@
             <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
-        <!-- Level tab buttons -->
-        <Style Selector="Button.level-tab">
+        <!-- Region header label — non-interactive, used only for visual group labelling -->
+        <Style Selector="Border.map-node.region-header">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0,0,0,2" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource GameMutedBrush}" />
-            <Setter Property="Padding" Value="12,6" />
-            <Setter Property="FontSize" Value="13" />
-        </Style>
-        <Style Selector="Button.level-tab.active">
-            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Cursor" Value="Arrow" />
         </Style>
     </UserControl.Styles>
 
@@ -66,38 +60,7 @@
         <Border Grid.Row="0" Classes="panel-topbar">
             <Grid ColumnDefinitions="Auto,*,Auto">
 
-                <!-- Left: back button + level breadcrumb tabs -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <Button Content="← Back"
-                            Classes="ghost"
-                            IsVisible="{Binding CanDrillOut}"
-                            Command="{Binding DrillOutCommand}"
-                            Padding="8,4" FontSize="12" />
-                    <Button Content="World"
-                            Classes="level-tab"
-                            Classes.active="{Binding IsWorldLevel}"
-                            Command="{Binding GoToWorldCommand}" />
-                    <TextBlock Text="›"
-                               IsVisible="{Binding FocusedRegionName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               VerticalAlignment="Center" Margin="2,0"
-                               Foreground="{DynamicResource GameTextMutedBrush}" FontSize="14" />
-                    <Button Content="{Binding FocusedRegionName}"
-                            Classes="level-tab"
-                            Classes.active="{Binding IsRegionLevel}"
-                            IsVisible="{Binding FocusedRegionName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                            IsEnabled="{Binding IsZoneLevel}"
-                            Command="{Binding GoToRegionCommand}" />
-                    <TextBlock Text="›"
-                               IsVisible="{Binding FocusedZoneName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               VerticalAlignment="Center" Margin="2,0"
-                               Foreground="{DynamicResource GameTextMutedBrush}" FontSize="14" />
-                    <TextBlock Text="{Binding FocusedZoneName}"
-                               IsVisible="{Binding FocusedZoneName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               VerticalAlignment="Center"
-                               FontSize="13" Foreground="{DynamicResource GameAccentBrush}" />
-                </StackPanel>
-
-                <!-- Centre: Title -->
+                <!-- Left: placeholder for future nav controls -->
                 <TextBlock Grid.Column="1"
                            Text="{Binding Title}"
                            FontSize="16" FontWeight="SemiBold"
@@ -187,6 +150,7 @@
                                         Classes.hidden-node="{Binding IsHidden}"
                                         Classes.selected="{Binding IsSelected}"
                                         Classes.region-node="{Binding IsRegionNode}"
+                                        Classes.region-header="{Binding IsRegionHeader}"
                                         ToolTip.Tip="{Binding DisplayLabel}"
                                         PointerPressed="OnNodePointerPressed"
                                         DoubleTapped="OnNodeDoubleTapped">

@@ -55,7 +55,11 @@ public class GameViewModel : ViewModelBase
     public string? CurrentZoneLocationSlug
     {
         get => _currentZoneLocationSlug;
-        private set => this.RaiseAndSetIfChanged(ref _currentZoneLocationSlug, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _currentZoneLocationSlug, value);
+            this.RaisePropertyChanged(nameof(CurrentZoneLocationDisplayName));
+        }
     }
 
     // Character stats
@@ -322,6 +326,13 @@ public class GameViewModel : ViewModelBase
     /// <summary>All regions in the current world, used by the world overview panel.</summary>
     public ObservableCollection<RegionCardViewModel> WorldRegions { get; } = [];
 
+    /// <summary>Zone locations within the current zone, shown in the Zone panel.</summary>
+    public ObservableCollection<ZoneLocationItemViewModel> ZoneLocations { get; } = [];
+
+    /// <summary>Display name of the zone location the character is currently standing at, or <see langword="null"/> if not at a specific location.</summary>
+    public string? CurrentZoneLocationDisplayName =>
+        ZoneLocations.FirstOrDefault(l => l.Slug == CurrentZoneLocationSlug)?.DisplayName;
+
     /// <summary>Toggles the collapsible left stats/log panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
 
@@ -475,20 +486,9 @@ public class GameViewModel : ViewModelBase
     public async Task InitializeAsync(string characterName, string zoneId)
     {
         CharacterName = characterName;
-        _currentZoneId = zoneId;
         ZoneViewMode = "Zone";
 
-        var zone = await _zoneService.GetZoneAsync(zoneId);
-        if (zone is not null)
-        {
-            ZoneName = zone.Name;
-            ZoneDescription = zone.Description;
-            ZoneType = zone.Type;
-            HasInn = zone.HasInn;
-            HasMerchant = zone.HasMerchant;
-            ZoneMinLevel = zone.MinLevel;
-            await LoadWorldContextAsync(zone.RegionId, zoneId);
-        }
+        await LoadZoneCoreAsync(zoneId);
 
         if (_assetStore is not null && _audioPlayer is not null)
         {
@@ -631,6 +631,39 @@ public class GameViewModel : ViewModelBase
         // Treat dungeon entry as a zone transition: refresh zone state and send EnterZone.
         _ = InitializeAsync(CharacterName, dungeonId);
         _ = _connection.SendCommandAsync<object>("EnterZone", dungeonId);
+    }
+
+    private async Task LoadZoneCoreAsync(string zoneId)
+    {
+        _currentZoneId = zoneId;
+        CurrentZoneLocationSlug = null;
+        var zone = await _zoneService.GetZoneAsync(zoneId);
+        if (zone is not null)
+        {
+            ZoneName = zone.Name;
+            ZoneDescription = zone.Description;
+            ZoneType = zone.Type;
+            HasInn = zone.HasInn;
+            HasMerchant = zone.HasMerchant;
+            ZoneMinLevel = zone.MinLevel;
+            await LoadWorldContextAsync(zone.RegionId, zoneId);
+        }
+        await LoadZoneLocationsAsync(zoneId);
+    }
+
+    private async Task LoadZoneLocationsAsync(string zoneId)
+    {
+        var locations = await _zoneService.GetZoneLocationsAsync(zoneId, _characterId);
+        ZoneLocations.Clear();
+        foreach (var loc in locations)
+        {
+            var slug = loc.Slug;
+            ZoneLocations.Add(new ZoneLocationItemViewModel(
+                loc.Slug, loc.DisplayName, loc.LocationType, loc.MinLevel,
+                isCurrent: loc.Slug == CurrentZoneLocationSlug,
+                onNavigate: () => DoNavigateToLocationAsync(slug)));
+        }
+        this.RaisePropertyChanged(nameof(CurrentZoneLocationDisplayName));
     }
 
     private async Task LoadWorldContextAsync(string? regionId, string currentZoneId)
@@ -941,6 +974,7 @@ public class GameViewModel : ViewModelBase
     public void OnLocationEntered(string locationSlug, string locationDisplayName, string locationType)
     {
         CurrentZoneLocationSlug = locationSlug;
+        foreach (var loc in ZoneLocations) loc.IsCurrent = loc.Slug == locationSlug;
         AppendLog($"Arrived at {locationDisplayName} ({locationType}).");
     }
 
@@ -978,10 +1012,22 @@ public class GameViewModel : ViewModelBase
     /// <param name="isCrossZone">Whether traversal moved the character into a different zone.</param>
     public void OnConnectionTraversed(string? toLocationSlug, string? toZoneId, bool isCrossZone)
     {
+        _ = HandleConnectionTraversedAsync(toLocationSlug, toZoneId, isCrossZone);
+    }
+
+    private async Task HandleConnectionTraversedAsync(string? toLocationSlug, string? toZoneId, bool isCrossZone)
+    {
         if (isCrossZone && toZoneId is not null)
+        {
             AppendLog($"You travel to {toZoneId}.");
+            await LoadZoneCoreAsync(toZoneId);
+        }
         else if (toLocationSlug is not null)
+        {
+            CurrentZoneLocationSlug = toLocationSlug;
+            foreach (var loc in ZoneLocations) loc.IsCurrent = loc.Slug == toLocationSlug;
             AppendLog($"You move to {toLocationSlug}.");
+        }
     }
 
     /// <summary>Handles the ShopVisited hub event: opens the shop panel for the given zone.</summary>
