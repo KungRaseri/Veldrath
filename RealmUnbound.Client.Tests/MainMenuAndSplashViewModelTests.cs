@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
@@ -191,6 +192,48 @@ public class MainMenuViewModelTests : TestBase
     }
 
     [Fact]
+    public async Task All_Server_Gated_Commands_Should_Be_Disabled_While_Check_Is_In_Progress()
+    {
+        var checkStarted = new TaskCompletionSource();
+        var checkRelease = new TaskCompletionSource();
+
+        var status = new FakeServerStatusService
+        {
+            IsOnline = true,
+            CheckOverride = (_, _) =>
+            {
+                checkStarted.TrySetResult();
+                return checkRelease.Task;
+            }
+        };
+        var nav = new FakeNavigationService();
+        var vm  = MakeVm(nav: nav, status: status);
+
+        // Start a command but don't await — it blocks inside CheckAsync.
+        var registerCmd  = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.RegisterCommand;
+        var loginCmd     = (ReactiveUI.ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit>)vm.LoginCommand;
+        var executeTask  = registerCmd.Execute().ToTask();
+
+        // Wait until CheckAsync is actually running.
+        await checkStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // While a check is in progress, every server-gated command should be disabled —
+        // not just the one that was clicked.
+        var loginCanExecute = await loginCmd.CanExecute.FirstAsync();
+        loginCanExecute.Should().BeFalse("LoginCommand should be disabled while a check is in progress");
+        vm.IsChecking.Should().BeTrue();
+
+        // Release the check and let the command finish.
+        checkRelease.SetResult();
+        await executeTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // After the check completes, commands should be enabled again.
+        var loginCanExecuteAfter = await loginCmd.CanExecute.FirstAsync();
+        loginCanExecuteAfter.Should().BeTrue();
+        vm.IsChecking.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task SelectCharacterCommand_Should_Be_Disabled_When_Server_Is_Offline()
     {
         var tokens = new TokenStore();
@@ -253,6 +296,36 @@ public class MainMenuViewModelTests : TestBase
         vm.HasAnnouncements.Should().BeTrue();
         vm.Announcements.Should().HaveCount(1);
         vm.Announcements[0].Title.Should().Be("Test");
+    }
+
+    [Fact]
+    public async Task Announcements_Should_Reload_When_Server_Comes_Back_Online()
+    {
+        // Start offline — announcements will not load initially.
+        var ann = new FakeAnnouncementService
+        {
+            Announcements =
+            [
+                new AnnouncementDto(1, "Back Online", "Server recovered.", "News", false, DateTimeOffset.UtcNow)
+            ]
+        };
+        var status = new FakeServerStatusService { IsOnline = false };
+        var vm     = MakeVm(status: status, ann: ann);
+
+        // Still offline — list should be empty.
+        vm.HasAnnouncements.Should().BeFalse();
+
+        // Simulate the server coming back online.
+        status.IsOnline = true;
+
+        // Announcements are reloaded asynchronously; poll briefly.
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (!vm.HasAnnouncements && DateTimeOffset.UtcNow < deadline)
+            await Task.Delay(10);
+
+        vm.HasAnnouncements.Should().BeTrue();
+        vm.Announcements[0].Title.Should().Be("Back Online");
+        vm.NewsPlaceholderText.Should().NotContain("server");
     }
 }
 

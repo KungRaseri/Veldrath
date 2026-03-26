@@ -414,8 +414,18 @@ public class FakeServerStatusService : ReactiveObject, IServerStatusService
     /// <inheritdoc/>
     public string StatusMessage => IsOnline ? string.Empty : "Server offline";
 
+    /// <summary>
+    /// Optional override invoked by <see cref="CheckAsync"/> instead of returning immediately.
+    /// Use in tests that need to block or observe the mid-check state.
+    /// </summary>
+    public Func<string, CancellationToken, Task>? CheckOverride { get; set; }
+
     /// <inheritdoc/>
-    public Task CheckAsync(string serverUrl, CancellationToken ct = default) => Task.CompletedTask;
+    public Task CheckAsync(string serverUrl, CancellationToken ct = default)
+        => CheckOverride?.Invoke(serverUrl, ct) ?? Task.CompletedTask;
+
+    /// <inheritdoc/>
+    public Task StartPollingAsync(Func<string> getServerUrl, CancellationToken ct = default) => Task.CompletedTask;
 }
 
 /// <summary>Configurable stub for <see cref="IAnnouncementService"/>.</summary>
