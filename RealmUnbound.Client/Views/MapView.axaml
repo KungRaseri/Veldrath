@@ -128,13 +128,30 @@
                                    Foreground="{DynamicResource GameTextMutedBrush}" />
                     </Border>
 
-                    <!-- Edge layer (lines drawn in code-behind, refreshed on collection change) -->
-                    <Canvas x:Name="EdgeCanvas"
-                            Width="{Binding CanvasWidth}"
-                            Height="{Binding CanvasHeight}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            ZIndex="0" />
+                    <!-- Edge layer — one Line per MapEdgeViewModel, bound declaratively -->
+                    <ItemsControl ItemsSource="{Binding Edges}"
+                                  Width="{Binding CanvasWidth}"
+                                  Height="{Binding CanvasHeight}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  ZIndex="0"
+                                  IsHitTestVisible="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MapEdgeViewModel">
+                                <Line StartPoint="{Binding StartPoint}"
+                                      EndPoint="{Binding EndPoint}"
+                                      Stroke="{Binding Stroke}"
+                                      StrokeThickness="{Binding StrokeThickness}"
+                                      StrokeDashArray="{Binding StrokeDash}"
+                                      Opacity="{Binding Opacity}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <!-- Node layer -->
                     <ItemsControl ItemsSource="{Binding Nodes}"
@@ -143,6 +160,16 @@
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
                                   ZIndex="1">
+                        <!-- ItemContainerTheme positions the ContentPresenter (direct Canvas child)
+                             via the node's X/Y from the layout algorithm. Setting Canvas.Left/Top
+                             on the DataTemplate Border has no effect because the Canvas only reads
+                             those attached properties from its direct children (the ContentPresenters). -->
+                        <ItemsControl.ItemContainerTheme>
+                            <ControlTheme TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                <Setter Property="Canvas.Top"  Value="{Binding Y}" />
+                            </ControlTheme>
+                        </ItemsControl.ItemContainerTheme>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <Canvas />
@@ -154,8 +181,6 @@
                                         Classes.current="{Binding IsCurrent}"
                                         Classes.hidden-node="{Binding IsHidden}"
                                         Classes.selected="{Binding IsSelected}"
-                                        Canvas.Left="{Binding X}"
-                                        Canvas.Top="{Binding Y}"
                                         ToolTip.Tip="{Binding DisplayLabel}"
                                         PointerPressed="OnNodePointerPressed"
                                         DoubleTapped="OnNodeDoubleTapped">
