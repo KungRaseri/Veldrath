@@ -96,6 +96,38 @@
                                    Foreground="{DynamicResource GameTextMutedBrush}" />
                     </Border>
 
+                    <!-- Region group backgrounds — rendered below edges and nodes -->
+                    <ItemsControl ItemsSource="{Binding RegionGroups}"
+                                  Width="{Binding CanvasWidth}"
+                                  Height="{Binding CanvasHeight}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  ZIndex="-1"
+                                  IsHitTestVisible="False">
+                        <ItemsControl.ItemContainerTheme>
+                            <ControlTheme TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                <Setter Property="Canvas.Top"  Value="{Binding Y}" />
+                            </ControlTheme>
+                        </ItemsControl.ItemContainerTheme>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MapRegionGroupViewModel">
+                                <Border Width="{Binding Width}"
+                                        Height="{Binding Height}"
+                                        Background="#14FFFFFF"
+                                        BorderBrush="{DynamicResource GameBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Opacity="0.7" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
                     <!-- Edge layer — one Line per MapEdgeViewModel, bound declaratively -->
                     <ItemsControl ItemsSource="{Binding Edges}"
                                   Width="{Binding CanvasWidth}"
@@ -111,12 +143,12 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:MapEdgeViewModel">
-                                <Line StartPoint="{Binding StartPoint}"
-                                      EndPoint="{Binding EndPoint}"
+                                <Path Data="{Binding PathData}"
                                       Stroke="{Binding Stroke}"
                                       StrokeThickness="{Binding StrokeThickness}"
                                       StrokeDashArray="{Binding StrokeDash}"
-                                      Opacity="{Binding Opacity}" />
+                                      Opacity="{Binding Opacity}"
+                                      Fill="Transparent" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

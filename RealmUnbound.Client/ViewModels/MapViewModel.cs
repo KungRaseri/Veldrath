@@ -59,6 +59,9 @@ public class MapViewModel : ViewModelBase
     /// <summary>Graph edges currently visible on the canvas.</summary>
     public ObservableCollection<MapEdgeViewModel> Edges { get; }
 
+    /// <summary>Background group panels — one per region — rendered below the edge and node layers.</summary>
+    public ObservableCollection<MapRegionGroupViewModel> RegionGroups { get; } = [];
+
     // ── State properties ────────────────────────────────────────────────────
 
     /// <summary>Header title shown in the map top-bar.</summary>
@@ -161,6 +164,23 @@ public class MapViewModel : ViewModelBase
             }
 
             GraphLayout.ComputeGroupedZones(Nodes, Edges, CanvasWidth, CanvasHeight);
+
+            // Build background group panels from the now-computed node positions.
+            const double NodeW = 96, NodeH = 56, Pad = 14;
+            RegionGroups.Clear();
+            foreach (var header in regionHeaderMap.Values)
+            {
+                var members = Nodes
+                    .Where(n => n.Id == header.Id || (n.NodeType == "zone" && n.RegionId == header.Id))
+                    .ToList();
+                if (members.Count == 0) continue;
+                double minX = members.Min(n => n.X) - Pad;
+                double minY = members.Min(n => n.Y) - Pad;
+                double maxX = members.Max(n => n.X) + NodeW + Pad;
+                double maxY = members.Max(n => n.Y) + NodeH + Pad;
+                RegionGroups.Add(new MapRegionGroupViewModel(minX, minY, maxX - minX, maxY - minY));
+            }
+
             Title = "World Map";
         }
         finally { IsLoading = false; }
