@@ -24,7 +24,12 @@ public interface IServerStatusService : System.ComponentModel.INotifyPropertyCha
     /// <summary>Gets the current server reachability status.</summary>
     ServerStatus Status { get; }
 
-    /// <summary>Gets a value indicating whether the server is reachable.</summary>
+    /// <summary>
+    /// Gets a value indicating whether the server is reachable.
+    /// Returns <see langword="true"/> when <see cref="Status"/> is <see cref="ServerStatus.Online"/>
+    /// or <see cref="ServerStatus.Unknown"/> (i.e., before the first check has completed),
+    /// so that the offline banner and command gates are not triggered prematurely during startup.
+    /// </summary>
     bool IsOnline { get; }
 
     /// <summary>Gets the human-readable status message for display in the UI.</summary>
@@ -70,7 +75,7 @@ public class ServerStatusService(IHttpClientFactory httpClientFactory, ILogger<S
     }
 
     /// <inheritdoc/>
-    public bool IsOnline => Status == ServerStatus.Online;
+    public bool IsOnline => Status is ServerStatus.Online or ServerStatus.Unknown;
 
     /// <inheritdoc/>
     public string StatusMessage => Status switch
@@ -106,7 +111,10 @@ public class ServerStatusService(IHttpClientFactory httpClientFactory, ILogger<S
     {
         while (true)
         {
-            var delay = IsOnline ? OnlinePollInterval : OfflinePollInterval;
+            // Use the fast offline interval only when the server is confirmed down.
+            // Unknown (pre-first-check) gets the same slow interval as Online so the
+            // poll does not race the splash screen's own CheckAsync call.
+            var delay = Status == ServerStatus.Offline ? OfflinePollInterval : OnlinePollInterval;
             try
             {
                 await Task.Delay(delay, ct).ConfigureAwait(false);

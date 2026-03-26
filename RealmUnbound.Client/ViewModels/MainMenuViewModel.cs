@@ -92,7 +92,13 @@ public class MainMenuViewModel : ViewModelBase
         // Mirror server status; default to online so commands aren't unexpectedly disabled
         // when constructed without the service (e.g. in tests).
         IsServerOnline = serverStatus?.IsOnline ?? true;
+
+        // The polling loop calls CheckAsync on a background thread, so the WhenAnyValue
+        // subscription fires there too. ObserveOn ensures all property mutations
+        // (IsServerOnline, NewsPlaceholderText, announcement reload) happen on the UI
+        // thread — matching what Avalonia bindings and ReactiveCommand CanExecute expect.
         serverStatus?.WhenAnyValue(s => s.Status)
+            .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(status =>
             {
                 var wasOffline = !IsServerOnline;
@@ -105,8 +111,10 @@ public class MainMenuViewModel : ViewModelBase
                     _ = LoadAnnouncementsAsync(announcementService);
             });
 
-        // Commands that require the server to be reachable are gated on IsServerOnline AND not currently
-        // mid-check, so that pressing one button disables all server-gated buttons for the check duration.
+        // Drive command canExecute from the VM's own IsServerOnline property, which is
+        // always updated on the main thread via the ObserveOn subscription above.
+        // Driving directly from the service would emit on the background polling thread,
+        // bypassing the UI-thread guarantee that ReactiveCommand requires for CanExecute.
         var serverOnline = this.WhenAnyValue(x => x.IsServerOnline, x => x.IsChecking,
                                (online, checking) => online && !checking);
         var canEnterGame = this.WhenAnyValue(x => x.IsLoggedIn, x => x.IsServerOnline, x => x.IsChecking,
