@@ -229,6 +229,9 @@ public class FakeZoneService : IZoneService
     public List<ZoneLocationDto> Locations { get; set; } = [];
     public List<ZoneLocationConnectionDto> LocationConnections { get; set; } = [];
 
+    /// <summary>Maps a region ID to the IDs of regions it connects to (used by <see cref="GetRegionConnectionsAsync"/>).</summary>
+    public Dictionary<string, List<string>> RegionConnections { get; set; } = [];
+
     public Task<List<ZoneDto>> GetZonesAsync()
         => Task.FromResult(new List<ZoneDto>(Zones));
 
@@ -245,7 +248,11 @@ public class FakeZoneService : IZoneService
         => Task.FromResult(Regions.FirstOrDefault(r => r.Id == regionId));
 
     public Task<List<RegionDto>> GetRegionConnectionsAsync(string regionId)
-        => Task.FromResult<List<RegionDto>>([]);
+    {
+        if (!RegionConnections.TryGetValue(regionId, out var ids))
+            return Task.FromResult<List<RegionDto>>([]);
+        return Task.FromResult(Regions.Where(r => ids.Contains(r.Id)).ToList());
+    }
 
     public Task<List<WorldDto>> GetWorldsAsync()
         => Task.FromResult(new List<WorldDto>(Worlds));

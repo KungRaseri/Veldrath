@@ -40,6 +40,11 @@
             <Setter Property="BorderBrush" Value="{DynamicResource GameAccentLightBrush}" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
+        <Style Selector="Border.map-node.region-node">
+            <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
         <!-- Level tab buttons -->
         <Style Selector="Button.level-tab">
             <Setter Property="Background" Value="Transparent" />
@@ -181,6 +186,7 @@
                                         Classes.current="{Binding IsCurrent}"
                                         Classes.hidden-node="{Binding IsHidden}"
                                         Classes.selected="{Binding IsSelected}"
+                                        Classes.region-node="{Binding IsRegionNode}"
                                         ToolTip.Tip="{Binding DisplayLabel}"
                                         PointerPressed="OnNodePointerPressed"
                                         DoubleTapped="OnNodeDoubleTapped">
@@ -255,40 +261,6 @@
                                            FontSize="10"
                                            Foreground="{DynamicResource GameSuccessBrush}" />
                             </Border>
-
-                            <!-- Drill-in button (not shown at Zone level) -->
-                            <Button Content="{Binding DrillInLabel}"
-                                    Classes="accent"
-                                    IsVisible="{Binding !IsZoneLevel}"
-                                    Command="{Binding DrillIntoCommand}"
-                                    CommandParameter="{Binding SelectedNode}"
-                                    HorizontalAlignment="Stretch" />
-                        </StackPanel>
-
-                        <Border Classes="separator" Margin="0,12,0,4" />
-
-                        <!-- Level info -->
-                        <TextBlock Text="Levels"
-                                   Classes="caption"
-                                   Foreground="{DynamicResource GameTextMutedBrush}" />
-                        <StackPanel Spacing="4">
-                            <Button Content="World"
-                                    Classes="ghost"
-                                    Classes.accent="{Binding IsWorldLevel}"
-                                    Command="{Binding GoToWorldCommand}"
-                                    HorizontalAlignment="Stretch" />
-                            <Button Content="{Binding FocusedRegionName}"
-                                    Classes="ghost"
-                                    Classes.accent="{Binding IsRegionLevel}"
-                                    IsVisible="{Binding FocusedRegionName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                    IsEnabled="{Binding IsZoneLevel}"
-                                    Command="{Binding GoToRegionCommand}"
-                                    HorizontalAlignment="Stretch" />
-                            <Button Content="{Binding FocusedZoneName}"
-                                    Classes="ghost accent"
-                                    IsVisible="{Binding FocusedZoneName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                    IsEnabled="False"
-                                    HorizontalAlignment="Stretch" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
