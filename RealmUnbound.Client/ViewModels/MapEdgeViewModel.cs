@@ -8,10 +8,14 @@ namespace RealmUnbound.Client.ViewModels;
 /// <summary>Represents a directed edge between two <see cref="MapNodeViewModel"/> instances on the traversal-graph map canvas.</summary>
 public class MapEdgeViewModel : ViewModelBase
 {
-    private const double NodeHalfW    = 48.0; // 96 / 2
-    private const double NodeHalfH    = 28.0; // 56 / 2
+    private const double NodeHalfW         = 48.0;  // 96 / 2
+    private const double NodeHalfH         = 28.0;  // 56 / 2
     /// <summary>Horizontal distance beyond which the edge routes orthogonally around the node grid.</summary>
-    private const double ArcThreshold = 280.0;
+    private const double ArcThreshold      = 280.0;
+    /// <summary>Half of the inter-region gap (48 px total) — places the vertical segment at the mid-point between two region panels.</summary>
+    private const double InterRegionHalfGap = 24.0;
+    /// <summary>Extra pixels below the lower node centre to route the horizontal "bottom" segment, clearing the region panel border.</summary>
+    private const double BelowPanelOffset   = 56.0;
 
     private string _pathData = string.Empty;
 
@@ -38,12 +42,17 @@ public class MapEdgeViewModel : ViewModelBase
                 double dx = Math.Abs(x2 - x1);
                 if (dx > ArcThreshold)
                 {
-                    // Orthogonal routing: right → up/down → right
-                    // The vertical segment runs at the left edge of the destination node,
-                    // which sits in the inter-region gap just before the destination's group panel.
-                    double gapX = x2 - NodeHalfW;
+                    // Orthogonal routing: down → right → up → right
+                    // 1. Drop below both region panels from the source node.
+                    // 2. Run right (or left) to the mid-point of the inter-region gap.
+                    // 3. Rise to the destination node's vertical centre.
+                    // 4. Enter the destination node horizontally.
+                    double gapX   = x2 > x1
+                        ? x2 - NodeHalfW - InterRegionHalfGap   // gap midpoint to the left of the dest panel
+                        : x2 + NodeHalfW + InterRegionHalfGap;  // mirror for left-going edges
+                    double belowY = Math.Max(y1, y2) + BelowPanelOffset;
                     PathData = FormattableString.Invariant(
-                        $"M {x1:F1},{y1:F1} L {gapX:F1},{y1:F1} L {gapX:F1},{y2:F1} L {x2:F1},{y2:F1}");
+                        $"M {x1:F1},{y1:F1} L {x1:F1},{belowY:F1} L {gapX:F1},{belowY:F1} L {gapX:F1},{y2:F1} L {x2:F1},{y2:F1}");
                 }
                 else
                 {
@@ -69,7 +78,9 @@ public class MapEdgeViewModel : ViewModelBase
     public bool IsTraversable { get; }
 
     /// <summary>Avalonia path markup data for rendering this edge — a straight <c>L</c> segment for
-    /// short edges, or a quadratic-bezier <c>Q</c> arc above the node grid for long-range edges.</summary>
+    /// short edges, or a five-point orthogonal route (<c>down → right → up → right</c>) for
+    /// long cross-region edges, with the vertical segment placed at the mid-point of the
+    /// inter-region gap between the two region panels.</summary>
     public string PathData
     {
         get => _pathData;
