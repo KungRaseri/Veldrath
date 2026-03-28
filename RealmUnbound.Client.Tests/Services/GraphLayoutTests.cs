@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
 
@@ -67,7 +68,7 @@ public class GraphLayoutTests : TestBase
 
     // ── Edge attraction ──────────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Compute_ConnectedPair_Is_Closer_Than_UnconnectedPair()
     {
         // Build a graph: (connected) a—b   (unconnected) c   d

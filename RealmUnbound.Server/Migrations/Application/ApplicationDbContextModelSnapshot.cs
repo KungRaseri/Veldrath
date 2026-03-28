@@ -264,6 +264,34 @@ namespace RealmUnbound.Server.Migrations.Application
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedConnection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ConnectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UnlockSource")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UnlockedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("CharacterUnlockedConnections");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
                 {
                     b.Property<int>("Id")
@@ -778,6 +806,17 @@ namespace RealmUnbound.Server.Migrations.Application
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedConnection", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>

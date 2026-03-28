@@ -297,4 +297,85 @@ public class EfCoreZoneLocationRepositoryTests
         result.Should().ContainSingle(c => c.FromLocationSlug == "active-loc");
         result.Should().NotContain(c => c.FromLocationSlug == "inactive-loc");
     }
+
+    // ── Hidden connection filtering ───────────────────────────────────────────
+
+    [Fact]
+    public async Task GetConnectionsFromAsync_ExcludesHiddenConnections()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocationConnections.AddRange(
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "fenwick-market", ConnectionType = "path",            IsTraversable = true, IsHidden = false },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "secret-passage", ConnectionType = "secret_passage",   IsTraversable = true, IsHidden = true  });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetConnectionsFromAsync("fenwick-inn");
+
+        result.Should().ContainSingle(c => c.ToLocationSlug == "fenwick-market");
+        result.Should().NotContain(c => c.ToLocationSlug == "secret-passage");
+    }
+
+    [Fact]
+    public async Task GetConnectionsFromAsync_WithUnlockedIds_IncludesUnlockedHiddenConnections()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocationConnections.AddRange(
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "fenwick-market", ConnectionType = "path",          IsTraversable = true, IsHidden = false },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "unlocked-path",  ConnectionType = "secret_passage", IsTraversable = true, IsHidden = true  },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "locked-path",    ConnectionType = "secret_passage", IsTraversable = true, IsHidden = true  });
+        await db.SaveChangesAsync();
+
+        // The second connection's auto-generated Id will be 2 after save.
+        var unlockedId = db.ZoneLocationConnections.Single(c => c.ToLocationSlug == "unlocked-path").Id;
+
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetConnectionsFromAsync("fenwick-inn", [unlockedId]);
+
+        result.Should().HaveCount(2);
+        result.Should().Contain(c => c.ToLocationSlug == "fenwick-market");
+        result.Should().Contain(c => c.ToLocationSlug == "unlocked-path");
+        result.Should().NotContain(c => c.ToLocationSlug == "locked-path");
+    }
+
+    [Fact]
+    public async Task GetAllConnectionsForZoneAsync_ExcludesHiddenConnections()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.Add(new ZoneLocation { Slug = "fenwick-inn", ZoneId = "fenwick-crossing", LocationType = "location", IsActive = true, DisplayName = "Inn" });
+        db.ZoneLocationConnections.AddRange(
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "fenwick-market", ConnectionType = "path",          IsTraversable = true, IsHidden = false },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "secret-room",    ConnectionType = "secret_passage", IsTraversable = true, IsHidden = true  });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetAllConnectionsForZoneAsync("fenwick-crossing");
+
+        result.Should().ContainSingle(c => c.ToLocationSlug == "fenwick-market");
+        result.Should().NotContain(c => c.ToLocationSlug == "secret-room");
+    }
+
+    [Fact]
+    public async Task GetAllConnectionsForZoneAsync_WithUnlockedIds_IncludesUnlockedHiddenConnections()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.Add(new ZoneLocation { Slug = "fenwick-inn", ZoneId = "fenwick-crossing", LocationType = "location", IsActive = true, DisplayName = "Inn" });
+        db.ZoneLocationConnections.AddRange(
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "fenwick-market", ConnectionType = "path",          IsTraversable = true, IsHidden = false },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "unlocked-room",  ConnectionType = "secret_passage", IsTraversable = true, IsHidden = true  },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-inn", ToLocationSlug = "locked-room",    ConnectionType = "secret_passage", IsTraversable = true, IsHidden = true  });
+        await db.SaveChangesAsync();
+
+        var unlockedId = db.ZoneLocationConnections.Single(c => c.ToLocationSlug == "unlocked-room").Id;
+
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetAllConnectionsForZoneAsync("fenwick-crossing", [unlockedId]);
+
+        result.Should().HaveCount(2);
+        result.Should().Contain(c => c.ToLocationSlug == "fenwick-market");
+        result.Should().Contain(c => c.ToLocationSlug == "unlocked-room");
+        result.Should().NotContain(c => c.ToLocationSlug == "locked-room");
+    }
 }

@@ -22,8 +22,9 @@ public interface IZoneService
     /// <summary>Fetches all zone-to-zone travel edges originating from the given zone.</summary>
     Task<List<ZoneConnectionDto>> GetZoneConnectionsAsync(string zoneId);
 
-    /// <summary>Fetches all location-to-location traversal edges for every location within the given zone.</summary>
-    Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId);
+    /// <summary>Fetches all location-to-location traversal edges for every location within the given zone.
+    /// When <paramref name="characterId"/> is provided, unlocked hidden connections are included.</summary>
+    Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId, Guid? characterId = null);
 
     Task<List<RegionDto>> GetRegionsAsync();
     Task<RegionDto?> GetRegionAsync(string regionId);
@@ -214,11 +215,14 @@ public class HttpZoneService(
         }
     }
 
-    public async Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId)
+    public async Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId, Guid? characterId = null)
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/zones/{zoneId}/location-connections");
+            var url = characterId.HasValue
+                ? $"api/zones/{zoneId}/location-connections?characterId={characterId.Value}"
+                : $"api/zones/{zoneId}/location-connections";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = BearerHeader;
             var response = await http.SendAsync(request);
             response.EnsureSuccessStatusCode();

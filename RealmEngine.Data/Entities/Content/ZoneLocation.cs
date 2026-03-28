@@ -76,4 +76,7 @@ public class ZoneLocationConnection
 
     /// <summary>False when the connection is temporarily blocked (quest gate, locked door, etc.).</summary>
     public bool IsTraversable { get; set; } = true;
+
+    /// <summary>True when this connection is hidden and only returned for characters who have unlocked it.</summary>
+    public bool IsHidden { get; set; } = false;
 }

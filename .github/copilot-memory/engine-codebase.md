@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of session-24)
+## Test Counts (as of session-25)
 - RealmEngine.Core.Tests: **1,859 passing**
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **208 passing**
+- RealmEngine.Data.Tests: **226 passing**
 - RealmUnbound.Client.Tests: **512 passing**
 - RealmUnbound.Server.Tests: **468 passing**
 
@@ -158,6 +158,12 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - Wired bridges: `GainExperience`, `RestAtLocation`, `AllocateAttributePoints`, `UseAbility`
 - Last P3 stub open: `CharacterSelectViewModel.ServerUrl` hardcoded to `"http://localhost:8080"`
 - P4 XML docs: `IPlayerAccountRepository` still missing; `IZoneRepository`/`IZoneSessionRepository` fixed session-4
+
+### Avalonia Thread Affinity in Client Tests
+- `MapEdgeViewModel.ComputeStyle` creates `SolidColorBrush` (inherits `AvaloniaObject`) which requires the Avalonia dispatcher thread.
+- Any test that constructs `MapEdgeViewModel` (directly or indirectly via `MapViewModel`) will throw `InvalidOperationException: Call from invalid thread` when run after `[AvaloniaFact]` tests that initialized the dispatcher on a different thread.
+- **Fix**: use `[AvaloniaFact]` (not `[Fact]`) for any test that creates `MapEdgeViewModel` or a `MapViewModel` that loads zone-exit edges.
+- Tests that create `MapViewModel` but with no zone connections (so no `MapEdgeViewModel` is created) are safe to remain as `[Fact]`.
 
 ### ActorClassDto Changed (2026-03-19)
 - `ActorClassDto` in `RealmUnbound.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters

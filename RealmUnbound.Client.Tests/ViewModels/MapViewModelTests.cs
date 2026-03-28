@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using System.Reactive.Linq;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
@@ -66,7 +67,7 @@ public class MapViewModelTests : TestBase
         vm.Nodes.Single(n => n.Id == "fenwick-crossing").NodeType.Should().Be("zone");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task ZoneExitEdges_Connect_Adjacent_Zones()
     {
         var zones = new FakeZoneService

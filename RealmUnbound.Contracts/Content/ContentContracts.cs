@@ -218,12 +218,14 @@ public record ZoneLocationDto(string Slug, string DisplayName, string TypeKey,
     bool IsHidden = false);
 
 /// <summary>A traversal edge leading from one ZoneLocation to another location or zone.</summary>
+/// <param name="ConnectionId">Primary key of the underlying <c>ZoneLocationConnection</c> record.</param>
 /// <param name="FromLocationSlug">Slug of the location that contains this exit.</param>
 /// <param name="ToLocationSlug">Destination ZoneLocation slug, or <see langword="null"/> when the destination is a whole zone.</param>
 /// <param name="ToZoneId">Destination zone slug, or <see langword="null"/> when the destination is a specific location.</param>
 /// <param name="ConnectionType">Travel method: "path" | "portal" | "dungeon_entrance" | "secret_passage".</param>
 /// <param name="IsTraversable">False when the connection is blocked (e.g. quest gate, locked door).</param>
 public record ZoneLocationConnectionDto(
+    int ConnectionId,
     string FromLocationSlug,
     string? ToLocationSlug,
     string? ToZoneId,

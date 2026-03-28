@@ -1255,6 +1255,9 @@ namespace RealmEngine.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsTraversable")
                         .HasColumnType("boolean");
 
