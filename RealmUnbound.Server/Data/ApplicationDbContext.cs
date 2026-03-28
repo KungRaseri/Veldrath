@@ -23,6 +23,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<Entities.Character> Characters => Set<Entities.Character>();
     /// <summary>Zone locations that characters have unlocked through discovery or quests.</summary>
     public DbSet<CharacterUnlockedLocation> CharacterUnlockedLocations => Set<CharacterUnlockedLocation>();
+    /// <summary>Zone location connections that characters have unlocked through discovery or quests.</summary>
+    public DbSet<CharacterUnlockedConnection> CharacterUnlockedConnections => Set<CharacterUnlockedConnection>();
     /// <summary>JWT refresh tokens.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     /// <summary>Top-level world containers (currently only Draveth).</summary>

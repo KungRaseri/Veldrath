@@ -23,9 +23,15 @@ public interface IZoneLocationRepository
     /// <summary>Returns only hidden active zone locations in the given zone (used for discovery checks).</summary>
     Task<List<ZoneLocationEntry>> GetHiddenByZoneIdAsync(string zoneId);
 
-    /// <summary>Returns all traversal edges originating from the given location slug.</summary>
+    /// <summary>Returns all non-hidden traversal edges originating from the given location slug.</summary>
     Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug);
 
-    /// <summary>Returns all traversal edges for every location within the given zone.</summary>
+    /// <summary>Returns non-hidden edges plus any hidden ones whose IDs appear in <paramref name="unlockedConnectionIds"/>.</summary>
+    Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug, IEnumerable<int> unlockedConnectionIds);
+
+    /// <summary>Returns all non-hidden traversal edges for every location within the given zone.</summary>
     Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId);
+
+    /// <summary>Returns non-hidden edges plus any hidden ones whose IDs appear in <paramref name="unlockedConnectionIds"/> for the given zone.</summary>
+    Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId, IEnumerable<int> unlockedConnectionIds);
 }

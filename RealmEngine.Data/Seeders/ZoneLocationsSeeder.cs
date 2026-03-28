@@ -449,10 +449,50 @@ public static class ZoneLocationsSeeder
 
     private static async Task SeedConnectionsAsync(ContentDbContext db)
     {
-        if (await db.ZoneLocationConnections.AnyAsync())
-            return;
+        var hasAny = await db.ZoneLocationConnections.AnyAsync();
 
-        db.ZoneLocationConnections.AddRange(
+        if (!hasAny)
+        {
+            db.ZoneLocationConnections.AddRange(GetAllConnections());
+            await db.SaveChangesAsync();
+        }
+        else
+        {
+            await SeedMissingHiddenConnectionsAsync(db);
+        }
+    }
+
+    private static async Task SeedMissingHiddenConnectionsAsync(ContentDbContext db)
+    {
+        // Incrementally insert any hidden cross-zone connections that may have been
+        // added after the table was first seeded. Each pair is identified by its
+        // directed from/to slugs so this is safe to run on every startup.
+        var hiddenPairs = new[]
+        {
+            ("deeps-entrance", "forge-quarter"),
+            ("forge-quarter",  "deeps-entrance"),
+        };
+
+        foreach (var (from, to) in hiddenPairs)
+        {
+            var exists = await db.ZoneLocationConnections
+                .AnyAsync(c => c.FromLocationSlug == from && c.ToLocationSlug == to);
+            if (!exists)
+                db.ZoneLocationConnections.Add(new ZoneLocationConnection
+                {
+                    FromLocationSlug = from,
+                    ToLocationSlug   = to,
+                    ConnectionType   = "path",
+                    IsTraversable    = true,
+                    IsHidden         = true,
+                });
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    private static ZoneLocationConnection[] GetAllConnections() =>
+    [
 
             // ── fenwick-crossing ────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "thornveil-village",    ToLocationSlug = "fenwick-market",          ConnectionType = "path",             IsTraversable = true },
@@ -492,6 +532,8 @@ public static class ZoneLocationsSeeder
             new ZoneLocationConnection { FromLocationSlug = "deeps-entrance",       ToLocationSlug = "ancestor-vault",          ConnectionType = "dungeon_entrance", IsTraversable = true },
             new ZoneLocationConnection { FromLocationSlug = "ancestor-vault",       ToLocationSlug = "deeps-entrance",          ConnectionType = "path",             IsTraversable = true },
             new ZoneLocationConnection { FromLocationSlug = "ancestor-vault",       ToLocationSlug = "relic-chamber",           ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "deeps-entrance",       ToLocationSlug = "forge-quarter",           ConnectionType = "path",             IsTraversable = true, IsHidden = true },
+            new ZoneLocationConnection { FromLocationSlug = "forge-quarter",        ToLocationSlug = "deeps-entrance",          ConnectionType = "path",             IsTraversable = true, IsHidden = true },
 
             // ── tolvaren ────────────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "tolvaren-harbour",     ToLocationSlug = "cliff-road-market",       ConnectionType = "path",             IsTraversable = true },
@@ -534,8 +576,5 @@ public static class ZoneLocationsSeeder
             new ZoneLocationConnection { FromLocationSlug = "maw-descent",          ToLocationSlug = "fire-ancient-chamber",    ConnectionType = "dungeon_entrance", IsTraversable = true },
             new ZoneLocationConnection { FromLocationSlug = "fire-ancient-chamber", ToLocationSlug = "maw-descent",             ConnectionType = "path",             IsTraversable = true },
             new ZoneLocationConnection { FromLocationSlug = "fire-ancient-chamber", ToLocationSlug = "kaldreks-heart",          ConnectionType = "path",             IsTraversable = true }
-        );
-
-        await db.SaveChangesAsync();
-    }
+        ];
 }

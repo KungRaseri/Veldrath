@@ -17,8 +17,10 @@ public record ZoneLocationEntry(
 
 /// <summary>A traversal edge linking one ZoneLocation to another location or zone.</summary>
 public record ZoneLocationConnectionEntry(
+    int ConnectionId,
     string FromLocationSlug,
     string? ToLocationSlug,
     string? ToZoneId,
     string ConnectionType,
-    bool IsTraversable);
+    bool IsTraversable,
+    bool IsHidden = false);

@@ -273,7 +273,7 @@ public class FakeZoneService : IZoneService
         return Task.FromResult(ids.Select(id => new ZoneConnectionDto(zoneId, id)).ToList());
     }
 
-    public Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId)
+    public Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId, Guid? characterId = null)
         => Task.FromResult(LocationConnections.Where(c => Locations.Any(l => l.ZoneId == zoneId && l.Slug == c.FromLocationSlug)).ToList());
 }
 
