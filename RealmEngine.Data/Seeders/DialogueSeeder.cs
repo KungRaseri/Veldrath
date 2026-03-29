@@ -10,12 +10,16 @@ public static class DialogueSeeder
     /// <summary>Seeds all dialogue rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.Dialogues.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Dialogues.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllDialogues(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Dialogues.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Dialogues.AddRange(
+    private static Dialogue[] GetAllDialogues(DateTimeOffset now) =>
+    [
             // Village Blacksmith
             new Dialogue
             {
@@ -142,8 +146,6 @@ public static class DialogueSeeder
                     Greeting     = false,
                     Farewell     = false,
                 },
-            });
-
-        await db.SaveChangesAsync();
-    }
+            }
+    ];
 }

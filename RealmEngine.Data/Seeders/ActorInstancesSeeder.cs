@@ -14,9 +14,6 @@ public static class ActorInstancesSeeder
     /// <summary>Seeds all actor instance rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.ActorInstances.AnyAsync())
-            return;
-
         var goblinScout   = await db.ActorArchetypes.FirstOrDefaultAsync(a => a.Slug == "goblin-scout");
         var banditRuffian = await db.ActorArchetypes.FirstOrDefaultAsync(a => a.Slug == "bandit-ruffian");
 
@@ -25,8 +22,15 @@ public static class ActorInstancesSeeder
             return;
 
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.ActorInstances.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllInstances(now, goblinScout.Id, banditRuffian.Id).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.ActorInstances.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.ActorInstances.AddRange(
+    private static ActorInstance[] GetAllInstances(DateTimeOffset now, Guid goblinScoutId, Guid banditRuffianId) =>
+    [
             // Boss instances
             new ActorInstance
             {
@@ -34,7 +38,7 @@ public static class ActorInstancesSeeder
                 TypeKey         = "boss",
                 DisplayName     = "Elder Goblin Chief",
                 RarityWeight    = 20,
-                ArchetypeId     = goblinScout.Id,
+                ArchetypeId     = goblinScoutId,
                 LevelOverride   = 5,
                 FactionOverride = "goblin-warband",
                 IsActive        = true,
@@ -61,7 +65,7 @@ public static class ActorInstancesSeeder
                 TypeKey         = "story",
                 DisplayName     = "Captain Blackthorn",
                 RarityWeight    = 10,
-                ArchetypeId     = banditRuffian.Id,
+                ArchetypeId     = banditRuffianId,
                 LevelOverride   = 8,
                 FactionOverride = "shadowhand-syndicate",
                 IsActive        = true,
@@ -81,8 +85,5 @@ public static class ActorInstancesSeeder
                     GoldRewardMax    = 80,
                 },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 }

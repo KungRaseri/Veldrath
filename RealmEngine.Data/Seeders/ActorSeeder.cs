@@ -19,12 +19,16 @@ public static class ActorSeeder
     // Actor Classes
     private static async Task SeedActorClassesAsync(ContentDbContext db)
     {
-        if (await db.ActorClasses.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.ActorClasses.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllActorClasses(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.ActorClasses.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.ActorClasses.AddRange(
+    private static ActorClass[] GetAllActorClasses(DateTimeOffset now) =>
+    [
             new ActorClass
             {
                 Slug         = "warrior",
@@ -91,21 +95,21 @@ public static class ActorSeeder
                     CanDualWield  = false,
                 },
             }
-        );
+    ];
 
-        await db.SaveChangesAsync();
-    }
-
-    // [Powers/ClassPowerUnlocks/SpeciesPowerPools moved to PowersSeeder]
     // Skills
     private static async Task SeedSkillsAsync(ContentDbContext db)
     {
-        if (await db.Skills.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Skills.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllSkills(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Skills.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Skills.AddRange(
+    private static Skill[] GetAllSkills(DateTimeOffset now) =>
+    [
             new Skill
             {
                 Slug               = "swordsmanship",
@@ -158,20 +162,21 @@ public static class ActorSeeder
                     Exploration = false,
                 },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 
     // Backgrounds
     private static async Task SeedBackgroundsAsync(ContentDbContext db)
     {
-        if (await db.Backgrounds.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Backgrounds.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllBackgrounds(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Backgrounds.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Backgrounds.AddRange(
+    private static Background[] GetAllBackgrounds(DateTimeOffset now) =>
+    [
             new Background
             {
                 Slug         = "soldier",
@@ -224,20 +229,21 @@ public static class ActorSeeder
                     Regional  = false,
                 },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 
     // Species
     private static async Task SeedSpeciesAsync(ContentDbContext db)
     {
-        if (await db.Species.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Species.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllSpecies(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Species.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Species.AddRange(
+    private static Species[] GetAllSpecies(DateTimeOffset now) =>
+    [
             new Species
             {
                 Slug         = "human",
@@ -306,8 +312,5 @@ public static class ActorSeeder
                     Flying     = false,
                 },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 }

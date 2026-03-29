@@ -14,10 +14,15 @@ public static class TraitDefinitionsSeeder
     /// <summary>Seeds all trait definition rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.TraitDefinitions.AnyAsync())
-            return;
+        var existing = await db.TraitDefinitions.AsNoTracking().Select(t => t.Key).ToHashSetAsync();
+        var missing = GetAllTraitDefinitions().Where(t => !existing.Contains(t.Key)).ToList();
+        if (missing.Count == 0) return;
+        db.TraitDefinitions.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.TraitDefinitions.AddRange(
+    private static TraitDefinition[] GetAllTraitDefinitions() =>
+    [
 
             // Enemy / NPC archetype traits
             new TraitDefinition { Key = "hostile",          ValueType = "bool", AppliesTo = "enemies,npcs",                 Description = "True if this actor attacks the player on sight." },
@@ -94,8 +99,5 @@ public static class TraitDefinitionsSeeder
 
             // Wildcard traits (apply to all entity types)
             new TraitDefinition { Key = "active",   ValueType = "bool", AppliesTo = "*", Description = "True if the record is published and visible in-game." }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 }

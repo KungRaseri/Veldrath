@@ -10,12 +10,16 @@ public static class OrganizationsSeeder
     /// <summary>Seeds all organization rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.Organizations.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Organizations.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllOrganizations(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Organizations.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Organizations.AddRange(
+    private static Organization[] GetAllOrganizations(DateTimeOffset now) =>
+    [
             new Organization
             {
                 Slug         = "iron-anvil-guild",
@@ -67,8 +71,6 @@ public static class OrganizationsSeeder
                     QuestGiver       = true,
                     PoliticalFaction = true,
                 },
-            });
-
-        await db.SaveChangesAsync();
-    }
+            }
+    ];
 }

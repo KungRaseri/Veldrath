@@ -20,12 +20,16 @@ public static class ZoneLocationsSeeder
 
     private static async Task SeedLocationsAsync(ContentDbContext db)
     {
-        if (await db.ZoneLocations.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.ZoneLocations.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllLocations(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.ZoneLocations.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.ZoneLocations.AddRange(
+    private static ZoneLocation[] GetAllLocations(DateTimeOffset now) =>
+    [
 
             // ── Thornveil region ────────────────────────────────────────────
 
@@ -442,52 +446,20 @@ public static class ZoneLocationsSeeder
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 10, MinLevel = 28, MaxLevel = 30 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 
     private static async Task SeedConnectionsAsync(ContentDbContext db)
     {
-        var hasAny = await db.ZoneLocationConnections.AnyAsync();
-
-        if (!hasAny)
-        {
-            db.ZoneLocationConnections.AddRange(GetAllConnections());
-            await db.SaveChangesAsync();
-        }
-        else
-        {
-            await SeedMissingHiddenConnectionsAsync(db);
-        }
-    }
-
-    private static async Task SeedMissingHiddenConnectionsAsync(ContentDbContext db)
-    {
-        // Incrementally insert any hidden cross-zone connections that may have been
-        // added after the table was first seeded. Each pair is identified by its
-        // directed from/to slugs so this is safe to run on every startup.
-        var hiddenPairs = new[]
-        {
-            ("deeps-entrance", "forge-quarter"),
-            ("forge-quarter",  "deeps-entrance"),
-        };
-
-        foreach (var (from, to) in hiddenPairs)
-        {
-            var exists = await db.ZoneLocationConnections
-                .AnyAsync(c => c.FromLocationSlug == from && c.ToLocationSlug == to);
-            if (!exists)
-                db.ZoneLocationConnections.Add(new ZoneLocationConnection
-                {
-                    FromLocationSlug = from,
-                    ToLocationSlug   = to,
-                    ConnectionType   = "path",
-                    IsTraversable    = true,
-                    IsHidden         = true,
-                });
-        }
-
+        var existing = (await db.ZoneLocationConnections.AsNoTracking()
+                .Select(c => new { c.FromLocationSlug, c.ToLocationSlug })
+                .ToListAsync())
+            .Select(c => (c.FromLocationSlug, c.ToLocationSlug))
+            .ToHashSet();
+        var missing = GetAllConnections()
+            .Where(c => !existing.Contains((c.FromLocationSlug, c.ToLocationSlug!)))
+            .ToList();
+        if (missing.Count == 0) return;
+        db.ZoneLocationConnections.AddRange(missing);
         await db.SaveChangesAsync();
     }
 

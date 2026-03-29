@@ -10,12 +10,16 @@ public static class RecipesSeeder
     /// <summary>Seeds all recipe rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.Recipes.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Recipes.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllRecipes(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Recipes.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Recipes.AddRange(
+    private static Recipe[] GetAllRecipes(DateTimeOffset now) =>
+    [
             // Weapon recipes
             new Recipe
             {
@@ -195,8 +199,6 @@ public static class RecipesSeeder
                 {
                     new() { ItemDomain = "items/materials", ItemSlug = "iron", Quantity = 2, IsOptional = false },
                 },
-            });
-
-        await db.SaveChangesAsync();
-    }
+            }
+    ];
 }

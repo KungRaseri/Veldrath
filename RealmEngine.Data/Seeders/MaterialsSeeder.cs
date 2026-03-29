@@ -34,13 +34,16 @@ public static class MaterialsSeeder
     // Materials
     private static async Task SeedMaterialsAsync(ContentDbContext db)
     {
-        if (await db.Materials.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Materials.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllMaterials(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Materials.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        var materials = new List<Material>
-        {
+    private static Material[] GetAllMaterials(DateTimeOffset now) =>
+    [
             // Metals
             new() { Slug = "iron",       TypeKey = "metals", MaterialFamily = "metal",   DisplayName = "Iron",        RarityWeight = 90, CostScale = 1.0f,  IsActive = true, Version = 1, UpdatedAt = now, Stats = MS(7.5f,  8.0f,  0.6f, null, 5),    Traits = MT(false, false, false, true,  false, false) },
             new() { Slug = "copper",     TypeKey = "metals", MaterialFamily = "metal",   DisplayName = "Copper",      RarityWeight = 85, CostScale = 0.8f,  IsActive = true, Version = 1, UpdatedAt = now, Stats = MS(4.0f,  9.0f,  0.9f, null, 4),    Traits = MT(false, false, false, true,  false, true)  },
@@ -112,22 +115,21 @@ public static class MaterialsSeeder
             new() { Slug = "arcane-crystal",    TypeKey = "crystals", MaterialFamily = "crystal", DisplayName = "Arcane Crystal",    RarityWeight = 20, CostScale = 7.0f,  IsActive = true, Version = 1, UpdatedAt = now, Stats = MS(7.5f, 3.0f, 0.9f, 0.9f, 300),  Traits = MT(false, false, true,  true, false, false) },
             new() { Slug = "void-crystal",      TypeKey = "crystals", MaterialFamily = "crystal", DisplayName = "Void Crystal",      RarityWeight = 8,  CostScale = 18.0f, IsActive = true, Version = 1, UpdatedAt = now, Stats = MS(8.0f, 3.2f, 1.0f, 1.0f, 800),  Traits = MT(false, false, true,  true, false, false) },
             new() { Slug = "eternal-crystal",   TypeKey = "crystals", MaterialFamily = "crystal", DisplayName = "Eternal Crystal",   RarityWeight = 3,  CostScale = 40.0f, IsActive = true, Version = 1, UpdatedAt = now, Stats = MS(9.0f, 3.5f, 1.0f, 1.0f, 2000), Traits = MT(false, false, true,  true, false, false) },
-        };
-
-        db.Materials.AddRange(materials);
-        await db.SaveChangesAsync();
-    }
+    ];
 
     // Material Properties
     private static async Task SeedMaterialPropertiesAsync(ContentDbContext db)
     {
-        if (await db.MaterialProperties.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.MaterialProperties.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllMaterialProperties(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.MaterialProperties.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        var props = new List<MaterialProperty>
-        {
+    private static MaterialProperty[] GetAllMaterialProperties(DateTimeOffset now) =>
+    [
             // Metals
             new() { Slug = "iron",       TypeKey = "metals", MaterialFamily = "metal",   DisplayName = "Iron",       RarityWeight = 90, CostScale = 1.0f,  IsActive = true, Version = 1, UpdatedAt = now, Stats = MPS(7.5f,  8.0f,  0.6f, null, 0.80f, 5),    Traits = MPT(false, false, false, false, false, false, true)  },
             new() { Slug = "copper",     TypeKey = "metals", MaterialFamily = "metal",   DisplayName = "Copper",     RarityWeight = 85, CostScale = 0.8f,  IsActive = true, Version = 1, UpdatedAt = now, Stats = MPS(4.0f,  9.0f,  0.9f, null, 0.60f, 4),    Traits = MPT(true,  false, false, false, false, false, true)  },
@@ -199,9 +201,5 @@ public static class MaterialsSeeder
             new() { Slug = "arcane-crystal",    TypeKey = "crystals", MaterialFamily = "crystal", DisplayName = "Arcane Crystal",    RarityWeight = 20, CostScale = 7.0f,  IsActive = true, Version = 1, UpdatedAt = now, Stats = MPS(7.5f, 3.0f, 0.9f, 0.9f, 0.85f, 300),  Traits = MPT(true,  false, true,  false, true, false, true) },
             new() { Slug = "void-crystal",      TypeKey = "crystals", MaterialFamily = "crystal", DisplayName = "Void Crystal",      RarityWeight = 8,  CostScale = 18.0f, IsActive = true, Version = 1, UpdatedAt = now, Stats = MPS(8.0f, 3.2f, 1.0f, 1.0f, 0.90f, 800),  Traits = MPT(true,  false, true,  false, true, false, true) },
             new() { Slug = "eternal-crystal",   TypeKey = "crystals", MaterialFamily = "crystal", DisplayName = "Eternal Crystal",   RarityWeight = 3,  CostScale = 40.0f, IsActive = true, Version = 1, UpdatedAt = now, Stats = MPS(9.0f, 3.5f, 1.0f, 1.0f, 0.98f, 2000), Traits = MPT(true,  false, true,  false, true, false, true) },
-        };
-
-        db.MaterialProperties.AddRange(props);
-        await db.SaveChangesAsync();
-    }
+    ];
 }

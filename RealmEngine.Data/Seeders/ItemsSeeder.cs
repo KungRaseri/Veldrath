@@ -30,13 +30,16 @@ public static class ItemsSeeder
     // Items
     private static async Task SeedItemsAsync(ContentDbContext db)
     {
-        if (await db.Items.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Items.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllItems(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Items.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        var items = new List<Item>
-        {
+    private static Item[] GetAllItems(DateTimeOffset now) =>
+    [
             // Consumables — single-use, stackable
             new() { Slug = "health-potion",      TypeKey = "consumables", ItemType = "consumable", DisplayName = "Health Potion",      RarityWeight = 90, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(0.10f, 20, 15,  50.0f, null),  Traits = ITr(true, false, false, false, true, false) },
             new() { Slug = "mana-potion",        TypeKey = "consumables", ItemType = "consumable", DisplayName = "Mana Potion",        RarityWeight = 90, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(0.10f, 20, 15,  40.0f, null),  Traits = ITr(true, false, false, false, true, false) },
@@ -107,22 +110,21 @@ public static class ItemsSeeder
                 Stats = new() { Weight = 15.0f, Value = 80, ArmorRating = 8, Durability = 150, MovementPenalty = 0.1f },
                 Traits = new() { StealthPenalty = true },
             },
-        };
-
-        db.Items.AddRange(items);
-        await db.SaveChangesAsync();
-    }
+    ];
 
     // Enchantments
     private static async Task SeedEnchantmentsAsync(ContentDbContext db)
     {
-        if (await db.Enchantments.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Enchantments.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllEnchantments(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Enchantments.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        var enchantments = new List<Enchantment>
-        {
+    private static Enchantment[] GetAllEnchantments(DateTimeOffset now) =>
+    [
             // Weapon enchantments — elemental and martial
             new() { Slug = "flame-strike",        TypeKey = "elemental", TargetSlot = "weapon", DisplayName = "Flame Strike",        RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now, Stats = new() { BonusDamage = 8,  BonusArmor = null, BonusStrength = null, BonusDexterity = null, BonusIntelligence = null, ManaCostReduction = null,  AttackSpeedBonus = null,  Value = 30  }, Traits = ETr(false, true,  false, false, false) },
             new() { Slug = "frostbite-edge",      TypeKey = "elemental", TargetSlot = "weapon", DisplayName = "Frostbite Edge",      RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now, Stats = new() { BonusDamage = 6,  BonusArmor = null, BonusStrength = null, BonusDexterity = null, BonusIntelligence = null, ManaCostReduction = null,  AttackSpeedBonus = 0.10f, Value = 35  }, Traits = ETr(false, true,  false, false, false) },
@@ -137,9 +139,5 @@ public static class ItemsSeeder
             // Any-slot enchantments — caster-oriented
             new() { Slug = "arcane-binding",  TypeKey = "arcane", TargetSlot = "any", DisplayName = "Arcane Binding",  RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now, Stats = new() { BonusDamage = null, BonusArmor = null, BonusStrength = 3,    BonusDexterity = 3,    BonusIntelligence = 3,  ManaCostReduction = null,  AttackSpeedBonus = null, Value = 120 }, Traits = ETr(false, false, true,  false, false) },
             new() { Slug = "runic-resonance", TypeKey = "arcane", TargetSlot = "any", DisplayName = "Runic Resonance", RarityWeight = 15, IsActive = true, Version = 1, UpdatedAt = now, Stats = new() { BonusDamage = null, BonusArmor = null, BonusStrength = null, BonusDexterity = null, BonusIntelligence = 10, ManaCostReduction = 0.10f, AttackSpeedBonus = null, Value = 350 }, Traits = ETr(false, true,  true,  false, true)  },
-        };
-
-        db.Enchantments.AddRange(enchantments);
-        await db.SaveChangesAsync();
-    }
+    ];
 }
