@@ -10,12 +10,16 @@ public static class LootTablesSeeder
     /// <summary>Seeds all loot table rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.LootTables.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.LootTables.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllLootTables(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.LootTables.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.LootTables.AddRange(
+    private static LootTable[] GetAllLootTables(DateTimeOffset now) =>
+    [
             // Enemy drops
             new LootTable
             {
@@ -191,8 +195,5 @@ public static class LootTablesSeeder
                     },
                 ],
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 }

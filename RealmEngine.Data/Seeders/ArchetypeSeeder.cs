@@ -17,12 +17,16 @@ public static class ArchetypeSeeder
     // Enemies
     private static async Task SeedEnemiesAsync(ContentDbContext db)
     {
-        if (await db.ActorArchetypes.AnyAsync(a => a.Traits != null && a.Traits.Hostile == true))
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.ActorArchetypes.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllEnemyArchetypes(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.ActorArchetypes.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.ActorArchetypes.AddRange(
+    private static ActorArchetype[] GetAllEnemyArchetypes(DateTimeOffset now) =>
+    [
             new ActorArchetype
             {
                 Slug         = "goblin-scout",
@@ -112,20 +116,22 @@ public static class ArchetypeSeeder
                     ColdImmune   = false,
                     PoisonImmune = false,
                 },
-            });
-
-        await db.SaveChangesAsync();
-    }
+            }
+    ];
 
     // NPCs
     private static async Task SeedNpcsAsync(ContentDbContext db)
     {
-        if (await db.ActorArchetypes.AnyAsync(a => a.Traits != null && a.Traits.Shopkeeper == true))
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.ActorArchetypes.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllNpcArchetypes(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.ActorArchetypes.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.ActorArchetypes.AddRange(
+    private static ActorArchetype[] GetAllNpcArchetypes(DateTimeOffset now) =>
+    [
             new ActorArchetype
             {
                 Slug         = "village-blacksmith",
@@ -191,8 +197,6 @@ public static class ArchetypeSeeder
                     Ranged      = false,
                     Caster      = false,
                 },
-            });
-
-        await db.SaveChangesAsync();
-    }
+        }
+    ];
 }

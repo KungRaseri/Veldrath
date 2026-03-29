@@ -10,12 +10,16 @@ public static class QuestsSeeder
     /// <summary>Seeds all quest rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        if (await db.Quests.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Quests.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllQuests(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Quests.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Quests.AddRange(
+    private static Quest[] GetAllQuests(DateTimeOffset now) =>
+    [
             // Combat quest
             new Quest
             {
@@ -175,8 +179,5 @@ public static class QuestsSeeder
                     ],
                 },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 }

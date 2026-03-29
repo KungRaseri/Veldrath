@@ -18,12 +18,16 @@ public static class PowersSeeder
     // Powers
     private static async Task SeedPowersAsync(ContentDbContext db)
     {
-        if (await db.Powers.AnyAsync())
-            return;
-
         var now = DateTimeOffset.UtcNow;
+        var existing = await db.Powers.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
+        var missing = GetAllPowers(now).Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count == 0) return;
+        db.Powers.AddRange(missing);
+        await db.SaveChangesAsync();
+    }
 
-        db.Powers.AddRange(
+    private static Power[] GetAllPowers(DateTimeOffset now) =>
+    [
             // Warrior active — heavy melee strike
             new Power
             {
@@ -197,17 +201,11 @@ public static class PowersSeeder
                     IsPassive      = false,
                 },
             }
-        );
-
-        await db.SaveChangesAsync();
-    }
+    ];
 
     // Class Power Unlocks
     private static async Task SeedClassPowerUnlocksAsync(ContentDbContext db)
     {
-        if (await db.ClassPowerUnlocks.AnyAsync())
-            return;
-
         var warrior = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "warrior");
         var mage    = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "mage");
 
@@ -220,30 +218,46 @@ public static class PowersSeeder
             toughness is null || fireball is null || arcaneFocus is null)
             return;
 
-        db.ClassPowerUnlocks.AddRange(
-            new ClassPowerUnlock { ClassId = warrior.Id, PowerId = powerStrike.Id, LevelRequired = 1, Rank = 1 },
-            new ClassPowerUnlock { ClassId = warrior.Id, PowerId = toughness.Id,   LevelRequired = 1, Rank = 1 },
-            new ClassPowerUnlock { ClassId = mage.Id,    PowerId = fireball.Id,    LevelRequired = 1, Rank = 1 },
-            new ClassPowerUnlock { ClassId = mage.Id,    PowerId = arcaneFocus.Id, LevelRequired = 1, Rank = 1 }
-        );
-
+        var existingUnlocks = (await db.ClassPowerUnlocks.AsNoTracking()
+                .Select(u => new { u.ClassId, u.PowerId }).ToListAsync())
+            .Select(u => (u.ClassId, u.PowerId)).ToHashSet();
+        var missingUnlocks = GetAllClassPowerUnlocks(warrior.Id, mage.Id, powerStrike.Id, toughness.Id, fireball.Id, arcaneFocus.Id)
+            .Where(u => !existingUnlocks.Contains((u.ClassId, u.PowerId))).ToList();
+        if (missingUnlocks.Count == 0) return;
+        db.ClassPowerUnlocks.AddRange(missingUnlocks);
         await db.SaveChangesAsync();
     }
+
+    private static ClassPowerUnlock[] GetAllClassPowerUnlocks(
+        Guid warriorId, Guid mageId, Guid powerStrikeId, Guid toughnessId, Guid fireballId, Guid arcaneFocusId) =>
+    [
+        new ClassPowerUnlock { ClassId = warriorId, PowerId = powerStrikeId, LevelRequired = 1, Rank = 1 },
+        new ClassPowerUnlock { ClassId = warriorId, PowerId = toughnessId,   LevelRequired = 1, Rank = 1 },
+        new ClassPowerUnlock { ClassId = mageId,    PowerId = fireballId,    LevelRequired = 1, Rank = 1 },
+        new ClassPowerUnlock { ClassId = mageId,    PowerId = arcaneFocusId, LevelRequired = 1, Rank = 1 },
+    ];
 
     // Species Power Pools
     private static async Task SeedSpeciesPowerPoolsAsync(ContentDbContext db)
     {
-        if (await db.SpeciesPowerPools.AnyAsync())
-            return;
-
         var wolf = await db.Species.FirstOrDefaultAsync(s => s.Slug == "wolf");
         var bite = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "bite");
 
         if (wolf is null || bite is null)
             return;
 
-        db.SpeciesPowerPools.Add(new SpeciesPowerPool { SpeciesId = wolf.Id, PowerId = bite.Id });
-
+        var existingPools = (await db.SpeciesPowerPools.AsNoTracking()
+                .Select(u => new { u.SpeciesId, u.PowerId }).ToListAsync())
+            .Select(u => (u.SpeciesId, u.PowerId)).ToHashSet();
+        var missingPools = GetAllSpeciesPowerPools(wolf.Id, bite.Id)
+            .Where(u => !existingPools.Contains((u.SpeciesId, u.PowerId))).ToList();
+        if (missingPools.Count == 0) return;
+        db.SpeciesPowerPools.AddRange(missingPools);
         await db.SaveChangesAsync();
     }
+
+    private static SpeciesPowerPool[] GetAllSpeciesPowerPools(Guid wolfId, Guid biteId) =>
+    [
+        new SpeciesPowerPool { SpeciesId = wolfId, PowerId = biteId },
+    ];
 }
