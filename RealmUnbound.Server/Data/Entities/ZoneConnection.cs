@@ -12,6 +12,9 @@ public class ZoneConnection
     /// <summary>Slug of the destination zone.</summary>
     public string ToZoneId { get; set; } = string.Empty;
 
+    /// <summary>When <see langword="true"/>, this edge is a hidden/secret passage and must not appear on the world map.</summary>
+    public bool IsHidden { get; set; }
+
     // Navigation
     /// <summary>Origin zone.</summary>
     public Zone FromZone { get; set; } = null!;

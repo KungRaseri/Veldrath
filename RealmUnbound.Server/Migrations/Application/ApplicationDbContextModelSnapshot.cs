@@ -702,6 +702,9 @@ namespace RealmUnbound.Server.Migrations.Application
                     b.Property<string>("ToZoneId")
                         .HasColumnType("character varying(64)");
 
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
                     b.HasKey("FromZoneId", "ToZoneId");
 
                     b.HasIndex("ToZoneId");

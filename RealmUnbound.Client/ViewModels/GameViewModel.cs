@@ -795,6 +795,7 @@ public class GameViewModel : ViewModelBase
     private void DoOpenMap()
     {
         var mapVm = new MapViewModel(_zoneService, _currentZoneId, _regionId, _currentZoneLocationSlug, _characterId);
+        mapVm.CloseCommand.Subscribe(_ => _navigation.NavigateTo(this));
         _navigation.NavigateTo(mapVm);
     }
 

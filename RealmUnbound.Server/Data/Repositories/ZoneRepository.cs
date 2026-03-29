@@ -19,7 +19,7 @@ public class ZoneRepository(ApplicationDbContext db) : IZoneRepository
 
     /// <inheritdoc/>
     public Task<List<ZoneConnection>> GetConnectionsAsync(string zoneId) =>
-        db.ZoneConnections.Where(c => c.FromZoneId == zoneId).ToListAsync();
+        db.ZoneConnections.Where(c => c.FromZoneId == zoneId && !c.IsHidden).ToListAsync();
 }
 
 public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionRepository

@@ -133,9 +133,9 @@ public static class ApplicationDataSeeder
             new ZoneConnection { FromZoneId = "saltcliff-heights", ToZoneId = "tidewrack-flats"  },
             new ZoneConnection { FromZoneId = "saltcliff-heights", ToZoneId = "sunken-name"      },
             new ZoneConnection { FromZoneId = "sunken-name",       ToZoneId = "saltcliff-heights"},
-            // Greymoor → Cinderplain border
-            new ZoneConnection { FromZoneId = "barrow-deeps",      ToZoneId = "skarhold"         },
-            new ZoneConnection { FromZoneId = "skarhold",          ToZoneId = "barrow-deeps"     },
+            // Greymoor → Cinderplain border (hidden secret passage — must not appear on world map)
+            new ZoneConnection { FromZoneId = "barrow-deeps",      ToZoneId = "skarhold",         IsHidden = true },
+            new ZoneConnection { FromZoneId = "skarhold",          ToZoneId = "barrow-deeps",     IsHidden = true },
             // Cinderplain internal
             new ZoneConnection { FromZoneId = "skarhold",          ToZoneId = "ashfields"        },
             new ZoneConnection { FromZoneId = "ashfields",         ToZoneId = "skarhold"         },
