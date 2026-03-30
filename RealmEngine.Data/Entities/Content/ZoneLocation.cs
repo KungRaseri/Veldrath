@@ -16,6 +16,9 @@ public class ZoneLocation : ContentBase
     public ZoneLocationStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags classifying this location.</summary>
     public ZoneLocationTraits Traits { get; set; } = new();
+
+    /// <summary>Weighted archetype entries that determine what actors can spawn at this location.</summary>
+    public IList<ActorPoolEntry> ActorPool { get; set; } = [];
 }
 
 /// <summary>Size, danger, and level-range statistics owned by a ZoneLocation.</summary>
@@ -54,6 +57,16 @@ public class ZoneLocationTraits
     public string? UnlockKey { get; set; }
     /// <summary>Character level threshold required for passive skill-check discovery (and target DC for active search rolls).</summary>
     public int? DiscoverThreshold { get; set; }
+}
+
+/// <summary>A weighted entry in an actor pool for a zone location.</summary>
+public class ActorPoolEntry
+{
+    /// <summary>Slug of the archetype that can spawn at this location.</summary>
+    public string ArchetypeSlug { get; set; } = string.Empty;
+
+    /// <summary>Relative spawn weight for this archetype (higher = more likely).</summary>
+    public int Weight { get; set; } = 1;
 }
 
 /// <summary>A directed traversal edge linking one ZoneLocation to another location or zone.</summary>

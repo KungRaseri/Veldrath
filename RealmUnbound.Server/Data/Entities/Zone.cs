@@ -35,6 +35,9 @@ public class Zone
     /// <summary>False for zones that are unlocked through progression or quests rather than open exploration.</summary>
     public bool IsDiscoverable { get; set; } = true;
 
+    /// <summary>Accumulated gold contributed to the rescue fund from player deaths in this zone.</summary>
+    public long RescueFundTotal { get; set; }
+
     // FK
     /// <summary>The region this zone belongs to.</summary>
     public string RegionId { get; set; } = string.Empty;

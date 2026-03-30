@@ -13,7 +13,13 @@ public record ZoneLocationEntry(
     bool IsHidden = false,
     string? UnlockType = null,
     string? UnlockKey = null,
-    int? DiscoverThreshold = null);
+    int? DiscoverThreshold = null,
+    IReadOnlyList<ActorPoolEntry>? ActorPool = null);
+
+/// <summary>A weighted entry in a zone location actor pool.</summary>
+/// <param name="ArchetypeSlug">Slug of the archetype that can spawn at this location.</param>
+/// <param name="Weight">Relative spawn weight (higher = more likely).</param>
+public record ActorPoolEntry(string ArchetypeSlug, int Weight);
 
 /// <summary>A traversal edge linking one ZoneLocation to another location or zone.</summary>
 public record ZoneLocationConnectionEntry(

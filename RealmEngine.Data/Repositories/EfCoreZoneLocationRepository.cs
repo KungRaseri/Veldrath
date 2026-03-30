@@ -129,7 +129,8 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
     private static ZoneLocationEntry MapToModel(Entities.ZoneLocation w) =>
         new(w.Slug, w.DisplayName ?? w.Slug, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight,
             w.Stats.MinLevel, w.Stats.MaxLevel,
-            w.Traits.IsHidden ?? false, w.Traits.UnlockType, w.Traits.UnlockKey, w.Traits.DiscoverThreshold);
+            w.Traits.IsHidden ?? false, w.Traits.UnlockType, w.Traits.UnlockKey, w.Traits.DiscoverThreshold,
+            w.ActorPool.Select(e => new ActorPoolEntry(e.ArchetypeSlug, e.Weight)).ToList());
 
     private static ZoneLocationConnectionEntry MapConnectionToModel(Entities.ZoneLocationConnection c) =>
         new(c.Id, c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable, c.IsHidden);

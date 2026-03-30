@@ -378,4 +378,56 @@ public class EfCoreZoneLocationRepositoryTests
         result.Should().Contain(c => c.ToLocationSlug == "unlocked-room");
         result.Should().NotContain(c => c.ToLocationSlug == "locked-room");
     }
+
+    // ── ActorPool ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_MapsActorPool_WhenPopulated()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.Add(new ZoneLocation
+        {
+            Slug = "darkwood-forest", ZoneId = "fenwick-crossing", LocationType = "dungeon", IsActive = true, DisplayName = "Darkwood",
+            ActorPool = [new ActorPoolEntry { ArchetypeSlug = "wolf", Weight = 3 }, new ActorPoolEntry { ArchetypeSlug = "bandit", Weight = 1 }]
+        });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetAllAsync();
+
+        var entry = result.Should().ContainSingle().Subject;
+        entry.ActorPool.Should().HaveCount(2);
+        entry.ActorPool!.Should().Contain(a => a.ArchetypeSlug == "wolf" && a.Weight == 3);
+        entry.ActorPool!.Should().Contain(a => a.ArchetypeSlug == "bandit" && a.Weight == 1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_MapsEmptyActorPool_WhenNoEntries()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.Add(MakeLoc("empty-loc"));
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetAllAsync();
+
+        result.Should().ContainSingle().Subject.ActorPool.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_MapsActorPool()
+    {
+        await using var db = CreateDbContext();
+        db.ZoneLocations.Add(new ZoneLocation
+        {
+            Slug = "iron-keep", ZoneId = "fenwick-crossing", LocationType = "dungeon", IsActive = true, DisplayName = "Iron Keep",
+            ActorPool = [new ActorPoolEntry { ArchetypeSlug = "skeleton", Weight = 5 }]
+        });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("iron-keep");
+
+        result!.ActorPool.Should().ContainSingle(a => a.ArchetypeSlug == "skeleton" && a.Weight == 5);
+    }
 }

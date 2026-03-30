@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
 using RealmEngine.Core.Features.SaveLoad;
@@ -18,6 +19,7 @@ public class AttackEnemyHandlerTests
     private readonly Mock<CombatService> _mockCombatService;
     private readonly Mock<IMediator> _mockMediator;
     private readonly Mock<SaveGameService> _mockSaveGameService;
+    private readonly Mock<ICombatSettings> _mockCombatSettings;
     private readonly AttackEnemyHandler _handler;
 
     public AttackEnemyHandlerTests()
@@ -25,7 +27,9 @@ public class AttackEnemyHandlerTests
         _mockCombatService = new Mock<CombatService>();
         _mockMediator = new Mock<IMediator>();
         _mockSaveGameService = new Mock<SaveGameService>();
-        _handler = new AttackEnemyHandler(_mockCombatService.Object, _mockMediator.Object, _mockSaveGameService.Object, NullLogger<AttackEnemyHandler>.Instance);
+        _mockCombatSettings = new Mock<ICombatSettings>();
+        _mockCombatSettings.Setup(s => s.GoldXPMultiplier).Returns(1.0);
+        _handler = new AttackEnemyHandler(_mockCombatService.Object, _mockMediator.Object, _mockSaveGameService.Object, _mockCombatSettings.Object, NullLogger<AttackEnemyHandler>.Instance);
     }
 
     [Fact]
@@ -37,9 +41,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 15, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -62,9 +63,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 15, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -89,9 +87,7 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 50, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.5 });
+        _mockCombatSettings.Setup(s => s.GoldXPMultiplier).Returns(1.5);
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -114,9 +110,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 30, IsCritical = true };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -138,9 +131,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 12, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -162,9 +152,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 10, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -191,9 +178,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 18, IsCritical = true };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = combatLog };
 
@@ -213,9 +197,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = 100, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 
@@ -246,9 +227,6 @@ public class AttackEnemyHandlerTests
         var combatResult = new CombatResult { Damage = damage, IsCritical = false };
 
         _mockCombatService.Setup(s => s.ExecutePlayerAttack(player, enemy, false)).ReturnsAsync(combatResult);
-        
-        _mockSaveGameService.Setup(s => s.GetDifficultySettings())
-            .Returns(new DifficultySettings { GoldXPMultiplier = 1.0 });
 
         var command = new AttackEnemyCommand { Player = player, Enemy = enemy, CombatLog = null };
 

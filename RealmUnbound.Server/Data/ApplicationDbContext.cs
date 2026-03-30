@@ -47,6 +47,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<FoundryNotification> FoundryNotifications => Set<FoundryNotification>();
     /// <summary>News and system announcements displayed in the client news panel.</summary>
     public DbSet<Announcement> Announcements => Set<Announcement>();
+    /// <summary>Server-wide key/value counters (e.g. global rescue fund total).</summary>
+    public DbSet<GlobalStat> GlobalStats => Set<GlobalStat>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -61,6 +63,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasIndex(c => new { c.AccountId, c.SlotIndex }).IsUnique();
             e.Property(c => c.Attributes).HasColumnType("text");
             e.Property(c => c.EquipmentBlob).HasColumnType("text").HasDefaultValue("{}");
+            e.Property(c => c.DifficultyMode).HasMaxLength(16).HasDefaultValue("normal");
             e.HasOne(c => c.Account)
              .WithMany()
              .HasForeignKey(c => c.AccountId)
@@ -131,6 +134,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasKey(z => z.Id);
             e.Property(z => z.Id).HasMaxLength(64);
             e.Property(z => z.Type).HasConversion<string>();
+            e.Property(z => z.RescueFundTotal).HasDefaultValue(0L);
             e.HasOne(z => z.Region)
              .WithMany(r => r.Zones)
              .HasForeignKey(z => z.RegionId)
@@ -230,6 +234,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(a => a.Title).HasMaxLength(200);
             e.Property(a => a.Category).HasMaxLength(64);
             e.HasIndex(a => new { a.IsActive, a.PublishedAt });
+        });
+
+        builder.Entity<GlobalStat>(e =>
+        {
+            e.HasKey(g => g.Key);
+            e.Property(g => g.Key).HasMaxLength(64);
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

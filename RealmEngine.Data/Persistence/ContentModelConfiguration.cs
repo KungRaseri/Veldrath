@@ -269,6 +269,7 @@ public static class ContentModelConfiguration
             e.Property(x => x.LocationType).HasMaxLength(32).IsRequired();
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
+            e.OwnsMany(x => x.ActorPool, o => o.ToJson("ActorPool"));
         });
 
         // Zone location traversal edges

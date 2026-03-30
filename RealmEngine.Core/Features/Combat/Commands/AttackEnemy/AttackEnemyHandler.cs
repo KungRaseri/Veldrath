@@ -1,4 +1,5 @@
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
     private readonly CombatService _combatService;
     private readonly IMediator _mediator;
     private readonly ISaveGameService _saveGameService;
+    private readonly ICombatSettings _combatSettings;
     private readonly ILogger<AttackEnemyHandler> _logger;
 
     /// <summary>
@@ -22,12 +24,14 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
     /// <param name="combatService">The combat service.</param>
     /// <param name="mediator">The mediator for publishing events.</param>
     /// <param name="saveGameService">The save game service.</param>
+    /// <param name="combatSettings">The combat difficulty settings.</param>
     /// <param name="logger">The logger.</param>
-    public AttackEnemyHandler(CombatService combatService, IMediator mediator, ISaveGameService saveGameService, ILogger<AttackEnemyHandler> logger)
+    public AttackEnemyHandler(CombatService combatService, IMediator mediator, ISaveGameService saveGameService, ICombatSettings combatSettings, ILogger<AttackEnemyHandler> logger)
     {
         _combatService = combatService;
         _mediator = mediator;
         _saveGameService = saveGameService;
+        _combatSettings = combatSettings;
         _logger = logger;
     }
 
@@ -66,9 +70,8 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
         if (isDefeated)
         {
             // Award gold and experience with difficulty multiplier
-            var difficulty = _saveGameService.GetDifficultySettings();
-            xpGained = (int)(enemy.XP * difficulty.GoldXPMultiplier);
-            goldGained = (int)(enemy.GoldReward * difficulty.GoldXPMultiplier);
+            xpGained = (int)(enemy.XP * _combatSettings.GoldXPMultiplier);
+            goldGained = (int)(enemy.GoldReward * _combatSettings.GoldXPMultiplier);
             
             player.Experience += xpGained;
             player.Gold += goldGained;
