@@ -1,9 +1,11 @@
+using RealmEngine.Shared.Abstractions;
+
 namespace RealmEngine.Shared.Models;
 
 /// <summary>
 /// Defines difficulty settings and modifiers for different game modes.
 /// </summary>
-public class DifficultySettings
+public class DifficultySettings : ICombatSettings
 {
     /// <summary>Gets or sets the difficulty name.</summary>
     public string Name { get; set; } = "Normal";

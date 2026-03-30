@@ -61,6 +61,12 @@ public class Character
     /// <summary>Soft-delete timestamp. Non-null means the character has been deleted.</summary>
     public DateTimeOffset? DeletedAt { get; set; }
 
+    /// <summary>
+    /// Difficulty mode chosen at character creation: <c>"normal"</c> or <c>"hardcore"</c>.
+    /// Hardcore characters are permanently deleted on death.
+    /// </summary>
+    public string DifficultyMode { get; set; } = "normal";
+
     // Navigation
     public PlayerAccount Account { get; set; } = null!;
 }

@@ -46,10 +46,10 @@ public class CombatServiceTests
     public async Task InitializeCombat_Should_Scale_Enemy_Health_By_Difficulty()
     {
         // Arrange
-        var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, NullLogger<CombatService>.Instance, NullLoggerFactory.Instance);
-        var enemy = new Enemy { Name = "Goblin", MaxHealth = 100, Health = 50 };
         _mockSaveGameService.Setup(s => s.GetDifficultySettings())
             .Returns(new DifficultySettings { EnemyHealthMultiplier = 1.5 });
+        var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, NullLogger<CombatService>.Instance, NullLoggerFactory.Instance);
+        var enemy = new Enemy { Name = "Goblin", MaxHealth = 100, Health = 50 };
 
         // Act
         service.InitializeCombat(enemy);
@@ -279,10 +279,10 @@ public class CombatServiceTests
     public void InitializeCombat_Should_Scale_Health_Correctly(double multiplier, int expectedHealth)
     {
         // Arrange
-        var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, NullLogger<CombatService>.Instance, NullLoggerFactory.Instance);
-        var enemy = new Enemy { Name = "TestEnemy", MaxHealth = 100, Health = 100 };
         _mockSaveGameService.Setup(s => s.GetDifficultySettings())
             .Returns(new DifficultySettings { EnemyHealthMultiplier = multiplier });
+        var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, NullLogger<CombatService>.Instance, NullLoggerFactory.Instance);
+        var enemy = new Enemy { Name = "TestEnemy", MaxHealth = 100, Health = 100 };
 
         // Act
         service.InitializeCombat(enemy);

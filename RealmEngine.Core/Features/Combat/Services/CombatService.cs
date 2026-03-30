@@ -1,4 +1,5 @@
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Utilities;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ public class CombatService
 {
     private readonly Random _random = new();
     private readonly ISaveGameService _saveGameService;
+    private readonly ICombatSettings _combatSettings;
     private readonly IMediator _mediator;
     private readonly ILogger<CombatService> _logger;
     private readonly ReactivePowerService _reactivePowerService;
@@ -29,7 +31,31 @@ public class CombatService
     private readonly ItemGenerator? _itemGenerator;
 
     /// <summary>
-    /// Initialize the combat service with required dependencies.
+    /// Initializes a new instance of <see cref="CombatService"/> for server/multiplayer use.
+    /// Receives <see cref="ICombatSettings"/> directly — no save-game context required.
+    /// </summary>
+    public CombatService(
+        ICombatSettings combatSettings,
+        IMediator mediator,
+        PowerDataService powerCatalogService,
+        ILogger<CombatService> logger,
+        ILoggerFactory loggerFactory,
+        ItemGenerator? itemGenerator = null)
+    {
+        _saveGameService = null!;
+        _combatSettings = combatSettings;
+        _mediator = mediator;
+        _logger = logger;
+        _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
+        _enemyPowerAI = new EnemyPowerAIService(powerCatalogService);
+        _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService);
+        _itemGenerator = itemGenerator;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="CombatService"/> for single-player use.
+    /// Extracts <see cref="ICombatSettings"/> from the active save game and retains
+    /// <paramref name="saveGameService"/> for quest-progress tracking during combat.
     /// </summary>
     public CombatService(
         ISaveGameService saveGameService,
@@ -40,6 +66,7 @@ public class CombatService
         ItemGenerator? itemGenerator = null)
     {
         _saveGameService = saveGameService;
+        _combatSettings = saveGameService.GetDifficultySettings();
         _mediator = mediator;
         _logger = logger;
         _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
@@ -54,6 +81,7 @@ public class CombatService
     protected CombatService()
     {
         _saveGameService = null!;
+        _combatSettings = null!;
         _mediator = null!;
         _logger = NullLogger<CombatService>.Instance;
         _reactivePowerService = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance);
@@ -67,14 +95,12 @@ public class CombatService
     /// </summary>
     public virtual void InitializeCombat(Enemy enemy)
     {
-        var difficulty = _saveGameService.GetDifficultySettings();
-
         // Scale enemy health based on difficulty
-        enemy.MaxHealth = (int)(enemy.MaxHealth * difficulty.EnemyHealthMultiplier);
+        enemy.MaxHealth = (int)(enemy.MaxHealth * _combatSettings.EnemyHealthMultiplier);
         enemy.Health = enemy.MaxHealth;
 
-        _logger.LogInformation("Enemy {Name} initialized with {Health} HP (difficulty: {Difficulty}, multiplier: {Multiplier})",
-            enemy.Name, enemy.Health, difficulty.Name, difficulty.EnemyHealthMultiplier);
+        _logger.LogInformation("Enemy {Name} initialized with {Health} HP (health multiplier: {Multiplier})",
+            enemy.Name, enemy.Health, _combatSettings.EnemyHealthMultiplier);
     }
 
     /// <summary>
@@ -152,8 +178,7 @@ public class CombatService
         int finalDamage = Math.Max(1, baseDamage - enemy.GetPhysicalDefense());
 
         // Apply difficulty multiplier to player damage
-        var difficulty = _saveGameService.GetDifficultySettings();
-        finalDamage = (int)(finalDamage * difficulty.PlayerDamageMultiplier);
+        finalDamage = (int)(finalDamage * _combatSettings.PlayerDamageMultiplier);
         finalDamage = Math.Max(1, finalDamage); // Ensure at least 1 damage
 
         // Apply damage to enemy
@@ -381,8 +406,7 @@ public class CombatService
         int finalDamage = Math.Max(1, baseDamage - playerDefense);
 
         // Apply difficulty multiplier to enemy damage
-        var difficulty = _saveGameService.GetDifficultySettings();
-        finalDamage = (int)(finalDamage * difficulty.EnemyDamageMultiplier);
+        finalDamage = (int)(finalDamage * _combatSettings.EnemyDamageMultiplier);
         finalDamage = Math.Max(1, finalDamage); // Ensure at least 1 damage
 
         // Apply damage to player

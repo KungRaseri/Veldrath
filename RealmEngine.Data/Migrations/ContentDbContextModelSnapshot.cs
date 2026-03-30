@@ -2656,6 +2656,30 @@ namespace RealmEngine.Data.Migrations
                                 .HasForeignKey("ZoneLocationId");
                         });
 
+                    b.OwnsMany("RealmEngine.Data.Entities.ActorPoolEntry", "ActorPool", b1 =>
+                        {
+                            b1.Property<Guid>("ZoneLocationId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<string>("ArchetypeSlug")
+                                .IsRequired();
+
+                            b1.Property<int>("Weight");
+
+                            b1.HasKey("ZoneLocationId", "__synthesizedOrdinal");
+
+                            b1.ToTable("ZoneLocations");
+
+                            b1.ToJson("ActorPool");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ZoneLocationId");
+                        });
+
+                    b.Navigation("ActorPool");
+
                     b.Navigation("Stats")
                         .IsRequired();
 

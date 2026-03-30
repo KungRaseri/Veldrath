@@ -143,6 +143,7 @@ public static class ServiceCollectionExtensions
         // Register interfaces to implementations
         services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
         services.AddScoped<ISaveGameService, SaveGameService>();
+        services.AddScoped<ICombatSettings>(sp => sp.GetRequiredService<ISaveGameService>().GetDifficultySettings());
         services.AddScoped<IPassiveBonusCalculator, PassiveBonusCalculator>();
         
         // Register repositories (interfaces defined in Shared, implementations in Data)
@@ -221,7 +222,16 @@ public static class ServiceCollectionExtensions
         // Register feature services (concrete implementations)
         services.AddScoped<SaveGameService>();
         services.AddScoped<LoadGameService>();
-        services.AddScoped<CombatService>();
+        // CombatService has two public constructors (ICombatSettings for server, ISaveGameService for single-player).
+        // Use an explicit factory to select the single-player constructor and avoid DI ambiguity.
+        // The server registers its own binding after calling AddRealmEngineCore().
+        services.AddScoped<CombatService>(sp => new CombatService(
+            sp.GetRequiredService<ISaveGameService>(),
+            sp.GetRequiredService<IMediator>(),
+            sp.GetRequiredService<PowerDataService>(),
+            sp.GetRequiredService<ILogger<CombatService>>(),
+            sp.GetRequiredService<ILoggerFactory>(),
+            sp.GetService<ItemGenerator>()));
         services.AddScoped<CraftingService>();
         services.AddScoped<ExplorationService>();
         services.AddScoped<CharacterInitializationService>();

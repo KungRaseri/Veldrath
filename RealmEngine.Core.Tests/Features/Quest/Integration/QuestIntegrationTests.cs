@@ -69,6 +69,7 @@ public class QuestIntegrationTests
         services.AddSingleton(mockRepository.Object);
         services.AddSingleton<SaveGameService>();
         services.AddSingleton<ISaveGameService>(sp => sp.GetRequiredService<SaveGameService>());
+        services.AddSingleton<ICombatSettings>(sp => sp.GetRequiredService<ISaveGameService>().GetDifficultySettings());
         services.AddSingleton<MainQuestService>();
         services.AddSingleton<QuestService>();
         services.AddSingleton<QuestProgressService>();
@@ -82,7 +83,12 @@ public class QuestIntegrationTests
         services.AddSingleton<SpellCastingService>();
         services.AddSingleton(mockSkillCatalog.Object);
         services.AddSingleton<SkillProgressionService>();
-        services.AddSingleton<CombatService>();
+        services.AddSingleton<CombatService>(sp => new CombatService(
+            sp.GetRequiredService<ISaveGameService>(),
+            sp.GetRequiredService<IMediator>(),
+            sp.GetRequiredService<PowerDataService>(),
+            sp.GetRequiredService<ILogger<CombatService>>(),
+            sp.GetRequiredService<ILoggerFactory>()));
 
         _serviceProvider = services.BuildServiceProvider();
         _mediator = _serviceProvider.GetRequiredService<IMediator>();
