@@ -66,6 +66,10 @@ services:
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
       # Use the Docker service name — "localhost" inside the container refers to itself, not the server.
       - Discord__ServerBaseUrl=http://server:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   foundry:

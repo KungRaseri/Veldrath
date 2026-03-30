@@ -171,6 +171,15 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IMaterialRepository, EfCoreMaterialRepository>();
             services.AddScoped<IEquipmentSetRepository, EfCoreEquipmentSetRepository>();
             services.AddScoped<IInventoryService, EfCoreInventoryService>();
+            services.AddScoped<IItemRepository, EfCoreItemRepository>();
+            services.AddScoped<IEnchantmentRepository, EfCoreEnchantmentRepository>();
+            services.AddScoped<IOrganizationRepository, EfCoreOrganizationRepository>();
+            services.AddScoped<IZoneLocationRepository, EfCoreZoneLocationRepository>();
+            services.AddScoped<IDialogueRepository, EfCoreDialogueRepository>();
+            services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();
+            services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();
+            services.AddScoped<ITraitDefinitionRepository, EfCoreTraitDefinitionRepository>();
+            services.AddScoped<ISpeciesRepository, EfCoreSpeciesRepository>();
         }
         else if (!persistenceOptions.IsExternal)
         {
@@ -195,6 +204,15 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IMaterialRepository, InMemoryMaterialRepository>();
             services.AddScoped<IEquipmentSetRepository, InMemoryEquipmentSetRepository>();
             services.AddScoped<IInventoryService, InMemoryInventoryService>();
+            services.AddScoped<IItemRepository, InMemoryItemRepository>();
+            services.AddScoped<IEnchantmentRepository, InMemoryEnchantmentRepository>();
+            services.AddScoped<IOrganizationRepository, InMemoryOrganizationRepository>();
+            services.AddScoped<IZoneLocationRepository, InMemoryZoneLocationRepository>();
+            services.AddScoped<IDialogueRepository, InMemoryDialogueRepository>();
+            services.AddScoped<IActorInstanceRepository, InMemoryActorInstanceRepository>();
+            services.AddScoped<IMaterialPropertyRepository, InMemoryMaterialPropertyRepository>();
+            services.AddScoped<ITraitDefinitionRepository, InMemoryTraitDefinitionRepository>();
+            services.AddScoped<ISpeciesRepository, InMemorySpeciesRepository>();
         }
         // External: host is responsible for registering ALL repo interfaces.
         services.AddSingleton<ISaveGameContext, SaveGameContext>();

@@ -34,7 +34,9 @@ try
     builder.Services.Configure<DiscordSettings>(builder.Configuration.GetSection("Discord"));
 
     // Wire up the RealmEngine — data → core → MediatR must be registered in this order
-    builder.Services.AddRealmEngineCore();
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
+    builder.Services.AddRealmEngineCore(p => p.UseNpgsql(connectionString));
     builder.Services.AddRealmEngineMediatR();
 
     // Typed HttpClient for server status; base URL is configurable in Discord settings
