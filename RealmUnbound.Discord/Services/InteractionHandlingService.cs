@@ -31,11 +31,17 @@ internal sealed class InteractionHandlingService(
             await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
         }
 
-        client.Ready             += RegisterCommandsAsync;
+        var commandCount = interactions.SlashCommands.Count;
+        logger.LogInformation("Loaded {Count} slash command(s): {Names}",
+            commandCount,
+            string.Join(", ", interactions.SlashCommands.Select(c => c.Name)));
+
+        client.Ready              += RegisterCommandsAsync;
         client.InteractionCreated += HandleInteractionAsync;
 
         interactions.Log += message =>
         {
+            // Use Debug for all interaction service log messages — InteractionExecuted handles failures.
             logger.LogDebug("[Interactions] {Source}: {Message}", message.Source, message.Message);
             return Task.CompletedTask;
         };
@@ -43,9 +49,14 @@ internal sealed class InteractionHandlingService(
         interactions.InteractionExecuted += (_, ctx, result) =>
         {
             if (!result.IsSuccess)
-                logger.LogWarning("Interaction '{Name}' failed: [{Error}] {Reason}",
-                    (ctx?.Interaction as ISlashCommandInteraction)?.Data?.Name ?? "unknown",
-                    result.Error, result.ErrorReason);
+            {
+                var name = (ctx?.Interaction as ISlashCommandInteraction)?.Data?.Name ?? "unknown";
+                var ex   = (result as ExecuteResult?)?.Exception;
+                if (ex is not null)
+                    logger.LogError(ex, "Interaction '{Name}' failed: [{Error}] {Reason}", name, result.Error, result.ErrorReason);
+                else
+                    logger.LogWarning("Interaction '{Name}' failed: [{Error}] {Reason}", name, result.Error, result.ErrorReason);
+            }
             return Task.CompletedTask;
         };
     }
@@ -66,10 +77,25 @@ internal sealed class InteractionHandlingService(
         }
     }
 
-    private async Task HandleInteractionAsync(SocketInteraction interaction)
+    private Task HandleInteractionAsync(SocketInteraction interaction)
     {
-        using var scope = scopeFactory.CreateScope();
-        var ctx    = new SocketInteractionContext(client, interaction);
-        await interactions.ExecuteCommandAsync(ctx, scope.ServiceProvider);
+        // Fire on a thread-pool thread so the gateway event dispatcher is freed immediately.
+        // This prevents the gateway thread from being blocked and eating into Discord's
+        // 3-second interaction ACK window before DeferAsync/RespondAsync is called.
+        // RunMode.Sync is kept so ExecuteCommandAsync awaits the command before the scope disposes.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var ctx = new SocketInteractionContext(client, interaction);
+                await interactions.ExecuteCommandAsync(ctx, scope.ServiceProvider);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unhandled exception dispatching interaction '{Type}'", interaction.GetType().Name);
+            }
+        });
+        return Task.CompletedTask;
     }
 }
