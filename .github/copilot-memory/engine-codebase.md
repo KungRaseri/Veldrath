@@ -1,9 +1,9 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of session-25)
+## Test Counts (as of session-26, 2026-03-30)
 - RealmEngine.Core.Tests: **1,859 passing**
 - RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **226 passing**
+- RealmEngine.Data.Tests: **229 passing** (+3 ActorPool tests)
 - RealmUnbound.Client.Tests: **512 passing**
 - RealmUnbound.Server.Tests: **468 passing**
 
@@ -139,6 +139,26 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `CategoryDiscoveryService` — queries 11+ EF Core DbSets in `Initialize()`
 - `MaterialPoolService` — calls `_dbFactory.CreateDbContextAsync()` in every public method
 - `BudgetItemGenerationService` — depends on `MaterialPoolService` (transitively EF Core)
+
+## Combat Loop Foundation — Phase 0a–0c (2026-03-30)
+
+### Phase 0a — ICombatSettings
+- `ICombatSettings` interface in `RealmEngine.Shared/Abstractions/ICombatSettings.cs`
+  - Properties: `PlayerDamageMultiplier`, `EnemyDamageMultiplier`, `EnemyHealthMultiplier`, `GoldXPMultiplier`, `IsPermadeath`
+- `DifficultySettings` already implemented `ICombatSettings`; confirmed all 5 properties covered
+- `NormalCombatSettings` + `HardcoreCombatSettings` static impls in `RealmEngine.Shared/Models/`
+- `CombatService` primary ctor: `(ICombatSettings, IMediator, PowerDataService, ILogger, ILoggerFactory, ItemGenerator? = null)`
+- Adapter ctor `(ISaveGameService, ...)` delegates to primary for single-player backward compat
+- `AttackEnemyCommandHandler` reads multipliers from `ICombatSettings`
+
+### Phase 0c — ZoneLocation ActorPool
+- `ActorPoolEntry` class in `RealmEngine.Data/Entities/Content/ZoneLocation.cs`: `string ArchetypeSlug`, `int Weight = 1`
+- `ZoneLocation.ActorPool: IList<ActorPoolEntry>` — `jsonb` column, owned via `OwnsMany(x => x.ActorPool).ToJson("ActorPool")` in `ContentModelConfiguration.cs`
+- `ActorPoolEntry(string ArchetypeSlug, int Weight)` positional record added to `ZoneLocationEntry` (`RealmEngine.Shared/Models/ZoneLocationEntry.cs`)
+- `ZoneLocationEntry` last positional parameter: `IReadOnlyList<ActorPoolEntry>? ActorPool = null`
+- `EfCoreZoneLocationRepository.MapToModel`: `.Select(e => new ActorPoolEntry(e.ArchetypeSlug, e.Weight)).ToList()`
+- Content migration: `20260330000004_AddZoneLocationActorPool` (adds `ActorPool jsonb` default `'[]'`)
+- `ActorPoolEntry` type is in scope as `RealmEngine.Data.Entities.ActorPoolEntry` (entity) vs `RealmEngine.Shared.Models.ActorPoolEntry` (shared record) — do NOT prefix with `Models.` in the repository file; the shared model is already in scope via using
 
 ## Known Open Items (as of March 2026)
 
