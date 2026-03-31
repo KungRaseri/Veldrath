@@ -402,6 +402,13 @@ public class CharacterSelectViewModel : ViewModelBase
             var bytes = await _assetStore!.LoadImageAsync(path);
             if (bytes is not null)
                 entry.ClassIcon = new Bitmap(new MemoryStream(bytes));
+
+            if (entry.Character.IsHardcore)
+            {
+                var skullBytes = await _assetStore!.LoadImageAsync(UiAssets.Skull1);
+                if (skullBytes is not null)
+                    entry.HardcoreIcon = new Bitmap(new MemoryStream(skullBytes));
+            }
         }
     }
 

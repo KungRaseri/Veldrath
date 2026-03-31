@@ -13,6 +13,7 @@ public class CharacterEntryViewModel : ViewModelBase
 {
     private bool _isOnline;
     private Bitmap? _classIcon;
+    private Bitmap? _hardcoreIcon;
 
     public CharacterDto Character { get; }
 
@@ -21,6 +22,13 @@ public class CharacterEntryViewModel : ViewModelBase
     {
         get => _classIcon;
         set => this.RaiseAndSetIfChanged(ref _classIcon, value);
+    }
+
+    /// <summary>Skull icon shown on the HC badge, loaded from the asset store.</summary>
+    public Bitmap? HardcoreIcon
+    {
+        get => _hardcoreIcon;
+        set => this.RaiseAndSetIfChanged(ref _hardcoreIcon, value);
     }
 
     /// <summary>True while another client (or this one) has this character actively in use.</summary>

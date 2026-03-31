@@ -103,13 +103,20 @@
                                                 <!-- HC badge — only visible for hardcore characters -->
                                                 <Border Background="#8B0000"
                                                         CornerRadius="4"
-                                                        Padding="6,2"
+                                                        Padding="4,2"
                                                         VerticalAlignment="Center"
                                                         IsVisible="{Binding IsHardcore}">
-                                                    <TextBlock Text="HC"
-                                                               Foreground="White"
-                                                               FontSize="11"
-                                                               FontWeight="Bold" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                        <Image Source="{Binding HardcoreIcon}"
+                                                               Width="14" Height="14"
+                                                               Stretch="Uniform"
+                                                               IsVisible="{Binding HardcoreIcon,
+                                                                   Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                                        <TextBlock Text="HC"
+                                                                   Foreground="White"
+                                                                   FontSize="11"
+                                                                   FontWeight="Bold" />
+                                                    </StackPanel>
                                                 </Border>
                                             </StackPanel>
                                             <TextBlock Classes="muted" FontSize="13">
