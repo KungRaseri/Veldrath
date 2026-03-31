@@ -143,6 +143,11 @@ public class GameHub : Hub
         var initMaxHealth = initAttrs.GetValueOrDefault("MaxHealth", character.Level * 10);
         var initMaxMana   = initAttrs.GetValueOrDefault("MaxMana",   character.Level * 5);
 
+        // Deserialise learned ability slugs so the client can render ability buttons immediately.
+        var learnedAbilities = JsonSerializer.Deserialize<List<string>>(
+            string.IsNullOrWhiteSpace(character.AbilitiesBlob) ? "[]" : character.AbilitiesBlob)
+            ?? [];
+
         await Clients.Caller.SendAsync("CharacterSelected", new
         {
             character.Id,
@@ -157,6 +162,7 @@ public class GameHub : Hub
             MaxMana                = initMaxMana,
             Gold                   = initAttrs.GetValueOrDefault("Gold", 0),
             UnspentAttributePoints = initAttrs.GetValueOrDefault("UnspentAttributePoints", 0),
+            LearnedAbilities       = learnedAbilities,
             SelectedAt             = DateTimeOffset.UtcNow,
         });
     }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using RealmEngine.Shared.Abstractions;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
@@ -21,6 +22,7 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
     private UseAbilityInCombatHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
             new CharacterRepository(db),
+            Mock.Of<IPowerRepository>(),
             Mock.Of<IServiceScopeFactory>(),
             Mock.Of<IHubContext<GameHub>>(),
             NullLogger<UseAbilityInCombatHubCommandHandler>.Instance);
@@ -41,11 +43,12 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
         db.Users.Add(account);
         var character = new Character
         {
-            AccountId  = account.Id,
-            Name       = $"Char_{Guid.NewGuid():N}",
-            ClassName  = "Mage",
-            SlotIndex  = 1,
-            Attributes = attrsJson ?? "{}",
+            AccountId    = account.Id,
+            Name         = $"Char_{Guid.NewGuid():N}",
+            ClassName    = "Mage",
+            SlotIndex    = 1,
+            Attributes   = attrsJson ?? "{}",
+            AbilitiesBlob = "[\"fireball\",\"heal\"]",
         };
         db.Characters.Add(character);
         await db.SaveChangesAsync();

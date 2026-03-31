@@ -404,6 +404,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Live enemy roster at the character's current zone location.</summary>
     public ObservableCollection<SpawnedEnemyItemViewModel> SpawnedEnemies { get; } = [];
 
+    /// <summary>Ability slugs the active character has learned, used to render combat ability buttons.</summary>
+    public ObservableCollection<string> LearnedAbilities { get; } = [];
+
     /// <summary>Gets whether there is at least one enemy in the roster at the current location.</summary>
     public bool HasSpawnedEnemies
     {
@@ -880,6 +883,7 @@ public class GameViewModel : ViewModelBase
         int currentHealth, int maxHealth,
         int currentMana, int maxMana,
         int gold, int unspentAttributePoints,
+        IReadOnlyList<string>? learnedAbilities = null,
         Guid? characterId = null)
     {
         Level = level;
@@ -892,6 +896,11 @@ public class GameViewModel : ViewModelBase
         UnspentAttributePoints = unspentAttributePoints;
         if (characterId.HasValue)
             _characterId = characterId;
+
+        LearnedAbilities.Clear();
+        if (learnedAbilities is not null)
+            foreach (var slug in learnedAbilities)
+                LearnedAbilities.Add(slug);
     }
 
     private async Task DoLogoutAsync()

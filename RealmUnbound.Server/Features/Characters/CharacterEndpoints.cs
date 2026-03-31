@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using RealmEngine.Shared.Abstractions;
 using RealmUnbound.Contracts.Characters;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
@@ -47,6 +49,7 @@ public static class CharacterEndpoints
         ClaimsPrincipal user,
         ICharacterRepository repo,
         IPlayerAccountRepository accountRepo,
+        ICharacterClassRepository classRepo,
         CancellationToken ct)
     {
         var accountId = GetAccountId(user);
@@ -74,6 +77,13 @@ public static class CharacterEndpoints
         var slotIndex = Enumerable.Range(1, account.MaxCharacterSlots)
             .First(i => !usedSlots.Contains(i));
 
+        // Seed starting ability slugs from the character class definition.
+        var characterClass = classRepo.GetByName(request.ClassName);
+        var starterSlugs = characterClass?.StartingPowerIds
+            .Select(id => id.Contains(':') ? id[(id.LastIndexOf(':') + 1)..] : id)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList() ?? [];
+
         var character = new Character
         {
             AccountId = accountId,
@@ -81,6 +91,7 @@ public static class CharacterEndpoints
             Name = request.Name,
             ClassName = request.ClassName,
             DifficultyMode = normalizedMode,
+            AbilitiesBlob = JsonSerializer.Serialize(starterSlugs),
         };
 
         var created = await repo.CreateAsync(character, ct);

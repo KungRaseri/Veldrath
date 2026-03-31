@@ -67,6 +67,12 @@ public class Character
     /// </summary>
     public string DifficultyMode { get; set; } = "normal";
 
+    /// <summary>
+    /// JSON-serialised list of ability slugs the character has learned (e.g. <c>["fireball","heal"]</c>).
+    /// Deserialised on demand. Empty array for characters with no learned abilities.
+    /// </summary>
+    public string AbilitiesBlob { get; set; } = "[]";
+
     // Navigation
     public PlayerAccount Account { get; set; } = null!;
 }

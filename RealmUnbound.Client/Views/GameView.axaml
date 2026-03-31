@@ -483,6 +483,50 @@
                                                     FontSize="13"
                                                     Command="{Binding FleeFromCombatCommand}" />
                                         </StackPanel>
+
+                                        <!-- Learned ability buttons (dynamic from LearnedAbilities) -->
+                                        <ItemsControl ItemsSource="{Binding LearnedAbilities}"
+                                                      IsVisible="{Binding LearnedAbilities.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding}"
+                                                            Classes="ghost"
+                                                            Height="30"
+                                                            FontSize="12"
+                                                            Margin="0,0,6,6"
+                                                            Command="{Binding $parent[UserControl].DataContext.UseAbilityInCombatCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Enemy known abilities caption -->
+                                        <StackPanel Spacing="2"
+                                                    IsVisible="{Binding EnemyAbilityNames.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                            <TextBlock Text="Enemy abilities:"
+                                                       Classes="caption"
+                                                       FontSize="11" />
+                                            <ItemsControl ItemsSource="{Binding EnemyAbilityNames}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}"
+                                                                   Classes="muted"
+                                                                   FontSize="11"
+                                                                   Margin="0,0,8,0" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
 
@@ -1059,16 +1103,9 @@
                         Classes.accent="{Binding IsInventoryOpen}"
                         Height="36"
                         FontSize="13" />
-                <Button Content="Craft Item"
+                <Button Content="Search Area"
                         Classes="ghost"
-                        Command="{Binding CraftItemCommand}"
-                        CommandParameter="basic-sword"
-                        Height="36"
-                        FontSize="13" />
-                <Button Content="Use Ability"
-                        Classes="ghost"
-                        Command="{Binding UseAbilityCommand}"
-                        CommandParameter="fireball"
+                        Command="{Binding SearchAreaCommand}"
                         Height="36"
                         FontSize="13" />
                 <Button Content="Map"

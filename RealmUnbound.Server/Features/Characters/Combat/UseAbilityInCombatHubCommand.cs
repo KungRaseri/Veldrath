@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Hubs;
 
@@ -75,27 +77,31 @@ public record UseAbilityInCombatHubResult
 public class UseAbilityInCombatHubCommandHandler
     : IRequestHandler<UseAbilityInCombatHubCommand, UseAbilityInCombatHubResult>
 {
-    private const int ManaCost       = 10;
-    private const int CooldownTurns  = 3;
-    private const int HealingAmount  = 20;
+    private const int FallbackManaCost      = 10;
+    private const int FallbackCooldownTurns = 3;
+    private const int FallbackHealingAmount = 20;
 
     private readonly ICharacterRepository _characterRepo;
+    private readonly IPowerRepository _powerRepo;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHubContext<GameHub> _hubContext;
     private readonly ILogger<UseAbilityInCombatHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="powerRepo">Repository for resolving ability costs and effects from the content database.</param>
     /// <param name="scopeFactory">Factory for creating scopes used in fire-and-forget respawn tasks.</param>
     /// <param name="hubContext">Hub context used to broadcast respawn notifications.</param>
     /// <param name="logger">Logger instance.</param>
     public UseAbilityInCombatHubCommandHandler(
         ICharacterRepository characterRepo,
+        IPowerRepository powerRepo,
         IServiceScopeFactory scopeFactory,
         IHubContext<GameHub> hubContext,
         ILogger<UseAbilityInCombatHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
+        _powerRepo     = powerRepo;
         _scopeFactory  = scopeFactory;
         _hubContext    = hubContext;
         _logger        = logger;
@@ -133,6 +139,16 @@ public class UseAbilityInCombatHubCommandHandler
         if (entity is null)
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Character not found" };
 
+        // Validate that the character has learned this ability.
+        var learnedSlugs = System.Text.Json.JsonSerializer.Deserialize<List<string>>(entity.AbilitiesBlob) ?? [];
+        if (!learnedSlugs.Contains(request.AbilityId, StringComparer.OrdinalIgnoreCase))
+            return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = $"Ability '{request.AbilityId}' is not learned" };
+
+        // Load the power definition from the content DB.
+        var power = await _powerRepo.GetBySlugAsync(request.AbilityId);
+        int manaCost      = power?.ManaCost   ?? FallbackManaCost;
+        int cooldownTurns = power?.Cooldown   ?? FallbackCooldownTurns;
+
         var attrs  = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
@@ -146,7 +162,7 @@ public class UseAbilityInCombatHubCommandHandler
             };
 
         // Check mana.
-        if (player.Mana < ManaCost)
+        if (player.Mana < manaCost)
             return new UseAbilityInCombatHubResult
             {
                 Success      = false,
@@ -154,11 +170,12 @@ public class UseAbilityInCombatHubCommandHandler
             };
 
         // Deduct mana and apply cooldown.
-        player.Mana -= ManaCost;
-        attrs["CurrentMana"]  = player.Mana;
-        attrs[cooldownKey]    = CooldownTurns;
+        player.Mana -= manaCost;
+        attrs["CurrentMana"] = player.Mana;
+        attrs[cooldownKey]   = cooldownTurns;
 
-        bool isHeal = request.AbilityId.Contains("heal", StringComparison.OrdinalIgnoreCase);
+        bool isHeal = power?.EffectType == PowerEffectType.Heal
+            || request.AbilityId.Contains("heal", StringComparison.OrdinalIgnoreCase);
 
         int abilityDamage   = 0;
         int healthRestored  = 0;
@@ -166,8 +183,10 @@ public class UseAbilityInCombatHubCommandHandler
 
         if (isHeal)
         {
-            // Heal the player.
-            int healed = Math.Min(HealingAmount, player.MaxHealth - player.Health);
+            // Derive healing amount from the DB fallback; Power.HealMin/HealMax are on the
+            // EF entity, not the shared model, so we use the fallback constant for now.
+            int healingAmount = FallbackHealingAmount;
+            int healed = Math.Min(healingAmount, player.MaxHealth - player.Health);
             player.Health += healed;
             attrs["CurrentHealth"] = player.Health;
             healthRestored         = healed;
@@ -211,7 +230,7 @@ public class UseAbilityInCombatHubCommandHandler
                 Success               = true,
                 AbilityId             = request.AbilityId,
                 AbilityDamage         = abilityDamage,
-                ManaCost              = ManaCost,
+                ManaCost              = manaCost,
                 PlayerRemainingMana   = player.Mana,
                 EnemyRemainingHealth  = 0,
                 EnemyDefeated         = true,
@@ -250,7 +269,7 @@ public class UseAbilityInCombatHubCommandHandler
             AbilityId             = request.AbilityId,
             AbilityDamage         = abilityDamage,
             HealthRestored        = healthRestored,
-            ManaCost              = ManaCost,
+            ManaCost              = manaCost,
             PlayerRemainingMana   = player.Mana,
             EnemyRemainingHealth  = enemyRemainingHealth,
             EnemyDefeated         = false,
