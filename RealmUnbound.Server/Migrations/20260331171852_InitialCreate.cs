@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Migrations.Application
+namespace RealmUnbound.Server.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -12,6 +12,25 @@ namespace RealmUnbound.Server.Migrations.Application
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Announcements",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "text", nullable: false),
+                    Category = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    IsPinned = table.Column<bool>(type: "boolean", nullable: false),
+                    PublishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Announcements", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -52,6 +71,18 @@ namespace RealmUnbound.Server.Migrations.Application
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GlobalStats",
+                columns: table => new
+                {
+                    Key = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    Value = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GlobalStats", x => x.Key);
                 });
 
             migrationBuilder.CreateTable(
@@ -190,9 +221,11 @@ namespace RealmUnbound.Server.Migrations.Application
                     InventoryBlob = table.Column<string>(type: "text", nullable: false),
                     StartingZoneId = table.Column<string>(type: "text", nullable: false),
                     CurrentZoneId = table.Column<string>(type: "text", nullable: false),
+                    CurrentZoneLocationSlug = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastPlayedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DifficultyMode = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false, defaultValue: "normal")
                 },
                 constraints: table =>
                 {
@@ -285,6 +318,50 @@ namespace RealmUnbound.Server.Migrations.Application
                         name: "FK_Regions_Worlds_WorldId",
                         column: x => x.WorldId,
                         principalTable: "Worlds",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CharacterUnlockedConnections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CharacterId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ConnectionId = table.Column<int>(type: "integer", nullable: false),
+                    UnlockedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UnlockSource = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CharacterUnlockedConnections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CharacterUnlockedConnections_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CharacterUnlockedLocations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CharacterId = table.Column<Guid>(type: "uuid", nullable: false),
+                    LocationSlug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    UnlockedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UnlockSource = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CharacterUnlockedLocations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CharacterUnlockedLocations_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -384,6 +461,7 @@ namespace RealmUnbound.Server.Migrations.Application
                     HasMerchant = table.Column<bool>(type: "boolean", nullable: false),
                     IsPvpEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     IsDiscoverable = table.Column<bool>(type: "boolean", nullable: false),
+                    RescueFundTotal = table.Column<long>(type: "bigint", nullable: false, defaultValue: 0L),
                     RegionId = table.Column<string>(type: "character varying(64)", nullable: false)
                 },
                 constraints: table =>
@@ -402,7 +480,8 @@ namespace RealmUnbound.Server.Migrations.Application
                 columns: table => new
                 {
                     FromZoneId = table.Column<string>(type: "character varying(64)", nullable: false),
-                    ToZoneId = table.Column<string>(type: "character varying(64)", nullable: false)
+                    ToZoneId = table.Column<string>(type: "character varying(64)", nullable: false),
+                    IsHidden = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -448,6 +527,11 @@ namespace RealmUnbound.Server.Migrations.Application
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcements_IsActive_PublishedAt",
+                table: "Announcements",
+                columns: new[] { "IsActive", "PublishedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -496,6 +580,17 @@ namespace RealmUnbound.Server.Migrations.Application
                 name: "IX_Characters_Name",
                 table: "Characters",
                 column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CharacterUnlockedConnections_CharacterId",
+                table: "CharacterUnlockedConnections",
+                column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CharacterUnlockedLocations_CharacterId_LocationSlug",
+                table: "CharacterUnlockedLocations",
+                columns: new[] { "CharacterId", "LocationSlug" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -597,6 +692,9 @@ namespace RealmUnbound.Server.Migrations.Application
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Announcements");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -612,10 +710,19 @@ namespace RealmUnbound.Server.Migrations.Application
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CharacterUnlockedConnections");
+
+            migrationBuilder.DropTable(
+                name: "CharacterUnlockedLocations");
+
+            migrationBuilder.DropTable(
                 name: "FoundryNotifications");
 
             migrationBuilder.DropTable(
                 name: "FoundryVotes");
+
+            migrationBuilder.DropTable(
+                name: "GlobalStats");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");

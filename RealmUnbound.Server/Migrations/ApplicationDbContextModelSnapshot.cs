@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RealmUnbound.Server.Data;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Data.Migrations.Application
+namespace RealmUnbound.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260329044125_AddIsHiddenToZoneConnection")]
-    partial class AddIsHiddenToZoneConnection
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -225,6 +222,13 @@ namespace RealmUnbound.Server.Data.Migrations.Application
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DifficultyMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("normal");
 
                     b.Property<string>("EquipmentBlob")
                         .IsRequired()
@@ -448,6 +452,20 @@ namespace RealmUnbound.Server.Data.Migrations.Application
                         .IsUnique();
 
                     b.ToTable("FoundryVotes");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.GlobalStat", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("GlobalStats");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerAccount", b =>
@@ -685,6 +703,11 @@ namespace RealmUnbound.Server.Data.Migrations.Application
                     b.Property<string>("RegionId")
                         .IsRequired()
                         .HasColumnType("character varying(64)");
+
+                    b.Property<long>("RescueFundTotal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<string>("Type")
                         .IsRequired()

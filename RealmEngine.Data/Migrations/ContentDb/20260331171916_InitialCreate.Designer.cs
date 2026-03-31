@@ -9,11 +9,11 @@ using RealmEngine.Data.Persistence;
 
 #nullable disable
 
-namespace RealmEngine.Data.Migrations.Content
+namespace RealmEngine.Data.Migrations.ContentDb
 {
     [DbContext(typeof(ContentDbContext))]
-    [Migration("20260327151326_AddHiddenConnectionToZoneLocationConnection")]
-    partial class AddHiddenConnectionToZoneLocationConnection
+    [Migration("20260331171916_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2603,6 +2603,28 @@ namespace RealmEngine.Data.Migrations.Content
 
             modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocation", b =>
                 {
+                    b.OwnsMany("RealmEngine.Data.Entities.ActorPoolEntry", "ActorPool", b1 =>
+                        {
+                            b1.Property<Guid>("ZoneLocationId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<string>("ArchetypeSlug")
+                                .IsRequired();
+
+                            b1.Property<int>("Weight");
+
+                            b1.HasKey("ZoneLocationId", "__synthesizedOrdinal");
+
+                            b1.ToTable("ZoneLocations");
+
+                            b1.ToJson("ActorPool");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ZoneLocationId");
+                        });
+
                     b.OwnsOne("RealmEngine.Data.Entities.ZoneLocationStats", "Stats", b1 =>
                         {
                             b1.Property<Guid>("ZoneLocationId");
@@ -2658,6 +2680,8 @@ namespace RealmEngine.Data.Migrations.Content
                             b1.WithOwner()
                                 .HasForeignKey("ZoneLocationId");
                         });
+
+                    b.Navigation("ActorPool");
 
                     b.Navigation("Stats")
                         .IsRequired();
