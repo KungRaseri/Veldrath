@@ -199,6 +199,10 @@ namespace RealmUnbound.Server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AbilitiesBlob")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uuid");
 
