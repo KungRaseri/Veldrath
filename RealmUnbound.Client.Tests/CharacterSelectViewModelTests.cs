@@ -832,6 +832,8 @@ public class CharacterSelectViewModelTests : TestBase
                 CurrentHealth: 80, MaxHealth: 100,
                 CurrentMana: 40, MaxMana: 50,
                 Gold: 200, UnspentAttributePoints: 2,
+                Strength: 10, Dexterity: 10, Constitution: 10,
+                Intelligence: 10, Wisdom: 10, Charisma: 10,
                 LearnedAbilities: [],
                 SelectedAt: DateTimeOffset.UtcNow));
 
@@ -864,6 +866,8 @@ public class CharacterSelectViewModelTests : TestBase
                 CurrentHealth: 70, MaxHealth: 70,
                 CurrentMana: 35, MaxMana: 35,
                 Gold: 0, UnspentAttributePoints: 0,
+                Strength: 10, Dexterity: 10, Constitution: 10,
+                Intelligence: 10, Wisdom: 10, Charisma: 10,
                 LearnedAbilities: [],
                 SelectedAt: DateTimeOffset.UtcNow));
 

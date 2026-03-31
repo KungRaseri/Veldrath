@@ -821,18 +821,21 @@
                                        FontSize="13" />
                         </Grid>
 
-                        <!-- Unspent AP badge (only when > 0) -->
-                        <Border IsVisible="{Binding HasUnspentPoints}"
+                        <!-- Unspent AP badge — click to open allocation overlay -->
+                        <Button IsVisible="{Binding HasUnspentPoints}"
+                                Command="{Binding OpenAttributeAllocationCommand}"
                                 Background="{DynamicResource GameWarningMutedBrush}"
                                 BorderBrush="{DynamicResource GameWarningBrush}"
                                 BorderThickness="1"
                                 CornerRadius="3"
                                 Padding="6,3"
-                                Margin="0,6,0,0">
+                                Margin="0,6,0,0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left">
                             <TextBlock Classes="warning" FontSize="11">
-                                <Run Text="{Binding UnspentAttributePoints}" /><Run Text=" unspent attribute points" />
+                                <Run Text="{Binding UnspentAttributePoints}" /><Run Text=" unspent attribute points — click to allocate" />
                             </TextBlock>
-                        </Border>
+                        </Button>
 
                         <!-- Divider -->
                         <Border Classes="separator" Margin="0,10" />
@@ -1115,6 +1118,77 @@
                         FontSize="13" />
 
             </StackPanel>
+        </Border>
+
+        <!-- ── ATTRIBUTE ALLOCATION OVERLAY ──────────────────────────────── -->
+        <Border Grid.Row="0" Grid.RowSpan="3"
+                IsVisible="{Binding IsAttributeAllocationOpen}"
+                ZIndex="100"
+                Background="#CC000000">
+            <Border HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="420"
+                    Classes="panel"
+                    Padding="24">
+                <StackPanel Spacing="12"
+                            DataContext="{Binding AttributeAllocation}">
+
+                    <TextBlock Text="Allocate Attribute Points"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Classes="accent" />
+
+                    <TextBlock FontSize="12">
+                        <Run Text="Points remaining: " /><Run Text="{Binding PointsToAllocate}" Classes="accent" />
+                    </TextBlock>
+
+                    <!-- Attribute rows -->
+                    <ItemsControl ItemsSource="{Binding Attributes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AttributeDraftViewModel">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto"
+                                      Margin="0,3">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               VerticalAlignment="Center"
+                                               FontSize="13" />
+                                    <Button Grid.Column="1"
+                                            Content="−"
+                                            Command="{Binding DecrementCommand}"
+                                            Width="28" Height="28"
+                                            Padding="0"
+                                            Margin="0,0,4,0" />
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DisplayValue}"
+                                               Width="36"
+                                               TextAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               FontSize="13"
+                                               Classes="accent" />
+                                    <Button Grid.Column="3"
+                                            Content="+"
+                                            Command="{Binding IncrementCommand}"
+                                            Width="28" Height="28"
+                                            Padding="0"
+                                            Margin="4,0,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8"
+                                HorizontalAlignment="Right"
+                                Margin="0,8,0,0">
+                        <Button Content="Cancel"
+                                Command="{Binding CancelCommand}" />
+                        <Button Content="Confirm"
+                                Classes="accent"
+                                Command="{Binding ConfirmCommand}" />
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
         </Border>
 
     </Grid>

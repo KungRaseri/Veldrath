@@ -328,13 +328,15 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnExperienceGained(payload.NewLevel, payload.NewExperience, payload.LeveledUp, payload.LeveledUpTo));
 
             _characterSelectedSub = _connection.On<CharacterSelectedPayload>("CharacterSelected", payload =>
-                _gameVm.SeedInitialStats(
+                _gameVm.SeedInitialStats(new SeedInitialStatsArgs(
                     payload.Level, payload.Experience,
                     payload.CurrentHealth, payload.MaxHealth,
                     payload.CurrentMana, payload.MaxMana,
                     payload.Gold, payload.UnspentAttributePoints,
+                    payload.Strength, payload.Dexterity, payload.Constitution,
+                    payload.Intelligence, payload.Wisdom, payload.Charisma,
                     payload.LearnedAbilities,
-                    payload.Id));
+                    payload.Id)));
 
             _itemCraftedSub = _connection.On<ItemCraftedPayload>("ItemCrafted", payload =>
                 _gameVm.OnItemCrafted(payload.RecipeSlug, payload.GoldSpent, payload.RemainingGold));
@@ -419,7 +421,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record GoldChangedPayload(Guid CharacterId, int GoldAdded, int NewGoldTotal, string? Source);
     internal record DamageTakenPayload(Guid CharacterId, int DamageAmount, int CurrentHealth, int MaxHealth, bool IsDead, string? Source);
     internal record ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source);
-    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, IReadOnlyList<string> LearnedAbilities, DateTimeOffset SelectedAt);
+    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, int Strength, int Dexterity, int Constitution, int Intelligence, int Wisdom, int Charisma, IReadOnlyList<string> LearnedAbilities, DateTimeOffset SelectedAt);
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);

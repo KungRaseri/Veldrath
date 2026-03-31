@@ -8,6 +8,33 @@ using RealmUnbound.Client.Services;
 
 namespace RealmUnbound.Client.ViewModels;
 
+/// <summary>Bundles all initial character stat values for <see cref="GameViewModel.SeedInitialStats"/>.</summary>
+/// <param name="Level">Character level.</param>
+/// <param name="Experience">Experience toward the next level.</param>
+/// <param name="CurrentHealth">Current hit points.</param>
+/// <param name="MaxHealth">Maximum hit points.</param>
+/// <param name="CurrentMana">Current mana points.</param>
+/// <param name="MaxMana">Maximum mana points.</param>
+/// <param name="Gold">Gold held.</param>
+/// <param name="UnspentAttributePoints">Attribute points not yet allocated.</param>
+/// <param name="Strength">Strength attribute value.</param>
+/// <param name="Dexterity">Dexterity attribute value.</param>
+/// <param name="Constitution">Constitution attribute value.</param>
+/// <param name="Intelligence">Intelligence attribute value.</param>
+/// <param name="Wisdom">Wisdom attribute value.</param>
+/// <param name="Charisma">Charisma attribute value.</param>
+/// <param name="LearnedAbilities">Ability slugs the character has learned.</param>
+/// <param name="CharacterId">The character's unique identifier.</param>
+public record SeedInitialStatsArgs(
+    int Level, long Experience,
+    int CurrentHealth, int MaxHealth,
+    int CurrentMana, int MaxMana,
+    int Gold, int UnspentAttributePoints,
+    int Strength = 10, int Dexterity = 10, int Constitution = 10,
+    int Intelligence = 10, int Wisdom = 10, int Charisma = 10,
+    IReadOnlyList<string>? LearnedAbilities = null,
+    Guid? CharacterId = null);
+
 /// <summary>In-game view model. Active after a character has entered a zone.</summary>
 public class GameViewModel : ViewModelBase
 {
@@ -71,6 +98,14 @@ public class GameViewModel : ViewModelBase
     private int _gold;
     private int _level;
     private long _experience;
+    private int _strength;
+    private int _dexterity;
+    private int _constitution;
+    private int _intelligence;
+    private int _wisdom;
+    private int _charisma;
+    private AttributeAllocationViewModel? _attributeAllocation;
+    private bool _isAttributeAllocationOpen;
 
     // Combat state
     private bool _isInCombat;
@@ -152,6 +187,62 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Whether the active character has unspent attribute points to allocate.</summary>
     public bool HasUnspentPoints => UnspentAttributePoints > 0;
+
+    /// <summary>Strength attribute of the active character.</summary>
+    public int Strength
+    {
+        get => _strength;
+        set => this.RaiseAndSetIfChanged(ref _strength, value);
+    }
+
+    /// <summary>Dexterity attribute of the active character.</summary>
+    public int Dexterity
+    {
+        get => _dexterity;
+        set => this.RaiseAndSetIfChanged(ref _dexterity, value);
+    }
+
+    /// <summary>Constitution attribute of the active character.</summary>
+    public int Constitution
+    {
+        get => _constitution;
+        set => this.RaiseAndSetIfChanged(ref _constitution, value);
+    }
+
+    /// <summary>Intelligence attribute of the active character.</summary>
+    public int Intelligence
+    {
+        get => _intelligence;
+        set => this.RaiseAndSetIfChanged(ref _intelligence, value);
+    }
+
+    /// <summary>Wisdom attribute of the active character.</summary>
+    public int Wisdom
+    {
+        get => _wisdom;
+        set => this.RaiseAndSetIfChanged(ref _wisdom, value);
+    }
+
+    /// <summary>Charisma attribute of the active character.</summary>
+    public int Charisma
+    {
+        get => _charisma;
+        set => this.RaiseAndSetIfChanged(ref _charisma, value);
+    }
+
+    /// <summary>Whether the attribute allocation overlay is currently open.</summary>
+    public bool IsAttributeAllocationOpen
+    {
+        get => _isAttributeAllocationOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isAttributeAllocationOpen, value);
+    }
+
+    /// <summary>The active attribute allocation draft, created fresh each time the overlay is opened.</summary>
+    public AttributeAllocationViewModel? AttributeAllocation
+    {
+        get => _attributeAllocation;
+        private set => this.RaiseAndSetIfChanged(ref _attributeAllocation, value);
+    }
 
     // Combat properties
 
@@ -445,6 +536,12 @@ public class GameViewModel : ViewModelBase
     /// <summary>Spend unallocated attribute points by sending an allocation map to the server.</summary>
     public ReactiveCommand<Dictionary<string, int>, Unit> AllocateAttributePointsCommand { get; }
 
+    /// <summary>Opens the attribute allocation overlay, allowing the player to distribute unspent points.</summary>
+    public ReactiveCommand<Unit, Unit> OpenAttributeAllocationCommand { get; }
+
+    /// <summary>Closes the attribute allocation overlay without applying changes.</summary>
+    public ReactiveCommand<Unit, Unit> CloseAttributeAllocationCommand { get; }
+
     /// <summary>Activate an ability by ID, consuming mana and optionally restoring health.</summary>
     public ReactiveCommand<string, Unit> UseAbilityCommand { get; }
 
@@ -560,6 +657,12 @@ public class GameViewModel : ViewModelBase
         DevTakeDamageCommand = ReactiveCommand.CreateFromTask(() => DoTakeDamageAsync(10, "dev"));
         RestAtLocationCommand = ReactiveCommand.CreateFromTask(DoRestAtLocationAsync);
         AllocateAttributePointsCommand = ReactiveCommand.CreateFromTask<Dictionary<string, int>>(DoAllocateAttributePointsAsync);
+        OpenAttributeAllocationCommand = ReactiveCommand.Create(() =>
+        {
+            AttributeAllocation = new AttributeAllocationViewModel(this);
+            IsAttributeAllocationOpen = true;
+        });
+        CloseAttributeAllocationCommand = ReactiveCommand.Create(() => { IsAttributeAllocationOpen = false; });
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
         EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
@@ -644,6 +747,13 @@ public class GameViewModel : ViewModelBase
     public void OnAttributePointsAllocated(int remainingPoints, Dictionary<string, int> newAttributes)
     {
         UnspentAttributePoints = remainingPoints;
+        if (newAttributes.TryGetValue("Strength",     out var str)) Strength     = str;
+        if (newAttributes.TryGetValue("Dexterity",    out var dex)) Dexterity    = dex;
+        if (newAttributes.TryGetValue("Constitution", out var con)) Constitution = con;
+        if (newAttributes.TryGetValue("Intelligence", out var intel)) Intelligence = intel;
+        if (newAttributes.TryGetValue("Wisdom",       out var wis)) Wisdom       = wis;
+        if (newAttributes.TryGetValue("Charisma",     out var cha)) Charisma     = cha;
+        IsAttributeAllocationOpen = false;
         AppendLog($"Attribute points allocated. Remaining unspent: {remainingPoints}.");
     }
 
@@ -869,37 +979,29 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Seeds all character stat properties from the <c>CharacterSelected</c> hub event so the HUD shows correct values immediately on login.</summary>
-    /// <param name="level">Character level.</param>
-    /// <param name="experience">Experience toward the next level.</param>
-    /// <param name="currentHealth">Current hit points.</param>
-    /// <param name="maxHealth">Maximum hit points.</param>
-    /// <param name="currentMana">Current mana points.</param>
-    /// <param name="maxMana">Maximum mana points.</param>
-    /// <param name="gold">Gold held.</param>
-    /// <param name="unspentAttributePoints">Attribute points not yet allocated.</param>
-    /// <param name="characterId">The character's unique identifier, used for hidden-location filtering.</param>
-    public void SeedInitialStats(
-        int level, long experience,
-        int currentHealth, int maxHealth,
-        int currentMana, int maxMana,
-        int gold, int unspentAttributePoints,
-        IReadOnlyList<string>? learnedAbilities = null,
-        Guid? characterId = null)
+    /// <param name="args">All initial stat values bundled together.</param>
+    public void SeedInitialStats(SeedInitialStatsArgs args)
     {
-        Level = level;
-        Experience = experience;
-        CurrentHealth = currentHealth;
-        MaxHealth = maxHealth;
-        CurrentMana = currentMana;
-        MaxMana = maxMana;
-        Gold = gold;
-        UnspentAttributePoints = unspentAttributePoints;
-        if (characterId.HasValue)
-            _characterId = characterId;
+        Level = args.Level;
+        Experience = args.Experience;
+        CurrentHealth = args.CurrentHealth;
+        MaxHealth = args.MaxHealth;
+        CurrentMana = args.CurrentMana;
+        MaxMana = args.MaxMana;
+        Gold = args.Gold;
+        UnspentAttributePoints = args.UnspentAttributePoints;
+        Strength = args.Strength;
+        Dexterity = args.Dexterity;
+        Constitution = args.Constitution;
+        Intelligence = args.Intelligence;
+        Wisdom = args.Wisdom;
+        Charisma = args.Charisma;
+        if (args.CharacterId.HasValue)
+            _characterId = args.CharacterId;
 
         LearnedAbilities.Clear();
-        if (learnedAbilities is not null)
-            foreach (var slug in learnedAbilities)
+        if (args.LearnedAbilities is not null)
+            foreach (var slug in args.LearnedAbilities)
                 LearnedAbilities.Add(slug);
     }
 
