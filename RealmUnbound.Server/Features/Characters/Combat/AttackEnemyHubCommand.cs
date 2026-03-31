@@ -98,7 +98,8 @@ public class AttackEnemyHubCommandHandler
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Not in combat" };
 
         var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        if (!ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId, out var enemy))
+        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        if (enemy is null)
         {
             CombatSessionStore.Remove(request.CharacterId);
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };
@@ -121,7 +122,7 @@ public class AttackEnemyHubCommandHandler
         int playerDamage = CombatHelpers.CalculatePlayerDamage(attrs, entity.Level);
         int enemyRemainingHealth;
 
-        lock (enemy.Lock)
+        lock (enemy.SyncRoot)
         {
             enemy.CurrentHealth = Math.Max(0, enemy.CurrentHealth - playerDamage);
             enemy.LastAttackerId = request.CharacterId;

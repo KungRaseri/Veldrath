@@ -70,14 +70,15 @@ public class EngageEnemyHubCommandHandler
             return Task.FromResult(new EngageEnemyHubResult { Success = false, ErrorMessage = "Already in combat" });
 
         var storeKey = ZoneLocationEnemyStore.MakeKey(request.ZoneGroup, request.LocationSlug);
-        if (!ZoneLocationEnemyStore.TryGetEnemy(storeKey, request.EnemyId, out var enemy))
+        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, request.EnemyId);
+        if (enemy is null)
             return Task.FromResult(new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy not found" });
 
         if (!enemy.IsAlive)
             return Task.FromResult(new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy is already dead" });
 
         // Register this player as a participant.
-        lock (enemy.Lock)
+        lock (enemy.SyncRoot)
         {
             enemy.Participants.Add(request.CharacterId);
         }

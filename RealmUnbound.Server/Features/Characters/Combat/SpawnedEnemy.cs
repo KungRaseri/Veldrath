@@ -56,8 +56,8 @@ public class SpawnedEnemy
     /// <summary>Gets the enemy template containing stats and spell cooldown state.</summary>
     public Enemy Template { get; init; } = new();
 
-    /// <summary>Gets the lock object used to synchronise HP mutations across concurrent attackers.</summary>
-    public object Lock { get; } = new();
+    /// <summary>Gets the sync root object used to synchronise HP mutations across concurrent attackers.</summary>
+    public object SyncRoot { get; } = new();
 
     /// <summary>Gets a value indicating whether this enemy has any remaining health.</summary>
     public bool IsAlive => CurrentHealth > 0;
