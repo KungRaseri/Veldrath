@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.Characters.Combat;
 
 namespace RealmUnbound.Server.Features.Zones;
 
@@ -14,7 +15,8 @@ namespace RealmUnbound.Server.Features.Zones;
 /// <param name="CharacterId">The ID of the character navigating.</param>
 /// <param name="LocationSlug">The slug of the target zone location.</param>
 /// <param name="ZoneId">The ID of the zone the character is currently in.</param>
-public record NavigateToLocationHubCommand(Guid CharacterId, string LocationSlug, string ZoneId)
+/// <param name="ZoneGroup">The SignalR group name for the zone, used to key the enemy store.</param>
+public record NavigateToLocationHubCommand(Guid CharacterId, string LocationSlug, string ZoneId, string ZoneGroup = "")
     : IRequest<NavigateToLocationHubResult>;
 
 /// <summary>Result returned by <see cref="NavigateToLocationHubCommandHandler"/>.</summary>
@@ -40,13 +42,25 @@ public record NavigateToLocationHubResult
 
     /// <summary>Gets hidden locations newly discovered by the passive skill-check sweep.</summary>
     public IReadOnlyList<ZoneLocationEntry> PassiveDiscoveries { get; init; } = [];
+
+    /// <summary>Gets the live enemies currently present at the arrived location.</summary>
+    public IReadOnlyList<SpawnedEnemySummary> SpawnedEnemies { get; init; } = [];
 }
+
+/// <summary>A lightweight snapshot of a live enemy visible to all players at a location.</summary>
+/// <param name="Id">Unique instance identifier for this spawned enemy.</param>
+/// <param name="Name">Display name of the enemy archetype.</param>
+/// <param name="Level">Difficulty level of the enemy.</param>
+/// <param name="CurrentHealth">Remaining HP at the time of the snapshot.</param>
+/// <param name="MaxHealth">Maximum HP of the enemy.</param>
+public record SpawnedEnemySummary(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
 
 /// <summary>
 /// Handles <see cref="NavigateToLocationHubCommand"/> by verifying the location exists within the
 /// character's current zone via <see cref="IZoneLocationRepository"/>, persisting the new current
 /// location via <see cref="ICharacterRepository"/>, loading available connections from the arrived
-/// location, and running a passive discovery sweep for hidden locations in the zone.
+/// location, running a passive discovery sweep for hidden locations in the zone, and ensuring the
+/// location's enemy roster is spawned in <see cref="ZoneLocationEnemyStore"/>.
 /// </summary>
 public class NavigateToLocationHubCommandHandler
     : IRequestHandler<NavigateToLocationHubCommand, NavigateToLocationHubResult>
@@ -56,23 +70,27 @@ public class NavigateToLocationHubCommandHandler
     private readonly IZoneLocationRepository _locationRepo;
     private readonly ICharacterRepository _characterRepo;
     private readonly ICharacterUnlockedLocationRepository _unlockedRepo;
+    private readonly ActorPoolResolver _actorPoolResolver;
     private readonly ILogger<NavigateToLocationHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="NavigateToLocationHubCommandHandler"/>.</summary>
     /// <param name="locationRepo">Repository used to look up zone location catalog entries.</param>
     /// <param name="characterRepo">Repository used to persist the character's current location.</param>
     /// <param name="unlockedRepo">Repository used to persist passive discovery unlock records.</param>
+    /// <param name="actorPoolResolver">Resolver used to spawn the initial enemy roster for a location.</param>
     /// <param name="logger">Logger instance.</param>
     public NavigateToLocationHubCommandHandler(
         IZoneLocationRepository locationRepo,
         ICharacterRepository characterRepo,
         ICharacterUnlockedLocationRepository unlockedRepo,
+        ActorPoolResolver actorPoolResolver,
         ILogger<NavigateToLocationHubCommandHandler> logger)
     {
-        _locationRepo  = locationRepo;
-        _characterRepo = characterRepo;
-        _unlockedRepo  = unlockedRepo;
-        _logger        = logger;
+        _locationRepo      = locationRepo;
+        _characterRepo     = characterRepo;
+        _unlockedRepo      = unlockedRepo;
+        _actorPoolResolver = actorPoolResolver;
+        _logger            = logger;
     }
 
     /// <summary>Handles the command and returns the navigation outcome.</summary>
@@ -116,6 +134,24 @@ public class NavigateToLocationHubCommandHandler
         var passiveDiscoveries = await RunPassiveDiscoveryAsync(
             request.CharacterId, request.ZoneId, unlockedSlugs, cancellationToken);
 
+        // Ensure the enemy roster for this location is spawned; reuse existing if already present.
+        var storeKey = ZoneLocationEnemyStore.MakeKey(request.ZoneGroup, location.Slug);
+        if (!string.IsNullOrEmpty(request.ZoneGroup) && !ZoneLocationEnemyStore.HasRoster(storeKey))
+        {
+            var roster = await _actorPoolResolver.SpawnRosterAsync(location.ActorPool);
+            ZoneLocationEnemyStore.TryAddRoster(storeKey, roster);
+
+            _logger.LogInformation(
+                "Spawned {Count} enemies at {StoreKey}",
+                roster.Count, storeKey);
+        }
+
+        var spawnedEnemies = string.IsNullOrEmpty(request.ZoneGroup)
+            ? []
+            : ZoneLocationEnemyStore.GetAlive(storeKey)
+                .Select(e => new SpawnedEnemySummary(e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth))
+                .ToList();
+
         return new NavigateToLocationHubResult
         {
             Success              = true,
@@ -124,6 +160,7 @@ public class NavigateToLocationHubCommandHandler
             LocationType         = location.LocationType,
             AvailableConnections = connections,
             PassiveDiscoveries   = passiveDiscoveries,
+            SpawnedEnemies       = spawnedEnemies,
         };
     }
 

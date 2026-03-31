@@ -848,10 +848,11 @@ public class GameHub : Hub
         }
 
         var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+        var zoneGroupForNav = TryGetCurrentZoneGroup(out var zg) ? zg : string.Empty;
 
         try
         {
-            var result = await _mediator.Send(new NavigateToLocationHubCommand(characterId, request.LocationSlug, zoneId));
+            var result = await _mediator.Send(new NavigateToLocationHubCommand(characterId, request.LocationSlug, zoneId, zoneGroupForNav));
 
             if (!result.Success)
             {
@@ -868,6 +869,10 @@ public class GameHub : Hub
                 AvailableConnections = result.AvailableConnections.Select(c => new
                 {
                     c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable,
+                }),
+                SpawnedEnemies = result.SpawnedEnemies.Select(e => new
+                {
+                    e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth,
                 }),
             };
 
