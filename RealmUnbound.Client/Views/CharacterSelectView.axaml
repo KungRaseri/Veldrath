@@ -212,6 +212,17 @@
                           Height="44"
                           FontSize="15" />
 
+                <TextBlock Text="Difficulty" Classes="muted" />
+                <CheckBox Content="Hardcore Mode"
+                          IsChecked="{Binding IsHardcoreCreate}"
+                          FontSize="15" />
+                <ui:InfoBar Title="Permadeath Warning"
+                            Message="Hardcore characters are permanently deleted on death. This cannot be undone."
+                            Severity="Warning"
+                            IsOpen="{Binding IsHardcoreCreate}"
+                            IsClosable="False"
+                            Margin="0,0,0,4" />
+
                 <Image Source="{Binding SelectedClassIcon}"
                        Width="72" Height="72"
                        Stretch="Uniform"
