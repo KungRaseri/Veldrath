@@ -8,7 +8,7 @@ using RealmEngine.Data.Persistence;
 
 #nullable disable
 
-namespace RealmEngine.Data.Migrations
+namespace RealmEngine.Data.Migrations.ContentDb
 {
     [DbContext(typeof(ContentDbContext))]
     partial class ContentDbContextModelSnapshot : ModelSnapshot
@@ -2600,6 +2600,28 @@ namespace RealmEngine.Data.Migrations
 
             modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocation", b =>
                 {
+                    b.OwnsMany("RealmEngine.Data.Entities.ActorPoolEntry", "ActorPool", b1 =>
+                        {
+                            b1.Property<Guid>("ZoneLocationId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<string>("ArchetypeSlug")
+                                .IsRequired();
+
+                            b1.Property<int>("Weight");
+
+                            b1.HasKey("ZoneLocationId", "__synthesizedOrdinal");
+
+                            b1.ToTable("ZoneLocations");
+
+                            b1.ToJson("ActorPool");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ZoneLocationId");
+                        });
+
                     b.OwnsOne("RealmEngine.Data.Entities.ZoneLocationStats", "Stats", b1 =>
                         {
                             b1.Property<Guid>("ZoneLocationId");
@@ -2651,28 +2673,6 @@ namespace RealmEngine.Data.Migrations
                             b1.ToTable("ZoneLocations");
 
                             b1.ToJson("Traits");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ZoneLocationId");
-                        });
-
-                    b.OwnsMany("RealmEngine.Data.Entities.ActorPoolEntry", "ActorPool", b1 =>
-                        {
-                            b1.Property<Guid>("ZoneLocationId");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd();
-
-                            b1.Property<string>("ArchetypeSlug")
-                                .IsRequired();
-
-                            b1.Property<int>("Weight");
-
-                            b1.HasKey("ZoneLocationId", "__synthesizedOrdinal");
-
-                            b1.ToTable("ZoneLocations");
-
-                            b1.ToJson("ActorPool");
 
                             b1.WithOwner()
                                 .HasForeignKey("ZoneLocationId");
