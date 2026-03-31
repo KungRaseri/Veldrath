@@ -30,6 +30,9 @@ public class CharacterEntryViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isOnline, value);
     }
 
+    /// <summary>True if this character was created in hardcore mode.</summary>
+    public bool IsHardcore => Character.IsHardcore;
+
     public CharacterEntryViewModel(CharacterDto character)
     {
         Character = character;

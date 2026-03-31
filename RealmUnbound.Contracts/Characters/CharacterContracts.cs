@@ -3,7 +3,8 @@ namespace RealmUnbound.Contracts.Characters;
 /// <summary>Request to create a new character in the current player account.</summary>
 /// <param name="Name">The display name for the new character.</param>
 /// <param name="ClassName">The class display name to assign (e.g. "Warrior", "Mage").</param>
-public record CreateCharacterRequest(string Name, string ClassName);
+/// <param name="DifficultyMode">The difficulty mode for this character: <c>"normal"</c> or <c>"hardcore"</c>.</param>
+public record CreateCharacterRequest(string Name, string ClassName, string DifficultyMode = "normal");
 
 /// <summary>Represents a character belonging to the current player account.</summary>
 /// <param name="Id">Unique identifier for this character.</param>
@@ -14,7 +15,9 @@ public record CreateCharacterRequest(string Name, string ClassName);
 /// <param name="Experience">Total accumulated experience points.</param>
 /// <param name="LastPlayedAt">UTC timestamp of the most recent session for this character.</param>
 /// <param name="CurrentZoneId">Identifier of the zone the character is currently located in.</param>
+/// <param name="DifficultyMode">The difficulty mode for this character: <c>"normal"</c> or <c>"hardcore"</c>.</param>
 /// <param name="IsOnline">True if this character is currently in an active session.</param>
+/// <param name="IsHardcore">True if this character was created in hardcore mode.</param>
 public record CharacterDto(
     Guid Id,
     int SlotIndex,
@@ -24,4 +27,6 @@ public record CharacterDto(
     long Experience,
     DateTimeOffset LastPlayedAt,
     string CurrentZoneId,
-    bool IsOnline = false);
+    string DifficultyMode = "normal",
+    bool IsOnline = false,
+    bool IsHardcore = false);

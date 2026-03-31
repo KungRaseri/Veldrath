@@ -128,14 +128,13 @@ public class RespawnCommandHandlerTests
   }
 
   [Fact]
-  public async Task Handle_DropsItems_AccordingToDifficulty()
+  public async Task Handle_DoesNotDropItemsDuringRespawn()
   {
     var item = new Item { Id = "gem1", Name = "Ruby", Price = 10 };
     var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
     player.Inventory.Add(item);
 
     var saveGame = new SaveGame { Character = player, LastDeathLocation = "Dungeon" };
-    // Hard difficulty drops 1 item
     saveGame.DifficultyLevel = DifficultySettings.Hard.Name;
 
     var mockSave = new Mock<ISaveGameService>();
@@ -148,6 +147,6 @@ public class RespawnCommandHandlerTests
     var result = await handler.Handle(command, default);
 
     result.Success.Should().BeTrue();
-    player.Inventory.Should().HaveCount(0); // 1 item dropped = empty
+    player.Inventory.Should().HaveCount(1); // inventory untouched — item dropping belongs to HandlePlayerDeath, not Respawn
   }
 }

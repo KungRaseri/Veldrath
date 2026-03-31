@@ -23,7 +23,7 @@ public class GetEnemyInfoHandler : IRequestHandler<GetEnemyInfoQuery, EnemyInfoD
             Level = enemy.Level,
             Health = enemy.Health,
             MaxHealth = enemy.MaxHealth,
-            Attack = enemy.Strength,
+            Attack = enemy.BasePhysicalDamage,
             Defense = enemy.GetPhysicalDefense(),
             Difficulty = enemy.Difficulty,
             Description = $"A level {enemy.Level} {enemy.Difficulty.ToString().ToLower()} enemy"

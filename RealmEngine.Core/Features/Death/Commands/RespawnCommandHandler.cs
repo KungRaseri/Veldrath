@@ -59,16 +59,6 @@ public class RespawnCommandHandler : IRequestHandler<RespawnCommand, RespawnResu
             }
 
             var saveGame = _saveGameService.GetCurrentSave();
-            if (saveGame != null)
-            {
-                // Apply death penalties — drop items at death location before respawning
-                var deathLocation = !string.IsNullOrEmpty(saveGame.LastDeathLocation)
-                    ? saveGame.LastDeathLocation
-                    : _gameState.CurrentLocation;
-
-                var difficulty = _saveGameService.GetDifficultySettings();
-                _deathService.HandleItemDropping(player, saveGame, deathLocation, difficulty);
-            }
 
             // Restore health and mana to maximum
             player.Health = player.MaxHealth;

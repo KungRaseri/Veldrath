@@ -122,6 +122,7 @@ public class GameHub : Hub
         Context.Items["CharacterId"]   = character.Id;
         Context.Items["CharacterName"] = character.Name;
         Context.Items["CurrentZoneId"] = character.CurrentZoneId;
+        Context.Items["DifficultyMode"] = character.DifficultyMode;
 
         _logger.LogInformation(
             "Character {CharacterName} ({CharacterId}) selected by {ConnectionId}",
@@ -211,11 +212,16 @@ public class GameHub : Hub
 
         Context.Items["CurrentZoneId"] = zoneId;
 
+        // Compute and store the zone group name based on zone type and difficulty
+        var difficultyMode = Context.Items.TryGetValue("DifficultyMode", out var dm) && dm is string d ? d : "normal";
+        var zoneGroup = ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
+        Context.Items["CurrentZoneGroupName"] = zoneGroup;
+
         // Join SignalR group
-        await Groups.AddToGroupAsync(Context.ConnectionId, ZoneGroup(zoneId));
+        await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup);
 
         // Announce arrival to other players already in zone
-        await Clients.OthersInGroup(ZoneGroup(zoneId)).SendAsync("PlayerEntered", new
+        await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerEntered", new
         {
             CharacterId   = characterId,
             CharacterName = characterName,
@@ -287,8 +293,8 @@ public class GameHub : Hub
                 Source        = request.Source,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("ExperienceGained", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("ExperienceGained", payload);
             else
                 await Clients.Caller.SendAsync("ExperienceGained", payload);
 
@@ -344,8 +350,8 @@ public class GameHub : Hub
                 result.NewAttributes,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("AttributePointsAllocated", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("AttributePointsAllocated", payload);
             else
                 await Clients.Caller.SendAsync("AttributePointsAllocated", payload);
 
@@ -402,8 +408,8 @@ public class GameHub : Hub
                 result.GoldRemaining,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("CharacterRested", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("CharacterRested", payload);
             else
                 await Clients.Caller.SendAsync("CharacterRested", payload);
 
@@ -461,8 +467,8 @@ public class GameHub : Hub
                 result.HealthRestored,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("AbilityUsed", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("AbilityUsed", payload);
             else
                 await Clients.Caller.SendAsync("AbilityUsed", payload);
 
@@ -514,8 +520,8 @@ public class GameHub : Hub
                 result.RankedUp,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("SkillXpGained", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("SkillXpGained", payload);
             else
                 await Clients.Caller.SendAsync("SkillXpGained", payload);
 
@@ -567,8 +573,8 @@ public class GameHub : Hub
                 result.AllEquippedItems,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("ItemEquipped", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("ItemEquipped", payload);
             else
                 await Clients.Caller.SendAsync("ItemEquipped", payload);
 
@@ -624,8 +630,8 @@ public class GameHub : Hub
                 Source       = request.Source,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("GoldChanged", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("GoldChanged", payload);
             else
                 await Clients.Caller.SendAsync("GoldChanged", payload);
 
@@ -679,8 +685,8 @@ public class GameHub : Hub
                 Source        = request.Source,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("DamageTaken", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("DamageTaken", payload);
             else
                 await Clients.Caller.SendAsync("DamageTaken", payload);
 
@@ -727,8 +733,8 @@ public class GameHub : Hub
                 result.RemainingGold,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("ItemCrafted", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("ItemCrafted", payload);
             else
                 await Clients.Caller.SendAsync("ItemCrafted", payload);
 
@@ -773,8 +779,8 @@ public class GameHub : Hub
                 DungeonSlug = dungeonSlug,
             };
 
-            if (Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zoneId && !string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("DungeonEntered", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("DungeonEntered", payload);
             else
                 await Clients.Caller.SendAsync("DungeonEntered", payload);
 
@@ -865,8 +871,8 @@ public class GameHub : Hub
                 }),
             };
 
-            if (!string.IsNullOrEmpty(zoneId))
-                await Clients.Group(ZoneGroup(zoneId)).SendAsync("LocationEntered", payload);
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("LocationEntered", payload);
             else
                 await Clients.Caller.SendAsync("LocationEntered", payload);
 
@@ -1042,9 +1048,12 @@ public class GameHub : Hub
                 // Leave the current zone group and join the destination zone group.
                 await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
 
-                var newZoneGroup = ZoneGroup(result.ToZoneId);
+                var destZone = await _zoneRepo.GetByIdAsync(result.ToZoneId);
+                var dm2 = Context.Items.TryGetValue("DifficultyMode", out var d2) && d2 is string s2 ? s2 : "normal";
+                var newZoneGroup = ComputeZoneGroup(destZone?.Type ?? ZoneType.Town, result.ToZoneId, dm2);
                 await Groups.AddToGroupAsync(Context.ConnectionId, newZoneGroup);
                 Context.Items["CurrentZoneId"] = result.ToZoneId;
+                Context.Items["CurrentZoneGroupName"] = newZoneGroup;
 
                 await Clients.Group(newZoneGroup).SendAsync("PlayerEntered", new
                 {
@@ -1118,11 +1127,16 @@ public class GameHub : Hub
         var characterName = session.CharacterName;
 
         await _zoneSessionRepo.RemoveAsync(session);
-        await Groups.RemoveFromGroupAsync(connectionId, ZoneGroup(zoneId));
+
+        // Use the stored group name so Wilderness players leave the correct difficulty-scoped group.
+        var groupName = Context.Items.TryGetValue("CurrentZoneGroupName", out var gn) && gn is string gs
+            ? gs
+            : $"zone:{zoneId}";
+        await Groups.RemoveFromGroupAsync(connectionId, groupName);
 
         if (notifyPeers)
         {
-            await Clients.Group(ZoneGroup(zoneId)).SendAsync("PlayerLeft", new
+            await Clients.Group(groupName).SendAsync("PlayerLeft", new
             {
                 CharacterId   = characterId,
                 CharacterName = characterName,
@@ -1133,7 +1147,20 @@ public class GameHub : Hub
         _logger.LogInformation("Character {Name} left zone {ZoneId}", characterName, zoneId);
     }
 
-    private static string ZoneGroup(string zoneId) => $"zone:{zoneId}";
+    private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>
+        zoneType == ZoneType.Wilderness ? $"zone:{zoneId}_{difficultyMode}" : $"zone:{zoneId}";
+
+    private bool TryGetCurrentZoneGroup([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? groupName)
+    {
+        if (Context.Items.TryGetValue("CurrentZoneGroupName", out var val) && val is string s)
+        {
+            groupName = s;
+            return true;
+        }
+        groupName = null;
+        return false;
+    }
+
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";
 
     private Guid GetAccountId()

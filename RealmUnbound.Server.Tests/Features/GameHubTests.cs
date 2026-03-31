@@ -590,6 +590,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.GainExperience(new GainExperienceHubRequest(150));
 
@@ -731,6 +732,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.AllocateAttributePoints(new Dictionary<string, int> { ["Intelligence"] = 1 });
 
@@ -976,6 +978,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
 
@@ -1225,6 +1228,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.UseAbility("fireball");
 
@@ -1558,6 +1562,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
 
@@ -1973,6 +1978,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.EquipItem(new EquipItemHubRequest("MainHand", "iron_sword"));
 
@@ -2254,6 +2260,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.AddGold(new AddGoldHubRequest(100));
 
@@ -2552,6 +2559,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.TakeDamage(new TakeDamageHubRequest(25));
 
@@ -2827,6 +2835,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.CraftItem("iron-sword");
 
@@ -3047,6 +3056,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
+        ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
         await hub.EnterDungeon("dungeon-grotto");
 
@@ -3394,6 +3404,7 @@ public class GameHubTests : IDisposable
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]  = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+        ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
         await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
 
@@ -3419,6 +3430,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]  = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+        ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
         await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
 
@@ -3441,6 +3453,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]  = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+        ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
         await hub.NavigateToLocation(new NavigateToLocationHubRequest("nonexistent-slug"));
 
@@ -3463,6 +3476,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]  = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+        ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
         await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
 
@@ -3719,6 +3733,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+        ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
         await hub.SearchArea();
 
@@ -3768,6 +3783,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
+        ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
         await hub.TraverseConnection(new TraverseConnectionHubRequest("fenwick-market", "path"));
 
