@@ -483,6 +483,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Items currently loaded in the character's inventory panel.</summary>
     public ObservableCollection<InventoryItemViewModel> InventoryItems { get; } = [];
 
+    /// <summary>Items available for purchase in the current zone's merchant shop.</summary>
+    public ObservableCollection<ShopItemViewModel> ShopItems { get; } = [];
+
     /// <summary>All zones in the current region, ordered by minimum level. Used by the zone and region panels.</summary>
     public ObservableCollection<ZoneNodeViewModel> RegionZones { get; } = [];
 
@@ -491,6 +494,9 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Zone locations within the current zone, shown in the Zone panel.</summary>
     public ObservableCollection<ZoneLocationItemViewModel> ZoneLocations { get; } = [];
+
+    /// <summary>Outgoing connections available from the character's current zone location.</summary>
+    public ObservableCollection<ZoneConnectionLinkViewModel> CurrentLocationConnections { get; } = [];
 
     /// <summary>Live enemy roster at the character's current zone location.</summary>
     public ObservableCollection<SpawnedEnemyItemViewModel> SpawnedEnemies { get; } = [];
@@ -550,6 +556,15 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Equip or unequip an item in a named slot. Tuple: (slot, itemRef) — pass <see langword="null"/> itemRef to unequip.</summary>
     public ReactiveCommand<(string Slot, string? ItemRef), Unit> EquipItemCommand { get; }
+
+    /// <summary>Drop one unit of an item from the active character's inventory (permanently removes it).</summary>
+    public ReactiveCommand<string, Unit> DropItemCommand { get; }
+
+    /// <summary>Buy one unit of an item from the current zone merchant.</summary>
+    public ReactiveCommand<string, Unit> BuyItemCommand { get; }
+
+    /// <summary>Sell one unit of an item to the current zone merchant.</summary>
+    public ReactiveCommand<string, Unit> SellItemCommand { get; }
 
     /// <summary>Add or remove gold from the active character. Tuple: (amount, source) — pass a negative amount to spend.</summary>
     public ReactiveCommand<(int Amount, string? Source), Unit> AddGoldCommand { get; }
@@ -666,6 +681,9 @@ public class GameViewModel : ViewModelBase
         UseAbilityCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityAsync);
         AwardSkillXpCommand = ReactiveCommand.CreateFromTask<(string, int)>(t => DoAwardSkillXpAsync(t.Item1, t.Item2));
         EquipItemCommand = ReactiveCommand.CreateFromTask<(string, string?)>(t => DoEquipItemAsync(t.Item1, t.Item2));
+        DropItemCommand = ReactiveCommand.CreateFromTask<string>(DoDropItemAsync);
+        BuyItemCommand = ReactiveCommand.CreateFromTask<string>(DoBuyItemAsync);
+        SellItemCommand = ReactiveCommand.CreateFromTask<string>(DoSellItemAsync);
         AddGoldCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoAddGoldAsync(t.Item1, t.Item2));
         TakeDamageCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoTakeDamageAsync(t.Item1, t.Item2));
         GainExperienceCommand = ReactiveCommand.CreateFromTask<(int, string?)>(t => DoGainExperienceAsync(t.Item1, t.Item2));
@@ -1081,6 +1099,42 @@ public class GameViewModel : ViewModelBase
         }
     }
 
+    private async Task DoDropItemAsync(string itemRef)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("DropItem", new { ItemRef = itemRef });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Drop failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoBuyItemAsync(string itemRef)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("BuyItem", new { ItemRef = itemRef });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Purchase failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoSellItemAsync(string itemRef)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("SellItem", new { ItemRef = itemRef });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Sale failed: {ex.Message}");
+        }
+    }
+
     private async Task DoAddGoldAsync(int amount, string? source)
     {
         try
@@ -1400,8 +1454,10 @@ public class GameViewModel : ViewModelBase
     /// <param name="locationDisplayName">The display name of the location.</param>
     /// <param name="locationType">The type of location (e.g. "dungeon", "location", "environment").</param>
     /// <param name="spawnedEnemies">Enemy roster at the arrived location.</param>
+    /// <param name="availableConnections">Outgoing connections from this location.</param>
     public void OnLocationEntered(string locationSlug, string locationDisplayName, string locationType,
-        IReadOnlyList<SpawnedEnemyItemViewModel>? spawnedEnemies = null)
+        IReadOnlyList<SpawnedEnemyItemViewModel>? spawnedEnemies = null,
+        IReadOnlyList<(string ToSlug, string ConnectionType, bool IsTraversable)>? availableConnections = null)
     {
         CurrentZoneLocationSlug = locationSlug;
         foreach (var loc in ZoneLocations) loc.IsCurrent = loc.Slug == locationSlug;
@@ -1410,6 +1466,8 @@ public class GameViewModel : ViewModelBase
         if (spawnedEnemies is not null)
             foreach (var e in spawnedEnemies)
                 SpawnedEnemies.Add(e);
+
+        PopulateConnections(locationSlug, availableConnections);
 
         AppendLog($"Arrived at {locationDisplayName} ({locationType}).");
         if (SpawnedEnemies.Count > 0)
@@ -1448,12 +1506,15 @@ public class GameViewModel : ViewModelBase
     /// <param name="toLocationSlug">The slug of the destination location, or <see langword="null"/> for zone-entry connections.</param>
     /// <param name="toZoneId">The destination zone ID when this was a cross-zone traversal, otherwise <see langword="null"/>.</param>
     /// <param name="isCrossZone">Whether traversal moved the character into a different zone.</param>
-    public void OnConnectionTraversed(string? toLocationSlug, string? toZoneId, bool isCrossZone)
+    /// <param name="availableConnections">Outgoing connections from the destination location.</param>
+    public void OnConnectionTraversed(string? toLocationSlug, string? toZoneId, bool isCrossZone,
+        IReadOnlyList<(string ToSlug, string ConnectionType, bool IsTraversable)>? availableConnections = null)
     {
-        _ = HandleConnectionTraversedAsync(toLocationSlug, toZoneId, isCrossZone);
+        _ = HandleConnectionTraversedAsync(toLocationSlug, toZoneId, isCrossZone, availableConnections);
     }
 
-    private async Task HandleConnectionTraversedAsync(string? toLocationSlug, string? toZoneId, bool isCrossZone)
+    private async Task HandleConnectionTraversedAsync(string? toLocationSlug, string? toZoneId, bool isCrossZone,
+        IReadOnlyList<(string ToSlug, string ConnectionType, bool IsTraversable)>? availableConnections = null)
     {
         if (isCrossZone && toZoneId is not null)
         {
@@ -1464,7 +1525,23 @@ public class GameViewModel : ViewModelBase
         {
             CurrentZoneLocationSlug = toLocationSlug;
             foreach (var loc in ZoneLocations) loc.IsCurrent = loc.Slug == toLocationSlug;
+            PopulateConnections(toLocationSlug, availableConnections);
             AppendLog($"You move to {toLocationSlug}.");
+        }
+    }
+
+    private void PopulateConnections(string fromSlug,
+        IReadOnlyList<(string ToSlug, string ConnectionType, bool IsTraversable)>? connections)
+    {
+        CurrentLocationConnections.Clear();
+        if (connections is null) return;
+        foreach (var c in connections)
+        {
+            var toSlug = c.ToSlug;
+            var connType = c.ConnectionType;
+            CurrentLocationConnections.Add(new ZoneConnectionLinkViewModel(
+                toSlug, connType, c.IsTraversable,
+                onTraverse: () => DoTraverseConnectionAsync(fromSlug, connType)));
         }
     }
 
@@ -1488,8 +1565,48 @@ public class GameViewModel : ViewModelBase
     {
         InventoryItems.Clear();
         foreach (var item in items)
-            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability));
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
         IsInventoryOpen = true;
+    }
+
+    /// <summary>Populates the shop catalog with items received from the server.</summary>
+    public void OnShopCatalogReceived(IReadOnlyList<ShopCatalogItemEntry> items)
+    {
+        ShopItems.Clear();
+        foreach (var item in items)
+            ShopItems.Add(new ShopItemViewModel(
+                item.ItemRef, item.DisplayName, item.BuyPrice, item.SellPrice,
+                onBuy:  () => DoBuyItemAsync(item.ItemRef),
+                onSell: () => DoSellItemAsync(item.ItemRef)));
+    }
+
+    /// <summary>Updates gold and inventory after a successful purchase.</summary>
+    public void OnItemPurchased(string itemRef, string displayName, int newGoldTotal, IReadOnlyList<InventoryItemEntry> newInventory)
+    {
+        Gold = newGoldTotal;
+        InventoryItems.Clear();
+        foreach (var item in newInventory)
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+        AppendLog($"Purchased {displayName}.");
+    }
+
+    /// <summary>Updates gold and inventory after a successful sale.</summary>
+    public void OnItemSold(string itemRef, string displayName, int newGoldTotal, IReadOnlyList<InventoryItemEntry> newInventory)
+    {
+        Gold = newGoldTotal;
+        InventoryItems.Clear();
+        foreach (var item in newInventory)
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+        AppendLog($"Sold {displayName}.");
+    }
+
+    /// <summary>Removes a dropped item from the inventory list.</summary>
+    public void OnItemDropped(string itemRef, IReadOnlyList<InventoryItemEntry> newInventory)
+    {
+        InventoryItems.Clear();
+        foreach (var item in newInventory)
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+        AppendLog($"Dropped {itemRef}.");
     }
 
     private async Task DoToggleInventoryAsync()
@@ -1566,6 +1683,13 @@ public class GameViewModel : ViewModelBase
 /// <param name="Quantity">Stack size.</param>
 /// <param name="Durability">Current durability (0–100), or <see langword="null"/> for stackable items.</param>
 public record InventoryItemEntry(string ItemRef, int Quantity, int? Durability);
+
+/// <summary>A single item available in a merchant's shop, including buy and sell prices.</summary>
+/// <param name="ItemRef">Item-reference slug.</param>
+/// <param name="DisplayName">Human-readable name shown in the shop UI.</param>
+/// <param name="BuyPrice">Gold cost to purchase the item.</param>
+/// <param name="SellPrice">Gold the merchant pays when the character sells the item.</param>
+public record ShopCatalogItemEntry(string ItemRef, string DisplayName, int BuyPrice, int SellPrice);
 
 /// <summary>A live enemy at the character's current zone location, displayed in the enemy roster UI.</summary>
 public class SpawnedEnemyItemViewModel : ReactiveObject

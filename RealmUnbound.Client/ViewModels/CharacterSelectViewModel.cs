@@ -61,6 +61,10 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _enemyEngagedSub;
     private IDisposable? _enemySpawnedSub;
     private IDisposable? _characterRespawnedSub;
+    private IDisposable? _shopCatalogSub;
+    private IDisposable? _itemPurchasedSub;
+    private IDisposable? _itemSoldSub;
+    private IDisposable? _itemDroppedSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -276,6 +280,10 @@ public class CharacterSelectViewModel : ViewModelBase
             _enemyEngagedSub?.Dispose();
             _enemySpawnedSub?.Dispose();
             _characterRespawnedSub?.Dispose();
+            _shopCatalogSub?.Dispose();
+            _itemPurchasedSub?.Dispose();
+            _itemSoldSub?.Dispose();
+            _itemDroppedSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -355,13 +363,19 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType,
                     payload.SpawnedEnemies
                         .Select(e => new SpawnedEnemyItemViewModel { Id = e.Id, Name = e.Name, Level = e.Level, CurrentHealth = e.CurrentHealth, MaxHealth = e.MaxHealth })
+                        .ToList(),
+                    payload.AvailableConnections?
+                        .Select(c => (c.ToLocationSlug, c.ConnectionType, c.IsTraversable))
                         .ToList()));
             _zoneLocationUnlockedSub = _connection.On<ZoneLocationUnlockedPayload>("ZoneLocationUnlocked", payload =>
                 _gameVm.OnZoneLocationUnlocked(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType, payload.UnlockSource));
             _areaSearchedSub = _connection.On<AreaSearchedPayload>("AreaSearched", payload =>
                 _gameVm.OnAreaSearched(payload.RollValue, payload.AnyFound));
             _connectionTraversedSub = _connection.On<ConnectionTraversedPayload>("ConnectionTraversed", payload =>
-                _gameVm.OnConnectionTraversed(payload.ToLocationSlug, payload.ToZoneId, payload.IsCrossZone));
+                _gameVm.OnConnectionTraversed(payload.ToLocationSlug, payload.ToZoneId, payload.IsCrossZone,
+                    payload.AvailableConnections?
+                        .Select(c => (c.ToLocationSlug, c.ConnectionType, c.IsTraversable))
+                        .ToList()));
 
             _combatStartedSub = _connection.On<CombatStartedPayload>("CombatStarted", payload =>
                 _gameVm.OnCombatStarted(payload.EnemyId, payload.EnemyName, payload.EnemyLevel,
@@ -382,6 +396,15 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnEnemySpawned(payload.Id, payload.Name, payload.Level, payload.CurrentHealth, payload.MaxHealth));
             _characterRespawnedSub = _connection.On<CharacterRespawnedPayload>("CharacterRespawned", payload =>
                 _gameVm.OnCharacterRespawned(payload.CurrentHealth, payload.CurrentMana));
+
+            _shopCatalogSub = _connection.On<ShopCatalogPayload>("ShopCatalog", payload =>
+                _gameVm.OnShopCatalogReceived(payload.Items));
+            _itemPurchasedSub = _connection.On<ItemTransactionPayload>("ItemPurchased", payload =>
+                _gameVm.OnItemPurchased(payload.ItemRef, payload.ItemDisplayName, payload.NewGoldTotal, payload.NewInventory));
+            _itemSoldSub = _connection.On<ItemTransactionPayload>("ItemSold", payload =>
+                _gameVm.OnItemSold(payload.ItemRef, payload.ItemDisplayName, payload.NewGoldTotal, payload.NewInventory));
+            _itemDroppedSub = _connection.On<ItemDroppedPayload>("ItemDropped", payload =>
+                _gameVm.OnItemDropped(payload.ItemRef, payload.NewInventory));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -426,8 +449,9 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
     internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items);
-    internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType, IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies);
+    internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType, IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies, IReadOnlyList<ConnectionEntry>? AvailableConnections = null);
     internal record SpawnedEnemyEntry(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
+    internal record ConnectionEntry(string FromLocationSlug, string ToLocationSlug, string? ToZoneId, string ConnectionType, bool IsTraversable);
     internal record CombatStartedPayload(Guid CharacterId, Guid EnemyId, string EnemyName, int EnemyLevel, int EnemyCurrentHealth, int EnemyMaxHealth, IReadOnlyList<string> EnemyAbilityNames);
     internal record CombatTurnPayload(string Action, int PlayerDamage, int HealthRestored, int EnemyRemainingHealth, bool EnemyDefeated, int EnemyDamage, string? EnemyAbilityUsed, int PlayerRemainingHealth, bool PlayerDefeated, bool PlayerHardcoreDeath, int XpEarned, int GoldEarned);
     internal record CombatEndedPayload(Guid CharacterId, string Reason);
@@ -437,7 +461,10 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record CharacterRespawnedPayload(Guid CharacterId, int CurrentHealth, int CurrentMana);
     internal record ZoneLocationUnlockedPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType, string UnlockSource);
     internal record AreaSearchedPayload(Guid CharacterId, int RollValue, bool AnyFound, IReadOnlyList<object> Discovered);
-    internal record ConnectionTraversedPayload(Guid CharacterId, string FromLocation, string? ToLocationSlug, string? ToZoneId, bool IsCrossZone, string? ConnectionType);
+    internal record ConnectionTraversedPayload(Guid CharacterId, string FromLocation, string? ToLocationSlug, string? ToZoneId, bool IsCrossZone, string? ConnectionType, IReadOnlyList<ConnectionEntry>? AvailableConnections = null);
+    internal record ShopCatalogPayload(Guid CharacterId, IReadOnlyList<ShopCatalogItemEntry> Items);
+    internal record ItemTransactionPayload(Guid CharacterId, string ItemRef, string ItemDisplayName, int GoldDelta, int NewGoldTotal, IReadOnlyList<InventoryItemEntry> NewInventory);
+    internal record ItemDroppedPayload(Guid CharacterId, string ItemRef, IReadOnlyList<InventoryItemEntry> NewInventory);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

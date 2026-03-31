@@ -37,6 +37,9 @@ public record TraverseConnectionHubResult
 
     /// <summary>Gets the connection type that was used.</summary>
     public string? ConnectionType { get; init; }
+
+    /// <summary>Gets the outgoing connections available from the destination location, populated for intra-zone traversals.</summary>
+    public IReadOnlyList<ZoneLocationConnectionEntry> AvailableConnections { get; init; } = [];
 }
 
 /// <summary>
@@ -112,13 +115,20 @@ public class TraverseConnectionHubCommandHandler
             request.CharacterId.ToString()[..8], match.ConnectionType,
             request.FromLocationSlug, match.ToZoneId ?? "(same)", match.ToLocationSlug ?? "(none)");
 
+        // For intra-zone traversals, look up connections from the destination so the client
+        // can render the "where can I go next?" buttons without a second round-trip.
+        IReadOnlyList<ZoneLocationConnectionEntry> availableConnections = [];
+        if (match.ToZoneId is null && match.ToLocationSlug is not null)
+            availableConnections = await _locationRepo.GetConnectionsFromAsync(match.ToLocationSlug);
+
         return new TraverseConnectionHubResult
         {
-            Success        = true,
-            ToLocationSlug = match.ToLocationSlug,
-            ToZoneId       = match.ToZoneId,
-            IsCrossZone    = match.ToZoneId is not null,
-            ConnectionType = match.ConnectionType,
+            Success              = true,
+            ToLocationSlug       = match.ToLocationSlug,
+            ToZoneId             = match.ToZoneId,
+            IsCrossZone          = match.ToZoneId is not null,
+            ConnectionType       = match.ConnectionType,
+            AvailableConnections = availableConnections,
         };
     }
 }
