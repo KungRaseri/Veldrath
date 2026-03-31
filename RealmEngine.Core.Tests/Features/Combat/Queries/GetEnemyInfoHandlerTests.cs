@@ -39,14 +39,14 @@ public class GetEnemyInfoHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_Return_Attack_From_Strength()
+    public async Task Handle_Should_Return_Attack_From_BasePhysicalDamage()
     {
         // Arrange
         var handler = new GetEnemyInfoHandler();
         var enemy = new Enemy
         {
             Name = "Orc",
-            Strength = 15
+            BasePhysicalDamage = 15
         };
         var query = new GetEnemyInfoQuery { Enemy = enemy };
 

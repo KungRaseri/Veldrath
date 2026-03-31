@@ -54,6 +54,10 @@ public static class CharacterEndpoints
         if (string.IsNullOrWhiteSpace(request.Name))
             return Results.BadRequest(new { error = "Character name is required" });
 
+        var normalizedMode = request.DifficultyMode?.ToLowerInvariant() ?? "normal";
+        if (normalizedMode is not "normal" and not "hardcore")
+            return Results.BadRequest(new { error = "DifficultyMode must be \"normal\" or \"hardcore\"" });
+
         var account = await accountRepo.FindByIdAsync(accountId, ct);
         if (account is null) return Results.Unauthorized();
 
@@ -76,6 +80,7 @@ public static class CharacterEndpoints
             SlotIndex = slotIndex,
             Name = request.Name,
             ClassName = request.ClassName,
+            DifficultyMode = normalizedMode,
         };
 
         var created = await repo.CreateAsync(character, ct);
@@ -115,5 +120,8 @@ public static class CharacterEndpoints
     }
 
     private static CharacterDto ToDto(Character c, bool isOnline = false) =>
-        new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt, c.CurrentZoneId, isOnline);
+        new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt, c.CurrentZoneId,
+            DifficultyMode: c.DifficultyMode,
+            IsOnline: isOnline,
+            IsHardcore: c.DifficultyMode == "hardcore");
 }
