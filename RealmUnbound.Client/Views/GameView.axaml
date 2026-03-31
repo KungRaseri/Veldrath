@@ -377,6 +377,158 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
+                                <!-- ── ENEMY ROSTER ──────────────────────────────────── -->
+                                <!-- Visible only when at a zone location that has enemies -->
+                                <StackPanel Spacing="8"
+                                            IsVisible="{Binding HasSpawnedEnemies}">
+                                    <Border Classes="separator" />
+                                    <TextBlock Text="Enemies"
+                                               Classes="caption" />
+                                    <ItemsControl ItemsSource="{Binding SpawnedEnemies}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SpawnedEnemyItemViewModel">
+                                                <Border Margin="0,0,0,5"
+                                                        Padding="8,6"
+                                                        CornerRadius="4"
+                                                        Background="{DynamicResource GameBackground2Brush}"
+                                                        BorderBrush="{DynamicResource GameBorderBrush}"
+                                                        BorderThickness="1">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <TextBlock Text="{Binding Name}"
+                                                                           FontSize="12"
+                                                                           FontWeight="SemiBold" />
+                                                                <TextBlock FontSize="10"
+                                                                           Classes="caption">
+                                                                    <Run Text="Lv." /><Run Text="{Binding Level}" />
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                            <ProgressBar Classes="health"
+                                                                         Minimum="0"
+                                                                         Maximum="{Binding MaxHealth}"
+                                                                         Value="{Binding CurrentHealth}"
+                                                                         Height="4" />
+                                                            <TextBlock FontSize="10"
+                                                                       Classes="caption">
+                                                                <Run Text="{Binding CurrentHealth}" /><Run Text=" / " /><Run Text="{Binding MaxHealth}" /><Run Text=" HP" />
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1"
+                                                                Content="Engage"
+                                                                Classes="accent"
+                                                                FontSize="10"
+                                                                Height="26"
+                                                                Padding="8,0"
+                                                                VerticalAlignment="Center"
+                                                                IsVisible="{Binding IsAlive}"
+                                                                Command="{Binding $parent[UserControl].DataContext.EngageEnemyCommand}"
+                                                                CommandParameter="{Binding Id}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!-- ── COMBAT HUD ────────────────────────────────────── -->
+                                <!-- Overlays the zone panel while IsInCombat is true -->
+                                <Border Padding="14"
+                                        CornerRadius="6"
+                                        Background="{DynamicResource GameBackground2Brush}"
+                                        BorderBrush="{DynamicResource GameDangerBrush}"
+                                        BorderThickness="1"
+                                        IsVisible="{Binding IsInCombat}">
+                                    <StackPanel Spacing="10">
+                                        <!-- Enemy stats -->
+                                        <StackPanel Spacing="4">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding CombatEnemyName}"
+                                                           FontSize="15"
+                                                           FontWeight="Bold" />
+                                                <TextBlock Grid.Column="1"
+                                                           Classes="caption"
+                                                           VerticalAlignment="Center">
+                                                    <Run Text="Lv." /><Run Text="{Binding CombatEnemyLevel}" />
+                                                </TextBlock>
+                                            </Grid>
+                                            <ProgressBar Classes="health"
+                                                         Minimum="0"
+                                                         Maximum="{Binding CombatEnemyMaxHealth}"
+                                                         Value="{Binding CombatEnemyCurrentHealth}"
+                                                         Height="8" />
+                                            <TextBlock Classes="caption">
+                                                <Run Text="{Binding CombatEnemyCurrentHealth}" /><Run Text=" / " /><Run Text="{Binding CombatEnemyMaxHealth}" /><Run Text=" HP" />
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <Border Classes="separator" />
+
+                                        <!-- Combat action buttons -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="⚔ Attack"
+                                                    Classes="accent"
+                                                    Height="32"
+                                                    FontSize="13"
+                                                    Command="{Binding AttackEnemyCommand}" />
+                                            <Button Content="🛡 Defend"
+                                                    Classes="ghost"
+                                                    Height="32"
+                                                    FontSize="13"
+                                                    Command="{Binding DefendActionCommand}" />
+                                            <Button Content="🏃 Flee"
+                                                    Classes="danger ghost"
+                                                    Height="32"
+                                                    FontSize="13"
+                                                    Command="{Binding FleeFromCombatCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── DEATH OVERLAY ──────────────────────────────────── -->
+                                <!-- Shown when the player is dead -->
+                                <Border Padding="14"
+                                        CornerRadius="6"
+                                        Background="{DynamicResource GameBackground2Brush}"
+                                        BorderBrush="{DynamicResource GameDangerBrush}"
+                                        BorderThickness="2"
+                                        IsVisible="{Binding IsPlayerDead}">
+                                    <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                        <TextBlock Text="You have fallen…"
+                                                   FontSize="18"
+                                                   FontWeight="Bold"
+                                                   Classes="danger"
+                                                   HorizontalAlignment="Center" />
+
+                                        <!-- Normal-mode: Respawn -->
+                                        <Button Content="Respawn"
+                                                Classes="accent"
+                                                Height="36"
+                                                FontSize="14"
+                                                HorizontalAlignment="Center"
+                                                IsVisible="{Binding IsHardcoreDeath,
+                                                            Converter={x:Static BoolConverters.Not}}"
+                                                Command="{Binding RespawnCommand}" />
+
+                                        <!-- Hardcore-mode: return to character select -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding IsHardcoreDeath}"
+                                                    HorizontalAlignment="Center">
+                                            <TextBlock Text="Your hardcore character is gone."
+                                                       Classes="muted"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center" />
+                                            <Button Content="Return to Character Select"
+                                                    Classes="danger"
+                                                    Height="36"
+                                                    FontSize="14"
+                                                    HorizontalAlignment="Center"
+                                                    Command="{Binding LogoutCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
                             </StackPanel>
                         </ScrollViewer>
 

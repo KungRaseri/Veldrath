@@ -74,6 +74,7 @@ public class GameViewModel : ViewModelBase
 
     // Combat state
     private bool _isInCombat;
+    private bool _hasSpawnedEnemies;
     private bool _isPlayerDead;
     private bool _isHardcoreDeath;
     private Guid? _combatEnemyId;
@@ -403,6 +404,13 @@ public class GameViewModel : ViewModelBase
     /// <summary>Live enemy roster at the character's current zone location.</summary>
     public ObservableCollection<SpawnedEnemyItemViewModel> SpawnedEnemies { get; } = [];
 
+    /// <summary>Gets whether there is at least one enemy in the roster at the current location.</summary>
+    public bool HasSpawnedEnemies
+    {
+        get => _hasSpawnedEnemies;
+        private set => this.RaiseAndSetIfChanged(ref _hasSpawnedEnemies, value);
+    }
+
     /// <summary>Display name of the zone location the character is currently standing at, or <see langword="null"/> if not at a specific location.</summary>
     public string? CurrentZoneLocationDisplayName =>
         ZoneLocations.FirstOrDefault(l => l.Slug == CurrentZoneLocationSlug)?.DisplayName;
@@ -581,6 +589,8 @@ public class GameViewModel : ViewModelBase
         FleeFromCombatCommand     = ReactiveCommand.CreateFromTask(DoFleeFromCombatAsync);
         UseAbilityInCombatCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityInCombatAsync);
         RespawnCommand            = ReactiveCommand.CreateFromTask(DoRespawnAsync);
+
+        SpawnedEnemies.CollectionChanged += (_, _) => HasSpawnedEnemies = SpawnedEnemies.Count > 0;
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
