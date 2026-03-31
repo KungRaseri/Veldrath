@@ -9,6 +9,7 @@ using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Features.LevelUp;
+using RealmUnbound.Server.Features.Shop;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 
@@ -847,6 +848,172 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Returns the DB-driven item catalog for the current zone's merchant shop.
+    /// Sends <c>ShopCatalog</c> to the caller on success.
+    /// </summary>
+    public async Task GetShopCatalog()
+    {
+        if (!TryGetCharacterId(out _))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetShopCatalog");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new GetShopCatalogHubCommand(zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load shop catalog");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ShopCatalog", new
+            {
+                ZoneId = zoneId,
+                Items  = result.Items,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetShopCatalog for zone {ZoneId}", zoneId);
+            await Clients.Caller.SendAsync("Error", "Failed to load shop catalog");
+        }
+    }
+
+    /// <summary>
+    /// Purchases one unit of an item from the current zone's merchant.
+    /// Sends <c>ItemPurchased</c> to the caller on success.
+    /// </summary>
+    /// <param name="itemRef">The item slug to purchase.</param>
+    public async Task BuyItem(string itemRef)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before BuyItem");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new BuyItemHubCommand(characterId, zoneId, itemRef));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to buy item");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ItemPurchased", new
+            {
+                CharacterId   = characterId,
+                result.ItemRef,
+                result.GoldSpent,
+                result.RemainingGold,
+            });
+
+            _logger.LogInformation(
+                "Character {CharacterId} bought '{ItemRef}' for {Gold} gold",
+                characterId, itemRef, result.GoldSpent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in BuyItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to buy item");
+        }
+    }
+
+    /// <summary>
+    /// Sells one unit of an item from the character's inventory to the current zone's merchant.
+    /// Sends <c>ItemSold</c> to the caller on success.
+    /// </summary>
+    /// <param name="itemRef">The item slug to sell.</param>
+    public async Task SellItem(string itemRef)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SellItem");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new SellItemHubCommand(characterId, zoneId, itemRef));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to sell item");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ItemSold", new
+            {
+                CharacterId  = characterId,
+                result.ItemRef,
+                result.GoldReceived,
+                result.NewGoldTotal,
+            });
+
+            _logger.LogInformation(
+                "Character {CharacterId} sold '{ItemRef}' for {Gold} gold",
+                characterId, itemRef, result.GoldReceived);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SellItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to sell item");
+        }
+    }
+
+    /// <summary>
+    /// Drops one unit of an item from the character's inventory (permanently removes it).
+    /// Sends <c>ItemDropped</c> to the caller on success.
+    /// </summary>
+    /// <param name="itemRef">The item slug to drop.</param>
+    public async Task DropItem(string itemRef)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before DropItem");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new DropItemHubCommand(characterId, itemRef));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to drop item");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ItemDropped", new
+            {
+                CharacterId       = characterId,
+                result.ItemRef,
+                result.RemainingQuantity,
+            });
+
+            _logger.LogInformation(
+                "Character {CharacterId} dropped '{ItemRef}'; {Remaining} remaining",
+                characterId, itemRef, result.RemainingQuantity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DropItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to drop item");
+        }
+    }
+
+    /// <summary>
     /// Moves the active character to a specific location within their current zone.
     /// Broadcasts <c>LocationEntered</c> to the zone group including available connections.
     /// Broadcasts <c>ZoneLocationUnlocked</c> to the caller for each passively discovered hidden location.
@@ -1087,12 +1254,16 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("ConnectionTraversed", new
             {
-                CharacterId    = characterId,
-                FromLocation   = request.FromLocationSlug,
+                CharacterId          = characterId,
+                FromLocation         = request.FromLocationSlug,
                 result.ToLocationSlug,
                 result.ToZoneId,
                 result.IsCrossZone,
                 result.ConnectionType,
+                AvailableConnections = result.AvailableConnections.Select(c => new
+                {
+                    c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable,
+                }),
             });
         }
         catch (Exception ex)

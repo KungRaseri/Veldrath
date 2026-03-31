@@ -1,3 +1,4 @@
+using System.Reactive;
 using ReactiveUI;
 
 namespace RealmUnbound.Client.ViewModels;
@@ -54,10 +55,24 @@ public sealed class InventoryItemViewModel : ViewModelBase
     /// <param name="itemRef">Item-reference slug.</param>
     /// <param name="quantity">Stack size.</param>
     /// <param name="durability">Current durability, or <see langword="null"/> for stackable items.</param>
-    public InventoryItemViewModel(string itemRef, int quantity, int? durability)
+    /// <param name="equipItem">Callback to equip this item into a slot via the hub.</param>
+    /// <param name="dropItem">Callback to drop one unit of this item via the hub.</param>
+    public InventoryItemViewModel(string itemRef, int quantity, int? durability,
+        Func<(string, string?), System.Threading.Tasks.Task>? equipItem = null,
+        Func<string, System.Threading.Tasks.Task>? dropItem = null)
     {
         ItemRef    = itemRef;
         _quantity  = quantity;
         _durability = durability;
+        EquipCommand = ReactiveCommand.CreateFromTask<string>(
+            slot => equipItem?.Invoke((slot, itemRef)) ?? System.Threading.Tasks.Task.CompletedTask);
+        DropCommand = ReactiveCommand.CreateFromTask(
+            () => dropItem?.Invoke(itemRef) ?? System.Threading.Tasks.Task.CompletedTask);
     }
+
+    /// <summary>Gets the command to equip this item; the command parameter is the target slot name.</summary>
+    public ReactiveCommand<string, Unit> EquipCommand { get; }
+
+    /// <summary>Gets the command to drop one unit of this item from the inventory.</summary>
+    public ReactiveCommand<Unit, Unit> DropCommand { get; }
 }
