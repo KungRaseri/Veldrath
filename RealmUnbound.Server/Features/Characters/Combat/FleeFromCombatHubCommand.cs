@@ -75,14 +75,14 @@ public class FleeFromCombatHubCommandHandler
             return new FleeFromCombatHubResult { Success = false, ErrorMessage = "Not in combat" };
 
         var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId, out var enemy);
+        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
 
         // Flee succeeds: remove from participation and end session.
         if (Random.Shared.Next(100) < FleeSuccessChance)
         {
             if (enemy is not null)
             {
-                lock (enemy.Lock)
+                lock (enemy.SyncRoot)
                 {
                     enemy.Participants.Remove(request.CharacterId);
                     enemy.DamageContributions.Remove(request.CharacterId);

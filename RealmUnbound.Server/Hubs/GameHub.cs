@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Characters;
+using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Features.LevelUp;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
@@ -1121,6 +1122,294 @@ public class GameHub : Hub
         }
     }
 
+    // Combat
+
+    /// <summary>
+    /// Initiates combat between the active character and a live enemy at the current location.
+    /// Broadcasts <c>CombatStarted</c> to the caller and <c>EnemyEngaged</c> to the zone group.
+    /// </summary>
+    /// <param name="request">Request containing the location slug and enemy instance ID.</param>
+    public async Task EngageEnemy(EngageEnemyHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before EngageEnemy");
+            return;
+        }
+
+        var zoneGroup    = TryGetCurrentZoneGroup(out var zg) ? zg : string.Empty;
+        var locationSlug = Context.Items.TryGetValue("CurrentLocationSlug", out var ls) && ls is string lss ? lss : request.LocationSlug;
+
+        try
+        {
+            var result = await _mediator.Send(
+                new EngageEnemyHubCommand(characterId, zoneGroup, locationSlug, request.EnemyId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to engage enemy");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("CombatStarted", new
+            {
+                CharacterId  = characterId,
+                result.EnemyId,
+                result.EnemyName,
+                result.EnemyLevel,
+                result.EnemyCurrentHealth,
+                result.EnemyMaxHealth,
+                result.EnemyAbilityNames,
+            });
+
+            if (!string.IsNullOrEmpty(zoneGroup))
+            {
+                await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyEngaged", new
+                {
+                    CharacterId = characterId,
+                    result.EnemyId,
+                    result.EnemyName,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in EngageEnemy for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to engage enemy");
+        }
+    }
+
+    /// <summary>
+    /// Performs a basic melee attack against the active character's engaged enemy.
+    /// Broadcasts <c>CombatTurn</c> to the caller and, on enemy death, <c>EnemyDefeated</c> to the zone group.
+    /// </summary>
+    public async Task AttackEnemy()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AttackEnemy");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new AttackEnemyHubCommand(characterId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Attack failed");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("CombatTurn", new
+            {
+                Action               = "attack",
+                result.PlayerDamage,
+                result.EnemyRemainingHealth,
+                result.EnemyDefeated,
+                result.EnemyDamage,
+                result.EnemyAbilityUsed,
+                result.PlayerRemainingHealth,
+                result.PlayerDefeated,
+                result.PlayerHardcoreDeath,
+                result.XpEarned,
+                result.GoldEarned,
+            });
+
+            if (result.EnemyDefeated && TryGetCurrentZoneGroup(out var zoneGroup))
+            {
+                await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyDefeated", new
+                {
+                    CharacterId = characterId,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AttackEnemy for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Attack failed");
+        }
+    }
+
+    /// <summary>
+    /// Puts the active character in a defending stance for the current combat turn, reducing incoming damage.
+    /// Broadcasts <c>CombatTurn</c> to the caller.
+    /// </summary>
+    public async Task DefendAction()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before DefendAction");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new DefendActionHubCommand(characterId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Defend failed");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("CombatTurn", new
+            {
+                Action               = "defend",
+                result.EnemyDamage,
+                result.EnemyAbilityUsed,
+                result.PlayerRemainingHealth,
+                result.PlayerDefeated,
+                result.PlayerHardcoreDeath,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DefendAction for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Defend failed");
+        }
+    }
+
+    /// <summary>
+    /// Attempts to flee from active combat (50% success chance).
+    /// On success, broadcasts <c>CombatEnded</c> to the caller.
+    /// On failure, broadcasts <c>CombatTurn</c> with the enemy counter-attack result.
+    /// </summary>
+    public async Task FleeFromCombat()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before FleeFromCombat");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new FleeFromCombatHubCommand(characterId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Flee failed");
+                return;
+            }
+
+            if (result.Fled)
+            {
+                await Clients.Caller.SendAsync("CombatEnded", new { CharacterId = characterId, Reason = "fled" });
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("CombatTurn", new
+                {
+                    Action               = "flee_failed",
+                    result.EnemyDamage,
+                    result.EnemyAbilityUsed,
+                    result.PlayerRemainingHealth,
+                    result.PlayerDefeated,
+                    result.PlayerHardcoreDeath,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in FleeFromCombat for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Flee failed");
+        }
+    }
+
+    /// <summary>
+    /// Activates a named ability in combat, dealing damage or restoring health before the enemy counter-attacks.
+    /// Broadcasts <c>CombatTurn</c> to the caller and <c>EnemyDefeated</c> to the zone group on kill.
+    /// </summary>
+    /// <param name="request">Request containing the ability ID to use.</param>
+    public async Task UseAbilityInCombat(UseAbilityInCombatHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before UseAbilityInCombat");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new UseAbilityInCombatHubCommand(characterId, request.AbilityId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Ability use failed");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("CombatTurn", new
+            {
+                Action               = "ability",
+                result.AbilityId,
+                result.AbilityDamage,
+                result.HealthRestored,
+                result.ManaCost,
+                result.PlayerRemainingMana,
+                result.EnemyRemainingHealth,
+                result.EnemyDefeated,
+                result.EnemyDamage,
+                result.EnemyAbilityUsed,
+                result.PlayerRemainingHealth,
+                result.PlayerDefeated,
+                result.PlayerHardcoreDeath,
+                result.XpEarned,
+                result.GoldEarned,
+            });
+
+            if (result.EnemyDefeated && TryGetCurrentZoneGroup(out var zoneGroup))
+            {
+                await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyDefeated", new
+                {
+                    CharacterId = characterId,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in UseAbilityInCombat for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Ability use failed");
+        }
+    }
+
+    /// <summary>
+    /// Respawns the active character after death in normal mode.
+    /// Restores a portion of HP and full mana; broadcasts <c>CharacterRespawned</c> to the caller.
+    /// </summary>
+    public async Task Respawn()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before Respawn");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new RespawnHubCommand(characterId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Respawn failed");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("CharacterRespawned", new
+            {
+                CharacterId   = characterId,
+                result.CurrentHealth,
+                result.CurrentMana,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Respawn for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Respawn failed");
+        }
+    }
+
     // Helpers
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
     {
@@ -1246,4 +1535,13 @@ public record UnlockZoneLocationHubRequest(string LocationSlug, string UnlockSou
 /// <param name="FromLocationSlug">Slug of the ZoneLocation the character is departing from.</param>
 /// <param name="ConnectionType">Type of the connection to use (e.g. <c>"path"</c>, <c>"portal"</c>).</param>
 public record TraverseConnectionHubRequest(string FromLocationSlug, string ConnectionType);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.EngageEnemy"/>.</summary>
+/// <param name="LocationSlug">Slug of the current zone location (used as fallback if not stored in context).</param>
+/// <param name="EnemyId">Unique instance ID of the enemy to engage.</param>
+public record EngageEnemyHubRequest(string LocationSlug, Guid EnemyId);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.UseAbilityInCombat"/>.</summary>
+/// <param name="AbilityId">Identifier of the ability to activate.</param>
+public record UseAbilityInCombatHubRequest(string AbilityId);
 

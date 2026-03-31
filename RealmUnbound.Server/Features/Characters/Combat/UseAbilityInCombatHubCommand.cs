@@ -116,7 +116,8 @@ public class UseAbilityInCombatHubCommandHandler
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Not in combat" };
 
         var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        if (!ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId, out var enemy))
+        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        if (enemy is null)
         {
             CombatSessionStore.Remove(request.CharacterId);
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };
@@ -180,7 +181,7 @@ public class UseAbilityInCombatHubCommandHandler
             int intelMod = (intel - 10) / 2;
             abilityDamage = Math.Max(1, intelMod + entity.Level + 5);
 
-            lock (enemy.Lock)
+            lock (enemy.SyncRoot)
             {
                 enemy.CurrentHealth = Math.Max(0, enemy.CurrentHealth - abilityDamage);
                 enemy.LastAttackerId = request.CharacterId;

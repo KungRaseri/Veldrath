@@ -70,7 +70,8 @@ public class DefendActionHubCommandHandler
             return new DefendActionHubResult { Success = false, ErrorMessage = "Not in combat" };
 
         var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        if (!ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId, out var enemy))
+        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        if (enemy is null)
         {
             CombatSessionStore.Remove(request.CharacterId);
             return new DefendActionHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };

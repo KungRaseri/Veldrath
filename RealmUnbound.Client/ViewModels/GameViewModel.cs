@@ -72,6 +72,16 @@ public class GameViewModel : ViewModelBase
     private int _level;
     private long _experience;
 
+    // Combat state
+    private bool _isInCombat;
+    private bool _isPlayerDead;
+    private bool _isHardcoreDeath;
+    private Guid? _combatEnemyId;
+    private string _combatEnemyName = string.Empty;
+    private int _combatEnemyLevel;
+    private int _combatEnemyCurrentHealth;
+    private int _combatEnemyMaxHealth;
+
     /// <summary>Attribute points the character has earned but not yet spent.</summary>
     public int UnspentAttributePoints
     {
@@ -141,6 +151,67 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Whether the active character has unspent attribute points to allocate.</summary>
     public bool HasUnspentPoints => UnspentAttributePoints > 0;
+
+    // Combat properties
+
+    /// <summary>Whether the active character is currently engaged in combat.</summary>
+    public bool IsInCombat
+    {
+        get => _isInCombat;
+        private set => this.RaiseAndSetIfChanged(ref _isInCombat, value);
+    }
+
+    /// <summary>Whether the active character has been defeated this session.</summary>
+    public bool IsPlayerDead
+    {
+        get => _isPlayerDead;
+        private set => this.RaiseAndSetIfChanged(ref _isPlayerDead, value);
+    }
+
+    /// <summary>Whether the active character has been permanently deleted by a hardcore-mode death.</summary>
+    public bool IsHardcoreDeath
+    {
+        get => _isHardcoreDeath;
+        private set => this.RaiseAndSetIfChanged(ref _isHardcoreDeath, value);
+    }
+
+    /// <summary>Instance ID of the enemy the player is currently fighting, or <see langword="null"/> when not in combat.</summary>
+    public Guid? CombatEnemyId
+    {
+        get => _combatEnemyId;
+        private set => this.RaiseAndSetIfChanged(ref _combatEnemyId, value);
+    }
+
+    /// <summary>Display name of the enemy currently being fought.</summary>
+    public string CombatEnemyName
+    {
+        get => _combatEnemyName;
+        private set => this.RaiseAndSetIfChanged(ref _combatEnemyName, value);
+    }
+
+    /// <summary>Level of the enemy currently being fought.</summary>
+    public int CombatEnemyLevel
+    {
+        get => _combatEnemyLevel;
+        private set => this.RaiseAndSetIfChanged(ref _combatEnemyLevel, value);
+    }
+
+    /// <summary>Current HP of the enemy being fought.</summary>
+    public int CombatEnemyCurrentHealth
+    {
+        get => _combatEnemyCurrentHealth;
+        private set => this.RaiseAndSetIfChanged(ref _combatEnemyCurrentHealth, value);
+    }
+
+    /// <summary>Maximum HP of the enemy being fought.</summary>
+    public int CombatEnemyMaxHealth
+    {
+        get => _combatEnemyMaxHealth;
+        private set => this.RaiseAndSetIfChanged(ref _combatEnemyMaxHealth, value);
+    }
+
+    /// <summary>Display names of abilities the current combat enemy can use.</summary>
+    public ObservableCollection<string> EnemyAbilityNames { get; } = [];
 
     // Left panel state
     private bool _isLeftPanelOpen = true;
@@ -329,6 +400,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Zone locations within the current zone, shown in the Zone panel.</summary>
     public ObservableCollection<ZoneLocationItemViewModel> ZoneLocations { get; } = [];
 
+    /// <summary>Live enemy roster at the character's current zone location.</summary>
+    public ObservableCollection<SpawnedEnemyItemViewModel> SpawnedEnemies { get; } = [];
+
     /// <summary>Display name of the zone location the character is currently standing at, or <see langword="null"/> if not at a specific location.</summary>
     public string? CurrentZoneLocationDisplayName =>
         ZoneLocations.FirstOrDefault(l => l.Slug == CurrentZoneLocationSlug)?.DisplayName;
@@ -414,6 +488,26 @@ public class GameViewModel : ViewModelBase
     /// <summary>Open the traversal-graph map screen.</summary>
     public ReactiveCommand<Unit, Unit> OpenMapCommand { get; }
 
+    // Combat commands
+
+    /// <summary>Engage a specific enemy by its instance ID at the current location.</summary>
+    public ReactiveCommand<Guid, Unit> EngageEnemyCommand { get; }
+
+    /// <summary>Perform a basic melee attack against the engaged enemy.</summary>
+    public ReactiveCommand<Unit, Unit> AttackEnemyCommand { get; }
+
+    /// <summary>Take a defensive stance this combat turn, reducing incoming damage.</summary>
+    public ReactiveCommand<Unit, Unit> DefendActionCommand { get; }
+
+    /// <summary>Attempt to flee from active combat (50% success chance).</summary>
+    public ReactiveCommand<Unit, Unit> FleeFromCombatCommand { get; }
+
+    /// <summary>Use a named ability in combat. Parameter is the ability ID.</summary>
+    public ReactiveCommand<string, Unit> UseAbilityInCombatCommand { get; }
+
+    /// <summary>Respawn the character after defeat in normal mode.</summary>
+    public ReactiveCommand<Unit, Unit> RespawnCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -480,6 +574,13 @@ public class GameViewModel : ViewModelBase
         TravelToZoneCommand = ReactiveCommand.CreateFromTask<string>(DoTravelToZoneAsync);
         ViewRegionCommand = ReactiveCommand.CreateFromTask<string>(DoShowRegionDetailsAsync);
         OpenMapCommand = ReactiveCommand.Create(DoOpenMap);
+
+        EngageEnemyCommand        = ReactiveCommand.CreateFromTask<Guid>(DoEngageEnemyAsync);
+        AttackEnemyCommand        = ReactiveCommand.CreateFromTask(DoAttackEnemyAsync);
+        DefendActionCommand       = ReactiveCommand.CreateFromTask(DoDefendActionAsync);
+        FleeFromCombatCommand     = ReactiveCommand.CreateFromTask(DoFleeFromCombatAsync);
+        UseAbilityInCombatCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityInCombatAsync);
+        RespawnCommand            = ReactiveCommand.CreateFromTask(DoRespawnAsync);
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -968,15 +1069,230 @@ public class GameViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Called from hub when combat begins with an enemy.</summary>
+    /// <param name="enemyId">The instance ID of the engaged enemy.</param>
+    /// <param name="enemyName">The enemy's display name.</param>
+    /// <param name="enemyLevel">The enemy's combat level.</param>
+    /// <param name="enemyCurrentHealth">The enemy's current HP at the start of combat.</param>
+    /// <param name="enemyMaxHealth">The enemy's maximum HP.</param>
+    /// <param name="abilityNames">Display names of abilities the enemy can use.</param>
+    public void OnCombatStarted(Guid enemyId, string enemyName, int enemyLevel,
+        int enemyCurrentHealth, int enemyMaxHealth, IReadOnlyList<string> abilityNames)
+    {
+        IsInCombat             = true;
+        IsPlayerDead           = false;
+        CombatEnemyId          = enemyId;
+        CombatEnemyName        = enemyName;
+        CombatEnemyLevel       = enemyLevel;
+        CombatEnemyCurrentHealth = enemyCurrentHealth;
+        CombatEnemyMaxHealth   = enemyMaxHealth;
+        EnemyAbilityNames.Clear();
+        foreach (var n in abilityNames) EnemyAbilityNames.Add(n);
+        AppendLog($"Combat started! You face {enemyName} (Lv {enemyLevel}).");
+    }
+
+    /// <summary>Called from hub after each combat turn resolves.</summary>
+    /// <param name="action">Action keyword: "attack", "defend", "flee_failed", or "ability".</param>
+    /// <param name="playerDamage">Damage dealt by the player this turn.</param>
+    /// <param name="healthRestored">HP healed by an ability this turn.</param>
+    /// <param name="enemyRemainingHealth">Enemy HP after the player's action.</param>
+    /// <param name="enemyDefeated">Whether the enemy was killed this turn.</param>
+    /// <param name="enemyDamage">Damage dealt by the enemy counter-attack.</param>
+    /// <param name="enemyAbilityUsed">Enemy ability name used, or <see langword="null"/> for basic attack.</param>
+    /// <param name="playerRemainingHealth">Player HP after the enemy counter-attack.</param>
+    /// <param name="playerDefeated">Whether the player was killed by the counter-attack.</param>
+    /// <param name="playerHardcoreDeath">Whether the player was permanently deleted.</param>
+    /// <param name="xpEarned">XP rewarded on enemy defeat.</param>
+    /// <param name="goldEarned">Gold rewarded on enemy defeat.</param>
+    public void OnCombatTurn(string action, int playerDamage, int healthRestored,
+        int enemyRemainingHealth, bool enemyDefeated,
+        int enemyDamage, string? enemyAbilityUsed,
+        int playerRemainingHealth, bool playerDefeated, bool playerHardcoreDeath,
+        int xpEarned, int goldEarned)
+    {
+        CombatEnemyCurrentHealth = enemyRemainingHealth;
+        CurrentHealth = playerRemainingHealth;
+
+        if (healthRestored > 0)
+            AppendLog($"[{action}] You restore {healthRestored} HP.");
+        if (playerDamage > 0)
+            AppendLog($"[{action}] You deal {playerDamage} damage. Enemy HP: {enemyRemainingHealth}/{CombatEnemyMaxHealth}");
+
+        if (enemyDefeated)
+        {
+            CombatEnemyCurrentHealth = 0;
+            IsInCombat = false;
+            var enemyItem = SpawnedEnemies.FirstOrDefault(e => e.Id == CombatEnemyId);
+            if (enemyItem is not null) enemyItem.CurrentHealth = 0;
+            AppendLog($"Enemy defeated! +{xpEarned} XP, +{goldEarned} Gold.");
+            Experience += xpEarned;
+            Gold += goldEarned;
+            return;
+        }
+
+        if (enemyAbilityUsed is not null)
+            AppendLog($"Enemy uses {enemyAbilityUsed} — deals {enemyDamage} damage.");
+        else if (enemyDamage > 0)
+            AppendLog($"Enemy attacks for {enemyDamage} damage. Your HP: {playerRemainingHealth}/{MaxHealth}");
+
+        if (playerDefeated)
+        {
+            IsPlayerDead = true;
+            IsHardcoreDeath = playerHardcoreDeath;
+            IsInCombat = false;
+            AppendLog(playerHardcoreDeath
+                ? "You have died. Your hardcore character is gone."
+                : "You have been defeated! You can respawn.");
+        }
+    }
+
+    /// <summary>Called from hub when combat ends by fleeing.</summary>
+    /// <param name="reason">Reason for combat ending (e.g. "fled").</param>
+    public void OnCombatEnded(string reason)
+    {
+        IsInCombat = false;
+        AppendLog($"Combat ended: {reason}.");
+    }
+
+    /// <summary>Called from hub when another player in the zone defeats an enemy.</summary>
+    /// <param name="charId">The character who killed the enemy.</param>
+    public void OnEnemyDefeated(Guid charId)
+    {
+        AppendLog("Another player defeated an enemy nearby.");
+    }
+
+    /// <summary>Called from hub when another player engages an enemy at this location.</summary>
+    /// <param name="charId">The character who engaged.</param>
+    /// <param name="enemyId">The instance ID of the engaged enemy.</param>
+    /// <param name="enemyName">The enemy's display name.</param>
+    public void OnEnemyEngaged(Guid charId, Guid enemyId, string enemyName)
+    {
+        AppendLog($"An ally engages {enemyName}!");
+    }
+
+    /// <summary>Called from hub when an enemy respawns at the current location.</summary>
+    /// <param name="enemyId">The new instance ID.</param>
+    /// <param name="name">The enemy's display name.</param>
+    /// <param name="level">The enemy's level.</param>
+    /// <param name="currentHealth">Starting HP.</param>
+    /// <param name="maxHealth">Maximum HP.</param>
+    public void OnEnemySpawned(Guid enemyId, string name, int level, int currentHealth, int maxHealth)
+    {
+        SpawnedEnemies.Add(new SpawnedEnemyItemViewModel
+        {
+            Id            = enemyId,
+            Name          = name,
+            Level         = level,
+            CurrentHealth = currentHealth,
+            MaxHealth     = maxHealth,
+        });
+        AppendLog($"A {name} (Lv {level}) has appeared!");
+    }
+
+    /// <summary>Called from hub when the character respawns after death in normal mode.</summary>
+    /// <param name="currentHealth">HP after respawn.</param>
+    /// <param name="currentMana">Mana after respawn.</param>
+    public void OnCharacterRespawned(int currentHealth, int currentMana)
+    {
+        CurrentHealth   = currentHealth;
+        CurrentMana     = currentMana;
+        IsPlayerDead    = false;
+        IsHardcoreDeath = false;
+        AppendLog($"You have respawned. HP: {currentHealth}/{MaxHealth}");
+    }
+
+    private async Task DoEngageEnemyAsync(Guid enemyId)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("EngageEnemy",
+                new { LocationSlug = CurrentZoneLocationSlug ?? string.Empty, EnemyId = enemyId });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Engage failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoAttackEnemyAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("AttackEnemy");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Attack failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoDefendActionAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("DefendAction");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Defend failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoFleeFromCombatAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("FleeFromCombat");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Flee failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoUseAbilityInCombatAsync(string abilityId)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("UseAbilityInCombat", new { AbilityId = abilityId });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Ability failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoRespawnAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("Respawn");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Respawn failed: {ex.Message}");
+        }
+    }
+
     /// <summary>Called from hub when the server confirms the character has entered a zone location.</summary>
     /// <param name="locationSlug">The slug of the location entered.</param>
     /// <param name="locationDisplayName">The display name of the location.</param>
     /// <param name="locationType">The type of location (e.g. "dungeon", "location", "environment").</param>
-    public void OnLocationEntered(string locationSlug, string locationDisplayName, string locationType)
+    /// <param name="spawnedEnemies">Enemy roster at the arrived location.</param>
+    public void OnLocationEntered(string locationSlug, string locationDisplayName, string locationType,
+        IReadOnlyList<SpawnedEnemyItemViewModel>? spawnedEnemies = null)
     {
         CurrentZoneLocationSlug = locationSlug;
         foreach (var loc in ZoneLocations) loc.IsCurrent = loc.Slug == locationSlug;
+
+        SpawnedEnemies.Clear();
+        if (spawnedEnemies is not null)
+            foreach (var e in spawnedEnemies)
+                SpawnedEnemies.Add(e);
+
         AppendLog($"Arrived at {locationDisplayName} ({locationType}).");
+        if (SpawnedEnemies.Count > 0)
+            AppendLog($"{SpawnedEnemies.Count} enemy/enemies present.");
     }
 
     /// <summary>Called from hub when a hidden zone location has been newly unlocked for this character.</summary>
@@ -1129,3 +1445,35 @@ public class GameViewModel : ViewModelBase
 /// <param name="Quantity">Stack size.</param>
 /// <param name="Durability">Current durability (0–100), or <see langword="null"/> for stackable items.</param>
 public record InventoryItemEntry(string ItemRef, int Quantity, int? Durability);
+
+/// <summary>A live enemy at the character's current zone location, displayed in the enemy roster UI.</summary>
+public class SpawnedEnemyItemViewModel : ReactiveObject
+{
+    private int _currentHealth;
+
+    /// <summary>Gets the unique instance ID of this spawned enemy.</summary>
+    public Guid Id { get; init; }
+
+    /// <summary>Gets the display name of this enemy.</summary>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>Gets the combat level of this enemy.</summary>
+    public int Level { get; init; }
+
+    /// <summary>Gets the maximum HP of this enemy.</summary>
+    public int MaxHealth { get; init; }
+
+    /// <summary>Gets or sets the current HP of this enemy.</summary>
+    public int CurrentHealth
+    {
+        get => _currentHealth;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _currentHealth, value);
+            this.RaisePropertyChanged(nameof(IsAlive));
+        }
+    }
+
+    /// <summary>Gets a value indicating whether this enemy has any remaining health.</summary>
+    public bool IsAlive => CurrentHealth > 0;
+}

@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
-using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Hubs;
+using ServerCharacter = RealmUnbound.Server.Data.Entities.Character;
 
 namespace RealmUnbound.Server.Features.Characters.Combat;
 
@@ -82,7 +82,10 @@ internal static class CombatHelpers
         int damage  = 0;
 
         if (ability.EffectType == RealmEngine.Shared.Models.PowerEffectType.Damage)
-            damage = Math.Max(1, (ability.BaseDamage > 0 ? ability.BaseDamage : 5) + enemy.Level);
+        {
+            int baseDmg = int.TryParse(ability.BaseDamage, out var d) ? d : 0;
+            damage = Math.Max(1, (baseDmg > 0 ? baseDmg : 5) + enemy.Level);
+        }
 
         return (damage, ability.Name);
     }
@@ -97,7 +100,7 @@ internal static class CombatHelpers
     {
         // Atomic guard: only distribute once even under concurrent kills.
         bool alreadyRewarded;
-        lock (enemy.Lock)
+        lock (enemy.SyncRoot)
         {
             alreadyRewarded = enemy.WasRewarded;
             if (!alreadyRewarded) enemy.WasRewarded = true;
@@ -181,7 +184,7 @@ internal static class CombatHelpers
     // Returns (isDead, isHardcore) for broadcast.
     internal static async Task<(bool isDead, bool isHardcore)> HandleDeathIfNeededAsync(
         Character player,
-        Data.Entities.Character entity,
+        ServerCharacter entity,
         Dictionary<string, int> attrs,
         ActiveCombatSession session,
         SpawnedEnemy? enemy,
@@ -193,7 +196,7 @@ internal static class CombatHelpers
         // Remove from enemy participation
         if (enemy is not null)
         {
-            lock (enemy.Lock)
+            lock (enemy.SyncRoot)
             {
                 enemy.Participants.Remove(entity.Id);
                 enemy.DamageContributions.Remove(entity.Id);
