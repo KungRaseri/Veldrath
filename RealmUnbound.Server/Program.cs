@@ -204,6 +204,7 @@ try
     // RealmEngine services
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
+    builder.Services.AddScoped<RealmUnbound.Server.Features.Characters.Combat.ActorPoolResolver>();
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
