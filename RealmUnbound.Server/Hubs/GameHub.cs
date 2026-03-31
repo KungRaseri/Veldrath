@@ -162,6 +162,12 @@ public class GameHub : Hub
             MaxMana                = initMaxMana,
             Gold                   = initAttrs.GetValueOrDefault("Gold", 0),
             UnspentAttributePoints = initAttrs.GetValueOrDefault("UnspentAttributePoints", 0),
+            Strength               = initAttrs.GetValueOrDefault("Strength", 10),
+            Dexterity              = initAttrs.GetValueOrDefault("Dexterity", 10),
+            Constitution           = initAttrs.GetValueOrDefault("Constitution", 10),
+            Intelligence           = initAttrs.GetValueOrDefault("Intelligence", 10),
+            Wisdom                 = initAttrs.GetValueOrDefault("Wisdom", 10),
+            Charisma               = initAttrs.GetValueOrDefault("Charisma", 10),
             LearnedAbilities       = learnedAbilities,
             SelectedAt             = DateTimeOffset.UtcNow,
         });

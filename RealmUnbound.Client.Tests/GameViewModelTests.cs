@@ -637,11 +637,11 @@ public class GameViewModelTests : TestBase
     public void SeedInitialStats_Should_Set_All_Properties()
     {
         var vm = MakeVm();
-        vm.SeedInitialStats(
-            level: 5, experience: 200L,
-            currentHealth: 80, maxHealth: 100,
-            currentMana: 40, maxMana: 50,
-            gold: 300, unspentAttributePoints: 3);
+        vm.SeedInitialStats(new SeedInitialStatsArgs(
+            Level: 5, Experience: 200L,
+            CurrentHealth: 80, MaxHealth: 100,
+            CurrentMana: 40, MaxMana: 50,
+            Gold: 300, UnspentAttributePoints: 3));
 
         vm.Level.Should().Be(5);
         vm.Experience.Should().Be(200L);
@@ -657,7 +657,7 @@ public class GameViewModelTests : TestBase
     public void SeedInitialStats_With_Zero_Values_Should_Not_Throw()
     {
         var vm = MakeVm();
-        var act = () => vm.SeedInitialStats(0, 0L, 0, 0, 0, 0, 0, 0);
+        var act = () => vm.SeedInitialStats(new SeedInitialStatsArgs(0, 0L, 0, 0, 0, 0, 0, 0));
         act.Should().NotThrow();
     }
 
@@ -981,8 +981,8 @@ public class GameViewModelTests : TestBase
     public void ExperienceToNextLevel_Should_Scale_With_Level()
     {
         var vm = MakeVm();
-        vm.SeedInitialStats(level: 5, experience: 0, currentHealth: 50, maxHealth: 50,
-                            currentMana: 25, maxMana: 25, gold: 0, unspentAttributePoints: 0);
+        vm.SeedInitialStats(new SeedInitialStatsArgs(Level: 5, Experience: 0, CurrentHealth: 50, MaxHealth: 50,
+                            CurrentMana: 25, MaxMana: 25, Gold: 0, UnspentAttributePoints: 0));
 
         vm.ExperienceToNextLevel.Should().Be(500L); // 5 * 100
     }
@@ -991,8 +991,8 @@ public class GameViewModelTests : TestBase
     public void ExperienceToNextLevel_Should_Be_At_Least_One_At_Level_Zero()
     {
         var vm = MakeVm();
-        vm.SeedInitialStats(level: 0, experience: 0, currentHealth: 10, maxHealth: 10,
-                            currentMana: 5, maxMana: 5, gold: 0, unspentAttributePoints: 0);
+        vm.SeedInitialStats(new SeedInitialStatsArgs(Level: 0, Experience: 0, CurrentHealth: 10, MaxHealth: 10,
+                            CurrentMana: 5, MaxMana: 5, Gold: 0, UnspentAttributePoints: 0));
 
         vm.ExperienceToNextLevel.Should().BeGreaterThanOrEqualTo(1L);
     }
