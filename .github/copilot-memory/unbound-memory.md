@@ -50,6 +50,12 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | `UnlockZoneLocation` | `UnlockZoneLocationHubCommand` | 2026-03-24 session-18 |
 | `SearchArea` | `SearchAreaHubCommand` | 2026-03-24 session-18 |
 | `TraverseConnection` | `TraverseConnectionHubCommand` | 2026-03-24 session-18 |
+| `EngageEnemy` | `EngageEnemyHubCommand` | 2026-03-30 session-27 |
+| `AttackEnemy` | `AttackEnemyHubCommand` | 2026-03-30 session-27 |
+| `DefendAction` | `DefendActionHubCommand` | 2026-03-30 session-27 |
+| `FleeFromCombat` | `FleeFromCombatHubCommand` | 2026-03-30 session-27 |
+| `UseAbilityInCombat` | `UseAbilityInCombatHubCommand` | 2026-03-30 session-27 |
+| `Respawn` | `RespawnHubCommand` | 2026-03-30 session-27 |
 
 > **Note**: All 15 bridges above are server-side complete and fully wired end-to-end.
 
@@ -127,6 +133,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-19 (server-offline UX) | **511** | **468** | **979** |
 | Session-20 (server reconnect polling) | **518** | **468** | **986** |
 | Session-26 (2026-03-30: Phase 0b–0c) | **512** | **468** | **980** |
+| Session-27 (2026-03-30: combat system phases 1-7) | **512** | **468** | **980** |
 
 ## Phase 0b — Server Schema Migrations (2026-03-30)
 
