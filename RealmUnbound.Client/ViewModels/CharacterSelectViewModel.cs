@@ -23,6 +23,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly TokenStore _tokens;
 
     private bool _isCreating;
+    private bool _isHardcoreCreate;
     private string _newCharacterName = string.Empty;
     private string _selectedClass = string.Empty;
     private IReadOnlyList<string> _availableClasses = ["Warrior"];
@@ -65,6 +66,13 @@ public class CharacterSelectViewModel : ViewModelBase
             this.RaiseAndSetIfChanged(ref _isCreating, value);
             this.RaisePropertyChanged(nameof(PanelTitle));
         }
+    }
+
+    /// <summary>Gets or sets a value indicating whether the character being created is in hardcore (permadeath) mode.</summary>
+    public bool IsHardcoreCreate
+    {
+        get => _isHardcoreCreate;
+        set => this.RaiseAndSetIfChanged(ref _isHardcoreCreate, value);
     }
 
     public string NewCharacterName
@@ -143,7 +151,7 @@ public class CharacterSelectViewModel : ViewModelBase
 
         SelectCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoSelectAsync);
         ShowCreateCommand = ReactiveCommand.Create(() => { IsCreating = true; ClearError(); });
-        CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; NewCharacterName = string.Empty; SelectedClass = string.Empty; ClearError(); });
+        CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; IsHardcoreCreate = false; NewCharacterName = string.Empty; SelectedClass = string.Empty; ClearError(); });
         CreateCommand = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
         DeleteCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoDeleteAsync);
         LogoutCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -426,7 +434,8 @@ public class CharacterSelectViewModel : ViewModelBase
         ClearError();
         try
         {
-            var (character, error) = await _characters.CreateCharacterAsync(new CreateCharacterRequest(NewCharacterName!, SelectedClass!));
+            var difficultyMode = IsHardcoreCreate ? "hardcore" : "normal";
+            var (character, error) = await _characters.CreateCharacterAsync(new CreateCharacterRequest(NewCharacterName!, SelectedClass!, difficultyMode));
             if (character is not null)
             {
                 var entry = new CharacterEntryViewModel(character);
@@ -435,6 +444,7 @@ public class CharacterSelectViewModel : ViewModelBase
                     _ = LoadEntryIconsAsync([entry]);
                 NewCharacterName = string.Empty;
                 SelectedClass = string.Empty;
+                IsHardcoreCreate = false;
                 IsCreating = false;
             }
             else

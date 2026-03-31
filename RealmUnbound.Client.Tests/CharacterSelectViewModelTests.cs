@@ -969,4 +969,43 @@ public class CharacterSelectViewModelTests : TestBase
 
         gameVm.ActionLog.Should().Contain(msg => msg.Contains("Welcome to the shop at Fenwick Crossing"));
     }
+
+    // Hardcore difficulty mode
+    [Fact]
+    public async Task CreateCommand_Should_Pass_Normal_DifficultyMode_By_Default()
+    {
+        var fake = new FakeCharacterService();
+        var vm   = MakeVm(chars: fake);
+        vm.NewCharacterName = "Hero";
+        vm.SelectedClass    = "Fighter";
+
+        await vm.CreateCommand.Execute();
+
+        fake.LastCreateRequest!.DifficultyMode.Should().Be("normal");
+    }
+
+    [Fact]
+    public async Task CreateCommand_Should_Pass_Hardcore_DifficultyMode_When_IsHardcoreCreate_Is_True()
+    {
+        var fake = new FakeCharacterService();
+        var vm   = MakeVm(chars: fake);
+        vm.NewCharacterName   = "Ironborn";
+        vm.SelectedClass      = "Fighter";
+        vm.IsHardcoreCreate   = true;
+
+        await vm.CreateCommand.Execute();
+
+        fake.LastCreateRequest!.DifficultyMode.Should().Be("hardcore");
+    }
+
+    [Fact]
+    public async Task CancelCreateCommand_Should_Reset_IsHardcoreCreate()
+    {
+        var vm = MakeVm();
+        vm.IsHardcoreCreate = true;
+
+        await vm.CancelCreateCommand.Execute();
+
+        vm.IsHardcoreCreate.Should().BeFalse();
+    }
 }

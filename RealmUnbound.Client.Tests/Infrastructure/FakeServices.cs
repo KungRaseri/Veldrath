@@ -74,6 +74,8 @@ public class FakeCharacterService : ICharacterService
     public int CreateCallCount { get; private set; }
     public int DeleteCallCount { get; private set; }
 
+    public CreateCharacterRequest? LastCreateRequest { get; private set; }
+
     public Task<List<CharacterDto>> GetCharactersAsync()
     {
         GetCallCount++;
@@ -83,6 +85,7 @@ public class FakeCharacterService : ICharacterService
     public Task<(CharacterDto? Character, AppError? Error)> CreateCharacterAsync(CreateCharacterRequest request)
     {
         CreateCallCount++;
+        LastCreateRequest = request;
         if (CreateResult.Character is not null)
         {
             var c = CreateResult.Character with { Name = request.Name };
