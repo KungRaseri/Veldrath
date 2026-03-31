@@ -11,7 +11,10 @@ using RealmEngine.Data.Repositories;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Shared.Abstractions;
 using RealmUnbound.Server.Features.Characters;
+using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Hubs;
 using RealmUnbound.Server.Services;
@@ -3508,6 +3511,7 @@ public class GameHubTests : IDisposable
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
             new CharacterUnlockedLocationRepository(db),
+            new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3537,6 +3541,7 @@ public class GameHubTests : IDisposable
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
             new CharacterUnlockedLocationRepository(db),
+            new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3558,6 +3563,7 @@ public class GameHubTests : IDisposable
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
             new CharacterUnlockedLocationRepository(db),
+            new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3579,6 +3585,7 @@ public class GameHubTests : IDisposable
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
             new CharacterUnlockedLocationRepository(db),
+            new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -3629,6 +3636,7 @@ public class GameHubTests : IDisposable
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
             new CharacterRepository(db),
             new CharacterUnlockedLocationRepository(db),
+            new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(

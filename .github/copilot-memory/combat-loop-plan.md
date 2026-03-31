@@ -145,10 +145,10 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 
 | Phase | Task | Status |
 |---|---|---|
-| 8 | Tests — server combat handler unit tests | ⬜ |
-| 8 | Tests — client GameViewModel combat command tests | ⬜ |
-| 9 | `GameView.axaml` — combat panel UI (enemy roster, action buttons, death/respawn overlay) | ⬜ |
-| Final | `dotnet test RealmUnbound.slnx --filter "Category!=UI"` | ⬜ |
+| 8 | Tests — server combat handler unit tests | ✅ |
+| 8 | Tests — client GameViewModel combat command tests | ✅ |
+| 9 | `GameView.axaml` — combat panel UI (enemy roster, action buttons, death/respawn overlay) | ✅ |
+| Final | `dotnet test RealmUnbound.slnx --filter "Category!=UI"` | ✅ 525+491=1016 |
 
 #### Phase 8 — Test Priorities
 - `EngageEnemyHubCommandHandlerTests`: guard (already in combat), enemy not found, enemy dead, success
