@@ -127,4 +127,29 @@ public class GetCreationPreviewHandlerTests
         result.Character.MaxHealth.Should().Be(150);
         result.Character.Mana.Should().Be(80);
     }
+
+    [Fact]
+    public async Task Handle_BackgroundBonuses_StackOnPreview()
+    {
+        var background = new Background
+        {
+            Slug               = "soldier",
+            Name               = "Soldier",
+            PrimaryAttribute   = "Strength",
+            PrimaryBonus       = 2,
+            SecondaryAttribute = "Constitution",
+            SecondaryBonus     = 1,
+        };
+        var session = new CharacterCreationSession
+        {
+            SelectedClass      = MakeClass(),
+            SelectedBackground = background,
+        };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(new GetCreationPreviewQuery(session.SessionId), default);
+
+        result.Character!.Strength.Should().Be(12);      // 10 default + 2 background bonus
+        result.Character.Constitution.Should().Be(11);   // 10 default + 1 background bonus
+    }
 }

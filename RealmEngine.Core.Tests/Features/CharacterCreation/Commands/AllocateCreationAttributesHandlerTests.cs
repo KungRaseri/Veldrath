@@ -102,4 +102,17 @@ public class AllocateCreationAttributesHandlerTests
 
         result.Success.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task Handle_FinalizedSession_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession { Status = CreationSessionStatus.Finalized };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(
+            new AllocateCreationAttributesCommand(session.SessionId, ValidAlloc()), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Finalized");
+    }
 }

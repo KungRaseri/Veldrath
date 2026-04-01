@@ -104,10 +104,10 @@ public class SetCreationChoiceCommandHandlerTests
         var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
             NullLogger<SetCreationNameHandler>.Instance);
 
-        var result = await handler.Handle(new SetCreationNameCommand(session.SessionId, "Heroic One"), default);
+        var result = await handler.Handle(new SetCreationNameCommand(session.SessionId, "Heroic"), default);
 
         result.Success.Should().BeTrue();
-        session.CharacterName.Should().Be("Heroic One");
+        session.CharacterName.Should().Be("Heroic");
     }
 
     // ----- SetCreationSpeciesHandler -----
@@ -241,5 +241,102 @@ public class SetCreationChoiceCommandHandlerTests
 
         result.Success.Should().BeTrue();
         session.SelectedLocationId.Should().Be("loc-1");
+    }
+
+    // ----- Status guard -----
+
+    [Fact]
+    public async Task SetCreationClass_FinalizedSession_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession { Status = CreationSessionStatus.Finalized };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+        var handler = new SetCreationClassHandler(_sessionStoreMock.Object, _mediatorMock.Object,
+            NullLogger<SetCreationClassHandler>.Instance);
+
+        var result = await handler.Handle(new SetCreationClassCommand(session.SessionId, "warrior"), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Finalized");
+    }
+
+    [Fact]
+    public async Task SetCreationName_FinalizedSession_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession { Status = CreationSessionStatus.Finalized };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+        var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
+            NullLogger<SetCreationNameHandler>.Instance);
+
+        var result = await handler.Handle(new SetCreationNameCommand(session.SessionId, "Heroic"), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Finalized");
+    }
+
+    // ----- Name validation -----
+
+    [Fact]
+    public async Task SetCreationName_TooShort_ReturnsFailed()
+    {
+        var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
+            NullLogger<SetCreationNameHandler>.Instance);
+
+        var result = await handler.Handle(new SetCreationNameCommand(Guid.NewGuid(), "A"), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("2 characters");
+    }
+
+    [Fact]
+    public async Task SetCreationName_TooLong_ReturnsFailed()
+    {
+        var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
+            NullLogger<SetCreationNameHandler>.Instance);
+
+        var result = await handler.Handle(
+            new SetCreationNameCommand(Guid.NewGuid(), new string('A', 31)), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("30 characters");
+    }
+
+    [Fact]
+    public async Task SetCreationName_ContainsNumber_ReturnsFailed()
+    {
+        var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
+            NullLogger<SetCreationNameHandler>.Instance);
+
+        var result = await handler.Handle(new SetCreationNameCommand(Guid.NewGuid(), "H3ro"), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("only contain letters");
+    }
+
+    [Fact]
+    public async Task SetCreationName_ContainsSpace_ReturnsFailed()
+    {
+        var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
+            NullLogger<SetCreationNameHandler>.Instance);
+
+        var result = await handler.Handle(new SetCreationNameCommand(Guid.NewGuid(), "Hero One"), default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("only contain letters");
+    }
+
+    [Fact]
+    public async Task SetCreationName_Valid_StoresTrimmedName()
+    {
+        var session = MakeSession();
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+        _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
+        var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
+            NullLogger<SetCreationNameHandler>.Instance);
+
+        var result = await handler.Handle(
+            new SetCreationNameCommand(session.SessionId, "  Heroic  "), default);
+
+        result.Success.Should().BeTrue();
+        session.CharacterName.Should().Be("Heroic");
     }
 }

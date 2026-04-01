@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using RealmEngine.Core;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Data.Persistence;
 using RealmUnbound.Server.Data;
@@ -88,6 +89,9 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         // database, so call CreateTables directly to create ContentDbContext's schema.
         sp.GetRequiredService<ContentDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
         DatabaseSeeder.SeedApplicationDataAsync(sp).GetAwaiter().GetResult();
+
+        // Initialize catalog singletons after the SQLite schema exists.
+        host.Services.InitializeCatalogsAsync().GetAwaiter().GetResult();
 
         return host;
     }

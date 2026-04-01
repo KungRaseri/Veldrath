@@ -67,6 +67,8 @@ public class SetCreationClassHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
         var classResult = await mediator.Send(new GetCharacterClassQuery { ClassName = request.ClassName }, cancellationToken);
         if (!classResult.Found || classResult.CharacterClass is null)
@@ -93,14 +95,24 @@ public class SetCreationNameHandler(
         if (string.IsNullOrWhiteSpace(request.CharacterName))
             return new SetCreationChoiceResult { Success = false, Message = "Character name cannot be empty." };
 
+        var trimmed = request.CharacterName.Trim();
+        if (trimmed.Length < 2)
+            return new SetCreationChoiceResult { Success = false, Message = "Character name must be at least 2 characters." };
+        if (trimmed.Length > 30)
+            return new SetCreationChoiceResult { Success = false, Message = "Character name cannot exceed 30 characters." };
+        if (!trimmed.All(char.IsLetter))
+            return new SetCreationChoiceResult { Success = false, Message = "Character name may only contain letters." };
+
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
-        session.CharacterName = request.CharacterName;
+        session.CharacterName = trimmed;
         await sessionStore.UpdateSessionAsync(session);
-        logger.LogDebug("Session {SessionId}: name set to '{Name}'", request.SessionId, request.CharacterName);
-        return new SetCreationChoiceResult { Success = true, Message = $"Character name set to '{request.CharacterName}'." };
+        logger.LogDebug("Session {SessionId}: name set to '{Name}'", request.SessionId, trimmed);
+        return new SetCreationChoiceResult { Success = true, Message = $"Character name set to '{trimmed}'." };
     }
 }
 
@@ -119,6 +131,8 @@ public class SetCreationSpeciesHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
         var species = await speciesRepository.GetSpeciesBySlugAsync(request.SpeciesSlug);
         if (species is null)
@@ -146,6 +160,8 @@ public class SetCreationBackgroundHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
         var background = await backgroundRepository.GetBackgroundByIdAsync(request.BackgroundId);
         if (background is null)
@@ -171,6 +187,8 @@ public class SetCreationEquipmentPreferencesHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
         session.PreferredArmorType  = request.PreferredArmorType;
         session.PreferredWeaponType = request.PreferredWeaponType;
@@ -193,6 +211,8 @@ public class SetCreationLocationHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
         session.SelectedLocationId = request.LocationId;
         await sessionStore.UpdateSessionAsync(session);

@@ -43,6 +43,8 @@ public class AllocateCreationAttributesHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new AllocateCreationAttributesResult { Success = false, Message = $"Session {request.SessionId} not found." };
+        if (session.Status != CreationSessionStatus.Draft)
+            return new AllocateCreationAttributesResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
         if (!Config.IsValid(request.Allocations))
         {
