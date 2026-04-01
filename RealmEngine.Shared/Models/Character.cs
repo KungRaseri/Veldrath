@@ -71,6 +71,12 @@ public class Character
     public string? BackgroundId { get; set; }
 
     /// <summary>
+    /// Gets or sets the species slug selected during character creation.
+    /// Example: "human", "elf", "dwarf"
+    /// </summary>
+    public string? SpeciesSlug { get; set; }
+
+    /// <summary>
     /// Gets or sets the Strength attribute. Affects melee damage and carry weight.
     /// </summary>
     public int Strength { get; set; } = 10;

@@ -102,12 +102,12 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
         WeaponProficiency  = [],
         StartingHealth     = entity.Stats.BaseHealth ?? 100,
         StartingMana       = entity.Stats.BaseMana   ?? 50,
-        BonusStrength      = 10,
-        BonusDexterity     = 10,
-        BonusConstitution  = 10,
-        BonusIntelligence  = 10,
-        BonusWisdom        = 10,
-        BonusCharisma      = 10,
+        BonusStrength      = 0,
+        BonusDexterity     = 0,
+        BonusConstitution  = 0,
+        BonusIntelligence  = 0,
+        BonusWisdom        = 0,
+        BonusCharisma      = 0,
         StartingPowerIds = entity.PowerUnlocks
             .Where(u => u.LevelRequired == 1 && u.Power is not null)
             .Select(u => $"@powers/{u.Power!.TypeKey}:{u.Power.Slug}")
