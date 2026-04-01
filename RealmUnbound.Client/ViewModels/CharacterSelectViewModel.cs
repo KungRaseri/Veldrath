@@ -16,18 +16,10 @@ public class CharacterSelectViewModel : ViewModelBase
     private readonly IServerConnectionService _connection;
     private readonly INavigationService _navigation;
     private readonly GameViewModel _gameVm;
-    private readonly ContentCache _contentCache;
     private readonly ClientSettings _settings;
     private readonly IAssetStore? _assetStore;
     private readonly IAuthService _auth;
     private readonly TokenStore _tokens;
-
-    private bool _isCreating;
-    private bool _isHardcoreCreate;
-    private string _newCharacterName = string.Empty;
-    private string _selectedClass = string.Empty;
-    private IReadOnlyList<string> _availableClasses = ["Warrior"];
-    private Bitmap? _selectedClassIcon;
 
     // Hub subscriptions — stored so they can be disposed before re-subscribing on retry
     private IDisposable? _zoneEnteredSub;
@@ -69,53 +61,6 @@ public class CharacterSelectViewModel : ViewModelBase
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
 
-    public bool IsCreating
-    {
-        get => _isCreating;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _isCreating, value);
-            this.RaisePropertyChanged(nameof(PanelTitle));
-        }
-    }
-
-    /// <summary>Gets or sets a value indicating whether the character being created is in hardcore (permadeath) mode.</summary>
-    public bool IsHardcoreCreate
-    {
-        get => _isHardcoreCreate;
-        set => this.RaiseAndSetIfChanged(ref _isHardcoreCreate, value);
-    }
-
-    public string NewCharacterName
-    {
-        get => _newCharacterName;
-        set => this.RaiseAndSetIfChanged(ref _newCharacterName, value);
-    }
-
-    public string SelectedClass
-    {
-        get => _selectedClass;
-        set => this.RaiseAndSetIfChanged(ref _selectedClass, value);
-    }
-
-    /// <summary>Gets the list of available character classes for the creation dropdown.
-    /// Loaded from the content catalog on startup; falls back to the built-in list when the server is unavailable.</summary>
-    public IReadOnlyList<string> AvailableClasses
-    {
-        get => _availableClasses;
-        private set => this.RaiseAndSetIfChanged(ref _availableClasses, value);
-    }
-
-    /// <summary>Class badge icon for the currently selected class in the create form, or <see langword="null"/> when no class is selected or assets are unavailable.</summary>
-    public Bitmap? SelectedClassIcon
-    {
-        get => _selectedClassIcon;
-        private set => this.RaiseAndSetIfChanged(ref _selectedClassIcon, value);
-    }
-
-    /// <summary>Drives the top bar title — changes when switching between list and create panels.</summary>
-    public string PanelTitle => IsCreating ? "New Character" : "Select Your Character";
-
     /// <summary>Gets or sets the base URL of the game server. Delegates to <see cref="ClientSettings.ServerBaseUrl"/>.</summary>
     public string ServerUrl
     {
@@ -125,8 +70,6 @@ public class CharacterSelectViewModel : ViewModelBase
 
     public ReactiveCommand<CharacterEntryViewModel, Unit> SelectCommand { get; }
     public ReactiveCommand<Unit, Unit> ShowCreateCommand { get; }
-    public ReactiveCommand<Unit, Unit> CancelCreateCommand { get; }
-    public ReactiveCommand<Unit, Unit> CreateCommand { get; }
     public ReactiveCommand<CharacterEntryViewModel, Unit> DeleteCommand { get; }
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
 
@@ -138,7 +81,6 @@ public class CharacterSelectViewModel : ViewModelBase
         GameViewModel gameVm,
         IAuthService auth,
         TokenStore tokens,
-        ContentCache contentCache,
         ClientSettings settings,
         IAssetStore? assetStore = null)
     {
@@ -146,24 +88,13 @@ public class CharacterSelectViewModel : ViewModelBase
         _connection = connection;
         _navigation = navigation;
         _gameVm = gameVm;
-        _contentCache = contentCache;
         _settings = settings;
         _assetStore = assetStore;
         _auth = auth;
         _tokens = tokens;
 
-        if (assetStore is not null)
-            this.WhenAnyValue(x => x.SelectedClass)
-                .Subscribe(cls => _ = LoadSelectedClassIconAsync(cls));
-
-        var canCreate = this.WhenAnyValue(
-            x => x.NewCharacterName, x => x.IsBusy, x => x.SelectedClass,
-            (name, busy, cls) => !string.IsNullOrWhiteSpace(name) && !busy && !string.IsNullOrWhiteSpace(cls));
-
         SelectCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoSelectAsync);
-        ShowCreateCommand = ReactiveCommand.Create(() => { IsCreating = true; ClearError(); });
-        CancelCreateCommand = ReactiveCommand.Create(() => { IsCreating = false; IsHardcoreCreate = false; NewCharacterName = string.Empty; SelectedClass = string.Empty; ClearError(); });
-        CreateCommand = ReactiveCommand.CreateFromTask(DoCreateAsync, canCreate);
+        ShowCreateCommand = ReactiveCommand.Create(() => _navigation.NavigateTo<CreateCharacterViewModel>());
         DeleteCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoDeleteAsync);
         LogoutCommand = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -206,15 +137,6 @@ public class CharacterSelectViewModel : ViewModelBase
                 if (entry is not null)
                     entry.IsOnline = payload.IsOnline;
             });
-
-            // Load class catalog from content service (best-effort; falls back to built-in list on failure).
-            try
-            {
-                var classes = await _contentCache.GetClassesAsync();
-                if (classes.Count > 0)
-                    AvailableClasses = classes.Select(c => c.DisplayName).ToArray();
-            }
-            catch { /* keep hardcoded fallback */ }
 
             var list = await _characters.GetCharactersAsync();
             PopulateCharacters(list);
@@ -493,42 +415,6 @@ public class CharacterSelectViewModel : ViewModelBase
                     entry.HardcoreIcon = new Bitmap(new MemoryStream(skullBytes));
             }
         }
-    }
-
-    private async Task LoadSelectedClassIconAsync(string className)
-    {
-        var path = ClassAssets.GetPath(className);
-        if (path is null) { SelectedClassIcon = null; return; }
-        var bytes = await _assetStore!.LoadImageAsync(path);
-        SelectedClassIcon = bytes is null ? null : new Bitmap(new MemoryStream(bytes));
-    }
-
-    private async Task DoCreateAsync()
-    {
-        IsBusy = true;
-        ClearError();
-        try
-        {
-            var difficultyMode = IsHardcoreCreate ? "hardcore" : "normal";
-            var (character, error) = await _characters.CreateCharacterAsync(new CreateCharacterRequest(NewCharacterName!, SelectedClass!, difficultyMode));
-            if (character is not null)
-            {
-                var entry = new CharacterEntryViewModel(character);
-                Characters.Add(entry);
-                if (_assetStore is not null)
-                    _ = LoadEntryIconsAsync([entry]);
-                NewCharacterName = string.Empty;
-                SelectedClass = string.Empty;
-                IsHardcoreCreate = false;
-                IsCreating = false;
-            }
-            else
-            {
-                ErrorMessage = error?.Message ?? "Failed to create character.";
-                ErrorDetails = error?.Details ?? string.Empty;
-            }
-        }
-        finally { IsBusy = false; }
     }
 
     private async Task DoDeleteAsync(CharacterEntryViewModel entry)

@@ -296,6 +296,30 @@ public class FakeContentService : IContentService
         new("rogue",   "Rogue",   "rogues",    8, "dexterity",    30),
     ];
 
+    /// <summary>Gets or sets the list of species returned by <see cref="GetSpeciesAsync"/>.</summary>
+    public List<SpeciesDto> Species { get; set; } =
+    [
+        new("human",  "Human",  "humanoids", 10),
+        new("elf",    "Elf",    "fae",         6),
+        new("dwarf",  "Dwarf",  "stout",       8),
+    ];
+
+    /// <summary>Gets or sets the list of backgrounds returned by <see cref="GetBackgroundsAsync"/>.</summary>
+    public List<BackgroundDto> Backgrounds { get; set; } =
+    [
+        new("soldier",  "Soldier",  "martial",  10),
+        new("sage",     "Sage",     "scholarly",  8),
+        new("criminal", "Criminal", "rogue",       6),
+    ];
+
+    /// <summary>Gets or sets the list of zone locations returned by <see cref="GetZoneLocationsAsync"/>.</summary>
+    public List<ZoneLocationDto> ZoneLocations { get; set; } =
+    [
+        new("town-square",   "Town Square",   "town",    "starter-zone", "landmark", 10, 1, 5),
+        new("forest-outpost","Forest Outpost","outdoor", "starter-zone", "outpost",   8, 1, 5),
+        new("docks",         "Docks",         "coastal", "starter-zone", "dock",      6, 1, 5),
+    ];
+
     public Task<List<PowerDto>>     GetAbilitiesAsync()            => Task.FromResult(new List<PowerDto>());
     public Task<PowerDto?>           GetAbilityAsync(string slug)   => Task.FromResult<PowerDto?>(null);
     public Task<List<EnemyDto>>      GetEnemiesAsync()              => Task.FromResult(new List<EnemyDto>());
@@ -312,16 +336,16 @@ public class FakeContentService : IContentService
     public Task<PowerDto?>           GetSpellAsync(string slug)     => Task.FromResult<PowerDto?>(null);
     public Task<List<ActorClassDto>> GetClassesAsync()              => Task.FromResult(new List<ActorClassDto>(Classes));
     public Task<ActorClassDto?>      GetClassAsync(string slug)     => Task.FromResult(Classes.FirstOrDefault(c => c.Slug == slug));
-    public Task<List<SpeciesDto>>    GetSpeciesAsync()              => Task.FromResult(new List<SpeciesDto>());
-    public Task<SpeciesDto?>         GetSpeciesAsync(string slug)   => Task.FromResult<SpeciesDto?>(null);
-    public Task<List<BackgroundDto>> GetBackgroundsAsync()          => Task.FromResult(new List<BackgroundDto>());
-    public Task<BackgroundDto?>      GetBackgroundAsync(string slug)=> Task.FromResult<BackgroundDto?>(null);
+    public Task<List<SpeciesDto>>    GetSpeciesAsync()              => Task.FromResult(new List<SpeciesDto>(Species));
+    public Task<SpeciesDto?>         GetSpeciesAsync(string slug)   => Task.FromResult(Species.FirstOrDefault(s => s.Slug == slug));
+    public Task<List<BackgroundDto>> GetBackgroundsAsync()          => Task.FromResult(new List<BackgroundDto>(Backgrounds));
+    public Task<BackgroundDto?>      GetBackgroundAsync(string slug)=> Task.FromResult(Backgrounds.FirstOrDefault(b => b.Slug == slug));
     public Task<List<SkillDto>>      GetSkillsAsync()               => Task.FromResult(new List<SkillDto>());
     public Task<SkillDto?>           GetSkillAsync(string slug)     => Task.FromResult<SkillDto?>(null);
     public Task<List<OrganizationDto>>    GetOrganizationsAsync()            => Task.FromResult(new List<OrganizationDto>());
     public Task<OrganizationDto?>         GetOrganizationAsync(string slug)  => Task.FromResult<OrganizationDto?>(null);
-    public Task<List<ZoneLocationDto>>    GetZoneLocationsAsync()            => Task.FromResult(new List<ZoneLocationDto>());
-    public Task<ZoneLocationDto?>         GetZoneLocationAsync(string slug)  => Task.FromResult<ZoneLocationDto?>(null);
+    public Task<List<ZoneLocationDto>>    GetZoneLocationsAsync()            => Task.FromResult(new List<ZoneLocationDto>(ZoneLocations));
+    public Task<ZoneLocationDto?>         GetZoneLocationAsync(string slug)  => Task.FromResult(ZoneLocations.FirstOrDefault(z => z.Slug == slug));
     public Task<List<DialogueDto>>        GetDialoguesAsync()                => Task.FromResult(new List<DialogueDto>());
     public Task<DialogueDto?>             GetDialogueAsync(string slug)      => Task.FromResult<DialogueDto?>(null);
     public Task<List<ActorInstanceDto>>   GetActorInstancesAsync()           => Task.FromResult(new List<ActorInstanceDto>());
@@ -454,4 +478,95 @@ public class FakeAnnouncementService : IAnnouncementService
     /// <inheritdoc/>
     public Task<IReadOnlyList<AnnouncementDto>> GetAnnouncementsAsync(CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<AnnouncementDto>>(Announcements);
+}
+
+/// <summary>Configurable stub for <see cref="ICharacterCreationService"/>.</summary>
+public class FakeCharacterCreationService : ICharacterCreationService
+{
+    /// <summary>Gets or sets the session ID returned by <see cref="BeginSessionAsync"/>. <see langword="null"/> simulates a failed begin.</summary>
+    public Guid? SessionIdResult { get; set; } = Guid.NewGuid();
+
+    /// <summary>Gets or sets whether <see cref="SetNameAsync"/> succeeds.</summary>
+    public bool SetNameResult { get; set; } = true;
+
+    /// <summary>Gets or sets whether <see cref="SetClassAsync"/> succeeds.</summary>
+    public bool SetClassResult { get; set; } = true;
+
+    /// <summary>Gets or sets whether <see cref="SetSpeciesAsync"/> succeeds.</summary>
+    public bool SetSpeciesResult { get; set; } = true;
+
+    /// <summary>Gets or sets whether <see cref="SetBackgroundAsync"/> succeeds.</summary>
+    public bool SetBackgroundResult { get; set; } = true;
+
+    /// <summary>Gets or sets whether <see cref="SetAttributesAsync"/> succeeds.</summary>
+    public bool SetAttributesResult { get; set; } = true;
+
+    /// <summary>Gets or sets whether <see cref="SetEquipmentPreferencesAsync"/> succeeds.</summary>
+    public bool SetEquipmentPreferencesResult { get; set; } = true;
+
+    /// <summary>Gets or sets whether <see cref="SetLocationAsync"/> succeeds.</summary>
+    public bool SetLocationResult { get; set; } = true;
+
+    /// <summary>Gets or sets the result returned by <see cref="FinalizeAsync"/>.</summary>
+    public (CharacterDto? Character, AppError? Error) FinalizeResult { get; set; } =
+        (new CharacterDto(Guid.NewGuid(), 1, "TestChar", "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone"), null);
+
+    /// <summary>Gets the number of times <see cref="AbandonAsync"/> was called.</summary>
+    public int AbandonCallCount { get; private set; }
+
+    /// <summary>Gets the number of times <see cref="SetEquipmentPreferencesAsync"/> was called.</summary>
+    public int SetEquipmentPreferencesCallCount { get; private set; }
+
+    /// <summary>Gets the number of times <see cref="SetLocationAsync"/> was called.</summary>
+    public int SetLocationCallCount { get; private set; }
+
+    /// <summary>Gets the last attribute allocations passed to <see cref="SetAttributesAsync"/>.</summary>
+    public Dictionary<string, int>? LastAttributeAllocations { get; private set; }
+
+    /// <inheritdoc/>
+    public Task<Guid?> BeginSessionAsync() => Task.FromResult(SessionIdResult);
+
+    /// <inheritdoc/>
+    public Task<bool> SetNameAsync(Guid sessionId, string name) => Task.FromResult(SetNameResult);
+
+    /// <inheritdoc/>
+    public Task<bool> SetClassAsync(Guid sessionId, string className) => Task.FromResult(SetClassResult);
+
+    /// <inheritdoc/>
+    public Task<bool> SetSpeciesAsync(Guid sessionId, string speciesSlug) => Task.FromResult(SetSpeciesResult);
+
+    /// <inheritdoc/>
+    public Task<bool> SetBackgroundAsync(Guid sessionId, string backgroundId) => Task.FromResult(SetBackgroundResult);
+
+    /// <inheritdoc/>
+    public Task<bool> SetAttributesAsync(Guid sessionId, Dictionary<string, int> allocations)
+    {
+        LastAttributeAllocations = allocations;
+        return Task.FromResult(SetAttributesResult);
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> SetEquipmentPreferencesAsync(Guid sessionId, SetCreationEquipmentPreferencesRequest preferences)
+    {
+        SetEquipmentPreferencesCallCount++;
+        return Task.FromResult(SetEquipmentPreferencesResult);
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> SetLocationAsync(Guid sessionId, string locationId)
+    {
+        SetLocationCallCount++;
+        return Task.FromResult(SetLocationResult);
+    }
+
+    /// <inheritdoc/>
+    public Task<(CharacterDto? Character, AppError? Error)> FinalizeAsync(Guid sessionId, FinalizeCreationSessionRequest request)
+        => Task.FromResult(FinalizeResult);
+
+    /// <inheritdoc/>
+    public Task AbandonAsync(Guid sessionId)
+    {
+        AbandonCallCount++;
+        return Task.CompletedTask;
+    }
 }
