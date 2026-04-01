@@ -1,8 +1,12 @@
 namespace RealmUnbound.Contracts.Characters;
 
 /// <summary>Request body for setting the character class on a creation session.</summary>
-/// <param name="ClassId">The slug or display name of the class to select.</param>
-public record SetCreationClassRequest(string ClassId);
+/// <param name="ClassName">The slug or display name of the class to select.</param>
+public record SetCreationClassRequest(string ClassName);
+
+/// <summary>Request body for setting the character name on a creation session.</summary>
+/// <param name="CharacterName">The desired name for the new character.</param>
+public record SetCreationNameRequest(string CharacterName);
 
 /// <summary>Request body for setting the species on a creation session.</summary>
 /// <param name="SpeciesSlug">The slug of the species to select.</param>
@@ -33,8 +37,8 @@ public record SetCreationEquipmentPreferencesRequest(
 public record SetCreationLocationRequest(string LocationId);
 
 /// <summary>Request body for finalizing a character creation session.</summary>
-/// <param name="CharacterName">The display name for the new character.</param>
+/// <param name="CharacterName">The display name for the new character, or <see langword="null"/> if the name was already set via the name step.</param>
 /// <param name="DifficultyMode">The difficulty mode: <c>"normal"</c> or <c>"hardcore"</c>.</param>
 public record FinalizeCreationSessionRequest(
-    string CharacterName,
+    string? CharacterName,
     string DifficultyMode = "normal");

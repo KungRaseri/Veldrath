@@ -71,7 +71,8 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
     public CharacterClass? GetByName(string name) =>
         GetAll().FirstOrDefault(c =>
             c.Name.Equals(name, StringComparison.OrdinalIgnoreCase) ||
-            c.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            c.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase) ||
+            c.Slug.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     /// <inheritdoc />
     public CharacterClass? GetById(string id)
