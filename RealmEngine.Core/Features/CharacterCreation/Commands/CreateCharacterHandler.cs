@@ -3,6 +3,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.Equipment.Queries;
 using RealmEngine.Core.Features.Exploration.Queries;
+using RealmEngine.Core.Features.Progression.Services;
 using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
@@ -14,6 +15,8 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 {
     private readonly IMediator _mediator;
     private readonly IBackgroundRepository _backgroundRepository;
+    private readonly ISpeciesRepository _speciesRepository;
+    private readonly SkillProgressionService _skillProgressionService;
     private readonly ILogger<CreateCharacterHandler> _logger;
 
     /// <summary>
@@ -21,12 +24,21 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
     /// </summary>
     /// <param name="mediator">The mediator for sending commands.</param>
     /// <param name="backgroundRepository">The repository for loading backgrounds.</param>
+    /// <param name="speciesRepository">The repository for loading species.</param>
+    /// <param name="skillProgressionService">The service for initializing character skills.</param>
     /// <param name="logger">The logger.</param>
-    public CreateCharacterHandler(IMediator mediator, IBackgroundRepository backgroundRepository, ILogger<CreateCharacterHandler> logger)
+    public CreateCharacterHandler(
+        IMediator mediator,
+        IBackgroundRepository backgroundRepository,
+        ISpeciesRepository speciesRepository,
+        SkillProgressionService skillProgressionService,
+        ILogger<CreateCharacterHandler> logger)
     {
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _backgroundRepository = backgroundRepository ?? throw new ArgumentNullException(nameof(backgroundRepository));
-        _logger = logger;
+        _mediator                = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _backgroundRepository    = backgroundRepository ?? throw new ArgumentNullException(nameof(backgroundRepository));
+        _speciesRepository       = speciesRepository ?? throw new ArgumentNullException(nameof(speciesRepository));
+        _skillProgressionService = skillProgressionService ?? throw new ArgumentNullException(nameof(skillProgressionService));
+        _logger                  = logger;
     }
 
     /// <summary>
@@ -40,7 +52,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         try
         {
             // Create the character with base stats from class
-            var character = CreateCharacterFromClass(request.CharacterName, request.CharacterClass);
+            var character = CreateCharacterFromClass(request.CharacterName, request.CharacterClass, request.AttributeAllocations);
             
             _logger.LogInformation("Created new character: {CharacterName} ({ClassName})", 
                 request.CharacterName, request.CharacterClass.Name);
@@ -50,6 +62,12 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             if (!string.IsNullOrWhiteSpace(request.BackgroundId))
             {
                 background = await ApplyBackgroundBonuses(character, request.BackgroundId);
+            }
+
+            // Apply species bonuses if provided
+            if (!string.IsNullOrWhiteSpace(request.SpeciesSlug))
+            {
+                await ApplySpeciesBonuses(character, request.SpeciesSlug);
             }
 
             // Initialize starting abilities
@@ -85,11 +103,14 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             // Select and equip starting equipment
             var equipment = await SelectStartingEquipment(
                 character, 
-                request.CharacterClass.Name,
+                request.CharacterClass.Slug,
                 request.PreferredArmorType,
                 request.PreferredWeaponType,
                 request.IncludeShield,
                 cancellationToken);
+
+            // Initialize all skills at rank 0
+            _skillProgressionService.InitializeAllSkills(character);
 
             // Assign starting location if provided
             Location? location = null;
@@ -126,40 +147,67 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
     }
 
     /// <summary>
-    /// Creates a new character object with base stats from the character class.
+    /// Creates a new character object with base stats from the character class and optional point-buy allocations.
     /// </summary>
-    private Character CreateCharacterFromClass(string name, CharacterClass characterClass)
+    private Character CreateCharacterFromClass(string name, CharacterClass characterClass, Dictionary<string, int>? allocations = null)
     {
+        int Base(string stat) => allocations?.GetValueOrDefault(stat, 10) ?? 10;
+
         var character = new Character
         {
             Name = name,
             ClassName = characterClass.Name,
             Level = 1,
             Experience = 0,
-            
-            // Apply class attribute bonuses
-            Strength = 10 + characterClass.BonusStrength,
-            Dexterity = 10 + characterClass.BonusDexterity,
-            Constitution = 10 + characterClass.BonusConstitution,
-            Intelligence = 10 + characterClass.BonusIntelligence,
-            Wisdom = 10 + characterClass.BonusWisdom,
-            Charisma = 10 + characterClass.BonusCharisma,
-            
+
+            // Point-buy base + class bonus
+            Strength     = Base("Strength")     + characterClass.BonusStrength,
+            Dexterity    = Base("Dexterity")    + characterClass.BonusDexterity,
+            Constitution = Base("Constitution") + characterClass.BonusConstitution,
+            Intelligence = Base("Intelligence") + characterClass.BonusIntelligence,
+            Wisdom       = Base("Wisdom")       + characterClass.BonusWisdom,
+            Charisma     = Base("Charisma")     + characterClass.BonusCharisma,
+
             // Set starting resources from class
-            Health = characterClass.StartingHealth,
+            Health    = characterClass.StartingHealth,
             MaxHealth = characterClass.StartingHealth,
-            Mana = characterClass.StartingMana,
-            MaxMana = characterClass.StartingMana,
-            
+            Mana      = characterClass.StartingMana,
+            MaxMana   = characterClass.StartingMana,
+
             // Initialize collections
-            Inventory = new List<Item>(),
+            Inventory        = new List<Item>(),
             LearnedAbilities = new Dictionary<string, CharacterAbility>(),
-            LearnedSpells = new Dictionary<string, CharacterSpell>(),
-            Skills = new Dictionary<string, CharacterSkill>(),
-            PendingLevelUps = new List<LevelUpInfo>()
+            LearnedSpells    = new Dictionary<string, CharacterSpell>(),
+            Skills           = new Dictionary<string, CharacterSkill>(),
+            PendingLevelUps  = new List<LevelUpInfo>()
         };
 
         return character;
+    }
+
+    /// <summary>
+    /// Applies species stat bonuses to the character.
+    /// </summary>
+    private async Task ApplySpeciesBonuses(Character character, string speciesSlug)
+    {
+        try
+        {
+            var species = await _speciesRepository.GetSpeciesBySlugAsync(speciesSlug);
+            if (species is null)
+            {
+                _logger.LogWarning("Species not found: {SpeciesSlug}", speciesSlug);
+                return;
+            }
+
+            species.ApplyBonuses(character);
+            character.SpeciesSlug = species.Slug;
+            _logger.LogInformation("Applied species {SpeciesName} bonuses to {CharacterName}",
+                species.DisplayName, character.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error applying species {SpeciesSlug} to {CharacterName}", speciesSlug, character.Name);
+        }
     }
 
     /// <summary>
@@ -198,7 +246,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
     /// </summary>
     private async Task<List<Item>> SelectStartingEquipment(
         Character character,
-        string className,
+        string classSlug,
         string? preferredArmorType,
         string? preferredWeaponType,
         bool includeShield,
@@ -208,13 +256,10 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
         try
         {
-            // Get class ID from name (e.g., "Fighter" -> "warriors:fighter")
-            var classId = GetClassIdFromName(className);
-
-            // Query equipment for this class
+            // Query equipment for this class using its slug directly
             var equipmentQuery = new GetEquipmentForClassQuery
             {
-                ClassId = classId,
+                ClassId = classSlug,
                 MaxItemsPerCategory = 5,
                 RandomizeSelection = true
             };
@@ -223,7 +268,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             if (!equipmentResult.Success || equipmentResult.Weapons.Count == 0)
             {
-                _logger.LogWarning("No equipment found for class {ClassName}", className);
+                _logger.LogWarning("No equipment found for class {ClassSlug}", classSlug);
                 return selectedEquipment;
             }
 

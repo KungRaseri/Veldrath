@@ -2,6 +2,7 @@ using FluentAssertions;
 using MediatR;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,13 +17,27 @@ public class CreateCharacterHandlerTests
 {
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<IBackgroundRepository> _backgroundRepositoryMock;
+    private readonly Mock<ISpeciesRepository> _speciesRepositoryMock;
     private readonly CreateCharacterHandler _handler;
 
     public CreateCharacterHandlerTests()
     {
         _mediatorMock = new Mock<IMediator>();
         _backgroundRepositoryMock = new Mock<IBackgroundRepository>();
-        _handler = new CreateCharacterHandler(_mediatorMock.Object, _backgroundRepositoryMock.Object, NullLogger<CreateCharacterHandler>.Instance);
+        _speciesRepositoryMock = new Mock<ISpeciesRepository>();
+
+        var skillRepo = new Mock<ISkillRepository>();
+        skillRepo.Setup(r => r.GetAllAsync()).ReturnsAsync([]);
+        var skillDataService = new SkillDataService(skillRepo.Object);
+        skillDataService.InitializeAsync().GetAwaiter().GetResult();
+        var skillProgressionService = new SkillProgressionService(skillDataService);
+
+        _handler = new CreateCharacterHandler(
+            _mediatorMock.Object,
+            _backgroundRepositoryMock.Object,
+            _speciesRepositoryMock.Object,
+            skillProgressionService,
+            NullLogger<CreateCharacterHandler>.Instance);
     }
 
     [Fact]

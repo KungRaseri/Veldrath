@@ -65,18 +65,18 @@ public class CharacterClass
     public int StartingHealth { get; set; } = 100;
     /// <summary>Gets or sets the starting mana points for this class.</summary>
     public int StartingMana { get; set; } = 50;
-    /// <summary>Gets or sets the bonus strength modifier for this class.</summary>
-    public int BonusStrength { get; set; } = 10;
-    /// <summary>Gets or sets the bonus dexterity modifier for this class.</summary>
-    public int BonusDexterity { get; set; } = 10;
-    /// <summary>Gets or sets the bonus constitution modifier for this class.</summary>
-    public int BonusConstitution { get; set; } = 10;
-    /// <summary>Gets or sets the bonus intelligence modifier for this class.</summary>
-    public int BonusIntelligence { get; set; } = 10;
-    /// <summary>Gets or sets the bonus wisdom modifier for this class.</summary>
-    public int BonusWisdom { get; set; } = 10;
-    /// <summary>Gets or sets the bonus charisma modifier for this class.</summary>
-    public int BonusCharisma { get; set; } = 10;
+    /// <summary>Gets or sets the strength bonus applied additively to the character's point-buy allocation at creation.</summary>
+    public int BonusStrength { get; set; } = 0;
+    /// <summary>Gets or sets the dexterity bonus applied additively to the character's point-buy allocation at creation.</summary>
+    public int BonusDexterity { get; set; } = 0;
+    /// <summary>Gets or sets the constitution bonus applied additively to the character's point-buy allocation at creation.</summary>
+    public int BonusConstitution { get; set; } = 0;
+    /// <summary>Gets or sets the intelligence bonus applied additively to the character's point-buy allocation at creation.</summary>
+    public int BonusIntelligence { get; set; } = 0;
+    /// <summary>Gets or sets the wisdom bonus applied additively to the character's point-buy allocation at creation.</summary>
+    public int BonusWisdom { get; set; } = 0;
+    /// <summary>Gets or sets the charisma bonus applied additively to the character's point-buy allocation at creation.</summary>
+    public int BonusCharisma { get; set; } = 0;
     
     /// <summary>
     /// Gets or sets the level-based progression data for this class.

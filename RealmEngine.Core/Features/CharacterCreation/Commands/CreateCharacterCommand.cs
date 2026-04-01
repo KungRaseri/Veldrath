@@ -37,6 +37,19 @@ public record CreateCharacterCommand : IRequest<CreateCharacterResult>
     public string? StartingLocationId { get; init; }
 
     /// <summary>
+    /// Gets the species slug selected during character creation (optional).
+    /// Example: "human", "elf", "dwarf"
+    /// </summary>
+    public string? SpeciesSlug { get; init; }
+
+    /// <summary>
+    /// Gets the point-buy attribute allocations chosen by the player (optional).
+    /// Keys are stat names (e.g. "Strength"); values are the base values before class/species/background bonuses (8–15).
+    /// When <see langword="null"/>, the handler defaults each stat to 10.
+    /// </summary>
+    public Dictionary<string, int>? AttributeAllocations { get; init; }
+
+    /// <summary>
     /// Gets the preferred armor type for equipment selection (optional).
     /// Example: "cloth", "leather", "mail", "plate"
     /// </summary>

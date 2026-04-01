@@ -48,9 +48,16 @@ public class EfCoreSpeciesRepository(ContentDbContext db, ILogger<EfCoreSpeciesR
 
     private static Species MapToModel(Entities.Species entity) => new()
     {
-        Slug         = entity.Slug,
-        DisplayName  = entity.DisplayName ?? entity.Slug,
-        TypeKey      = entity.TypeKey,
-        RarityWeight = entity.RarityWeight,
+        Slug              = entity.Slug,
+        DisplayName       = entity.DisplayName ?? entity.Slug,
+        Description       = string.Empty,
+        TypeKey           = entity.TypeKey,
+        RarityWeight      = entity.RarityWeight,
+        BonusStrength     = entity.Stats.BaseStrength     ?? 0,
+        BonusDexterity    = entity.Stats.BaseAgility      ?? 0,
+        BonusConstitution = entity.Stats.BaseConstitution ?? 0,
+        BonusIntelligence = entity.Stats.BaseIntelligence ?? 0,
+        BonusWisdom       = 0,
+        BonusCharisma     = 0,
     };
 }

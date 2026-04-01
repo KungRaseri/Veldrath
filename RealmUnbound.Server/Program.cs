@@ -200,6 +200,7 @@ try
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();
     builder.Services.AddScoped<IWorldRepository, WorldRepository>();
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
+    builder.Services.AddSingleton<ICharacterCreationSessionStore, InMemoryCharacterCreationSessionStore>();
 
     // RealmEngine services
     builder.Services.AddRealmEngineMediatR();
@@ -330,6 +331,7 @@ try
     app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();
     app.MapCharacterEndpoints();
+    app.MapCharacterCreationSessionEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();
 
