@@ -135,6 +135,8 @@ public partial class App : Application
         // HTTP client for auth + character APIs
         services.AddHttpClient<IAuthService, HttpAuthService>(client =>
             client.BaseAddress = new Uri(serverBaseUrl));
+        services.AddHttpClient<ICharacterCreationService, HttpCharacterCreationService>(client =>
+            client.BaseAddress = new Uri(serverBaseUrl));
         services.AddHttpClient<ICharacterService, HttpCharacterService>(client =>
             client.BaseAddress = new Uri(serverBaseUrl));
         services.AddHttpClient<IZoneService, HttpZoneService>(client =>
@@ -170,6 +172,7 @@ public partial class App : Application
         services.AddTransient<RegisterViewModel>();
         services.AddSingleton<GameViewModel>();
         services.AddTransient<CharacterSelectViewModel>();
+        services.AddTransient<CreateCharacterViewModel>();
         services.AddTransient<SettingsViewModel>();
     }
 }

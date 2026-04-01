@@ -21,6 +21,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
     private List<SpeciesDto>?     _species;
     private List<BackgroundDto>?  _backgrounds;
     private List<SkillDto>?       _skills;
+    private List<ZoneLocationDto>? _zoneLocations;
 
     // Catalog accessors (lazy-load)
     public async Task<IReadOnlyList<PowerDto>> GetAbilitiesAsync()
@@ -133,6 +134,17 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
         return _skills;
     }
 
+    /// <summary>Gets the full list of zone locations, loading from the server on first call.</summary>
+    public async Task<IReadOnlyList<ZoneLocationDto>> GetZoneLocationsAsync()
+    {
+        if (_zoneLocations is null)
+        {
+            logger.LogDebug("ContentCache: loading zone locations from server");
+            _zoneLocations = await contentService.GetZoneLocationsAsync();
+        }
+        return _zoneLocations;
+    }
+
     // Slug lookups
     public async Task<PowerDto?> GetAbilityAsync(string slug)
     {
@@ -226,6 +238,7 @@ public class ContentCache(IContentService contentService, ILogger<ContentCache> 
         _species    = null;
         _backgrounds = null;
         _skills     = null;
+        _zoneLocations = null;
         logger.LogInformation("ContentCache invalidated");
         return Task.CompletedTask;
     }

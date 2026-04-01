@@ -28,7 +28,6 @@ public class ViewDataBindingTests
             MakeGameVm(),
             new FakeAuthService(),
             new TokenStore(),
-            FakeContentCache.Create(),
             new RealmUnbound.Client.ClientSettings("http://localhost:8080"));
 
     private static Window Show(object content)
@@ -52,20 +51,6 @@ public class ViewDataBindingTests
         var window = Show(new CharacterSelectView { DataContext = vm });
 
         vm.Characters.Should().HaveCount(2);
-        window.Close();
-    }
-
-    // CharacterSelectView — create panel (IsCreating = true)
-    [AvaloniaFact]
-    public async Task CharacterSelectView_Should_Show_Create_Panel_When_IsCreating_True()
-    {
-        var vm = MakeCharacterSelectVm();
-        await Task.Yield();
-        vm.IsCreating = true;
-
-        var window = Show(new CharacterSelectView { DataContext = vm });
-
-        vm.IsCreating.Should().BeTrue();
         window.Close();
     }
 
@@ -94,22 +79,6 @@ public class ViewDataBindingTests
         var window = Show(new CharacterSelectView { DataContext = vm });
 
         vm.ErrorMessage.Should().Be("Unable to connect");
-        window.Close();
-    }
-
-    // CharacterSelectView — error in create panel
-    [AvaloniaFact]
-    public async Task CharacterSelectView_Should_Display_Error_In_Create_Panel()
-    {
-        var vm = MakeCharacterSelectVm();
-        await Task.Yield();
-        vm.IsCreating = true;
-        vm.ErrorMessage = "Name already taken";
-
-        var window = Show(new CharacterSelectView { DataContext = vm });
-
-        vm.IsCreating.Should().BeTrue();
-        vm.ErrorMessage.Should().Be("Name already taken");
         window.Close();
     }
 

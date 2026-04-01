@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.CreateCharacterView"
+             x:DataType="vm:CreateCharacterViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Top bar -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource SystemAccentColorDark2}"
+                Padding="24,12">
+            <TextBlock Text="New Character"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="White" />
+        </Border>
+
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Width="480"
+                        HorizontalAlignment="Center"
+                        Spacing="8"
+                        Margin="0,32,0,32">
+
+                <!-- Error feedback -->
+                <ui:InfoBar Title="Error"
+                            Message="{Binding ErrorMessage}"
+                            Severity="Error"
+                            IsOpen="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            IsClosable="False"
+                            Margin="0,0,0,4" />
+
+                <TextBlock Text="Character Name" Classes="muted" />
+                <TextBox Text="{Binding Name}"
+                         Watermark="Enter a name for your character"
+                         Height="44"
+                         FontSize="15" />
+
+                <TextBlock Text="Class" Classes="muted" />
+                <ComboBox ItemsSource="{Binding AvailableClasses}"
+                          SelectedItem="{Binding SelectedClass}"
+                          PlaceholderText="Select a class"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+
+                <TextBlock Text="Species" Classes="muted" />
+                <ComboBox ItemsSource="{Binding AvailableSpecies}"
+                          SelectedItem="{Binding SelectedSpecies}"
+                          PlaceholderText="Select a species"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+
+                <TextBlock Text="Background" Classes="muted" />
+                <ComboBox ItemsSource="{Binding AvailableBackgrounds}"
+                          SelectedItem="{Binding SelectedBackground}"
+                          PlaceholderText="Select a background"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+
+                <TextBlock Text="Attributes" Classes="muted" />                <TextBlock Text="{Binding RemainingPoints, StringFormat='Points remaining: {0}'}"
+                           FontSize="13"
+                           Margin="0,0,0,4" />
+                <Grid ColumnDefinitions="80,32,40,32"
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                      HorizontalAlignment="Left"
+                      Margin="0,0,0,8">
+                    <!-- Strength -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Strength" VerticalAlignment="Center" />
+                    <Button   Grid.Row="0" Grid.Column="1" Content="-" Width="28" Height="28"
+                              Command="{Binding DecreaseStatCommand}" CommandParameter="Strength" />
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding Strength}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button   Grid.Row="0" Grid.Column="3" Content="+" Width="28" Height="28"
+                              Command="{Binding IncreaseStatCommand}" CommandParameter="Strength" />
+                    <!-- Dexterity -->
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Dexterity" VerticalAlignment="Center" />
+                    <Button   Grid.Row="1" Grid.Column="1" Content="-" Width="28" Height="28"
+                              Command="{Binding DecreaseStatCommand}" CommandParameter="Dexterity" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Dexterity}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button   Grid.Row="1" Grid.Column="3" Content="+" Width="28" Height="28"
+                              Command="{Binding IncreaseStatCommand}" CommandParameter="Dexterity" />
+                    <!-- Constitution -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Constitution" VerticalAlignment="Center" />
+                    <Button   Grid.Row="2" Grid.Column="1" Content="-" Width="28" Height="28"
+                              Command="{Binding DecreaseStatCommand}" CommandParameter="Constitution" />
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Constitution}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button   Grid.Row="2" Grid.Column="3" Content="+" Width="28" Height="28"
+                              Command="{Binding IncreaseStatCommand}" CommandParameter="Constitution" />
+                    <!-- Intelligence -->
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Intelligence" VerticalAlignment="Center" />
+                    <Button   Grid.Row="3" Grid.Column="1" Content="-" Width="28" Height="28"
+                              Command="{Binding DecreaseStatCommand}" CommandParameter="Intelligence" />
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding Intelligence}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button   Grid.Row="3" Grid.Column="3" Content="+" Width="28" Height="28"
+                              Command="{Binding IncreaseStatCommand}" CommandParameter="Intelligence" />
+                    <!-- Wisdom -->
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Wisdom" VerticalAlignment="Center" />
+                    <Button   Grid.Row="4" Grid.Column="1" Content="-" Width="28" Height="28"
+                              Command="{Binding DecreaseStatCommand}" CommandParameter="Wisdom" />
+                    <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding Wisdom}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button   Grid.Row="4" Grid.Column="3" Content="+" Width="28" Height="28"
+                              Command="{Binding IncreaseStatCommand}" CommandParameter="Wisdom" />
+                    <!-- Charisma -->
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Charisma" VerticalAlignment="Center" />
+                    <Button   Grid.Row="5" Grid.Column="1" Content="-" Width="28" Height="28"
+                              Command="{Binding DecreaseStatCommand}" CommandParameter="Charisma" />
+                    <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Charisma}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Button   Grid.Row="5" Grid.Column="3" Content="+" Width="28" Height="28"
+                              Command="{Binding IncreaseStatCommand}" CommandParameter="Charisma" />
+                </Grid>
+
+                <TextBlock Text="Equipment Preferences" Classes="muted" />
+                <ComboBox ItemsSource="{Binding AvailableArmorTypes}"
+                          SelectedItem="{Binding SelectedArmorType}"
+                          PlaceholderText="Preferred armor type (optional)"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+                <ComboBox ItemsSource="{Binding AvailableWeaponTypes}"
+                          SelectedItem="{Binding SelectedWeaponType}"
+                          PlaceholderText="Preferred weapon type (optional)"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+                <CheckBox Content="Include shield in starting equipment"
+                          IsChecked="{Binding IncludeShield}"
+                          FontSize="15" />
+
+                <TextBlock Text="Starting Location" Classes="muted" />
+                <ComboBox ItemsSource="{Binding AvailableLocations}"
+                          SelectedItem="{Binding SelectedLocation}"
+                          PlaceholderText="Select a starting location (optional)"
+                          HorizontalAlignment="Stretch"
+                          Height="44"
+                          FontSize="15" />
+
+                <TextBlock Text="Difficulty" Classes="muted" />
+                <CheckBox Content="Hardcore Mode"
+                          IsChecked="{Binding IsHardcoreCreate}"
+                          FontSize="15" />
+                <ui:InfoBar Title="Permadeath Warning"
+                            Message="Hardcore characters are permanently deleted on death. This cannot be undone."
+                            Severity="Warning"
+                            IsOpen="{Binding IsHardcoreCreate}"
+                            IsClosable="False"
+                            Margin="0,0,0,4" />
+
+                <Image Source="{Binding SelectedClassIcon}"
+                       Width="72" Height="72"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       Margin="0,8,0,0"
+                       IsVisible="{Binding SelectedClassIcon,
+                           Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                <Button Content="Create Character"
+                        Classes="accent"
+                        Command="{Binding ConfirmCommand}"
+                        HorizontalAlignment="Stretch"
+                        Height="44"
+                        FontSize="15"
+                        Margin="0,16,0,0" />
+
+                <Button Content="Cancel"
+                        Classes="ghost"
+                        Command="{Binding CancelCommand}"
+                        HorizontalAlignment="Stretch"
+                        Height="44"
+                        FontSize="15" />
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+
+</UserControl>

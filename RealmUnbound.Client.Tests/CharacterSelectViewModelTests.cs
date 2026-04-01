@@ -3,7 +3,6 @@ using RealmUnbound.Client;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Content;
 
 namespace RealmUnbound.Client.Tests;
 
@@ -26,7 +25,6 @@ public class CharacterSelectViewModelTests : TestBase
         FakeServerConnectionService?  conn = null,
         FakeNavigationService?        nav = null,
         GameViewModel?                gameVm = null,
-        FakeContentService?           content = null,
         FakeAuthService?              auth = null,
         TokenStore?                   tokens = null)
     {
@@ -40,7 +38,6 @@ public class CharacterSelectViewModelTests : TestBase
             gameVm,
             auth ?? new FakeAuthService(),
             tokens ?? new TokenStore(),
-            FakeContentCache.Create(content),
             new ClientSettings("http://localhost:8080"));
     }
 
@@ -110,137 +107,16 @@ public class CharacterSelectViewModelTests : TestBase
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 
-    // ShowCreate / CancelCreate
+    // ShowCreate
     [Fact]
-    public async Task ShowCreateCommand_Should_Set_IsCreating_True()
+    public async Task ShowCreateCommand_Should_Navigate_To_CreateCharacterViewModel()
     {
-        var vm = MakeVm();
-        await vm.ShowCreateCommand.Execute();
-        vm.IsCreating.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task CancelCreateCommand_Should_Reset_IsCreating_And_Name()
-    {
-        var vm = MakeVm();
-        await vm.ShowCreateCommand.Execute();
-        vm.NewCharacterName = "Temp";
-
-        await vm.CancelCreateCommand.Execute();
-
-        vm.IsCreating.Should().BeFalse();
-        vm.NewCharacterName.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ShowCreateCommand_Should_Clear_ErrorMessage()
-    {
-        var vm = MakeVm();
-        vm.ErrorMessage = "Previous error";
+        var nav = new FakeNavigationService();
+        var vm  = MakeVm(nav: nav);
 
         await vm.ShowCreateCommand.Execute();
 
-        vm.ErrorMessage.Should().BeEmpty();
-    }
-
-    // CreateCommand CanExecute
-    [Fact]
-    public void CreateCommand_Should_Be_Disabled_When_Name_Is_Empty()
-    {
-        var vm = MakeVm();
-        vm.SelectedClass = "Fighter";
-        bool canExecute = false;
-        vm.CreateCommand.CanExecute.Subscribe(v => canExecute = v);
-        canExecute.Should().BeFalse();
-    }
-
-    [Fact]
-    public void CreateCommand_Should_Be_Enabled_When_Name_And_Class_Are_Set()
-    {
-        var vm = MakeVm();
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass = "Fighter";
-        bool canExecute = false;
-        vm.CreateCommand.CanExecute.Subscribe(v => canExecute = v);
-        canExecute.Should().BeTrue();
-    }
-
-    [Fact]
-    public void CreateCommand_Should_Be_Disabled_When_Class_Is_Not_Set()
-    {
-        var vm = MakeVm();
-        vm.NewCharacterName = "Hero";
-        bool canExecute = false;
-        vm.CreateCommand.CanExecute.Subscribe(v => canExecute = v);
-        canExecute.Should().BeFalse();
-    }
-
-    // Character creation
-    [Fact]
-    public async Task CreateCommand_Should_Add_Character_To_List_On_Success()
-    {
-        var vm = MakeVm();
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass = "Fighter";
-
-        await vm.CreateCommand.Execute();
-
-        vm.Characters.Should().ContainSingle(c => c.Character.Name == "Hero");
-    }
-
-    [Fact]
-    public async Task CreateCommand_Should_Reset_Name_And_IsCreating_On_Success()
-    {
-        var vm = MakeVm();
-        vm.IsCreating       = true;
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass    = "Fighter";
-
-        await vm.CreateCommand.Execute();
-
-        vm.NewCharacterName.Should().BeEmpty();
-        vm.IsCreating.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task CreateCommand_Should_Show_Error_On_Failure()
-    {
-        var fake = new FakeCharacterService
-        {
-            CreateResult = (null, new AppError("Name already taken"))
-        };
-        var vm = MakeVm(chars: fake);
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass    = "Fighter";
-
-        await vm.CreateCommand.Execute();
-
-        vm.ErrorMessage.Should().Be("Name already taken");
-    }
-
-    [Fact]
-    public async Task CreateCommand_Should_Use_Fallback_Error_When_No_Message()
-    {
-        var fake = new FakeCharacterService { CreateResult = (null, null) };
-        var vm   = MakeVm(chars: fake);
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass    = "Fighter";
-
-        await vm.CreateCommand.Execute();
-
-        vm.ErrorMessage.Should().Be("Failed to create character.");
-    }
-
-    [Fact]
-    public async Task CreateCommand_Should_Clear_IsBusy_After_Completion()
-    {
-        var vm = MakeVm();
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass    = "Fighter";
-
-        await vm.CreateCommand.Execute();
-
-        vm.IsBusy.Should().BeFalse();
+        nav.NavigationLog.Should().Contain(typeof(CreateCharacterViewModel));
     }
 
     // Character deletion
@@ -408,98 +284,6 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().BeEmpty();
     }
 
-    // Lifecycle: create → delete → recreate
-    [Fact]
-    public async Task CreateCommand_ThenDeleteCommand_RemovesCharacterFromList()
-    {
-        var fake = new FakeCharacterService();
-        var vm   = MakeVm(chars: fake);
-        vm.NewCharacterName = "Hero";
-        await vm.CreateCommand.Execute();
-
-        var created = vm.Characters.Single();
-        await vm.DeleteCommand.Execute(created);
-
-        vm.Characters.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task CreateDeleteCreate_SameNameSucceeds_CharacterInList()
-    {
-        // First create succeeds; after delete, second create should also succeed
-        var fake = new FakeCharacterService();
-        var vm   = MakeVm(chars: fake);
-
-        // Create "Hero"
-        vm.NewCharacterName = "Hero";
-        await vm.CreateCommand.Execute();
-        var first = vm.Characters.Single();
-
-        // Delete it
-        await vm.DeleteCommand.Execute(first);
-        vm.Characters.Should().BeEmpty();
-
-        // Recreate with same name — FakeCharacterService defaults to success
-        vm.NewCharacterName = "Hero";
-        await vm.CreateCommand.Execute();
-
-        vm.Characters.Should().ContainSingle(c => c.Character.Name == "Hero");
-    }
-
-    [Fact]
-    public async Task CreateDeleteCreate_SameName_ErrorIsCleared()
-    {
-        var fake = new FakeCharacterService();
-        var vm   = MakeVm(chars: fake);
-
-        vm.NewCharacterName = "Hero";
-        await vm.CreateCommand.Execute();
-        var first = vm.Characters.Single();
-
-        // Inject an error into the ViewModel, then go through the lifecycle
-        vm.ErrorMessage = "Some stale error";
-        await vm.DeleteCommand.Execute(first);
-
-        vm.NewCharacterName = "Hero";
-        await vm.CreateCommand.Execute();
-
-        // Successful create should have cleared the error
-        vm.ErrorMessage.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task CreateCommand_OnNameConflict_ShowsFriendlyError()
-    {
-        var fake = new FakeCharacterService
-        {
-            CreateResult = (null, new AppError("That character name is already taken. Please choose a different name."))
-        };
-        var vm = MakeVm(chars: fake);
-        vm.NewCharacterName = "Taken";
-
-        await vm.CreateCommand.Execute();
-
-        vm.ErrorMessage.Should().Contain("already taken");
-    }
-
-    [Fact]
-    public async Task ShowCreateCommand_ClearsErrorFromPreviousFailedCreate()
-    {
-        var fake = new FakeCharacterService
-        {
-            CreateResult = (null, new AppError("Name conflict"))
-        };
-        var vm = MakeVm(chars: fake);
-        vm.NewCharacterName = "Bad";
-        await vm.CreateCommand.Execute(); // sets vm.ErrorMessage
-
-        // Open the create panel again
-        await vm.CancelCreateCommand.Execute();
-        await vm.ShowCreateCommand.Execute();
-
-        vm.ErrorMessage.Should().BeEmpty();
-    }
-
     [Fact]
     public async Task DeleteCommand_DoesNotClearErrorFromUnrelatedCreate()
     {
@@ -523,34 +307,6 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().Be("Stale create error");
     }
 
-    [Fact]
-    public async Task MultipleDeletesThenCreates_AllSucceed()
-    {
-        var fake = new FakeCharacterService();
-        var vm   = MakeVm(chars: fake);
-
-        // Create three characters
-        foreach (var name in new[] { "Alpha", "Beta", "Gamma" })
-        {
-            vm.NewCharacterName = name;
-            await vm.CreateCommand.Execute();
-        }
-        vm.Characters.Should().HaveCount(3);
-
-        // Delete all three
-        foreach (var c in vm.Characters.ToList())
-            await vm.DeleteCommand.Execute(c);
-        vm.Characters.Should().BeEmpty();
-
-        // Recreate each — none should conflict in the fake service
-        foreach (var name in new[] { "Alpha", "Beta", "Gamma" })
-        {
-            vm.NewCharacterName = name;
-            await vm.CreateCommand.Execute();
-        }
-        vm.Characters.Should().HaveCount(3);
-    }
-
     // LogoutCommand
     [Fact]
     public async Task LogoutCommand_Should_Call_AuthService_LogoutAsync()
@@ -560,7 +316,7 @@ public class CharacterSelectViewModelTests : TestBase
         var nav  = new FakeNavigationService();
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = new CharacterSelectViewModel(
-            new FakeCharacterService(), conn, nav, gameVm, auth, new TokenStore(), FakeContentCache.Create(),
+            new FakeCharacterService(), conn, nav, gameVm, auth, new TokenStore(),
             new ClientSettings("http://localhost:8080"));
 
         await vm.LogoutCommand.Execute();
@@ -580,49 +336,11 @@ public class CharacterSelectViewModelTests : TestBase
             MakeGameVm(nav: nav),
             auth,
             new TokenStore(),
-            FakeContentCache.Create(),
             new ClientSettings("http://localhost:8080"));
 
         await vm.LogoutCommand.Execute();
 
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
-    }
-
-    // PanelTitle
-    [Fact]
-    public async Task PanelTitle_Should_Be_SelectYourCharacter_By_Default()
-    {
-        var vm = MakeVm();
-        vm.PanelTitle.Should().Be("Select Your Character");
-    }
-
-    [Fact]
-    public async Task PanelTitle_Should_Be_NewCharacter_When_IsCreating_Is_True()
-    {
-        var vm = MakeVm();
-        await vm.ShowCreateCommand.Execute();
-        vm.PanelTitle.Should().Be("New Character");
-    }
-
-    // SelectedClass / AvailableClasses
-    [Fact]
-    public async Task CancelCreateCommand_Should_Reset_SelectedClass()
-    {
-        var vm = MakeVm();
-        vm.SelectedClass = "Fighter";
-
-        await vm.CancelCreateCommand.Execute();
-
-        vm.SelectedClass.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task AvailableClasses_Should_Contain_Expected_Classes_When_Catalog_Empty()
-    {
-        // When the content catalog returns no classes the fallback hardcoded list is preserved.
-        var vm = MakeVm(content: new FakeContentService { Classes = [] });
-        await Task.Delay(50);
-        vm.AvailableClasses.Should().Contain("Warrior");
     }
 
     // Hub Error event
@@ -658,36 +376,6 @@ public class CharacterSelectViewModelTests : TestBase
         conn.FireEvent("Error", "Zone not found");
 
         nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
-    }
-
-    // AvailableClasses — content catalog loading
-    [Fact]
-    public async Task AvailableClasses_Should_Be_Populated_From_Content_Catalog()
-    {
-        var content = new FakeContentService
-        {
-            Classes =
-            [
-                new ActorClassDto("warrior", "Warrior", "warriors", 10, "strength",     50),
-                new ActorClassDto("mage",    "Mage",    "casters",   6, "intelligence", 40),
-            ]
-        };
-
-        var vm = MakeVm(content: content);
-        await Task.Delay(50); // allow fire-and-forget LoadAsync to complete
-
-        vm.AvailableClasses.Should().BeEquivalentTo(new[] { "Warrior", "Mage" });
-    }
-
-    [Fact]
-    public async Task AvailableClasses_Should_Fall_Back_To_Builtins_When_Catalog_Empty()
-    {
-        var content = new FakeContentService { Classes = [] };
-        var vm = MakeVm(content: content);
-        await Task.Delay(50);
-
-        // Built-in fallback list must contain at least one entry
-        vm.AvailableClasses.Should().NotBeEmpty();
     }
 
     // Hub callbacks — GoldChanged
@@ -976,42 +664,4 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().Contain(msg => msg.Contains("Welcome to the shop at Fenwick Crossing"));
     }
 
-    // Hardcore difficulty mode
-    [Fact]
-    public async Task CreateCommand_Should_Pass_Normal_DifficultyMode_By_Default()
-    {
-        var fake = new FakeCharacterService();
-        var vm   = MakeVm(chars: fake);
-        vm.NewCharacterName = "Hero";
-        vm.SelectedClass    = "Fighter";
-
-        await vm.CreateCommand.Execute();
-
-        fake.LastCreateRequest!.DifficultyMode.Should().Be("normal");
-    }
-
-    [Fact]
-    public async Task CreateCommand_Should_Pass_Hardcore_DifficultyMode_When_IsHardcoreCreate_Is_True()
-    {
-        var fake = new FakeCharacterService();
-        var vm   = MakeVm(chars: fake);
-        vm.NewCharacterName   = "Ironborn";
-        vm.SelectedClass      = "Fighter";
-        vm.IsHardcoreCreate   = true;
-
-        await vm.CreateCommand.Execute();
-
-        fake.LastCreateRequest!.DifficultyMode.Should().Be("hardcore");
-    }
-
-    [Fact]
-    public async Task CancelCreateCommand_Should_Reset_IsHardcoreCreate()
-    {
-        var vm = MakeVm();
-        vm.IsHardcoreCreate = true;
-
-        await vm.CancelCreateCommand.Execute();
-
-        vm.IsHardcoreCreate.Should().BeFalse();
-    }
 }
