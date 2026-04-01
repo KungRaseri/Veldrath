@@ -220,7 +220,7 @@ public static class CharacterCreationSessionEndpoints
             {
                 SessionId       = id,
                 CharacterName   = resolvedName,
-                DifficultyLevel = session.DifficultyLevel,
+                DifficultyLevel = normalizedMode == "hardcore" ? "Hardcore" : "Normal",
             }, ct);
 
         if (!engineResult.Success || engineResult.Character is null)
