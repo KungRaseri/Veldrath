@@ -13,8 +13,8 @@ public record FinalizeCreationSessionCommand : IRequest<CreateCharacterResult>
     /// <summary>Gets the session to finalize.</summary>
     public required Guid SessionId { get; init; }
 
-    /// <summary>Gets the character's name, entered at finalization.</summary>
-    public required string CharacterName { get; init; }
+    /// <summary>Gets the character's name. When <see langword="null"/>, falls back to the name stored on the session via <see cref="SetCreationNameCommand"/>.</summary>
+    public string? CharacterName { get; init; }
 
     /// <summary>Gets the difficulty level (defaults to Normal).</summary>
     public string DifficultyLevel { get; init; } = "Normal";
@@ -39,12 +39,13 @@ public class FinalizeCreationSessionHandler(
         if (session.SelectedClass is null)
             return Fail("A character class must be selected before finalizing.");
 
-        if (string.IsNullOrWhiteSpace(request.CharacterName))
-            return Fail("Character name is required.");
+        var resolvedName = request.CharacterName ?? session.CharacterName;
+        if (string.IsNullOrWhiteSpace(resolvedName))
+            return Fail("Character name is required. Provide it at finalization or call the name step first.");
 
         var command = new CreateCharacterCommand
         {
-            CharacterName        = request.CharacterName,
+            CharacterName        = resolvedName,
             CharacterClass       = session.SelectedClass,
             BackgroundId         = session.SelectedBackground?.GetBackgroundId(),
             SpeciesSlug          = session.SelectedSpecies?.Slug,
@@ -61,9 +62,9 @@ public class FinalizeCreationSessionHandler(
         if (result.Success)
         {
             session.Status        = CreationSessionStatus.Finalized;
-            session.CharacterName = request.CharacterName;
+            session.CharacterName = resolvedName;
             await sessionStore.UpdateSessionAsync(session);
-            logger.LogInformation("Session {SessionId} finalized — character '{Name}' created", request.SessionId, request.CharacterName);
+            logger.LogInformation("Session {SessionId} finalized — character '{Name}' created", request.SessionId, resolvedName);
         }
 
         return result;

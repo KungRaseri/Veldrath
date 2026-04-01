@@ -9,7 +9,12 @@ namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 /// <summary>
 /// Sets the character class choice on an in-progress creation session.
 /// </summary>
-public record SetCreationClassCommand(Guid SessionId, string ClassId) : IRequest<SetCreationChoiceResult>;
+public record SetCreationClassCommand(Guid SessionId, string ClassName) : IRequest<SetCreationChoiceResult>;
+
+/// <summary>
+/// Sets the character name on an in-progress creation session.
+/// </summary>
+public record SetCreationNameCommand(Guid SessionId, string CharacterName) : IRequest<SetCreationChoiceResult>;
 
 /// <summary>
 /// Sets the species choice on an in-progress creation session.
@@ -63,14 +68,39 @@ public class SetCreationClassHandler(
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
 
-        var classResult = await mediator.Send(new GetCharacterClassQuery { ClassName = request.ClassId }, cancellationToken);
+        var classResult = await mediator.Send(new GetCharacterClassQuery { ClassName = request.ClassName }, cancellationToken);
         if (!classResult.Found || classResult.CharacterClass is null)
-            return new SetCreationChoiceResult { Success = false, Message = $"Class '{request.ClassId}' not found." };
+            return new SetCreationChoiceResult { Success = false, Message = $"Class '{request.ClassName}' not found." };
 
         session.SelectedClass = classResult.CharacterClass;
         await sessionStore.UpdateSessionAsync(session);
-        logger.LogDebug("Session {SessionId}: class set to {ClassId}", request.SessionId, request.ClassId);
+        logger.LogDebug("Session {SessionId}: class set to {ClassName}", request.SessionId, request.ClassName);
         return new SetCreationChoiceResult { Success = true, Message = $"Class set to '{classResult.CharacterClass.Name}'." };
+    }
+}
+
+/// <summary>
+/// Handles <see cref="SetCreationNameCommand"/>.
+/// </summary>
+public class SetCreationNameHandler(
+    ICharacterCreationSessionStore sessionStore,
+    ILogger<SetCreationNameHandler> logger)
+    : IRequestHandler<SetCreationNameCommand, SetCreationChoiceResult>
+{
+    /// <inheritdoc />
+    public async Task<SetCreationChoiceResult> Handle(SetCreationNameCommand request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.CharacterName))
+            return new SetCreationChoiceResult { Success = false, Message = "Character name cannot be empty." };
+
+        var session = await sessionStore.GetSessionAsync(request.SessionId);
+        if (session is null)
+            return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
+
+        session.CharacterName = request.CharacterName;
+        await sessionStore.UpdateSessionAsync(session);
+        logger.LogDebug("Session {SessionId}: name set to '{Name}'", request.SessionId, request.CharacterName);
+        return new SetCreationChoiceResult { Success = true, Message = $"Character name set to '{request.CharacterName}'." };
     }
 }
 
