@@ -150,6 +150,18 @@ public class HttpAuthServiceTests : TestBase
         error!.Message.Should().Be("Network error. Please check your connection.");
     }
 
+    [Fact]
+    public async Task LoginAsync_Should_Return_Lockout_Message_When_Server_Returns_Locked_Out()
+    {
+        var sut = MakeSut(FakeHttpHandler.Json(
+            new { error = "Account is locked out" }, HttpStatusCode.Unauthorized));
+
+        var (response, error) = await sut.LoginAsync("user@test.com", "Password1!");
+
+        response.Should().BeNull();
+        error!.Message.Should().Contain("locked");
+    }
+
     // RefreshAsync
     [Fact]
     public async Task RefreshAsync_Should_Return_False_When_No_RefreshToken()
