@@ -102,6 +102,9 @@ public class CharacterSelectViewModel : ViewModelBase
             navigation.NavigateTo<MainMenuViewModel>();
         });
 
+        // Auto-redirect if the hub drops while the character list is displayed.
+        _connection.ConnectionLost += OnConnectionLost;
+
         // Load on construction
         _ = LoadAsync();
     }
@@ -350,8 +353,13 @@ public class CharacterSelectViewModel : ViewModelBase
         if (!_tokens.IsExpiringSoon) return;
         var refreshed = await _auth.RefreshAsync();
         if (!refreshed)
+        {
+            await _connection.DisconnectAsync();
             _navigation.NavigateTo<MainMenuViewModel>();
+        }
     }
+
+    private void OnConnectionLost() => _navigation.NavigateTo<MainMenuViewModel>();
 
     // Payload shapes (matching server hub broadcasts)
     internal record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt);

@@ -1,6 +1,11 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Tests.Infrastructure;
 
 namespace RealmUnbound.Server.Tests.Features;
@@ -234,5 +239,52 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
 
         var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
         body!.AccessTokenExpiry.Should().BeAfter(DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
+    public async Task Refresh_Should_Return_Unauthorized_For_Expired_Token()
+    {
+        // Register so we have a real, valid-format token in the DB.
+        var reg = await _client.PostAsJsonAsync("/api/auth/register",
+            new { Email = "auth_expired_refresh@test.com", Username = "Auth_ExpiredRefresh_User", Password = "Pass1234!" });
+        var auth = await reg.Content.ReadFromJsonAsync<AuthResponse>();
+
+        // Manually expire the token in the DB (without revoking it) to simulate natural expiry.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var hash = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(auth!.RefreshToken))).ToLowerInvariant();
+            var stored = await db.RefreshTokens.FirstAsync(t => t.TokenHash == hash);
+            stored.ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1);
+            await db.SaveChangesAsync();
+        }
+
+        var response = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new { auth!.RefreshToken });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Login_Should_Return_Lockout_Message_After_Max_Failed_Attempts()
+    {
+        const string email    = "auth_lockout_target@test.com";
+        const string username = "Auth_Lockout_Target";
+        await _client.PostAsJsonAsync("/api/auth/register",
+            new { Email = email, Username = username, Password = "Pass1234!" });
+
+        // Exhaust attempts (MaxFailedAccessAttempts = 5)
+        for (var i = 0; i < 5; i++)
+            await _client.PostAsJsonAsync("/api/auth/login",
+                new { Email = email, Password = "WrongPass!" });
+
+        // Locked-out attempt
+        var locked = await _client.PostAsJsonAsync("/api/auth/login",
+            new { Email = email, Password = "WrongPass!" });
+
+        locked.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await locked.Content.ReadAsStringAsync();
+        body.Should().ContainEquivalentOf("locked out");
     }
 }

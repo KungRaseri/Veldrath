@@ -284,4 +284,43 @@ public class ServerConnectionServiceTests : TestBase
 
         auth.RefreshCallCount.Should().Be(0);
     }
+
+    [Fact]
+    public async Task AccessTokenProvider_Should_Return_Null_When_RefreshAsync_Fails()
+    {
+        var tokens = new TokenStore();
+        var auth   = new FakeAuthService { RefreshResult = false };
+        var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
+
+        // Token is expiring so refresh will be attempted
+        tokens.Set("old-token", "refresh-token", "user", Guid.NewGuid(),
+                   DateTimeOffset.UtcNow.AddSeconds(90));
+
+        await svc.ConnectAsync("http://localhost");
+
+        var result = await factory.LastAccessTokenProvider!.Invoke();
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AccessTokenProvider_Should_Fire_ConnectionLost_Via_Closed_When_Refresh_Fails()
+    {
+        var tokens = new TokenStore();
+        var auth   = new FakeAuthService { RefreshResult = false };
+        var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
+
+        tokens.Set("old-token", "refresh-token", "user", Guid.NewGuid(),
+                   DateTimeOffset.UtcNow.AddSeconds(90));
+
+        await svc.ConnectAsync("http://localhost");
+
+        var connectionLostFired = false;
+        svc.ConnectionLost += () => connectionLostFired = true;
+
+        // Simulate SignalR rejecting the null token and closing the connection
+        await factory.Connection.SimulateClosedAsync();
+
+        connectionLostFired.Should().BeTrue();
+    }
 }

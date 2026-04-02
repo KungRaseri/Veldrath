@@ -52,7 +52,7 @@ public static class ZoneLocationsSeeder
             },
             new ZoneLocation
             {
-                Slug = "the-wayward-pilgrim",  DisplayName = "The Wayward Pilgrim",
+                Slug = "wayward-pilgrim",      DisplayName = "The Wayward Pilgrim",
                 ZoneId = "fenwick-crossing",   TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 1, Population = 20, MinLevel = 1 },
@@ -158,7 +158,7 @@ public static class ZoneLocationsSeeder
             },
             new ZoneLocation
             {
-                Slug = "the-grey-cup",         DisplayName = "The Grey Cup",
+                Slug = "grey-cup",             DisplayName = "The Grey Cup",
                 ZoneId = "aldenmere",          TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 1, Population = 25, MinLevel = 5 },
@@ -432,7 +432,7 @@ public static class ZoneLocationsSeeder
             },
             new ZoneLocation
             {
-                Slug = "fire-ancient-chamber", DisplayName = "The Fire-Ancient's Chamber",
+                Slug = "fire-ancients-chamber", DisplayName = "The Fire-Ancient's Chamber",
                 ZoneId = "kaldrek-maw",        TypeKey = "dungeons",   LocationType = "dungeon",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 8, DangerLevel = 10, Population = 30, MinLevel = 26, MaxLevel = 30 },
@@ -469,8 +469,8 @@ public static class ZoneLocationsSeeder
             // ── fenwick-crossing ────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "thornveil-village",    ToLocationSlug = "fenwick-market",          ConnectionType = "path",             IsTraversable = true },
             new ZoneLocationConnection { FromLocationSlug = "fenwick-market",       ToLocationSlug = "thornveil-village",       ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fenwick-market",       ToLocationSlug = "the-wayward-pilgrim",     ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "the-wayward-pilgrim",  ToLocationSlug = "fenwick-market",          ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "fenwick-market",       ToLocationSlug = "wayward-pilgrim",         ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "wayward-pilgrim",      ToLocationSlug = "fenwick-market",          ConnectionType = "path",             IsTraversable = true },
 
             // ── greenveil-paths ─────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "darkwood-forest",      ToLocationSlug = "old-oak-crossing",        ConnectionType = "path",             IsTraversable = true },
@@ -489,8 +489,8 @@ public static class ZoneLocationsSeeder
             // ── aldenmere ───────────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "ironhollow-keep",      ToLocationSlug = "aldenmere-marketplace",   ConnectionType = "path",             IsTraversable = true },
             new ZoneLocationConnection { FromLocationSlug = "aldenmere-marketplace",ToLocationSlug = "ironhollow-keep",         ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "aldenmere-marketplace",ToLocationSlug = "the-grey-cup",            ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "the-grey-cup",         ToLocationSlug = "aldenmere-marketplace",   ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "aldenmere-marketplace",ToLocationSlug = "grey-cup",                ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "grey-cup",             ToLocationSlug = "aldenmere-marketplace",   ConnectionType = "path",             IsTraversable = true },
 
             // ── pale-moor ───────────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "ashveil-highlands",    ToLocationSlug = "moorstone-cairns",        ConnectionType = "path",             IsTraversable = true },
@@ -545,8 +545,8 @@ public static class ZoneLocationsSeeder
             new ZoneLocationConnection { FromLocationSlug = "pyreling-den",         ToLocationSlug = "lava-bridge",             ConnectionType = "path",             IsTraversable = true },
 
             // ── kaldrek-maw ─────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "maw-descent",          ToLocationSlug = "fire-ancient-chamber",    ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fire-ancient-chamber", ToLocationSlug = "maw-descent",             ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fire-ancient-chamber", ToLocationSlug = "kaldreks-heart",          ConnectionType = "path",             IsTraversable = true }
+            new ZoneLocationConnection { FromLocationSlug = "maw-descent",            ToLocationSlug = "fire-ancients-chamber",   ConnectionType = "dungeon_entrance", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "fire-ancients-chamber",ToLocationSlug = "maw-descent",             ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "fire-ancients-chamber",ToLocationSlug = "kaldreks-heart",          ConnectionType = "path",             IsTraversable = true }
         ];
 }
