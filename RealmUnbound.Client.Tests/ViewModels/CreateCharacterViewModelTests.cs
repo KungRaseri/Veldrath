@@ -470,6 +470,92 @@ public class CreateCharacterViewModelTests : TestBase
         creation.SetLocationCallCount.Should().Be(0);
     }
 
+    // NextCommand — per-step error paths
+    [Fact]
+    public async Task NextCommand_Sets_StepError_When_SetName_Fails_On_Step0()
+    {
+        var creation = new FakeCharacterCreationService { SetNameResult = false };
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+
+        await vm.NextCommand.Execute();
+
+        vm.StepError.Should().Be("Could not save character name. Please try again.");
+        vm.IsBusy.Should().BeFalse();
+        vm.CurrentStepIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task NextCommand_Sets_StepError_When_SetClass_Fails_On_Step1()
+    {
+        var creation = new FakeCharacterCreationService { SetClassResult = false };
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+
+        await AdvanceAsync(vm, 1); // advance step 0 (name) → step 1
+        await vm.NextCommand.Execute(); // step 1 fails
+
+        vm.StepError.Should().Be("Could not save class selection. Please try again.");
+        vm.CurrentStepIndex.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task NextCommand_Sets_StepError_When_SetSpecies_Fails_On_Step2()
+    {
+        var creation = new FakeCharacterCreationService { SetSpeciesResult = false };
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+
+        await AdvanceAsync(vm, 2); // advance through steps 0 and 1
+        await vm.NextCommand.Execute(); // step 2 fails
+
+        vm.StepError.Should().Be("Could not save species selection. Please try again.");
+        vm.CurrentStepIndex.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task NextCommand_Sets_StepError_When_SetBackground_Fails_On_Step3()
+    {
+        var creation = new FakeCharacterCreationService { SetBackgroundResult = false };
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+
+        await AdvanceAsync(vm, 3); // advance through steps 0–2
+        await vm.NextCommand.Execute(); // step 3 fails
+
+        vm.StepError.Should().Be("Could not save background selection. Please try again.");
+        vm.CurrentStepIndex.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task NextCommand_Sets_StepError_When_SetAttributes_Fails_On_Step4()
+    {
+        var creation = new FakeCharacterCreationService { SetAttributesResult = false };
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+
+        await AdvanceAsync(vm, 4); // advance through steps 0–3
+        await vm.NextCommand.Execute(); // step 4 fails
+
+        vm.StepError.Should().Be("Could not save attribute choices. Please try again.");
+        vm.CurrentStepIndex.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task NextCommand_Sets_StepError_When_SetEquipmentPreferences_Fails_On_Step5()
+    {
+        var creation = new FakeCharacterCreationService { SetEquipmentPreferencesResult = false };
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+        vm.SelectedArmorType = "Heavy Armor"; // must be set for the equipment step to call the service
+
+        await AdvanceAsync(vm, 5); // advance through steps 0–4
+        await vm.NextCommand.Execute(); // step 5 fails
+
+        vm.StepError.Should().Be("Could not save equipment preferences. Please try again.");
+        vm.CurrentStepIndex.Should().Be(5);
+    }
+
     // CancelCommand
     [Fact]
     public async Task CancelCommand_Calls_AbandonAsync_When_Session_Exists()    {
