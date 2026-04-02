@@ -32,6 +32,10 @@ namespace RealmUnbound.Server.Features.Characters;
 /// </summary>
 public static class CharacterCreationSessionEndpoints
 {
+    // All new characters start at this location regardless of wizard choices.
+    // Location selection is not exposed in the wizard; this will remain static until zone progression is designed.
+    private const string DefaultStartingLocationSlug = "fenwick-market";
+
     /// <summary>Maps all character creation session endpoints onto the application.</summary>
     /// <param name="app">The endpoint route builder to register routes on.</param>
     /// <returns>The same <paramref name="app"/> for chaining.</returns>
@@ -353,7 +357,7 @@ public static class CharacterCreationSessionEndpoints
             AbilitiesBlob         = JsonSerializer.Serialize(abilitySlugs),
             BackgroundId          = session.SelectedBackground?.GetBackgroundId(),
             SpeciesSlug           = session.SelectedSpecies?.Slug,
-            CurrentZoneLocationSlug = session.SelectedLocationId,
+            CurrentZoneLocationSlug = DefaultStartingLocationSlug,
         };
 
         Character created;

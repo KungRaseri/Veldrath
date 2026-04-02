@@ -139,6 +139,7 @@ public class FakeServerConnectionService : IServerConnectionService
     public IEnumerable<Guid>? ActiveCharacterIds { get; set; }
 
     public event Action<ConnectionState>? StateChanged;
+    public event Action? ConnectionLost;
 
     public Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
     {
@@ -173,6 +174,14 @@ public class FakeServerConnectionService : IServerConnectionService
     {
         if (_handlers.TryGetValue(method, out var h))
             ((Action)h)();
+    }
+
+    /// <summary>Simulates the hub connection dropping, firing <see cref="ConnectionLost"/>.</summary>
+    public void SimulateConnectionLost()
+    {
+        _state = ConnectionState.Disconnected;
+        StateChanged?.Invoke(_state);
+        ConnectionLost?.Invoke();
     }
 
     public Task SendCommandAsync(string method)

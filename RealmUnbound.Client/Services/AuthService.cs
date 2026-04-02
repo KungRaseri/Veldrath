@@ -32,6 +32,10 @@ public class HttpAuthService(
         var statusCode = (int)response.StatusCode;
         var friendly = (context, statusCode) switch
         {
+            ("login",    401) or ("login",    403)
+                when serverMessage is not null
+                  && serverMessage.Contains("locked out", StringComparison.OrdinalIgnoreCase)
+                                                    => "Account locked. Too many failed login attempts. Please try again later.",
             ("login",    401) or ("login",    403) => "Incorrect email or password. Please try again.",
             ("login",    429)                       => "Too many login attempts. Please wait a moment and try again.",
             ("register", 409)                       => "An account with that email or username already exists.",

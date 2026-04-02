@@ -8,6 +8,8 @@ public interface IServerConnectionService
 {
     ConnectionState State { get; }
     event Action<ConnectionState>? StateChanged;
+    /// <summary>Raised when the hub connection is closed — including after a failed token refresh.</summary>
+    event Action? ConnectionLost;
     Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default);
     Task DisconnectAsync();
     Task SendCommandAsync(string method);
@@ -39,6 +41,9 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     public event Action<ConnectionState>? StateChanged;
 
+    /// <inheritdoc />
+    public event Action? ConnectionLost;
+
     /// <summary>Initializes a new instance of <see cref="ServerConnectionService"/>.</summary>
     public ServerConnectionService(
         ILogger<ServerConnectionService> logger,
@@ -67,7 +72,14 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
                 // automatic reconnects after a network blip don't fail with 401 due to an
                 // expired token. The RefreshToken remains valid for 30 days.
                 if (_tokens.IsExpiringSoon && _tokens.RefreshToken is not null)
-                    await _auth.RefreshAsync();
+                {
+                    var refreshed = await _auth.RefreshAsync();
+                    if (!refreshed)
+                    {
+                        _logger.LogWarning("Token refresh failed during hub connect — forcing disconnect");
+                        return null;
+                    }
+                }
                 return _tokens.AccessToken;
             });
 
@@ -75,6 +87,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         {
             State = ConnectionState.Disconnected;
             _logger.LogWarning(error, "Connection closed");
+            ConnectionLost?.Invoke();
             await Task.CompletedTask;
         };
 

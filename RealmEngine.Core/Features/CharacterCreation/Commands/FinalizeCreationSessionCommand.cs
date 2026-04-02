@@ -37,6 +37,8 @@ public class FinalizeCreationSessionHandler(
             return Fail($"Session {request.SessionId} not found.");
         if (session.Status == CreationSessionStatus.Abandoned)
             return Fail("Cannot finalize an abandoned session.");
+        if (session.Status == CreationSessionStatus.Finalized)
+            return Fail("Session has already been finalized.");
 
         if (session.SelectedClass is null)
             return Fail("A character class must be selected before finalizing.");

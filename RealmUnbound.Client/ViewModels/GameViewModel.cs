@@ -715,6 +715,9 @@ public class GameViewModel : ViewModelBase
         RespawnCommand            = ReactiveCommand.CreateFromTask(DoRespawnAsync);
 
         SpawnedEnemies.CollectionChanged += (_, _) => HasSpawnedEnemies = SpawnedEnemies.Count > 0;
+
+        // Auto-redirect to main menu if the hub drops (e.g. failed token refresh mid-session).
+        _connection.ConnectionLost += OnConnectionLost;
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -1029,6 +1032,13 @@ public class GameViewModel : ViewModelBase
         try { await _connection.SendCommandAsync("LeaveZone"); } catch { /* ignore */ }
         _audioPlayer?.StopMusic();
         await _connection.DisconnectAsync();
+        _navigation.NavigateTo<MainMenuViewModel>();
+    }
+
+    private void OnConnectionLost()
+    {
+        // Hub dropped mid-session (e.g. token refresh failed). Stop audio and redirect.
+        _audioPlayer?.StopMusic();
         _navigation.NavigateTo<MainMenuViewModel>();
     }
 
