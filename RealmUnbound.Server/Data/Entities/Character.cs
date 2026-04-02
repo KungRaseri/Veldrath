@@ -54,6 +54,12 @@ public class Character
     /// <summary>Slug of the ZoneLocation the character is currently at within the zone, or <see langword="null"/> if not at a specific location.</summary>
     public string? CurrentZoneLocationSlug { get; set; }
 
+    /// <summary>Identifier of the background chosen at character creation (e.g. "acolyte", "criminal"), or <see langword="null"/> if none was selected.</summary>
+    public string? BackgroundId { get; set; }
+
+    /// <summary>Slug of the species chosen at character creation (e.g. "human", "elf"), or <see langword="null"/> if none was selected.</summary>
+    public string? SpeciesSlug { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset LastPlayedAt { get; set; } = DateTimeOffset.UtcNow;

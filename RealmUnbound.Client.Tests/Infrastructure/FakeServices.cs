@@ -569,4 +569,11 @@ public class FakeCharacterCreationService : ICharacterCreationService
         AbandonCallCount++;
         return Task.CompletedTask;
     }
+
+    /// <summary>Gets or sets the preview DTO returned by <see cref="GetPreviewAsync"/>.</summary>
+    public CharacterPreviewDto? PreviewResult { get; set; } =
+        new CharacterPreviewDto("Warrior", null, null, 10, 8, 8, 8, 8, 8, 25, 10);
+
+    /// <inheritdoc/>
+    public Task<CharacterPreviewDto?> GetPreviewAsync(Guid sessionId) => Task.FromResult(PreviewResult);
 }

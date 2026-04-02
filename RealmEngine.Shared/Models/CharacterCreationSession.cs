@@ -50,8 +50,8 @@ public class CharacterCreationSession
     /// <summary>Gets or sets the ID of the selected starting location.</summary>
     public string? SelectedLocationId { get; set; }
 
-    /// <summary>Gets or sets the difficulty level for the new character (defaults to Normal).</summary>
-    public string DifficultyLevel { get; set; } = "Normal";
+    /// <summary>Gets or sets the account that owns this session, set when the session is created via the server.</summary>
+    public Guid? AccountId { get; set; }
 }
 
 /// <summary>The lifecycle status of a <see cref="CharacterCreationSession"/>.</summary>

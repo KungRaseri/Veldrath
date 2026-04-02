@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.CharacterCreation.Queries;
 using RealmEngine.Shared.Abstractions;
@@ -57,20 +58,35 @@ public static class CharacterCreationSessionEndpoints
     }
 
     private static async Task<IResult> BeginAsync(
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
         var result = await mediator.Send(new BeginCreationSessionCommand(), ct);
-        return result.Success
-            ? Results.Created($"/api/character-creation/sessions/{result.SessionId}", result)
-            : Results.StatusCode(StatusCodes.Status500InternalServerError);
+        if (!result.Success)
+            return Results.StatusCode(StatusCodes.Status500InternalServerError);
+
+        // Stamp owner so subsequent requests can be ownership-checked.
+        var session = await sessionStore.GetSessionAsync(result.SessionId);
+        if (session is not null)
+        {
+            session.AccountId = GetAccountId(user);
+            await sessionStore.UpdateSessionAsync(session);
+        }
+
+        return Results.Created($"/api/character-creation/sessions/{result.SessionId}", result);
     }
 
     private static async Task<IResult> GetSessionAsync(
         Guid id,
+        ClaimsPrincipal user,
         ICharacterCreationSessionStore sessionStore,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var session = await sessionStore.GetSessionAsync(id);
         return session is null
             ? Results.NotFound(new { error = $"Session {id} not found." })
@@ -80,9 +96,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetNameAsync(
         Guid id,
         [FromBody] SetCreationNameRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new SetCreationNameCommand(id, request.CharacterName), ct);
         return result.Success
             ? Results.Ok(result)
@@ -92,9 +113,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetClassAsync(
         Guid id,
         [FromBody] SetCreationClassRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new SetCreationClassCommand(id, request.ClassName), ct);
         return result.Success
             ? Results.Ok(result)
@@ -104,9 +130,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetSpeciesAsync(
         Guid id,
         [FromBody] SetCreationSpeciesRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new SetCreationSpeciesCommand(id, request.SpeciesSlug), ct);
         return result.Success
             ? Results.Ok(result)
@@ -116,9 +147,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetBackgroundAsync(
         Guid id,
         [FromBody] SetCreationBackgroundRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new SetCreationBackgroundCommand(id, request.BackgroundId), ct);
         return result.Success
             ? Results.Ok(result)
@@ -128,9 +164,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetAttributesAsync(
         Guid id,
         [FromBody] SetCreationAttributesRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new AllocateCreationAttributesCommand(id, request.Allocations), ct);
         return result.Success
             ? Results.Ok(result)
@@ -140,9 +181,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetEquipmentAsync(
         Guid id,
         [FromBody] SetCreationEquipmentPreferencesRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(
             new SetCreationEquipmentPreferencesCommand(id, request.PreferredArmorType, request.PreferredWeaponType, request.IncludeShield),
             ct);
@@ -154,9 +200,14 @@ public static class CharacterCreationSessionEndpoints
     private static async Task<IResult> SetLocationAsync(
         Guid id,
         [FromBody] SetCreationLocationRequest request,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new SetCreationLocationCommand(id, request.LocationId), ct);
         return result.Success
             ? Results.Ok(result)
@@ -165,13 +216,31 @@ public static class CharacterCreationSessionEndpoints
 
     private static async Task<IResult> GetPreviewAsync(
         Guid id,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new GetCreationPreviewQuery(id), ct);
-        return result.Success
-            ? Results.Ok(result)
-            : Results.BadRequest(new { error = result.Message });
+        if (!result.Success || result.Character is null)
+            return Results.BadRequest(new { error = result.Message });
+
+        var c = result.Character;
+        return Results.Ok(new CharacterPreviewDto(
+            ClassName:      c.ClassName,
+            SpeciesName:    c.SpeciesSlug,
+            BackgroundName: c.BackgroundId,
+            Strength:       c.Strength,
+            Dexterity:      c.Dexterity,
+            Constitution:   c.Constitution,
+            Intelligence:   c.Intelligence,
+            Wisdom:         c.Wisdom,
+            Charisma:       c.Charisma,
+            Health:         c.MaxHealth,
+            Mana:           c.MaxMana));
     }
 
     private static async Task<IResult> FinalizeAsync(
@@ -188,6 +257,10 @@ public static class CharacterCreationSessionEndpoints
         if (session is null)
             return Results.NotFound(new { error = $"Session {id} not found." });
 
+        var accountId = GetAccountId(user);
+        if (session.AccountId is not null && session.AccountId != accountId)
+            return Results.Forbid();
+
         if (session.SelectedClass is null)
             return Results.BadRequest(new { error = "A character class must be selected before finalizing." });
 
@@ -198,8 +271,6 @@ public static class CharacterCreationSessionEndpoints
         var normalizedMode = request.DifficultyMode?.ToLowerInvariant() ?? "normal";
         if (normalizedMode is not "normal" and not "hardcore")
             return Results.BadRequest(new { error = "DifficultyMode must be \"normal\" or \"hardcore\"." });
-
-        var accountId = GetAccountId(user);
         var account = await accountRepo.FindByIdAsync(accountId, ct);
         if (account is null) return Results.Unauthorized();
 
@@ -229,16 +300,36 @@ public static class CharacterCreationSessionEndpoints
         var engineChar = engineResult.Character;
         var attrsJson = JsonSerializer.Serialize(new Dictionary<string, int>
         {
-            ["Strength"]     = engineChar.Strength,
-            ["Dexterity"]    = engineChar.Dexterity,
-            ["Constitution"] = engineChar.Constitution,
-            ["Intelligence"] = engineChar.Intelligence,
-            ["Wisdom"]       = engineChar.Wisdom,
-            ["Charisma"]     = engineChar.Charisma,
+            ["Strength"]      = engineChar.Strength,
+            ["Dexterity"]     = engineChar.Dexterity,
+            ["Constitution"]  = engineChar.Constitution,
+            ["Intelligence"]  = engineChar.Intelligence,
+            ["Wisdom"]        = engineChar.Wisdom,
+            ["Charisma"]      = engineChar.Charisma,
             ["CurrentHealth"] = engineChar.Health,
-            ["MaxHealth"]    = engineChar.MaxHealth,
-            ["Gold"]         = engineChar.Gold,
+            ["MaxHealth"]     = engineChar.MaxHealth,
+            ["CurrentMana"]   = engineChar.Mana,
+            ["MaxMana"]       = engineChar.MaxMana,
+            ["Gold"]          = engineChar.Gold,
         });
+
+        var equipmentDict = new Dictionary<string, string>();
+        if (engineChar.EquippedMainHand  is { Slug: { Length: > 0 } s1 }) equipmentDict["MainHand"]  = s1;
+        if (engineChar.EquippedOffHand   is { Slug: { Length: > 0 } s2 }) equipmentDict["OffHand"]   = s2;
+        if (engineChar.EquippedHelmet    is { Slug: { Length: > 0 } s3 }) equipmentDict["Helmet"]    = s3;
+        if (engineChar.EquippedShoulders is { Slug: { Length: > 0 } s4 }) equipmentDict["Shoulders"] = s4;
+        if (engineChar.EquippedChest     is { Slug: { Length: > 0 } s5 }) equipmentDict["Chest"]     = s5;
+        if (engineChar.EquippedBracers   is { Slug: { Length: > 0 } s6 }) equipmentDict["Bracers"]   = s6;
+        if (engineChar.EquippedGloves    is { Slug: { Length: > 0 } s7 }) equipmentDict["Gloves"]    = s7;
+        if (engineChar.EquippedBelt      is { Slug: { Length: > 0 } s8 }) equipmentDict["Belt"]      = s8;
+        if (engineChar.EquippedLegs      is { Slug: { Length: > 0 } s9 }) equipmentDict["Legs"]      = s9;
+        if (engineChar.EquippedBoots     is { Slug: { Length: > 0 } s10 }) equipmentDict["Boots"]    = s10;
+        if (engineChar.EquippedNecklace  is { Slug: { Length: > 0 } s11 }) equipmentDict["Necklace"] = s11;
+
+        var inventoryItems = engineChar.Inventory
+            .Where(i => !string.IsNullOrWhiteSpace(i.Slug))
+            .Select(i => new { ItemRef = i.Slug, Quantity = 1 })
+            .ToList();
 
         var abilitySlugs = engineChar.LearnedAbilities.Keys
             .Select(pid => pid.Contains(':') ? pid[(pid.LastIndexOf(':') + 1)..] : pid)
@@ -247,16 +338,29 @@ public static class CharacterCreationSessionEndpoints
 
         var character = new Character
         {
-            AccountId      = accountId,
-            SlotIndex      = slotIndex,
-            Name           = resolvedName,
-            ClassName      = session.SelectedClass.Name,
-            DifficultyMode = normalizedMode,
-            Attributes     = attrsJson,
-            AbilitiesBlob  = JsonSerializer.Serialize(abilitySlugs),
+            AccountId             = accountId,
+            SlotIndex             = slotIndex,
+            Name                  = resolvedName,
+            ClassName             = session.SelectedClass.Name,
+            DifficultyMode        = normalizedMode,
+            Attributes            = attrsJson,
+            EquipmentBlob         = JsonSerializer.Serialize(equipmentDict),
+            InventoryBlob         = JsonSerializer.Serialize(inventoryItems),
+            AbilitiesBlob         = JsonSerializer.Serialize(abilitySlugs),
+            BackgroundId          = session.SelectedBackground?.GetBackgroundId(),
+            SpeciesSlug           = session.SelectedSpecies?.Slug,
+            CurrentZoneLocationSlug = session.SelectedLocationId,
         };
 
-        var created = await repo.CreateAsync(character, ct);
+        Character created;
+        try
+        {
+            created = await repo.CreateAsync(character, ct);
+        }
+        catch (DbUpdateException)
+        {
+            return Results.Conflict(new { error = "Character name already taken." });
+        }
 
         return Results.Created(
             $"/api/characters/{created.Id}",
@@ -265,14 +369,21 @@ public static class CharacterCreationSessionEndpoints
                 created.Level, created.Experience, created.LastPlayedAt, created.CurrentZoneId,
                 DifficultyMode: created.DifficultyMode,
                 IsOnline: false,
-                IsHardcore: created.DifficultyMode == "hardcore"));
+                IsHardcore: created.DifficultyMode == "hardcore",
+                BackgroundId: created.BackgroundId,
+                SpeciesSlug: created.SpeciesSlug));
     }
 
     private static async Task<IResult> AbandonAsync(
         Guid id,
+        ClaimsPrincipal user,
+        ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
         CancellationToken ct)
     {
+        var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
+        if (ownerCheck is not null) return ownerCheck;
+
         var result = await mediator.Send(new AbandonCreationSessionCommand(id), ct);
         return result.Success
             ? Results.NoContent()
@@ -280,6 +391,24 @@ public static class CharacterCreationSessionEndpoints
     }
 
     // Helpers
+
+    /// <summary>
+    /// Returns <see langword="null"/> when the caller owns the session (or it has no owner).
+    /// Returns a 404 result when the session does not exist, or a 403 result when the caller is not the owner.
+    /// </summary>
+    private static async Task<IResult?> VerifyOwnerAsync(
+        Guid sessionId,
+        Guid callerId,
+        ICharacterCreationSessionStore store)
+    {
+        var session = await store.GetSessionAsync(sessionId);
+        if (session is null)
+            return Results.NotFound(new { error = $"Session {sessionId} not found." });
+        if (session.AccountId is not null && session.AccountId != callerId)
+            return Results.Forbid();
+        return null;
+    }
+
     private static Guid GetAccountId(ClaimsPrincipal user)
     {
         var value = user.FindFirstValue(JwtRegisteredClaimNames.Sub)

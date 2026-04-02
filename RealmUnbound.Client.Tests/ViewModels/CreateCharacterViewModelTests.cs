@@ -1,4 +1,4 @@
-using System.Reactive.Linq;
+﻿using System.Reactive.Linq;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
@@ -18,6 +18,13 @@ public class CreateCharacterViewModelTests : TestBase
             creation ?? new FakeCharacterCreationService(),
             FakeContentCache.Create(content),
             nav ?? new FakeNavigationService());
+    }
+
+    /// <summary>Advances the wizard by executing NextCommand the given number of times.</summary>
+    private static async Task AdvanceAsync(CreateCharacterViewModel vm, int steps)
+    {
+        for (var i = 0; i < steps; i++)
+            await vm.NextCommand.Execute();
     }
 
     // Initialization
@@ -57,42 +64,43 @@ public class CreateCharacterViewModelTests : TestBase
         vm.IsBusy.Should().BeFalse();
     }
 
-    // ConfirmCommand — CanExecute
+    // NextCommand â€” CanExecute
     [Fact]
-    public void ConfirmCommand_IsDisabled_When_Name_Is_Empty()
+    public void NextCommand_IsDisabled_When_Name_Is_Empty()
     {
         var vm = MakeVm();
-        vm.SelectedClass = "Warrior";
         bool canExecute = false;
-        vm.ConfirmCommand.CanExecute.Subscribe(v => canExecute = v);
+        vm.NextCommand.CanExecute.Subscribe(v => canExecute = v);
 
         canExecute.Should().BeFalse();
     }
 
     [Fact]
-    public void ConfirmCommand_IsDisabled_When_Class_Not_Selected()
+    public async Task NextCommand_IsDisabled_When_Class_Not_Selected()
     {
         var vm = MakeVm();
         vm.Name = "Hero";
+        // Advance to step 1 (Class step)
+        await vm.NextCommand.Execute();
+
         bool canExecute = false;
-        vm.ConfirmCommand.CanExecute.Subscribe(v => canExecute = v);
+        vm.NextCommand.CanExecute.Subscribe(v => canExecute = v);
 
         canExecute.Should().BeFalse();
     }
 
     [Fact]
-    public void ConfirmCommand_IsEnabled_When_Name_And_Class_Are_Set()
+    public void NextCommand_IsEnabled_When_Name_Is_Set()
     {
         var vm = MakeVm();
         vm.Name = "Hero";
-        vm.SelectedClass = "Warrior";
         bool canExecute = false;
-        vm.ConfirmCommand.CanExecute.Subscribe(v => canExecute = v);
+        vm.NextCommand.CanExecute.Subscribe(v => canExecute = v);
 
         canExecute.Should().BeTrue();
     }
 
-    // ConfirmCommand — happy path
+    // NextCommand â€” happy path (full wizard advance)
     [Fact]
     public async Task InitializeAsync_Sets_AvailableSpecies_From_Catalog()
     {
@@ -120,33 +128,35 @@ public class CreateCharacterViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task ConfirmCommand_Navigates_To_CharacterSelect_On_Success()
+    public async Task NextCommand_Navigates_To_CharacterSelect_On_Success()
     {
         var nav = new FakeNavigationService();
         var vm  = MakeVm(nav: nav);
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7); // steps 0â€“6
+        await vm.NextCommand.Execute(); // step 7: finalize
 
         nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
     }
 
     [Fact]
-    public async Task ConfirmCommand_Clears_IsBusy_After_Success()
+    public async Task NextCommand_Clears_IsBusy_After_Success()
     {
         var vm = MakeVm();
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7);
+        await vm.NextCommand.Execute();
 
         vm.IsBusy.Should().BeFalse();
     }
 
-    // ConfirmCommand — failure
+    // NextCommand â€” failure
     [Fact]
-    public async Task ConfirmCommand_Sets_ErrorMessage_When_Finalize_Fails()
+    public async Task NextCommand_Sets_StepError_When_Finalize_Fails()
     {
         var creation = new FakeCharacterCreationService
         {
@@ -156,26 +166,28 @@ public class CreateCharacterViewModelTests : TestBase
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7);
+        await vm.NextCommand.Execute();
 
-        vm.ErrorMessage.Should().Be("Name already taken");
+        vm.StepError.Should().Be("Name already taken");
     }
 
     [Fact]
-    public async Task ConfirmCommand_Sets_Fallback_Error_When_No_Message()
+    public async Task NextCommand_Sets_Fallback_StepError_When_No_Message()
     {
         var creation = new FakeCharacterCreationService { FinalizeResult = (null, null) };
         var vm = MakeVm(creation: creation);
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7);
+        await vm.NextCommand.Execute();
 
-        vm.ErrorMessage.Should().Be("Failed to create character.");
+        vm.StepError.Should().Be("Failed to create character.");
     }
 
     [Fact]
-    public async Task ConfirmCommand_Clears_IsBusy_On_Failure()
+    public async Task NextCommand_Clears_IsBusy_On_Failure()
     {
         var creation = new FakeCharacterCreationService
         {
@@ -185,13 +197,14 @@ public class CreateCharacterViewModelTests : TestBase
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7);
+        await vm.NextCommand.Execute();
 
         vm.IsBusy.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ConfirmCommand_Does_Not_Navigate_On_Finalize_Failure()
+    public async Task NextCommand_Does_Not_Navigate_On_Finalize_Failure()
     {
         var nav      = new FakeNavigationService();
         var creation = new FakeCharacterCreationService
@@ -202,7 +215,8 @@ public class CreateCharacterViewModelTests : TestBase
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7);
+        await vm.NextCommand.Execute();
 
         nav.NavigationLog.Should().NotContain(typeof(CharacterSelectViewModel));
     }
@@ -262,7 +276,7 @@ public class CreateCharacterViewModelTests : TestBase
     {
         var vm = MakeVm();
         // Spend all 27 points on Strength (max 9) + Dexterity (max 9) + one Constitution point (9)
-        // STR 8→15 costs 9, DEX 8→15 costs 9, CON 8→15 costs 9 = 27 total
+        // STR 8â†’15 costs 9, DEX 8â†’15 costs 9, CON 8â†’15 costs 9 = 27 total
         for (var i = 0; i < 7; i++) await vm.IncreaseStatCommand.Execute("Strength");
         for (var i = 0; i < 7; i++) await vm.IncreaseStatCommand.Execute("Dexterity");
         for (var i = 0; i < 7; i++) await vm.IncreaseStatCommand.Execute("Constitution");
@@ -295,7 +309,7 @@ public class CreateCharacterViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task ConfirmCommand_Sends_Attribute_Allocations()
+    public async Task NextCommand_Sends_Attribute_Allocations()
     {
         var creation = new FakeCharacterCreationService();
         var vm = MakeVm(creation: creation);
@@ -303,7 +317,8 @@ public class CreateCharacterViewModelTests : TestBase
         vm.SelectedClass = "Warrior";
         await vm.IncreaseStatCommand.Execute("Strength");
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 4); // advance 0â†’4 (Name, Class, Species, Background steps)
+        await vm.NextCommand.Execute(); // step 4: sends attribute allocations
 
         creation.LastAttributeAllocations.Should().ContainKey("Strength")
             .WhoseValue.Should().Be(9);
@@ -344,7 +359,7 @@ public class CreateCharacterViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task ConfirmCommand_Calls_SetEquipmentPreferences_When_ArmorType_Selected()
+    public async Task NextCommand_Calls_SetEquipmentPreferences_When_ArmorType_Selected()
     {
         var creation = new FakeCharacterCreationService();
         var vm = MakeVm(creation: creation);
@@ -352,26 +367,28 @@ public class CreateCharacterViewModelTests : TestBase
         vm.SelectedClass = "Warrior";
         vm.SelectedArmorType = "Heavy Armor";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 5); // advance 0â†’5 (Name, Class, Species, Background, Attributes steps)
+        await vm.NextCommand.Execute(); // step 5: sends equipment preferences
 
         creation.SetEquipmentPreferencesCallCount.Should().Be(1);
     }
 
     [Fact]
-    public async Task ConfirmCommand_Does_Not_Call_SetEquipmentPreferences_When_Nothing_Selected()
+    public async Task NextCommand_Does_Not_Call_SetEquipmentPreferences_When_Nothing_Selected()
     {
         var creation = new FakeCharacterCreationService();
         var vm = MakeVm(creation: creation);
         vm.Name = "Hero";
         vm.SelectedClass = "Warrior";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 7);
+        await vm.NextCommand.Execute(); // finalize
 
         creation.SetEquipmentPreferencesCallCount.Should().Be(0);
     }
 
     [Fact]
-    public async Task ConfirmCommand_Calls_SetLocation_When_Location_Selected()
+    public async Task NextCommand_Calls_SetLocation_When_Location_Selected()
     {
         var content = new FakeContentService
         {
@@ -384,7 +401,8 @@ public class CreateCharacterViewModelTests : TestBase
         vm.SelectedClass = "Warrior";
         vm.SelectedLocation = "Town Square";
 
-        await vm.ConfirmCommand.Execute();
+        await AdvanceAsync(vm, 6); // advance 0â†’6 (Name, Class, Species, Background, Attributes, Equipment steps)
+        await vm.NextCommand.Execute(); // step 6: sends location
 
         creation.SetLocationCallCount.Should().Be(1);
     }

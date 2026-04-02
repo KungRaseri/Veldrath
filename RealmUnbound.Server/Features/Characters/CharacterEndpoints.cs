@@ -134,5 +134,7 @@ public static class CharacterEndpoints
         new(c.Id, c.SlotIndex, c.Name, c.ClassName, c.Level, c.Experience, c.LastPlayedAt, c.CurrentZoneId,
             DifficultyMode: c.DifficultyMode,
             IsOnline: isOnline,
-            IsHardcore: c.DifficultyMode == "hardcore");
+            IsHardcore: c.DifficultyMode == "hardcore",
+            BackgroundId: c.BackgroundId,
+            SpeciesSlug: c.SpeciesSlug);
 }

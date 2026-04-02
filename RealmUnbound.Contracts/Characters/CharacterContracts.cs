@@ -18,6 +18,8 @@ public record CreateCharacterRequest(string Name, string ClassName, string Diffi
 /// <param name="DifficultyMode">The difficulty mode for this character: <c>"normal"</c> or <c>"hardcore"</c>.</param>
 /// <param name="IsOnline">True if this character is currently in an active session.</param>
 /// <param name="IsHardcore">True if this character was created in hardcore mode.</param>
+/// <param name="BackgroundId">Identifier of the background chosen at creation, or <see langword="null"/> if none was selected.</param>
+/// <param name="SpeciesSlug">Slug of the species chosen at creation, or <see langword="null"/> if none was selected.</param>
 public record CharacterDto(
     Guid Id,
     int SlotIndex,
@@ -29,4 +31,6 @@ public record CharacterDto(
     string CurrentZoneId,
     string DifficultyMode = "normal",
     bool IsOnline = false,
-    bool IsHardcore = false);
+    bool IsHardcore = false,
+    string? BackgroundId = null,
+    string? SpeciesSlug = null);

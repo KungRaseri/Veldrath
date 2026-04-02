@@ -42,3 +42,28 @@ public record SetCreationLocationRequest(string LocationId);
 public record FinalizeCreationSessionRequest(
     string? CharacterName,
     string DifficultyMode = "normal");
+
+/// <summary>A non-persisted snapshot of the character as it would appear if the session were finalized now.</summary>
+/// <param name="ClassName">Selected class display name, or <see langword="null"/> if not yet chosen.</param>
+/// <param name="SpeciesName">Selected species display name, or <see langword="null"/> if not yet chosen.</param>
+/// <param name="BackgroundName">Selected background display name, or <see langword="null"/> if not yet chosen.</param>
+/// <param name="Strength">Allocated Strength value, or 0 if not yet allocated.</param>
+/// <param name="Dexterity">Allocated Dexterity value, or 0 if not yet allocated.</param>
+/// <param name="Constitution">Allocated Constitution value, or 0 if not yet allocated.</param>
+/// <param name="Intelligence">Allocated Intelligence value, or 0 if not yet allocated.</param>
+/// <param name="Wisdom">Allocated Wisdom value, or 0 if not yet allocated.</param>
+/// <param name="Charisma">Allocated Charisma value, or 0 if not yet allocated.</param>
+/// <param name="Health">Projected maximum health, or 0 if not yet calculable.</param>
+/// <param name="Mana">Projected maximum mana, or 0 if not yet calculable.</param>
+public record CharacterPreviewDto(
+    string? ClassName,
+    string? SpeciesName,
+    string? BackgroundName,
+    int Strength,
+    int Dexterity,
+    int Constitution,
+    int Intelligence,
+    int Wisdom,
+    int Charisma,
+    int Health,
+    int Mana);

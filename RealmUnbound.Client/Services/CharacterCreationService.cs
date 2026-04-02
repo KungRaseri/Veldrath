@@ -40,6 +40,9 @@ public interface ICharacterCreationService
 
     /// <summary>Abandons the session (best-effort — does not throw on failure).</summary>
     Task AbandonAsync(Guid sessionId);
+
+    /// <summary>Returns a live preview of the character being built, or <see langword="null"/> if the session has insufficient state to generate one.</summary>
+    Task<CharacterPreviewDto?> GetPreviewAsync(Guid sessionId);
 }
 
 /// <summary>
@@ -244,6 +247,25 @@ public class HttpCharacterCreationService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to abandon session {SessionId}", sessionId);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<CharacterPreviewDto?> GetPreviewAsync(Guid sessionId)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"api/character-creation/sessions/{sessionId}/preview");
+            request.Headers.Authorization = BearerHeader;
+            var response = await http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return null;
+            return await response.Content.ReadFromJsonAsync<CharacterPreviewDto>();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to get preview for session {SessionId}", sessionId);
+            return null;
         }
     }
 }
