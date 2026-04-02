@@ -62,7 +62,21 @@ public class BeginCreationSessionHandler(
         var backgroundsTask = backgroundRepository.GetAllBackgroundsAsync();
         var locationsTask   = mediator.Send(new GetStartingLocationsQuery(BackgroundId: null, FilterByRecommended: false), cancellationToken);
 
-        await Task.WhenAll(classesTask, speciesTask, backgroundsTask, locationsTask);
+        try
+        {
+            await Task.WhenAll(classesTask, speciesTask, backgroundsTask, locationsTask);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to load session content for {SessionId}", session.SessionId);
+            return new BeginCreationSessionResult { SessionId = session.SessionId, Success = false };
+        }
+
+        if (!classesTask.Result.Success)
+        {
+            logger.LogError("Failed to load available classes for {SessionId}: {Error}", session.SessionId, classesTask.Result.ErrorMessage);
+            return new BeginCreationSessionResult { SessionId = session.SessionId, Success = false };
+        }
 
         return new BeginCreationSessionResult
         {

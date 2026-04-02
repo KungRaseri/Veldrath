@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,10 +30,10 @@ file sealed class ActiveDungeonScope : IDisposable
         Dict[_id] = dungeon;
     }
 
-    private static Dictionary<string, DungeonInstance> Dict =>
-        (Dictionary<string, DungeonInstance>)DictField.GetValue(null)!;
+    private static ConcurrentDictionary<string, DungeonInstance> Dict =>
+        (ConcurrentDictionary<string, DungeonInstance>)DictField.GetValue(null)!;
 
-    public void Dispose() => Dict.Remove(_id);
+    public void Dispose() => Dict.TryRemove(_id, out _);
 }
 
 /// <summary>

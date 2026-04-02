@@ -65,7 +65,7 @@ public static class CharacterCreationSessionEndpoints
     {
         var result = await mediator.Send(new BeginCreationSessionCommand(), ct);
         if (!result.Success)
-            return Results.StatusCode(StatusCodes.Status500InternalServerError);
+            return Results.Problem("Could not initialize session content.", statusCode: StatusCodes.Status503ServiceUnavailable);
 
         // Stamp owner so subsequent requests can be ownership-checked.
         var session = await sessionStore.GetSessionAsync(result.SessionId);
