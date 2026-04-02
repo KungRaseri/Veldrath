@@ -9,7 +9,6 @@ namespace RealmEngine.Core.Features.Combat.Commands.FleeFromCombat;
 /// </summary>
 public class FleeFromCombatHandler : IRequestHandler<FleeFromCombatCommand, FleeFromCombatResult>
 {
-    private static readonly Random _random = new();
     private readonly ILogger<FleeFromCombatHandler> _logger;
 
     /// <summary>
@@ -34,7 +33,7 @@ public class FleeFromCombatHandler : IRequestHandler<FleeFromCombatCommand, Flee
 
         // Base flee chance: 30% + 2% per point of Dexterity, capped at 90%
         double fleeChance = Math.Min(0.90, 0.30 + (player.Dexterity * 0.02));
-        bool fled = _random.NextDouble() < fleeChance;
+        bool fled = Random.Shared.NextDouble() < fleeChance;
 
         if (fled)
         {

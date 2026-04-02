@@ -7,7 +7,6 @@ namespace RealmEngine.Core.Services;
 /// </summary>
 public static class DiceRoller
 {
-    private static readonly Random _random = new();
     private static readonly Regex DicePattern = new(@"^(\d+)d(\d+)([\+\-]\d+)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
@@ -31,7 +30,7 @@ public static class DiceRoller
         int total = 0;
         for (int i = 0; i < count; i++)
         {
-            total += _random.Next(1, sides + 1);
+            total += Random.Shared.Next(1, sides + 1);
         }
 
         return Math.Max(0, total + modifier);
@@ -44,7 +43,7 @@ public static class DiceRoller
     /// <returns>The result of the die roll.</returns>
     public static int Roll(int sides)
     {
-        return _random.Next(1, sides + 1);
+        return Random.Shared.Next(1, sides + 1);
     }
 
     /// <summary>
@@ -58,7 +57,7 @@ public static class DiceRoller
         int total = 0;
         for (int i = 0; i < count; i++)
         {
-            total += _random.Next(1, sides + 1);
+            total += Random.Shared.Next(1, sides + 1);
         }
         return total;
     }

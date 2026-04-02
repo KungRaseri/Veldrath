@@ -272,6 +272,23 @@ try
 
     var app = builder.Build();
 
+    app.UseExceptionHandler(handler => handler.Run(async context =>
+    {
+        var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        if (exceptionFeature?.Error is not null)
+        {
+            var exLogger = context.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("RealmUnbound.Server.UnhandledExceptions");
+            exLogger.LogError(exceptionFeature.Error, "Unhandled exception for {Method} {Path}",
+                context.Request.Method, context.Request.Path);
+        }
+
+        await Results.Problem(
+            title: "An unexpected error occurred.",
+            statusCode: StatusCodes.Status500InternalServerError)
+            .ExecuteAsync(context);
+    }));
     app.UseSerilogRequestLogging();
     app.UseCors("AllowLocalClient");
     app.UseCookiePolicy();

@@ -16,9 +16,11 @@ public class SkillDataService
     private readonly ILogger<SkillDataService> _logger;
     private readonly Dictionary<string, SkillDefinition> _skillDefinitions = new();
     private bool _initialized;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
     [ActivatorUtilitiesConstructor]
+    /// <summary>Initializes a new instance of <see cref="SkillDataService"/> with a scope factory (DI use).</summary>
     public SkillDataService(IServiceScopeFactory scopeFactory, ILogger<SkillDataService>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
@@ -26,6 +28,7 @@ public class SkillDataService
     }
 
     // Secondary constructor for direct construction in tests
+    /// <summary>Initializes a new instance of <see cref="SkillDataService"/> with a direct repository (test use).</summary>
     public SkillDataService(ISkillRepository repository, ILogger<SkillDataService>? logger = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -35,14 +38,15 @@ public class SkillDataService
     /// <summary>Initialize by loading all skills from the repository.</summary>
     public async Task InitializeAsync()
     {
-        if (_initialized)
-        {
-            _logger.LogWarning("SkillCatalogService already initialized");
-            return;
-        }
-
+        await _initLock.WaitAsync();
         try
         {
+            if (_initialized)
+            {
+                _logger.LogWarning("SkillCatalogService already initialized");
+                return;
+            }
+
             IEnumerable<SkillDefinition> all;
             if (_scopeFactory is not null)
             {
@@ -65,6 +69,10 @@ public class SkillDataService
         {
             _logger.LogError(ex, "Failed to initialize SkillCatalogService");
             throw;
+        }
+        finally
+        {
+            _initLock.Release();
         }
     }
 

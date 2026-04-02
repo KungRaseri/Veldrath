@@ -18,6 +18,7 @@ public class PowerDataService
     private readonly Dictionary<string, Power> _powers = new();
     private readonly Dictionary<MagicalTradition, List<string>> _powersByTradition = new();
     private bool _initialized;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
 
     // Primary constructor used by DI (Singleton-safe — no scoped dependency captured)
     [ActivatorUtilitiesConstructor]
@@ -39,14 +40,15 @@ public class PowerDataService
     /// <summary>Initialize by loading all powers from the repository.</summary>
     public async Task InitializeAsync()
     {
-        if (_initialized)
-        {
-            _logger.LogWarning("PowerDataService already initialized");
-            return;
-        }
-
+        await _initLock.WaitAsync();
         try
         {
+            if (_initialized)
+            {
+                _logger.LogWarning("PowerDataService already initialized");
+                return;
+            }
+
             IEnumerable<Power> all;
             if (_scopeFactory is not null)
             {
@@ -77,6 +79,10 @@ public class PowerDataService
         {
             _logger.LogError(ex, "Failed to initialize PowerDataService");
             throw;
+        }
+        finally
+        {
+            _initLock.Release();
         }
     }
 

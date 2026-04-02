@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using MediatR;
 using RealmEngine.Core.Features.Exploration.Services;
 using RealmEngine.Core.Abstractions;
@@ -17,7 +18,7 @@ public class EnterDungeonHandler : IRequestHandler<EnterDungeonCommand, EnterDun
     private readonly IGameStateService _gameState;
     private readonly ILogger<EnterDungeonHandler> _logger;
 
-    private static readonly Dictionary<string, DungeonInstance> _activeDungeons = new();
+    private static readonly ConcurrentDictionary<string, DungeonInstance> _activeDungeons = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnterDungeonHandler"/> class.
@@ -116,7 +117,7 @@ public class EnterDungeonHandler : IRequestHandler<EnterDungeonCommand, EnterDun
     /// </summary>
     public static void RemoveDungeon(string dungeonId)
     {
-        _activeDungeons.Remove(dungeonId);
+        _activeDungeons.TryRemove(dungeonId, out _);
     }
 }
 
