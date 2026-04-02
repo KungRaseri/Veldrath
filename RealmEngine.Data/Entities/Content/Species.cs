@@ -6,6 +6,8 @@ namespace RealmEngine.Data.Entities;
 /// </summary>
 public class Species : ContentBase
 {
+    /// <summary>When true, this species may be selected by players during character creation.</summary>
+    public bool IsPlayerSelectable { get; set; }
     /// <summary>Base and range statistics intrinsic to this species.</summary>
     public SpeciesStats Stats { get; set; } = new();
     /// <summary>Boolean biological and physical trait flags.</summary>
@@ -20,13 +22,13 @@ public class Species : ContentBase
 /// <summary>Base and range statistics intrinsic to a species.</summary>
 public class SpeciesStats
 {
-    /// <summary>Base strength value for an average member of the species.</summary>
+    /// <summary>Base strength value for an average member of the species (NPC stat floor).</summary>
     public int? BaseStrength { get; set; }
-    /// <summary>Base agility value.</summary>
+    /// <summary>Base agility value (NPC stat floor).</summary>
     public int? BaseAgility { get; set; }
-    /// <summary>Base intelligence value.</summary>
+    /// <summary>Base intelligence value (NPC stat floor).</summary>
     public int? BaseIntelligence { get; set; }
-    /// <summary>Base constitution value.</summary>
+    /// <summary>Base constitution value (NPC stat floor).</summary>
     public int? BaseConstitution { get; set; }
     /// <summary>Base maximum hit points at level 1.</summary>
     public int? BaseHealth { get; set; }
@@ -36,6 +38,18 @@ public class SpeciesStats
     public float? MovementSpeed { get; set; }
     /// <summary>Typical creature size category (e.g. "small", "medium", "large", "huge").</summary>
     public string? SizeCategory { get; set; }
+    /// <summary>Flat Strength bonus applied to player characters of this species.</summary>
+    public int? PlayerBonusStrength { get; set; }
+    /// <summary>Flat Dexterity bonus applied to player characters of this species.</summary>
+    public int? PlayerBonusDexterity { get; set; }
+    /// <summary>Flat Constitution bonus applied to player characters of this species.</summary>
+    public int? PlayerBonusConstitution { get; set; }
+    /// <summary>Flat Intelligence bonus applied to player characters of this species.</summary>
+    public int? PlayerBonusIntelligence { get; set; }
+    /// <summary>Flat Wisdom bonus applied to player characters of this species.</summary>
+    public int? PlayerBonusWisdom { get; set; }
+    /// <summary>Flat Charisma bonus applied to player characters of this species.</summary>
+    public int? PlayerBonusCharisma { get; set; }
 }
 
 /// <summary>Boolean biological and physical trait flags for a species.</summary>

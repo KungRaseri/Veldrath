@@ -76,11 +76,15 @@ public class CreateCharacterViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task NextCommand_IsDisabled_When_Class_Not_Selected()
+    public async Task NextCommand_IsDisabled_When_Species_Is_Empty()
     {
         var vm = MakeVm();
+        await Task.Yield();
         vm.Name = "Hero";
-        // Advance to step 1 (Class step)
+        vm.SelectedSpecies = string.Empty; // override the auto-default
+
+        // Advance Name (0→1), then Class (1→2)
+        await vm.NextCommand.Execute();
         await vm.NextCommand.Execute();
 
         bool canExecute = false;
@@ -125,6 +129,64 @@ public class CreateCharacterViewModelTests : TestBase
         await Task.Yield();
 
         vm.AvailableBackgrounds.Should().BeEquivalentTo(["Soldier", "Sage"]);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_AutoDefaults_SelectedClass_To_First()
+    {
+        var content = new FakeContentService
+        {
+            Classes = [new ActorClassDto("warrior", "Warrior", "warriors", 10, "strength", 50)]
+        };
+        var vm = MakeVm(content: content);
+        await Task.Yield();
+
+        vm.SelectedClass.Should().Be("Warrior");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_AutoDefaults_SelectedSpecies_To_First()
+    {
+        var content = new FakeContentService
+        {
+            Species = [new SpeciesDto("human", "Human", "humanoids", 10)]
+        };
+        var vm = MakeVm(content: content);
+        await Task.Yield();
+
+        vm.SelectedSpecies.Should().Be("Human");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_AutoDefaults_SelectedBackground_To_First()
+    {
+        var content = new FakeContentService
+        {
+            Backgrounds = [new BackgroundDto("soldier", "Soldier", "martial", 10)]
+        };
+        var vm = MakeVm(content: content);
+        await Task.Yield();
+
+        vm.SelectedBackground.Should().Be("Soldier");
+    }
+
+    [Fact]
+    public async Task NextCommand_IsDisabled_When_Background_Is_Empty()
+    {
+        var vm = MakeVm();
+        await Task.Yield();
+        vm.Name = "Hero";
+        vm.SelectedBackground = string.Empty; // override the auto-default
+
+        // Advance Name → Class → Species
+        await vm.NextCommand.Execute();
+        await vm.NextCommand.Execute();
+        await vm.NextCommand.Execute();
+
+        bool canExecute = false;
+        vm.NextCommand.CanExecute.Subscribe(v => canExecute = v);
+
+        canExecute.Should().BeFalse();
     }
 
     [Fact]
@@ -352,10 +414,13 @@ public class CreateCharacterViewModelTests : TestBase
                 new("riverside",    "Riverside",    "outdoor", "zone-1", "outpost", 8, 1, 5),
             ]
         };
+        // Location step is removed from the wizard — AvailableLocations is no longer exposed.
+        // This test documents that zone locations are loaded by the content catalog but
+        // are not used in the character creation wizard (all players start at Fenwick's Crossing).
         var vm = MakeVm(content: content);
         await Task.Yield();
 
-        vm.AvailableLocations.Should().BeEquivalentTo(["Starter Town", "Riverside"]);
+        vm.Should().NotBeNull();
     }
 
     [Fact]
@@ -388,7 +453,7 @@ public class CreateCharacterViewModelTests : TestBase
     }
 
     [Fact]
-    public async Task NextCommand_Calls_SetLocation_When_Location_Selected()
+    public async Task NextCommand_Does_Not_Call_SetLocation_Because_Step_Is_Removed()
     {
         var content = new FakeContentService
         {
@@ -398,13 +463,11 @@ public class CreateCharacterViewModelTests : TestBase
         var vm = MakeVm(creation: creation, content: content);
         await Task.Yield();
         vm.Name = "Hero";
-        vm.SelectedClass = "Warrior";
-        vm.SelectedLocation = "Town Square";
 
-        await AdvanceAsync(vm, 6); // advance 0â†’6 (Name, Class, Species, Background, Attributes, Equipment steps)
-        await vm.NextCommand.Execute(); // step 6: sends location
+        await AdvanceAsync(vm, 6); // steps 0–5; step 6 = Review (finalize)
+        await vm.NextCommand.Execute(); // step 6: finalize
 
-        creation.SetLocationCallCount.Should().Be(1);
+        creation.SetLocationCallCount.Should().Be(0);
     }
 
     // CancelCommand

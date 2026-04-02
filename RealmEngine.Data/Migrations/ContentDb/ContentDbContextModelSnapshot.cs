@@ -1117,6 +1117,9 @@ namespace RealmEngine.Data.Migrations.ContentDb
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPlayerSelectable")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("RarityWeight")
                         .HasColumnType("integer");
 
@@ -2525,6 +2528,18 @@ namespace RealmEngine.Data.Migrations.ContentDb
                             b1.Property<float?>("MovementSpeed");
 
                             b1.Property<int?>("NaturalArmor");
+
+                            b1.Property<int?>("PlayerBonusCharisma");
+
+                            b1.Property<int?>("PlayerBonusConstitution");
+
+                            b1.Property<int?>("PlayerBonusDexterity");
+
+                            b1.Property<int?>("PlayerBonusIntelligence");
+
+                            b1.Property<int?>("PlayerBonusStrength");
+
+                            b1.Property<int?>("PlayerBonusWisdom");
 
                             b1.Property<string>("SizeCategory");
 

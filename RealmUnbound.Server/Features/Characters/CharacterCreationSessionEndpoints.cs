@@ -263,6 +263,10 @@ public static class CharacterCreationSessionEndpoints
 
         if (session.SelectedClass is null)
             return Results.BadRequest(new { error = "A character class must be selected before finalizing." });
+        if (session.SelectedSpecies is null)
+            return Results.BadRequest(new { error = "A species must be selected before finalizing." });
+        if (session.SelectedBackground is null)
+            return Results.BadRequest(new { error = "A background must be selected before finalizing." });
 
         var resolvedName = request.CharacterName ?? session.CharacterName;
         if (string.IsNullOrWhiteSpace(resolvedName))

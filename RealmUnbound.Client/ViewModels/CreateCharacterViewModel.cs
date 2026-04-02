@@ -54,11 +54,6 @@ public class CreateCharacterViewModel : ViewModelBase
     private string _selectedWeaponType = string.Empty;
     private bool _includeShield;
 
-    // Starting location
-    private IReadOnlyList<ZoneLocationDto> _locationList = [];
-    private IReadOnlyList<string> _availableLocations = [];
-    private string _selectedLocation = string.Empty;
-
     private int _currentStepIndex;
     private string _stepError = string.Empty;
     private CharacterPreviewDto? _characterPreview;
@@ -207,22 +202,8 @@ public class CreateCharacterViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _includeShield, value);
     }
 
-    /// <summary>Gets the list of available starting location display names.</summary>
-    public IReadOnlyList<string> AvailableLocations
-    {
-        get => _availableLocations;
-        private set => this.RaiseAndSetIfChanged(ref _availableLocations, value);
-    }
-
-    /// <summary>Gets or sets the display name of the selected starting location.</summary>
-    public string SelectedLocation
-    {
-        get => _selectedLocation;
-        set => this.RaiseAndSetIfChanged(ref _selectedLocation, value);
-    }
-
     /// <summary>Gets the ordered titles for each creation step.</summary>
-    public static IReadOnlyList<string> StepTitles { get; } = ["Name", "Class", "Species", "Background", "Attributes", "Equipment", "Location", "Review"];
+    public static IReadOnlyList<string> StepTitles { get; } = ["Name", "Class", "Species", "Background", "Attributes", "Equipment", "Review"];
 
     /// <summary>Gets the zero-based index of the currently displayed creation step.</summary>
     public int CurrentStepIndex
@@ -278,11 +259,14 @@ public class CreateCharacterViewModel : ViewModelBase
                 .Subscribe(cls => _ = LoadSelectedClassIconAsync(cls));
 
         var canNext = this.WhenAnyValue(
-            x => x.CurrentStepIndex, x => x.Name, x => x.SelectedClass, x => x.IsBusy,
-            (step, name, cls, busy) => !busy && step switch
+            x => x.CurrentStepIndex, x => x.Name, x => x.SelectedClass,
+            x => x.SelectedSpecies, x => x.SelectedBackground, x => x.IsBusy,
+            (step, name, cls, species, background, busy) => !busy && step switch
             {
                 0 => !string.IsNullOrWhiteSpace(name),
                 1 => !string.IsNullOrWhiteSpace(cls),
+                2 => !string.IsNullOrWhiteSpace(species),
+                3 => !string.IsNullOrWhiteSpace(background),
                 _ => true
             });
 
@@ -309,13 +293,12 @@ public class CreateCharacterViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var sessionTask       = _creationService.BeginSessionAsync();
-            var classesTask       = _content.GetClassesAsync();
-            var speciesTask       = _content.GetSpeciesAsync();
-            var backgroundsTask   = _content.GetBackgroundsAsync();
-            var locationsTask     = _content.GetZoneLocationsAsync();
+            var sessionTask     = _creationService.BeginSessionAsync();
+            var classesTask     = _content.GetClassesAsync();
+            var speciesTask     = _content.GetSpeciesAsync();
+            var backgroundsTask = _content.GetBackgroundsAsync();
 
-            await Task.WhenAll(sessionTask, classesTask, speciesTask, backgroundsTask, locationsTask);
+            await Task.WhenAll(sessionTask, classesTask, speciesTask, backgroundsTask);
 
             _sessionId = await sessionTask;
             if (_sessionId is null)
@@ -323,19 +306,24 @@ public class CreateCharacterViewModel : ViewModelBase
 
             var classes = await classesTask;
             if (classes.Count > 0)
+            {
                 AvailableClasses = classes.Select(c => c.DisplayName).ToArray();
+                SelectedClass = AvailableClasses[0];
+            }
 
             _speciesList = await speciesTask;
             if (_speciesList.Count > 0)
+            {
                 AvailableSpecies = _speciesList.Select(s => s.DisplayName).ToArray();
+                SelectedSpecies = AvailableSpecies[0];
+            }
 
             _backgroundList = await backgroundsTask;
             if (_backgroundList.Count > 0)
+            {
                 AvailableBackgrounds = _backgroundList.Select(b => b.DisplayName).ToArray();
-
-            _locationList = await locationsTask;
-            if (_locationList.Count > 0)
-                AvailableLocations = _locationList.Select(l => l.DisplayName).ToArray();
+                SelectedBackground = AvailableBackgrounds[0];
+            }
         }
         catch
         {
@@ -367,21 +355,19 @@ public class CreateCharacterViewModel : ViewModelBase
                     { StepError = "Could not save class selection. Please try again."; return; }
                     break;
                 case 2:
-                    if (!string.IsNullOrEmpty(SelectedSpecies))
-                    {
-                        var slug = _speciesList.FirstOrDefault(s => s.DisplayName == SelectedSpecies)?.Slug ?? SelectedSpecies;
-                        if (!await _creationService.SetSpeciesAsync(_sessionId.Value, slug))
-                        { StepError = "Could not save species selection. Please try again."; return; }
-                    }
+                {
+                    var slug = _speciesList.FirstOrDefault(s => s.DisplayName == SelectedSpecies)?.Slug ?? SelectedSpecies;
+                    if (!await _creationService.SetSpeciesAsync(_sessionId.Value, slug))
+                    { StepError = "Could not save species selection. Please try again."; return; }
                     break;
+                }
                 case 3:
-                    if (!string.IsNullOrEmpty(SelectedBackground))
-                    {
-                        var id = _backgroundList.FirstOrDefault(b => b.DisplayName == SelectedBackground)?.Slug ?? SelectedBackground;
-                        if (!await _creationService.SetBackgroundAsync(_sessionId.Value, id))
-                        { StepError = "Could not save background selection. Please try again."; return; }
-                    }
+                {
+                    var id = _backgroundList.FirstOrDefault(b => b.DisplayName == SelectedBackground)?.Slug ?? SelectedBackground;
+                    if (!await _creationService.SetBackgroundAsync(_sessionId.Value, id))
+                    { StepError = "Could not save background selection. Please try again."; return; }
                     break;
+                }
                 case 4:
                 {
                     var allocations = new Dictionary<string, int>
@@ -404,14 +390,6 @@ public class CreateCharacterViewModel : ViewModelBase
                     }
                     break;
                 case 6:
-                    if (!string.IsNullOrEmpty(SelectedLocation))
-                    {
-                        var locationId = _locationList.FirstOrDefault(l => l.DisplayName == SelectedLocation)?.Slug ?? SelectedLocation;
-                        if (!await _creationService.SetLocationAsync(_sessionId.Value, locationId))
-                        { StepError = "Could not save starting location. Please try again."; return; }
-                    }
-                    break;
-                case 7:
                 {
                     var difficultyMode = IsHardcoreCreate ? "hardcore" : "normal";
                     var (character, error) = await _creationService.FinalizeAsync(

@@ -40,6 +40,10 @@ public class FinalizeCreationSessionHandler(
 
         if (session.SelectedClass is null)
             return Fail("A character class must be selected before finalizing.");
+        if (session.SelectedSpecies is null)
+            return Fail("A species must be selected before finalizing.");
+        if (session.SelectedBackground is null)
+            return Fail("A background must be selected before finalizing.");
 
         var resolvedName = request.CharacterName ?? session.CharacterName;
         if (string.IsNullOrWhiteSpace(resolvedName))

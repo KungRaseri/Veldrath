@@ -5,6 +5,7 @@ using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using SpeciesModel = RealmEngine.Shared.Models.Species;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 
@@ -23,6 +24,9 @@ public class FinalizeCreationSessionHandlerTests
         Name = "Warrior", Slug = "warrior",
         BonusStrength = 3, StartingHealth = 120, StartingMana = 20,
     };
+
+    private static SpeciesModel HumanSpecies => new() { Slug = "human", DisplayName = "Human" };
+    private static Background SoldierBackground => new() { Slug = "soldier", Name = "Soldier" };
 
     [Fact]
     public async Task Handle_SessionNotFound_ReturnsFailed()
@@ -50,9 +54,40 @@ public class FinalizeCreationSessionHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NoSpeciesSelected_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession { SelectedClass = WarriorClass }; // no species
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(
+            new FinalizeCreationSessionCommand { SessionId = session.SessionId, CharacterName = "Hero" }, default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("species");
+    }
+
+    [Fact]
+    public async Task Handle_NoBackgroundSelected_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession { SelectedClass = WarriorClass, SelectedSpecies = HumanSpecies }; // no background
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(
+            new FinalizeCreationSessionCommand { SessionId = session.SessionId, CharacterName = "Hero" }, default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("background");
+    }
+
+    [Fact]
     public async Task Handle_BothNamesNull_ReturnsFailed()
     {
-        var session = new CharacterCreationSession { SelectedClass = WarriorClass };
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+        };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
 
         var result = await CreateHandler().Handle(
@@ -65,7 +100,12 @@ public class FinalizeCreationSessionHandlerTests
     [Fact]
     public async Task Handle_NameFromRequest_PassedToCreateCharacterCommand()
     {
-        var session = new CharacterCreationSession { SelectedClass = WarriorClass };
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+        };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
         var capturedCommand = (CreateCharacterCommand?)null;
@@ -91,6 +131,8 @@ public class FinalizeCreationSessionHandlerTests
         var session = new CharacterCreationSession
         {
             SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
             CharacterName = "SessionHero",
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
@@ -114,7 +156,12 @@ public class FinalizeCreationSessionHandlerTests
     [Fact]
     public async Task Handle_Success_MarksSessionFinalized()
     {
-        var session = new CharacterCreationSession { SelectedClass = WarriorClass };
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+        };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
         _mediatorMock
@@ -133,7 +180,12 @@ public class FinalizeCreationSessionHandlerTests
     [Fact]
     public async Task Handle_CreateCharacterFails_ReturnsFailureResult()
     {
-        var session = new CharacterCreationSession { SelectedClass = WarriorClass };
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+        };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreateCharacterCommand>(), It.IsAny<CancellationToken>()))
