@@ -151,7 +151,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
     /// </summary>
     private Character CreateCharacterFromClass(string name, CharacterClass characterClass, Dictionary<string, int>? allocations = null)
     {
-        int Base(string stat) => allocations?.GetValueOrDefault(stat, 10) ?? 10;
+        int Base(string stat) => allocations?.GetValueOrDefault(stat, 8) ?? 8;
 
         var character = new Character
         {
@@ -160,13 +160,13 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             Level = 1,
             Experience = 0,
 
-            // Point-buy base + class bonus
-            Strength     = Base("Strength")     + characterClass.BonusStrength,
-            Dexterity    = Base("Dexterity")    + characterClass.BonusDexterity,
-            Constitution = Base("Constitution") + characterClass.BonusConstitution,
-            Intelligence = Base("Intelligence") + characterClass.BonusIntelligence,
-            Wisdom       = Base("Wisdom")       + characterClass.BonusWisdom,
-            Charisma     = Base("Charisma")     + characterClass.BonusCharisma,
+            // Point-buy base (8) + player allocations; class does not modify stats
+            Strength     = Base("Strength"),
+            Dexterity    = Base("Dexterity"),
+            Constitution = Base("Constitution"),
+            Intelligence = Base("Intelligence"),
+            Wisdom       = Base("Wisdom"),
+            Charisma     = Base("Charisma"),
 
             // Set starting resources from class
             Health    = characterClass.StartingHealth,

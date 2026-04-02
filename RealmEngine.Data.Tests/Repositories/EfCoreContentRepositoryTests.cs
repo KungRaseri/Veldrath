@@ -456,7 +456,7 @@ public class EfCoreSpeciesRepositoryTests
             .Options);
 
     private static RealmEngine.Data.Entities.Species MakeSpecies(string slug, string typeKey = "humanoid", bool active = true) =>
-        new() { Slug = slug, TypeKey = typeKey, DisplayName = slug, IsActive = active };
+        new() { Slug = slug, TypeKey = typeKey, DisplayName = slug, IsActive = active, IsPlayerSelectable = true };
 
     [Fact]
     public async Task GetAllSpeciesAsync_ReturnsOnlyActive()

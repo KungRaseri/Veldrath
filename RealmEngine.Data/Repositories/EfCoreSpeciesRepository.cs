@@ -17,10 +17,10 @@ public class EfCoreSpeciesRepository(ContentDbContext db, ILogger<EfCoreSpeciesR
     {
         var entities = await db.Species
             .AsNoTracking()
-            .Where(s => s.IsActive)
+            .Where(s => s.IsActive && s.IsPlayerSelectable)
             .ToListAsync();
 
-        logger.LogDebug("Loaded {Count} species from database", entities.Count);
+        logger.LogDebug("Loaded {Count} player-selectable species from database", entities.Count);
         return entities.Select(MapToModel).ToList();
     }
 
@@ -53,11 +53,11 @@ public class EfCoreSpeciesRepository(ContentDbContext db, ILogger<EfCoreSpeciesR
         Description       = string.Empty,
         TypeKey           = entity.TypeKey,
         RarityWeight      = entity.RarityWeight,
-        BonusStrength     = entity.Stats.BaseStrength     ?? 0,
-        BonusDexterity    = entity.Stats.BaseAgility      ?? 0,
-        BonusConstitution = entity.Stats.BaseConstitution ?? 0,
-        BonusIntelligence = entity.Stats.BaseIntelligence ?? 0,
-        BonusWisdom       = 0,
-        BonusCharisma     = 0,
+        BonusStrength     = entity.Stats.PlayerBonusStrength     ?? 0,
+        BonusDexterity    = entity.Stats.PlayerBonusDexterity    ?? 0,
+        BonusConstitution = entity.Stats.PlayerBonusConstitution ?? 0,
+        BonusIntelligence = entity.Stats.PlayerBonusIntelligence ?? 0,
+        BonusWisdom       = entity.Stats.PlayerBonusWisdom       ?? 0,
+        BonusCharisma     = entity.Stats.PlayerBonusCharisma     ?? 0,
     };
 }

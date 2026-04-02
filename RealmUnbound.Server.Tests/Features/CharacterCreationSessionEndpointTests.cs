@@ -38,9 +38,18 @@ public sealed class CharacterCreationFixture : IAsyncLifetime
 
         db.Species.Add(new Species
         {
-            Slug        = "human",
-            TypeKey     = "humanoid",
-            DisplayName = "Human",
+            Slug               = "human",
+            TypeKey            = "humanoid",
+            DisplayName        = "Human",
+            IsActive           = true,
+            IsPlayerSelectable = true,
+        });
+
+        db.Backgrounds.Add(new Background
+        {
+            Slug        = "soldier",
+            TypeKey     = "combat",
+            DisplayName = "Soldier",
             IsActive    = true,
         });
 
@@ -291,6 +300,18 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             $"/api/character-creation/sessions/{sid}/class",
             new { ClassName = "warrior" });
         classResp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Set species (seeded human)
+        var speciesResp = await client.PatchAsJsonAsync(
+            $"/api/character-creation/sessions/{sid}/species",
+            new { SpeciesSlug = "human" });
+        speciesResp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Set background (seeded soldier)
+        var backgroundResp = await client.PatchAsJsonAsync(
+            $"/api/character-creation/sessions/{sid}/background",
+            new { BackgroundId = "soldier" });
+        backgroundResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Finalize
         var finalResp = await client.PostAsJsonAsync(

@@ -35,10 +35,11 @@ public sealed class ContentTypedEndpointsFixture : IAsyncLifetime
 
         db.Species.Add(new Species
         {
-            Slug        = "typed-human",
-            TypeKey     = "humanoid",
-            DisplayName = "Typed Human",
-            IsActive    = true,
+            Slug               = "typed-human",
+            TypeKey            = "humanoid",
+            DisplayName        = "Typed Human",
+            IsActive           = true,
+            IsPlayerSelectable = true,
         });
 
         db.Backgrounds.Add(new Background

@@ -82,7 +82,7 @@ public class CreateCharacterHandlerTests
         result.Character.ClassName.Should().Be("Warrior");
         result.Character.Level.Should().Be(1);
         result.Character.Experience.Should().Be(0);
-        result.Character.Strength.Should().Be(13); // 10 base + 3 bonus
+        result.Character.Strength.Should().Be(8); // 8 base, no class bonus applied
         result.Character.Health.Should().Be(12);
         result.Character.MaxHealth.Should().Be(12);
         result.Character.Mana.Should().Be(4);
@@ -132,7 +132,7 @@ public class CreateCharacterHandlerTests
         result.Character!.Name.Should().Be("TestMage");
         result.Character.ClassName.Should().Be("Mage");
         result.Character.Level.Should().Be(1);
-        result.Character.Intelligence.Should().Be(13); // 10 base + 3 bonus
+        result.Character.Intelligence.Should().Be(8); // 8 base, no class bonus applied
         result.Character.Health.Should().Be(6);
         result.Character.MaxHealth.Should().Be(6);
         result.Character.Mana.Should().Be(20);
@@ -288,12 +288,12 @@ public class CreateCharacterHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Character!.Strength.Should().Be(11); // 10 + 1
-        result.Character.Dexterity.Should().Be(12); // 10 + 2
-        result.Character.Constitution.Should().Be(11); // 10 + 1
-        result.Character.Intelligence.Should().Be(13); // 10 + 3
-        result.Character.Wisdom.Should().Be(12); // 10 + 2
-        result.Character.Charisma.Should().Be(11); // 10 + 1
+        result.Character!.Strength.Should().Be(8); // 8 base, class bonuses no longer applied
+        result.Character.Dexterity.Should().Be(8);
+        result.Character.Constitution.Should().Be(8);
+        result.Character.Intelligence.Should().Be(8);
+        result.Character.Wisdom.Should().Be(8);
+        result.Character.Charisma.Should().Be(8);
     }
 
     // Helper methods to create test character classes

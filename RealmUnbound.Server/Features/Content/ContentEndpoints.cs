@@ -417,7 +417,7 @@ public static class ContentEndpoints
     private static async Task<IResult> GetSpeciesAsync(ContentDbContext db)
     {
         var items = await db.Species
-            .Where(s => s.IsActive)
+            .Where(s => s.IsActive && s.IsPlayerSelectable)
             .AsNoTracking()
             .ToListAsync();
         return Results.Ok(items.Select(ToDto));
