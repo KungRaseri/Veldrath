@@ -13,10 +13,11 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 [Trait("Category", "Feature")]
 public class SetCreationChoiceCommandHandlerTests
 {
-    private readonly Mock<ICharacterCreationSessionStore> _sessionStoreMock   = new();
-    private readonly Mock<IMediator>                      _mediatorMock       = new();
-    private readonly Mock<ISpeciesRepository>             _speciesRepoMock    = new();
-    private readonly Mock<IBackgroundRepository>          _backgroundRepoMock = new();
+    private readonly Mock<ICharacterCreationSessionStore> _sessionStoreMock      = new();
+    private readonly Mock<IMediator>                      _mediatorMock          = new();
+    private readonly Mock<ISpeciesRepository>             _speciesRepoMock       = new();
+    private readonly Mock<IBackgroundRepository>          _backgroundRepoMock    = new();
+    private readonly Mock<IZoneLocationRepository>        _zoneLocationRepoMock  = new();
 
     private static CharacterCreationSession MakeSession() => new();
 
@@ -222,7 +223,7 @@ public class SetCreationChoiceCommandHandlerTests
     public async Task SetCreationLocation_SessionNotFound_ReturnsFailed()
     {
         _sessionStoreMock.Setup(s => s.GetSessionAsync(It.IsAny<Guid>())).ReturnsAsync((CharacterCreationSession?)null);
-        var handler = new SetCreationLocationHandler(_sessionStoreMock.Object);
+        var handler = new SetCreationLocationHandler(_sessionStoreMock.Object, _zoneLocationRepoMock.Object);
 
         var result = await handler.Handle(new SetCreationLocationCommand(Guid.NewGuid(), "loc-1"), default);
 
@@ -235,7 +236,9 @@ public class SetCreationChoiceCommandHandlerTests
         var session = MakeSession();
         _sessionStoreMock.Setup(s => s.GetSessionAsync(It.IsAny<Guid>())).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
-        var handler = new SetCreationLocationHandler(_sessionStoreMock.Object);
+        _zoneLocationRepoMock.Setup(r => r.GetBySlugAsync("loc-1"))
+            .ReturnsAsync(new ZoneLocationEntry("loc-1", "Loc One", "location", "zone-1", "outpost", 10, 1, 5));
+        var handler = new SetCreationLocationHandler(_sessionStoreMock.Object, _zoneLocationRepoMock.Object);
 
         var result = await handler.Handle(new SetCreationLocationCommand(session.SessionId, "loc-1"), default);
 

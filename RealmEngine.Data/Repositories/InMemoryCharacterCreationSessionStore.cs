@@ -41,4 +41,24 @@ public class InMemoryCharacterCreationSessionStore : ICharacterCreationSessionSt
         _sessions.TryRemove(sessionId, out _);
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Removes all sessions whose <see cref="CharacterCreationSession.LastUpdatedAt"/> is older than
+    /// <paramref name="maxIdle"/>. Called periodically by the server's cleanup background service.
+    /// </summary>
+    /// <param name="maxIdle">Maximum allowed idle time before a session is evicted.</param>
+    /// <returns>The number of sessions that were removed.</returns>
+    public int EvictExpiredSessions(TimeSpan maxIdle)
+    {
+        var cutoff = DateTime.UtcNow - maxIdle;
+        var expired = _sessions
+            .Where(kv => kv.Value.LastUpdatedAt < cutoff)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var id in expired)
+            _sessions.TryRemove(id, out _);
+
+        return expired.Count;
+    }
 }

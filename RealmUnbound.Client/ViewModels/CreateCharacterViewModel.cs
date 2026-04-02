@@ -59,6 +59,10 @@ public class CreateCharacterViewModel : ViewModelBase
     private IReadOnlyList<string> _availableLocations = [];
     private string _selectedLocation = string.Empty;
 
+    private int _currentStepIndex;
+    private string _stepError = string.Empty;
+    private CharacterPreviewDto? _characterPreview;
+
     /// <summary>Gets or sets the character name entered by the player.</summary>
     public string Name
     {
@@ -217,8 +221,42 @@ public class CreateCharacterViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _selectedLocation, value);
     }
 
-    /// <summary>Confirms all selections, calls the wizard API, and navigates back to character select on success.</summary>
-    public ReactiveCommand<Unit, Unit> ConfirmCommand { get; }
+    /// <summary>Gets the ordered titles for each creation step.</summary>
+    public static IReadOnlyList<string> StepTitles { get; } = ["Name", "Class", "Species", "Background", "Attributes", "Equipment", "Location", "Review"];
+
+    /// <summary>Gets the zero-based index of the currently displayed creation step.</summary>
+    public int CurrentStepIndex
+    {
+        get => _currentStepIndex;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _currentStepIndex, value);
+            this.RaisePropertyChanged(nameof(NextButtonLabel));
+        }
+    }
+
+    /// <summary>Gets the per-step error message; cleared when advancing to a new step.</summary>
+    public string StepError
+    {
+        get => _stepError;
+        private set => this.RaiseAndSetIfChanged(ref _stepError, value);
+    }
+
+    /// <summary>Gets the live character preview, populated once a class has been confirmed.</summary>
+    public CharacterPreviewDto? CharacterPreview
+    {
+        get => _characterPreview;
+        private set => this.RaiseAndSetIfChanged(ref _characterPreview, value);
+    }
+
+    /// <summary>Gets the label for the primary action button; changes to "Create Character" on the review step.</summary>
+    public string NextButtonLabel => CurrentStepIndex == StepTitles.Count - 1 ? "Create Character" : "Next";
+
+    /// <summary>Advances to the next creation step, persisting the current step's choices to the server.</summary>
+    public ReactiveCommand<Unit, Unit> NextCommand { get; }
+
+    /// <summary>Returns to the previous creation step without making any API calls.</summary>
+    public ReactiveCommand<Unit, Unit> BackCommand { get; }
 
     /// <summary>Abandons the current session and navigates back to character select without creating a character.</summary>
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
@@ -239,14 +277,29 @@ public class CreateCharacterViewModel : ViewModelBase
             this.WhenAnyValue(x => x.SelectedClass)
                 .Subscribe(cls => _ = LoadSelectedClassIconAsync(cls));
 
-        var canConfirm = this.WhenAnyValue(
-            x => x.Name, x => x.IsBusy, x => x.SelectedClass,
-            (name, busy, cls) => !string.IsNullOrWhiteSpace(name) && !busy && !string.IsNullOrWhiteSpace(cls));
+        var canNext = this.WhenAnyValue(
+            x => x.CurrentStepIndex, x => x.Name, x => x.SelectedClass, x => x.IsBusy,
+            (step, name, cls, busy) => !busy && step switch
+            {
+                0 => !string.IsNullOrWhiteSpace(name),
+                1 => !string.IsNullOrWhiteSpace(cls),
+                _ => true
+            });
 
-        ConfirmCommand = ReactiveCommand.CreateFromTask(DoFinalizeAsync, canConfirm);
-        CancelCommand  = ReactiveCommand.CreateFromTask(DoAbandonAsync);
+        var canBack = this.WhenAnyValue(
+            x => x.CurrentStepIndex, x => x.IsBusy,
+            (step, busy) => step > 0 && !busy);
+
+        NextCommand         = ReactiveCommand.CreateFromTask(DoNextStepAsync, canNext);
+        BackCommand         = ReactiveCommand.Create(() => { CurrentStepIndex--; StepError = string.Empty; }, canBack);
+        CancelCommand       = ReactiveCommand.CreateFromTask(DoAbandonAsync);
         IncreaseStatCommand = ReactiveCommand.Create<string>(IncreaseStat);
         DecreaseStatCommand = ReactiveCommand.Create<string>(DecreaseStat);
+
+        this.WhenAnyValue(
+                x => x.Strength, x => x.Dexterity, x => x.Constitution,
+                x => x.Intelligence, x => x.Wisdom, x => x.Charisma)
+            .Subscribe(ignored => { _ = RefreshPreviewAsync(); });
 
         _ = InitializeAsync();
     }
@@ -291,69 +344,100 @@ public class CreateCharacterViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
-    private async Task DoFinalizeAsync()
+    private async Task DoNextStepAsync()
     {
         if (_sessionId is null)
         {
-            ErrorMessage = "No active creation session. Please cancel and try again.";
+            StepError = "No active creation session. Please cancel and try again.";
             return;
         }
 
         IsBusy = true;
-        ErrorMessage = string.Empty;
+        StepError = string.Empty;
         try
         {
-            await _creationService.SetNameAsync(_sessionId.Value, Name);
-            await _creationService.SetClassAsync(_sessionId.Value, SelectedClass);
-
-            if (!string.IsNullOrEmpty(SelectedSpecies))
+            switch (CurrentStepIndex)
             {
-                var speciesSlug = _speciesList.FirstOrDefault(s => s.DisplayName == SelectedSpecies)?.Slug ?? SelectedSpecies;
-                await _creationService.SetSpeciesAsync(_sessionId.Value, speciesSlug);
+                case 0:
+                    if (!await _creationService.SetNameAsync(_sessionId.Value, Name))
+                    { StepError = "Could not save character name. Please try again."; return; }
+                    break;
+                case 1:
+                    if (!await _creationService.SetClassAsync(_sessionId.Value, SelectedClass))
+                    { StepError = "Could not save class selection. Please try again."; return; }
+                    break;
+                case 2:
+                    if (!string.IsNullOrEmpty(SelectedSpecies))
+                    {
+                        var slug = _speciesList.FirstOrDefault(s => s.DisplayName == SelectedSpecies)?.Slug ?? SelectedSpecies;
+                        if (!await _creationService.SetSpeciesAsync(_sessionId.Value, slug))
+                        { StepError = "Could not save species selection. Please try again."; return; }
+                    }
+                    break;
+                case 3:
+                    if (!string.IsNullOrEmpty(SelectedBackground))
+                    {
+                        var id = _backgroundList.FirstOrDefault(b => b.DisplayName == SelectedBackground)?.Slug ?? SelectedBackground;
+                        if (!await _creationService.SetBackgroundAsync(_sessionId.Value, id))
+                        { StepError = "Could not save background selection. Please try again."; return; }
+                    }
+                    break;
+                case 4:
+                {
+                    var allocations = new Dictionary<string, int>
+                    {
+                        ["Strength"] = Strength, ["Dexterity"] = Dexterity, ["Constitution"] = Constitution,
+                        ["Intelligence"] = Intelligence, ["Wisdom"] = Wisdom, ["Charisma"] = Charisma
+                    };
+                    if (!await _creationService.SetAttributesAsync(_sessionId.Value, allocations))
+                    { StepError = "Could not save attribute choices. Please try again."; return; }
+                    break;
+                }
+                case 5:
+                    if (!string.IsNullOrEmpty(SelectedArmorType) || !string.IsNullOrEmpty(SelectedWeaponType) || IncludeShield)
+                    {
+                        var armorSlug  = string.IsNullOrEmpty(SelectedArmorType)  ? null : SelectedArmorType.ToLowerInvariant().Replace(' ', '-');
+                        var weaponSlug = string.IsNullOrEmpty(SelectedWeaponType) ? null : SelectedWeaponType.ToLowerInvariant().Replace(' ', '-');
+                        if (!await _creationService.SetEquipmentPreferencesAsync(
+                                _sessionId.Value, new SetCreationEquipmentPreferencesRequest(armorSlug, weaponSlug, IncludeShield)))
+                        { StepError = "Could not save equipment preferences. Please try again."; return; }
+                    }
+                    break;
+                case 6:
+                    if (!string.IsNullOrEmpty(SelectedLocation))
+                    {
+                        var locationId = _locationList.FirstOrDefault(l => l.DisplayName == SelectedLocation)?.Slug ?? SelectedLocation;
+                        if (!await _creationService.SetLocationAsync(_sessionId.Value, locationId))
+                        { StepError = "Could not save starting location. Please try again."; return; }
+                    }
+                    break;
+                case 7:
+                {
+                    var difficultyMode = IsHardcoreCreate ? "hardcore" : "normal";
+                    var (character, error) = await _creationService.FinalizeAsync(
+                        _sessionId.Value, new FinalizeCreationSessionRequest(null, difficultyMode));
+                    if (character is not null)
+                    {
+                        _sessionId = null;
+                        _navigation.NavigateTo<CharacterSelectViewModel>();
+                    }
+                    else
+                    {
+                        StepError = error?.Message ?? "Failed to create character.";
+                    }
+                    return;
+                }
             }
-
-            if (!string.IsNullOrEmpty(SelectedBackground))
-            {
-                var backgroundId = _backgroundList.FirstOrDefault(b => b.DisplayName == SelectedBackground)?.Slug ?? SelectedBackground;
-                await _creationService.SetBackgroundAsync(_sessionId.Value, backgroundId);
-            }
-
-            var allocations = new Dictionary<string, int>
-            {
-                ["Strength"] = Strength, ["Dexterity"] = Dexterity, ["Constitution"] = Constitution,
-                ["Intelligence"] = Intelligence, ["Wisdom"] = Wisdom, ["Charisma"] = Charisma
-            };
-            await _creationService.SetAttributesAsync(_sessionId.Value, allocations);
-
-            if (!string.IsNullOrEmpty(SelectedArmorType) || !string.IsNullOrEmpty(SelectedWeaponType) || IncludeShield)
-            {
-                var armorSlug  = string.IsNullOrEmpty(SelectedArmorType)  ? null : SelectedArmorType.ToLowerInvariant().Replace(' ', '-');
-                var weaponSlug = string.IsNullOrEmpty(SelectedWeaponType) ? null : SelectedWeaponType.ToLowerInvariant().Replace(' ', '-');
-                await _creationService.SetEquipmentPreferencesAsync(
-                    _sessionId.Value, new SetCreationEquipmentPreferencesRequest(armorSlug, weaponSlug, IncludeShield));
-            }
-
-            if (!string.IsNullOrEmpty(SelectedLocation))
-            {
-                var locationId = _locationList.FirstOrDefault(l => l.DisplayName == SelectedLocation)?.Slug ?? SelectedLocation;
-                await _creationService.SetLocationAsync(_sessionId.Value, locationId);
-            }
-
-            var difficultyMode = IsHardcoreCreate ? "hardcore" : "normal";
-            var (character, error) = await _creationService.FinalizeAsync(
-                _sessionId.Value, new FinalizeCreationSessionRequest(null, difficultyMode));
-
-            if (character is not null)
-            {
-                _sessionId = null; // consumed
-                _navigation.NavigateTo<CharacterSelectViewModel>();
-            }
-            else
-            {
-                ErrorMessage = error?.Message ?? "Failed to create character.";
-            }
+            CurrentStepIndex++;
+            await RefreshPreviewAsync();
         }
         finally { IsBusy = false; }
+    }
+
+    private async Task RefreshPreviewAsync()
+    {
+        if (_sessionId is null || CurrentStepIndex < 2) return;
+        CharacterPreview = await _creationService.GetPreviewAsync(_sessionId.Value);
     }
 
     private async Task DoAbandonAsync()

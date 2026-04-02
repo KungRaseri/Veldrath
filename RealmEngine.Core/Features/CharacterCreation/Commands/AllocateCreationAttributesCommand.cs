@@ -46,6 +46,11 @@ public class AllocateCreationAttributesHandler(
         if (session.Status != CreationSessionStatus.Draft)
             return new AllocateCreationAttributesResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
+        string[] requiredStats = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"];
+        var missing = requiredStats.Where(s => !request.Allocations.ContainsKey(s)).ToList();
+        if (missing.Count > 0)
+            return new AllocateCreationAttributesResult { Success = false, Message = $"Allocations must include all 6 stats. Missing: {string.Join(", ", missing)}." };
+
         if (!Config.IsValid(request.Allocations))
         {
             int cost = Config.CalculateTotalCost(request.Allocations);

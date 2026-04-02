@@ -35,6 +35,8 @@ public class FinalizeCreationSessionHandler(
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return Fail($"Session {request.SessionId} not found.");
+        if (session.Status == CreationSessionStatus.Abandoned)
+            return Fail("Cannot finalize an abandoned session.");
 
         if (session.SelectedClass is null)
             return Fail("A character class must be selected before finalizing.");

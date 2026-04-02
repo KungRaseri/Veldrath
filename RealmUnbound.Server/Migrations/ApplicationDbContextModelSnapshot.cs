@@ -210,6 +210,9 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("BackgroundId")
+                        .HasColumnType("text");
+
                     b.Property<string>("ClassName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -259,6 +262,9 @@ namespace RealmUnbound.Server.Migrations
 
                     b.Property<int>("SlotIndex")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SpeciesSlug")
+                        .HasColumnType("text");
 
                     b.Property<string>("StartingZoneId")
                         .IsRequired()

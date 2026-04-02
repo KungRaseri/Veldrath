@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.CharacterCreation.Queries;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
 /// <summary>
@@ -184,6 +183,11 @@ public class SetCreationEquipmentPreferencesHandler(
     /// <inheritdoc />
     public async Task<SetCreationChoiceResult> Handle(SetCreationEquipmentPreferencesCommand request, CancellationToken cancellationToken)
     {
+        if (request.PreferredArmorType is not null && string.IsNullOrWhiteSpace(request.PreferredArmorType))
+            return new SetCreationChoiceResult { Success = false, Message = "PreferredArmorType cannot be an empty or whitespace string. Omit the field or provide a valid type." };
+        if (request.PreferredWeaponType is not null && string.IsNullOrWhiteSpace(request.PreferredWeaponType))
+            return new SetCreationChoiceResult { Success = false, Message = "PreferredWeaponType cannot be an empty or whitespace string. Omit the field or provide a valid type." };
+
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)
             return new SetCreationChoiceResult { Success = false, Message = $"Session {request.SessionId} not found." };
@@ -202,7 +206,8 @@ public class SetCreationEquipmentPreferencesHandler(
 /// Handles <see cref="SetCreationLocationCommand"/>.
 /// </summary>
 public class SetCreationLocationHandler(
-    ICharacterCreationSessionStore sessionStore)
+    ICharacterCreationSessionStore sessionStore,
+    IZoneLocationRepository zoneLocationRepository)
     : IRequestHandler<SetCreationLocationCommand, SetCreationChoiceResult>
 {
     /// <inheritdoc />
@@ -214,8 +219,12 @@ public class SetCreationLocationHandler(
         if (session.Status != CreationSessionStatus.Draft)
             return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
+        var location = await zoneLocationRepository.GetBySlugAsync(request.LocationId);
+        if (location is null)
+            return new SetCreationChoiceResult { Success = false, Message = $"Location '{request.LocationId}' not found." };
+
         session.SelectedLocationId = request.LocationId;
         await sessionStore.UpdateSessionAsync(session);
-        return new SetCreationChoiceResult { Success = true, Message = $"Starting location set to '{request.LocationId}'." };
+        return new SetCreationChoiceResult { Success = true, Message = $"Starting location set to '{location.DisplayName}'." };
     }
 }

@@ -1,11 +1,15 @@
 # RealmEngine Codebase Notes
 
-## Test Counts (as of session-26, 2026-03-30)
-- RealmEngine.Core.Tests: **1,859 passing**
-- RealmEngine.Shared.Tests: **778 passing**
-- RealmEngine.Data.Tests: **229 passing** (+3 ActorPool tests)
-- RealmUnbound.Client.Tests: **512 passing**
-- RealmUnbound.Server.Tests: **468 passing**
+## Test Counts (as of Pass 4 Phase 6B, session after 2026-03-30)
+- RealmEngine.Core.Tests: **1,912 passing**
+- RealmEngine.Shared.Tests: **803 passing**
+- RealmEngine.Data.Tests: **237 passing**
+- RealmUnbound.Client.Tests: **571 passing**
+- RealmUnbound.Server.Tests: **505 passing**
+- RealmForge.Tests: **8 passing**
+- RealmFoundry.Tests: **48 passing**
+- RealmUnbound.Assets.Tests: **10 passing**
+- **Total: 4,094 passing**
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`

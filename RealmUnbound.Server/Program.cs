@@ -209,6 +209,7 @@ try
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
+    builder.Services.AddHostedService<SessionCleanupService>();
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
     builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));
