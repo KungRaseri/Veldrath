@@ -335,7 +335,7 @@ public class GameViewModel : ViewModelBase
 
     // Chat state
     private string _chatInput = string.Empty;
-    private string _activeChatChannel = "Zone";
+    private string _activeChatChannel = "System";
     private string _whisperTarget = string.Empty;
 
     /// <summary>Whether the collapsible left character-sheet panel is expanded.</summary>
@@ -465,13 +465,13 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Zero-based tab index for the chat channel selector (0=Zone, 1=Global, 2=Whisper, 3=System). Two-way bound to <see cref="ActiveChatChannel"/>.</summary>
+    /// <summary>Zero-based tab index for the chat channel selector (0=System, 1=Global, 2=Zone, 3=Whisper). Two-way bound to <see cref="ActiveChatChannel"/>.</summary>
     public int ChatChannelIndex
     {
-        get => _activeChatChannel switch { "Global" => 1, "Whisper" => 2, "System" => 3, _ => 0 };
+        get => _activeChatChannel switch { "Global" => 1, "Zone" => 2, "Whisper" => 3, _ => 0 };
         set
         {
-            var ch = value switch { 1 => "Global", 2 => "Whisper", 3 => "System", _ => "Zone" };
+            var ch = value switch { 1 => "Global", 2 => "Zone", 3 => "Whisper", _ => "System" };
             ActiveChatChannel = ch;
             this.RaisePropertyChanged();
         }
