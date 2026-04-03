@@ -2,6 +2,7 @@ using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using Avalonia.Media.Imaging;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using RealmUnbound.Assets;
 using RealmUnbound.Assets.Manifest;
@@ -18,6 +19,7 @@ public class CreateCharacterViewModel : ViewModelBase
     private readonly ContentCache _content;
     private readonly INavigationService _navigation;
     private readonly IAssetStore? _assetStore;
+    private readonly ILogger<CreateCharacterViewModel> _logger;
 
     private Guid? _sessionId;
     private string _name = string.Empty;
@@ -291,15 +293,22 @@ public class CreateCharacterViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="CreateCharacterViewModel"/>.</summary>
+    /// <param name="creationService">Service for managing character creation sessions.</param>
+    /// <param name="content">Content catalog cache for classes, species, and backgrounds.</param>
+    /// <param name="navigation">Navigation service for transitioning between views.</param>
+    /// <param name="logger">Logger for diagnostic output during initialization.</param>
+    /// <param name="assetStore">Optional asset store for loading class icons.</param>
     public CreateCharacterViewModel(
         ICharacterCreationService creationService,
         ContentCache content,
         INavigationService navigation,
+        ILogger<CreateCharacterViewModel> logger,
         IAssetStore? assetStore = null)
     {
         _creationService = creationService;
         _content = content;
         _navigation = navigation;
+        _logger = logger;
         _assetStore = assetStore;
 
         if (assetStore is not null)
@@ -365,6 +374,7 @@ public class CreateCharacterViewModel : ViewModelBase
 
     private async Task InitializeAsync()
     {
+        _logger.LogInformation("InitializeAsync starting");
         IsBusy = true;
         try
         {
@@ -377,7 +387,10 @@ public class CreateCharacterViewModel : ViewModelBase
 
             _sessionId = await sessionTask;
             if (_sessionId is null)
+            {
+                _logger.LogWarning("BeginSessionAsync returned null — session could not be started");
                 ErrorMessage = "Could not start creation session. Please check your connection.";
+            }
 
             var classes = await classesTask;
             if (classes.Count > 0)
@@ -400,11 +413,16 @@ public class CreateCharacterViewModel : ViewModelBase
                 SelectedBackground = AvailableBackgrounds[0];
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "InitializeAsync threw an unhandled exception");
             ErrorMessage = "Could not start creation session. Please check your connection.";
         }
-        finally { IsBusy = false; }
+        finally
+        {
+            _logger.LogInformation("InitializeAsync completed. SessionId={SessionId}", _sessionId);
+            IsBusy = false;
+        }
     }
 
     private async Task DoNextStepAsync()
