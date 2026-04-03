@@ -34,13 +34,18 @@ public class GetStartingLocationsHandler : IRequestHandler<GetStartingLocationsQ
 
         using var db = _dbFactory.CreateDbContext();
 
-        // Towns are safe starting zones; fallback to all active locations if none exist
-        var raw = await db.ZoneLocations
-            .Where(l => l.IsActive && l.Traits.IsTown == true)
+        // Load all active locations first, then filter for towns in memory.
+        // Filtering on l.Traits.IsTown inside a DB Where() on a ToJson()-owned entity generates
+        // "Traits"['IsTown']::boolean which Postgres rejects ("cannot cast type jsonb to boolean").
+        // Client-side filtering avoids that translation entirely.
+        var all = await db.ZoneLocations
+            .AsNoTracking()
+            .Where(l => l.IsActive)
             .ToListAsync(cancellationToken);
 
+        var raw = all.Where(l => l.Traits.IsTown == true).ToList();
         if (raw.Count == 0)
-            raw = await db.ZoneLocations.Where(l => l.IsActive).ToListAsync(cancellationToken);
+            raw = all;
 
         var locations = raw
             .Select(l => new Location

@@ -222,10 +222,13 @@ namespace RealmUnbound.Server.Migrations
                     StartingZoneId = table.Column<string>(type: "text", nullable: false),
                     CurrentZoneId = table.Column<string>(type: "text", nullable: false),
                     CurrentZoneLocationSlug = table.Column<string>(type: "text", nullable: true),
+                    BackgroundId = table.Column<string>(type: "text", nullable: true),
+                    SpeciesSlug = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastPlayedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DifficultyMode = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false, defaultValue: "normal")
+                    DifficultyMode = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false, defaultValue: "normal"),
+                    AbilitiesBlob = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

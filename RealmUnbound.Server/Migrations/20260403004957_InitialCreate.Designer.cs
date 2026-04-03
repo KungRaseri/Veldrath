@@ -12,8 +12,8 @@ using RealmUnbound.Server.Data;
 namespace RealmUnbound.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260402011902_AddBackgroundAndSpeciesToCharacter")]
-    partial class AddBackgroundAndSpeciesToCharacter
+    [Migration("20260403004957_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
