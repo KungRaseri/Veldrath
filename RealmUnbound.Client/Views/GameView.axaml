@@ -19,106 +19,150 @@
         <!-- ── ROW 0: HEADER ──────────────────────────────────────────────── -->
         <Border Grid.Row="0"
                 Classes="panel-topbar">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto">
 
-                <!-- Col 0: character name → zone name + zone type badge -->
+                <!-- Col 0: compact character strip — name · class · level + stat bars -->
                 <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            Spacing="10"
-                            VerticalAlignment="Center">
-                    <TextBlock Text="{Binding CharacterName}"
-                               Classes="accent"
-                               FontSize="15"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center" />
-                    <TextBlock Text="→"
-                               Foreground="{DynamicResource GameTextTertiaryBrush}"
-                               VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding ZoneName}"
-                               FontSize="14"
-                               VerticalAlignment="Center" />
-                    <Border Background="{DynamicResource GameBackground3Brush}"
-                            BorderBrush="{DynamicResource GameBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="3"
-                            Padding="6,2"
+                            Spacing="4"
                             VerticalAlignment="Center"
-                            IsVisible="{Binding ZoneType,
-                                        Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <TextBlock Text="{Binding ZoneType}"
-                                   Classes="caption" />
-                    </Border>
+                            Margin="0,0,20,0">
+
+                    <!-- Name · ClassName · Level badge -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding CharacterName}"
+                                   Classes="accent"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ClassName}"
+                                   Foreground="{DynamicResource GameTextTertiaryBrush}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                        <Border Background="{DynamicResource GameBackground3Brush}"
+                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Padding="5,1"
+                                VerticalAlignment="Center">
+                            <TextBlock Classes="caption">
+                                <Run Text="Lv. " /><Run Text="{Binding Level}" FontWeight="Bold" />
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- HP bar -->
+                    <Grid ColumnDefinitions="20,80,Auto" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="0"
+                                   Text="HP"
+                                   Classes="caption"
+                                   VerticalAlignment="Center" />
+                        <ProgressBar Grid.Column="1"
+                                     Classes="health"
+                                     Minimum="0"
+                                     Maximum="{Binding MaxHealth}"
+                                     Value="{Binding CurrentHealth}"
+                                     Height="5"
+                                     VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2"
+                                   Classes="caption"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0">
+                            <Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- MP bar -->
+                    <Grid ColumnDefinitions="20,80,Auto" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="0"
+                                   Text="MP"
+                                   Classes="caption"
+                                   VerticalAlignment="Center" />
+                        <ProgressBar Grid.Column="1"
+                                     Classes="mana"
+                                     Minimum="0"
+                                     Maximum="{Binding MaxMana}"
+                                     Value="{Binding CurrentMana}"
+                                     Height="5"
+                                     VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2"
+                                   Classes="caption"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0">
+                            <Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- XP bar -->
+                    <Grid ColumnDefinitions="20,80,Auto" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="0"
+                                   Text="XP"
+                                   Classes="caption"
+                                   VerticalAlignment="Center" />
+                        <ProgressBar Grid.Column="1"
+                                     Classes="xp"
+                                     Minimum="0"
+                                     Maximum="{Binding ExperienceToNextLevel}"
+                                     Value="{Binding Experience}"
+                                     Height="4"
+                                     VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2"
+                                   Classes="caption"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0">
+                            <Run Text="{Binding Experience}" /><Run Text="/" /><Run Text="{Binding ExperienceToNextLevel}" />
+                        </TextBlock>
+                    </Grid>
+
                 </StackPanel>
 
-                <!-- Col 1: HP bar + label (always visible) -->
-                <Grid Grid.Column="1"
-                      ColumnDefinitions="Auto,80,Auto"
-                      VerticalAlignment="Center"
-                      Margin="16,0,12,0">
-                    <TextBlock Grid.Column="0"
-                               Text="HP"
-                               Classes="caption"
-                               VerticalAlignment="Center"
-                               Margin="0,0,6,0" />
-                    <ProgressBar Grid.Column="1"
-                                 Classes="health"
-                                 Minimum="0"
-                                 Maximum="{Binding MaxHealth}"
-                                 Value="{Binding CurrentHealth}"
-                                 Height="6"
-                                 VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2"
-                               Classes="caption"
-                               VerticalAlignment="Center"
-                               Margin="6,0,0,0">
-                        <Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
-                    </TextBlock>
-                </Grid>
+                <!-- Col 1: zone info — name + type badge + sub-location breadcrumb -->
+                <StackPanel Grid.Column="1"
+                            Spacing="4"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
 
-                <!-- Col 2: MP bar + label (always visible) -->
-                <Grid Grid.Column="2"
-                      ColumnDefinitions="Auto,80,Auto"
-                      VerticalAlignment="Center"
-                      Margin="0,0,12,0">
-                    <TextBlock Grid.Column="0"
-                               Text="MP"
-                               Classes="caption"
-                               VerticalAlignment="Center"
-                               Margin="0,0,6,0" />
-                    <ProgressBar Grid.Column="1"
-                                 Classes="mana"
-                                 Minimum="0"
-                                 Maximum="{Binding MaxMana}"
-                                 Value="{Binding CurrentMana}"
-                                 Height="6"
-                                 VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2"
-                               Classes="caption"
-                               VerticalAlignment="Center"
-                               Margin="6,0,0,0">
-                        <Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
-                    </TextBlock>
-                </Grid>
+                    <!-- Zone name + type badge -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding ZoneName}"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <Border Background="{DynamicResource GameBackground3Brush}"
+                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Padding="6,2"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding ZoneType,
+                                            Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <TextBlock Text="{Binding ZoneType}"
+                                       Classes="caption" />
+                        </Border>
+                    </StackPanel>
 
-                <!-- Col 3: Level + Gold + Connection dot + Settings + Logout -->
-                <StackPanel Grid.Column="3"
+                    <!-- Sub-location breadcrumb (shown when inside a specific location) -->
+                    <TextBlock Foreground="{DynamicResource GameTextTertiaryBrush}"
+                               FontSize="12"
+                               IsVisible="{Binding CurrentZoneLocationDisplayName,
+                                           Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <Run Text="› " /><Run Text="{Binding CurrentZoneLocationDisplayName}" />
+                    </TextBlock>
+
+                    <!-- Zone description fallback (shown when not at a specific location) -->
+                    <TextBlock Text="{Binding ZoneDescription}"
+                               Classes="muted"
+                               FontStyle="Italic"
+                               FontSize="11"
+                               IsVisible="{Binding CurrentZoneLocationDisplayName,
+                                           Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+
+                </StackPanel>
+
+                <!-- Col 2: connection dot + settings flyout -->
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
-                            Spacing="12"
+                            Spacing="8"
                             VerticalAlignment="Center">
-                    <Border Background="{DynamicResource GameBackground3Brush}"
-                            BorderBrush="{DynamicResource GameBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="3"
-                            Padding="6,2"
-                            VerticalAlignment="Center">
-                        <TextBlock Classes="caption">
-                            <Run Text="Lv. " /><Run Text="{Binding Level}" FontWeight="Bold" />
-                        </TextBlock>
-                    </Border>
-                    <TextBlock FontSize="13"
-                               VerticalAlignment="Center">
-                        <Run Text="{Binding Gold}" /><Run Text=" gp" />
-                    </TextBlock>
 
                     <!-- Connection status dot -->
                     <Ellipse Width="10" Height="10"
@@ -141,7 +185,7 @@
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         Padding="12">
-                                    <StackPanel Spacing="8" MinWidth="160">
+                                    <StackPanel Spacing="8" MinWidth="180">
                                         <TextBlock Text="Settings" FontWeight="Bold" />
                                         <Separator />
                                         <Button Content="{Binding MusicMuteLabel}"
@@ -152,6 +196,22 @@
                                                 Classes="ghost"
                                                 HorizontalAlignment="Stretch"
                                                 Command="{Binding ToggleSfxMuteCommand}" />
+                                        <Separator />
+                                        <TextBlock Text="Dev Tools"
+                                                   Classes="caption"
+                                                   Margin="0,4,0,0" />
+                                        <Button Content="Gain 100 XP"
+                                                Classes="ghost"
+                                                HorizontalAlignment="Stretch"
+                                                Command="{Binding DevGainXpCommand}" />
+                                        <Button Content="+50 Gold"
+                                                Classes="ghost"
+                                                HorizontalAlignment="Stretch"
+                                                Command="{Binding DevAddGoldCommand}" />
+                                        <Button Content="Take 10 Damage"
+                                                Classes="ghost"
+                                                HorizontalAlignment="Stretch"
+                                                Command="{Binding DevTakeDamageCommand}" />
                                         <Separator />
                                         <Button Content="Logout"
                                                 Classes="danger ghost"
@@ -280,9 +340,6 @@
                                 </TextBlock>
                             </Grid>
 
-                            <!-- Divider -->
-                            <Border Classes="separator" Margin="0,8" />
-
                             <!-- Unspent AP badge -->
                             <Button IsVisible="{Binding HasUnspentPoints}"
                                     Command="{Binding OpenAttributeAllocationCommand}"
@@ -291,7 +348,7 @@
                                     BorderThickness="1"
                                     CornerRadius="3"
                                     Padding="6,3"
-                                    Margin="0,0,0,8"
+                                    Margin="0,8,0,8"
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Left">
                                 <TextBlock Classes="warning" FontSize="11">
@@ -1042,94 +1099,58 @@
                         Width="196"
                         BorderBrush="{DynamicResource GameBorderBrush}"
                         BorderThickness="1,0,0,0"
-                        Padding="12">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Spacing="0">
+                        Padding="8">
+                    <Grid RowDefinitions="2*,8,5*,8,3*">
 
-                            <!-- Action Log -->
-                            <TextBlock Text="Action Log"
+                        <!-- Row 0: Online in Zone -->
+                        <DockPanel Grid.Row="0">
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="Online in Zone"
                                        Classes="caption"
                                        Margin="0,0,0,6" />
-                            <ScrollViewer Height="200"
-                                          VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding ActionLog}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding OnlinePlayers}">
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}"
-                                                       FontSize="11"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,1" />
+                                        <DataTemplate x:DataType="vm:OnlinePlayerViewModel">
+                                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                                  Margin="0,2">
+                                                <Ellipse Grid.Column="0"
+                                                         Width="7" Height="7"
+                                                         Fill="{DynamicResource GameSuccessBrush}"
+                                                         VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Name}"
+                                                           FontSize="12"
+                                                           Margin="6,0,0,0"
+                                                           VerticalAlignment="Center" />
+                                                <Button Grid.Column="2"
+                                                        Content="[W]"
+                                                        Classes="ghost"
+                                                        FontSize="10"
+                                                        Padding="2,0"
+                                                        ToolTip.Tip="Whisper"
+                                                        Command="{Binding StartWhisperCommand}" />
+                                            </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
+                        </DockPanel>
 
-                            <!-- Divider -->
-                            <Border Classes="separator" Margin="0,10" />
+                        <!-- Row 1: GridSplitter -->
+                        <GridSplitter Grid.Row="1"
+                                      ResizeDirection="Rows"
+                                      HorizontalAlignment="Stretch"
+                                      Height="8" />
 
-                            <!-- Chat -->
-                            <TextBlock Text="Chat"
-                                       Classes="caption"
-                                       Margin="0,0,0,6" />
+                        <!-- Row 2: Chat -->
+                        <DockPanel Grid.Row="2">
 
-                            <!-- Channel pills -->
-                            <WrapPanel Margin="0,0,0,6">
-                                <Button Content="Zone"
-                                        Classes="ghost"
-                                        FontSize="11"
-                                        Padding="6,2"
-                                        Margin="0,0,4,4"
-                                        Command="{Binding SetChatChannelCommand}"
-                                        CommandParameter="Zone" />
-                                <Button Content="Global"
-                                        Classes="ghost"
-                                        FontSize="11"
-                                        Padding="6,2"
-                                        Margin="0,0,4,4"
-                                        Command="{Binding SetChatChannelCommand}"
-                                        CommandParameter="Global" />
-                                <Button Content="Whisper"
-                                        Classes="ghost"
-                                        FontSize="11"
-                                        Padding="6,2"
-                                        Margin="0,0,4,4"
-                                        Command="{Binding SetChatChannelCommand}"
-                                        CommandParameter="Whisper" />
-                                <Button Content="System"
-                                        Classes="ghost"
-                                        FontSize="11"
-                                        Padding="6,2"
-                                        Margin="0,0,0,4"
-                                        Command="{Binding SetChatChannelCommand}"
-                                        CommandParameter="System" />
-                            </WrapPanel>
-
-                            <!-- Whisper target input (only visible when Whisper channel is active) -->
-                            <TextBox Watermark="Recipient name…"
-                                     IsVisible="{Binding IsWhisperChannelActive}"
-                                     Text="{Binding WhisperTarget}"
-                                     FontSize="11"
-                                     Margin="0,0,0,4" />
-
-                            <!-- Message list -->
-                            <ScrollViewer Height="160"
-                                          VerticalScrollBarVisibility="Auto"
-                                          Margin="0,0,0,6">
-                                <ItemsControl ItemsSource="{Binding ChatMessages}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:ChatMessageViewModel">
-                                            <TextBlock Text="{Binding FormattedMessage}"
-                                                       FontSize="11"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,1" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-
-                            <!-- Send input (hidden when System channel is active) -->
-                            <Grid IsVisible="{Binding IsChatInputVisible}"
-                                  ColumnDefinitions="*,Auto">
+                            <!-- Send input row (pinned to bottom) -->
+                            <Grid DockPanel.Dock="Bottom"
+                                  IsVisible="{Binding IsChatInputVisible}"
+                                  ColumnDefinitions="*,Auto"
+                                  Margin="0,4,0,0">
                                 <TextBox Grid.Column="0"
                                          Watermark="Message…"
                                          Text="{Binding ChatInput}"
@@ -1143,64 +1164,67 @@
                                         Command="{Binding SendChatCommand}" />
                             </Grid>
 
-                            <!-- Divider -->
-                            <Border Classes="separator" Margin="0,10" />
+                            <!-- Whisper target input (pinned to top, only when Whisper is active) -->
+                            <TextBox DockPanel.Dock="Top"
+                                     Watermark="Recipient name…"
+                                     IsVisible="{Binding IsWhisperChannelActive}"
+                                     Text="{Binding WhisperTarget}"
+                                     FontSize="11"
+                                     Margin="0,0,0,4" />
 
-                            <!-- Online players -->
-                            <TextBlock Text="Online in Zone"
-                                       Classes="caption"
-                                       Margin="0,0,0,8" />
-                            <ItemsControl ItemsSource="{Binding OnlinePlayers}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:OnlinePlayerViewModel">
-                                        <Grid ColumnDefinitions="Auto,*,Auto"
-                                              Margin="0,2">
-                                            <Ellipse Grid.Column="0"
-                                                     Width="7" Height="7"
-                                                     Fill="{DynamicResource GameSuccessBrush}"
-                                                     VerticalAlignment="Center" />
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding Name}"
-                                                       FontSize="12"
-                                                       Margin="6,0,0,0"
-                                                       VerticalAlignment="Center" />
-                                            <Button Grid.Column="2"
-                                                    Content="[W]"
-                                                    Classes="ghost"
-                                                    FontSize="10"
-                                                    Padding="2,0"
-                                                    ToolTip.Tip="Whisper"
-                                                    Command="{Binding StartWhisperCommand}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <!-- Channel tabs (pinned to top) -->
+                            <TabControl DockPanel.Dock="Top"
+                                        SelectedIndex="{Binding ChatChannelIndex, Mode=TwoWay}"
+                                        Margin="0,0,0,4">
+                                <TabItem Header="Zone" />
+                                <TabItem Header="Global" />
+                                <TabItem Header="Whisper" />
+                                <TabItem Header="System" />
+                            </TabControl>
 
-                            <!-- Divider -->
-                            <Border Classes="separator" Margin="0,12" />
+                            <!-- Message list fills remaining space -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding ChatMessages}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ChatMessageViewModel">
+                                            <TextBlock Text="{Binding FormattedMessage}"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,1" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
 
-                            <!-- Dev Tools expander (debug helpers during development) -->
-                            <Expander Header="Dev Tools"
+                        </DockPanel>
+
+                        <!-- Row 3: GridSplitter -->
+                        <GridSplitter Grid.Row="3"
+                                      ResizeDirection="Rows"
                                       HorizontalAlignment="Stretch"
-                                      HorizontalContentAlignment="Stretch">
-                                <StackPanel Spacing="4" Margin="0,6,0,0">
-                                    <Button Content="Gain 100 XP"
-                                            Classes="ghost"
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding DevGainXpCommand}" />
-                                    <Button Content="+50 Gold"
-                                            Classes="ghost"
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding DevAddGoldCommand}" />
-                                    <Button Content="Take 10 Damage"
-                                            Classes="ghost"
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding DevTakeDamageCommand}" />
-                                </StackPanel>
-                            </Expander>
+                                      Height="8" />
 
-                        </StackPanel>
-                    </ScrollViewer>
+                        <!-- Row 4: Action Log -->
+                        <DockPanel Grid.Row="4">
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="Action Log"
+                                       Classes="caption"
+                                       Margin="0,0,0,6" />
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding ActionLog}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,1" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+
+                    </Grid>
                 </Border>
 
             </DockPanel>
@@ -1430,10 +1454,30 @@
         <!-- ── ROW 2: HOTBAR + CONTEXT-SENSITIVE ACTION BAR ──────────────── -->
         <Border Grid.Row="2"
                 Classes="panel-statusbar">
-            <StackPanel Spacing="6">
+            <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
 
-                <!-- Row 1: Ability hotbar — 6 always-visible slots -->
-                <ItemsControl ItemsSource="{Binding HotbarSlots}">
+                <!-- Left: navigation actions -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button Content="Inventory"
+                            Classes="ghost"
+                            Command="{Binding ToggleInventoryCommand}"
+                            Classes.accent="{Binding IsInventoryOpen}"
+                            Height="34"
+                            FontSize="13" />
+                    <Button Content="Map"
+                            Classes="ghost"
+                            Command="{Binding OpenMapCommand}"
+                            Height="34"
+                            FontSize="13" />
+                </StackPanel>
+
+                <!-- Center: ability hotbar — 6 always-visible slots -->
+                <ItemsControl Grid.Column="1"
+                              ItemsSource="{Binding HotbarSlots}"
+                              HorizontalAlignment="Center">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" Spacing="4" />
@@ -1453,54 +1497,31 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Row 2: Contextual (left) + utility actions (right) -->
-                <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Right: context-sensitive + utility actions -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button Content="Rest at Inn"
+                            Classes="accent"
+                            IsVisible="{Binding HasInn}"
+                            Command="{Binding RestAtLocationCommand}"
+                            Height="34"
+                            FontSize="13" />
+                    <Button Content="Shop"
+                            Classes="ghost"
+                            IsVisible="{Binding HasMerchant}"
+                            Command="{Binding VisitShopCommand}"
+                            Height="34"
+                            FontSize="13" />
+                    <Button Content="Search Area"
+                            Classes="ghost"
+                            Command="{Binding SearchAreaCommand}"
+                            Height="34"
+                            FontSize="13" />
+                </StackPanel>
 
-                    <!-- Left: context-sensitive actions -->
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal"
-                                Spacing="8"
-                                VerticalAlignment="Center">
-                        <Button Content="Rest at Inn"
-                                Classes="accent"
-                                IsVisible="{Binding HasInn}"
-                                Command="{Binding RestAtLocationCommand}"
-                                Height="32"
-                                FontSize="13" />
-                        <Button Content="Shop"
-                                Classes="ghost"
-                                IsVisible="{Binding HasMerchant}"
-                                Command="{Binding VisitShopCommand}"
-                                Height="32"
-                                FontSize="13" />
-                    </StackPanel>
-
-                    <!-- Right: always-on actions -->
-                    <StackPanel Grid.Column="2"
-                                Orientation="Horizontal"
-                                Spacing="8"
-                                VerticalAlignment="Center">
-                        <Button Content="Inventory"
-                                Classes="ghost"
-                                Command="{Binding ToggleInventoryCommand}"
-                                Classes.accent="{Binding IsInventoryOpen}"
-                                Height="32"
-                                FontSize="13" />
-                        <Button Content="Search Area"
-                                Classes="ghost"
-                                Command="{Binding SearchAreaCommand}"
-                                Height="32"
-                                FontSize="13" />
-                        <Button Content="Map"
-                                Classes="ghost"
-                                Command="{Binding OpenMapCommand}"
-                                Height="32"
-                                FontSize="13" />
-                    </StackPanel>
-
-                </Grid>
-
-            </StackPanel>
+            </Grid>
         </Border>
 
         <!-- ── ATTRIBUTE ALLOCATION OVERLAY ──────────────────────────────── -->
