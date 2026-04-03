@@ -5,11 +5,11 @@ using RealmUnbound.Client.ViewModels;
 
 namespace RealmUnbound.Client.Views;
 
-/// <summary>Code-behind for <see cref="MapView"/>. Routes pointer gestures to <see cref="MapViewModel"/> commands.</summary>
-public partial class MapView : UserControl
+/// <summary>Code-behind for <see cref="MapCanvasView"/>. Routes pointer gestures to <see cref="MapViewModel"/> commands.</summary>
+public partial class MapCanvasView : UserControl
 {
-    /// <summary>Initializes a new instance of <see cref="MapView"/>.</summary>
-    public MapView() => InitializeComponent();
+    /// <summary>Initializes a new instance of <see cref="MapCanvasView"/>.</summary>
+    public MapCanvasView() => InitializeComponent();
 
     private MapViewModel? Vm => DataContext as MapViewModel;
 

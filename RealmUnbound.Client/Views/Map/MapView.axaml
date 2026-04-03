@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:views="using:RealmUnbound.Client.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="RealmUnbound.Client.Views.MapView"
+             x:DataType="vm:MapViewModel"
+             Background="{DynamicResource GameBackground0Brush}">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Row 0: Header bar -->
+        <Border Grid.Row="0" Classes="panel-topbar">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Title}"
+                           FontSize="16" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{DynamicResource GameTextPrimaryBrush}" />
+                <Button Grid.Column="2"
+                        Content="✕ Close"
+                        Classes="ghost danger"
+                        Command="{Binding CloseCommand}"
+                        VerticalAlignment="Center" Margin="0,0,8,0" />
+            </Grid>
+        </Border>
+
+        <!-- Row 1: Canvas graph + detail panel -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,220">
+            <views:MapCanvasView      Grid.Column="0" />
+            <views:MapDetailPanelView Grid.Column="1" />
+        </Grid>
+
+        <!-- Row 2: Status bar -->
+        <Border Grid.Row="2" Classes="panel-statusbar">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="{Binding StatusText}"
+                           FontSize="11"
+                           Foreground="{DynamicResource GameTextMutedBrush}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

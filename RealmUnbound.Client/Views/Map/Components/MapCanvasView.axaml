@@ -1,0 +1,178 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="RealmUnbound.Client.Views.MapCanvasView"
+             x:DataType="vm:MapViewModel">
+
+    <UserControl.Styles>
+        <!-- Node border base -->
+        <Style Selector="Border.map-node">
+            <Setter Property="Width" Value="96" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="BoxShadow" Value="0 2 8 0 #30000000" />
+        </Style>
+        <Style Selector="Border.map-node:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.map-node.current">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+        </Style>
+        <Style Selector="Border.map-node.hidden-node">
+            <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GameMutedBrush}" />
+            <Setter Property="Opacity" Value="0.6" />
+        </Style>
+        <Style Selector="Border.map-node.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentLightBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.map-node.region-node">
+            <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <!-- Region header label — non-interactive, used only for visual group labelling -->
+        <Style Selector="Border.map-node.region-header">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Cursor" Value="Arrow" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="{DynamicResource GameBackground1Brush}"
+            Margin="0" ClipToBounds="True">
+        <Panel>
+            <!-- Loading overlay -->
+            <Border IsVisible="{Binding IsLoading}"
+                    Background="#88000000"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    ZIndex="10">
+                <TextBlock Text="Loading…"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontSize="16"
+                           Foreground="{DynamicResource GameTextMutedBrush}" />
+            </Border>
+
+            <!-- Region group backgrounds — rendered below edges and nodes -->
+            <ItemsControl ItemsSource="{Binding RegionGroups}"
+                          Width="{Binding CanvasWidth}"
+                          Height="{Binding CanvasHeight}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          ZIndex="-1"
+                          IsHitTestVisible="False">
+                <ItemsControl.ItemContainerTheme>
+                    <ControlTheme TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                        <Setter Property="Canvas.Top"  Value="{Binding Y}" />
+                    </ControlTheme>
+                </ItemsControl.ItemContainerTheme>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MapRegionGroupViewModel">
+                        <Border Width="{Binding Width}"
+                                Height="{Binding Height}"
+                                Background="#14FFFFFF"
+                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Opacity="0.7" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Edge layer — one Line per MapEdgeViewModel, bound declaratively -->
+            <ItemsControl ItemsSource="{Binding Edges}"
+                          Width="{Binding CanvasWidth}"
+                          Height="{Binding CanvasHeight}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          ZIndex="0"
+                          IsHitTestVisible="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MapEdgeViewModel">
+                        <Path Data="{Binding PathData}"
+                              Stroke="{Binding Stroke}"
+                              StrokeThickness="{Binding StrokeThickness}"
+                              StrokeDashArray="{Binding StrokeDash}"
+                              Opacity="{Binding Opacity}"
+                              Fill="Transparent" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Node layer -->
+            <ItemsControl ItemsSource="{Binding Nodes}"
+                          Width="{Binding CanvasWidth}"
+                          Height="{Binding CanvasHeight}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          ZIndex="1">
+                <!-- ItemContainerTheme positions the ContentPresenter (direct Canvas child)
+                     via the node's X/Y from the layout algorithm. Setting Canvas.Left/Top
+                     on the DataTemplate Border has no effect because the Canvas only reads
+                     those attached properties from its direct children (the ContentPresenters). -->
+                <ItemsControl.ItemContainerTheme>
+                    <ControlTheme TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                        <Setter Property="Canvas.Top"  Value="{Binding Y}" />
+                    </ControlTheme>
+                </ItemsControl.ItemContainerTheme>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MapNodeViewModel">
+                        <Border Classes="map-node"
+                                Classes.current="{Binding IsCurrent}"
+                                Classes.hidden-node="{Binding IsHidden}"
+                                Classes.selected="{Binding IsSelected}"
+                                Classes.region-node="{Binding IsRegionNode}"
+                                Classes.region-header="{Binding IsRegionHeader}"
+                                ToolTip.Tip="{Binding DisplayLabel}"
+                                PointerPressed="OnNodePointerPressed"
+                                DoubleTapped="OnNodeDoubleTapped">
+                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DisplayLabel}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource GameTextPrimaryBrush}"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="84"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding SubType}"
+                                           FontSize="9"
+                                           Foreground="{DynamicResource GameTextMutedBrush}"
+                                           IsVisible="{Binding SubType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Panel>
+    </Border>
+
+</UserControl>
