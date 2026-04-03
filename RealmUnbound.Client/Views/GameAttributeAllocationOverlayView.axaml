@@ -1,0 +1,89 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameAttributeAllocationOverlayView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="420"
+    d:DesignWidth="420"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <Border
+        Background="#CC000000"
+        IsVisible="{Binding IsAttributeAllocationOpen}">
+        <Border
+            Width="420"
+            Padding="24"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Classes="panel">
+            <StackPanel DataContext="{Binding AttributeAllocation}" Spacing="12">
+
+                <TextBlock
+                    Classes="accent"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Text="Allocate Attribute Points" />
+
+                <TextBlock FontSize="12">
+                    <Run Text="Points remaining: " /><Run Classes="accent" Text="{Binding PointsToAllocate}" />
+                </TextBlock>
+
+                <!--  Attribute rows  -->
+                <ItemsControl ItemsSource="{Binding Attributes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AttributeDraftViewModel">
+                            <Grid Margin="0,3" ColumnDefinitions="*,Auto,Auto,Auto">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Text="{Binding Name}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Width="28"
+                                    Height="28"
+                                    Margin="0,0,4,0"
+                                    Padding="0"
+                                    Command="{Binding DecrementCommand}"
+                                    Content="−" />
+                                <TextBlock
+                                    Grid.Column="2"
+                                    Width="36"
+                                    VerticalAlignment="Center"
+                                    Classes="accent"
+                                    FontSize="13"
+                                    Text="{Binding DisplayValue}"
+                                    TextAlignment="Center" />
+                                <Button
+                                    Grid.Column="3"
+                                    Width="28"
+                                    Height="28"
+                                    Margin="4,0,0,0"
+                                    Padding="0"
+                                    Command="{Binding IncrementCommand}"
+                                    Content="+" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel
+                    Margin="0,8,0,0"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Button Command="{Binding CancelCommand}" Content="Cancel" />
+                    <Button
+                        Classes="accent"
+                        Command="{Binding ConfirmCommand}"
+                        Content="Confirm" />
+                </StackPanel>
+
+            </StackPanel>
+        </Border>
+    </Border>
+
+</UserControl>

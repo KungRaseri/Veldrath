@@ -1,0 +1,418 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameZonePanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+
+            <!--  Feature badges (Inn / Merchant)  -->
+            <StackPanel
+                Margin="0,4,0,0"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Border
+                    Padding="10,5"
+                    Background="{DynamicResource GameSuccessMutedBrush}"
+                    BorderBrush="{DynamicResource GameSuccessBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    IsVisible="{Binding HasInn}">
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{DynamicResource GameSuccessBrush}"
+                        Text="Inn" />
+                </Border>
+                <Border
+                    Padding="10,5"
+                    Background="{DynamicResource GameInfoMutedBrush}"
+                    BorderBrush="{DynamicResource GameInfoBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    IsVisible="{Binding HasMerchant}">
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{DynamicResource GameInfoBrush}"
+                        Text="Merchant" />
+                </Border>
+            </StackPanel>
+
+            <!--  Region breadcrumb + min level  -->
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="caption"
+                        Text="Region:" />
+                    <Button
+                        Height="24"
+                        Padding="4,0"
+                        VerticalAlignment="Center"
+                        Classes="ghost"
+                        Command="{Binding ShowRegionViewCommand}"
+                        Content="{Binding RegionName}"
+                        FontSize="13" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="4">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="caption"
+                        Text="Min level" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="accent"
+                        FontSize="15"
+                        FontWeight="Bold"
+                        Text="{Binding ZoneMinLevel}" />
+                </StackPanel>
+            </Grid>
+
+            <Border Classes="separator" />
+
+            <!--  Mini zone list for current region  -->
+            <TextBlock Classes="caption" Text="Zones in this region" />
+            <ItemsControl ItemsSource="{Binding RegionZones}">
+                <ItemsControl.Styles>
+                    <Style Selector="Border.active">
+                        <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+                    </Style>
+                </ItemsControl.Styles>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ZoneNodeViewModel">
+                        <Border
+                            MinWidth="120"
+                            Margin="0,0,8,8"
+                            Padding="10,7"
+                            Background="{DynamicResource GameBackground2Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="1"
+                            Classes.active="{Binding IsCurrentZone}"
+                            CornerRadius="4">
+                            <StackPanel Spacing="3">
+                                <TextBlock
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Name}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock
+                                        Classes="caption"
+                                        FontSize="10"
+                                        Text="{Binding Type}" />
+                                    <TextBlock Classes="caption" FontSize="10">
+                                        <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
+                                    </TextBlock>
+                                </StackPanel>
+                                <Button
+                                    Height="22"
+                                    Padding="6,0"
+                                    Classes="ghost"
+                                    Command="{Binding TravelCommand}"
+                                    Content="Travel →"
+                                    FontSize="10"
+                                    IsVisible="{Binding CanTravel}" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Classes="separator" />
+
+            <!--  Locations in this zone  -->
+            <TextBlock Classes="caption" Text="Locations" />
+            <ItemsControl ItemsSource="{Binding ZoneLocations}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ZoneLocationItemViewModel">
+                        <Border
+                            Margin="0,0,0,6"
+                            Padding="10,7"
+                            Background="{DynamicResource GameBackground2Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Text="{Binding DisplayName}" />
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock
+                                                Classes="caption"
+                                                FontSize="10"
+                                                Text="{Binding LocationType}" />
+                                            <TextBlock
+                                                Classes="caption"
+                                                FontSize="10"
+                                                IsVisible="{Binding MinLevel, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button
+                                        Grid.Column="1"
+                                        Height="22"
+                                        Padding="6,0"
+                                        VerticalAlignment="Center"
+                                        Classes="ghost"
+                                        Command="{Binding NavigateCommand}"
+                                        Content="Go →"
+                                        FontSize="10"
+                                        IsVisible="{Binding CanNavigate}" />
+                                </Grid>
+                                <!--  Outgoing connection buttons — only shown when this is the current location  -->
+                                <ItemsControl IsVisible="{Binding IsCurrent}" ItemsSource="{Binding $parent[Window].DataContext.CurrentLocationConnections, FallbackValue={}}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ZoneConnectionLinkViewModel">
+                                            <Button
+                                                Height="22"
+                                                Margin="0,2,4,0"
+                                                Padding="6,0"
+                                                Classes="ghost"
+                                                Command="{Binding TraverseCommand}"
+                                                Content="{Binding Label}"
+                                                FontSize="10" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!--  Enemy roster — visible only when at a zone location that has enemies  -->
+            <StackPanel IsVisible="{Binding HasSpawnedEnemies}" Spacing="8">
+                <Border Classes="separator" />
+                <TextBlock Classes="caption" Text="Enemies" />
+                <ItemsControl ItemsSource="{Binding SpawnedEnemies}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SpawnedEnemyItemViewModel">
+                            <Border
+                                Margin="0,0,0,5"
+                                Padding="8,6"
+                                Background="{DynamicResource GameBackground2Brush}"
+                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                Text="{Binding Name}" />
+                                            <TextBlock Classes="caption" FontSize="10">
+                                                <Run Text="Lv." /><Run Text="{Binding Level}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <ProgressBar
+                                            Height="4"
+                                            Classes="health"
+                                            Maximum="{Binding MaxHealth}"
+                                            Minimum="0"
+                                            Value="{Binding CurrentHealth}" />
+                                        <TextBlock Classes="caption" FontSize="10">
+                                            <Run Text="{Binding CurrentHealth}" /><Run Text=" / " /><Run Text="{Binding MaxHealth}" /><Run Text=" HP" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <Button
+                                        Grid.Column="1"
+                                        Height="26"
+                                        Padding="8,0"
+                                        VerticalAlignment="Center"
+                                        Classes="accent"
+                                        Command="{Binding $parent[UserControl].DataContext.EngageEnemyCommand}"
+                                        CommandParameter="{Binding Id}"
+                                        Content="Engage"
+                                        FontSize="10"
+                                        IsVisible="{Binding IsAlive}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!--  Combat HUD — overlays the zone panel while IsInCombat is true  -->
+            <Border
+                Padding="14"
+                Background="{DynamicResource GameBackground2Brush}"
+                BorderBrush="{DynamicResource GameDangerBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                IsVisible="{Binding IsInCombat}">
+                <StackPanel Spacing="10">
+                    <!--  Enemy stats  -->
+                    <StackPanel Spacing="4">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                Grid.Column="0"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                Text="{Binding CombatEnemyName}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Classes="caption">
+                                <Run Text="Lv." /><Run Text="{Binding CombatEnemyLevel}" />
+                            </TextBlock>
+                        </Grid>
+                        <ProgressBar
+                            Height="8"
+                            Classes="health"
+                            Maximum="{Binding CombatEnemyMaxHealth}"
+                            Minimum="0"
+                            Value="{Binding CombatEnemyCurrentHealth}" />
+                        <TextBlock Classes="caption">
+                            <Run Text="{Binding CombatEnemyCurrentHealth}" /><Run Text=" / " /><Run Text="{Binding CombatEnemyMaxHealth}" /><Run Text=" HP" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Border Classes="separator" />
+
+                    <!--  Combat action buttons  -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button
+                            Height="32"
+                            Classes="accent"
+                            Command="{Binding AttackEnemyCommand}"
+                            Content="⚔ Attack"
+                            FontSize="13" />
+                        <Button
+                            Height="32"
+                            Classes="ghost"
+                            Command="{Binding DefendActionCommand}"
+                            Content="🛡 Defend"
+                            FontSize="13" />
+                        <Button
+                            Height="32"
+                            Classes="danger ghost"
+                            Command="{Binding FleeFromCombatCommand}"
+                            Content="🏃 Flee"
+                            FontSize="13" />
+                    </StackPanel>
+
+                    <!--  Learned ability buttons  -->
+                    <ItemsControl IsVisible="{Binding LearnedAbilities.Count, Converter={x:Static ObjectConverters.IsNotNull}}" ItemsSource="{Binding LearnedAbilities}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Height="30"
+                                    Margin="0,0,6,6"
+                                    Classes="ghost"
+                                    Command="{Binding $parent[UserControl].DataContext.UseAbilityInCombatCommand}"
+                                    CommandParameter="{Binding}"
+                                    Content="{Binding}"
+                                    FontSize="12" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!--  Enemy known abilities  -->
+                    <StackPanel IsVisible="{Binding EnemyAbilityNames.Count, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="2">
+                        <TextBlock
+                            Classes="caption"
+                            FontSize="11"
+                            Text="Enemy abilities:" />
+                        <ItemsControl ItemsSource="{Binding EnemyAbilityNames}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        Margin="0,0,8,0"
+                                        Classes="muted"
+                                        FontSize="11"
+                                        Text="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Death overlay — shown when the player is dead  -->
+            <Border
+                Padding="14"
+                Background="{DynamicResource GameBackground2Brush}"
+                BorderBrush="{DynamicResource GameDangerBrush}"
+                BorderThickness="2"
+                CornerRadius="6"
+                IsVisible="{Binding IsPlayerDead}">
+                <StackPanel HorizontalAlignment="Center" Spacing="10">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Classes="danger"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Text="You have fallen…" />
+                    <!--  Normal-mode: Respawn  -->
+                    <Button
+                        Height="36"
+                        HorizontalAlignment="Center"
+                        Classes="accent"
+                        Command="{Binding RespawnCommand}"
+                        Content="Respawn"
+                        FontSize="14"
+                        IsVisible="{Binding IsHardcoreDeath, Converter={x:Static BoolConverters.Not}}" />
+                    <!--  Hardcore-mode: return to character select  -->
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding IsHardcoreDeath}"
+                        Spacing="6">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Classes="muted"
+                            FontSize="12"
+                            Text="Your hardcore character is gone." />
+                        <Button
+                            Height="36"
+                            HorizontalAlignment="Center"
+                            Classes="danger"
+                            Command="{Binding LogoutCommand}"
+                            Content="Return to Character Select"
+                            FontSize="14" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>
