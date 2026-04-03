@@ -57,14 +57,20 @@ public class BeginCreationSessionHandler(
         var session = await sessionStore.CreateSessionAsync();
         logger.LogInformation("Started character creation session {SessionId}", session.SessionId);
 
-        var classesTask     = mediator.Send(new GetAvailableClassesQuery(), cancellationToken);
-        var speciesTask     = speciesRepository.GetAllSpeciesAsync();
-        var backgroundsTask = backgroundRepository.GetAllBackgroundsAsync();
-        var locationsTask   = mediator.Send(new GetStartingLocationsQuery(BackgroundId: null, FilterByRecommended: false), cancellationToken);
+        // classesTask and locationsTask each own their own DbContext instance, so they are safe to run concurrently.
+        // speciesRepository and backgroundRepository share the single scoped ContentDbContext for this request,
+        // so they must be awaited sequentially to avoid "a second operation was started" EF Core errors
+        // (most visible after Npgsql drops idle connections and reconnects on the first concurrent query).
+        var classesTask   = mediator.Send(new GetAvailableClassesQuery(), cancellationToken);
+        var locationsTask = mediator.Send(new GetStartingLocationsQuery(BackgroundId: null, FilterByRecommended: false), cancellationToken);
 
+        List<SpeciesModel> species;
+        List<Background> backgrounds;
         try
         {
-            await Task.WhenAll(classesTask, speciesTask, backgroundsTask, locationsTask);
+            species     = await speciesRepository.GetAllSpeciesAsync();
+            backgrounds = await backgroundRepository.GetAllBackgroundsAsync();
+            await Task.WhenAll(classesTask, locationsTask);
         }
         catch (Exception ex)
         {
@@ -84,8 +90,8 @@ public class BeginCreationSessionHandler(
             Success              = true,
             PointBuyConfig       = new PointBuyConfig(),
             AvailableClasses     = classesTask.Result.Classes,
-            AvailableSpecies     = speciesTask.Result,
-            AvailableBackgrounds = backgroundsTask.Result,
+            AvailableSpecies     = species,
+            AvailableBackgrounds = backgrounds,
             AvailableLocations   = locationsTask.Result,
         };
     }
