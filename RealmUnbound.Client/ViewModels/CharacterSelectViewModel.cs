@@ -57,6 +57,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _itemPurchasedSub;
     private IDisposable? _itemSoldSub;
     private IDisposable? _itemDroppedSub;
+    private IDisposable? _chatMessageSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -209,6 +210,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _itemPurchasedSub?.Dispose();
             _itemSoldSub?.Dispose();
             _itemDroppedSub?.Dispose();
+            _chatMessageSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -330,6 +332,8 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnItemSold(payload.ItemRef, payload.ItemDisplayName, payload.NewGoldTotal, payload.NewInventory));
             _itemDroppedSub = _connection.On<ItemDroppedPayload>("ItemDropped", payload =>
                 _gameVm.OnItemDropped(payload.ItemRef, payload.NewInventory));
+            _chatMessageSub = _connection.On<ChatMessagePayload>("ReceiveChatMessage", payload =>
+                _gameVm.OnChatMessageReceived(payload.Channel, payload.Sender, payload.Message, payload.Timestamp));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -395,6 +399,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ShopCatalogPayload(Guid CharacterId, IReadOnlyList<ShopCatalogItemEntry> Items);
     internal record ItemTransactionPayload(Guid CharacterId, string ItemRef, string ItemDisplayName, int GoldDelta, int NewGoldTotal, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ItemDroppedPayload(Guid CharacterId, string ItemRef, IReadOnlyList<InventoryItemEntry> NewInventory);
+    internal record ChatMessagePayload(string Channel, string Sender, string Message, DateTimeOffset Timestamp);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

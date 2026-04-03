@@ -30,6 +30,9 @@ public interface IZoneSessionRepository
     /// <summary>Returns the active session for the given <paramref name="characterId"/>, or <see langword="null"/> if not found.</summary>
     Task<ZoneSession?> GetByCharacterIdAsync(Guid characterId);
 
+    /// <summary>Returns the active session for the character with the given <paramref name="characterName"/>, or <see langword="null"/> if not found.</summary>
+    Task<ZoneSession?> GetByCharacterNameAsync(string characterName);
+
     /// <summary>Persists a new zone session.</summary>
     Task AddAsync(ZoneSession session);
 

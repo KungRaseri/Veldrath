@@ -204,6 +204,8 @@ public class FakeServerConnectionService : IServerConnectionService
         return Task.FromResult(default(TResult));
     }
 
+    public Task<long?> MeasurePingAsync() => Task.FromResult<long?>(null);
+
     public Task DisconnectAsync()
     {
         _state = ConnectionState.Disconnected;
@@ -410,6 +412,18 @@ public class FakeAudioPlayer : IAudioPlayer
 
     /// <inheritdoc />
     public void SetMuted(bool muted) => Muted = muted;
+
+    /// <inheritdoc />
+    public bool IsMusicMuted { get; private set; }
+
+    /// <inheritdoc />
+    public bool IsSfxMuted { get; private set; }
+
+    /// <inheritdoc />
+    public void ToggleMusicMute() => IsMusicMuted = !IsMusicMuted;
+
+    /// <inheritdoc />
+    public void ToggleSfxMute() => IsSfxMuted = !IsSfxMuted;
 
     /// <inheritdoc />
     public void Dispose() => GC.SuppressFinalize(this);

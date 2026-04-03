@@ -2,7 +2,22 @@ using Microsoft.Extensions.Logging;
 
 namespace RealmUnbound.Client.Services;
 
-public enum ConnectionState { Disconnected, Connecting, Connected, Failed }
+/// <summary>Connection health state for the game server hub.</summary>
+public enum ConnectionState
+{
+    /// <summary>Not connected to the server.</summary>
+    Disconnected,
+    /// <summary>Establishing the initial connection.</summary>
+    Connecting,
+    /// <summary>Connected with acceptable latency.</summary>
+    Connected,
+    /// <summary>Connected but with elevated latency (ping ≥ 200 ms).</summary>
+    Degraded,
+    /// <summary>Lost the connection and SignalR is attempting to reconnect automatically.</summary>
+    Reconnecting,
+    /// <summary>Initial connection attempt failed with a hard error.</summary>
+    Failed,
+}
 
 public interface IServerConnectionService
 {
@@ -18,6 +33,8 @@ public interface IServerConnectionService
     IDisposable On<T>(string method, Action<T> handler);
     /// <summary>Registers a handler for a server-to-client message that carries no payload.</summary>
     IDisposable On(string method, Action handler);
+    /// <summary>Measures round-trip latency to the server in milliseconds, or <see langword="null"/> when not connected.</summary>
+    Task<long?> MeasurePingAsync();
 }
 
 public class ServerConnectionService : IServerConnectionService, IAsyncDisposable
@@ -28,6 +45,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
     private readonly IAuthService _auth;
     private IHubConnection? _connection;
     private ConnectionState _state = ConnectionState.Disconnected;
+    private System.Timers.Timer? _pingTimer;
 
     public ConnectionState State
     {
@@ -85,15 +103,25 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
         _connection.Closed += async (error) =>
         {
+            StopPingTimer();
             State = ConnectionState.Disconnected;
             _logger.LogWarning(error, "Connection closed");
             ConnectionLost?.Invoke();
             await Task.CompletedTask;
         };
 
+        _connection.Reconnecting += (error) =>
+        {
+            StopPingTimer();
+            State = ConnectionState.Reconnecting;
+            _logger.LogWarning(error, "Connection reconnecting");
+            return Task.CompletedTask;
+        };
+
         _connection.Reconnected += (connectionId) =>
         {
             State = ConnectionState.Connected;
+            StartPingTimer();
             _logger.LogInformation("Reconnected: {ConnectionId}", connectionId);
             return Task.CompletedTask;
         };
@@ -102,6 +130,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         {
             await _connection.StartAsync(cancellationToken);
             State = ConnectionState.Connected;
+            StartPingTimer();
             _logger.LogInformation("Connected to server");
         }
         catch (Exception ex)
@@ -116,6 +145,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
     {
         if (_connection is not null)
         {
+            StopPingTimer();
             await _connection.StopAsync();
             State = ConnectionState.Disconnected;
         }
@@ -160,8 +190,48 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         return _connection.On(method, handler);
     }
 
+    /// <inheritdoc/>
+    public async Task<long?> MeasurePingAsync()
+    {
+        if (_connection is null || (_state != ConnectionState.Connected && _state != ConnectionState.Degraded))
+            return null;
+        try
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            await _connection.InvokeAsync<long>("Ping");
+            sw.Stop();
+            return sw.ElapsedMilliseconds;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Ping failed; skipping cycle");
+            return null;
+        }
+    }
+
+    private void StartPingTimer()
+    {
+        StopPingTimer();
+        _pingTimer = new System.Timers.Timer(5_000) { AutoReset = true };
+        _pingTimer.Elapsed += async (_, _) =>
+        {
+            var rtt = await MeasurePingAsync();
+            if (rtt is null) return;
+            State = rtt < 200 ? ConnectionState.Connected : ConnectionState.Degraded;
+        };
+        _pingTimer.Start();
+    }
+
+    private void StopPingTimer()
+    {
+        _pingTimer?.Stop();
+        _pingTimer?.Dispose();
+        _pingTimer = null;
+    }
+
     public async ValueTask DisposeAsync()
     {
+        StopPingTimer();
         if (_connection is not null)
             await _connection.DisposeAsync();
     }

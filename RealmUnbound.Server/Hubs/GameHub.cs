@@ -1624,6 +1624,104 @@ public class GameHub : Hub
         _logger.LogInformation("Character {Name} left zone {ZoneId}", characterName, zoneId);
     }
 
+    // ── Utility ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the server's current UTC timestamp in Unix milliseconds.
+    /// Used by the client to measure round-trip latency (ping).
+    /// </summary>
+    public Task<long> Ping() =>
+        Task.FromResult(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+    // ── Chat ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Broadcasts a chat message to all players currently in the caller's zone.
+    /// </summary>
+    /// <param name="request">The message payload.</param>
+    public async Task SendZoneMessage(SendZoneChatMessageHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var characterName))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendZoneMessage");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Message))
+            return;
+
+        var dto = new ChatMessageHubDto(
+            Channel: "Zone",
+            Sender: characterName,
+            Message: request.Message.Trim(),
+            Timestamp: DateTimeOffset.UtcNow);
+
+        if (TryGetCurrentZoneGroup(out var zoneGroup))
+            await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage", dto);
+        else
+            await Clients.Caller.SendAsync("ReceiveChatMessage", dto);
+    }
+
+    /// <summary>
+    /// Broadcasts a chat message to all connected players across all zones.
+    /// </summary>
+    /// <param name="request">The message payload.</param>
+    public async Task SendGlobalMessage(SendGlobalChatMessageHubRequest request)
+    {
+        if (!TryGetCharacterId(out _) || !TryGetCharacterName(out var characterName))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendGlobalMessage");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Message))
+            return;
+
+        var dto = new ChatMessageHubDto(
+            Channel: "Global",
+            Sender: characterName,
+            Message: request.Message.Trim(),
+            Timestamp: DateTimeOffset.UtcNow);
+
+        await Clients.All.SendAsync("ReceiveChatMessage", dto);
+    }
+
+    /// <summary>
+    /// Sends a private whisper message from the caller to a specific online character.
+    /// Delivers the message to the target and echoes it back to the sender.
+    /// </summary>
+    /// <param name="request">Target character name and message text.</param>
+    public async Task SendWhisper(SendWhisperHubRequest request)
+    {
+        if (!TryGetCharacterId(out _) || !TryGetCharacterName(out var senderName))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendWhisper");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Message) || string.IsNullOrWhiteSpace(request.TargetCharacterName))
+            return;
+
+        var targetSession = await _zoneSessionRepo.GetByCharacterNameAsync(request.TargetCharacterName);
+        if (targetSession is null)
+        {
+            await Clients.Caller.SendAsync("Error", $"Player '{request.TargetCharacterName}' is not online.");
+            return;
+        }
+
+        var dto = new ChatMessageHubDto(
+            Channel: "Whisper",
+            Sender: senderName,
+            Message: request.Message.Trim(),
+            Timestamp: DateTimeOffset.UtcNow);
+
+        await Clients.Client(targetSession.ConnectionId).SendAsync("ReceiveChatMessage", dto);
+
+        // Echo to sender so they see their own whisper in the chat log
+        var echoDto = dto with { Sender = $"To {request.TargetCharacterName}" };
+        await Clients.Caller.SendAsync("ReceiveChatMessage", echoDto);
+    }
+
     private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>
         zoneType == ZoneType.Wilderness ? $"zone:{zoneId}_{difficultyMode}" : $"zone:{zoneId}";
 
@@ -1718,6 +1816,26 @@ public record UnlockZoneLocationHubRequest(string LocationSlug, string UnlockSou
 /// <param name="FromLocationSlug">Slug of the ZoneLocation the character is departing from.</param>
 /// <param name="ConnectionType">Type of the connection to use (e.g. <c>"path"</c>, <c>"portal"</c>).</param>
 public record TraverseConnectionHubRequest(string FromLocationSlug, string ConnectionType);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.SendZoneMessage"/>.</summary>
+/// <param name="Message">The chat message text. Must not be empty or whitespace.</param>
+public record SendZoneChatMessageHubRequest(string Message);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.SendGlobalMessage"/>.</summary>
+/// <param name="Message">The chat message text. Must not be empty or whitespace.</param>
+public record SendGlobalChatMessageHubRequest(string Message);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.SendWhisper"/>.</summary>
+/// <param name="TargetCharacterName">The display name of the target character.</param>
+/// <param name="Message">The whisper message text. Must not be empty or whitespace.</param>
+public record SendWhisperHubRequest(string TargetCharacterName, string Message);
+
+/// <summary>Server-to-client chat message payload for the <c>ReceiveChatMessage</c> event.</summary>
+/// <param name="Channel">Chat channel: <c>Zone</c>, <c>Global</c>, <c>Whisper</c>, or <c>System</c>.</param>
+/// <param name="Sender">Display name of the character who sent the message.</param>
+/// <param name="Message">The message text.</param>
+/// <param name="Timestamp">UTC time the message was sent.</param>
+public record ChatMessageHubDto(string Channel, string Sender, string Message, DateTimeOffset Timestamp);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.EngageEnemy"/>.</summary>
 /// <param name="LocationSlug">Slug of the current zone location (used as fallback if not stored in context).</param>

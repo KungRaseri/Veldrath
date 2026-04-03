@@ -19,6 +19,7 @@ public class FakeHubConnection : IHubConnection
     // Stored handlers
     private readonly Dictionary<string, object>         _onHandlers = new();
     private          Func<Exception?, Task>?            _closedHandler;
+    private          Func<Exception?, Task>?            _reconnectingHandler;
     private          Func<string?, Task>?               _reconnectedHandler;
 
     // Events
@@ -26,6 +27,12 @@ public class FakeHubConnection : IHubConnection
     {
         add    => _closedHandler += value;
         remove => _closedHandler -= value;
+    }
+
+    public event Func<Exception?, Task>? Reconnecting
+    {
+        add    => _reconnectingHandler += value;
+        remove => _reconnectingHandler -= value;
     }
 
     public event Func<string?, Task>? Reconnected
@@ -76,6 +83,10 @@ public class FakeHubConnection : IHubConnection
     /// <summary>Simulates the server closing the connection.</summary>
     public Task SimulateClosedAsync(Exception? error = null)
         => _closedHandler?.Invoke(error) ?? Task.CompletedTask;
+
+    /// <summary>Simulates an automatic reconnect attempt in progress.</summary>
+    public Task SimulateReconnectingAsync(Exception? error = null)
+        => _reconnectingHandler?.Invoke(error) ?? Task.CompletedTask;
 
     /// <summary>Simulates the client successfully reconnecting.</summary>
     public Task SimulateReconnectedAsync(string? connectionId = "new-conn-id")

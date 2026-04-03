@@ -231,7 +231,7 @@ public class CharacterSelectViewModelTests : TestBase
                     new CharacterSelectViewModel.OccupantInfo(Guid.NewGuid(), "Bob", DateTimeOffset.UtcNow)
                 ]));
 
-        gameVm.OnlinePlayers.Should().BeEquivalentTo(["Alice", "Bob"]);
+        gameVm.OnlinePlayers.Select(p => p.Name).Should().BeEquivalentTo(["Alice", "Bob"]);
     }
 
     [Fact]
@@ -248,7 +248,7 @@ public class CharacterSelectViewModelTests : TestBase
         conn.FireEvent("PlayerEntered",
             new CharacterSelectViewModel.PlayerEventPayload("Gandalf"));
 
-        gameVm.OnlinePlayers.Should().Contain("Gandalf");
+        gameVm.OnlinePlayers.Should().Contain(p => p.Name == "Gandalf");
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public class CharacterSelectViewModelTests : TestBase
         conn.FireEvent("PlayerEntered", new CharacterSelectViewModel.PlayerEventPayload("Legolas"));
         conn.FireEvent("PlayerLeft",    new CharacterSelectViewModel.PlayerEventPayload("Legolas"));
 
-        gameVm.OnlinePlayers.Should().NotContain("Legolas");
+        gameVm.OnlinePlayers.Should().NotContain(p => p.Name == "Legolas");
     }
 
     [Fact]

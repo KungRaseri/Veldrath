@@ -11,6 +11,7 @@ namespace RealmUnbound.Client.Services;
 public interface IHubConnection : IAsyncDisposable
 {
     event Func<Exception?, Task>? Closed;
+    event Func<Exception?, Task>? Reconnecting;
     event Func<string?, Task>? Reconnected;
     Task StartAsync(CancellationToken cancellationToken = default);
     Task StopAsync();
@@ -37,6 +38,12 @@ internal sealed class HubConnectionWrapper : IHubConnection
     {
         add    => _inner.Closed += value;
         remove => _inner.Closed -= value;
+    }
+
+    public event Func<Exception?, Task>? Reconnecting
+    {
+        add    => _inner.Reconnecting += value;
+        remove => _inner.Reconnecting -= value;
     }
 
     public event Func<string?, Task>? Reconnected
