@@ -233,12 +233,15 @@
                                                 <Run Text="Lv." /><Run Text="{Binding Level}" />
                                             </TextBlock>
                                         </StackPanel>
-                                        <ProgressBar
-                                            Height="4"
-                                            Classes="health"
-                                            Maximum="{Binding MaxHealth}"
-                                            Minimum="0"
-                                            Value="{Binding CurrentHealth}" />
+                                        <Panel Height="4">
+                                            <Border Height="4" CornerRadius="3" Background="{DynamicResource GameSuccessMutedBrush}" />
+                                            <ProgressBar
+                                                Height="4"
+                                                Classes="health"
+                                                Maximum="{Binding MaxHealth}"
+                                                Minimum="0"
+                                                Value="{Binding CurrentHealth}" />
+                                        </Panel>
                                         <TextBlock Classes="caption" FontSize="10">
                                             <Run Text="{Binding CurrentHealth}" /><Run Text=" / " /><Run Text="{Binding MaxHealth}" /><Run Text=" HP" />
                                         </TextBlock>
@@ -285,12 +288,15 @@
                                 <Run Text="Lv." /><Run Text="{Binding CombatEnemyLevel}" />
                             </TextBlock>
                         </Grid>
-                        <ProgressBar
-                            Height="8"
-                            Classes="health"
-                            Maximum="{Binding CombatEnemyMaxHealth}"
-                            Minimum="0"
-                            Value="{Binding CombatEnemyCurrentHealth}" />
+                        <Panel Height="8">
+                            <Border Height="8" CornerRadius="3" Background="{DynamicResource GameSuccessMutedBrush}" />
+                            <ProgressBar
+                                Height="8"
+                                Classes="health"
+                                Maximum="{Binding CombatEnemyMaxHealth}"
+                                Minimum="0"
+                                Value="{Binding CombatEnemyCurrentHealth}" />
+                        </Panel>
                         <TextBlock Classes="caption">
                             <Run Text="{Binding CombatEnemyCurrentHealth}" /><Run Text=" / " /><Run Text="{Binding CombatEnemyMaxHealth}" /><Run Text=" HP" />
                         </TextBlock>

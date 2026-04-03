@@ -1,19 +1,18 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-    ================================================================
-      REALM UNBOUND — GAME THEME
-      Entry point for all client-side visual customization.
-
-      This file wires together the color palette and all control
-      style overrides that give the game its visual identity.
-
-      Files:
+        ================================================================
+        REALM UNBOUND — GAME THEME
+        Entry point for all client-side visual customization.
+        
+        This file wires together the color palette and all control
+        style overrides that give the game its visual identity.
+        
+        Files:
         Assets/Themes/GameColors.axaml  ← Colors & brushes (edit first)
         Assets/Themes/GameTheme.axaml   ← This file (control styles)
-
-      Control sections in this file:
+        
+        Control sections in this file:
         1.  Global / Window
         2.  Typography (TextBlock classes)
         3.  Button  — default, .accent, .danger, .ghost, .icon
@@ -28,7 +27,7 @@
         12. TabControl / TabItem
         13. Separator
         14. Panel surface helpers
-    ================================================================
+        ================================================================
     -->
 
     <Styles.Resources>
@@ -37,11 +36,11 @@
                 <ResourceInclude Source="avares://RealmUnbound.Client/Assets/Themes/GameColors.axaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- 
-                 TYPOGRAPHY TOKENS
-             -->
+            <!--
+                TYPOGRAPHY TOKENS
+            -->
 
-            <!-- Body font — Inter loaded via Avalonia.Fonts.Inter -->
+            <!--  Body font — Inter loaded via Avalonia.Fonts.Inter  -->
             <FontFamily x:Key="GameFontBody">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
             <FontFamily x:Key="GameFontTitle">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
 
@@ -55,9 +54,11 @@
     </Styles.Resources>
 
 
-    <!-- ============================================================
-         1. GLOBAL / WINDOW
-    ============================================================ -->
+    <!--
+        ============================================================
+        1. GLOBAL / WINDOW
+        ============================================================
+    -->
 
     <Style Selector="Window">
         <Setter Property="Background" Value="{DynamicResource GameBackground0Brush}" />
@@ -76,7 +77,7 @@
            <TextBlock Classes="subtitle muted" Text="Choose your hero" />
            <TextBlock Classes="accent" Text="2,400 Gold" />
            <TextBlock Classes="danger" Text="You are dead." />
-    ============================================================ -->
+    ============================================================-->
 
     <Style Selector="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
@@ -84,77 +85,79 @@
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeBody}" />
     </Style>
 
-    <!-- .title — large section headings -->
+    <!--  .title — large section headings  -->
     <Style Selector="TextBlock.title">
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeTitle}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
     </Style>
 
-    <!-- .title-large — splash screens, main menu -->
+    <!--  .title-large — splash screens, main menu  -->
     <Style Selector="TextBlock.title-large">
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeTitleLarge}" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
     </Style>
 
-    <!-- .subtitle — sub-headings, panel labels -->
+    <!--  .subtitle — sub-headings, panel labels  -->
     <Style Selector="TextBlock.subtitle">
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeSubtitle}" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Foreground" Value="{DynamicResource GameTextSecondaryBrush}" />
     </Style>
 
-    <!-- .muted — secondary/supporting copy -->
+    <!--  .muted — secondary/supporting copy  -->
     <Style Selector="TextBlock.muted">
         <Setter Property="Foreground" Value="{DynamicResource GameTextTertiaryBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeSmall}" />
     </Style>
 
-    <!-- .caption — tiny labels (stat names, timestamps) -->
+    <!--  .caption — tiny labels (stat names, timestamps)  -->
     <Style Selector="TextBlock.caption">
         <Setter Property="Foreground" Value="{DynamicResource GameTextTertiaryBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeXSmall}" />
     </Style>
 
-    <!-- .accent — gold highlighted text (currency, important values) -->
+    <!--  .accent — gold highlighted text (currency, important values)  -->
     <Style Selector="TextBlock.accent">
         <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
-    <!-- .success — positive values, buffs -->
+    <!--  .success — positive values, buffs  -->
     <Style Selector="TextBlock.success">
         <Setter Property="Foreground" Value="{DynamicResource GameSuccessBrush}" />
     </Style>
 
-    <!-- .danger — errors, low health, hostile -->
+    <!--  .danger — errors, low health, hostile  -->
     <Style Selector="TextBlock.danger">
         <Setter Property="Foreground" Value="{DynamicResource GameDangerBrush}" />
     </Style>
 
-    <!-- .warning — caution states -->
+    <!--  .warning — caution states  -->
     <Style Selector="TextBlock.warning">
         <Setter Property="Foreground" Value="{DynamicResource GameWarningBrush}" />
     </Style>
 
-    <!-- .info — tooltips, lore text -->
+    <!--  .info — tooltips, lore text  -->
     <Style Selector="TextBlock.info">
         <Setter Property="Foreground" Value="{DynamicResource GameInfoBrush}" />
     </Style>
 
 
-    <!-- ============================================================
-         3. BUTTON
-         Variants (add as Classes):
-           default    — standard dark surface button
-           .accent    — gold filled, for primary actions (Join Game, Confirm)
-           .danger    — red tinted, for destructive actions (Leave Party, Delete)
-           .ghost     — transparent background, subtle border
-           .icon      — square, no padding, for icon-only buttons
-    ============================================================ -->
+    <!--
+        ============================================================
+        3. BUTTON
+        Variants (add as Classes):
+        default    — standard dark surface button
+        .accent    — gold filled, for primary actions (Join Game, Confirm)
+        .danger    — red tinted, for destructive actions (Leave Party, Delete)
+        .ghost     — transparent background, subtle border
+        .icon      — square, no padding, for icon-only buttons
+        ============================================================
+    -->
 
-    <!-- Default button -->
+    <!--  Default button  -->
     <Style Selector="Button">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
@@ -181,7 +184,7 @@
         <Setter Property="Foreground" Value="{DynamicResource GameTextDisabledBrush}" />
     </Style>
 
-    <!-- .accent — primary call-to-action (gold fill, dark text) -->
+    <!--  .accent — primary call-to-action (gold fill, dark text)  -->
     <Style Selector="Button.accent">
         <Setter Property="Background" Value="{DynamicResource GameAccentBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource GameBackground0Brush}" />
@@ -197,7 +200,7 @@
         <Setter Property="Background" Value="{DynamicResource GameAccentDarkBrush}" />
     </Style>
 
-    <!-- .danger — destructive actions (muted red, red border) -->
+    <!--  .danger — destructive actions (muted red, red border)  -->
     <Style Selector="Button.danger">
         <Setter Property="Background" Value="{DynamicResource GameDangerMutedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource GameDangerBrush}" />
@@ -209,7 +212,7 @@
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
     </Style>
 
-    <!-- .ghost — transparent, minimal (toolbar actions, secondary nav) -->
+    <!--  .ghost — transparent, minimal (toolbar actions, secondary nav)  -->
     <Style Selector="Button.ghost">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
@@ -220,7 +223,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderStrongBrush}" />
     </Style>
 
-    <!-- .icon — square icon-only button (no extra padding) -->
+    <!--  .icon — square icon-only button (no extra padding)  -->
     <Style Selector="Button.icon">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -233,9 +236,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         4. TEXT BOX (input fields)
-    ============================================================ -->
+    <!--
+        ============================================================
+        4. TEXT BOX (input fields)
+        ============================================================
+    -->
 
     <Style Selector="TextBox">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
@@ -260,9 +265,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         5. LISTBOX / LISTBOXITEM
-    ============================================================ -->
+    <!--
+        ============================================================
+        5. LISTBOX / LISTBOXITEM
+        ============================================================
+    -->
 
     <Style Selector="ListBox">
         <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
@@ -291,9 +298,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         6. COMBO BOX
-    ============================================================ -->
+    <!--
+        ============================================================
+        6. COMBO BOX
+        ============================================================
+    -->
 
     <Style Selector="ComboBox">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
@@ -338,9 +347,9 @@
            <Border Classes="card-elevated">...</Border>
            <Border Classes="separator" />
            <Border Classes="panel-sidebar">...</Border>
-    ============================================================ -->
+    ============================================================-->
 
-    <!-- Standard card — dialogs, inventory slots, stat panels -->
+    <!--  Standard card — dialogs, inventory slots, stat panels  -->
     <Style Selector="Border.card">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
@@ -349,7 +358,7 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
-    <!-- Elevated card — higher-level surfaces, modals -->
+    <!--  Elevated card — higher-level surfaces, modals  -->
     <Style Selector="Border.card-elevated">
         <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderStrongBrush}" />
@@ -358,7 +367,7 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
-    <!-- Accent-bordered card — selected/highlighted items -->
+    <!--  Accent-bordered card — selected/highlighted items  -->
     <Style Selector="Border.card-accent">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
@@ -367,28 +376,28 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
-    <!-- Horizontal divider line -->
+    <!--  Horizontal divider line  -->
     <Style Selector="Border.separator">
         <Setter Property="Background" Value="{DynamicResource GameBorderBrush}" />
         <Setter Property="Height" Value="1" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
 
-    <!-- Vertical divider -->
+    <!--  Vertical divider  -->
     <Style Selector="Border.separator-vertical">
         <Setter Property="Background" Value="{DynamicResource GameBorderBrush}" />
         <Setter Property="Width" Value="1" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
 
-    <!-- Sidebar panel -->
+    <!--  Sidebar panel  -->
     <Style Selector="Border.panel-sidebar">
         <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderSubtleBrush}" />
         <Setter Property="BorderThickness" Value="0,0,1,0" />
     </Style>
 
-    <!-- Top navigation bar -->
+    <!--  Top navigation bar  -->
     <Style Selector="Border.panel-topbar">
         <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderSubtleBrush}" />
@@ -396,7 +405,7 @@
         <Setter Property="Padding" Value="16,8" />
     </Style>
 
-    <!-- Bottom status bar -->
+    <!--  Bottom status bar  -->
     <Style Selector="Border.panel-statusbar">
         <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderSubtleBrush}" />
@@ -405,9 +414,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         8. SCROLL BAR
-    ============================================================ -->
+    <!--
+        ============================================================
+        8. SCROLL BAR
+        ============================================================
+    -->
 
     <Style Selector="ScrollBar">
         <Setter Property="Background" Value="Transparent" />
@@ -422,43 +433,53 @@
     </Style>
 
 
-    <!-- ============================================================
-         9. PROGRESS BAR
-         Variants (add as Classes):
-           .health  — green health bar
-           .mana    — blue mana bar
-           .xp      — gold XP bar
-           .danger  — red for timer / urgency bar
-    ============================================================ -->
+    <!--
+        ============================================================
+        9. PROGRESS BAR
+        Variants (add as Classes):
+        .health  — green health bar
+        .mana    — blue mana bar
+        .xp      — gold XP bar
+        .danger  — red for timer / urgency bar
+        ============================================================
+    -->
 
     <Style Selector="ProgressBar">
         <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
         <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
         <Setter Property="CornerRadius" Value="3" />
-        <Setter Property="Height" Value="6" />
         <Setter Property="MinHeight" Value="4" />
     </Style>
 
     <Style Selector="ProgressBar.health">
         <Setter Property="Foreground" Value="{DynamicResource GameSuccessBrush}" />
+        <Setter Property="Background" Value="{DynamicResource GameSuccessMutedBrush}" />
+        <Setter Property="MinHeight" Value="12" />
     </Style>
 
     <Style Selector="ProgressBar.mana">
         <Setter Property="Foreground" Value="{DynamicResource GameInfoBrush}" />
+        <Setter Property="Background" Value="{DynamicResource GameInfoMutedBrush}" />
+        <Setter Property="MinHeight" Value="12" />
     </Style>
 
     <Style Selector="ProgressBar.xp">
         <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
+        <Setter Property="Background" Value="{DynamicResource GameWarningMutedBrush}" />
+        <Setter Property="MinHeight" Value="12" />
     </Style>
 
     <Style Selector="ProgressBar.danger">
         <Setter Property="Foreground" Value="{DynamicResource GameDangerBrush}" />
+        <Setter Property="Background" Value="{DynamicResource GameDangerMutedBrush}" />
     </Style>
 
 
-    <!-- ============================================================
-         10. CHECK BOX
-    ============================================================ -->
+    <!--
+        ============================================================
+        10. CHECK BOX
+        ============================================================
+    -->
 
     <Style Selector="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
@@ -467,9 +488,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         11. SLIDER
-    ============================================================ -->
+    <!--
+        ============================================================
+        11. SLIDER
+        ============================================================
+    -->
 
     <Style Selector="Slider /template/ Thumb">
         <Setter Property="Background" Value="{DynamicResource GameAccentBrush}" />
@@ -477,9 +500,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         12. TAB CONTROL / TAB ITEM
-    ============================================================ -->
+    <!--
+        ============================================================
+        12. TAB CONTROL / TAB ITEM
+        ============================================================
+    -->
 
     <Style Selector="TabControl">
         <Setter Property="Background" Value="{DynamicResource GameBackground1Brush}" />
@@ -502,9 +527,11 @@
     </Style>
 
 
-    <!-- ============================================================
-         13. SEPARATOR
-    ============================================================ -->
+    <!--
+        ============================================================
+        13. SEPARATOR
+        ============================================================
+    -->
 
     <Style Selector="Separator">
         <Setter Property="Background" Value="{DynamicResource GameBorderBrush}" />
@@ -519,7 +546,7 @@
          Usage:
            <Grid Classes="surface-0">...</Grid>
            <StackPanel Classes="surface-2">...</StackPanel>
-    ============================================================ -->
+    ============================================================-->
 
     <Style Selector="Panel.surface-0">
         <Setter Property="Background" Value="{DynamicResource GameBackground0Brush}" />
