@@ -25,5 +25,17 @@ internal sealed class NullAudioPlayer : IAudioPlayer
     public void SetMuted(bool muted) { }
 
     /// <inheritdoc />
+    public bool IsMusicMuted => false;
+
+    /// <inheritdoc />
+    public bool IsSfxMuted => false;
+
+    /// <inheritdoc />
+    public void ToggleMusicMute() { }
+
+    /// <inheritdoc />
+    public void ToggleSfxMute() { }
+
+    /// <inheritdoc />
     public void Dispose() { }
 }

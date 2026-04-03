@@ -76,6 +76,22 @@ public sealed class LibVlcAudioPlayer : IAudioPlayer
     }
 
     /// <inheritdoc />
+    public bool IsMusicMuted => _musicPlayer.Volume == 0 && _muted;
+
+    /// <inheritdoc />
+    public bool IsSfxMuted { get; private set; }
+
+    /// <inheritdoc />
+    public void ToggleMusicMute()
+    {
+        _muted = !_muted;
+        _musicPlayer.Volume = _muted ? 0 : _musicVolume;
+    }
+
+    /// <inheritdoc />
+    public void ToggleSfxMute() => IsSfxMuted = !IsSfxMuted;
+
+    /// <inheritdoc />
     public void Dispose()
     {
         _musicPlayer.Stop();

@@ -317,6 +317,17 @@ public class GameViewModel : ViewModelBase
     private bool _isLeftPanelOpen = true;
     private bool _isRightPanelOpen = true;
 
+    // Connection state
+    private ConnectionState _connectionState = ConnectionState.Disconnected;
+
+    // Settings flyout state
+    private bool _isSettingsOpen;
+
+    // Chat state
+    private string _chatInput = string.Empty;
+    private string _activeChatChannel = "Zone";
+    private string _whisperTarget = string.Empty;
+
     /// <summary>Whether the collapsible left character-sheet panel is expanded.</summary>
     public bool IsLeftPanelOpen
     {
@@ -344,6 +355,117 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Icon text for the right panel toggle button: <c>▶</c> when open, <c>◀</c> when collapsed.</summary>
     public string RightPanelToggleIcon => IsRightPanelOpen ? "▶" : "◀";
+
+    // Connection status display
+
+    /// <summary>Current health state of the server hub connection.</summary>
+    public ConnectionState ConnectionStateValue
+    {
+        get => _connectionState;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _connectionState, value);
+            this.RaisePropertyChanged(nameof(ConnectionStatusColor));
+            this.RaisePropertyChanged(nameof(ConnectionStatusTooltip));
+        }
+    }
+
+    /// <summary>Hex colour string representing the current connection state for the indicator dot.</summary>
+    public string ConnectionStatusColor => _connectionState switch
+    {
+        ConnectionState.Connected    => "#22c55e",
+        ConnectionState.Degraded     => "#eab308",
+        ConnectionState.Reconnecting => "#f97316",
+        ConnectionState.Disconnected => "#ef4444",
+        ConnectionState.Failed       => "#ef4444",
+        _                            => "#6b7280",
+    };
+
+    /// <summary>Tooltip text for the connection status indicator dot.</summary>
+    public string ConnectionStatusTooltip => _connectionState switch
+    {
+        ConnectionState.Connected    => "Connected",
+        ConnectionState.Degraded     => "Degraded (high latency)",
+        ConnectionState.Reconnecting => "Reconnecting\u2026",
+        ConnectionState.Disconnected => "Disconnected",
+        ConnectionState.Failed       => "Connection failed",
+        _                            => "Unknown",
+    };
+
+    // Settings flyout
+
+    /// <summary>Whether the ⚙ settings flyout is currently open.</summary>
+    public bool IsSettingsOpen
+    {
+        get => _isSettingsOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isSettingsOpen, value);
+    }
+
+    /// <summary>Whether background music is currently muted.</summary>
+    public bool IsMusicMuted => _audioPlayer?.IsMusicMuted ?? false;
+
+    /// <summary>Label for the music mute toggle button.</summary>
+    public string MusicMuteLabel => IsMusicMuted ? "🔇 Unmute Music" : "🎵 Mute Music";
+
+    /// <summary>Whether sound effects are currently muted.</summary>
+    public bool IsSfxMuted => _audioPlayer?.IsSfxMuted ?? false;
+
+    /// <summary>Label for the SFX mute toggle button.</summary>
+    public string SfxMuteLabel => IsSfxMuted ? "🔇 Unmute SFX" : "🔊 Mute SFX";
+
+    // Chat
+
+    /// <summary>Scrolling chat log (last 200 messages across all channels).</summary>
+    public ObservableCollection<ChatMessageViewModel> ChatMessages { get; } = [];
+
+    /// <summary>Text the player has typed into the chat input box.</summary>
+    public string ChatInput
+    {
+        get => _chatInput;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _chatInput, value);
+            // /w prefix interception: auto-switch to Whisper channel
+            if (value.StartsWith("/w ", StringComparison.OrdinalIgnoreCase))
+            {
+                var rest = value[3..];
+                var spaceIdx = rest.IndexOf(' ');
+                if (spaceIdx > 0)
+                {
+                    WhisperTarget = rest[..spaceIdx];
+                    ActiveChatChannel = "Whisper";
+                    // Replace input with just the message body (suppress re-entrancy via field)
+                    _chatInput = rest[(spaceIdx + 1)..];
+                    this.RaisePropertyChanged(nameof(ChatInput));
+                }
+            }
+        }
+    }
+
+    /// <summary>Currently selected chat channel: <c>Zone</c>, <c>Global</c>, <c>Whisper</c>, or <c>System</c>.</summary>
+    public string ActiveChatChannel
+    {
+        get => _activeChatChannel;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _activeChatChannel, value);
+            this.RaisePropertyChanged(nameof(IsWhisperChannelActive));
+            this.RaisePropertyChanged(nameof(IsChatInputVisible));
+        }
+    }
+
+    /// <summary>The whisper target character name, set when the Whisper channel is active.</summary>
+    public string WhisperTarget
+    {
+        get => _whisperTarget;
+        set => this.RaiseAndSetIfChanged(ref _whisperTarget, value);
+    }
+
+    /// <summary>Whether the Whisper target input is currently visible (i.e. Whisper channel is active).</summary>
+    public bool IsWhisperChannelActive => ActiveChatChannel == "Whisper";
+
+    /// <summary>Whether the chat input row is visible (hidden when System channel is active, which is read-only).</summary>
+    public bool IsChatInputVisible => ActiveChatChannel != "System";
 
     // Overlay panel state
     private bool _isInventoryOpen;
@@ -495,7 +617,7 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Players currently online in the same zone.</summary>
-    public ObservableCollection<string> OnlinePlayers { get; } = [];
+    public ObservableCollection<OnlinePlayerViewModel> OnlinePlayers { get; } = [];
 
     /// <summary>Scrolling action log (last 100 entries).</summary>
     public ObservableCollection<string> ActionLog { get; } = [];
@@ -558,6 +680,21 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Logs out the character, leaves the zone, and returns to the main menu.</summary>
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
+
+    /// <summary>Toggles the ⚙ settings flyout open or closed.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleSettingsCommand { get; }
+
+    /// <summary>Toggles background music mute.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleMusicMuteCommand { get; }
+
+    /// <summary>Toggles sound effects mute.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleSfxMuteCommand { get; }
+
+    /// <summary>Switch the active chat channel. Parameter is the channel name string.</summary>
+    public ReactiveCommand<string, Unit> SetChatChannelCommand { get; }
+
+    /// <summary>Send the current <see cref="ChatInput"/> on the <see cref="ActiveChatChannel"/>.</summary>
+    public ReactiveCommand<Unit, Unit> SendChatCommand { get; }
 
     /// <summary>Dev helper: gains 100 XP. Used during development for testing progression.</summary>
     public ReactiveCommand<Unit, Unit> DevGainXpCommand { get; }
@@ -660,6 +797,12 @@ public class GameViewModel : ViewModelBase
     /// <summary>Use a named ability in combat. Parameter is the ability ID.</summary>
     public ReactiveCommand<string, Unit> UseAbilityInCombatCommand { get; }
 
+    /// <summary>
+    /// Fires the hotbar ability slot's assigned ability, routing to the correct hub method
+    /// depending on whether the character is currently in combat.
+    /// </summary>
+    public ReactiveCommand<string, Unit> UseHotbarAbilityCommand { get; }
+
     /// <summary>Respawn the character after defeat in normal mode.</summary>
     public ReactiveCommand<Unit, Unit> RespawnCommand { get; }
 
@@ -747,14 +890,40 @@ public class GameViewModel : ViewModelBase
         DefendActionCommand       = ReactiveCommand.CreateFromTask(DoDefendActionAsync);
         FleeFromCombatCommand     = ReactiveCommand.CreateFromTask(DoFleeFromCombatAsync);
         UseAbilityInCombatCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityInCombatAsync);
+        UseHotbarAbilityCommand   = ReactiveCommand.CreateFromTask<string>(DoUseHotbarAbilityAsync);
         RespawnCommand            = ReactiveCommand.CreateFromTask(DoRespawnAsync);
 
         // Initialize 6 empty hotbar slots
         for (var i = 1; i <= 6; i++)
-            HotbarSlots.Add(new HotbarSlotViewModel(i, UseAbilityInCombatCommand));
+            HotbarSlots.Add(new HotbarSlotViewModel(i, UseHotbarAbilityCommand));
         LearnedAbilities.CollectionChanged += (_, _) => SyncHotbarSlots();
 
         SpawnedEnemies.CollectionChanged += (_, _) => HasSpawnedEnemies = SpawnedEnemies.Count > 0;
+
+        // Settings + audio mute commands
+        ToggleSettingsCommand  = ReactiveCommand.Create(() => { IsSettingsOpen = !IsSettingsOpen; });
+        ToggleMusicMuteCommand = ReactiveCommand.Create(() =>
+        {
+            _audioPlayer?.ToggleMusicMute();
+            this.RaisePropertyChanged(nameof(IsMusicMuted));
+            this.RaisePropertyChanged(nameof(MusicMuteLabel));
+        });
+        ToggleSfxMuteCommand   = ReactiveCommand.Create(() =>
+        {
+            _audioPlayer?.ToggleSfxMute();
+            this.RaisePropertyChanged(nameof(IsSfxMuted));
+            this.RaisePropertyChanged(nameof(SfxMuteLabel));
+        });
+
+        // Chat commands
+        SetChatChannelCommand = ReactiveCommand.Create<string>(ch => { ActiveChatChannel = ch; });
+        var canSend = this.WhenAnyValue(x => x.ChatInput, x => x.ActiveChatChannel,
+            (input, ch) => !string.IsNullOrWhiteSpace(input) && ch != "System");
+        SendChatCommand = ReactiveCommand.CreateFromTask(DoSendChatAsync, canSend);
+
+        // Subscribe to connection state changes
+        _connection.StateChanged += state => { ConnectionStateValue = state; };
+        ConnectionStateValue = _connection.State;
 
         // Auto-redirect to main menu if the hub drops (e.g. failed token refresh mid-session).
         _connection.ConnectionLost += OnConnectionLost;
@@ -783,15 +952,17 @@ public class GameViewModel : ViewModelBase
     /// <summary>Called from hub when another player enters the zone.</summary>
     public void OnPlayerEntered(string playerName)
     {
-        if (!OnlinePlayers.Contains(playerName))
-            OnlinePlayers.Add(playerName);
+        if (!OnlinePlayers.Any(p => p.Name == playerName))
+            OnlinePlayers.Add(new OnlinePlayerViewModel(playerName, StartWhisperFromPlayer));
         AppendLog($"{playerName} entered the zone.");
     }
 
     /// <summary>Called from hub when another player leaves the zone.</summary>
     public void OnPlayerLeft(string playerName)
     {
-        OnlinePlayers.Remove(playerName);
+        var existing = OnlinePlayers.FirstOrDefault(p => p.Name == playerName);
+        if (existing is not null)
+            OnlinePlayers.Remove(existing);
         AppendLog($"{playerName} left the zone.");
     }
 
@@ -801,7 +972,24 @@ public class GameViewModel : ViewModelBase
         OnlinePlayers.Clear();
         foreach (var name in playerNames)
             if (name != CharacterName)
-                OnlinePlayers.Add(name);
+                OnlinePlayers.Add(new OnlinePlayerViewModel(name, StartWhisperFromPlayer));
+    }
+
+    /// <summary>Called from hub when a chat message is received.</summary>
+    /// <param name="channel">The chat channel the message was sent on.</param>
+    /// <param name="sender">The name of the player who sent the message.</param>
+    /// <param name="message">The message text.</param>
+    /// <param name="timestamp">The UTC timestamp of the message.</param>
+    public void OnChatMessageReceived(string channel, string sender, string message, DateTimeOffset timestamp)
+    {
+        var isOwn = sender == CharacterName || sender.StartsWith("To ", StringComparison.Ordinal);
+        ChatMessages.Add(new ChatMessageViewModel(channel, sender, message, timestamp, isOwn));
+    }
+
+    private void StartWhisperFromPlayer(string name)
+    {
+        ActiveChatChannel = "Whisper";
+        WhisperTarget = name;
     }
 
     /// <summary>Called from hub when the active character's attribute points have been allocated.</summary>
@@ -1488,6 +1676,35 @@ public class GameViewModel : ViewModelBase
         }
     }
 
+    private Task DoUseHotbarAbilityAsync(string abilityId) =>
+        IsInCombat ? DoUseAbilityInCombatAsync(abilityId) : DoUseAbilityAsync(abilityId);
+
+    private async Task DoSendChatAsync()
+    {
+        var message = ChatInput.Trim();
+        if (string.IsNullOrEmpty(message)) return;
+        try
+        {
+            switch (ActiveChatChannel)
+            {
+                case "Zone":
+                    await _connection.SendCommandAsync<object>("SendZoneMessage", new { Message = message });
+                    break;
+                case "Global":
+                    await _connection.SendCommandAsync<object>("SendGlobalMessage", new { Message = message });
+                    break;
+                case "Whisper":
+                    await _connection.SendCommandAsync<object>("SendWhisper", new { TargetCharacterName = WhisperTarget, Message = message });
+                    break;
+            }
+            ChatInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Chat failed: {ex.Message}");
+        }
+    }
+
     private async Task DoRespawnAsync()
     {
         try
@@ -1747,20 +1964,20 @@ public class GameViewModel : ViewModelBase
 /// <summary>Represents one of the six ability hotbar slots in the game footer.</summary>
 public class HotbarSlotViewModel : ReactiveObject
 {
-    private readonly ReactiveCommand<string, Unit> _useAbilityInCombatCommand;
+    private readonly ReactiveCommand<string, Unit> _useHotbarAbilityCommand;
     private string? _abilitySlug;
 
     /// <summary>Initializes a new instance of <see cref="HotbarSlotViewModel"/>.</summary>
     /// <param name="slotNumber">The 1-based position of this slot in the hotbar (1–6).</param>
-    /// <param name="useAbilityInCombatCommand">The parent view model's combat ability command.</param>
-    public HotbarSlotViewModel(int slotNumber, ReactiveCommand<string, Unit> useAbilityInCombatCommand)
+    /// <param name="useHotbarAbilityCommand">The parent view model's hotbar ability command.</param>
+    public HotbarSlotViewModel(int slotNumber, ReactiveCommand<string, Unit> useHotbarAbilityCommand)
     {
         SlotNumber = slotNumber;
-        _useAbilityInCombatCommand = useAbilityInCombatCommand;
+        _useHotbarAbilityCommand = useHotbarAbilityCommand;
 
         var canUse = this.WhenAnyValue(x => x.IsEmpty, isEmpty => !isEmpty);
         UseCommand = ReactiveCommand.CreateFromObservable(
-            () => _useAbilityInCombatCommand.Execute(AbilitySlug!),
+            () => _useHotbarAbilityCommand.Execute(AbilitySlug!),
             canUse);
     }
 

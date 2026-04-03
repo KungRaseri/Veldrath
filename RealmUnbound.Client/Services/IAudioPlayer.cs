@@ -31,4 +31,16 @@ public interface IAudioPlayer : IDisposable
     /// <summary>Mutes or unmutes all audio output without changing the stored volume levels.</summary>
     /// <param name="muted"><see langword="true"/> to silence all output; <see langword="false"/> to restore.</param>
     void SetMuted(bool muted);
+
+    /// <summary>Gets whether background music is currently muted.</summary>
+    bool IsMusicMuted { get; }
+
+    /// <summary>Gets whether sound effects are currently muted.</summary>
+    bool IsSfxMuted { get; }
+
+    /// <summary>Toggles background music mute on or off.</summary>
+    void ToggleMusicMute();
+
+    /// <summary>Toggles sound effects mute on or off.</summary>
+    void ToggleSfxMute();
 }

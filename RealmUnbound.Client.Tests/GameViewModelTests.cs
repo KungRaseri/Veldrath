@@ -116,7 +116,7 @@ public class GameViewModelTests : TestBase
     {
         var vm = MakeVm();
         vm.OnPlayerEntered("Gandalf");
-        vm.OnlinePlayers.Should().Contain("Gandalf");
+        vm.OnlinePlayers.Should().Contain(p => p.Name == "Gandalf");
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public class GameViewModelTests : TestBase
         var vm = MakeVm();
         vm.OnPlayerEntered("Legolas");
         vm.OnPlayerLeft("Legolas");
-        vm.OnlinePlayers.Should().NotContain("Legolas");
+        vm.OnlinePlayers.Should().NotContain(p => p.Name == "Legolas");
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class GameViewModelTests : TestBase
 
         vm.SetOccupants(new[] { "Hero", "Alice", "Bob" });
 
-        vm.OnlinePlayers.Should().BeEquivalentTo(new[] { "Alice", "Bob" });
+        vm.OnlinePlayers.Select(p => p.Name).Should().BeEquivalentTo(new[] { "Alice", "Bob" });
     }
 
     [Fact]
@@ -175,8 +175,8 @@ public class GameViewModelTests : TestBase
 
         vm.SetOccupants(new[] { "Alice" });
 
-        vm.OnlinePlayers.Should().NotContain("OldPlayer");
-        vm.OnlinePlayers.Should().Contain("Alice");
+        vm.OnlinePlayers.Should().NotContain(p => p.Name == "OldPlayer");
+        vm.OnlinePlayers.Should().Contain(p => p.Name == "Alice");
     }
 
     // ActionLog capacity

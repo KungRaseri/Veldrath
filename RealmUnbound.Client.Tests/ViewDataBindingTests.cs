@@ -87,8 +87,8 @@ public class ViewDataBindingTests
     public void GameView_Should_Render_OnlinePlayers_DataTemplate()
     {
         var vm = MakeGameVm();
-        vm.OnlinePlayers.Add("Gandalf");
-        vm.OnlinePlayers.Add("Aragorn");
+        vm.OnlinePlayers.Add(new OnlinePlayerViewModel("Gandalf", _ => { }));
+        vm.OnlinePlayers.Add(new OnlinePlayerViewModel("Aragorn", _ => { }));
 
         var window = Show(new GameView { DataContext = vm });
 
@@ -119,7 +119,7 @@ public class ViewDataBindingTests
         vm.ZoneDescription = "A peaceful valley.";
         vm.CharacterName   = "Hero";
         vm.StatusMessage   = "In zone";
-        vm.OnlinePlayers.Add("Legolas");
+        vm.OnlinePlayers.Add(new OnlinePlayerViewModel("Legolas", _ => { }));
         vm.ActionLog.Add("[10:00] Legolas entered the zone.");
 
         var window = Show(new GameView { DataContext = vm });

@@ -33,6 +33,9 @@ public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionReposi
     public Task<ZoneSession?> GetByCharacterIdAsync(Guid characterId) =>
         db.ZoneSessions.FirstOrDefaultAsync(s => s.CharacterId == characterId);
 
+    public Task<ZoneSession?> GetByCharacterNameAsync(string characterName) =>
+        db.ZoneSessions.FirstOrDefaultAsync(s => s.CharacterName == characterName);
+
     public async Task AddAsync(ZoneSession session)
     {
         db.ZoneSessions.Add(session);
