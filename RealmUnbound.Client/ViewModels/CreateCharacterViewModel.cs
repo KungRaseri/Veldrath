@@ -309,13 +309,14 @@ public class CreateCharacterViewModel : ViewModelBase
         var canNext = this.WhenAnyValue(
             x => x.CurrentStepIndex, x => x.Name, x => x.SelectedClass,
             x => x.SelectedSpecies, x => x.SelectedBackground, x => x.IsBusy,
-            x => x.NameValidationError,
-            (step, name, cls, species, background, busy, nameError) => !busy && step switch
+            x => x.NameValidationError, x => x.RemainingPoints,
+            (step, name, cls, species, background, busy, nameError, remaining) => !busy && step switch
             {
                 0 => !string.IsNullOrWhiteSpace(name) && string.IsNullOrEmpty(nameError),
                 1 => !string.IsNullOrWhiteSpace(cls),
                 2 => !string.IsNullOrWhiteSpace(species),
                 3 => !string.IsNullOrWhiteSpace(background),
+                4 => remaining == 0,
                 _ => true
             });
 
@@ -343,8 +344,11 @@ public class CreateCharacterViewModel : ViewModelBase
             .Subscribe(background => { _ = EagerSetBackgroundAsync(background); });
 
         this.WhenAnyValue(x => x.Name)
-            .Throttle(TimeSpan.FromMilliseconds(400), RxApp.MainThreadScheduler)
-            .Subscribe(name => { _ = ValidateNameAsync(name); });
+            .Throttle(TimeSpan.FromMilliseconds(400), RxApp.TaskpoolScheduler)
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Select(name => Observable.FromAsync(() => ComputeNameErrorAsync(name)))
+            .Switch()
+            .Subscribe(err => NameValidationError = err);
 
         _ = InitializeAsync();
     }
@@ -550,23 +554,13 @@ public class CreateCharacterViewModel : ViewModelBase
         }
     }
 
-    private async Task ValidateNameAsync(string name)
+    private async Task<string> ComputeNameErrorAsync(string name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            NameValidationError = string.Empty;
-            return;
-        }
-
+        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
         var formatError = ValidateNameFormat(name);
-        if (formatError is not null)
-        {
-            NameValidationError = formatError;
-            return;
-        }
-
+        if (formatError is not null) return formatError;
         var (available, error) = await _creationService.CheckNameAvailabilityAsync(name.Trim());
-        NameValidationError = available ? string.Empty : (error ?? "That name is not available.");
+        return available ? string.Empty : (error ?? "That name is not available.");
     }
 
     private async Task LoadSelectedClassIconAsync(string className)
