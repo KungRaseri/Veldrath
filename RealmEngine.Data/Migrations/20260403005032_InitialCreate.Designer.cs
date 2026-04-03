@@ -12,7 +12,7 @@ using RealmEngine.Data.Persistence;
 namespace RealmEngine.Data.Migrations
 {
     [DbContext(typeof(GameDbContext))]
-    [Migration("20260331171905_InitialCreate")]
+    [Migration("20260403005032_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

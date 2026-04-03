@@ -369,6 +369,7 @@ namespace RealmEngine.Data.Migrations.ContentDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsPlayerSelectable = table.Column<bool>(type: "boolean", nullable: false),
                     Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),

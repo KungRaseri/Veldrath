@@ -12,7 +12,7 @@ using RealmEngine.Data.Persistence;
 namespace RealmEngine.Data.Migrations.ContentDb
 {
     [DbContext(typeof(ContentDbContext))]
-    [Migration("20260331171916_InitialCreate")]
+    [Migration("20260403005057_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1118,6 +1118,9 @@ namespace RealmEngine.Data.Migrations.ContentDb
                         .HasColumnType("character varying(256)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPlayerSelectable")
                         .HasColumnType("boolean");
 
                     b.Property<int>("RarityWeight")
@@ -2528,6 +2531,18 @@ namespace RealmEngine.Data.Migrations.ContentDb
                             b1.Property<float?>("MovementSpeed");
 
                             b1.Property<int?>("NaturalArmor");
+
+                            b1.Property<int?>("PlayerBonusCharisma");
+
+                            b1.Property<int?>("PlayerBonusConstitution");
+
+                            b1.Property<int?>("PlayerBonusDexterity");
+
+                            b1.Property<int?>("PlayerBonusIntelligence");
+
+                            b1.Property<int?>("PlayerBonusStrength");
+
+                            b1.Property<int?>("PlayerBonusWisdom");
 
                             b1.Property<string>("SizeCategory");
 
