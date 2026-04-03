@@ -54,6 +54,7 @@
                     <Panel Height="12" Margin="0,2,0,0">
                         <ProgressBar
                             Height="12"
+                            MinHeight="12"
                             Classes="health"
                             Maximum="{Binding MaxHealth}"
                             Minimum="0"
