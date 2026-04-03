@@ -43,6 +43,10 @@ public interface ICharacterCreationService
 
     /// <summary>Returns a live preview of the character being built, or <see langword="null"/> if the session has insufficient state to generate one.</summary>
     Task<CharacterPreviewDto?> GetPreviewAsync(Guid sessionId);
+
+    /// <summary>Checks whether <paramref name="name"/> is well-formed and not already taken.</summary>
+    /// <returns>A tuple where <c>Available</c> is <see langword="true"/> when the name can be used, and <c>Error</c> is a human-readable reason when it cannot.</returns>
+    Task<(bool Available, string? Error)> CheckNameAvailabilityAsync(string name);
 }
 
 /// <summary>
@@ -266,6 +270,26 @@ public class HttpCharacterCreationService(
         {
             logger.LogError(ex, "Failed to get preview for session {SessionId}", sessionId);
             return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<(bool Available, string? Error)> CheckNameAvailabilityAsync(string name)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"api/character-creation/sessions/check-name?name={Uri.EscapeDataString(name)}");
+            request.Headers.Authorization = BearerHeader;
+            var response = await http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return (true, null);
+            var body = await response.Content.ReadFromJsonAsync<CheckNameAvailabilityResponse>();
+            return body is null ? (true, null) : (body.Available, body.Error);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to check name availability for name {Name}", name);
+            return (true, null);
         }
     }
 }

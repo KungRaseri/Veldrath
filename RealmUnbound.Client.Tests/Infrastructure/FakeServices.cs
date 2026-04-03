@@ -585,4 +585,17 @@ public class FakeCharacterCreationService : ICharacterCreationService
 
     /// <inheritdoc/>
     public Task<CharacterPreviewDto?> GetPreviewAsync(Guid sessionId) => Task.FromResult(PreviewResult);
+
+    /// <summary>Gets or sets the result returned by <see cref="CheckNameAvailabilityAsync"/>. Defaults to available with no error.</summary>
+    public (bool Available, string? Error) CheckNameAvailabilityResult { get; set; } = (true, null);
+
+    /// <summary>Gets the last name passed to <see cref="CheckNameAvailabilityAsync"/>.</summary>
+    public string? LastCheckedName { get; private set; }
+
+    /// <inheritdoc/>
+    public Task<(bool Available, string? Error)> CheckNameAvailabilityAsync(string name)
+    {
+        LastCheckedName = name;
+        return Task.FromResult(CheckNameAvailabilityResult);
+    }
 }
