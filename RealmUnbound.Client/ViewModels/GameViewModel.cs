@@ -25,6 +25,7 @@ namespace RealmUnbound.Client.ViewModels;
 /// <param name="Charisma">Charisma attribute value.</param>
 /// <param name="LearnedAbilities">Ability slugs the character has learned.</param>
 /// <param name="CharacterId">The character's unique identifier.</param>
+/// <param name="ClassName">The character class name.</param>
 public record SeedInitialStatsArgs(
     int Level, long Experience,
     int CurrentHealth, int MaxHealth,
@@ -33,7 +34,8 @@ public record SeedInitialStatsArgs(
     int Strength = 10, int Dexterity = 10, int Constitution = 10,
     int Intelligence = 10, int Wisdom = 10, int Charisma = 10,
     IReadOnlyList<string>? LearnedAbilities = null,
-    Guid? CharacterId = null);
+    Guid? CharacterId = null,
+    string ClassName = "");
 
 /// <summary>In-game view model. Active after a character has entered a zone.</summary>
 public class GameViewModel : ViewModelBase
@@ -49,6 +51,7 @@ public class GameViewModel : ViewModelBase
     private string _zoneName = string.Empty;
     private string _zoneDescription = string.Empty;
     private string _characterName = string.Empty;
+    private string _className = string.Empty;
     private string _statusMessage = string.Empty;
     private bool _isStatusMessageDismissable = true;
     private string _currentZoneId = string.Empty;
@@ -71,6 +74,13 @@ public class GameViewModel : ViewModelBase
     {
         get => _characterName;
         set => this.RaiseAndSetIfChanged(ref _characterName, value);
+    }
+
+    /// <summary>The character's class name (e.g. Warrior, Mage).</summary>
+    public string ClassName
+    {
+        get => _className;
+        private set => this.RaiseAndSetIfChanged(ref _className, value);
     }
 
     public string StatusMessage
@@ -451,6 +461,19 @@ public class GameViewModel : ViewModelBase
             this.RaiseAndSetIfChanged(ref _activeChatChannel, value);
             this.RaisePropertyChanged(nameof(IsWhisperChannelActive));
             this.RaisePropertyChanged(nameof(IsChatInputVisible));
+            this.RaisePropertyChanged(nameof(ChatChannelIndex));
+        }
+    }
+
+    /// <summary>Zero-based tab index for the chat channel selector (0=Zone, 1=Global, 2=Whisper, 3=System). Two-way bound to <see cref="ActiveChatChannel"/>.</summary>
+    public int ChatChannelIndex
+    {
+        get => _activeChatChannel switch { "Global" => 1, "Whisper" => 2, "System" => 3, _ => 0 };
+        set
+        {
+            var ch = value switch { 1 => "Global", 2 => "Whisper", 3 => "System", _ => "Zone" };
+            ActiveChatChannel = ch;
+            this.RaisePropertyChanged();
         }
     }
 
@@ -1247,6 +1270,7 @@ public class GameViewModel : ViewModelBase
         Charisma = args.Charisma;
         if (args.CharacterId.HasValue)
             _characterId = args.CharacterId;
+        ClassName = args.ClassName;
 
         LearnedAbilities.Clear();
         if (args.LearnedAbilities is not null)
