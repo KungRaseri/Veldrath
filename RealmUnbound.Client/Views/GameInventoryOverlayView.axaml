@@ -1,0 +1,117 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameInventoryOverlayView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="520"
+    d:DesignWidth="640"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <!--  Spans center + right columns so the left stats panel stays visible  -->
+    <Border Background="#B2000000" IsVisible="{Binding IsInventoryOpen}">
+        <Border
+            MaxWidth="640"
+            MaxHeight="520"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="{DynamicResource GameBackground1Brush}"
+            BorderBrush="{DynamicResource GameBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4">
+            <DockPanel>
+
+                <!--  Header  -->
+                <Border
+                    Padding="16,10"
+                    Background="{DynamicResource GameBackground2Brush}"
+                    BorderBrush="{DynamicResource GameBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    DockPanel.Dock="Top">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Text="Inventory" />
+                        <Button
+                            Grid.Column="1"
+                            Width="32"
+                            Height="32"
+                            Classes="ghost icon"
+                            Command="{Binding ToggleInventoryCommand}"
+                            Content="✕" />
+                    </Grid>
+                </Border>
+
+                <!--  Item list  -->
+                <ScrollViewer Padding="16" VerticalScrollBarVisibility="Auto">
+                    <Panel>
+                        <!--  Empty state  -->
+                        <TextBlock
+                            Margin="0,32"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Classes="muted"
+                            IsVisible="{Binding !InventoryItems.Count}"
+                            Text="Your inventory is empty." />
+
+                        <!--  Item rows  -->
+                        <ItemsControl IsVisible="{Binding InventoryItems.Count}" ItemsSource="{Binding InventoryItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:InventoryItemViewModel">
+                                    <Border
+                                        Padding="4,8"
+                                        BorderBrush="{DynamicResource GameBorderBrush}"
+                                        BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                VerticalAlignment="Center"
+                                                Text="{Binding DisplayName}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Margin="8,0"
+                                                VerticalAlignment="Center"
+                                                Classes="caption"
+                                                IsVisible="{Binding HasDurability}"
+                                                Text="{Binding DurabilityText}" />
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                Margin="8,0"
+                                                VerticalAlignment="Center"
+                                                Classes="accent"
+                                                Text="{Binding QuantityText}" />
+                                            <Button
+                                                Grid.Column="3"
+                                                Height="28"
+                                                Margin="4,0,0,0"
+                                                Classes="ghost"
+                                                Command="{Binding EquipCommand}"
+                                                CommandParameter="MainHand"
+                                                Content="Equip"
+                                                FontSize="12" />
+                                            <Button
+                                                Grid.Column="4"
+                                                Height="28"
+                                                Margin="4,0,0,0"
+                                                Classes="ghost"
+                                                Command="{Binding DropCommand}"
+                                                Content="Drop"
+                                                FontSize="12" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Panel>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Border>
+    </Border>
+
+</UserControl>

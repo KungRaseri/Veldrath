@@ -1,0 +1,94 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameWorldPanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+
+            <!--  World header  -->
+            <StackPanel Spacing="4">
+                <TextBlock
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Text="{Binding WorldName}" />
+                <TextBlock
+                    Classes="muted"
+                    FontStyle="Italic"
+                    Text="{Binding WorldEra}" />
+            </StackPanel>
+
+            <Border Classes="separator" />
+
+            <TextBlock Classes="caption" Text="Regions" />
+            <ItemsControl ItemsSource="{Binding WorldRegions}">
+                <ItemsControl.Styles>
+                    <Style Selector="Border.active">
+                        <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                    </Style>
+                </ItemsControl.Styles>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RegionCardViewModel">
+                        <Border
+                            MinWidth="200"
+                            Margin="0,0,16,16"
+                            Padding="16,12"
+                            Background="{DynamicResource GameBackground2Brush}"
+                            BorderBrush="{DynamicResource GameBorderBrush}"
+                            BorderThickness="1"
+                            Classes.active="{Binding IsCurrentRegion}"
+                            CornerRadius="6">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock
+                                        FontSize="15"
+                                        FontWeight="Bold"
+                                        Text="{Binding Name}" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Classes="accent"
+                                        FontSize="10"
+                                        IsVisible="{Binding IsCurrentRegion}"
+                                        Text="You are here" />
+                                </StackPanel>
+                                <Border
+                                    Padding="6,2"
+                                    HorizontalAlignment="Left"
+                                    Background="{DynamicResource GameBackground3Brush}"
+                                    CornerRadius="3">
+                                    <TextBlock
+                                        Classes="caption"
+                                        FontSize="11"
+                                        Text="{Binding Type}" />
+                                </Border>
+                                <TextBlock Classes="muted" FontSize="12">
+                                    <Run Text="Levels " /><Run Text="{Binding MinLevel}" /><Run Text="–" /><Run Text="{Binding MaxLevel}" />
+                                </TextBlock>
+                                <Button
+                                    Height="26"
+                                    Classes="ghost"
+                                    Command="{Binding ExploreCommand}"
+                                    Content="Explore →"
+                                    FontSize="11" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

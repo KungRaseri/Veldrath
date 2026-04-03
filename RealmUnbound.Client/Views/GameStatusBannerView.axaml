@@ -1,0 +1,41 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameStatusBannerView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="48"
+    d:DesignWidth="1280"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <!--  Full-width overlay anchored to the top; ZIndex 200 puts it above all other content  -->
+    <Border
+        Padding="16,10"
+        VerticalAlignment="Top"
+        Background="{DynamicResource GameBackground2Brush}"
+        BorderBrush="{DynamicResource GameWarningBrush}"
+        BorderThickness="0,0,0,2"
+        IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontSize="13"
+                Text="{Binding StatusMessage}"
+                TextWrapping="Wrap" />
+            <Button
+                Grid.Column="1"
+                Width="32"
+                Height="32"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Classes="ghost icon"
+                Command="{Binding DismissStatusMessageCommand}"
+                Content="✕"
+                IsVisible="{Binding IsStatusMessageDismissable}" />
+        </Grid>
+    </Border>
+
+</UserControl>
