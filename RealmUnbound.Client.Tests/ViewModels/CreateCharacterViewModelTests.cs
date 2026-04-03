@@ -1,4 +1,5 @@
 ﻿using System.Reactive.Linq;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
@@ -17,7 +18,8 @@ public class CreateCharacterViewModelTests : TestBase
         return new CreateCharacterViewModel(
             creation ?? new FakeCharacterCreationService(),
             FakeContentCache.Create(content),
-            nav ?? new FakeNavigationService());
+            nav ?? new FakeNavigationService(),
+            NullLogger<CreateCharacterViewModel>.Instance);
     }
 
     /// <summary>Advances the wizard by executing NextCommand the given number of times.</summary>

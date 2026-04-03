@@ -69,7 +69,11 @@ public class HttpCharacterCreationService(
             using var request = new HttpRequestMessage(HttpMethod.Post, "api/character-creation/sessions");
             request.Headers.Authorization = BearerHeader;
             var response = await http.SendAsync(request);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("BeginSessionAsync received non-success HTTP {StatusCode}", response.StatusCode);
+                return null;
+            }
             var body = await response.Content.ReadFromJsonAsync<BeginSessionResponse>();
             return body?.SessionId;
         }
