@@ -1,0 +1,188 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameRightPanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="720"
+    d:DesignWidth="224"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <!--  DockPanel auto-sizes: 224px open, 28px collapsed  -->
+    <DockPanel
+        Background="{DynamicResource GameBackground1Brush}"
+        LastChildFill="False">
+
+        <!--  Toggle button — always visible, pinned to left edge  -->
+        <Button
+            Width="28"
+            Margin="2,10,0,0"
+            VerticalAlignment="Top"
+            Classes="icon ghost"
+            Command="{Binding ToggleRightPanelCommand}"
+            Content="{Binding RightPanelToggleIcon}"
+            DockPanel.Dock="Left"
+            ToolTip.Tip="Toggle log panel" />
+
+        <!--  Collapsible content panel  -->
+        <Border
+            Width="196"
+            Padding="8"
+            BorderBrush="{DynamicResource GameBorderBrush}"
+            BorderThickness="1,0,0,0"
+            DockPanel.Dock="Right"
+            IsVisible="{Binding IsRightPanelOpen}">
+            <Grid RowDefinitions="1*,8,6*,8,3*">
+
+                <!--  Row 0: Online in Zone  -->
+                <DockPanel Grid.Row="0">
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Classes="caption"
+                        DockPanel.Dock="Top"
+                        Text="Online in Zone" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding OnlinePlayers}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:OnlinePlayerViewModel">
+                                    <Grid Margin="0,2" ColumnDefinitions="Auto,*,Auto">
+                                        <Ellipse
+                                            Grid.Column="0"
+                                            Width="7"
+                                            Height="7"
+                                            VerticalAlignment="Center"
+                                            Fill="{DynamicResource GameSuccessBrush}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Margin="6,0,0,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="{Binding Name}" />
+                                        <Button
+                                            Grid.Column="2"
+                                            Padding="2,0"
+                                            Classes="ghost"
+                                            Command="{Binding StartWhisperCommand}"
+                                            Content="[W]"
+                                            FontSize="10"
+                                            ToolTip.Tip="Whisper" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!--  Row 1: GridSplitter  -->
+                <GridSplitter
+                    Grid.Row="1"
+                    Height="8"
+                    HorizontalAlignment="Stretch"
+                    ResizeDirection="Rows" />
+
+                <!--  Row 2: Chat  -->
+                <DockPanel Grid.Row="2">
+
+                    <!--  Send input row (pinned to bottom)  -->
+                    <Grid
+                        Margin="0,4,0,0"
+                        ColumnDefinitions="*,Auto"
+                        DockPanel.Dock="Bottom"
+                        IsVisible="{Binding IsChatInputVisible}">
+                        <TextBox
+                            Grid.Column="0"
+                            Margin="0,0,4,0"
+                            FontSize="11"
+                            Text="{Binding ChatInput}"
+                            Watermark="Message…" />
+                        <Button
+                            Grid.Column="1"
+                            Width="32"
+                            Classes="ghost"
+                            Command="{Binding SendChatCommand}"
+                            Content="↵"
+                            FontSize="14" />
+                    </Grid>
+
+                    <!--  Whisper target input (pinned to top, only when Whisper is active)  -->
+                    <TextBox
+                        Margin="0,0,0,4"
+                        DockPanel.Dock="Top"
+                        FontSize="11"
+                        IsVisible="{Binding IsWhisperChannelActive}"
+                        Text="{Binding WhisperTarget}"
+                        Watermark="Recipient name…" />
+
+                    <!--  Channel tabs (pinned to top)  -->
+                    <TabControl
+                        Margin="0,0,0,2"
+                        Padding="0"
+                        DockPanel.Dock="Top"
+                        SelectedIndex="{Binding ChatChannelIndex, Mode=TwoWay}">
+                        <TabControl.Styles>
+                            <Style Selector="TabItem">
+                                <Setter Property="Padding" Value="4,1" />
+                                <Setter Property="FontSize" Value="10" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </Style>
+                        </TabControl.Styles>
+                        <TabItem Header="System" />
+                        <TabItem Header="Global" />
+                        <TabItem Header="Zone" />
+                        <TabItem Header="Whisper" />
+                    </TabControl>
+
+                    <!--  Message list fills remaining space  -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ChatMessages}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ChatMessageViewModel">
+                                    <TextBlock
+                                        Margin="0,1"
+                                        FontSize="11"
+                                        Text="{Binding FormattedMessage}"
+                                        TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                </DockPanel>
+
+                <!--  Row 3: GridSplitter  -->
+                <GridSplitter
+                    Grid.Row="3"
+                    Height="8"
+                    HorizontalAlignment="Stretch"
+                    ResizeDirection="Rows" />
+
+                <!--  Row 4: Action Log  -->
+                <DockPanel Grid.Row="4">
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Classes="caption"
+                        DockPanel.Dock="Top"
+                        Text="Action Log" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ActionLog}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        Margin="0,1"
+                                        FontSize="11"
+                                        Text="{Binding}"
+                                        TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+
+            </Grid>
+        </Border>
+
+    </DockPanel>
+
+</UserControl>
