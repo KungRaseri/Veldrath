@@ -52,6 +52,7 @@
 
                     <!--  HP bar  -->
                     <Panel Height="12" Margin="0,2,0,0">
+                        <Border Height="12" CornerRadius="3" Background="{DynamicResource GameSuccessMutedBrush}" />
                         <ProgressBar
                             Height="12"
                             MinHeight="12"
@@ -71,6 +72,7 @@
 
                     <!--  MP bar  -->
                     <Panel Height="12" Margin="0,2,0,0">
+                        <Border Height="12" CornerRadius="3" Background="{DynamicResource GameInfoMutedBrush}" />
                         <ProgressBar
                             Height="12"
                             Classes="mana"
@@ -89,6 +91,7 @@
 
                     <!--  XP bar  -->
                     <Panel Height="12" Margin="0,2,0,0">
+                        <Border Height="12" CornerRadius="3" Background="{DynamicResource GameWarningMutedBrush}" />
                         <ProgressBar
                             Height="12"
                             Classes="xp"

@@ -453,19 +453,19 @@
 
     <Style Selector="ProgressBar.health">
         <Setter Property="Foreground" Value="{DynamicResource GameSuccessBrush}" />
-        <Setter Property="Background" Value="{DynamicResource GameSuccessMutedBrush}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="MinHeight" Value="12" />
     </Style>
 
     <Style Selector="ProgressBar.mana">
         <Setter Property="Foreground" Value="{DynamicResource GameInfoBrush}" />
-        <Setter Property="Background" Value="{DynamicResource GameInfoMutedBrush}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="MinHeight" Value="12" />
     </Style>
 
     <Style Selector="ProgressBar.xp">
         <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
-        <Setter Property="Background" Value="{DynamicResource GameWarningMutedBrush}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="MinHeight" Value="12" />
     </Style>
 
