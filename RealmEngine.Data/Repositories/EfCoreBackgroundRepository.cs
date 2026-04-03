@@ -50,7 +50,7 @@ public class EfCoreBackgroundRepository(ContentDbContext db, ILogger<EfCoreBackg
         Slug             = entity.Slug,
         Name             = entity.DisplayName ?? entity.Slug,
         RarityWeight     = entity.RarityWeight,
-        Description      = string.Empty,
+        Description      = entity.Description ?? string.Empty,
         PrimaryAttribute = entity.TypeKey,
         PrimaryBonus     = DerivePrimaryBonus(entity),
         SecondaryAttribute = string.Empty,

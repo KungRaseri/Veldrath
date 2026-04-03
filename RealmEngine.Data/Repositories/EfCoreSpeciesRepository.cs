@@ -50,7 +50,7 @@ public class EfCoreSpeciesRepository(ContentDbContext db, ILogger<EfCoreSpeciesR
     {
         Slug              = entity.Slug,
         DisplayName       = entity.DisplayName ?? entity.Slug,
-        Description       = string.Empty,
+        Description       = entity.Description ?? string.Empty,
         TypeKey           = entity.TypeKey,
         RarityWeight      = entity.RarityWeight,
         BonusStrength     = entity.Stats.PlayerBonusStrength     ?? 0,

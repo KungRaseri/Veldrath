@@ -104,8 +104,16 @@ public class CreateCharacterViewModel : ViewModelBase
     public string SelectedSpecies
     {
         get => _selectedSpecies;
-        set => this.RaiseAndSetIfChanged(ref _selectedSpecies, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedSpecies, value);
+            this.RaisePropertyChanged(nameof(SelectedSpeciesDescription));
+        }
     }
+
+    /// <summary>Gets the lore description of the currently selected species, or an empty string when none is selected.</summary>
+    public string SelectedSpeciesDescription =>
+        _speciesList.FirstOrDefault(s => s.DisplayName == SelectedSpecies)?.Description ?? string.Empty;
 
     /// <summary>Gets the list of available background display names loaded from the content catalog.</summary>
     public IReadOnlyList<string> AvailableBackgrounds
@@ -118,8 +126,16 @@ public class CreateCharacterViewModel : ViewModelBase
     public string SelectedBackground
     {
         get => _selectedBackground;
-        set => this.RaiseAndSetIfChanged(ref _selectedBackground, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedBackground, value);
+            this.RaisePropertyChanged(nameof(SelectedBackgroundDescription));
+        }
     }
+
+    /// <summary>Gets the lore description of the currently selected background, or an empty string when none is selected.</summary>
+    public string SelectedBackgroundDescription =>
+        _backgroundList.FirstOrDefault(b => b.DisplayName == SelectedBackground)?.Description ?? string.Empty;
 
     /// <summary>Gets or sets the Strength base stat value (8–15).</summary>
     public int Strength
@@ -296,6 +312,14 @@ public class CreateCharacterViewModel : ViewModelBase
                 x => x.Intelligence, x => x.Wisdom, x => x.Charisma)
             .Subscribe(ignored => { _ = RefreshPreviewAsync(); });
 
+        this.WhenAnyValue(x => x.SelectedSpecies)
+            .Skip(1)
+            .Subscribe(species => { _ = EagerSetSpeciesAsync(species); });
+
+        this.WhenAnyValue(x => x.SelectedBackground)
+            .Skip(1)
+            .Subscribe(background => { _ = EagerSetBackgroundAsync(background); });
+
         _ = InitializeAsync();
     }
 
@@ -427,6 +451,22 @@ public class CreateCharacterViewModel : ViewModelBase
     {
         if (_sessionId is null || CurrentStepIndex < 2) return;
         CharacterPreview = await _creationService.GetPreviewAsync(_sessionId.Value);
+    }
+
+    private async Task EagerSetSpeciesAsync(string displayName)
+    {
+        if (_sessionId is null) return;
+        var slug = _speciesList.FirstOrDefault(s => s.DisplayName == displayName)?.Slug ?? displayName;
+        await _creationService.SetSpeciesAsync(_sessionId.Value, slug);
+        await RefreshPreviewAsync();
+    }
+
+    private async Task EagerSetBackgroundAsync(string displayName)
+    {
+        if (_sessionId is null) return;
+        var id = _backgroundList.FirstOrDefault(b => b.DisplayName == displayName)?.Slug ?? displayName;
+        await _creationService.SetBackgroundAsync(_sessionId.Value, id);
+        await RefreshPreviewAsync();
     }
 
     private async Task DoAbandonAsync()

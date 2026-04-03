@@ -169,10 +169,25 @@ public static class ActorSeeder
     {
         var now = DateTimeOffset.UtcNow;
         var existing = await db.Backgrounds.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
-        var missing = GetAllBackgrounds(now).Where(x => !existing.Contains(x.Slug)).ToList();
-        if (missing.Count == 0) return;
-        db.Backgrounds.AddRange(missing);
-        await db.SaveChangesAsync();
+        var allDefs = GetAllBackgrounds(now);
+        var missing = allDefs.Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count > 0)
+        {
+            db.Backgrounds.AddRange(missing);
+            await db.SaveChangesAsync();
+        }
+        // Patch descriptions on existing rows that were seeded before this field existed.
+        var needsDescription = await db.Backgrounds.Where(b => b.Description == null).ToListAsync();
+        if (needsDescription.Count > 0)
+        {
+            var bySlug = allDefs.ToDictionary(d => d.Slug, d => d.Description);
+            foreach (var b in needsDescription)
+            {
+                if (bySlug.TryGetValue(b.Slug, out var desc))
+                    b.Description = desc;
+            }
+            await db.SaveChangesAsync();
+        }
     }
 
     private static Background[] GetAllBackgrounds(DateTimeOffset now) =>
@@ -182,6 +197,7 @@ public static class ActorSeeder
                 Slug         = "soldier",
                 TypeKey      = "common",
                 DisplayName  = "Soldier",
+                Description  = "You served in the military, learning discipline and the art of combat. Time on the battlefield hardened your body and sharpened your instincts. You begin with +2 Strength and +1 Constitution.",
                 RarityWeight = 55,
                 IsActive     = true,
                 Version      = 1,
@@ -208,6 +224,7 @@ public static class ActorSeeder
                 Slug         = "scholar",
                 TypeKey      = "scholar",
                 DisplayName  = "Scholar",
+                Description  = "You spent years in academic study, poring over tomes and experimenting with arcane theory. The pursuit of knowledge defines you. You begin with +2 Intelligence and +1 Dexterity.",
                 RarityWeight = 45,
                 IsActive     = true,
                 Version      = 1,
@@ -236,10 +253,25 @@ public static class ActorSeeder
     {
         var now = DateTimeOffset.UtcNow;
         var existing = await db.Species.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
-        var missing = GetAllSpecies(now).Where(x => !existing.Contains(x.Slug)).ToList();
-        if (missing.Count == 0) return;
-        db.Species.AddRange(missing);
-        await db.SaveChangesAsync();
+        var allDefs = GetAllSpecies(now);
+        var missing = allDefs.Where(x => !existing.Contains(x.Slug)).ToList();
+        if (missing.Count > 0)
+        {
+            db.Species.AddRange(missing);
+            await db.SaveChangesAsync();
+        }
+        // Patch descriptions on existing rows that were seeded before this field existed.
+        var needsDescription = await db.Species.Where(s => s.Description == null).ToListAsync();
+        if (needsDescription.Count > 0)
+        {
+            var bySlug = allDefs.ToDictionary(d => d.Slug, d => d.Description);
+            foreach (var s in needsDescription)
+            {
+                if (bySlug.TryGetValue(s.Slug, out var desc))
+                    s.Description = desc;
+            }
+            await db.SaveChangesAsync();
+        }
     }
 
     private static Species[] GetAllSpecies(DateTimeOffset now) =>
@@ -249,6 +281,7 @@ public static class ActorSeeder
                 Slug              = "human",
                 TypeKey           = "humanoid",
                 DisplayName       = "Human",
+                Description       = "Versatile and adaptable, humans are found across all corners of the realm, thriving through determination and ingenuity. You gain +2 Constitution and +1 Charisma.",
                 RarityWeight      = 60,
                 IsActive          = true,
                 IsPlayerSelectable = true,
@@ -279,6 +312,7 @@ public static class ActorSeeder
                 Slug              = "elf",
                 TypeKey           = "humanoid",
                 DisplayName       = "Elf",
+                Description       = "Ancient and graceful, elves have walked the forests of the world since before memory. Their keen senses and natural agility set them apart. You gain +2 Dexterity and +1 Wisdom.",
                 RarityWeight      = 50,
                 IsActive          = true,
                 IsPlayerSelectable = true,
@@ -309,6 +343,7 @@ public static class ActorSeeder
                 Slug              = "dwarf",
                 TypeKey           = "humanoid",
                 DisplayName       = "Dwarf",
+                Description       = "Hardy and resilient, dwarves are master craftspeople of the mountain halls. Their stout frames endure where others would falter. You gain +2 Constitution and +1 Strength.",
                 RarityWeight      = 50,
                 IsActive          = true,
                 IsPlayerSelectable = true,
@@ -339,6 +374,7 @@ public static class ActorSeeder
                 Slug              = "halfling",
                 TypeKey           = "humanoid",
                 DisplayName       = "Halfling",
+                Description       = "Small in stature but bold in spirit, halflings are nimble wanderers with surprising luck. Their cheerful resilience carries them through the most perilous adventures. You gain +2 Dexterity and +1 Charisma.",
                 RarityWeight      = 45,
                 IsActive          = true,
                 IsPlayerSelectable = true,
@@ -369,6 +405,7 @@ public static class ActorSeeder
                 Slug              = "gnome",
                 TypeKey           = "humanoid",
                 DisplayName       = "Gnome",
+                Description       = "Curious and inventive, gnomes approach every problem with boundless enthusiasm. Their natural affinity for the arcane arts makes them formidable scholars and tinkerers. You gain +2 Intelligence and +1 Dexterity.",
                 RarityWeight      = 40,
                 IsActive          = true,
                 IsPlayerSelectable = true,

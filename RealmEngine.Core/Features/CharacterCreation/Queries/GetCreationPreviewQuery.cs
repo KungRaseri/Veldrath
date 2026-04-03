@@ -23,6 +23,12 @@ public record GetCreationPreviewResult
 
     /// <summary>Gets the assembled (not persisted) character preview, or <see langword="null"/> on failure.</summary>
     public Character? Character { get; init; }
+
+    /// <summary>Gets the display name of the selected species, or <see langword="null"/> when none is selected.</summary>
+    public string? SpeciesDisplayName { get; init; }
+
+    /// <summary>Gets the display name of the selected background, or <see langword="null"/> when none is selected.</summary>
+    public string? BackgroundDisplayName { get; init; }
 }
 
 /// <summary>
@@ -78,6 +84,12 @@ public class GetCreationPreviewHandler(
         session.SelectedSpecies?.ApplyBonuses(character);
 
         logger.LogDebug("Session {SessionId}: preview built for candidate '{Name}'", request.SessionId, character.Name);
-        return new GetCreationPreviewResult { Success = true, Character = character };
+        return new GetCreationPreviewResult
+        {
+            Success              = true,
+            Character            = character,
+            SpeciesDisplayName   = session.SelectedSpecies?.DisplayName,
+            BackgroundDisplayName = session.SelectedBackground?.Name,
+        };
     }
 }

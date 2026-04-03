@@ -235,8 +235,8 @@ public static class CharacterCreationSessionEndpoints
         var c = result.Character;
         return Results.Ok(new CharacterPreviewDto(
             ClassName:      c.ClassName,
-            SpeciesName:    c.SpeciesSlug,
-            BackgroundName: c.BackgroundId,
+            SpeciesName:    result.SpeciesDisplayName,
+            BackgroundName: result.BackgroundDisplayName,
             Strength:       c.Strength,
             Dexterity:      c.Dexterity,
             Constitution:   c.Constitution,
