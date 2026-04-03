@@ -60,19 +60,19 @@ public static class CharacterCreationSessionEndpoints
             .WithTags("Character Creation")
             .RequireAuthorization();
 
-        group.MapPost("/",                          BeginAsync);
-        group.MapGet("/check-name",                CheckNameAsync);
-        group.MapGet("/{id:guid}",                 GetSessionAsync);
-        group.MapPatch("/{id:guid}/name",          SetNameAsync);
-        group.MapPatch("/{id:guid}/class",         SetClassAsync);
-        group.MapPatch("/{id:guid}/species",       SetSpeciesAsync);
-        group.MapPatch("/{id:guid}/background",    SetBackgroundAsync);
-        group.MapPatch("/{id:guid}/attributes",    SetAttributesAsync);
-        group.MapPatch("/{id:guid}/equipment",     SetEquipmentAsync);
-        group.MapPatch("/{id:guid}/location",      SetLocationAsync);
-        group.MapGet("/{id:guid}/preview",         GetPreviewAsync);
-        group.MapPost("/{id:guid}/finalize",       FinalizeAsync);
-        group.MapDelete("/{id:guid}",              AbandonAsync);
+        group.MapPost("/", BeginAsync);
+        group.MapGet("/check-name", CheckNameAsync);
+        group.MapGet("/{id:guid}", GetSessionAsync);
+        group.MapPatch("/{id:guid}/name", SetNameAsync);
+        group.MapPatch("/{id:guid}/class", SetClassAsync);
+        group.MapPatch("/{id:guid}/species", SetSpeciesAsync);
+        group.MapPatch("/{id:guid}/background", SetBackgroundAsync);
+        group.MapPatch("/{id:guid}/attributes", SetAttributesAsync);
+        group.MapPatch("/{id:guid}/equipment", SetEquipmentAsync);
+        group.MapPatch("/{id:guid}/location", SetLocationAsync);
+        group.MapGet("/{id:guid}/preview", GetPreviewAsync);
+        group.MapPost("/{id:guid}/finalize", FinalizeAsync);
+        group.MapDelete("/{id:guid}", AbandonAsync);
 
         return app;
     }
@@ -118,11 +118,14 @@ public static class CharacterCreationSessionEndpoints
         ICharacterRepository repo,
         CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(name))
+            return Results.Ok(new CheckNameAvailabilityResponse(false, "Name is required."));
+
         var formatError = ValidateNameFormat(name);
         if (formatError is not null)
             return Results.Ok(new CheckNameAvailabilityResponse(false, formatError));
 
-        var taken = await repo.NameExistsAsync(name!.Trim(), ct);
+        var taken = await repo.NameExistsAsync(name.Trim(), ct);
         return Results.Ok(new CheckNameAvailabilityResponse(
             Available: !taken,
             Error: taken ? "That name is already taken." : null));
@@ -274,17 +277,17 @@ public static class CharacterCreationSessionEndpoints
 
         var c = result.Character;
         return Results.Ok(new CharacterPreviewDto(
-            ClassName:      c.ClassName,
-            SpeciesName:    result.SpeciesDisplayName,
+            ClassName: c.ClassName,
+            SpeciesName: result.SpeciesDisplayName,
             BackgroundName: result.BackgroundDisplayName,
-            Strength:       c.Strength,
-            Dexterity:      c.Dexterity,
-            Constitution:   c.Constitution,
-            Intelligence:   c.Intelligence,
-            Wisdom:         c.Wisdom,
-            Charisma:       c.Charisma,
-            Health:         c.MaxHealth,
-            Mana:           c.MaxMana));
+            Strength: c.Strength,
+            Dexterity: c.Dexterity,
+            Constitution: c.Constitution,
+            Intelligence: c.Intelligence,
+            Wisdom: c.Wisdom,
+            Charisma: c.Charisma,
+            Health: c.MaxHealth,
+            Mana: c.MaxMana));
     }
 
     private static async Task<IResult> FinalizeAsync(
@@ -337,8 +340,8 @@ public static class CharacterCreationSessionEndpoints
         var engineResult = await mediator.Send(
             new FinalizeCreationSessionCommand
             {
-                SessionId       = id,
-                CharacterName   = resolvedName,
+                SessionId = id,
+                CharacterName = resolvedName,
                 DifficultyLevel = normalizedMode == "hardcore" ? "Hardcore" : "Normal",
             }, ct);
 
@@ -348,31 +351,31 @@ public static class CharacterCreationSessionEndpoints
         var engineChar = engineResult.Character;
         var attrsJson = JsonSerializer.Serialize(new Dictionary<string, int>
         {
-            ["Strength"]      = engineChar.Strength,
-            ["Dexterity"]     = engineChar.Dexterity,
-            ["Constitution"]  = engineChar.Constitution,
-            ["Intelligence"]  = engineChar.Intelligence,
-            ["Wisdom"]        = engineChar.Wisdom,
-            ["Charisma"]      = engineChar.Charisma,
+            ["Strength"] = engineChar.Strength,
+            ["Dexterity"] = engineChar.Dexterity,
+            ["Constitution"] = engineChar.Constitution,
+            ["Intelligence"] = engineChar.Intelligence,
+            ["Wisdom"] = engineChar.Wisdom,
+            ["Charisma"] = engineChar.Charisma,
             ["CurrentHealth"] = engineChar.Health,
-            ["MaxHealth"]     = engineChar.MaxHealth,
-            ["CurrentMana"]   = engineChar.Mana,
-            ["MaxMana"]       = engineChar.MaxMana,
-            ["Gold"]          = engineChar.Gold,
+            ["MaxHealth"] = engineChar.MaxHealth,
+            ["CurrentMana"] = engineChar.Mana,
+            ["MaxMana"] = engineChar.MaxMana,
+            ["Gold"] = engineChar.Gold,
         });
 
         var equipmentDict = new Dictionary<string, string>();
-        if (engineChar.EquippedMainHand  is { Slug: { Length: > 0 } s1 }) equipmentDict["MainHand"]  = s1;
-        if (engineChar.EquippedOffHand   is { Slug: { Length: > 0 } s2 }) equipmentDict["OffHand"]   = s2;
-        if (engineChar.EquippedHelmet    is { Slug: { Length: > 0 } s3 }) equipmentDict["Helmet"]    = s3;
+        if (engineChar.EquippedMainHand is { Slug: { Length: > 0 } s1 }) equipmentDict["MainHand"] = s1;
+        if (engineChar.EquippedOffHand is { Slug: { Length: > 0 } s2 }) equipmentDict["OffHand"] = s2;
+        if (engineChar.EquippedHelmet is { Slug: { Length: > 0 } s3 }) equipmentDict["Helmet"] = s3;
         if (engineChar.EquippedShoulders is { Slug: { Length: > 0 } s4 }) equipmentDict["Shoulders"] = s4;
-        if (engineChar.EquippedChest     is { Slug: { Length: > 0 } s5 }) equipmentDict["Chest"]     = s5;
-        if (engineChar.EquippedBracers   is { Slug: { Length: > 0 } s6 }) equipmentDict["Bracers"]   = s6;
-        if (engineChar.EquippedGloves    is { Slug: { Length: > 0 } s7 }) equipmentDict["Gloves"]    = s7;
-        if (engineChar.EquippedBelt      is { Slug: { Length: > 0 } s8 }) equipmentDict["Belt"]      = s8;
-        if (engineChar.EquippedLegs      is { Slug: { Length: > 0 } s9 }) equipmentDict["Legs"]      = s9;
-        if (engineChar.EquippedBoots     is { Slug: { Length: > 0 } s10 }) equipmentDict["Boots"]    = s10;
-        if (engineChar.EquippedNecklace  is { Slug: { Length: > 0 } s11 }) equipmentDict["Necklace"] = s11;
+        if (engineChar.EquippedChest is { Slug: { Length: > 0 } s5 }) equipmentDict["Chest"] = s5;
+        if (engineChar.EquippedBracers is { Slug: { Length: > 0 } s6 }) equipmentDict["Bracers"] = s6;
+        if (engineChar.EquippedGloves is { Slug: { Length: > 0 } s7 }) equipmentDict["Gloves"] = s7;
+        if (engineChar.EquippedBelt is { Slug: { Length: > 0 } s8 }) equipmentDict["Belt"] = s8;
+        if (engineChar.EquippedLegs is { Slug: { Length: > 0 } s9 }) equipmentDict["Legs"] = s9;
+        if (engineChar.EquippedBoots is { Slug: { Length: > 0 } s10 }) equipmentDict["Boots"] = s10;
+        if (engineChar.EquippedNecklace is { Slug: { Length: > 0 } s11 }) equipmentDict["Necklace"] = s11;
 
         var inventoryItems = engineChar.Inventory
             .Where(i => !string.IsNullOrWhiteSpace(i.Slug))
@@ -386,17 +389,17 @@ public static class CharacterCreationSessionEndpoints
 
         var character = new Character
         {
-            AccountId             = accountId,
-            SlotIndex             = slotIndex,
-            Name                  = resolvedName,
-            ClassName             = session.SelectedClass.Name,
-            DifficultyMode        = normalizedMode,
-            Attributes            = attrsJson,
-            EquipmentBlob         = JsonSerializer.Serialize(equipmentDict),
-            InventoryBlob         = JsonSerializer.Serialize(inventoryItems),
-            AbilitiesBlob         = JsonSerializer.Serialize(abilitySlugs),
-            BackgroundId          = session.SelectedBackground?.GetBackgroundId(),
-            SpeciesSlug           = session.SelectedSpecies?.Slug,
+            AccountId = accountId,
+            SlotIndex = slotIndex,
+            Name = resolvedName,
+            ClassName = session.SelectedClass.Name,
+            DifficultyMode = normalizedMode,
+            Attributes = attrsJson,
+            EquipmentBlob = JsonSerializer.Serialize(equipmentDict),
+            InventoryBlob = JsonSerializer.Serialize(inventoryItems),
+            AbilitiesBlob = JsonSerializer.Serialize(abilitySlugs),
+            BackgroundId = session.SelectedBackground?.GetBackgroundId(),
+            SpeciesSlug = session.SelectedSpecies?.Slug,
             CurrentZoneLocationSlug = DefaultStartingLocationSlug,
         };
 
