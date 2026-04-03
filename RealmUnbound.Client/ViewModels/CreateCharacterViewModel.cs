@@ -56,7 +56,21 @@ public class CreateCharacterViewModel : ViewModelBase
 
     private int _currentStepIndex;
     private string _stepError = string.Empty;
+    private string _nameValidationError = string.Empty;
     private CharacterPreviewDto? _characterPreview;
+
+    private static readonly System.Text.RegularExpressions.Regex NameLettersPattern =
+        new(@"^[a-zA-Z]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static string? ValidateNameFormat(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var trimmed = name.Trim();
+        if (trimmed.Length < 2) return "Name must be at least 2 characters.";
+        if (trimmed.Length > 20) return "Name must be at most 20 characters.";
+        if (!NameLettersPattern.IsMatch(trimmed)) return "Name may only contain letters.";
+        return null;
+    }
 
     /// <summary>Gets or sets the character name entered by the player.</summary>
     public string Name
@@ -250,6 +264,13 @@ public class CreateCharacterViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _stepError, value);
     }
 
+    /// <summary>Gets the inline validation error for the character name field, or empty string when the name is valid.</summary>
+    public string NameValidationError
+    {
+        get => _nameValidationError;
+        private set => this.RaiseAndSetIfChanged(ref _nameValidationError, value);
+    }
+
     /// <summary>Gets the live character preview, populated once a class has been confirmed.</summary>
     public CharacterPreviewDto? CharacterPreview
     {
@@ -288,9 +309,10 @@ public class CreateCharacterViewModel : ViewModelBase
         var canNext = this.WhenAnyValue(
             x => x.CurrentStepIndex, x => x.Name, x => x.SelectedClass,
             x => x.SelectedSpecies, x => x.SelectedBackground, x => x.IsBusy,
-            (step, name, cls, species, background, busy) => !busy && step switch
+            x => x.NameValidationError,
+            (step, name, cls, species, background, busy, nameError) => !busy && step switch
             {
-                0 => !string.IsNullOrWhiteSpace(name),
+                0 => !string.IsNullOrWhiteSpace(name) && string.IsNullOrEmpty(nameError),
                 1 => !string.IsNullOrWhiteSpace(cls),
                 2 => !string.IsNullOrWhiteSpace(species),
                 3 => !string.IsNullOrWhiteSpace(background),
@@ -319,6 +341,10 @@ public class CreateCharacterViewModel : ViewModelBase
         this.WhenAnyValue(x => x.SelectedBackground)
             .Skip(1)
             .Subscribe(background => { _ = EagerSetBackgroundAsync(background); });
+
+        this.WhenAnyValue(x => x.Name)
+            .Throttle(TimeSpan.FromMilliseconds(400), RxApp.MainThreadScheduler)
+            .Subscribe(name => { _ = ValidateNameAsync(name); });
 
         _ = InitializeAsync();
     }
@@ -382,9 +408,14 @@ public class CreateCharacterViewModel : ViewModelBase
             switch (CurrentStepIndex)
             {
                 case 0:
+                {
+                    var nameFormatError = ValidateNameFormat(Name);
+                    if (nameFormatError is not null)
+                    { StepError = nameFormatError; return; }
                     if (!await _creationService.SetNameAsync(_sessionId.Value, Name))
                     { StepError = "Could not save character name. Please try again."; return; }
                     break;
+                }
                 case 1:
                     if (!await _creationService.SetClassAsync(_sessionId.Value, SelectedClass))
                     { StepError = "Could not save class selection. Please try again."; return; }
@@ -517,6 +548,25 @@ public class CreateCharacterViewModel : ViewModelBase
             case "Wisdom":       Wisdom       = value; break;
             case "Charisma":     Charisma     = value; break;
         }
+    }
+
+    private async Task ValidateNameAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            NameValidationError = string.Empty;
+            return;
+        }
+
+        var formatError = ValidateNameFormat(name);
+        if (formatError is not null)
+        {
+            NameValidationError = formatError;
+            return;
+        }
+
+        var (available, error) = await _creationService.CheckNameAvailabilityAsync(name.Trim());
+        NameValidationError = available ? string.Empty : (error ?? "That name is not available.");
     }
 
     private async Task LoadSelectedClassIconAsync(string className)

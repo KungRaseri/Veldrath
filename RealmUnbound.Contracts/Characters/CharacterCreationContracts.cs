@@ -67,3 +67,8 @@ public record CharacterPreviewDto(
     int Charisma,
     int Health,
     int Mana);
+
+/// <summary>Response from the name-availability check endpoint.</summary>
+/// <param name="Available"><see langword="true"/> when the name is both well-formed and not already taken.</param>
+/// <param name="Error">Human-readable reason the name is unavailable, or <see langword="null"/> when available.</param>
+public record CheckNameAvailabilityResponse(bool Available, string? Error);

@@ -61,6 +61,11 @@
                                      Watermark="Enter a name for your character"
                                      Height="44"
                                      FontSize="15" />
+                            <TextBlock Text="{Binding NameValidationError}"
+                                       FontSize="12"
+                                       Foreground="#ff6b6b"
+                                       IsVisible="{Binding NameValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Margin="0,2,0,0" />
                         </StackPanel>
 
                         <!-- Step 1: Class -->
@@ -262,6 +267,15 @@
                         <TextBlock Text="{Binding CharacterPreview.BackgroundName, StringFormat='Background: {0}'}"
                                    FontSize="14" Foreground="White"
                                    IsVisible="{Binding CharacterPreview.BackgroundName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock Text="{Binding SelectedArmorType, StringFormat='Armor: {0}'}"
+                                   FontSize="14" Foreground="White"
+                                   IsVisible="{Binding SelectedArmorType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock Text="{Binding SelectedWeaponType, StringFormat='Weapon: {0}'}"
+                                   FontSize="14" Foreground="White"
+                                   IsVisible="{Binding SelectedWeaponType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock Text="Shield: Yes"
+                                   FontSize="14" Foreground="White"
+                                   IsVisible="{Binding IncludeShield}" />
 
                         <Border Height="1" Background="White" Opacity="0.2" Margin="0,4,0,4" />
 

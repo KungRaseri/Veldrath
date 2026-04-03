@@ -36,6 +36,21 @@ public static class CharacterCreationSessionEndpoints
     // Location selection is not exposed in the wizard; this will remain static until zone progression is designed.
     private const string DefaultStartingLocationSlug = "fenwick-market";
 
+    private const int NameMinLength = 2;
+    private const int NameMaxLength = 20;
+    private static readonly System.Text.RegularExpressions.Regex NamePattern =
+        new(@"^[a-zA-Z]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static string? ValidateNameFormat(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "Name is required.";
+        var trimmed = name.Trim();
+        if (trimmed.Length < NameMinLength) return $"Name must be at least {NameMinLength} characters.";
+        if (trimmed.Length > NameMaxLength) return $"Name must be at most {NameMaxLength} characters.";
+        if (!NamePattern.IsMatch(trimmed)) return "Name may only contain letters.";
+        return null;
+    }
+
     /// <summary>Maps all character creation session endpoints onto the application.</summary>
     /// <param name="app">The endpoint route builder to register routes on.</param>
     /// <returns>The same <paramref name="app"/> for chaining.</returns>
@@ -46,6 +61,7 @@ public static class CharacterCreationSessionEndpoints
             .RequireAuthorization();
 
         group.MapPost("/",                          BeginAsync);
+        group.MapGet("/check-name",                CheckNameAsync);
         group.MapGet("/{id:guid}",                 GetSessionAsync);
         group.MapPatch("/{id:guid}/name",          SetNameAsync);
         group.MapPatch("/{id:guid}/class",         SetClassAsync);
@@ -97,16 +113,40 @@ public static class CharacterCreationSessionEndpoints
             : Results.Ok(session);
     }
 
+    private static async Task<IResult> CheckNameAsync(
+        string? name,
+        ICharacterRepository repo,
+        CancellationToken ct)
+    {
+        var formatError = ValidateNameFormat(name);
+        if (formatError is not null)
+            return Results.Ok(new CheckNameAvailabilityResponse(false, formatError));
+
+        var taken = await repo.NameExistsAsync(name!.Trim(), ct);
+        return Results.Ok(new CheckNameAvailabilityResponse(
+            Available: !taken,
+            Error: taken ? "That name is already taken." : null));
+    }
+
     private static async Task<IResult> SetNameAsync(
         Guid id,
         [FromBody] SetCreationNameRequest request,
         ClaimsPrincipal user,
         ICharacterCreationSessionStore sessionStore,
         IMediator mediator,
+        ICharacterRepository repo,
         CancellationToken ct)
     {
         var ownerCheck = await VerifyOwnerAsync(id, GetAccountId(user), sessionStore);
         if (ownerCheck is not null) return ownerCheck;
+
+        var formatError = ValidateNameFormat(request.CharacterName);
+        if (formatError is not null)
+            return Results.BadRequest(new { error = formatError });
+
+        var taken = await repo.NameExistsAsync(request.CharacterName.Trim(), ct);
+        if (taken)
+            return Results.BadRequest(new { error = "That name is already taken." });
 
         var result = await mediator.Send(new SetCreationNameCommand(id, request.CharacterName), ct);
         return result.Success
