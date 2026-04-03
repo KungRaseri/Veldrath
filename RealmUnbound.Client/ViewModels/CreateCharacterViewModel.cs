@@ -357,6 +357,7 @@ public class CreateCharacterViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Select(name => Observable.FromAsync(() => ComputeNameErrorAsync(name)))
             .Switch()
+            .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(err => NameValidationError = err);
 
         _ = InitializeAsync();
