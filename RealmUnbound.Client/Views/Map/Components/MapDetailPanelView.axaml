@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="RealmUnbound.Client.Views.MapDetailPanelView"
+             x:DataType="vm:MapViewModel">
+
+    <Border Background="{DynamicResource GameBackground2Brush}"
+            BorderBrush="{DynamicResource GameBorderBrush}"
+            BorderThickness="1,0,0,0"
+            Padding="12">
+        <ScrollViewer>
+            <StackPanel Spacing="8">
+                <TextBlock Text="Details"
+                           Classes="caption"
+                           Foreground="{DynamicResource GameTextMutedBrush}" />
+                <Border Classes="separator" />
+
+                <!-- No selection state -->
+                <TextBlock Text="{Binding NullSelectionHint}"
+                           TextWrapping="Wrap"
+                           FontSize="11"
+                           Foreground="{DynamicResource GameTextMutedBrush}"
+                           IsVisible="{Binding SelectedNode, Converter={x:Static ObjectConverters.IsNull}}" />
+
+                <!-- Selected node details -->
+                <StackPanel IsVisible="{Binding SelectedNode, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Spacing="6">
+                    <TextBlock Text="{Binding SelectedNode.DisplayLabel}"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource GameTextPrimaryBrush}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding SelectedNode.SubType}"
+                               FontSize="11"
+                               Foreground="{DynamicResource GameTextMutedBrush}"
+                               IsVisible="{Binding SelectedNode.SubType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <StackPanel Orientation="Horizontal" Spacing="4"
+                                IsVisible="{Binding SelectedNode.MinLevel, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock Text="Min level:" FontSize="11"
+                                   Foreground="{DynamicResource GameTextMutedBrush}" />
+                        <TextBlock Text="{Binding SelectedNode.MinLevel}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource GameAccentBrush}" />
+                    </StackPanel>
+
+                    <Border Classes="separator" Margin="0,4" />
+
+                    <!-- "You are here" badge -->
+                    <Border Background="{DynamicResource GameSuccessMutedBrush}"
+                            BorderBrush="{DynamicResource GameSuccessBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4" Padding="6,3"
+                            IsVisible="{Binding SelectedNode.IsCurrent}">
+                        <TextBlock Text="You are here"
+                                   FontSize="10"
+                                   Foreground="{DynamicResource GameSuccessBrush}" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+
+</UserControl>

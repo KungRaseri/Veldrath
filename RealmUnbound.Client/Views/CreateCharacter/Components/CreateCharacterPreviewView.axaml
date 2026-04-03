@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="RealmUnbound.Client.Views.CreateCharacterPreviewView"
+             x:DataType="vm:CreateCharacterViewModel">
+
+    <Border Background="#1c1c1e"
+            Padding="32">
+        <StackPanel Spacing="12" VerticalAlignment="Center">
+            <TextBlock Text="Character Preview"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="White" />
+
+            <!-- Preview unavailable -->
+            <TextBlock Text="Advance past the Class step to see a preview."
+                       FontSize="13"
+                       Foreground="White"
+                       Opacity="0.6"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding CharacterPreview, Converter={x:Static ObjectConverters.IsNull}}" />
+
+            <!-- Preview available -->
+            <StackPanel Spacing="8"
+                        IsVisible="{Binding CharacterPreview, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock Text="{Binding CharacterPreview.ClassName, StringFormat='Class: {0}'}"
+                           FontSize="14" Foreground="White" />
+                <TextBlock Text="{Binding CharacterPreview.SpeciesName, StringFormat='Species: {0}'}"
+                           FontSize="14" Foreground="White"
+                           IsVisible="{Binding CharacterPreview.SpeciesName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="{Binding CharacterPreview.BackgroundName, StringFormat='Background: {0}'}"
+                           FontSize="14" Foreground="White"
+                           IsVisible="{Binding CharacterPreview.BackgroundName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="{Binding SelectedArmorType, StringFormat='Armor: {0}'}"
+                           FontSize="14" Foreground="White"
+                           IsVisible="{Binding SelectedArmorType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="{Binding SelectedWeaponType, StringFormat='Weapon: {0}'}"
+                           FontSize="14" Foreground="White"
+                           IsVisible="{Binding SelectedWeaponType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="Shield: Yes"
+                           FontSize="14" Foreground="White"
+                           IsVisible="{Binding IncludeShield}" />
+
+                <Border Height="1" Background="White" Opacity="0.2" Margin="0,4,0,4" />
+
+                <!-- Stat grid -->
+                <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="*,*">
+                        <TextBlock Grid.Column="0" Text="{Binding CharacterPreview.Strength,    StringFormat='STR {0}'}" FontSize="13" Foreground="White" />
+                        <TextBlock Grid.Column="1" Text="{Binding CharacterPreview.Dexterity,   StringFormat='DEX {0}'}" FontSize="13" Foreground="White" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*">
+                        <TextBlock Grid.Column="0" Text="{Binding CharacterPreview.Constitution,StringFormat='CON {0}'}" FontSize="13" Foreground="White" />
+                        <TextBlock Grid.Column="1" Text="{Binding CharacterPreview.Intelligence,StringFormat='INT {0}'}" FontSize="13" Foreground="White" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*">
+                        <TextBlock Grid.Column="0" Text="{Binding CharacterPreview.Wisdom,      StringFormat='WIS {0}'}" FontSize="13" Foreground="White" />
+                        <TextBlock Grid.Column="1" Text="{Binding CharacterPreview.Charisma,    StringFormat='CHA {0}'}" FontSize="13" Foreground="White" />
+                    </Grid>
+                </StackPanel>
+
+                <Border Height="1" Background="White" Opacity="0.2" Margin="0,4,0,4" />
+
+                <TextBlock Text="{Binding CharacterPreview.Health, StringFormat='HP: {0}'}" FontSize="13" Foreground="White" />
+                <TextBlock Text="{Binding CharacterPreview.Mana,   StringFormat='MP: {0}'}" FontSize="13" Foreground="White" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+
+</UserControl>
