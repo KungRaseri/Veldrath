@@ -306,19 +306,27 @@ public class CreateCharacterViewModel : ViewModelBase
             this.WhenAnyValue(x => x.SelectedClass)
                 .Subscribe(cls => _ = LoadSelectedClassIconAsync(cls));
 
-        var canNext = this.WhenAnyValue(
+        var canNextCore = this.WhenAnyValue(
             x => x.CurrentStepIndex, x => x.Name, x => x.SelectedClass,
             x => x.SelectedSpecies, x => x.SelectedBackground, x => x.IsBusy,
-            x => x.NameValidationError, x => x.RemainingPoints,
-            (step, name, cls, species, background, busy, nameError, remaining) => !busy && step switch
+            x => x.RemainingPoints,
+            (step, name, cls, species, background, busy, remaining) => !busy && step switch
             {
-                0 => !string.IsNullOrWhiteSpace(name) && string.IsNullOrEmpty(nameError),
+                0 => !string.IsNullOrWhiteSpace(name),
                 1 => !string.IsNullOrWhiteSpace(cls),
                 2 => !string.IsNullOrWhiteSpace(species),
                 3 => !string.IsNullOrWhiteSpace(background),
                 4 => remaining == 0,
                 _ => true
             });
+
+        // Separate gate so NameValidationError changes reliably disable step 0.
+        // On all other steps this is always true.
+        var nameGate = this.WhenAnyValue(
+            x => x.CurrentStepIndex, x => x.NameValidationError,
+            (step, nameError) => step != 0 || string.IsNullOrEmpty(nameError));
+
+        var canNext = canNextCore.CombineLatest(nameGate, (core, gate) => core && gate);
 
         var canBack = this.WhenAnyValue(
             x => x.CurrentStepIndex, x => x.IsBusy,
@@ -344,6 +352,7 @@ public class CreateCharacterViewModel : ViewModelBase
             .Subscribe(background => { _ = EagerSetBackgroundAsync(background); });
 
         this.WhenAnyValue(x => x.Name)
+            .Do(_ => NameValidationError = string.Empty)
             .Throttle(TimeSpan.FromMilliseconds(400), RxApp.TaskpoolScheduler)
             .ObserveOn(RxApp.MainThreadScheduler)
             .Select(name => Observable.FromAsync(() => ComputeNameErrorAsync(name)))
