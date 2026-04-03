@@ -4,6 +4,22 @@ Utility scripts for development, versioning, releases, and data tooling.
 
 ---
 
+## `download-assets.ps1`
+
+Downloads the latest GameAssets release from the private `KungRaseri/RealmUnbound-Assets` GitHub repository and extracts it into `RealmUnbound.Assets/GameAssets/`. Run this after cloning instead of (or in addition to) `sync-assets.ps1` when you have the `ASSETS_TOKEN` PAT available.
+
+Requires a fine-grained PAT with **Contents: Read** on `KungRaseri/RealmUnbound-Assets`. Set it as the `ASSETS_TOKEN` environment variable or pass it with `-Token`.
+
+```powershell
+.\scripts\download-assets.ps1                        # uses $env:ASSETS_TOKEN
+.\scripts\download-assets.ps1 -Token ghp_xxxxx       # explicit token
+.\scripts\download-assets.ps1 -Force                 # overwrite without prompting
+```
+
+Also available as the **download-assets** VS Code task (`Ctrl+Shift+B` → download-assets).
+
+---
+
 ## `generate-version.ps1`
 
 Reads the version from `versions/<component>.props` and the current git commit count to produce a deterministic version string.

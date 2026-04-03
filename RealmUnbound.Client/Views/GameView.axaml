@@ -23,95 +23,88 @@
 
                 <!-- Col 0: compact character strip — name · class · level + stat bars -->
                 <StackPanel Grid.Column="0"
-                            Spacing="4"
+                            Spacing="2"
                             VerticalAlignment="Center"
-                            Margin="0,0,20,0">
+                            Margin="0,0,16,0">
 
                     <!-- Name · ClassName · Level badge -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="{Binding CharacterName}"
                                    Classes="accent"
-                                   FontSize="14"
+                                   FontSize="12"
                                    FontWeight="Bold"
                                    VerticalAlignment="Center" />
                         <TextBlock Text="{Binding ClassName}"
                                    Foreground="{DynamicResource GameTextTertiaryBrush}"
-                                   FontSize="13"
+                                   FontSize="11"
                                    VerticalAlignment="Center" />
                         <Border Background="{DynamicResource GameBackground3Brush}"
                                 BorderBrush="{DynamicResource GameBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="3"
-                                Padding="5,1"
+                                CornerRadius="2"
+                                Padding="4,1"
                                 VerticalAlignment="Center">
-                            <TextBlock Classes="caption">
+                            <TextBlock FontSize="10">
                                 <Run Text="Lv. " /><Run Text="{Binding Level}" FontWeight="Bold" />
                             </TextBlock>
                         </Border>
                     </StackPanel>
 
-                    <!-- HP bar -->
-                    <Grid ColumnDefinitions="20,80,Auto" VerticalAlignment="Center">
-                        <TextBlock Grid.Column="0"
-                                   Text="HP"
-                                   Classes="caption"
-                                   VerticalAlignment="Center" />
-                        <ProgressBar Grid.Column="1"
-                                     Classes="health"
-                                     Minimum="0"
-                                     Maximum="{Binding MaxHealth}"
-                                     Value="{Binding CurrentHealth}"
-                                     Height="5"
-                                     VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2"
-                                   Classes="caption"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0">
-                            <Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
-                        </TextBlock>
-                    </Grid>
+                    <!-- Stat bars — text overlaid inside each bar, stacked with no gap -->
+                    <!-- Light grey backing ensures text is readable when bar fill is empty -->
+                    <Border Background="#C8C8C8" CornerRadius="2" ClipToBounds="True">
+                        <StackPanel Spacing="0">
 
-                    <!-- MP bar -->
-                    <Grid ColumnDefinitions="20,80,Auto" VerticalAlignment="Center">
-                        <TextBlock Grid.Column="0"
-                                   Text="MP"
-                                   Classes="caption"
-                                   VerticalAlignment="Center" />
-                        <ProgressBar Grid.Column="1"
-                                     Classes="mana"
-                                     Minimum="0"
-                                     Maximum="{Binding MaxMana}"
-                                     Value="{Binding CurrentMana}"
-                                     Height="5"
-                                     VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2"
-                                   Classes="caption"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0">
-                            <Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
-                        </TextBlock>
-                    </Grid>
+                            <!-- HP bar -->
+                            <Panel Height="14">
+                                <ProgressBar Classes="health"
+                                             Minimum="0"
+                                             Maximum="{Binding MaxHealth}"
+                                             Value="{Binding CurrentHealth}"
+                                             Height="14" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="Black">
+                                    <Run Text="HP " /><Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
+                                </TextBlock>
+                            </Panel>
 
-                    <!-- XP bar -->
-                    <Grid ColumnDefinitions="20,80,Auto" VerticalAlignment="Center">
-                        <TextBlock Grid.Column="0"
-                                   Text="XP"
-                                   Classes="caption"
-                                   VerticalAlignment="Center" />
-                        <ProgressBar Grid.Column="1"
-                                     Classes="xp"
-                                     Minimum="0"
-                                     Maximum="{Binding ExperienceToNextLevel}"
-                                     Value="{Binding Experience}"
-                                     Height="4"
-                                     VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2"
-                                   Classes="caption"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0">
-                            <Run Text="{Binding Experience}" /><Run Text="/" /><Run Text="{Binding ExperienceToNextLevel}" />
-                        </TextBlock>
-                    </Grid>
+                            <!-- MP bar -->
+                            <Panel Height="14">
+                                <ProgressBar Classes="mana"
+                                             Minimum="0"
+                                             Maximum="{Binding MaxMana}"
+                                             Value="{Binding CurrentMana}"
+                                             Height="14" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="Black">
+                                    <Run Text="MP " /><Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
+                                </TextBlock>
+                            </Panel>
+
+                            <!-- XP bar -->
+                            <Panel Height="12">
+                                <ProgressBar Classes="xp"
+                                             Minimum="0"
+                                             Maximum="{Binding ExperienceToNextLevel}"
+                                             Value="{Binding Experience}"
+                                             Height="12" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="Black">
+                                    <Run Text="XP " /><Run Text="{Binding Experience}" /><Run Text="/" /><Run Text="{Binding ExperienceToNextLevel}" />
+                                </TextBlock>
+                            </Panel>
+
+                        </StackPanel>
+                    </Border>
 
                 </StackPanel>
 
@@ -1100,7 +1093,7 @@
                         BorderBrush="{DynamicResource GameBorderBrush}"
                         BorderThickness="1,0,0,0"
                         Padding="8">
-                    <Grid RowDefinitions="2*,8,5*,8,3*">
+                    <Grid RowDefinitions="1*,8,6*,8,3*">
 
                         <!-- Row 0: Online in Zone -->
                         <DockPanel Grid.Row="0">
@@ -1175,11 +1168,19 @@
                             <!-- Channel tabs (pinned to top) -->
                             <TabControl DockPanel.Dock="Top"
                                         SelectedIndex="{Binding ChatChannelIndex, Mode=TwoWay}"
-                                        Margin="0,0,0,4">
-                                <TabItem Header="Zone" />
-                                <TabItem Header="Global" />
-                                <TabItem Header="Whisper" />
+                                        Padding="0"
+                                        Margin="0,0,0,2">
+                                <TabControl.Styles>
+                                    <Style Selector="TabItem">
+                                        <Setter Property="Padding" Value="4,1" />
+                                        <Setter Property="FontSize" Value="10" />
+                                        <Setter Property="MinHeight" Value="0" />
+                                    </Style>
+                                </TabControl.Styles>
                                 <TabItem Header="System" />
+                                <TabItem Header="Global" />
+                                <TabItem Header="Zone" />
+                                <TabItem Header="Whisper" />
                             </TabControl>
 
                             <!-- Message list fills remaining space -->
