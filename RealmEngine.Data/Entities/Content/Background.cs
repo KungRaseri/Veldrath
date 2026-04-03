@@ -3,6 +3,8 @@ namespace RealmEngine.Data.Entities;
 /// <summary>Character background chosen at creation, granting starting bonuses and flavor.</summary>
 public class Background : ContentBase
 {
+    /// <summary>Lore description of the background shown during character creation.</summary>
+    public string? Description { get; set; }
     /// <summary>Starting bonuses granted by this background.</summary>
     public BackgroundStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags classifying this background's archetype.</summary>

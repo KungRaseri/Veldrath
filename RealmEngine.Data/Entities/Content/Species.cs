@@ -6,6 +6,8 @@ namespace RealmEngine.Data.Entities;
 /// </summary>
 public class Species : ContentBase
 {
+    /// <summary>Lore description of the species shown during character creation.</summary>
+    public string? Description { get; set; }
     /// <summary>When true, this species may be selected by players during character creation.</summary>
     public bool IsPlayerSelectable { get; set; }
     /// <summary>Base and range statistics intrinsic to this species.</summary>

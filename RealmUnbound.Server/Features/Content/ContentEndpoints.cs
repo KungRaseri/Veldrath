@@ -483,13 +483,15 @@ public static class ContentEndpoints
         Slug:        s.Slug,
         DisplayName: s.DisplayName ?? s.Slug,
         TypeKey:     s.TypeKey,
-        RarityWeight: s.RarityWeight);
+        RarityWeight: s.RarityWeight,
+        Description: s.Description ?? string.Empty);
 
     private static BackgroundDto ToDto(RealmEngine.Data.Entities.Background b) => new(
         Slug:        b.Slug,
         DisplayName: b.DisplayName ?? b.Slug,
         TypeKey:     b.TypeKey,
-        RarityWeight: b.RarityWeight);
+        RarityWeight: b.RarityWeight,
+        Description: b.Description ?? string.Empty);
 
     private static SkillDto ToDto(RealmEngine.Data.Entities.Skill s) => new(
         Slug:               s.Slug,

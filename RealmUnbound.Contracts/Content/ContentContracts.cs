@@ -132,7 +132,8 @@ public record SpeciesDto(
     string Slug,
     string DisplayName,
     string TypeKey,
-    int RarityWeight);
+    int RarityWeight,
+    string Description = "");
 
 // Background
 /// <summary>A character background (e.g. Soldier, Sage) that provides starting bonuses.</summary>
@@ -140,7 +141,8 @@ public record BackgroundDto(
     string Slug,
     string DisplayName,
     string TypeKey,
-    int RarityWeight);
+    int RarityWeight,
+    string Description = "");
 
 // Skill
 /// <summary>A learnable skill that grants bonuses as its rank increases.</summary>
