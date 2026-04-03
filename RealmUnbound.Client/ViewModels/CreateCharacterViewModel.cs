@@ -205,6 +205,9 @@ public class CreateCharacterViewModel : ViewModelBase
     /// <summary>Gets the ordered titles for each creation step.</summary>
     public static IReadOnlyList<string> StepTitles { get; } = ["Name", "Class", "Species", "Background", "Attributes", "Equipment", "Review"];
 
+    /// <summary>Gets the total number of creation steps.</summary>
+    public static int StepCount => StepTitles.Count;
+
     /// <summary>Gets the zero-based index of the currently displayed creation step.</summary>
     public int CurrentStepIndex
     {
@@ -213,8 +216,16 @@ public class CreateCharacterViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref _currentStepIndex, value);
             this.RaisePropertyChanged(nameof(NextButtonLabel));
+            this.RaisePropertyChanged(nameof(CurrentStepNumber));
+            this.RaisePropertyChanged(nameof(StepLabel));
         }
     }
+
+    /// <summary>Gets the one-based display index of the current step (1 … StepCount).</summary>
+    public int CurrentStepNumber => CurrentStepIndex + 1;
+
+    /// <summary>Gets the formatted step counter label, e.g. "Step 1 of 7".</summary>
+    public string StepLabel => $"Step {CurrentStepNumber} of {StepCount}";
 
     /// <summary>Gets the per-step error message; cleared when advancing to a new step.</summary>
     public string StepError

@@ -21,7 +21,7 @@
                            FontWeight="SemiBold"
                            Foreground="White" />
                 <TextBlock Grid.Column="1"
-                           Text="{Binding CurrentStepIndex, StringFormat='Step {0} of 7'}"
+                           Text="{Binding StepLabel}"
                            FontSize="14"
                            Foreground="White"
                            VerticalAlignment="Center"
