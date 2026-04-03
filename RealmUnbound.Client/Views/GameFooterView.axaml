@@ -1,0 +1,93 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameFooterView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="48"
+    d:DesignWidth="1280"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <Border Classes="panel-statusbar">
+        <Grid VerticalAlignment="Center" ColumnDefinitions="Auto,*,Auto">
+
+            <!--  Left: navigation actions  -->
+            <StackPanel
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button
+                    Height="34"
+                    Classes="ghost"
+                    Classes.accent="{Binding IsInventoryOpen}"
+                    Command="{Binding ToggleInventoryCommand}"
+                    Content="Inventory"
+                    FontSize="13" />
+                <Button
+                    Height="34"
+                    Classes="ghost"
+                    Command="{Binding OpenMapCommand}"
+                    Content="Map"
+                    FontSize="13" />
+            </StackPanel>
+
+            <!--  Center: ability hotbar — 6 always-visible slots  -->
+            <ItemsControl
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                ItemsSource="{Binding HotbarSlots}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="4" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HotbarSlotViewModel">
+                        <Button
+                            Height="34"
+                            MinWidth="80"
+                            Padding="6,0"
+                            Classes="ghost"
+                            Classes.muted="{Binding IsEmpty}"
+                            Command="{Binding UseCommand}"
+                            Content="{Binding DisplayLabel}"
+                            FontSize="12" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!--  Right: context-sensitive + utility actions  -->
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button
+                    Height="34"
+                    Classes="accent"
+                    Command="{Binding RestAtLocationCommand}"
+                    Content="Rest at Inn"
+                    FontSize="13"
+                    IsVisible="{Binding HasInn}" />
+                <Button
+                    Height="34"
+                    Classes="ghost"
+                    Command="{Binding VisitShopCommand}"
+                    Content="Shop"
+                    FontSize="13"
+                    IsVisible="{Binding HasMerchant}" />
+                <Button
+                    Height="34"
+                    Classes="ghost"
+                    Command="{Binding SearchAreaCommand}"
+                    Content="Search Area"
+                    FontSize="13" />
+            </StackPanel>
+
+        </Grid>
+    </Border>
+
+</UserControl>

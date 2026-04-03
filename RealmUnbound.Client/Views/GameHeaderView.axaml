@@ -1,0 +1,234 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameHeaderView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="60"
+    d:DesignWidth="1280"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <Border Classes="panel-topbar">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+
+            <!--  Col 0: compact character strip — name · class · level + stat bars  -->
+            <StackPanel
+                Grid.Column="0"
+                Margin="0,0,16,0"
+                VerticalAlignment="Center"
+                Spacing="2">
+
+                <!--  Name · ClassName · Level badge  -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="accent"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Text="{Binding CharacterName}" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="{DynamicResource GameTextTertiaryBrush}"
+                        Text="{Binding ClassName}" />
+                    <Border
+                        Padding="4,1"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource GameBackground3Brush}"
+                        BorderBrush="{DynamicResource GameBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="2">
+                        <TextBlock FontSize="10">
+                            <Run Text="Lv. " /><Run FontWeight="Bold" Text="{Binding Level}" />
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+
+                <!--  Stat bars — text overlaid inside each bar, stacked with no gap  -->
+                <!--  Light grey backing ensures text is readable when bar fill is empty  -->
+                <StackPanel Spacing="0">
+
+                    <!--  HP bar  -->
+                    <Panel Height="12" Margin="0,2,0,0">
+                        <ProgressBar
+                            Height="12"
+                            Classes="health"
+                            Maximum="{Binding MaxHealth}"
+                            Minimum="0"
+                            Value="{Binding CurrentHealth}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="Black">
+                            <Run Text="HP " /><Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
+                        </TextBlock>
+                    </Panel>
+
+                    <!--  MP bar  -->
+                    <Panel Height="12" Margin="0,2,0,0">
+                        <ProgressBar
+                            Height="12"
+                            Classes="mana"
+                            Maximum="{Binding MaxMana}"
+                            Minimum="0"
+                            Value="{Binding CurrentMana}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="Black">
+                            <Run Text="MP " /><Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
+                        </TextBlock>
+                    </Panel>
+
+                    <!--  XP bar  -->
+                    <Panel Height="12" Margin="0,2,0,0">
+                        <ProgressBar
+                            Height="12"
+                            Classes="xp"
+                            Maximum="{Binding ExperienceToNextLevel}"
+                            Minimum="0"
+                            Value="{Binding Experience}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="Black">
+                            <Run Text="XP " /><Run Text="{Binding Experience}" /><Run Text="/" /><Run Text="{Binding ExperienceToNextLevel}" />
+                        </TextBlock>
+                    </Panel>
+
+                </StackPanel>
+            </StackPanel>
+
+            <!--  Col 1: zone info — name + type badge + sub-location breadcrumb  -->
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="4">
+
+                <!--  Zone name + type badge  -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Text="{Binding ZoneName}" />
+                    <Border
+                        Padding="6,2"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource GameBackground3Brush}"
+                        BorderBrush="{DynamicResource GameBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="3"
+                        IsVisible="{Binding ZoneType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Classes="caption" Text="{Binding ZoneType}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  Sub-location breadcrumb (shown when inside a specific location)  -->
+                <TextBlock
+                    FontSize="12"
+                    Foreground="{DynamicResource GameTextTertiaryBrush}"
+                    IsVisible="{Binding CurrentZoneLocationDisplayName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <Run Text="› " /><Run Text="{Binding CurrentZoneLocationDisplayName}" />
+                </TextBlock>
+
+                <!--  Zone description fallback (shown when not at a specific location)  -->
+                <TextBlock
+                    Classes="muted"
+                    FontSize="11"
+                    FontStyle="Italic"
+                    IsVisible="{Binding CurrentZoneLocationDisplayName, Converter={x:Static StringConverters.IsNullOrEmpty}}"
+                    Text="{Binding ZoneDescription}" />
+
+            </StackPanel>
+
+            <!--  Col 2: connection dot + settings flyout  -->
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+
+                <!--  Connection status dot  -->
+                <Ellipse
+                    Width="10"
+                    Height="10"
+                    VerticalAlignment="Center"
+                    Fill="{Binding ConnectionStatusColor}"
+                    ToolTip.Tip="{Binding ConnectionStatusTooltip}" />
+
+                <!--  Settings flyout button  -->
+                <Button
+                    Width="32"
+                    Height="32"
+                    Classes="icon ghost"
+                    Command="{Binding ToggleSettingsCommand}"
+                    Content="⚙"
+                    FontSize="16"
+                    ToolTip.Tip="Settings">
+                    <Button.Flyout>
+                        <Flyout IsOpen="{Binding IsSettingsOpen, Mode=TwoWay}" Placement="BottomEdgeAlignedRight">
+                            <Border
+                                Padding="12"
+                                Background="{DynamicResource GameBackground2Brush}"
+                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <StackPanel MinWidth="180" Spacing="8">
+                                    <TextBlock FontWeight="Bold" Text="Settings" />
+                                    <Separator />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Classes="ghost"
+                                        Command="{Binding ToggleMusicMuteCommand}"
+                                        Content="{Binding MusicMuteLabel}" />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Classes="ghost"
+                                        Command="{Binding ToggleSfxMuteCommand}"
+                                        Content="{Binding SfxMuteLabel}" />
+                                    <Separator />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        Classes="caption"
+                                        Text="Dev Tools" />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Classes="ghost"
+                                        Command="{Binding DevGainXpCommand}"
+                                        Content="Gain 100 XP" />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Classes="ghost"
+                                        Command="{Binding DevAddGoldCommand}"
+                                        Content="+50 Gold" />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Classes="ghost"
+                                        Command="{Binding DevTakeDamageCommand}"
+                                        Content="Take 10 Damage" />
+                                    <Separator />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Classes="danger ghost"
+                                        Command="{Binding LogoutCommand}"
+                                        Content="Logout" />
+                                </StackPanel>
+                            </Border>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+
+</UserControl>

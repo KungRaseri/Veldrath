@@ -1,492 +1,167 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:RealmUnbound.Client.ViewModels"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d"
-             d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="RealmUnbound.Client.Views.GameView"
-             x:DataType="vm:GameViewModel">
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    xmlns:views="using:RealmUnbound.Client.Views"
+    d:DesignHeight="720"
+    d:DesignWidth="1280"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         GAME VIEW — 3-column layout with collapsible left panel
-         Row 0: Header  (Auto)
-         Row 1: Content — Left|Center|Right  (*)
-         Row 2: Action bar  (Auto)
-    ══════════════════════════════════════════════════════════════════════ -->
+    <!--
+        ══════════════════════════════════════════════════════════════════════
+        GAME VIEW — 3-column layout with collapsible left panel
+        Row 0: Header  (Auto)
+        Row 1: Content — Left|Center|Right  (*)
+        Row 2: Action bar  (Auto)
+        ══════════════════════════════════════════════════════════════════════
+    -->
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- ── ROW 0: HEADER ──────────────────────────────────────────────── -->
-        <Border Grid.Row="0"
-                Classes="panel-topbar">
-            <Grid ColumnDefinitions="Auto,*,Auto">
+        <!--  ── ROW 0: HEADER ────────────────────────────────────────────────  -->
+        <views:GameHeaderView Grid.Row="0" />
 
-                <!-- Col 0: compact character strip — name · class · level + stat bars -->
-                <StackPanel Grid.Column="0"
-                            Spacing="2"
-                            VerticalAlignment="Center"
-                            Margin="0,0,16,0">
-
-                    <!-- Name · ClassName · Level badge -->
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock Text="{Binding CharacterName}"
-                                   Classes="accent"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding ClassName}"
-                                   Foreground="{DynamicResource GameTextTertiaryBrush}"
-                                   FontSize="11"
-                                   VerticalAlignment="Center" />
-                        <Border Background="{DynamicResource GameBackground3Brush}"
-                                BorderBrush="{DynamicResource GameBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="2"
-                                Padding="4,1"
-                                VerticalAlignment="Center">
-                            <TextBlock FontSize="10">
-                                <Run Text="Lv. " /><Run Text="{Binding Level}" FontWeight="Bold" />
-                            </TextBlock>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- Stat bars — text overlaid inside each bar, stacked with no gap -->
-                    <!-- Light grey backing ensures text is readable when bar fill is empty -->
-                    <Border Background="#C8C8C8" CornerRadius="2" ClipToBounds="True">
-                        <StackPanel Spacing="0">
-
-                            <!-- HP bar -->
-                            <Panel Height="14">
-                                <ProgressBar Classes="health"
-                                             Minimum="0"
-                                             Maximum="{Binding MaxHealth}"
-                                             Value="{Binding CurrentHealth}"
-                                             Height="14" />
-                                <TextBlock HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="Black">
-                                    <Run Text="HP " /><Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
-                                </TextBlock>
-                            </Panel>
-
-                            <!-- MP bar -->
-                            <Panel Height="14">
-                                <ProgressBar Classes="mana"
-                                             Minimum="0"
-                                             Maximum="{Binding MaxMana}"
-                                             Value="{Binding CurrentMana}"
-                                             Height="14" />
-                                <TextBlock HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="Black">
-                                    <Run Text="MP " /><Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
-                                </TextBlock>
-                            </Panel>
-
-                            <!-- XP bar -->
-                            <Panel Height="12">
-                                <ProgressBar Classes="xp"
-                                             Minimum="0"
-                                             Maximum="{Binding ExperienceToNextLevel}"
-                                             Value="{Binding Experience}"
-                                             Height="12" />
-                                <TextBlock HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="Black">
-                                    <Run Text="XP " /><Run Text="{Binding Experience}" /><Run Text="/" /><Run Text="{Binding ExperienceToNextLevel}" />
-                                </TextBlock>
-                            </Panel>
-
-                        </StackPanel>
-                    </Border>
-
-                </StackPanel>
-
-                <!-- Col 1: zone info — name + type badge + sub-location breadcrumb -->
-                <StackPanel Grid.Column="1"
-                            Spacing="4"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Center">
-
-                    <!-- Zone name + type badge -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding ZoneName}"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center" />
-                        <Border Background="{DynamicResource GameBackground3Brush}"
-                                BorderBrush="{DynamicResource GameBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="3"
-                                Padding="6,2"
-                                VerticalAlignment="Center"
-                                IsVisible="{Binding ZoneType,
-                                            Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                            <TextBlock Text="{Binding ZoneType}"
-                                       Classes="caption" />
-                        </Border>
-                    </StackPanel>
-
-                    <!-- Sub-location breadcrumb (shown when inside a specific location) -->
-                    <TextBlock Foreground="{DynamicResource GameTextTertiaryBrush}"
-                               FontSize="12"
-                               IsVisible="{Binding CurrentZoneLocationDisplayName,
-                                           Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <Run Text="› " /><Run Text="{Binding CurrentZoneLocationDisplayName}" />
-                    </TextBlock>
-
-                    <!-- Zone description fallback (shown when not at a specific location) -->
-                    <TextBlock Text="{Binding ZoneDescription}"
-                               Classes="muted"
-                               FontStyle="Italic"
-                               FontSize="11"
-                               IsVisible="{Binding CurrentZoneLocationDisplayName,
-                                           Converter={x:Static StringConverters.IsNullOrEmpty}}" />
-
-                </StackPanel>
-
-                <!-- Col 2: connection dot + settings flyout -->
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            VerticalAlignment="Center">
-
-                    <!-- Connection status dot -->
-                    <Ellipse Width="10" Height="10"
-                             VerticalAlignment="Center"
-                             Fill="{Binding ConnectionStatusColor}"
-                             ToolTip.Tip="{Binding ConnectionStatusTooltip}" />
-
-                    <!-- Settings flyout button -->
-                    <Button Classes="icon ghost"
-                            Content="⚙"
-                            FontSize="16"
-                            Height="32" Width="32"
-                            ToolTip.Tip="Settings"
-                            Command="{Binding ToggleSettingsCommand}">
-                        <Button.Flyout>
-                            <Flyout IsOpen="{Binding IsSettingsOpen, Mode=TwoWay}"
-                                    Placement="BottomEdgeAlignedRight">
-                                <Border Background="{DynamicResource GameBackground2Brush}"
-                                        BorderBrush="{DynamicResource GameBorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="4"
-                                        Padding="12">
-                                    <StackPanel Spacing="8" MinWidth="180">
-                                        <TextBlock Text="Settings" FontWeight="Bold" />
-                                        <Separator />
-                                        <Button Content="{Binding MusicMuteLabel}"
-                                                Classes="ghost"
-                                                HorizontalAlignment="Stretch"
-                                                Command="{Binding ToggleMusicMuteCommand}" />
-                                        <Button Content="{Binding SfxMuteLabel}"
-                                                Classes="ghost"
-                                                HorizontalAlignment="Stretch"
-                                                Command="{Binding ToggleSfxMuteCommand}" />
-                                        <Separator />
-                                        <TextBlock Text="Dev Tools"
-                                                   Classes="caption"
-                                                   Margin="0,4,0,0" />
-                                        <Button Content="Gain 100 XP"
-                                                Classes="ghost"
-                                                HorizontalAlignment="Stretch"
-                                                Command="{Binding DevGainXpCommand}" />
-                                        <Button Content="+50 Gold"
-                                                Classes="ghost"
-                                                HorizontalAlignment="Stretch"
-                                                Command="{Binding DevAddGoldCommand}" />
-                                        <Button Content="Take 10 Damage"
-                                                Classes="ghost"
-                                                HorizontalAlignment="Stretch"
-                                                Command="{Binding DevTakeDamageCommand}" />
-                                        <Separator />
-                                        <Button Content="Logout"
-                                                Classes="danger ghost"
-                                                HorizontalAlignment="Stretch"
-                                                Command="{Binding LogoutCommand}" />
-                                    </StackPanel>
-                                </Border>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- ── ROW 1: 3-COLUMN CONTENT ───────────────────────────────────── -->
+        <!--  ── ROW 1: 3-COLUMN CONTENT ─────────────────────────────────────  -->
         <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
 
-            <!-- ── LEFT PANEL (collapsible) ──────────────────────────────── -->
-            <!-- DockPanel auto-sizes the column: 224px open, 28px collapsed -->
-            <DockPanel Grid.Column="0"
-                       Background="{DynamicResource GameBackground1Brush}"
-                       LastChildFill="False">
+            <!--  ── LEFT PANEL (collapsible) ────────────────────────────────  -->
+            <views:GameLeftPanelView Grid.Column="0" />
 
-                <!-- Toggle button — always visible, pinned to right edge -->
-                <Button DockPanel.Dock="Right"
-                        Classes="icon ghost"
-                        Content="{Binding LeftPanelToggleIcon}"
-                        Command="{Binding ToggleLeftPanelCommand}"
-                        Width="28"
-                        VerticalAlignment="Top"
-                        Margin="0,10,2,0"
-                        ToolTip.Tip="Toggle stats panel" />
-
-                <!-- Collapsible character-sheet panel -->
-                <Border DockPanel.Dock="Left"
-                        IsVisible="{Binding IsLeftPanelOpen}"
-                        Width="196"
-                        BorderBrush="{DynamicResource GameBorderBrush}"
-                        BorderThickness="0,0,1,0"
-                        Padding="12,12,8,12">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Spacing="0">
-
-                            <!-- Gold -->
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
-                                <TextBlock Text="Gold"
-                                           FontSize="12"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1"
-                                           Classes="accent"
-                                           FontSize="13">
-                                    <Run Text="{Binding Gold}" /><Run Text=" gp" />
-                                </TextBlock>
-                            </Grid>
-
-                            <!-- Unspent AP badge -->
-                            <Button IsVisible="{Binding HasUnspentPoints}"
-                                    Command="{Binding OpenAttributeAllocationCommand}"
-                                    Background="{DynamicResource GameWarningMutedBrush}"
-                                    BorderBrush="{DynamicResource GameWarningBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="3"
-                                    Padding="6,3"
-                                    Margin="0,8,0,8"
-                                    HorizontalAlignment="Stretch"
-                                    HorizontalContentAlignment="Left">
-                                <TextBlock Classes="warning" FontSize="11">
-                                    <Run Text="{Binding UnspentAttributePoints}" /><Run Text=" unspent attribute points" />
-                                </TextBlock>
-                            </Button>
-
-                            <!-- Divider -->
-                            <Border Classes="separator" Margin="0,0,0,8" />
-
-                            <!-- Attributes -->
-                            <TextBlock Text="Attributes"
-                                       Classes="caption"
-                                       Margin="0,0,0,6" />
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,2">
-                                <TextBlock Text="STR" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Strength}" Classes="accent" FontSize="12" />
-                            </Grid>
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,2">
-                                <TextBlock Text="DEX" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Dexterity}" Classes="accent" FontSize="12" />
-                            </Grid>
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,2">
-                                <TextBlock Text="CON" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Constitution}" Classes="accent" FontSize="12" />
-                            </Grid>
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,2">
-                                <TextBlock Text="INT" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Intelligence}" Classes="accent" FontSize="12" />
-                            </Grid>
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,2">
-                                <TextBlock Text="WIS" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Wisdom}" Classes="accent" FontSize="12" />
-                            </Grid>
-                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                <TextBlock Text="CHA" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Charisma}" Classes="accent" FontSize="12" />
-                            </Grid>
-
-                            <!-- Divider -->
-                            <Border Classes="separator" Margin="0,0,0,8" />
-
-                            <!-- Equipment slots -->
-                            <TextBlock Text="Equipment"
-                                       Classes="caption"
-                                       Margin="0,0,0,6" />
-                            <ItemsControl ItemsSource="{Binding EquipmentSlots}">
-                                <ItemsControl.Styles>
-                                    <Style Selector="Border.equipped">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
-                                        <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
-                                    </Style>
-                                </ItemsControl.Styles>
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:EquipmentSlotViewModel">
-                                        <Border Width="44" Height="52"
-                                                Margin="2"
-                                                Background="{DynamicResource GameBackground2Brush}"
-                                                BorderBrush="{DynamicResource GameBorderBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="3"
-                                                ToolTip.Tip="{Binding Label}"
-                                                Classes.equipped="{Binding IsOccupied}">
-                                            <StackPanel>
-                                                <Panel Width="36" Height="36" Margin="4,4,4,0">
-                                                    <Image Source="{Binding DisplayIcon}"
-                                                           Width="36" Height="36"
-                                                           Stretch="Uniform"
-                                                           IsVisible="{Binding IsOccupied}"
-                                                           VerticalAlignment="Top" />
-                                                    <TextBlock Text="{Binding Label}"
-                                                               FontSize="7"
-                                                               Classes="caption"
-                                                               IsVisible="{Binding IsEmpty}"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               TextWrapping="Wrap"
-                                                               TextAlignment="Center" />
-                                                </Panel>
-                                                <TextBlock Text="{Binding Label}"
-                                                           FontSize="6"
-                                                           Classes="caption"
-                                                           IsVisible="{Binding IsOccupied}"
-                                                           HorizontalAlignment="Center"
-                                                           Margin="2,1"
-                                                           TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
-            </DockPanel>
-
-            <!-- ── CENTER PANEL (Zone / Region / World views) ───────────── -->
-            <Border Grid.Column="1"
-                    Background="{DynamicResource GameBackground0Brush}"
-                    Padding="24">
+            <!--  ── CENTER PANEL (Zone / Region / World views) ─────────────  -->
+            <Border
+                Grid.Column="1"
+                Padding="24"
+                Background="{DynamicResource GameBackground0Brush}">
                 <DockPanel>
 
-                    <!-- Header: zone description + view selector tabs -->
-                    <DockPanel DockPanel.Dock="Top"
-                               Margin="0,0,0,16">
+                    <!--  Header: zone description + view selector tabs  -->
+                    <DockPanel Margin="0,0,0,16" DockPanel.Dock="Top">
 
-                        <!-- View tabs (right-aligned) -->
-                        <StackPanel DockPanel.Dock="Right"
-                                    Orientation="Horizontal"
-                                    Spacing="2"
-                                    VerticalAlignment="Center">
-                            <Button Content="Zone"
-                                    Classes="ghost"
-                                    Classes.accent="{Binding IsZoneViewActive}"
-                                    Command="{Binding ShowZoneViewCommand}"
-                                    Height="28"
-                                    FontSize="12" />
-                            <Button Content="Region"
-                                    Classes="ghost"
-                                    Classes.accent="{Binding IsRegionViewActive}"
-                                    Command="{Binding ShowRegionViewCommand}"
-                                    Height="28"
-                                    FontSize="12" />
-                            <Button Content="World"
-                                    Classes="ghost"
-                                    Classes.accent="{Binding IsWorldViewActive}"
-                                    Command="{Binding ShowWorldViewCommand}"
-                                    Height="28"
-                                    FontSize="12" />
+                        <!--  View tabs (right-aligned)  -->
+                        <StackPanel
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="2">
+                            <Button
+                                Height="28"
+                                Classes="ghost"
+                                Classes.accent="{Binding IsZoneViewActive}"
+                                Command="{Binding ShowZoneViewCommand}"
+                                Content="Zone"
+                                FontSize="12" />
+                            <Button
+                                Height="28"
+                                Classes="ghost"
+                                Classes.accent="{Binding IsRegionViewActive}"
+                                Command="{Binding ShowRegionViewCommand}"
+                                Content="Region"
+                                FontSize="12" />
+                            <Button
+                                Height="28"
+                                Classes="ghost"
+                                Classes.accent="{Binding IsWorldViewActive}"
+                                Command="{Binding ShowWorldViewCommand}"
+                                Content="World"
+                                FontSize="12" />
                         </StackPanel>
 
-                        <!-- Zone description (fills remaining width) -->
-                        <TextBlock Text="{Binding ZoneDescription}"
-                                   Classes="muted"
-                                   FontStyle="Italic"
-                                   TextWrapping="Wrap"
-                                   VerticalAlignment="Center" />
+                        <!--  Zone description (fills remaining width)  -->
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Classes="muted"
+                            FontStyle="Italic"
+                            Text="{Binding ZoneDescription}"
+                            TextWrapping="Wrap" />
                     </DockPanel>
 
-                    <!-- Three panels stacked — only the active one is visible -->
+                    <!--  Three panels stacked — only the active one is visible  -->
                     <Grid>
 
-                        <!-- ══════════════════════════════════════════════════
-                             ZONE PANEL — current zone details + mini region list
-                        ══════════════════════════════════════════════════ -->
-                        <ScrollViewer IsVisible="{Binding IsZoneViewActive}"
-                                      VerticalScrollBarVisibility="Auto">
+                        <!--
+                            ══════════════════════════════════════════════════
+                            ZONE PANEL — current zone details + mini region list
+                            ══════════════════════════════════════════════════
+                        -->
+                        <ScrollViewer IsVisible="{Binding IsZoneViewActive}" VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="16">
 
-                                <!-- Feature badges (Inn / Merchant) -->
-                                <StackPanel Orientation="Horizontal"
-                                            Spacing="8"
-                                            Margin="0,4,0,0">
-                                    <Border Background="{DynamicResource GameSuccessMutedBrush}"
-                                            BorderBrush="{DynamicResource GameSuccessBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Padding="10,5"
-                                            IsVisible="{Binding HasInn}">
-                                        <TextBlock Text="Inn"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource GameSuccessBrush}" />
+                                <!--  Feature badges (Inn / Merchant)  -->
+                                <StackPanel
+                                    Margin="0,4,0,0"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                                    <Border
+                                        Padding="10,5"
+                                        Background="{DynamicResource GameSuccessMutedBrush}"
+                                        BorderBrush="{DynamicResource GameSuccessBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding HasInn}">
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="{DynamicResource GameSuccessBrush}"
+                                            Text="Inn" />
                                     </Border>
-                                    <Border Background="{DynamicResource GameInfoMutedBrush}"
-                                            BorderBrush="{DynamicResource GameInfoBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Padding="10,5"
-                                            IsVisible="{Binding HasMerchant}">
-                                        <TextBlock Text="Merchant"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource GameInfoBrush}" />
+                                    <Border
+                                        Padding="10,5"
+                                        Background="{DynamicResource GameInfoMutedBrush}"
+                                        BorderBrush="{DynamicResource GameInfoBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding HasMerchant}">
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="{DynamicResource GameInfoBrush}"
+                                            Text="Merchant" />
                                     </Border>
                                 </StackPanel>
 
-                                <!-- Region breadcrumb + min level -->
+                                <!--  Region breadcrumb + min level  -->
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Grid.Column="0"
-                                                Orientation="Horizontal"
-                                                Spacing="8"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="Region:"
-                                                   Classes="caption"
-                                                   VerticalAlignment="Center" />
-                                        <Button Content="{Binding RegionName}"
-                                                Command="{Binding ShowRegionViewCommand}"
-                                                Classes="ghost"
-                                                FontSize="13"
-                                                Height="24"
-                                                Padding="4,0"
-                                                VerticalAlignment="Center" />
+                                    <StackPanel
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Classes="caption"
+                                            Text="Region:" />
+                                        <Button
+                                            Height="24"
+                                            Padding="4,0"
+                                            VerticalAlignment="Center"
+                                            Classes="ghost"
+                                            Command="{Binding ShowRegionViewCommand}"
+                                            Content="{Binding RegionName}"
+                                            FontSize="13" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1"
-                                                Orientation="Horizontal"
-                                                Spacing="4"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="Min level"
-                                                   Classes="caption"
-                                                   VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding ZoneMinLevel}"
-                                                   Classes="accent"
-                                                   FontWeight="Bold"
-                                                   FontSize="15"
-                                                   VerticalAlignment="Center" />
+                                    <StackPanel
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="4">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Classes="caption"
+                                            Text="Min level" />
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Classes="accent"
+                                            FontSize="15"
+                                            FontWeight="Bold"
+                                            Text="{Binding ZoneMinLevel}" />
                                     </StackPanel>
                                 </Grid>
 
                                 <Border Classes="separator" />
 
-                                <!-- Mini zone list for current region -->
-                                <TextBlock Text="Zones in this region"
-                                           Classes="caption" />
+                                <!--  Mini zone list for current region  -->
+                                <TextBlock Classes="caption" Text="Zones in this region" />
                                 <ItemsControl ItemsSource="{Binding RegionZones}">
                                     <ItemsControl.Styles>
                                         <Style Selector="Border.active">
@@ -501,35 +176,37 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:ZoneNodeViewModel">
-                                            <Border Margin="0,0,8,8"
-                                                    Padding="10,7"
-                                                    CornerRadius="4"
-                                                    Background="{DynamicResource GameBackground2Brush}"
-                                                    BorderBrush="{DynamicResource GameBorderBrush}"
-                                                    BorderThickness="1"
-                                                    MinWidth="120"
-                                                    Classes.active="{Binding IsCurrentZone}">
+                                            <Border
+                                                MinWidth="120"
+                                                Margin="0,0,8,8"
+                                                Padding="10,7"
+                                                Background="{DynamicResource GameBackground2Brush}"
+                                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                                BorderThickness="1"
+                                                Classes.active="{Binding IsCurrentZone}"
+                                                CornerRadius="4">
                                                 <StackPanel Spacing="3">
-                                                    <TextBlock Text="{Binding Name}"
-                                                               FontSize="12"
-                                                               FontWeight="SemiBold" />
-                                                    <StackPanel Orientation="Horizontal"
-                                                                Spacing="6">
-                                                        <TextBlock Text="{Binding Type}"
-                                                                   FontSize="10"
-                                                                   Classes="caption" />
-                                                        <TextBlock FontSize="10"
-                                                                   Classes="caption">
+                                                    <TextBlock
+                                                        FontSize="12"
+                                                        FontWeight="SemiBold"
+                                                        Text="{Binding Name}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock
+                                                            Classes="caption"
+                                                            FontSize="10"
+                                                            Text="{Binding Type}" />
+                                                        <TextBlock Classes="caption" FontSize="10">
                                                             <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
                                                         </TextBlock>
                                                     </StackPanel>
-                                                    <Button Content="Travel →"
-                                                            Classes="ghost"
-                                                            FontSize="10"
-                                                            Height="22"
-                                                            Padding="6,0"
-                                                            IsVisible="{Binding CanTravel}"
-                                                            Command="{Binding TravelCommand}" />
+                                                    <Button
+                                                        Height="22"
+                                                        Padding="6,0"
+                                                        Classes="ghost"
+                                                        Command="{Binding TravelCommand}"
+                                                        Content="Travel →"
+                                                        FontSize="10"
+                                                        IsVisible="{Binding CanTravel}" />
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>
@@ -538,48 +215,51 @@
 
                                 <Border Classes="separator" />
 
-                                <!-- Locations in this zone -->
-                                <TextBlock Text="Locations"
-                                           Classes="caption" />
+                                <!--  Locations in this zone  -->
+                                <TextBlock Classes="caption" Text="Locations" />
                                 <ItemsControl ItemsSource="{Binding ZoneLocations}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:ZoneLocationItemViewModel">
-                                            <Border Margin="0,0,0,6"
-                                                    Padding="10,7"
-                                                    CornerRadius="4"
-                                                    Background="{DynamicResource GameBackground2Brush}"
-                                                    BorderBrush="{DynamicResource GameBorderBrush}"
-                                                    BorderThickness="1">
+                                            <Border
+                                                Margin="0,0,0,6"
+                                                Padding="10,7"
+                                                Background="{DynamicResource GameBackground2Brush}"
+                                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4">
                                                 <StackPanel Spacing="4">
                                                     <Grid ColumnDefinitions="*,Auto">
                                                         <StackPanel Grid.Column="0" Spacing="2">
-                                                            <TextBlock Text="{Binding DisplayName}"
-                                                                       FontSize="12"
-                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock
+                                                                FontSize="12"
+                                                                FontWeight="SemiBold"
+                                                                Text="{Binding DisplayName}" />
                                                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                                                <TextBlock Text="{Binding LocationType}"
-                                                                           FontSize="10"
-                                                                           Classes="caption" />
-                                                                <TextBlock FontSize="10"
-                                                                           Classes="caption"
-                                                                           IsVisible="{Binding MinLevel, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                                <TextBlock
+                                                                    Classes="caption"
+                                                                    FontSize="10"
+                                                                    Text="{Binding LocationType}" />
+                                                                <TextBlock
+                                                                    Classes="caption"
+                                                                    FontSize="10"
+                                                                    IsVisible="{Binding MinLevel, Converter={x:Static ObjectConverters.IsNotNull}}">
                                                                     <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
                                                                 </TextBlock>
                                                             </StackPanel>
                                                         </StackPanel>
-                                                        <Button Grid.Column="1"
-                                                                Content="Go →"
-                                                                Classes="ghost"
-                                                                FontSize="10"
-                                                                Height="22"
-                                                                Padding="6,0"
-                                                                VerticalAlignment="Center"
-                                                                IsVisible="{Binding CanNavigate}"
-                                                                Command="{Binding NavigateCommand}" />
+                                                        <Button
+                                                            Grid.Column="1"
+                                                            Height="22"
+                                                            Padding="6,0"
+                                                            VerticalAlignment="Center"
+                                                            Classes="ghost"
+                                                            Command="{Binding NavigateCommand}"
+                                                            Content="Go →"
+                                                            FontSize="10"
+                                                            IsVisible="{Binding CanNavigate}" />
                                                     </Grid>
-                                                    <!-- Outgoing connection buttons — only shown when this is the current location -->
-                                                    <ItemsControl ItemsSource="{Binding $parent[Window].DataContext.CurrentLocationConnections, FallbackValue={}}"
-                                                                  IsVisible="{Binding IsCurrent}">
+                                                    <!--  Outgoing connection buttons — only shown when this is the current location  -->
+                                                    <ItemsControl IsVisible="{Binding IsCurrent}" ItemsSource="{Binding $parent[Window].DataContext.CurrentLocationConnections, FallbackValue={}}">
                                                         <ItemsControl.ItemsPanel>
                                                             <ItemsPanelTemplate>
                                                                 <WrapPanel Orientation="Horizontal" />
@@ -587,13 +267,14 @@
                                                         </ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate x:DataType="vm:ZoneConnectionLinkViewModel">
-                                                                <Button Content="{Binding Label}"
-                                                                        Classes="ghost"
-                                                                        FontSize="10"
-                                                                        Height="22"
-                                                                        Padding="6,0"
-                                                                        Margin="0,2,4,0"
-                                                                        Command="{Binding TraverseCommand}" />
+                                                                <Button
+                                                                    Height="22"
+                                                                    Margin="0,2,4,0"
+                                                                    Padding="6,0"
+                                                                    Classes="ghost"
+                                                                    Command="{Binding TraverseCommand}"
+                                                                    Content="{Binding Label}"
+                                                                    FontSize="10" />
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
@@ -603,53 +284,53 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
-                                <!-- ── ENEMY ROSTER ──────────────────────────────────── -->
-                                <!-- Visible only when at a zone location that has enemies -->
-                                <StackPanel Spacing="8"
-                                            IsVisible="{Binding HasSpawnedEnemies}">
+                                <!--  ── ENEMY ROSTER ────────────────────────────────────  -->
+                                <!--  Visible only when at a zone location that has enemies  -->
+                                <StackPanel IsVisible="{Binding HasSpawnedEnemies}" Spacing="8">
                                     <Border Classes="separator" />
-                                    <TextBlock Text="Enemies"
-                                               Classes="caption" />
+                                    <TextBlock Classes="caption" Text="Enemies" />
                                     <ItemsControl ItemsSource="{Binding SpawnedEnemies}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:SpawnedEnemyItemViewModel">
-                                                <Border Margin="0,0,0,5"
-                                                        Padding="8,6"
-                                                        CornerRadius="4"
-                                                        Background="{DynamicResource GameBackground2Brush}"
-                                                        BorderBrush="{DynamicResource GameBorderBrush}"
-                                                        BorderThickness="1">
+                                                <Border
+                                                    Margin="0,0,0,5"
+                                                    Padding="8,6"
+                                                    Background="{DynamicResource GameBackground2Brush}"
+                                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4">
                                                     <Grid ColumnDefinitions="*,Auto">
                                                         <StackPanel Grid.Column="0" Spacing="2">
                                                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                                                <TextBlock Text="{Binding Name}"
-                                                                           FontSize="12"
-                                                                           FontWeight="SemiBold" />
-                                                                <TextBlock FontSize="10"
-                                                                           Classes="caption">
+                                                                <TextBlock
+                                                                    FontSize="12"
+                                                                    FontWeight="SemiBold"
+                                                                    Text="{Binding Name}" />
+                                                                <TextBlock Classes="caption" FontSize="10">
                                                                     <Run Text="Lv." /><Run Text="{Binding Level}" />
                                                                 </TextBlock>
                                                             </StackPanel>
-                                                            <ProgressBar Classes="health"
-                                                                         Minimum="0"
-                                                                         Maximum="{Binding MaxHealth}"
-                                                                         Value="{Binding CurrentHealth}"
-                                                                         Height="4" />
-                                                            <TextBlock FontSize="10"
-                                                                       Classes="caption">
+                                                            <ProgressBar
+                                                                Height="4"
+                                                                Classes="health"
+                                                                Maximum="{Binding MaxHealth}"
+                                                                Minimum="0"
+                                                                Value="{Binding CurrentHealth}" />
+                                                            <TextBlock Classes="caption" FontSize="10">
                                                                 <Run Text="{Binding CurrentHealth}" /><Run Text=" / " /><Run Text="{Binding MaxHealth}" /><Run Text=" HP" />
                                                             </TextBlock>
                                                         </StackPanel>
-                                                        <Button Grid.Column="1"
-                                                                Content="Engage"
-                                                                Classes="accent"
-                                                                FontSize="10"
-                                                                Height="26"
-                                                                Padding="8,0"
-                                                                VerticalAlignment="Center"
-                                                                IsVisible="{Binding IsAlive}"
-                                                                Command="{Binding $parent[UserControl].DataContext.EngageEnemyCommand}"
-                                                                CommandParameter="{Binding Id}" />
+                                                        <Button
+                                                            Grid.Column="1"
+                                                            Height="26"
+                                                            Padding="8,0"
+                                                            VerticalAlignment="Center"
+                                                            Classes="accent"
+                                                            Command="{Binding $parent[UserControl].DataContext.EngageEnemyCommand}"
+                                                            CommandParameter="{Binding Id}"
+                                                            Content="Engage"
+                                                            FontSize="10"
+                                                            IsVisible="{Binding IsAlive}" />
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -657,33 +338,37 @@
                                     </ItemsControl>
                                 </StackPanel>
 
-                                <!-- ── COMBAT HUD ────────────────────────────────────── -->
-                                <!-- Overlays the zone panel while IsInCombat is true -->
-                                <Border Padding="14"
-                                        CornerRadius="6"
-                                        Background="{DynamicResource GameBackground2Brush}"
-                                        BorderBrush="{DynamicResource GameDangerBrush}"
-                                        BorderThickness="1"
-                                        IsVisible="{Binding IsInCombat}">
+                                <!--  ── COMBAT HUD ──────────────────────────────────────  -->
+                                <!--  Overlays the zone panel while IsInCombat is true  -->
+                                <Border
+                                    Padding="14"
+                                    Background="{DynamicResource GameBackground2Brush}"
+                                    BorderBrush="{DynamicResource GameDangerBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    IsVisible="{Binding IsInCombat}">
                                     <StackPanel Spacing="10">
-                                        <!-- Enemy stats -->
+                                        <!--  Enemy stats  -->
                                         <StackPanel Spacing="4">
                                             <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Grid.Column="0"
-                                                           Text="{Binding CombatEnemyName}"
-                                                           FontSize="15"
-                                                           FontWeight="Bold" />
-                                                <TextBlock Grid.Column="1"
-                                                           Classes="caption"
-                                                           VerticalAlignment="Center">
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    FontSize="15"
+                                                    FontWeight="Bold"
+                                                    Text="{Binding CombatEnemyName}" />
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    VerticalAlignment="Center"
+                                                    Classes="caption">
                                                     <Run Text="Lv." /><Run Text="{Binding CombatEnemyLevel}" />
                                                 </TextBlock>
                                             </Grid>
-                                            <ProgressBar Classes="health"
-                                                         Minimum="0"
-                                                         Maximum="{Binding CombatEnemyMaxHealth}"
-                                                         Value="{Binding CombatEnemyCurrentHealth}"
-                                                         Height="8" />
+                                            <ProgressBar
+                                                Height="8"
+                                                Classes="health"
+                                                Maximum="{Binding CombatEnemyMaxHealth}"
+                                                Minimum="0"
+                                                Value="{Binding CombatEnemyCurrentHealth}" />
                                             <TextBlock Classes="caption">
                                                 <Run Text="{Binding CombatEnemyCurrentHealth}" /><Run Text=" / " /><Run Text="{Binding CombatEnemyMaxHealth}" /><Run Text=" HP" />
                                             </TextBlock>
@@ -691,28 +376,30 @@
 
                                         <Border Classes="separator" />
 
-                                        <!-- Combat action buttons -->
+                                        <!--  Combat action buttons  -->
                                         <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <Button Content="⚔ Attack"
-                                                    Classes="accent"
-                                                    Height="32"
-                                                    FontSize="13"
-                                                    Command="{Binding AttackEnemyCommand}" />
-                                            <Button Content="🛡 Defend"
-                                                    Classes="ghost"
-                                                    Height="32"
-                                                    FontSize="13"
-                                                    Command="{Binding DefendActionCommand}" />
-                                            <Button Content="🏃 Flee"
-                                                    Classes="danger ghost"
-                                                    Height="32"
-                                                    FontSize="13"
-                                                    Command="{Binding FleeFromCombatCommand}" />
+                                            <Button
+                                                Height="32"
+                                                Classes="accent"
+                                                Command="{Binding AttackEnemyCommand}"
+                                                Content="⚔ Attack"
+                                                FontSize="13" />
+                                            <Button
+                                                Height="32"
+                                                Classes="ghost"
+                                                Command="{Binding DefendActionCommand}"
+                                                Content="🛡 Defend"
+                                                FontSize="13" />
+                                            <Button
+                                                Height="32"
+                                                Classes="danger ghost"
+                                                Command="{Binding FleeFromCombatCommand}"
+                                                Content="🏃 Flee"
+                                                FontSize="13" />
                                         </StackPanel>
 
-                                        <!-- Learned ability buttons (dynamic from LearnedAbilities) -->
-                                        <ItemsControl ItemsSource="{Binding LearnedAbilities}"
-                                                      IsVisible="{Binding LearnedAbilities.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <!--  Learned ability buttons (dynamic from LearnedAbilities)  -->
+                                        <ItemsControl IsVisible="{Binding LearnedAbilities.Count, Converter={x:Static ObjectConverters.IsNotNull}}" ItemsSource="{Binding LearnedAbilities}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <WrapPanel Orientation="Horizontal" />
@@ -720,23 +407,24 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Button Content="{Binding}"
-                                                            Classes="ghost"
-                                                            Height="30"
-                                                            FontSize="12"
-                                                            Margin="0,0,6,6"
-                                                            Command="{Binding $parent[UserControl].DataContext.UseAbilityInCombatCommand}"
-                                                            CommandParameter="{Binding}" />
+                                                    <Button
+                                                        Height="30"
+                                                        Margin="0,0,6,6"
+                                                        Classes="ghost"
+                                                        Command="{Binding $parent[UserControl].DataContext.UseAbilityInCombatCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        Content="{Binding}"
+                                                        FontSize="12" />
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
 
-                                        <!-- Enemy known abilities caption -->
-                                        <StackPanel Spacing="2"
-                                                    IsVisible="{Binding EnemyAbilityNames.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
-                                            <TextBlock Text="Enemy abilities:"
-                                                       Classes="caption"
-                                                       FontSize="11" />
+                                        <!--  Enemy known abilities caption  -->
+                                        <StackPanel IsVisible="{Binding EnemyAbilityNames.Count, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="2">
+                                            <TextBlock
+                                                Classes="caption"
+                                                FontSize="11"
+                                                Text="Enemy abilities:" />
                                             <ItemsControl ItemsSource="{Binding EnemyAbilityNames}">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -745,10 +433,11 @@
                                                 </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding}"
-                                                                   Classes="muted"
-                                                                   FontSize="11"
-                                                                   Margin="0,0,8,0" />
+                                                        <TextBlock
+                                                            Margin="0,0,8,0"
+                                                            Classes="muted"
+                                                            FontSize="11"
+                                                            Text="{Binding}" />
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
@@ -756,45 +445,50 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- ── DEATH OVERLAY ──────────────────────────────────── -->
-                                <!-- Shown when the player is dead -->
-                                <Border Padding="14"
-                                        CornerRadius="6"
-                                        Background="{DynamicResource GameBackground2Brush}"
-                                        BorderBrush="{DynamicResource GameDangerBrush}"
-                                        BorderThickness="2"
-                                        IsVisible="{Binding IsPlayerDead}">
-                                    <StackPanel Spacing="10" HorizontalAlignment="Center">
-                                        <TextBlock Text="You have fallen…"
-                                                   FontSize="18"
-                                                   FontWeight="Bold"
-                                                   Classes="danger"
-                                                   HorizontalAlignment="Center" />
+                                <!--  ── DEATH OVERLAY ────────────────────────────────────  -->
+                                <!--  Shown when the player is dead  -->
+                                <Border
+                                    Padding="14"
+                                    Background="{DynamicResource GameBackground2Brush}"
+                                    BorderBrush="{DynamicResource GameDangerBrush}"
+                                    BorderThickness="2"
+                                    CornerRadius="6"
+                                    IsVisible="{Binding IsPlayerDead}">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="10">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            Classes="danger"
+                                            FontSize="18"
+                                            FontWeight="Bold"
+                                            Text="You have fallen…" />
 
-                                        <!-- Normal-mode: Respawn -->
-                                        <Button Content="Respawn"
-                                                Classes="accent"
-                                                Height="36"
-                                                FontSize="14"
+                                        <!--  Normal-mode: Respawn  -->
+                                        <Button
+                                            Height="36"
+                                            HorizontalAlignment="Center"
+                                            Classes="accent"
+                                            Command="{Binding RespawnCommand}"
+                                            Content="Respawn"
+                                            FontSize="14"
+                                            IsVisible="{Binding IsHardcoreDeath, Converter={x:Static BoolConverters.Not}}" />
+
+                                        <!--  Hardcore-mode: return to character select  -->
+                                        <StackPanel
+                                            HorizontalAlignment="Center"
+                                            IsVisible="{Binding IsHardcoreDeath}"
+                                            Spacing="6">
+                                            <TextBlock
                                                 HorizontalAlignment="Center"
-                                                IsVisible="{Binding IsHardcoreDeath,
-                                                            Converter={x:Static BoolConverters.Not}}"
-                                                Command="{Binding RespawnCommand}" />
-
-                                        <!-- Hardcore-mode: return to character select -->
-                                        <StackPanel Spacing="6"
-                                                    IsVisible="{Binding IsHardcoreDeath}"
-                                                    HorizontalAlignment="Center">
-                                            <TextBlock Text="Your hardcore character is gone."
-                                                       Classes="muted"
-                                                       FontSize="12"
-                                                       HorizontalAlignment="Center" />
-                                            <Button Content="Return to Character Select"
-                                                    Classes="danger"
-                                                    Height="36"
-                                                    FontSize="14"
-                                                    HorizontalAlignment="Center"
-                                                    Command="{Binding LogoutCommand}" />
+                                                Classes="muted"
+                                                FontSize="12"
+                                                Text="Your hardcore character is gone." />
+                                            <Button
+                                                Height="36"
+                                                HorizontalAlignment="Center"
+                                                Classes="danger"
+                                                Command="{Binding LogoutCommand}"
+                                                Content="Return to Character Select"
+                                                FontSize="14" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Border>
@@ -802,46 +496,45 @@
                             </StackPanel>
                         </ScrollViewer>
 
-                        <!-- ══════════════════════════════════════════════════
-                             REGION PANEL — region info + full zone card grid
-                        ══════════════════════════════════════════════════ -->
-                        <ScrollViewer IsVisible="{Binding IsRegionViewActive}"
-                                      VerticalScrollBarVisibility="Auto">
+                        <!--
+                            ══════════════════════════════════════════════════
+                            REGION PANEL — region info + full zone card grid
+                            ══════════════════════════════════════════════════
+                        -->
+                        <ScrollViewer IsVisible="{Binding IsRegionViewActive}" VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="16">
 
-                                <!-- Region header -->
+                                <!--  Region header  -->
                                 <StackPanel Spacing="6">
-                                    <StackPanel Orientation="Horizontal"
-                                                Spacing="10">
-                                        <TextBlock Text="{Binding RegionName}"
-                                                   FontSize="20"
-                                                   FontWeight="Bold" />
-                                        <Border Background="{DynamicResource GameBackground3Brush}"
-                                                BorderBrush="{DynamicResource GameBorderBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="3"
-                                                Padding="6,2"
-                                                VerticalAlignment="Center"
-                                                IsVisible="{Binding RegionType,
-                                                    Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                                            <TextBlock Text="{Binding RegionType}"
-                                                       Classes="caption" />
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock
+                                            FontSize="20"
+                                            FontWeight="Bold"
+                                            Text="{Binding RegionName}" />
+                                        <Border
+                                            Padding="6,2"
+                                            VerticalAlignment="Center"
+                                            Background="{DynamicResource GameBackground3Brush}"
+                                            BorderBrush="{DynamicResource GameBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="3"
+                                            IsVisible="{Binding RegionType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <TextBlock Classes="caption" Text="{Binding RegionType}" />
                                         </Border>
                                     </StackPanel>
-                                    <TextBlock Classes="muted"
-                                               FontSize="13">
+                                    <TextBlock Classes="muted" FontSize="13">
                                         <Run Text="Levels " /><Run Text="{Binding RegionMinLevel}" /><Run Text="–" /><Run Text="{Binding RegionMaxLevel}" />
                                     </TextBlock>
-                                    <TextBlock Text="{Binding RegionDescription}"
-                                               Classes="muted"
-                                               FontStyle="Italic"
-                                               TextWrapping="Wrap" />
+                                    <TextBlock
+                                        Classes="muted"
+                                        FontStyle="Italic"
+                                        Text="{Binding RegionDescription}"
+                                        TextWrapping="Wrap" />
                                 </StackPanel>
 
                                 <Border Classes="separator" />
 
-                                <TextBlock Text="Zones"
-                                           Classes="caption" />
+                                <TextBlock Classes="caption" Text="Zones" />
                                 <ItemsControl ItemsSource="{Binding RegionZones}">
                                     <ItemsControl.Styles>
                                         <Style Selector="Border.active">
@@ -856,54 +549,60 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:ZoneNodeViewModel">
-                                            <Border Margin="0,0,12,12"
-                                                    Padding="14,10"
-                                                    CornerRadius="6"
-                                                    Background="{DynamicResource GameBackground2Brush}"
-                                                    BorderBrush="{DynamicResource GameBorderBrush}"
-                                                    BorderThickness="1"
-                                                    MinWidth="160"
-                                                    Classes.active="{Binding IsCurrentZone}">
+                                            <Border
+                                                MinWidth="160"
+                                                Margin="0,0,12,12"
+                                                Padding="14,10"
+                                                Background="{DynamicResource GameBackground2Brush}"
+                                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                                BorderThickness="1"
+                                                Classes.active="{Binding IsCurrentZone}"
+                                                CornerRadius="6">
                                                 <StackPanel Spacing="6">
-                                                    <StackPanel Orientation="Horizontal"
-                                                                Spacing="6">
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   FontSize="13"
-                                                                   FontWeight="SemiBold" />
-                                                        <TextBlock Text="★"
-                                                                   Classes="accent"
-                                                                   FontSize="11"
-                                                                   VerticalAlignment="Center"
-                                                                   IsVisible="{Binding IsCurrentZone}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            FontWeight="SemiBold"
+                                                            Text="{Binding Name}" />
+                                                        <TextBlock
+                                                            VerticalAlignment="Center"
+                                                            Classes="accent"
+                                                            FontSize="11"
+                                                            IsVisible="{Binding IsCurrentZone}"
+                                                            Text="★" />
                                                     </StackPanel>
-                                                    <Border CornerRadius="3"
-                                                            Padding="5,2"
-                                                            Background="{DynamicResource GameBackground4Brush}"
-                                                            HorizontalAlignment="Left">
-                                                        <TextBlock Text="{Binding Type}"
-                                                                   FontSize="10"
-                                                                   Classes="caption" />
+                                                    <Border
+                                                        Padding="5,2"
+                                                        HorizontalAlignment="Left"
+                                                        Background="{DynamicResource GameBackground4Brush}"
+                                                        CornerRadius="3">
+                                                        <TextBlock
+                                                            Classes="caption"
+                                                            FontSize="10"
+                                                            Text="{Binding Type}" />
                                                     </Border>
-                                                    <StackPanel Orientation="Horizontal"
-                                                                Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <TextBlock FontSize="11">
                                                             <Run Text="Lv." /><Run Text="{Binding MinLevel}" />
                                                         </TextBlock>
-                                                        <TextBlock Text="Inn"
-                                                                   FontSize="10"
-                                                                   Classes="muted"
-                                                                   IsVisible="{Binding HasInn}" />
-                                                        <TextBlock Text="Shop"
-                                                                   FontSize="10"
-                                                                   Classes="muted"
-                                                                   IsVisible="{Binding HasMerchant}" />
+                                                        <TextBlock
+                                                            Classes="muted"
+                                                            FontSize="10"
+                                                            IsVisible="{Binding HasInn}"
+                                                            Text="Inn" />
+                                                        <TextBlock
+                                                            Classes="muted"
+                                                            FontSize="10"
+                                                            IsVisible="{Binding HasMerchant}"
+                                                            Text="Shop" />
                                                     </StackPanel>
-                                                    <Button Content="Travel here"
-                                                            Classes="ghost"
-                                                            FontSize="11"
-                                                            Height="26"
-                                                            IsVisible="{Binding CanTravel}"
-                                                            Command="{Binding TravelCommand}" />
+                                                    <Button
+                                                        Height="26"
+                                                        Classes="ghost"
+                                                        Command="{Binding TravelCommand}"
+                                                        Content="Travel here"
+                                                        FontSize="11"
+                                                        IsVisible="{Binding CanTravel}" />
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>
@@ -913,27 +612,29 @@
                             </StackPanel>
                         </ScrollViewer>
 
-                        <!-- ══════════════════════════════════════════════════
-                             WORLD PANEL — world header + region card grid
-                        ══════════════════════════════════════════════════ -->
-                        <ScrollViewer IsVisible="{Binding IsWorldViewActive}"
-                                      VerticalScrollBarVisibility="Auto">
+                        <!--
+                            ══════════════════════════════════════════════════
+                            WORLD PANEL — world header + region card grid
+                            ══════════════════════════════════════════════════
+                        -->
+                        <ScrollViewer IsVisible="{Binding IsWorldViewActive}" VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="16">
 
-                                <!-- World header -->
+                                <!--  World header  -->
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="{Binding WorldName}"
-                                               FontSize="22"
-                                               FontWeight="Bold" />
-                                    <TextBlock Text="{Binding WorldEra}"
-                                               Classes="muted"
-                                               FontStyle="Italic" />
+                                    <TextBlock
+                                        FontSize="22"
+                                        FontWeight="Bold"
+                                        Text="{Binding WorldName}" />
+                                    <TextBlock
+                                        Classes="muted"
+                                        FontStyle="Italic"
+                                        Text="{Binding WorldEra}" />
                                 </StackPanel>
 
                                 <Border Classes="separator" />
 
-                                <TextBlock Text="Regions"
-                                           Classes="caption" />
+                                <TextBlock Classes="caption" Text="Regions" />
                                 <ItemsControl ItemsSource="{Binding WorldRegions}">
                                     <ItemsControl.Styles>
                                         <Style Selector="Border.active">
@@ -947,43 +648,47 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:RegionCardViewModel">
-                                            <Border Margin="0,0,16,16"
-                                                    Padding="16,12"
-                                                    CornerRadius="6"
-                                                    Background="{DynamicResource GameBackground2Brush}"
-                                                    BorderBrush="{DynamicResource GameBorderBrush}"
-                                                    BorderThickness="1"
-                                                    MinWidth="200"
-                                                    Classes.active="{Binding IsCurrentRegion}">
+                                            <Border
+                                                MinWidth="200"
+                                                Margin="0,0,16,16"
+                                                Padding="16,12"
+                                                Background="{DynamicResource GameBackground2Brush}"
+                                                BorderBrush="{DynamicResource GameBorderBrush}"
+                                                BorderThickness="1"
+                                                Classes.active="{Binding IsCurrentRegion}"
+                                                CornerRadius="6">
                                                 <StackPanel Spacing="8">
-                                                    <StackPanel Orientation="Horizontal"
-                                                                Spacing="8">
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   FontSize="15"
-                                                                   FontWeight="Bold" />
-                                                        <TextBlock Text="You are here"
-                                                                   FontSize="10"
-                                                                   Classes="accent"
-                                                                   VerticalAlignment="Center"
-                                                                   IsVisible="{Binding IsCurrentRegion}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock
+                                                            FontSize="15"
+                                                            FontWeight="Bold"
+                                                            Text="{Binding Name}" />
+                                                        <TextBlock
+                                                            VerticalAlignment="Center"
+                                                            Classes="accent"
+                                                            FontSize="10"
+                                                            IsVisible="{Binding IsCurrentRegion}"
+                                                            Text="You are here" />
                                                     </StackPanel>
-                                                    <Border CornerRadius="3"
-                                                            Padding="6,2"
-                                                            Background="{DynamicResource GameBackground3Brush}"
-                                                            HorizontalAlignment="Left">
-                                                        <TextBlock Text="{Binding Type}"
-                                                                   FontSize="11"
-                                                                   Classes="caption" />
+                                                    <Border
+                                                        Padding="6,2"
+                                                        HorizontalAlignment="Left"
+                                                        Background="{DynamicResource GameBackground3Brush}"
+                                                        CornerRadius="3">
+                                                        <TextBlock
+                                                            Classes="caption"
+                                                            FontSize="11"
+                                                            Text="{Binding Type}" />
                                                     </Border>
-                                                    <TextBlock FontSize="12"
-                                                               Classes="muted">
+                                                    <TextBlock Classes="muted" FontSize="12">
                                                         <Run Text="Levels " /><Run Text="{Binding MinLevel}" /><Run Text="–" /><Run Text="{Binding MaxLevel}" />
                                                     </TextBlock>
-                                                    <Button Content="Explore →"
-                                                            Classes="ghost"
-                                                            FontSize="11"
-                                                            Height="26"
-                                                            Command="{Binding ExploreCommand}" />
+                                                    <Button
+                                                        Height="26"
+                                                        Classes="ghost"
+                                                        Command="{Binding ExploreCommand}"
+                                                        Content="Explore →"
+                                                        FontSize="11" />
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>
@@ -997,251 +702,109 @@
                 </DockPanel>
             </Border>
 
-            <!-- ── RIGHT PANEL (action log + social) ─────────────────────── -->
-            <!-- DockPanel auto-sizes: 224px open, 28px collapsed -->
-            <DockPanel Grid.Column="2"
-                       Background="{DynamicResource GameBackground1Brush}"
-                       LastChildFill="False">
-
-                <!-- Toggle button — always visible, pinned to left edge -->
-                <Button DockPanel.Dock="Left"
-                        Classes="icon ghost"
-                        Content="{Binding RightPanelToggleIcon}"
-                        Command="{Binding ToggleRightPanelCommand}"
-                        Width="28"
-                        VerticalAlignment="Top"
-                        Margin="2,10,0,0"
-                        ToolTip.Tip="Toggle log panel" />
-
-                <!-- Collapsible content panel -->
-                <Border DockPanel.Dock="Right"
-                        IsVisible="{Binding IsRightPanelOpen}"
-                        Width="196"
-                        BorderBrush="{DynamicResource GameBorderBrush}"
-                        BorderThickness="1,0,0,0"
-                        Padding="8">
-                    <Grid RowDefinitions="1*,8,6*,8,3*">
-
-                        <!-- Row 0: Online in Zone -->
-                        <DockPanel Grid.Row="0">
-                            <TextBlock DockPanel.Dock="Top"
-                                       Text="Online in Zone"
-                                       Classes="caption"
-                                       Margin="0,0,0,6" />
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding OnlinePlayers}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:OnlinePlayerViewModel">
-                                            <Grid ColumnDefinitions="Auto,*,Auto"
-                                                  Margin="0,2">
-                                                <Ellipse Grid.Column="0"
-                                                         Width="7" Height="7"
-                                                         Fill="{DynamicResource GameSuccessBrush}"
-                                                         VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="1"
-                                                           Text="{Binding Name}"
-                                                           FontSize="12"
-                                                           Margin="6,0,0,0"
-                                                           VerticalAlignment="Center" />
-                                                <Button Grid.Column="2"
-                                                        Content="[W]"
-                                                        Classes="ghost"
-                                                        FontSize="10"
-                                                        Padding="2,0"
-                                                        ToolTip.Tip="Whisper"
-                                                        Command="{Binding StartWhisperCommand}" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </DockPanel>
-
-                        <!-- Row 1: GridSplitter -->
-                        <GridSplitter Grid.Row="1"
-                                      ResizeDirection="Rows"
-                                      HorizontalAlignment="Stretch"
-                                      Height="8" />
-
-                        <!-- Row 2: Chat -->
-                        <DockPanel Grid.Row="2">
-
-                            <!-- Send input row (pinned to bottom) -->
-                            <Grid DockPanel.Dock="Bottom"
-                                  IsVisible="{Binding IsChatInputVisible}"
-                                  ColumnDefinitions="*,Auto"
-                                  Margin="0,4,0,0">
-                                <TextBox Grid.Column="0"
-                                         Watermark="Message…"
-                                         Text="{Binding ChatInput}"
-                                         FontSize="11"
-                                         Margin="0,0,4,0" />
-                                <Button Grid.Column="1"
-                                        Content="↵"
-                                        Classes="ghost"
-                                        FontSize="14"
-                                        Width="32"
-                                        Command="{Binding SendChatCommand}" />
-                            </Grid>
-
-                            <!-- Whisper target input (pinned to top, only when Whisper is active) -->
-                            <TextBox DockPanel.Dock="Top"
-                                     Watermark="Recipient name…"
-                                     IsVisible="{Binding IsWhisperChannelActive}"
-                                     Text="{Binding WhisperTarget}"
-                                     FontSize="11"
-                                     Margin="0,0,0,4" />
-
-                            <!-- Channel tabs (pinned to top) -->
-                            <TabControl DockPanel.Dock="Top"
-                                        SelectedIndex="{Binding ChatChannelIndex, Mode=TwoWay}"
-                                        Padding="0"
-                                        Margin="0,0,0,2">
-                                <TabControl.Styles>
-                                    <Style Selector="TabItem">
-                                        <Setter Property="Padding" Value="4,1" />
-                                        <Setter Property="FontSize" Value="10" />
-                                        <Setter Property="MinHeight" Value="0" />
-                                    </Style>
-                                </TabControl.Styles>
-                                <TabItem Header="System" />
-                                <TabItem Header="Global" />
-                                <TabItem Header="Zone" />
-                                <TabItem Header="Whisper" />
-                            </TabControl>
-
-                            <!-- Message list fills remaining space -->
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding ChatMessages}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:ChatMessageViewModel">
-                                            <TextBlock Text="{Binding FormattedMessage}"
-                                                       FontSize="11"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,1" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-
-                        </DockPanel>
-
-                        <!-- Row 3: GridSplitter -->
-                        <GridSplitter Grid.Row="3"
-                                      ResizeDirection="Rows"
-                                      HorizontalAlignment="Stretch"
-                                      Height="8" />
-
-                        <!-- Row 4: Action Log -->
-                        <DockPanel Grid.Row="4">
-                            <TextBlock DockPanel.Dock="Top"
-                                       Text="Action Log"
-                                       Classes="caption"
-                                       Margin="0,0,0,6" />
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding ActionLog}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}"
-                                                       FontSize="11"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,1" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </DockPanel>
-
-                    </Grid>
-                </Border>
-
-            </DockPanel>
+            <!--  ── RIGHT PANEL (action log + social) ───────────────────────  -->
+            <views:GameRightPanelView Grid.Column="2" />
 
         </Grid>
 
-        <!-- ── INVENTORY OVERLAY ─────────────────────────────────────────── -->
-        <!-- Spans center + right columns so the left stats panel stays visible -->
-        <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
-                IsVisible="{Binding IsInventoryOpen}"
-                Background="#B2000000">
-            <Border MaxWidth="640"
-                    MaxHeight="520"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Background="{DynamicResource GameBackground1Brush}"
-                    BorderBrush="{DynamicResource GameBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4">
+        <!--  ── INVENTORY OVERLAY ───────────────────────────────────────────  -->
+        <!--  Spans center + right columns so the left stats panel stays visible  -->
+        <Border
+            Grid.Row="1"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Background="#B2000000"
+            IsVisible="{Binding IsInventoryOpen}">
+            <Border
+                MaxWidth="640"
+                MaxHeight="520"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource GameBackground1Brush}"
+                BorderBrush="{DynamicResource GameBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="4">
                 <DockPanel>
 
-                    <!-- Header -->
-                    <Border DockPanel.Dock="Top"
-                            Background="{DynamicResource GameBackground2Brush}"
-                            BorderBrush="{DynamicResource GameBorderBrush}"
-                            BorderThickness="0,0,0,1"
-                            Padding="16,10">
+                    <!--  Header  -->
+                    <Border
+                        Padding="16,10"
+                        Background="{DynamicResource GameBackground2Brush}"
+                        BorderBrush="{DynamicResource GameBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        DockPanel.Dock="Top">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0"
-                                       Text="Inventory"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       VerticalAlignment="Center" />
-                            <Button Grid.Column="1"
-                                    Content="✕"
-                                    Classes="ghost icon"
-                                    Command="{Binding ToggleInventoryCommand}"
-                                    Width="32" Height="32" />
+                            <TextBlock
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="Inventory" />
+                            <Button
+                                Grid.Column="1"
+                                Width="32"
+                                Height="32"
+                                Classes="ghost icon"
+                                Command="{Binding ToggleInventoryCommand}"
+                                Content="✕" />
                         </Grid>
                     </Border>
 
-                    <!-- Item list -->
-                    <ScrollViewer Padding="16"
-                                  VerticalScrollBarVisibility="Auto">
+                    <!--  Item list  -->
+                    <ScrollViewer Padding="16" VerticalScrollBarVisibility="Auto">
                         <Panel>
-                            <!-- Empty state -->
-                            <TextBlock Text="Your inventory is empty."
-                                       Classes="muted"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Margin="0,32"
-                                       IsVisible="{Binding !InventoryItems.Count}" />
+                            <!--  Empty state  -->
+                            <TextBlock
+                                Margin="0,32"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Classes="muted"
+                                IsVisible="{Binding !InventoryItems.Count}"
+                                Text="Your inventory is empty." />
 
-                            <!-- Item rows -->
-                            <ItemsControl ItemsSource="{Binding InventoryItems}"
-                                          IsVisible="{Binding InventoryItems.Count}">
+                            <!--  Item rows  -->
+                            <ItemsControl IsVisible="{Binding InventoryItems.Count}" ItemsSource="{Binding InventoryItems}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:InventoryItemViewModel">
-                                        <Border BorderBrush="{DynamicResource GameBorderBrush}"
-                                                BorderThickness="0,0,0,1"
-                                                Padding="4,8">
+                                        <Border
+                                            Padding="4,8"
+                                            BorderBrush="{DynamicResource GameBorderBrush}"
+                                            BorderThickness="0,0,0,1">
                                             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
-                                                <TextBlock Grid.Column="0"
-                                                           Text="{Binding DisplayName}"
-                                                           VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="1"
-                                                           Text="{Binding DurabilityText}"
-                                                           Classes="caption"
-                                                           IsVisible="{Binding HasDurability}"
-                                                           Margin="8,0"
-                                                           VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="2"
-                                                           Text="{Binding QuantityText}"
-                                                           Classes="accent"
-                                                           Margin="8,0"
-                                                           VerticalAlignment="Center" />
-                                                <Button Grid.Column="3"
-                                                        Content="Equip"
-                                                        Classes="ghost"
-                                                        Command="{Binding EquipCommand}"
-                                                        CommandParameter="MainHand"
-                                                        Margin="4,0,0,0"
-                                                        Height="28" FontSize="12" />
-                                                <Button Grid.Column="4"
-                                                        Content="Drop"
-                                                        Classes="ghost"
-                                                        Command="{Binding DropCommand}"
-                                                        Margin="4,0,0,0"
-                                                        Height="28" FontSize="12" />
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding DisplayName}" />
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    Margin="8,0"
+                                                    VerticalAlignment="Center"
+                                                    Classes="caption"
+                                                    IsVisible="{Binding HasDurability}"
+                                                    Text="{Binding DurabilityText}" />
+                                                <TextBlock
+                                                    Grid.Column="2"
+                                                    Margin="8,0"
+                                                    VerticalAlignment="Center"
+                                                    Classes="accent"
+                                                    Text="{Binding QuantityText}" />
+                                                <Button
+                                                    Grid.Column="3"
+                                                    Height="28"
+                                                    Margin="4,0,0,0"
+                                                    Classes="ghost"
+                                                    Command="{Binding EquipCommand}"
+                                                    CommandParameter="MainHand"
+                                                    Content="Equip"
+                                                    FontSize="12" />
+                                                <Button
+                                                    Grid.Column="4"
+                                                    Height="28"
+                                                    Margin="4,0,0,0"
+                                                    Classes="ghost"
+                                                    Command="{Binding DropCommand}"
+                                                    Content="Drop"
+                                                    FontSize="12" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -1254,77 +817,95 @@
             </Border>
         </Border>
 
-        <!-- ── SHOP OVERLAY ──────────────────────────────────────────────── -->
-        <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
-                IsVisible="{Binding IsShopOpen}"
-                Background="#B2000000">
-            <Border MaxWidth="640"
-                    MaxHeight="520"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Background="{DynamicResource GameBackground1Brush}"
-                    BorderBrush="{DynamicResource GameBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4">
+        <!--  ── SHOP OVERLAY ────────────────────────────────────────────────  -->
+        <Border
+            Grid.Row="1"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Background="#B2000000"
+            IsVisible="{Binding IsShopOpen}">
+            <Border
+                MaxWidth="640"
+                MaxHeight="520"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource GameBackground1Brush}"
+                BorderBrush="{DynamicResource GameBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="4">
                 <DockPanel>
 
-                    <!-- Header -->
-                    <Border DockPanel.Dock="Top"
-                            Background="{DynamicResource GameBackground2Brush}"
-                            BorderBrush="{DynamicResource GameBorderBrush}"
-                            BorderThickness="0,0,0,1"
-                            Padding="16,10">
+                    <!--  Header  -->
+                    <Border
+                        Padding="16,10"
+                        Background="{DynamicResource GameBackground2Brush}"
+                        BorderBrush="{DynamicResource GameBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        DockPanel.Dock="Top">
                         <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <TextBlock Text="Shop"
-                                           FontSize="16"
-                                           FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding ShopZoneName}"
-                                           Classes="muted"
-                                           FontSize="14"
-                                           VerticalAlignment="Center" />
+                            <StackPanel
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="Shop" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Classes="muted"
+                                    FontSize="14"
+                                    Text="{Binding ShopZoneName}" />
                             </StackPanel>
-                            <Button Grid.Column="1"
-                                    Content="✕"
-                                    Classes="ghost icon"
-                                    Command="{Binding CloseShopCommand}"
-                                    Width="32" Height="32" />
+                            <Button
+                                Grid.Column="1"
+                                Width="32"
+                                Height="32"
+                                Classes="ghost icon"
+                                Command="{Binding CloseShopCommand}"
+                                Content="✕" />
                         </Grid>
                     </Border>
 
-                    <!-- Shop content: Buy / Sell tabs -->
+                    <!--  Shop content: Buy / Sell tabs  -->
                     <TabControl Margin="8">
 
-                        <!-- Buy tab -->
+                        <!--  Buy tab  -->
                         <TabItem Header="Buy">
                             <ScrollViewer MaxHeight="360">
                                 <Panel>
-                                    <TextBlock Text="Nothing for sale here."
-                                               Classes="muted"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,32"
-                                               IsVisible="{Binding !ShopItems.Count}" />
-                                    <ItemsControl ItemsSource="{Binding ShopItems}"
-                                                  IsVisible="{Binding ShopItems.Count}">
+                                    <TextBlock
+                                        Margin="0,32"
+                                        HorizontalAlignment="Center"
+                                        Classes="muted"
+                                        IsVisible="{Binding !ShopItems.Count}"
+                                        Text="Nothing for sale here." />
+                                    <ItemsControl IsVisible="{Binding ShopItems.Count}" ItemsSource="{Binding ShopItems}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:ShopItemViewModel">
-                                                <Border BorderBrush="{DynamicResource GameBorderBrush}"
-                                                        BorderThickness="0,0,0,1"
-                                                        Padding="4,8">
+                                                <Border
+                                                    Padding="4,8"
+                                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                                    BorderThickness="0,0,0,1">
                                                     <Grid ColumnDefinitions="*,Auto,Auto">
-                                                        <TextBlock Grid.Column="0"
-                                                                   Text="{Binding DisplayName}"
-                                                                   VerticalAlignment="Center" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Text="{Binding BuyPriceText}"
-                                                                   Classes="accent"
-                                                                   Margin="12,0"
-                                                                   VerticalAlignment="Center" />
-                                                        <Button Grid.Column="2"
-                                                                Content="Buy"
-                                                                Classes="accent"
-                                                                Command="{Binding BuyCommand}"
-                                                                Height="28" FontSize="12" />
+                                                        <TextBlock
+                                                            Grid.Column="0"
+                                                            VerticalAlignment="Center"
+                                                            Text="{Binding DisplayName}" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            Margin="12,0"
+                                                            VerticalAlignment="Center"
+                                                            Classes="accent"
+                                                            Text="{Binding BuyPriceText}" />
+                                                        <Button
+                                                            Grid.Column="2"
+                                                            Height="28"
+                                                            Classes="accent"
+                                                            Command="{Binding BuyCommand}"
+                                                            Content="Buy"
+                                                            FontSize="12" />
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -1334,36 +915,41 @@
                             </ScrollViewer>
                         </TabItem>
 
-                        <!-- Sell tab -->
+                        <!--  Sell tab  -->
                         <TabItem Header="Sell">
                             <ScrollViewer MaxHeight="360">
                                 <Panel>
-                                    <TextBlock Text="Nothing available to sell."
-                                               Classes="muted"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,32"
-                                               IsVisible="{Binding !ShopItems.Count}" />
-                                    <ItemsControl ItemsSource="{Binding ShopItems}"
-                                                  IsVisible="{Binding ShopItems.Count}">
+                                    <TextBlock
+                                        Margin="0,32"
+                                        HorizontalAlignment="Center"
+                                        Classes="muted"
+                                        IsVisible="{Binding !ShopItems.Count}"
+                                        Text="Nothing available to sell." />
+                                    <ItemsControl IsVisible="{Binding ShopItems.Count}" ItemsSource="{Binding ShopItems}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:ShopItemViewModel">
-                                                <Border BorderBrush="{DynamicResource GameBorderBrush}"
-                                                        BorderThickness="0,0,0,1"
-                                                        Padding="4,8">
+                                                <Border
+                                                    Padding="4,8"
+                                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                                    BorderThickness="0,0,0,1">
                                                     <Grid ColumnDefinitions="*,Auto,Auto">
-                                                        <TextBlock Grid.Column="0"
-                                                                   Text="{Binding DisplayName}"
-                                                                   VerticalAlignment="Center" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Text="{Binding SellPriceText}"
-                                                                   Classes="muted"
-                                                                   Margin="12,0"
-                                                                   VerticalAlignment="Center" />
-                                                        <Button Grid.Column="2"
-                                                                Content="Sell"
-                                                                Classes="ghost"
-                                                                Command="{Binding SellCommand}"
-                                                                Height="28" FontSize="12" />
+                                                        <TextBlock
+                                                            Grid.Column="0"
+                                                            VerticalAlignment="Center"
+                                                            Text="{Binding DisplayName}" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            Margin="12,0"
+                                                            VerticalAlignment="Center"
+                                                            Classes="muted"
+                                                            Text="{Binding SellPriceText}" />
+                                                        <Button
+                                                            Grid.Column="2"
+                                                            Height="28"
+                                                            Classes="ghost"
+                                                            Command="{Binding SellCommand}"
+                                                            Content="Sell"
+                                                            FontSize="12" />
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -1379,175 +965,118 @@
             </Border>
         </Border>
 
-        <!-- ── ROW 2: HOTBAR + CONTEXT-SENSITIVE ACTION BAR ──────────────── -->
-        <Border Grid.Row="2"
-                Classes="panel-statusbar">
-            <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+        <!--  ── ROW 2: HOTBAR + CONTEXT-SENSITIVE ACTION BAR ────────────────  -->
+        <views:GameFooterView Grid.Row="2" />
 
-                <!-- Left: navigation actions -->
-                <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            VerticalAlignment="Center">
-                    <Button Content="Inventory"
-                            Classes="ghost"
-                            Command="{Binding ToggleInventoryCommand}"
-                            Classes.accent="{Binding IsInventoryOpen}"
-                            Height="34"
-                            FontSize="13" />
-                    <Button Content="Map"
-                            Classes="ghost"
-                            Command="{Binding OpenMapCommand}"
-                            Height="34"
-                            FontSize="13" />
-                </StackPanel>
+        <!--  ── ATTRIBUTE ALLOCATION OVERLAY ────────────────────────────────  -->
+        <Border
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            Background="#CC000000"
+            IsVisible="{Binding IsAttributeAllocationOpen}"
+            ZIndex="100">
+            <Border
+                Width="420"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Classes="panel">
+                <StackPanel DataContext="{Binding AttributeAllocation}" Spacing="12">
 
-                <!-- Center: ability hotbar — 6 always-visible slots -->
-                <ItemsControl Grid.Column="1"
-                              ItemsSource="{Binding HotbarSlots}"
-                              HorizontalAlignment="Center">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="4" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:HotbarSlotViewModel">
-                            <Button Content="{Binding DisplayLabel}"
-                                    Classes="ghost"
-                                    Classes.muted="{Binding IsEmpty}"
-                                    Command="{Binding UseCommand}"
-                                    MinWidth="80"
-                                    Height="34"
-                                    FontSize="12"
-                                    Padding="6,0" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Right: context-sensitive + utility actions -->
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            VerticalAlignment="Center">
-                    <Button Content="Rest at Inn"
-                            Classes="accent"
-                            IsVisible="{Binding HasInn}"
-                            Command="{Binding RestAtLocationCommand}"
-                            Height="34"
-                            FontSize="13" />
-                    <Button Content="Shop"
-                            Classes="ghost"
-                            IsVisible="{Binding HasMerchant}"
-                            Command="{Binding VisitShopCommand}"
-                            Height="34"
-                            FontSize="13" />
-                    <Button Content="Search Area"
-                            Classes="ghost"
-                            Command="{Binding SearchAreaCommand}"
-                            Height="34"
-                            FontSize="13" />
-                </StackPanel>
-
-            </Grid>
-        </Border>
-
-        <!-- ── ATTRIBUTE ALLOCATION OVERLAY ──────────────────────────────── -->
-        <Border Grid.Row="0" Grid.RowSpan="3"
-                IsVisible="{Binding IsAttributeAllocationOpen}"
-                ZIndex="100"
-                Background="#CC000000">
-            <Border HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Width="420"
-                    Classes="panel"
-                    Padding="24">
-                <StackPanel Spacing="12"
-                            DataContext="{Binding AttributeAllocation}">
-
-                    <TextBlock Text="Allocate Attribute Points"
-                               FontSize="16"
-                               FontWeight="Bold"
-                               Classes="accent" />
+                    <TextBlock
+                        Classes="accent"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="Allocate Attribute Points" />
 
                     <TextBlock FontSize="12">
-                        <Run Text="Points remaining: " /><Run Text="{Binding PointsToAllocate}" Classes="accent" />
+                        <Run Text="Points remaining: " /><Run Classes="accent" Text="{Binding PointsToAllocate}" />
                     </TextBlock>
 
-                    <!-- Attribute rows -->
+                    <!--  Attribute rows  -->
                     <ItemsControl ItemsSource="{Binding Attributes}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:AttributeDraftViewModel">
-                                <Grid ColumnDefinitions="*,Auto,Auto,Auto"
-                                      Margin="0,3">
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding Name}"
-                                               VerticalAlignment="Center"
-                                               FontSize="13" />
-                                    <Button Grid.Column="1"
-                                            Content="−"
-                                            Command="{Binding DecrementCommand}"
-                                            Width="28" Height="28"
-                                            Padding="0"
-                                            Margin="0,0,4,0" />
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding DisplayValue}"
-                                               Width="36"
-                                               TextAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               FontSize="13"
-                                               Classes="accent" />
-                                    <Button Grid.Column="3"
-                                            Content="+"
-                                            Command="{Binding IncrementCommand}"
-                                            Width="28" Height="28"
-                                            Padding="0"
-                                            Margin="4,0,0,0" />
+                                <Grid Margin="0,3" ColumnDefinitions="*,Auto,Auto,Auto">
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Text="{Binding Name}" />
+                                    <Button
+                                        Grid.Column="1"
+                                        Width="28"
+                                        Height="28"
+                                        Margin="0,0,4,0"
+                                        Padding="0"
+                                        Command="{Binding DecrementCommand}"
+                                        Content="−" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Width="36"
+                                        VerticalAlignment="Center"
+                                        Classes="accent"
+                                        FontSize="13"
+                                        Text="{Binding DisplayValue}"
+                                        TextAlignment="Center" />
+                                    <Button
+                                        Grid.Column="3"
+                                        Width="28"
+                                        Height="28"
+                                        Margin="4,0,0,0"
+                                        Padding="0"
+                                        Command="{Binding IncrementCommand}"
+                                        Content="+" />
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8"
-                                HorizontalAlignment="Right"
-                                Margin="0,8,0,0">
-                        <Button Content="Cancel"
-                                Command="{Binding CancelCommand}" />
-                        <Button Content="Confirm"
-                                Classes="accent"
-                                Command="{Binding ConfirmCommand}" />
+                    <StackPanel
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button Command="{Binding CancelCommand}" Content="Cancel" />
+                        <Button
+                            Classes="accent"
+                            Command="{Binding ConfirmCommand}"
+                            Content="Confirm" />
                     </StackPanel>
 
                 </StackPanel>
             </Border>
         </Border>
 
-        <!-- ── STATUS MESSAGE BANNER ─────────────────────────────────────── -->
-        <!-- Full-width overlay anchored to the top; ZIndex 200 puts it above all other content -->
-        <Border Grid.Row="0" Grid.RowSpan="3"
-                VerticalAlignment="Top"
-                ZIndex="200"
-                IsVisible="{Binding StatusMessage,
-                            Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                Background="{DynamicResource GameBackground2Brush}"
-                BorderBrush="{DynamicResource GameWarningBrush}"
-                BorderThickness="0,0,0,2"
-                Padding="16,10">
+        <!--  ── STATUS MESSAGE BANNER ───────────────────────────────────────  -->
+        <!--  Full-width overlay anchored to the top; ZIndex 200 puts it above all other content  -->
+        <Border
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            Padding="16,10"
+            VerticalAlignment="Top"
+            Background="{DynamicResource GameBackground2Brush}"
+            BorderBrush="{DynamicResource GameWarningBrush}"
+            BorderThickness="0,0,0,2"
+            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+            ZIndex="200">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0"
-                           Text="{Binding StatusMessage}"
-                           FontSize="13"
-                           VerticalAlignment="Center"
-                           TextWrapping="Wrap" />
-                <Button Grid.Column="1"
-                        Content="✕"
-                        Classes="ghost icon"
-                        Command="{Binding DismissStatusMessageCommand}"
-                        IsVisible="{Binding IsStatusMessageDismissable}"
-                        Width="32" Height="32"
-                        VerticalAlignment="Center"
-                        Margin="12,0,0,0" />
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Text="{Binding StatusMessage}"
+                    TextWrapping="Wrap" />
+                <Button
+                    Grid.Column="1"
+                    Width="32"
+                    Height="32"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    Classes="ghost icon"
+                    Command="{Binding DismissStatusMessageCommand}"
+                    Content="✕"
+                    IsVisible="{Binding IsStatusMessageDismissable}" />
             </Grid>
         </Border>
 

@@ -1,0 +1,219 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameLeftPanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="720"
+    d:DesignWidth="224"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <!--  DockPanel auto-sizes the column: 224px open, 28px collapsed  -->
+    <DockPanel
+        Background="{DynamicResource GameBackground1Brush}"
+        LastChildFill="False">
+
+        <!--  Toggle button — always visible, pinned to right edge  -->
+        <Button
+            Width="28"
+            Margin="0,10,2,0"
+            VerticalAlignment="Top"
+            Classes="icon ghost"
+            Command="{Binding ToggleLeftPanelCommand}"
+            Content="{Binding LeftPanelToggleIcon}"
+            DockPanel.Dock="Right"
+            ToolTip.Tip="Toggle stats panel" />
+
+        <!--  Collapsible character-sheet panel  -->
+        <Border
+            Width="196"
+            Padding="12,12,8,12"
+            BorderBrush="{DynamicResource GameBorderBrush}"
+            BorderThickness="0,0,1,0"
+            DockPanel.Dock="Left"
+            IsVisible="{Binding IsLeftPanelOpen}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="0">
+
+                    <!--  Gold  -->
+                    <Grid Margin="0,0,0,4" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Gold" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="13">
+                            <Run Text="{Binding Gold}" /><Run Text=" gp" />
+                        </TextBlock>
+                    </Grid>
+
+                    <!--  Unspent AP badge  -->
+                    <Button
+                        Margin="0,8,0,8"
+                        Padding="6,3"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource GameWarningMutedBrush}"
+                        BorderBrush="{DynamicResource GameWarningBrush}"
+                        BorderThickness="1"
+                        Command="{Binding OpenAttributeAllocationCommand}"
+                        CornerRadius="3"
+                        IsVisible="{Binding HasUnspentPoints}">
+                        <TextBlock Classes="warning" FontSize="11">
+                            <Run Text="{Binding UnspentAttributePoints}" /><Run Text=" unspent attribute points" />
+                        </TextBlock>
+                    </Button>
+
+                    <!--  Divider  -->
+                    <Border Margin="0,0,0,8" Classes="separator" />
+
+                    <!--  Attributes  -->
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Classes="caption"
+                        Text="Attributes" />
+                    <Grid Margin="0,0,0,2" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="STR" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="12"
+                            Text="{Binding Strength}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,2" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="DEX" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="12"
+                            Text="{Binding Dexterity}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,2" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="CON" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="12"
+                            Text="{Binding Constitution}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,2" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="INT" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="12"
+                            Text="{Binding Intelligence}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,2" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="WIS" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="12"
+                            Text="{Binding Wisdom}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,8" ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="CHA" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Classes="accent"
+                            FontSize="12"
+                            Text="{Binding Charisma}" />
+                    </Grid>
+
+                    <!--  Divider  -->
+                    <Border Margin="0,0,0,8" Classes="separator" />
+
+                    <!--  Equipment slots  -->
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Classes="caption"
+                        Text="Equipment" />
+                    <ItemsControl ItemsSource="{Binding EquipmentSlots}">
+                        <ItemsControl.Styles>
+                            <Style Selector="Border.equipped">
+                                <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+                                <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+                            </Style>
+                        </ItemsControl.Styles>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EquipmentSlotViewModel">
+                                <Border
+                                    Width="44"
+                                    Height="52"
+                                    Margin="2"
+                                    Background="{DynamicResource GameBackground2Brush}"
+                                    BorderBrush="{DynamicResource GameBorderBrush}"
+                                    BorderThickness="1"
+                                    Classes.equipped="{Binding IsOccupied}"
+                                    CornerRadius="3"
+                                    ToolTip.Tip="{Binding Label}">
+                                    <StackPanel>
+                                        <Panel
+                                            Width="36"
+                                            Height="36"
+                                            Margin="4,4,4,0">
+                                            <Image
+                                                Width="36"
+                                                Height="36"
+                                                VerticalAlignment="Top"
+                                                IsVisible="{Binding IsOccupied}"
+                                                Source="{Binding DisplayIcon}"
+                                                Stretch="Uniform" />
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Classes="caption"
+                                                FontSize="7"
+                                                IsVisible="{Binding IsEmpty}"
+                                                Text="{Binding Label}"
+                                                TextAlignment="Center"
+                                                TextWrapping="Wrap" />
+                                        </Panel>
+                                        <TextBlock
+                                            Margin="2,1"
+                                            HorizontalAlignment="Center"
+                                            Classes="caption"
+                                            FontSize="6"
+                                            IsVisible="{Binding IsOccupied}"
+                                            Text="{Binding Label}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+
+</UserControl>
