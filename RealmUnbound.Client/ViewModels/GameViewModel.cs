@@ -50,6 +50,7 @@ public class GameViewModel : ViewModelBase
     private string _zoneDescription = string.Empty;
     private string _characterName = string.Empty;
     private string _statusMessage = string.Empty;
+    private bool _isStatusMessageDismissable = true;
     private string _currentZoneId = string.Empty;
     private string? _currentZoneLocationSlug;
     private Guid? _characterId;
@@ -76,6 +77,13 @@ public class GameViewModel : ViewModelBase
     {
         get => _statusMessage;
         set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+    }
+
+    /// <summary>Whether the current status message can be dismissed by the player.</summary>
+    public bool IsStatusMessageDismissable
+    {
+        get => _isStatusMessageDismissable;
+        private set => this.RaiseAndSetIfChanged(ref _isStatusMessageDismissable, value);
     }
 
     /// <summary>Slug of the zone location the character is currently at, or <see langword="null"/> if not at a specific location.</summary>
@@ -307,8 +315,9 @@ public class GameViewModel : ViewModelBase
 
     // Left panel state
     private bool _isLeftPanelOpen = true;
+    private bool _isRightPanelOpen = true;
 
-    /// <summary>Whether the collapsible left stats/log panel is expanded.</summary>
+    /// <summary>Whether the collapsible left character-sheet panel is expanded.</summary>
     public bool IsLeftPanelOpen
     {
         get => _isLeftPanelOpen;
@@ -321,6 +330,20 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Icon text for the left panel toggle button: <c>◀</c> when open, <c>▶</c> when collapsed.</summary>
     public string LeftPanelToggleIcon => IsLeftPanelOpen ? "◀" : "▶";
+
+    /// <summary>Whether the collapsible right action-log panel is expanded.</summary>
+    public bool IsRightPanelOpen
+    {
+        get => _isRightPanelOpen;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _isRightPanelOpen, value);
+            this.RaisePropertyChanged(nameof(RightPanelToggleIcon));
+        }
+    }
+
+    /// <summary>Icon text for the right panel toggle button: <c>▶</c> when open, <c>◀</c> when collapsed.</summary>
+    public string RightPanelToggleIcon => IsRightPanelOpen ? "▶" : "◀";
 
     // Overlay panel state
     private bool _isInventoryOpen;
@@ -504,6 +527,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Ability slugs the active character has learned, used to render combat ability buttons.</summary>
     public ObservableCollection<string> LearnedAbilities { get; } = [];
 
+    /// <summary>Six hotbar slots populated from <see cref="LearnedAbilities"/>; empty slots show as greyed-out placeholders.</summary>
+    public ObservableCollection<HotbarSlotViewModel> HotbarSlots { get; } = [];
+
     /// <summary>Gets whether there is at least one enemy in the roster at the current location.</summary>
     public bool HasSpawnedEnemies
     {
@@ -515,8 +541,14 @@ public class GameViewModel : ViewModelBase
     public string? CurrentZoneLocationDisplayName =>
         ZoneLocations.FirstOrDefault(l => l.Slug == CurrentZoneLocationSlug)?.DisplayName;
 
-    /// <summary>Toggles the collapsible left stats/log panel open or closed.</summary>
+    /// <summary>Toggles the collapsible left character-sheet panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
+
+    /// <summary>Toggles the collapsible right action-log panel open or closed.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleRightPanelCommand { get; }
+
+    /// <summary>Dismisses the current status message banner. Only available when <see cref="IsStatusMessageDismissable"/> is <see langword="true"/>.</summary>
+    public ReactiveCommand<Unit, Unit> DismissStatusMessageCommand { get; }
 
     /// <summary>Toggles the inventory panel: opens it and fetches items from the server when closed; closes it when open.</summary>
     public ReactiveCommand<Unit, Unit> ToggleInventoryCommand { get; }
@@ -663,7 +695,10 @@ public class GameViewModel : ViewModelBase
         if (assetStore is not null)
             _ = LoadEquipmentIconsAsync(assetStore);
 
-        ToggleLeftPanelCommand = ReactiveCommand.Create(() => { IsLeftPanelOpen = !IsLeftPanelOpen; });
+        ToggleLeftPanelCommand  = ReactiveCommand.Create(() => { IsLeftPanelOpen  = !IsLeftPanelOpen; });
+        ToggleRightPanelCommand = ReactiveCommand.Create(() => { IsRightPanelOpen = !IsRightPanelOpen; });
+        var canDismiss = this.WhenAnyValue(x => x.IsStatusMessageDismissable);
+        DismissStatusMessageCommand = ReactiveCommand.Create(() => { StatusMessage = string.Empty; }, canDismiss);
         ToggleInventoryCommand = ReactiveCommand.CreateFromTask(DoToggleInventoryAsync);
         CloseShopCommand = ReactiveCommand.Create(() => { IsShopOpen = false; });
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
@@ -713,6 +748,11 @@ public class GameViewModel : ViewModelBase
         FleeFromCombatCommand     = ReactiveCommand.CreateFromTask(DoFleeFromCombatAsync);
         UseAbilityInCombatCommand = ReactiveCommand.CreateFromTask<string>(DoUseAbilityInCombatAsync);
         RespawnCommand            = ReactiveCommand.CreateFromTask(DoRespawnAsync);
+
+        // Initialize 6 empty hotbar slots
+        for (var i = 1; i <= 6; i++)
+            HotbarSlots.Add(new HotbarSlotViewModel(i, UseAbilityInCombatCommand));
+        LearnedAbilities.CollectionChanged += (_, _) => SyncHotbarSlots();
 
         SpawnedEnemies.CollectionChanged += (_, _) => HasSpawnedEnemies = SpawnedEnemies.Count > 0;
 
@@ -1024,6 +1064,7 @@ public class GameViewModel : ViewModelBase
         if (args.LearnedAbilities is not null)
             foreach (var slug in args.LearnedAbilities)
                 LearnedAbilities.Add(slug);
+        SyncHotbarSlots();
     }
 
     private async Task DoLogoutAsync()
@@ -1644,6 +1685,24 @@ public class GameViewModel : ViewModelBase
             ActionLog.RemoveAt(0);
     }
 
+    /// <summary>Sets the status message banner text and whether it can be player-dismissed.</summary>
+    /// <param name="message">The message to display. Pass an empty string to clear the banner.</param>
+    /// <param name="dismissable">
+    /// <see langword="true"/> (default) for informational messages the player can close;
+    /// <see langword="false"/> for critical server messages that must persist until the underlying state changes.
+    /// </param>
+    public void SetStatusMessage(string message, bool dismissable = true)
+    {
+        IsStatusMessageDismissable = dismissable;
+        StatusMessage = message;
+    }
+
+    private void SyncHotbarSlots()
+    {
+        for (var i = 0; i < HotbarSlots.Count; i++)
+            HotbarSlots[i].AbilitySlug = i < LearnedAbilities.Count ? LearnedAbilities[i] : null;
+    }
+
     private async Task RefreshAllEquippedIconsAsync(IAssetStore assetStore)
     {
         foreach (var equipSlot in EquipmentSlots)
@@ -1683,6 +1742,51 @@ public class GameViewModel : ViewModelBase
             slot.Icon = icon;
         }
     }
+}
+
+/// <summary>Represents one of the six ability hotbar slots in the game footer.</summary>
+public class HotbarSlotViewModel : ReactiveObject
+{
+    private readonly ReactiveCommand<string, Unit> _useAbilityInCombatCommand;
+    private string? _abilitySlug;
+
+    /// <summary>Initializes a new instance of <see cref="HotbarSlotViewModel"/>.</summary>
+    /// <param name="slotNumber">The 1-based position of this slot in the hotbar (1–6).</param>
+    /// <param name="useAbilityInCombatCommand">The parent view model's combat ability command.</param>
+    public HotbarSlotViewModel(int slotNumber, ReactiveCommand<string, Unit> useAbilityInCombatCommand)
+    {
+        SlotNumber = slotNumber;
+        _useAbilityInCombatCommand = useAbilityInCombatCommand;
+
+        var canUse = this.WhenAnyValue(x => x.IsEmpty, isEmpty => !isEmpty);
+        UseCommand = ReactiveCommand.CreateFromObservable(
+            () => _useAbilityInCombatCommand.Execute(AbilitySlug!),
+            canUse);
+    }
+
+    /// <summary>Gets the 1-based slot number displayed on the hotbar button label.</summary>
+    public int SlotNumber { get; }
+
+    /// <summary>Gets or sets the ability slug assigned to this slot, or <see langword="null"/> if the slot is empty.</summary>
+    public string? AbilitySlug
+    {
+        get => _abilitySlug;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _abilitySlug, value);
+            this.RaisePropertyChanged(nameof(DisplayLabel));
+            this.RaisePropertyChanged(nameof(IsEmpty));
+        }
+    }
+
+    /// <summary>Gets the button label: <c>"{N}: {ability}"</c> when occupied, or <c>"{N} —"</c> when empty.</summary>
+    public string DisplayLabel => IsEmpty ? $"{SlotNumber} \u2014" : $"{SlotNumber}: {AbilitySlug}";
+
+    /// <summary>Gets whether this slot has no ability assigned.</summary>
+    public bool IsEmpty => AbilitySlug is null;
+
+    /// <summary>Executes the ability assigned to this slot via the parent's combat command. Disabled when the slot is empty.</summary>
+    public ReactiveCommand<Unit, Unit> UseCommand { get; }
 }
 
 /// <summary>
