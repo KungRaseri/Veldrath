@@ -24,6 +24,7 @@ public class TilemapViewModel : ViewModelBase
     private int _cameraX;
     private int _cameraY;
     private bool _isMiniMapOpen;
+    private Guid? _selfEntityId;
 
     // ── Map data ─────────────────────────────────────────────────────────────
 
@@ -67,6 +68,16 @@ public class TilemapViewModel : ViewModelBase
     }
 
     // ── Entity tracking ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The entity ID of the local player's own character.
+    /// Used to distinguish self from other players in rendering and input handling.
+    /// </summary>
+    public Guid? SelfEntityId
+    {
+        get => _selfEntityId;
+        set => this.RaiseAndSetIfChanged(ref _selfEntityId, value);
+    }
 
     /// <summary>All live entity positions on the map (players + enemies). Mutated on the UI thread.</summary>
     public ObservableCollection<TileEntityState> Entities { get; } = [];

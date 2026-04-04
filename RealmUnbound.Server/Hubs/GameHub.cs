@@ -276,9 +276,12 @@ public class GameHub : Hub
         var spawnY = map?.SpawnPoints.Count > 0 ? map.SpawnPoints[0].TileY : 1;
         _entityTracker.TrackPlayer(zoneId, characterId, spawnX, spawnY);
 
-        // Spawn enemies if this is the first player entering an empty zone; notify other occupants only.
+        // Persist the spawn tile so MoveCharacter can validate 1-tile steps from the correct origin.
+        await _characterRepo.UpdateTilePositionAsync(characterId, spawnX, spawnY, zoneId);
+
+        // Spawn enemies only in non-town zones; towns are safe areas with no hostile spawns.
         var existingEntities = _entityTracker.GetEntities(zoneId);
-        if (existingEntities.Count == 0 && map is not null)
+        if (existingEntities.Count == 0 && map is not null && zone.Type != ZoneType.Town)
         {
             var spawned = await SpawnEnemiesForZoneAsync(zoneId, map);
             if (spawned.Count > 0)

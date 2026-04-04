@@ -21,10 +21,11 @@ public class TilemapControl : Control
 {
     private const int DisplayTileSize = 48; // 16 px × 3
 
-    private static readonly IBrush FogBrush    = new SolidColorBrush(Color.FromArgb(200, 0, 0, 0));
-    private static readonly IBrush PlayerBrush  = Brushes.LimeGreen;
-    private static readonly IBrush EnemyBrush   = Brushes.OrangeRed;
-    private static readonly IBrush EntityPen    = Brushes.White;
+    private static readonly IBrush FogBrush       = new SolidColorBrush(Color.FromArgb(200, 0, 0, 0));
+    private static readonly IBrush SelfPlayerBrush = new SolidColorBrush(Color.FromRgb(30, 144, 255)); // DodgerBlue — own character
+    private static readonly IBrush PlayerBrush     = Brushes.LimeGreen;  // other players
+    private static readonly IBrush EnemyBrush      = Brushes.OrangeRed;
+    private static readonly IBrush EntityPen       = Brushes.White;
 
     // Avalonia styled property for the ViewModel
     /// <summary>ViewModel property for the tilemap control.</summary>
@@ -80,7 +81,9 @@ public class TilemapControl : Control
         var vm = ViewModel;
         if (vm is null || !vm.HasMap) return;
 
-        var player = vm.Entities.FirstOrDefault(en => en.EntityType == "player");
+        var player = vm.SelfEntityId.HasValue
+            ? vm.Entities.FirstOrDefault(en => en.EntityId == vm.SelfEntityId.Value)
+            : vm.Entities.FirstOrDefault(en => en.EntityType == "player");
         if (player is null) return;
 
         var (dx, dy, dir) = e.Key switch
@@ -162,7 +165,13 @@ public class TilemapControl : Control
             if (scrY < -DisplayTileSize || scrY > Bounds.Height + DisplayTileSize) continue;
 
             var rect = new Rect(scrX + 4, scrY + 4, DisplayTileSize - 8, DisplayTileSize - 8);
-            var fill = entity.EntityType == "player" ? PlayerBrush : EnemyBrush;
+            IBrush fill;
+            if (entity.EntityType == "player")
+                fill = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
+                    ? SelfPlayerBrush
+                    : PlayerBrush;
+            else
+                fill = EnemyBrush;
             context.FillRectangle(fill, rect, 4f);
         }
 
