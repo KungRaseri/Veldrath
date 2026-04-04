@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using RealmUnbound.Assets.Manifest;
+using Serilog;
 
 namespace RealmUnbound.Client.Services;
 
@@ -26,20 +27,33 @@ public class TileTextureCache : IDisposable
             return cached;
 
         if (!TilemapAssets.All.TryGetValue(tilesetKey, out var info))
+        {
+            Log.Warning("TileTextureCache: unknown tileset key {TilesetKey}", tilesetKey);
             return null;
+        }
 
         var fullPath = Path.Combine(AppContext.BaseDirectory, info.RelativePath);
         if (!File.Exists(fullPath))
+        {
+            Log.Warning("TileTextureCache: spritesheet not found at {Path}", fullPath);
             return null;
+        }
 
         try
         {
-            var bitmap = new Bitmap(fullPath);
+            // Use stream-based load — Avalonia's path-based Bitmap ctor can fail silently
+            // on some platforms when the path contains non-ASCII characters or is resolved
+            // differently by the runtime. Stream load is always reliable.
+            using var fs = File.OpenRead(fullPath);
+            var bitmap = new Bitmap(fs);
             _sheets[tilesetKey] = bitmap;
+            Log.Debug("TileTextureCache: loaded {TilesetKey} from {Path} ({W}x{H})",
+                tilesetKey, fullPath, bitmap.Size.Width, bitmap.Size.Height);
             return bitmap;
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warning(ex, "TileTextureCache: failed to load spritesheet {TilesetKey} from {Path}", tilesetKey, fullPath);
             return null;
         }
     }

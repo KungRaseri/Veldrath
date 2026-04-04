@@ -8,10 +8,11 @@ namespace RealmEngine.Shared.Models;
 /// </summary>
 public static class DungeonGenerator
 {
-    // Tile indices within the tiny_dungeon spritesheet (12 columns × 11 rows)
-    // Row 0: wall and floor tiles
-    private const int TileWall  = 0;   // solid wall (row 0, col 0)
-    private const int TileFloor = 1;   // dungeon floor (row 0, col 1)
+    // Tile indices within the roguelike_base spritesheet (57 columns × 31 rows, 16 px, 1 px spacing).
+    // Layer 0 "base"    — Stone.Floor (7) everywhere (opaque ground visible under all cells).
+    // Layer 1 "objects" — Stone.M (920) for wall cells; -1 (transparent) for carved floor cells.
+    private const int TileWall  = TileIndex.Terrain.Stone.M;     // 920 — solid centre stone
+    private const int TileFloor = TileIndex.Terrain.Stone.Floor; // 7   — lighter dungeon floor
 
     private const int MapWidth  = 40;
     private const int MapHeight = 30;
@@ -36,7 +37,7 @@ public static class DungeonGenerator
     {
         var rng = new Random(seed == 0 ? zoneId.GetHashCode() : seed);
 
-        // Build flat ground layer (all walls)
+        // Build flat ground layer (all walls) — used for carving, then split into 2 layers
         var groundData = new int[MapWidth * MapHeight];
         Array.Fill(groundData, TileWall);
 
@@ -56,6 +57,15 @@ public static class DungeonGenerator
         // Connect rooms with L-shaped corridors
         for (var i = 0; i < rooms.Count - 1; i++)
             CarveCorridorBetween(rooms[i], rooms[i + 1], groundData, collisionMask, rng);
+
+        // Build 2-layer data from the carved groundData:
+        //   Layer 0 "base"    — Stone.Floor everywhere (opaque, never -1)
+        //   Layer 1 "objects" — Stone.M where walls remain; -1 where floor was carved
+        var baseData    = new int[MapWidth * MapHeight];
+        var objectsData = new int[MapWidth * MapHeight];
+        Array.Fill(baseData, TileFloor);
+        for (var i = 0; i < groundData.Length; i++)
+            objectsData[i] = groundData[i] == TileWall ? TileWall : -1;
 
         // Spawn points: two positions in the first room's centre
         var firstRoom = rooms[0];
@@ -79,11 +89,15 @@ public static class DungeonGenerator
         return new TileMapDefinition
         {
             ZoneId        = zoneId,
-            TilesetKey    = "tiny_dungeon",
+            TilesetKey    = "roguelike_base",
             Width         = MapWidth,
             Height        = MapHeight,
             TileSize      = 16,
-            Layers        = [new TileLayerDefinition { Name = "ground", Data = groundData }],
+            Layers        =
+            [
+                new TileLayerDefinition { Name = "base",    Data = baseData    },
+                new TileLayerDefinition { Name = "objects", Data = objectsData },
+            ],
             CollisionMask = collisionMask,
             FogMask       = fogMask,
             SpawnPoints   = spawnPoints,
