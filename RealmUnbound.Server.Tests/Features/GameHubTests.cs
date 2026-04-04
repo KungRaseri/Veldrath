@@ -144,7 +144,10 @@ public class GameHubTests : IDisposable
                                   new ZoneRepository(db),
                                   new ZoneSessionRepository(db),
                                   tracker ?? new ActiveCharacterTracker(),
-                                  mediator ?? Mock.Of<ISender>());
+                                  mediator ?? Mock.Of<ISender>(),
+                                  new ZoneEntityTracker(),
+                                  Mock.Of<ITileMapRepository>(),
+                                  Mock.Of<IEnemyRepository>());
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();
         var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));
@@ -1463,7 +1466,10 @@ public class GameHubTests : IDisposable
                                new ZoneRepository(db),
                                new ZoneSessionRepository(db),
                                tracker,
-                               Mock.Of<ISender>());
+                               Mock.Of<ISender>(),
+                               new ZoneEntityTracker(),
+                               Mock.Of<ITileMapRepository>(),
+                               Mock.Of<IEnemyRepository>());
         hub2.Clients = hub.Clients;
         hub2.Groups  = hub.Groups;
         hub2.Context = ctx;
@@ -1492,7 +1498,10 @@ public class GameHubTests : IDisposable
                               new ZoneRepository(db),
                               new ZoneSessionRepository(db),
                               tracker,
-                              Mock.Of<ISender>());
+                              Mock.Of<ISender>(),
+                              new ZoneEntityTracker(),
+                              Mock.Of<ITileMapRepository>(),
+                              Mock.Of<IEnemyRepository>());
         hub.Clients = new FakeHubCallerClients();
         hub.Groups  = new FakeGroupManager();
         hub.Context = ctx;

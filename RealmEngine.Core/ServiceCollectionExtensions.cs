@@ -176,9 +176,9 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IEnchantmentRepository, EfCoreEnchantmentRepository>();
             services.AddScoped<IOrganizationRepository, EfCoreOrganizationRepository>();
             services.AddScoped<IZoneLocationRepository, EfCoreZoneLocationRepository>();
-            services.AddSingleton<ITileMapRepository>(sp => new JsonFileTileMapRepository(
+            services.AddSingleton<ITileMapRepository>(sp => new CompositeITileMapRepository(
                 Path.Combine(AppContext.BaseDirectory, "GameAssets", "tilemaps", "maps"),
-                sp.GetRequiredService<ILogger<JsonFileTileMapRepository>>()));
+                sp.GetRequiredService<ILogger<CompositeITileMapRepository>>()));
             services.AddScoped<IDialogueRepository, EfCoreDialogueRepository>();
             services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();
             services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();

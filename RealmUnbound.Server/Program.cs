@@ -202,9 +202,9 @@ try
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
     builder.Services.AddSingleton<ICharacterCreationSessionStore, InMemoryCharacterCreationSessionStore>();
     builder.Services.AddSingleton<IZoneEntityTracker, ZoneEntityTracker>();
-    builder.Services.AddSingleton<RealmEngine.Shared.Abstractions.ITileMapRepository>(sp => new RealmEngine.Data.Repositories.JsonFileTileMapRepository(
+    builder.Services.AddSingleton<RealmEngine.Shared.Abstractions.ITileMapRepository>(sp => new RealmEngine.Data.Repositories.CompositeITileMapRepository(
         Path.Combine(AppContext.BaseDirectory, "GameAssets", "tilemaps", "maps"),
-        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RealmEngine.Data.Repositories.JsonFileTileMapRepository>>()));
+        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RealmEngine.Data.Repositories.CompositeITileMapRepository>>()));
 
     // RealmEngine services
     builder.Services.AddRealmEngineMediatR();
@@ -214,6 +214,7 @@ try
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
     builder.Services.AddHostedService<SessionCleanupService>();
+    builder.Services.AddHostedService<EnemyAiService>();
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
     builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));

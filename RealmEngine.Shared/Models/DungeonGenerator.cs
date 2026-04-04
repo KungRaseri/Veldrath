@@ -1,0 +1,198 @@
+using RealmEngine.Shared.Models;
+
+namespace RealmEngine.Shared.Models;
+
+/// <summary>
+/// Procedural dungeon map generator using Binary Space Partitioning (BSP).
+/// Produces a <see cref="TileMapDefinition"/> suitable for a dungeon zone.
+/// </summary>
+public static class DungeonGenerator
+{
+    // Tile indices within the tiny_dungeon spritesheet (12 columns × 11 rows)
+    // Row 0: wall and floor tiles
+    private const int TileWall  = 0;   // solid wall (row 0, col 0)
+    private const int TileFloor = 1;   // dungeon floor (row 0, col 1)
+
+    private const int MapWidth  = 40;
+    private const int MapHeight = 30;
+    private const int MinRoomW  = 5;
+    private const int MinRoomH  = 5;
+    private const int MaxRoomW  = 10;
+    private const int MaxRoomH  = 8;
+    private const int MinRooms  = 6;
+    private const int MaxRooms  = 10;
+
+    /// <summary>
+    /// Generates a deterministic dungeon <see cref="TileMapDefinition"/> for the given zone identifier.
+    /// The same <paramref name="zoneId"/> always produces the same layout.
+    /// </summary>
+    /// <param name="zoneId">Dungeon zone identifier (e.g. <c>"dungeon-1"</c>).</param>
+    /// <param name="seed">
+    /// Optional explicit seed. When 0 (default) the seed is derived from <paramref name="zoneId"/>'s hash code,
+    /// ensuring deterministic but zone-unique layouts.
+    /// </param>
+    /// <returns>A fully-formed <see cref="TileMapDefinition"/> with rooms, corridors, spawn points, and one exit tile.</returns>
+    public static TileMapDefinition Generate(string zoneId, int seed = 0)
+    {
+        var rng = new Random(seed == 0 ? zoneId.GetHashCode() : seed);
+
+        // Build flat ground layer (all walls)
+        var groundData = new int[MapWidth * MapHeight];
+        Array.Fill(groundData, TileWall);
+
+        var collisionMask = new bool[MapWidth * MapHeight];
+        Array.Fill(collisionMask, true); // everything starts blocked
+
+        var fogMask = new bool[MapWidth * MapHeight];
+        Array.Fill(fogMask, true); // dungeons start fully hidden
+
+        // Generate rooms via BSP partitioning
+        var rooms = GenerateRooms(rng);
+
+        // Carve floor tiles for each room
+        foreach (var room in rooms)
+            CarveRoom(room, groundData, collisionMask);
+
+        // Connect rooms with L-shaped corridors
+        for (var i = 0; i < rooms.Count - 1; i++)
+            CarveCorridorBetween(rooms[i], rooms[i + 1], groundData, collisionMask, rng);
+
+        // Spawn points: two positions in the first room's centre
+        var firstRoom = rooms[0];
+        var spawnX    = firstRoom.X + firstRoom.W / 2;
+        var spawnY    = firstRoom.Y + firstRoom.H / 2;
+        var spawnPoints = new List<SpawnPointDefinition>
+        {
+            new() { TileX = spawnX,     TileY = spawnY },
+            new() { TileX = spawnX + 1, TileY = spawnY },
+        };
+
+        // Exit tile: floor tile on the border of the last room
+        var lastRoom = rooms[^1];
+        var exitTile = new ExitTileDefinition
+        {
+            TileX    = lastRoom.X + lastRoom.W / 2,
+            TileY    = lastRoom.Y + lastRoom.H - 1,
+            ToZoneId = DeeperZoneId(zoneId),
+        };
+
+        return new TileMapDefinition
+        {
+            ZoneId        = zoneId,
+            TilesetKey    = "tiny_dungeon",
+            Width         = MapWidth,
+            Height        = MapHeight,
+            TileSize      = 16,
+            Layers        = [new TileLayerDefinition { Name = "ground", Data = groundData }],
+            CollisionMask = collisionMask,
+            FogMask       = fogMask,
+            SpawnPoints   = spawnPoints,
+            ExitTiles     = [exitTile],
+        };
+    }
+
+    // ── Room generation ───────────────────────────────────────────────────────
+
+    private static List<Rect> GenerateRooms(Random rng)
+    {
+        var count = rng.Next(MinRooms, MaxRooms + 1);
+        var rooms = new List<Rect>(count);
+        const int maxAttempts = 200;
+
+        for (var i = 0; i < count; i++)
+        {
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                var w = rng.Next(MinRoomW, MaxRoomW + 1);
+                var h = rng.Next(MinRoomH, MaxRoomH + 1);
+                var x = rng.Next(1, MapWidth  - w - 1);
+                var y = rng.Next(1, MapHeight - h - 1);
+                var candidate = new Rect(x, y, w, h);
+
+                if (!rooms.Any(r => r.Overlaps(candidate, padding: 1)))
+                {
+                    rooms.Add(candidate);
+                    break;
+                }
+            }
+        }
+
+        return rooms;
+    }
+
+    private static void CarveRoom(Rect room, int[] ground, bool[] collision)
+    {
+        for (var y = room.Y; y < room.Y + room.H; y++)
+        for (var x = room.X; x < room.X + room.W; x++)
+        {
+            var idx = y * MapWidth + x;
+            ground[idx]    = TileFloor;
+            collision[idx] = false;
+        }
+    }
+
+    private static void CarveCorridorBetween(Rect a, Rect b, int[] ground, bool[] collision, Random rng)
+    {
+        // Centre points
+        var (ax, ay) = (a.X + a.W / 2, a.Y + a.H / 2);
+        var (bx, by) = (b.X + b.W / 2, b.Y + b.H / 2);
+
+        // Randomly choose horizontal-first or vertical-first
+        if (rng.Next(2) == 0)
+        {
+            CarveHorizontalTunnel(ay, ax, bx, ground, collision);
+            CarveVerticalTunnel(bx, ay, by, ground, collision);
+        }
+        else
+        {
+            CarveVerticalTunnel(ax, ay, by, ground, collision);
+            CarveHorizontalTunnel(by, ax, bx, ground, collision);
+        }
+    }
+
+    private static void CarveHorizontalTunnel(int y, int x1, int x2, int[] ground, bool[] collision)
+    {
+        var (minX, maxX) = x1 < x2 ? (x1, x2) : (x2, x1);
+        for (var x = minX; x <= maxX; x++)
+            CarveTile(x, y, ground, collision);
+    }
+
+    private static void CarveVerticalTunnel(int x, int y1, int y2, int[] ground, bool[] collision)
+    {
+        var (minY, maxY) = y1 < y2 ? (y1, y2) : (y2, y1);
+        for (var y = minY; y <= maxY; y++)
+            CarveTile(x, y, ground, collision);
+    }
+
+    private static void CarveTile(int x, int y, int[] ground, bool[] collision)
+    {
+        if (x < 0 || x >= MapWidth || y < 0 || y >= MapHeight) return;
+        var idx = y * MapWidth + x;
+        ground[idx]    = TileFloor;
+        collision[idx] = false;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Derives the next-level dungeon zone ID from the current one.
+    /// E.g. <c>"dungeon-1"</c> → <c>"dungeon-2"</c>; unknown format → <c>"dungeon-1"</c>.
+    /// </summary>
+    private static string DeeperZoneId(string zoneId)
+    {
+        const string prefix = "dungeon-";
+        if (zoneId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(zoneId[prefix.Length..], out var level))
+            return $"{prefix}{level + 1}";
+        return "dungeon-1";
+    }
+
+    private readonly record struct Rect(int X, int Y, int W, int H)
+    {
+        internal bool Overlaps(Rect other, int padding = 0) =>
+            X - padding < other.X + other.W + padding &&
+            X + W + padding > other.X - padding &&
+            Y - padding < other.Y + other.H + padding &&
+            Y + H + padding > other.Y - padding;
+    }
+}
