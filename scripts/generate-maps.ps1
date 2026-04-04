@@ -28,7 +28,6 @@
 #   kaldrek-maw       → smoldering-reach
 
 $mapsDir = "C:\code\RealmEngine\RealmUnbound.Assets\GameAssets\tilemaps\maps"
-$N = 1200   # 40 x 30
 
 # Base tile constants (TileIndex.Terrain.*. M)
 $Grass  = 915   # TileIndex.Terrain.Grass.M
@@ -37,7 +36,7 @@ $Sand   = 1262  # TileIndex.Terrain.Sand.M
 
 function e($x, $y, $to) { [pscustomobject]@{ x = $x; y = $y; z = $to } }
 
-# Builds a flat collision mask for a 40×30 map.
+# Builds a flat collision mask for a w×h map.
 # Border tiles are solid (true), interior is open (false).
 # Exit tile positions are explicitly unblocked even if on the border.
 function Get-CollisionMask {
@@ -63,13 +62,19 @@ function Write-Map {
         [string]  $id,
         [int]     $base,
         [object[]]$exits,
-        [int]     $sx = 20,
-        [int]     $sy = 15
+        [int]     $w  = 40,
+        [int]     $h  = 30,
+        [int]     $sx = -1,
+        [int]     $sy = -1
     )
 
+    if ($sx -lt 0) { $sx = [int]($w / 2) }
+    if ($sy -lt 0) { $sy = [int]($h / 2) }
+
+    $N    = $w * $h
     $bArr = (([string]$base + ",") * ($N - 1)) + [string]$base
     $oArr = (("-1,") * ($N - 1)) + "-1"
-    $cArr = Get-CollisionMask -exits $exits
+    $cArr = Get-CollisionMask -exits $exits -w $w -h $h
     $fArr = (("false,") * ($N - 1)) + "false"
 
     $el = ($exits | ForEach-Object {
@@ -80,8 +85,8 @@ function Write-Map {
 {
   "zoneId": "$id",
   "tilesetKey": "roguelike_base",
-  "width": 40,
-  "height": 30,
+  "width": $w,
+  "height": $h,
   "tileSize": 16,
   "layers": [
     { "name": "base",    "data": [$bArr] },
@@ -99,57 +104,64 @@ $el
 "@
 
     [System.IO.File]::WriteAllText("$mapsDir\$id.json", $json, [System.Text.Encoding]::UTF8)
-    Write-Host "  Written: $id.json"
+    Write-Host "  Written: $id.json  (${w}x${h})"
 }
 
 Write-Host "Generating 16 zone tilemaps (all using roguelike_base)..."
 
+# Zone size categories:
+#   Small  (30×22) — starter towns and short paths (fenwick-crossing, greenveil-paths, aldenmere)
+#   Medium (40×30) — standard wilderness (default; most zones)
+#   Large  (50×38) — epic late-game regions (soddenfen and endgame zones)
+#
+# Exit tile positions are expressed in the tile-coordinate space of THIS zone's own map.
+
 # -- Grass biome (Terrain.Grass.M = 915) --------------------------------------
-Write-Map "fenwick-crossing"  $Grass @(e 20 29 "greenveil-paths") 18 15
 
-Write-Map "greenveil-paths"   $Grass `
-    @(e 20  0 "fenwick-crossing"; e 20 29 "thornveil-hollow")
+# Small starting town — bottom exit to greenveil paths
+Write-Map "fenwick-crossing"  $Grass @(e 15 21 "greenveil-paths")                               -w 30 -h 22
 
+# Small path zone — top to fenwick, bottom to thornveil
+Write-Map "greenveil-paths"   $Grass @(e 15  0 "fenwick-crossing"; e 15 21 "thornveil-hollow") -w 30 -h 22
+
+# Medium zone — top to greenveil, right to verdant-barrow, bottom to aldenmere
 Write-Map "thornveil-hollow"  $Grass `
     @(e 20  0 "greenveil-paths"; e 39 15 "verdant-barrow"; e 20 29 "aldenmere")
 
+# Large marsh zone — top to pale-moor, right to barrow-deeps, bottom to tolvaren
 Write-Map "soddenfen"         $Grass `
-    @(e 20  0 "pale-moor"; e 39 15 "barrow-deeps"; e 20 29 "tolvaren")
+    @(e 25  0 "pale-moor"; e 49 19 "barrow-deeps"; e 25 37 "tolvaren")                          -w 50 -h 38
 
 # -- Stone biome (Terrain.Stone.M = 920) --------------------------------------
+
 Write-Map "verdant-barrow"    $Stone @(e  0 15 "thornveil-hollow")
 
-Write-Map "aldenmere"         $Stone `
-    @(e 20  0 "thornveil-hollow"; e 20 29 "pale-moor")
+# Small hub town — top to thornveil, bottom to pale-moor
+Write-Map "aldenmere"         $Stone @(e 15  0 "thornveil-hollow"; e 15 21 "pale-moor")         -w 30 -h 22
 
-Write-Map "pale-moor"         $Stone `
-    @(e 20  0 "aldenmere"; e 20 29 "soddenfen")
+Write-Map "pale-moor"         $Stone @(e 20  0 "aldenmere"; e 20 29 "soddenfen")
 
-Write-Map "barrow-deeps"      $Stone `
-    @(e  0 15 "soddenfen"; e 20 29 "skarhold")
+Write-Map "barrow-deeps"      $Stone @(e  0 15 "soddenfen"; e 20 29 "skarhold")
 
-Write-Map "saltcliff-heights" $Stone `
-    @(e 20  0 "tidewrack-flats"; e 20 29 "sunken-name")
+Write-Map "saltcliff-heights" $Stone @(e 20  0 "tidewrack-flats"; e 20 29 "sunken-name")
 
 Write-Map "sunken-name"       $Stone @(e 20  0 "saltcliff-heights")
 
 Write-Map "skarhold"          $Stone `
-    @(e 20  0 "barrow-deeps"; e 20 29 "ashfields")
+    @(e 25  0 "barrow-deeps"; e 25 37 "ashfields")                                              -w 50 -h 38
 
 Write-Map "ashfields"         $Stone `
-    @(e 20  0 "skarhold"; e 20 29 "smoldering-reach")
+    @(e 25  0 "skarhold"; e 25 37 "smoldering-reach")                                           -w 50 -h 38
 
 Write-Map "smoldering-reach"  $Stone `
-    @(e 20  0 "ashfields"; e 20 29 "kaldrek-maw")
+    @(e 25  0 "ashfields"; e 25 37 "kaldrek-maw")                                               -w 50 -h 38
 
-Write-Map "kaldrek-maw"       $Stone @(e 20  0 "smoldering-reach")
+Write-Map "kaldrek-maw"       $Stone @(e 25  0 "smoldering-reach")                              -w 50 -h 38
 
 # -- Sand biome (Terrain.Sand.M = 1262) ----------------------------------------
-Write-Map "tolvaren"          $Sand `
-    @(e 20  0 "soddenfen"; e 20 29 "tidewrack-flats")
+Write-Map "tolvaren"          $Sand  @(e 20  0 "soddenfen"; e 20 29 "tidewrack-flats")
 
-Write-Map "tidewrack-flats"   $Sand `
-    @(e 20  0 "tolvaren"; e 20 29 "saltcliff-heights")
+Write-Map "tidewrack-flats"   $Sand  @(e 20  0 "tolvaren"; e 20 29 "saltcliff-heights")
 
 Write-Host ""
 Write-Host "Done! All 16 maps written to: $mapsDir"

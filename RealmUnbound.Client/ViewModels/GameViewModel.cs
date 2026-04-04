@@ -1010,9 +1010,7 @@ public class GameViewModel : ViewModelBase
         // If this is our own character, re-center the camera
         if (characterId == _characterId)
         {
-            const int viewportTiles = 26;
-            const int viewportTilesH = 17;
-            Tilemap.CenterCameraOn(tileX, tileY, viewportTiles, viewportTilesH);
+            Tilemap.CenterCameraOn(tileX, tileY);
             Tilemap.RevealAround(tileX, tileY);
         }
     }
@@ -1053,9 +1051,7 @@ public class GameViewModel : ViewModelBase
             var self = entities.FirstOrDefault(e => e.EntityId == _characterId.Value);
             if (self is not null)
             {
-                const int viewportTiles = 26;
-                const int viewportTilesH = 17;
-                Tilemap.CenterCameraOn(self.TileX, self.TileY, viewportTiles, viewportTilesH);
+                Tilemap.CenterCameraOn(self.TileX, self.TileY);
                 Tilemap.RevealAround(self.TileX, self.TileY);
             }
         }
