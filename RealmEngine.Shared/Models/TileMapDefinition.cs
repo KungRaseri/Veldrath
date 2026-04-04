@@ -12,8 +12,8 @@ public class TileMapDefinition
     public string ZoneId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Tileset key used to look up the spritesheet in <c>TilemapAssets.All</c>
-    /// (e.g. <c>"tiny_town"</c>, <c>"tiny_dungeon"</c>, <c>"roguelike_base"</c>).
+    /// Tileset key used to look up the spritesheet in <c>TilemapAssets.All</c>.
+    /// All zones use <c>"roguelike_base"</c>. Tile index constants are in <see cref="TileIndex"/>.
     /// </summary>
     public string TilesetKey { get; set; } = string.Empty;
 
