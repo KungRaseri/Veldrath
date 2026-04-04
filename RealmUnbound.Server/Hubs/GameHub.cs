@@ -4,6 +4,8 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
@@ -36,6 +38,9 @@ public class GameHub : Hub
     private readonly IZoneSessionRepository _zoneSessionRepo;
     private readonly IActiveCharacterTracker _activeCharacters;
     private readonly ISender _mediator;
+    private readonly IZoneEntityTracker _entityTracker;
+    private readonly ITileMapRepository _tilemapRepo;
+    private readonly IEnemyRepository _enemyRepo;
 
     /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
@@ -44,14 +49,20 @@ public class GameHub : Hub
         IZoneRepository zoneRepo,
         IZoneSessionRepository zoneSessionRepo,
         IActiveCharacterTracker activeCharacters,
-        ISender mediator)
+        ISender mediator,
+        IZoneEntityTracker entityTracker,
+        ITileMapRepository tilemapRepo,
+        IEnemyRepository enemyRepo)
     {
-        _logger          = logger;
-        _characterRepo   = characterRepo;
-        _zoneRepo        = zoneRepo;
-        _zoneSessionRepo = zoneSessionRepo;
+        _logger           = logger;
+        _characterRepo    = characterRepo;
+        _zoneRepo         = zoneRepo;
+        _zoneSessionRepo  = zoneSessionRepo;
         _activeCharacters = activeCharacters;
-        _mediator        = mediator;
+        _mediator         = mediator;
+        _entityTracker    = entityTracker;
+        _tilemapRepo      = tilemapRepo;
+        _enemyRepo        = enemyRepo;
     }
 
     public override async Task OnConnectedAsync()
@@ -232,6 +243,9 @@ public class GameHub : Hub
         var zoneGroup = ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
 
+        // Register zone group name for background services (e.g. EnemyAiService)
+        _entityTracker.SetZoneGroupName(zoneId, zoneGroup);
+
         // Join SignalR group
         await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup);
 
@@ -255,6 +269,32 @@ public class GameHub : Hub
             ZoneType = zone.Type.ToString(),
             Occupants = occupants,
         });
+
+        // Determine spawn position (first spawn point or tile 1,1 fallback)
+        var map = await _tilemapRepo.GetByZoneIdAsync(zoneId);
+        var spawnX = map?.SpawnPoints.Count > 0 ? map.SpawnPoints[0].TileX : 1;
+        var spawnY = map?.SpawnPoints.Count > 0 ? map.SpawnPoints[0].TileY : 1;
+        _entityTracker.TrackPlayer(zoneId, characterId, spawnX, spawnY);
+
+        // Spawn enemies if this is the first player entering an empty zone
+        var existingEntities = _entityTracker.GetEntities(zoneId);
+        if (existingEntities.Count == 0 && map is not null)
+        {
+            var spawned = await SpawnEnemiesForZoneAsync(zoneId, map);
+            if (spawned.Count > 0)
+            {
+                var spawnPayload = new ZoneEntitiesSnapshotPayload(
+                    spawned.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList());
+                await Clients.Group(zoneGroup).SendAsync("ZoneEntitiesSnapshot", spawnPayload);
+            }
+        }
+        else if (existingEntities.Count > 0)
+        {
+            // Send existing entities to the newly-joined player
+            var snapshotPayload = new ZoneEntitiesSnapshotPayload(
+                existingEntities.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList());
+            await Clients.Caller.SendAsync("ZoneEntitiesSnapshot", snapshotPayload);
+        }
 
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
     }
@@ -301,6 +341,9 @@ public class GameHub : Hub
             }
 
             var payload = new CharacterMovedPayload(characterId, result.TileX, result.TileY, result.Direction);
+
+            // Keep player position up-to-date for AI pathfinding
+            _entityTracker.TrackPlayer(zoneId, characterId, result.TileX, result.TileY);
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
                 await Clients.Group(zoneGroup).SendAsync("CharacterMoved", payload);
@@ -1696,6 +1739,11 @@ public class GameHub : Hub
 
         await _zoneSessionRepo.RemoveAsync(session);
 
+        // Untrack player; if zone is now empty of players, despawn all entities
+        _entityTracker.UntrackPlayer(zoneId, characterId);
+        if (_entityTracker.GetPlayerPositions(zoneId).Count == 0)
+            _entityTracker.ClearZone(zoneId);
+
         // Use the stored group name so Wilderness players leave the correct difficulty-scoped group.
         var groupName = Context.Items.TryGetValue("CurrentZoneGroupName", out var gn) && gn is string gs
             ? gs
@@ -1811,6 +1859,66 @@ public class GameHub : Hub
         // Echo to sender so they see their own whisper in the chat log
         var echoDto = dto with { Sender = $"To {request.TargetCharacterName}" };
         await Clients.Caller.SendAsync("ReceiveChatMessage", echoDto);
+    }
+
+    /// <summary>
+    /// Spawns a small set of enemies into the zone when the first player enters.
+    /// Picks up to 3 archetypes from the enemy repository and places them at random
+    /// non-blocked, non-spawn-point tiles.
+    /// </summary>
+    private async Task<IReadOnlyList<ZoneEntitySnapshot>> SpawnEnemiesForZoneAsync(string zoneId, TileMapDefinition map)
+    {
+        try
+        {
+            var archetypes = (await _enemyRepo.GetAllAsync()).Take(3).ToList();
+            if (archetypes.Count == 0) return [];
+
+            var spawnPointSet = map.SpawnPoints
+                .Select(p => (p.TileX, p.TileY))
+                .ToHashSet();
+
+            var rng = new Random(zoneId.GetHashCode());
+            var snapshots = new List<ZoneEntitySnapshot>(archetypes.Count);
+
+            foreach (var archetype in archetypes)
+            {
+                // Pick a random non-blocked tile that isn't a player spawn point
+                var (ex, ey) = FindSpawnTile(map, spawnPointSet, rng);
+                var snapshot = new ZoneEntitySnapshot(
+                    EntityId:      Guid.NewGuid(),
+                    EntityType:    "enemy",
+                    ArchetypeSlug: archetype.Slug,
+                    SpriteKey:     archetype.Slug,
+                    TileX:         ex,
+                    TileY:         ey,
+                    Direction:     "S",
+                    MaxHealth:     archetype.MaxHealth,
+                    CurrentHealth: archetype.Health);
+                snapshots.Add(snapshot);
+            }
+
+            _entityTracker.SetEntities(zoneId, snapshots);
+            return snapshots;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to spawn enemies for zone {ZoneId}", zoneId);
+            return [];
+        }
+    }
+
+    private static (int x, int y) FindSpawnTile(TileMapDefinition map, HashSet<(int, int)> exclusions, Random rng)
+    {
+        // Make up to 50 attempts to find a valid non-blocked, non-spawn-point tile
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            var x = rng.Next(1, map.Width - 1);
+            var y = rng.Next(1, map.Height - 1);
+            if (!map.IsBlocked(x, y) && !exclusions.Contains((x, y)))
+                return (x, y);
+        }
+        // Fallback: top-left-ish corner
+        return (2, 2);
     }
 
     private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>

@@ -62,6 +62,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _characterMovedSub;
     private IDisposable? _zoneTileMapSub;
     private IDisposable? _tileExitSub;
+    private IDisposable? _enemyMovedSub;
+    private IDisposable? _zoneEntitiesSnapshotSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -218,6 +220,8 @@ public class CharacterSelectViewModel : ViewModelBase
             _characterMovedSub?.Dispose();
             _zoneTileMapSub?.Dispose();
             _tileExitSub?.Dispose();
+            _enemyMovedSub?.Dispose();
+            _zoneEntitiesSnapshotSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -348,6 +352,10 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnZoneTileMap(dto));
             _tileExitSub = _connection.On<ExitTileDto>("TileExitTriggered", payload =>
                 _gameVm.OnTileExitTriggered(payload.ToZoneId));
+            _enemyMovedSub = _connection.On<EnemyMovedPayload>("EnemyMoved", payload =>
+                _gameVm.OnEnemyMoved(payload.EntityId, payload.TileX, payload.TileY, payload.Direction));
+            _zoneEntitiesSnapshotSub = _connection.On<ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", payload =>
+                _gameVm.OnZoneEntitiesSnapshot(payload.Entities));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.

@@ -1033,6 +1033,20 @@ public class GameViewModel : ViewModelBase
         await DoTravelToZoneAsync(toZoneId);
     }
 
+    /// <summary>Called from hub when an enemy moves one tile on the map.</summary>
+    public void OnEnemyMoved(Guid entityId, int tileX, int tileY, string direction)
+    {
+        Tilemap?.UpsertEntity(entityId, "enemy", "enemy", tileX, tileY, direction);
+    }
+
+    /// <summary>Called from hub when the zone's initial entity snapshot is received (e.g. on zone entry).</summary>
+    public void OnZoneEntitiesSnapshot(IReadOnlyList<RealmUnbound.Contracts.Tilemap.TileEntityDto> entities)
+    {
+        if (Tilemap is null) return;
+        foreach (var e in entities)
+            Tilemap.UpsertEntity(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction);
+    }
+
     // ────────────────────────────────────────────────────────────────────────
 
     /// <summary>Called from hub when zone state is received with initial occupant list.</summary>

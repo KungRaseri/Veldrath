@@ -93,3 +93,10 @@ public record EnemyMovedPayload(Guid EntityId, int TileX, int TileY, string Dire
 /// </summary>
 /// <param name="TileKeys">Collection of newly-revealed tile keys in <c>"x,y"</c> format.</param>
 public record FogRevealedPayload(IReadOnlyList<string> TileKeys);
+
+/// <summary>
+/// Sent to a player who joins a zone that already has live entities (enemies/NPCs).
+/// Also broadcast to the zone group when the first player enters and entities are spawned.
+/// </summary>
+/// <param name="Entities">Snapshot of all live entities currently in the zone.</param>
+public record ZoneEntitiesSnapshotPayload(IReadOnlyList<TileEntityDto> Entities);
