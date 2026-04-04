@@ -57,4 +57,12 @@ public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionReposi
             await db.SaveChangesAsync();
         }
     }
+
+    public async Task UpdateLastMovedAtAsync(Guid characterId, DateTimeOffset time)
+    {
+        var session = await GetByCharacterIdAsync(characterId);
+        if (session is null) return;
+        session.LastMovedAt = time;
+        await db.SaveChangesAsync();
+    }
 }

@@ -47,6 +47,9 @@ public class GameViewModel : ViewModelBase
     private readonly IAssetStore? _assetStore;
     private readonly IAudioPlayer? _audioPlayer;
 
+    // Tilemap
+    private TilemapViewModel? _tilemapViewModel;
+
     // Zone state
     private string _zoneName = string.Empty;
     private string _zoneDescription = string.Empty;
@@ -506,6 +509,17 @@ public class GameViewModel : ViewModelBase
     private string _worldName = string.Empty;
     private string _worldEra = string.Empty;
 
+    // ── Tilemap ──────────────────────────────────────────────────────────────
+
+    /// <summary>View model for the real-time tilemap canvas. Initialized when the character selects a character.</summary>
+    public TilemapViewModel? Tilemap
+    {
+        get => _tilemapViewModel;
+        private set => this.RaiseAndSetIfChanged(ref _tilemapViewModel, value);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+
     /// <summary>Whether the current zone has an inn available for resting.</summary>
     public bool HasInn
     {
@@ -897,6 +911,14 @@ public class GameViewModel : ViewModelBase
 
         SpawnedEnemies.CollectionChanged += (_, _) => HasSpawnedEnemies = SpawnedEnemies.Count > 0;
 
+        // Tilemap VM — forward move requests to the hub
+        Tilemap = new TilemapViewModel(async (toX, toY, dir) =>
+        {
+            await _connection.SendCommandAsync<object>(
+                "MoveCharacter",
+                new { ToX = toX, ToY = toY, Direction = dir });
+        });
+
         // Settings + audio mute commands
         ToggleSettingsCommand  = ReactiveCommand.Create(() => { IsSettingsOpen = !IsSettingsOpen; });
         ToggleMusicMuteCommand = ReactiveCommand.Create(() =>
@@ -937,6 +959,9 @@ public class GameViewModel : ViewModelBase
 
         await LoadZoneCoreAsync(zoneId);
 
+        // Request the tilemap for the new zone from the server
+        await _connection.SendCommandAsync("GetZoneTileMap");
+
         if (_assetStore is not null && _audioPlayer is not null)
         {
             var musicPath = ZoneType.Equals("Dungeon", StringComparison.OrdinalIgnoreCase)
@@ -965,6 +990,50 @@ public class GameViewModel : ViewModelBase
             OnlinePlayers.Remove(existing);
         AppendLog($"{playerName} left the zone.");
     }
+
+    // ── Tilemap hub handlers ─────────────────────────────────────────────────
+
+    /// <summary>Called from hub when a <c>ZoneTileMap</c> message arrives with the zone's full tilemap.</summary>
+    public void OnZoneTileMap(RealmUnbound.Contracts.Tilemap.TileMapDto tileMap)
+    {
+        if (Tilemap is null) return;
+        Tilemap.TileMapData = tileMap;
+        Tilemap.RevealedTiles.Clear();
+    }
+
+    /// <summary>Called from hub when a character (self or other player) moves on the tilemap.</summary>
+    public void OnCharacterMoved(Guid characterId, int tileX, int tileY, string direction)
+    {
+        if (Tilemap is null) return;
+        Tilemap.UpsertEntity(characterId, "player", "player", tileX, tileY, direction);
+
+        // If this is our own character, re-center the camera
+        if (characterId == _characterId)
+        {
+            const int viewportTiles = 26;
+            const int viewportTilesH = 17;
+            Tilemap.CenterCameraOn(tileX, tileY, viewportTiles, viewportTilesH);
+            Tilemap.RevealAround(tileX, tileY);
+        }
+    }
+
+    /// <summary>Called from hub when tiles are revealed from fog-of-war for this character.</summary>
+    public void OnFogRevealed(IEnumerable<string> tileKeys)
+    {
+        if (Tilemap is null) return;
+        foreach (var key in tileKeys)
+            Tilemap.RevealedTiles.Add(key);
+    }
+
+    /// <summary>Called from hub when the character steps on an exit tile and triggers a zone transition.</summary>
+    public async void OnTileExitTriggered(string toZoneId)
+    {
+        if (string.IsNullOrEmpty(toZoneId)) return;
+        AppendLog($"Traveling to {toZoneId}...");
+        await DoTravelToZoneAsync(toZoneId);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
 
     /// <summary>Called from hub when zone state is received with initial occupant list.</summary>
     public void SetOccupants(IEnumerable<string> playerNames)

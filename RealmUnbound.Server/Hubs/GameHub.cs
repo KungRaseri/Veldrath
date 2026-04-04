@@ -4,6 +4,7 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Characters;
@@ -265,7 +266,97 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync("ZoneLeft");
     }
 
-    // Game actions
+    // Tilemap movement
+    /// <summary>
+    /// Requests a one-tile movement for the caller's active character.
+    /// The server validates the step (1-tile distance, collision mask, 100 ms cooldown) and,
+    /// on success, persists the new position and broadcasts <c>CharacterMoved</c> to the zone group.
+    /// If the destination is an exit tile the caller additionally receives <c>TileExitTriggered</c>.
+    /// </summary>
+    /// <param name="request">Target tile coordinates and facing direction.</param>
+    public async Task MoveCharacter(MoveCharacterHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before MoveCharacter");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before MoveCharacter");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new MoveCharacterHubCommand(
+                characterId, request.ToX, request.ToY, request.Direction, zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Move rejected");
+                return;
+            }
+
+            var payload = new CharacterMovedPayload(characterId, result.TileX, result.TileY, result.Direction);
+
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("CharacterMoved", payload);
+            else
+                await Clients.Caller.SendAsync("CharacterMoved", payload);
+
+            if (result.ExitTriggered is not null)
+                await Clients.Caller.SendAsync("TileExitTriggered", result.ExitTriggered);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in MoveCharacter for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to process move");
+        }
+    }
+
+    /// <summary>
+    /// Loads and returns the <see cref="RealmUnbound.Contracts.Tilemap.TileMapDto"/> for the caller's current zone.
+    /// Sends <c>ZoneTileMap</c> to the caller on success.
+    /// </summary>
+    public async Task GetZoneTileMap()
+    {
+        if (!TryGetCharacterId(out _))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetZoneTileMap");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before GetZoneTileMap");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new GetZoneTileMapHubCommand(zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load tilemap");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ZoneTileMap", result.TileMap);
+
+            _logger.LogDebug("Sent tilemap for zone {ZoneId} to {ConnectionId}", zoneId, Context.ConnectionId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetZoneTileMap for zone {ZoneId}", zoneId);
+            await Clients.Caller.SendAsync("Error", "Failed to load tilemap");
+        }
+    }
+
     /// <summary>
     /// Award experience points to the caller's active character.
     /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching

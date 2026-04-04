@@ -79,6 +79,21 @@ public class Character
     /// </summary>
     public string AbilitiesBlob { get; set; } = "[]";
 
+    // ── Tilemap position ───────────────────────────────────────────────────
+
+    /// <summary>Tile X coordinate of the character's current position on the zone grid.</summary>
+    public int TileX { get; set; } = 0;
+
+    /// <summary>Tile Y coordinate of the character's current position on the zone grid.</summary>
+    public int TileY { get; set; } = 0;
+
+    /// <summary>
+    /// Zone ID whose tile grid the character is currently positioned in.
+    /// <see langword="null"/> until the character first enters a zone with an authored tilemap.
+    /// When this differs from <see cref="CurrentZoneId"/> the character is snapped to the spawn tile on entry.
+    /// </summary>
+    public string? TileZoneId { get; set; }
+
     // Navigation
     public PlayerAccount Account { get; set; } = null!;
 }

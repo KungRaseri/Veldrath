@@ -270,6 +270,16 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("TileX")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TileY")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TileZoneId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
@@ -766,6 +776,9 @@ namespace RealmUnbound.Server.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("EnteredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("LastMovedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ZoneId")

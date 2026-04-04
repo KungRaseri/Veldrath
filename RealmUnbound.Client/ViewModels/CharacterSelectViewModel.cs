@@ -7,6 +7,7 @@ using RealmUnbound.Assets;
 using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Contracts.Characters;
+using RealmUnbound.Contracts.Tilemap;
 
 namespace RealmUnbound.Client.ViewModels;
 
@@ -58,6 +59,9 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _itemSoldSub;
     private IDisposable? _itemDroppedSub;
     private IDisposable? _chatMessageSub;
+    private IDisposable? _characterMovedSub;
+    private IDisposable? _zoneTileMapSub;
+    private IDisposable? _tileExitSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -211,6 +215,9 @@ public class CharacterSelectViewModel : ViewModelBase
             _itemSoldSub?.Dispose();
             _itemDroppedSub?.Dispose();
             _chatMessageSub?.Dispose();
+            _characterMovedSub?.Dispose();
+            _zoneTileMapSub?.Dispose();
+            _tileExitSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -335,6 +342,12 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnItemDropped(payload.ItemRef, payload.NewInventory));
             _chatMessageSub = _connection.On<ChatMessagePayload>("ReceiveChatMessage", payload =>
                 _gameVm.OnChatMessageReceived(payload.Channel, payload.Sender, payload.Message, payload.Timestamp));
+            _characterMovedSub = _connection.On<CharacterMovedPayload>("CharacterMoved", payload =>
+                _gameVm.OnCharacterMoved(payload.CharacterId, payload.TileX, payload.TileY, payload.Direction));
+            _zoneTileMapSub = _connection.On<TileMapDto>("ZoneTileMap", dto =>
+                _gameVm.OnZoneTileMap(dto));
+            _tileExitSub = _connection.On<ExitTileDto>("TileExitTriggered", payload =>
+                _gameVm.OnTileExitTriggered(payload.ToZoneId));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
