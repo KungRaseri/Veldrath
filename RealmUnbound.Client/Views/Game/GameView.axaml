@@ -51,6 +51,12 @@
             Grid.Column="1"
             Grid.ColumnSpan="2" />
 
+        <!--  ── JOURNAL OVERLAY ──────────────────────────────────────────────  -->
+        <views:GameJournalOverlayView
+            Grid.Row="1"
+            Grid.Column="1"
+            Grid.ColumnSpan="2" />
+
         <!--  ── ROW 2: HOTBAR + CONTEXT-SENSITIVE ACTION BAR ────────────────  -->
         <views:GameFooterView Grid.Row="2" />
 

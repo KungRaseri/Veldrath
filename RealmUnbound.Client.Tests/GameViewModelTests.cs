@@ -236,14 +236,52 @@ public class GameViewModelTests : TestBase
 
     // OpenJournalCommand
     [Fact]
-    public async Task OpenJournalCommand_Sets_StatusMessage_To_Coming_Soon()
+    public async Task OpenJournalCommand_Should_Send_GetQuestLog_To_Hub()
     {
-        var vm = MakeVm();
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
 
         await vm.OpenJournalCommand.Execute();
 
-        vm.StatusMessage.Should().Be("Journal coming soon.");
-        vm.IsStatusMessageDismissable.Should().BeTrue();
+        conn.SentCommands.Should().Contain(c => c.Method == "GetQuestLog");
+    }
+
+    [Fact]
+    public void OnQuestLogReceived_Should_Set_IsJournalOpen_True()
+    {
+        var vm = MakeVm();
+
+        vm.OnQuestLogReceived([]);
+
+        vm.IsJournalOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnQuestLogReceived_Should_Populate_JournalQuests()
+    {
+        var vm = MakeVm();
+
+        vm.OnQuestLogReceived(
+        [
+            new QuestLogEntryDto("find-key", "Find the Key", "Active"),
+            new QuestLogEntryDto("slay-dragon", "Slay the Dragon", "Completed"),
+        ]);
+
+        vm.JournalQuests.Should().HaveCount(2);
+        vm.JournalQuests[0].Slug.Should().Be("find-key");
+        vm.JournalQuests[1].Status.Should().Be("Completed");
+    }
+
+    [Fact]
+    public async Task CloseJournalCommand_Should_Set_IsJournalOpen_False()
+    {
+        var vm = MakeVm();
+        vm.OnQuestLogReceived([]);
+        vm.IsJournalOpen.Should().BeTrue();
+
+        await vm.CloseJournalCommand.Execute();
+
+        vm.IsJournalOpen.Should().BeFalse();
     }
 
     // RestAtLocationCommand
