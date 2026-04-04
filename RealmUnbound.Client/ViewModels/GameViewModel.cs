@@ -1045,6 +1045,20 @@ public class GameViewModel : ViewModelBase
         if (Tilemap is null) return;
         foreach (var e in entities)
             Tilemap.UpsertEntity(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction);
+
+        // If our own character is present in the snapshot, center the camera immediately
+        // so the player sees their position without waiting for the first CharacterMoved.
+        if (_characterId.HasValue)
+        {
+            var self = entities.FirstOrDefault(e => e.EntityId == _characterId.Value);
+            if (self is not null)
+            {
+                const int viewportTiles = 26;
+                const int viewportTilesH = 17;
+                Tilemap.CenterCameraOn(self.TileX, self.TileY, viewportTiles, viewportTilesH);
+                Tilemap.RevealAround(self.TileX, self.TileY);
+            }
+        }
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -1214,12 +1228,10 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Called from hub when the character has entered a dungeon.</summary>
-    public void OnDungeonEntered(string dungeonId, string dungeonSlug)
+    public async void OnDungeonEntered(string dungeonId, string dungeonSlug)
     {
         AppendLog($"Entered dungeon '{dungeonSlug}' (ID: {dungeonId}).");
-        // Treat dungeon entry as a zone transition: refresh zone state and send EnterZone.
-        _ = InitializeAsync(CharacterName, dungeonId);
-        _ = _connection.SendCommandAsync<object>("EnterZone", dungeonId);
+        await DoTravelToZoneAsync(dungeonId);
     }
 
     private async Task LoadZoneCoreAsync(string zoneId)

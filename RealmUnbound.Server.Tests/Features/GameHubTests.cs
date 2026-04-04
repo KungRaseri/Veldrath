@@ -529,6 +529,30 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
+    [Fact]
+    public async Task EnterZone_Should_Include_Player_In_ZoneEntitiesSnapshot()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+        var (hub, clients, _, ctx) = CreateHub(db, accountId);
+
+        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("fenwick-crossing");
+
+        var snapshotMsg = clients.CallerProxy.SentMessages
+            .Should().ContainSingle(m => m.Method == "ZoneEntitiesSnapshot")
+            .Which;
+
+        var json = JsonSerializer.Serialize(snapshotMsg.Args[0]);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("Entities")
+            .EnumerateArray()
+            .Should().Contain(e => e.GetProperty("EntityId").GetGuid() == character.Id);
+    }
+
     // GainExperience
     [Fact]
     public async Task GainExperience_Should_Send_Error_When_No_Character_Selected()

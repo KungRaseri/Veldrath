@@ -276,7 +276,7 @@ public class GameHub : Hub
         var spawnY = map?.SpawnPoints.Count > 0 ? map.SpawnPoints[0].TileY : 1;
         _entityTracker.TrackPlayer(zoneId, characterId, spawnX, spawnY);
 
-        // Spawn enemies if this is the first player entering an empty zone
+        // Spawn enemies if this is the first player entering an empty zone; notify other occupants only.
         var existingEntities = _entityTracker.GetEntities(zoneId);
         if (existingEntities.Count == 0 && map is not null)
         {
@@ -285,16 +285,20 @@ public class GameHub : Hub
             {
                 var spawnPayload = new ZoneEntitiesSnapshotPayload(
                     spawned.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList());
-                await Clients.Group(zoneGroup).SendAsync("ZoneEntitiesSnapshot", spawnPayload);
+                await Clients.OthersInGroup(zoneGroup).SendAsync("ZoneEntitiesSnapshot", spawnPayload);
             }
         }
-        else if (existingEntities.Count > 0)
-        {
-            // Send existing entities to the newly-joined player
-            var snapshotPayload = new ZoneEntitiesSnapshotPayload(
-                existingEntities.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList());
-            await Clients.Caller.SendAsync("ZoneEntitiesSnapshot", snapshotPayload);
-        }
+
+        // Always send the entering player a complete snapshot: all current enemies plus all tracked
+        // player positions. This ensures their own character appears on the tilemap immediately,
+        // without waiting for the first CharacterMoved broadcast.
+        var allEnemies = _entityTracker.GetEntities(zoneId);
+        var allPlayers = _entityTracker.GetPlayerPositions(zoneId);
+        var callerSnapshot = new ZoneEntitiesSnapshotPayload(
+            allEnemies.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction))
+                      .Concat(allPlayers.Select(p => new TileEntityDto(p.CharacterId, "player", "player", p.X, p.Y, "S")))
+                      .ToList());
+        await Clients.Caller.SendAsync("ZoneEntitiesSnapshot", callerSnapshot);
 
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
     }
