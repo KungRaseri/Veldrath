@@ -1,10 +1,9 @@
 # generate-maps.ps1
 # Generates / overwrites stub tilemap JSON files for all 16 Draveth zones.
 #
-# Tile index choices (see TilemapAssets.cs for sheet specs):
-#   tiny_town    (12×11, 1px spacing): base = 13  row 1 col 1  stone cobblestone path
-#   roguelike_base (57×31, 1px spacing): base = 3   row 0 col 3  flat terrain fill
-#   tiny_dungeon (12×11, 1px spacing): base = 1   row 0 col 1  dark stone floor
+# ALL zones use the roguelike_base tileset (57×31, 16px, 1px spacing).
+# Tile index constants: TileIndex.Terrain.Grass.M = 915, Stone.M = 920, Sand.M = 1262.
+# See RealmEngine.Shared/Models/TileIndex.cs for the full catalog.
 #
 # Layer architecture (all maps):
 #   Layer 0 "base"    – uniform opaque fill tile,  NEVER -1.
@@ -31,12 +30,16 @@
 $mapsDir = "C:\code\RealmEngine\RealmUnbound.Assets\GameAssets\tilemaps\maps"
 $N = 1200   # 40 x 30
 
+# Base tile constants (TileIndex.Terrain.*. M)
+$Grass  = 915   # TileIndex.Terrain.Grass.M
+$Stone  = 920   # TileIndex.Terrain.Stone.M
+$Sand   = 1262  # TileIndex.Terrain.Sand.M
+
 function e($x, $y, $to) { [pscustomobject]@{ x = $x; y = $y; z = $to } }
 
 function Write-Map {
     param(
         [string]  $id,
-        [string]  $key,
         [int]     $base,
         [object[]]$exits,
         [int]     $sx = 20,
@@ -55,7 +58,7 @@ function Write-Map {
     $json = @"
 {
   "zoneId": "$id",
-  "tilesetKey": "$key",
+  "tilesetKey": "roguelike_base",
   "width": 40,
   "height": 30,
   "tileSize": 16,
@@ -78,59 +81,54 @@ $el
     Write-Host "  Written: $id.json"
 }
 
-$TT = 13   # tiny_town
-$RB = 3    # roguelike_base
-$TD = 1    # tiny_dungeon
+Write-Host "Generating 16 zone tilemaps (all using roguelike_base)..."
 
-Write-Host "Generating 16 zone tilemaps..."
+# -- Grass biome (Terrain.Grass.M = 915) --------------------------------------
+Write-Map "fenwick-crossing"  $Grass @(e 20 29 "greenveil-paths") 18 15
 
-# -- Towns (tiny_town) --------------------------------------------------------
-Write-Map "fenwick-crossing"  "tiny_town"      $TT @(e 20 29 "greenveil-paths") 18 15
-
-Write-Map "aldenmere"         "tiny_town"      $TT `
-    @(e 20  0 "thornveil-hollow"; e 20 29 "pale-moor")
-
-Write-Map "tolvaren"          "tiny_town"      $TT `
-    @(e 20  0 "soddenfen"; e 20 29 "tidewrack-flats")
-
-# Skarhold is Zone.Type = Town but uses tiny_dungeon (Kaldrek forge-city, dark stone)
-Write-Map "skarhold"          "tiny_dungeon"   $TD `
-    @(e 20  0 "barrow-deeps"; e 20 29 "ashfields")
-
-# -- Wilderness (roguelike_base) ----------------------------------------------
-Write-Map "greenveil-paths"   "roguelike_base" $RB `
+Write-Map "greenveil-paths"   $Grass `
     @(e 20  0 "fenwick-crossing"; e 20 29 "thornveil-hollow")
 
-Write-Map "thornveil-hollow"  "roguelike_base" $RB `
+Write-Map "thornveil-hollow"  $Grass `
     @(e 20  0 "greenveil-paths"; e 39 15 "verdant-barrow"; e 20 29 "aldenmere")
 
-Write-Map "pale-moor"         "roguelike_base" $RB `
-    @(e 20  0 "aldenmere"; e 20 29 "soddenfen")
-
-Write-Map "soddenfen"         "roguelike_base" $RB `
+Write-Map "soddenfen"         $Grass `
     @(e 20  0 "pale-moor"; e 39 15 "barrow-deeps"; e 20 29 "tolvaren")
 
-Write-Map "tidewrack-flats"   "roguelike_base" $RB `
-    @(e 20  0 "tolvaren"; e 20 29 "saltcliff-heights")
+# -- Stone biome (Terrain.Stone.M = 920) --------------------------------------
+Write-Map "verdant-barrow"    $Stone @(e  0 15 "thornveil-hollow")
 
-Write-Map "saltcliff-heights" "roguelike_base" $RB `
-    @(e 20  0 "tidewrack-flats"; e 20 29 "sunken-name")
+Write-Map "aldenmere"         $Stone `
+    @(e 20  0 "thornveil-hollow"; e 20 29 "pale-moor")
 
-Write-Map "ashfields"         "roguelike_base" $RB `
-    @(e 20  0 "skarhold"; e 20 29 "smoldering-reach")
+Write-Map "pale-moor"         $Stone `
+    @(e 20  0 "aldenmere"; e 20 29 "soddenfen")
 
-Write-Map "smoldering-reach"  "roguelike_base" $RB `
-    @(e 20  0 "ashfields"; e 20 29 "kaldrek-maw")
-
-# -- Dungeons (tiny_dungeon) --------------------------------------------------
-Write-Map "verdant-barrow"    "tiny_dungeon"   $TD @(e  0 15 "thornveil-hollow")
-
-Write-Map "barrow-deeps"      "tiny_dungeon"   $TD `
+Write-Map "barrow-deeps"      $Stone `
     @(e  0 15 "soddenfen"; e 20 29 "skarhold")
 
-Write-Map "sunken-name"       "tiny_dungeon"   $TD @(e 20  0 "saltcliff-heights")
+Write-Map "saltcliff-heights" $Stone `
+    @(e 20  0 "tidewrack-flats"; e 20 29 "sunken-name")
 
-Write-Map "kaldrek-maw"       "tiny_dungeon"   $TD @(e 20  0 "smoldering-reach")
+Write-Map "sunken-name"       $Stone @(e 20  0 "saltcliff-heights")
+
+Write-Map "skarhold"          $Stone `
+    @(e 20  0 "barrow-deeps"; e 20 29 "ashfields")
+
+Write-Map "ashfields"         $Stone `
+    @(e 20  0 "skarhold"; e 20 29 "smoldering-reach")
+
+Write-Map "smoldering-reach"  $Stone `
+    @(e 20  0 "ashfields"; e 20 29 "kaldrek-maw")
+
+Write-Map "kaldrek-maw"       $Stone @(e 20  0 "smoldering-reach")
+
+# -- Sand biome (Terrain.Sand.M = 1262) ----------------------------------------
+Write-Map "tolvaren"          $Sand `
+    @(e 20  0 "soddenfen"; e 20 29 "tidewrack-flats")
+
+Write-Map "tidewrack-flats"   $Sand `
+    @(e 20  0 "tolvaren"; e 20 29 "saltcliff-heights")
 
 Write-Host ""
 Write-Host "Done! All 16 maps written to: $mapsDir"
