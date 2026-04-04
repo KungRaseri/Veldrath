@@ -58,6 +58,18 @@ public class TilemapViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _cameraY, value);
     }
 
+    /// <summary>
+    /// Number of tile columns visible in the viewport. Updated by <c>TilemapControl</c> on resize.
+    /// Defaults to 26 (1248 px ÷ 48 px/tile) until the control reports its actual bounds.
+    /// </summary>
+    public int ViewportWidthTiles  { get; set; } = 26;
+
+    /// <summary>
+    /// Number of tile rows visible in the viewport. Updated by <c>TilemapControl</c> on resize.
+    /// Defaults to 17 (816 px ÷ 48 px/tile) until the control reports its actual bounds.
+    /// </summary>
+    public int ViewportHeightTiles { get; set; } = 17;
+
     // ── Mini-map overlay ─────────────────────────────────────────────────────
 
     /// <summary>Whether the mini-map overlay is currently open.</summary>
@@ -125,7 +137,18 @@ public class TilemapViewModel : ViewModelBase
             Entities.Remove(entity);
     }
 
-    /// <summary>Centers the camera on the given tile coordinate, clamped to map bounds.</summary>
+    /// <summary>
+    /// Centers the camera on the given tile coordinate using the current
+    /// <see cref="ViewportWidthTiles"/> / <see cref="ViewportHeightTiles"/>.
+    /// The camera is clamped so it never scrolls past the map boundary (dead-zone at edges).
+    /// </summary>
+    public void CenterCameraOn(int tileX, int tileY)
+        => CenterCameraOn(tileX, tileY, ViewportWidthTiles, ViewportHeightTiles);
+
+    /// <summary>
+    /// Centers the camera on the given tile coordinate with explicit viewport dimensions.
+    /// The camera is clamped so it never scrolls past the map boundary (dead-zone at edges).
+    /// </summary>
     public void CenterCameraOn(int tileX, int tileY, int viewportWidthTiles, int viewportHeightTiles)
     {
         if (_tileMapData is null) return;

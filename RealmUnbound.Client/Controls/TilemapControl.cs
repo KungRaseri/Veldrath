@@ -67,6 +67,28 @@ public class TilemapControl : Control
     }
 
     /// <inheritdoc/>
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        var vm = ViewModel;
+        if (vm is null) return;
+
+        // Compute how many tiles fit in the new bounds and push into the VM so that
+        // CenterCameraOn() always has correct, window-size-aware viewport dimensions.
+        vm.ViewportWidthTiles  = Math.Max(1, (int)(Bounds.Width  / DisplayTileSize));
+        vm.ViewportHeightTiles = Math.Max(1, (int)(Bounds.Height / DisplayTileSize));
+
+        // Re-centre immediately so the camera adjusts on window resize without waiting
+        // for the next character move.
+        if (vm.SelfEntityId.HasValue)
+        {
+            var self = vm.Entities.FirstOrDefault(en => en.EntityId == vm.SelfEntityId.Value);
+            if (self is not null)
+                vm.CenterCameraOn(self.TileX, self.TileY);
+        }
+    }
+
+    /// <inheritdoc/>
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _timer?.Stop();
