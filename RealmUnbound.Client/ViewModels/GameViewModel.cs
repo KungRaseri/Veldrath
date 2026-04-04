@@ -334,9 +334,10 @@ public class GameViewModel : ViewModelBase
     private bool _isSettingsOpen;
 
     // Chat state
+    private readonly GlobalChatTabViewModel _globalTab;
+    private readonly ZoneChatTabViewModel _zoneTab;
     private string _chatInput = string.Empty;
-    private string _activeChatChannel = "System";
-    private string _whisperTarget = string.Empty;
+    private ChatTabViewModel _activeChatTab = null!; // assigned in ctor after tab instances are created
 
     /// <summary>Whether the collapsible left character-sheet panel is expanded.</summary>
     public bool IsLeftPanelOpen
@@ -425,8 +426,15 @@ public class GameViewModel : ViewModelBase
 
     // Chat
 
-    /// <summary>Scrolling chat log (last 200 messages across all channels).</summary>
-    public ObservableCollection<ChatMessageViewModel> ChatMessages { get; } = [];
+    /// <summary>The ordered list of open chat tabs: always Global and Zone first, followed by any open per-person whisper tabs.</summary>
+    public ObservableCollection<ChatTabViewModel> ChatTabs { get; }
+
+    /// <summary>The currently selected chat tab.</summary>
+    public ChatTabViewModel ActiveChatTab
+    {
+        get => _activeChatTab;
+        set => this.RaiseAndSetIfChanged(ref _activeChatTab, value);
+    }
 
     /// <summary>Text the player has typed into the chat input box.</summary>
     public string ChatInput
@@ -435,15 +443,14 @@ public class GameViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref _chatInput, value);
-            // /w prefix interception: auto-switch to Whisper channel
+            // /w prefix interception: auto-open a whisper tab for the named character
             if (value.StartsWith("/w ", StringComparison.OrdinalIgnoreCase))
             {
                 var rest = value[3..];
                 var spaceIdx = rest.IndexOf(' ');
                 if (spaceIdx > 0)
                 {
-                    WhisperTarget = rest[..spaceIdx];
-                    ActiveChatChannel = "Whisper";
+                    ActiveChatTab = GetOrCreateWhisperTab(rest[..spaceIdx]);
                     // Replace input with just the message body (suppress re-entrancy via field)
                     _chatInput = rest[(spaceIdx + 1)..];
                     this.RaisePropertyChanged(nameof(ChatInput));
@@ -451,44 +458,6 @@ public class GameViewModel : ViewModelBase
             }
         }
     }
-
-    /// <summary>Currently selected chat channel: <c>Zone</c>, <c>Global</c>, <c>Whisper</c>, or <c>System</c>.</summary>
-    public string ActiveChatChannel
-    {
-        get => _activeChatChannel;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _activeChatChannel, value);
-            this.RaisePropertyChanged(nameof(IsWhisperChannelActive));
-            this.RaisePropertyChanged(nameof(IsChatInputVisible));
-            this.RaisePropertyChanged(nameof(ChatChannelIndex));
-        }
-    }
-
-    /// <summary>Zero-based tab index for the chat channel selector (0=System, 1=Global, 2=Zone, 3=Whisper). Two-way bound to <see cref="ActiveChatChannel"/>.</summary>
-    public int ChatChannelIndex
-    {
-        get => _activeChatChannel switch { "Global" => 1, "Zone" => 2, "Whisper" => 3, _ => 0 };
-        set
-        {
-            var ch = value switch { 1 => "Global", 2 => "Zone", 3 => "Whisper", _ => "System" };
-            ActiveChatChannel = ch;
-            this.RaisePropertyChanged();
-        }
-    }
-
-    /// <summary>The whisper target character name, set when the Whisper channel is active.</summary>
-    public string WhisperTarget
-    {
-        get => _whisperTarget;
-        set => this.RaiseAndSetIfChanged(ref _whisperTarget, value);
-    }
-
-    /// <summary>Whether the Whisper target input is currently visible (i.e. Whisper channel is active).</summary>
-    public bool IsWhisperChannelActive => ActiveChatChannel == "Whisper";
-
-    /// <summary>Whether the chat input row is visible (hidden when System channel is active, which is read-only).</summary>
-    public bool IsChatInputVisible => ActiveChatChannel != "System";
 
     // Overlay panel state
     private bool _isInventoryOpen;
@@ -713,10 +682,7 @@ public class GameViewModel : ViewModelBase
     /// <summary>Toggles sound effects mute.</summary>
     public ReactiveCommand<Unit, Unit> ToggleSfxMuteCommand { get; }
 
-    /// <summary>Switch the active chat channel. Parameter is the channel name string.</summary>
-    public ReactiveCommand<string, Unit> SetChatChannelCommand { get; }
-
-    /// <summary>Send the current <see cref="ChatInput"/> on the <see cref="ActiveChatChannel"/>.</summary>
+    /// <summary>Send the current <see cref="ChatInput"/> on the active chat tab's channel.</summary>
     public ReactiveCommand<Unit, Unit> SendChatCommand { get; }
 
     /// <summary>Dev helper: gains 100 XP. Used during development for testing progression.</summary>
@@ -938,10 +904,13 @@ public class GameViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(SfxMuteLabel));
         });
 
-        // Chat commands
-        SetChatChannelCommand = ReactiveCommand.Create<string>(ch => { ActiveChatChannel = ch; });
-        var canSend = this.WhenAnyValue(x => x.ChatInput, x => x.ActiveChatChannel,
-            (input, ch) => !string.IsNullOrWhiteSpace(input) && ch != "System");
+        // Chat tabs and commands
+        _globalTab = new GlobalChatTabViewModel();
+        _zoneTab = new ZoneChatTabViewModel();
+        ChatTabs = [_globalTab, _zoneTab];
+        _activeChatTab = _globalTab;
+        var canSend = this.WhenAnyValue(x => x.ChatInput, x => x.ActiveChatTab,
+            (input, tab) => !string.IsNullOrWhiteSpace(input) && tab is not null);
         SendChatCommand = ReactiveCommand.CreateFromTask(DoSendChatAsync, canSend);
 
         // Subscribe to connection state changes
@@ -1006,13 +975,46 @@ public class GameViewModel : ViewModelBase
     public void OnChatMessageReceived(string channel, string sender, string message, DateTimeOffset timestamp)
     {
         var isOwn = sender == CharacterName || sender.StartsWith("To ", StringComparison.Ordinal);
-        ChatMessages.Add(new ChatMessageViewModel(channel, sender, message, timestamp, isOwn));
+        var vm = new ChatMessageViewModel(channel, sender, message, timestamp, isOwn);
+        switch (channel)
+        {
+            case "Global":
+                _globalTab.AddMessage(vm);
+                break;
+            case "Zone":
+                _zoneTab.AddMessage(vm);
+                break;
+            case "Whisper":
+                var partnerName = sender.StartsWith("To ", StringComparison.Ordinal) ? sender[3..] : sender;
+                GetOrCreateWhisperTab(partnerName).AddMessage(vm);
+                break;
+            default: // "System" and any future channels broadcast to all open tabs
+                foreach (var tab in ChatTabs)
+                    tab.AddMessage(vm);
+                break;
+        }
     }
 
-    private void StartWhisperFromPlayer(string name)
+    private void StartWhisperFromPlayer(string name) => ActiveChatTab = GetOrCreateWhisperTab(name);
+
+    private WhisperChatTabViewModel GetOrCreateWhisperTab(string name)
     {
-        ActiveChatChannel = "Whisper";
-        WhisperTarget = name;
+        const int MaxWhisperTabs = 5;
+        var existing = ChatTabs.OfType<WhisperChatTabViewModel>().FirstOrDefault(t => t.TargetName == name);
+        if (existing is not null) return existing;
+        var openWhispers = ChatTabs.OfType<WhisperChatTabViewModel>().ToList();
+        if (openWhispers.Count >= MaxWhisperTabs)
+            RemoveWhisperTab(openWhispers[0]);
+        var tab = new WhisperChatTabViewModel(name, RemoveWhisperTab);
+        ChatTabs.Add(tab);
+        return tab;
+    }
+
+    private void RemoveWhisperTab(WhisperChatTabViewModel tab)
+    {
+        ChatTabs.Remove(tab);
+        if (ActiveChatTab == tab)
+            ActiveChatTab = _zoneTab;
     }
 
     /// <summary>Called from hub when the active character's attribute points have been allocated.</summary>
@@ -1709,16 +1711,16 @@ public class GameViewModel : ViewModelBase
         if (string.IsNullOrEmpty(message)) return;
         try
         {
-            switch (ActiveChatChannel)
+            switch (ActiveChatTab)
             {
-                case "Zone":
+                case ZoneChatTabViewModel:
                     await _connection.SendCommandAsync<object>("SendZoneMessage", new { Message = message });
                     break;
-                case "Global":
+                case GlobalChatTabViewModel:
                     await _connection.SendCommandAsync<object>("SendGlobalMessage", new { Message = message });
                     break;
-                case "Whisper":
-                    await _connection.SendCommandAsync<object>("SendWhisper", new { TargetCharacterName = WhisperTarget, Message = message });
+                case WhisperChatTabViewModel whisperTab:
+                    await _connection.SendCommandAsync<object>("SendWhisper", new { TargetCharacterName = whisperTab.TargetName, Message = message });
                     break;
             }
             ChatInput = string.Empty;

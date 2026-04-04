@@ -621,6 +621,52 @@
 				"focus": false, "panel": "shared", "clear": true
 			}
 		},
+		// ── Multi-client / Debug ─────────────────────────────────────────────────
+		{
+			"label": "run-two-realmunbound-clients",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj --no-build'; Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj --no-build'"
+			],
+			"dependsOn": "build-realmunbound-client",
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "run-realmunbound-client-debug",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj",
+				"--configuration",
+				"Debug"
+			],
+			"dependsOn": "build-realmunbound-client",
+			"problemMatcher": "$msCompile",
+			"options": {
+				"env": {
+					"DOTNET_ENVIRONMENT": "Development",
+					"AVALONIA_DIAGNOSTICS": "1"
+				}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
 		// ── Docker ───────────────────────────────────────────────────────────────
 		{
 			"label": "docker-compose-up",

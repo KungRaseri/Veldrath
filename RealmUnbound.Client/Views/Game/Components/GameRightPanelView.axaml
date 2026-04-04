@@ -89,8 +89,7 @@
                     <Grid
                         Margin="0,4,0,0"
                         ColumnDefinitions="*,Auto"
-                        DockPanel.Dock="Bottom"
-                        IsVisible="{Binding IsChatInputVisible}">
+                        DockPanel.Dock="Bottom">
                         <TextBox
                             Grid.Column="0"
                             Margin="0,0,4,0"
@@ -101,26 +100,21 @@
                             Grid.Column="1"
                             Width="32"
                             Classes="ghost"
-                            Command="{Binding SendChatCommand}"
-                            Content="↵"
-                            FontSize="14" />
+                            Command="{Binding SendChatCommand}">
+                            <PathIcon
+                                Width="14"
+                                Height="14"
+                                Data="M0,0 L16,8 L0,16 L3,8 Z" />
+                        </Button>
                     </Grid>
-
-                    <!--  Whisper target input (pinned to top, only when Whisper is active)  -->
-                    <TextBox
-                        Margin="0,0,0,4"
-                        DockPanel.Dock="Top"
-                        FontSize="11"
-                        IsVisible="{Binding IsWhisperChannelActive}"
-                        Text="{Binding WhisperTarget}"
-                        Watermark="Recipient name…" />
 
                     <!--  Channel tabs (pinned to top)  -->
                     <TabControl
                         Margin="0,0,0,2"
                         Padding="0"
                         DockPanel.Dock="Top"
-                        SelectedIndex="{Binding ChatChannelIndex, Mode=TwoWay}">
+                        ItemsSource="{Binding ChatTabs}"
+                        SelectedItem="{Binding ActiveChatTab, Mode=TwoWay}">
                         <TabControl.Styles>
                             <Style Selector="TabItem">
                                 <Setter Property="Padding" Value="4,1" />
@@ -128,15 +122,31 @@
                                 <Setter Property="MinHeight" Value="0" />
                             </Style>
                         </TabControl.Styles>
-                        <TabItem Header="System" />
-                        <TabItem Header="Global" />
-                        <TabItem Header="Zone" />
-                        <TabItem Header="Whisper" />
+                        <TabControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ChatTabViewModel">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="{Binding TabHeader}" VerticalAlignment="Center" />
+                                    <Button
+                                        Width="14"
+                                        Height="14"
+                                        Padding="0"
+                                        Classes="ghost"
+                                        Command="{Binding CloseCommand}"
+                                        Content="×"
+                                        IsVisible="{Binding CanClose}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </TabControl.ItemTemplate>
+                        <TabControl.ContentTemplate>
+                            <DataTemplate>
+                                <Grid Height="0" />
+                            </DataTemplate>
+                        </TabControl.ContentTemplate>
                     </TabControl>
 
                     <!--  Message list fills remaining space  -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding ChatMessages}">
+                        <ItemsControl ItemsSource="{Binding ActiveChatTab.Messages}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ChatMessageViewModel">
                                     <TextBlock
