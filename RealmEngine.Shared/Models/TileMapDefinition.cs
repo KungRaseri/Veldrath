@@ -23,7 +23,7 @@ public class TileMapDefinition
     /// <summary>Map height in tiles.</summary>
     public int Height { get; set; }
 
-    /// <summary>Native tile size in pixels (always 16 for Kenney Tiny packs).</summary>
+    /// <summary>Native tile size in pixels. All shipped zones use 16.</summary>
     public int TileSize { get; set; } = 16;
 
     /// <summary>Ordered render layers (ground first, decoration on top).</summary>

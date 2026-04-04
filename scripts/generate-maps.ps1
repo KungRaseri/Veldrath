@@ -37,6 +37,27 @@ $Sand   = 1262  # TileIndex.Terrain.Sand.M
 
 function e($x, $y, $to) { [pscustomobject]@{ x = $x; y = $y; z = $to } }
 
+# Builds a flat collision mask for a 40×30 map.
+# Border tiles are solid (true), interior is open (false).
+# Exit tile positions are explicitly unblocked even if on the border.
+function Get-CollisionMask {
+    param([object[]]$exits, [int]$w = 40, [int]$h = 30)
+    $mask = New-Object bool[] ($w * $h)
+    for ($x = 0; $x -lt $w; $x++) {
+        $mask[0           * $w + $x] = $true   # top row
+        $mask[($h - 1)    * $w + $x] = $true   # bottom row
+    }
+    for ($y = 1; $y -lt ($h - 1); $y++) {
+        $mask[$y * $w + 0]          = $true    # left column
+        $mask[$y * $w + ($w - 1)]   = $true    # right column
+    }
+    # Exit tiles sit on the border — keep them walkable
+    foreach ($exit in $exits) {
+        $mask[$exit.y * $w + $exit.x] = $false
+    }
+    return ($mask | ForEach-Object { $_.ToString().ToLower() }) -join ","
+}
+
 function Write-Map {
     param(
         [string]  $id,
@@ -48,7 +69,7 @@ function Write-Map {
 
     $bArr = (([string]$base + ",") * ($N - 1)) + [string]$base
     $oArr = (("-1,") * ($N - 1)) + "-1"
-    $cArr = (("false,") * ($N - 1)) + "false"
+    $cArr = Get-CollisionMask -exits $exits
     $fArr = (("false,") * ($N - 1)) + "false"
 
     $el = ($exits | ForEach-Object {
