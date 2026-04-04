@@ -85,6 +85,13 @@
                 <Button
                     Height="34"
                     Classes="ghost"
+                    Classes.accent="{Binding Tilemap.IsMiniMapOpen}"
+                    Command="{Binding Tilemap.ToggleMiniMapCommand}"
+                    Content="Mini-map"
+                    FontSize="13" />
+                <Button
+                    Height="34"
+                    Classes="ghost"
                     Command="{Binding OpenJournalCommand}"
                     Content="Journal"
                     FontSize="13" />

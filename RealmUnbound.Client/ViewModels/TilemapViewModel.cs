@@ -170,4 +170,17 @@ public class TilemapViewModel : ViewModelBase
                 RevealedTiles.Add($"{centerX + dx}:{centerY + dy}");
         }
     }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the tile at <paramref name="x"/>, <paramref name="y"/>
+    /// is statically impassable according to the current map's collision mask.
+    /// Returns <see langword="false"/> when no map is loaded, letting the server decide.
+    /// </summary>
+    public bool IsBlocked(int x, int y)
+    {
+        if (_tileMapData is null) return false;
+        if (x < 0 || y < 0 || x >= _tileMapData.Width || y >= _tileMapData.Height) return true;
+        var idx = y * _tileMapData.Width + x;
+        return idx < _tileMapData.CollisionMask.Length && _tileMapData.CollisionMask[idx];
+    }
 }
