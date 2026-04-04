@@ -1374,7 +1374,11 @@ public class GameViewModel : ViewModelBase
         Wisdom = args.Wisdom;
         Charisma = args.Charisma;
         if (args.CharacterId.HasValue)
+        {
             _characterId = args.CharacterId;
+            if (Tilemap is not null)
+                Tilemap.SelfEntityId = _characterId;
+        }
         ClassName = args.ClassName;
 
         LearnedAbilities.Clear();
