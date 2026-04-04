@@ -304,49 +304,6 @@
 
                     <Border Classes="separator" />
 
-                    <!--  Combat action buttons  -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button
-                            Height="32"
-                            Classes="accent"
-                            Command="{Binding AttackEnemyCommand}"
-                            Content="⚔ Attack"
-                            FontSize="13" />
-                        <Button
-                            Height="32"
-                            Classes="ghost"
-                            Command="{Binding DefendActionCommand}"
-                            Content="🛡 Defend"
-                            FontSize="13" />
-                        <Button
-                            Height="32"
-                            Classes="danger ghost"
-                            Command="{Binding FleeFromCombatCommand}"
-                            Content="🏃 Flee"
-                            FontSize="13" />
-                    </StackPanel>
-
-                    <!--  Learned ability buttons  -->
-                    <ItemsControl IsVisible="{Binding LearnedAbilities.Count, Converter={x:Static ObjectConverters.IsNotNull}}" ItemsSource="{Binding LearnedAbilities}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button
-                                    Height="30"
-                                    Margin="0,0,6,6"
-                                    Classes="ghost"
-                                    Command="{Binding $parent[UserControl].DataContext.UseAbilityInCombatCommand}"
-                                    CommandParameter="{Binding}"
-                                    Content="{Binding}"
-                                    FontSize="12" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
                     <!--  Enemy known abilities  -->
                     <StackPanel IsVisible="{Binding EnemyAbilityNames.Count, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="2">
                         <TextBlock

@@ -234,6 +234,18 @@ public class GameViewModelTests : TestBase
         changes.Should().Contain(nameof(GameViewModel.StatusMessage));
     }
 
+    // OpenJournalCommand
+    [Fact]
+    public async Task OpenJournalCommand_Sets_StatusMessage_To_Coming_Soon()
+    {
+        var vm = MakeVm();
+
+        await vm.OpenJournalCommand.Execute();
+
+        vm.StatusMessage.Should().Be("Journal coming soon.");
+        vm.IsStatusMessageDismissable.Should().BeTrue();
+    }
+
     // RestAtLocationCommand
     [Fact]
     public async Task RestAtLocationCommand_Should_Send_RestAtLocation_To_Hub()
