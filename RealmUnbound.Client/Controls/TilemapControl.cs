@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reactive;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -26,6 +27,17 @@ public class TilemapControl : Control
     private static readonly IBrush PlayerBrush     = Brushes.LimeGreen;  // other players
     private static readonly IBrush EnemyBrush      = Brushes.OrangeRed;
     private static readonly IBrush EntityPen       = Brushes.White;
+
+    // Exit tile highlight (semi-transparent yellow fill + solid border)
+    private static readonly IBrush ExitFillBrush  = new SolidColorBrush(Color.FromArgb(80, 255, 220, 0));
+    private static readonly IPen   ExitBorderPen  = new Pen(Brushes.Yellow, 2f);
+
+    // Minimap palette — pre-allocated so no brush is created per-frame
+    private static readonly IBrush MiniWallBrush  = new SolidColorBrush(Color.FromRgb(30,  30,  40));
+    private static readonly IBrush MiniFloorBrush = new SolidColorBrush(Color.FromRgb(80,  80, 100));
+    private static readonly IBrush MiniExitBrush  = new SolidColorBrush(Color.FromRgb(255, 220,   0));
+    private static readonly IBrush MiniBgBrush    = new SolidColorBrush(Color.FromArgb(210,   8,  10,  20));
+    private static readonly IPen   MiniVpPen      = new Pen(Brushes.White, 1);
 
     // Avalonia styled property for the ViewModel
     /// <summary>ViewModel property for the tilemap control.</summary>
@@ -103,6 +115,14 @@ public class TilemapControl : Control
         var vm = ViewModel;
         if (vm is null || !vm.HasMap) return;
 
+        // ── Mini-map toggle (M) ───────────────────────────────────────────────
+        if (e.Key == Key.M)
+        {
+            vm.ToggleMiniMapCommand.Execute(Unit.Default).Subscribe();
+            e.Handled = true;
+            return;
+        }
+
         var player = vm.SelfEntityId.HasValue
             ? vm.Entities.FirstOrDefault(en => en.EntityId == vm.SelfEntityId.Value)
             : vm.Entities.FirstOrDefault(en => en.EntityType == "player");
@@ -122,6 +142,12 @@ public class TilemapControl : Control
 
         var toX = player.TileX + dx;
         var toY = player.TileY + dy;
+
+        // ── Client-side collision pre-check ───────────────────────────────────
+        // Skips the server round-trip when the tile is statically blocked.
+        // The server still validates as the authoritative fallback.
+        if (vm.IsBlocked(toX, toY)) return;
+
         vm.RequestMoveCommand.Execute((toX, toY, dir)).Subscribe();
     }
 
@@ -178,6 +204,19 @@ public class TilemapControl : Control
             }
         }
 
+        // ── Exit tile highlights ─────────────────────────────────────────────
+        // Tinted fill + yellow border on every exit tile within the viewport
+        // so the player can see where zone transitions are.
+        foreach (var exit in map.ExitTiles)
+        {
+            if (exit.TileX < camX || exit.TileX >= camX + vpWidthTiles)  continue;
+            if (exit.TileY < camY || exit.TileY >= camY + vpHeightTiles) continue;
+            var ex = (exit.TileX - camX) * DisplayTileSize;
+            var ey = (exit.TileY - camY) * DisplayTileSize;
+            context.DrawRectangle(ExitFillBrush, ExitBorderPen,
+                new Rect(ex + 1, ey + 1, DisplayTileSize - 2, DisplayTileSize - 2));
+        }
+
         // ── Entities ─────────────────────────────────────────────────────────
         foreach (var entity in vm.Entities)
         {
@@ -211,6 +250,71 @@ public class TilemapControl : Control
                 var destY = (ty - camY) * DisplayTileSize;
                 context.FillRectangle(FogBrush, new Rect(destX, destY, DisplayTileSize, DisplayTileSize));
             }
+        }
+
+        // ── Mini-map overlay ─────────────────────────────────────────────────
+        // Rendered on top of everything; toggled with M or the footer button.
+        if (vm.IsMiniMapOpen)
+            DrawMinimap(context, vm, map);
+    }
+
+    private void DrawMinimap(DrawingContext context, TilemapViewModel vm, TileMapDto map)
+    {
+        const int maxMiniSize = 200;
+        const int miniPadding = 8;
+
+        var miniScale = Math.Max(1, maxMiniSize / Math.Max(map.Width, map.Height));
+        var miniW     = map.Width  * miniScale;
+        var miniH     = map.Height * miniScale;
+        var offsetX   = (int)Bounds.Width  - miniW - miniPadding;
+        var offsetY   = miniPadding;
+
+        // Tinted background panel
+        context.FillRectangle(MiniBgBrush,
+            new Rect(offsetX - 2, offsetY - 2, miniW + 4, miniH + 4));
+
+        // Terrain: blocked = dark wall colour, open = lighter floor colour
+        for (var ty = 0; ty < map.Height; ty++)
+        for (var tx = 0; tx < map.Width;  tx++)
+        {
+            var idx     = ty * map.Width + tx;
+            var blocked = idx < map.CollisionMask.Length && map.CollisionMask[idx];
+            context.FillRectangle(
+                blocked ? MiniWallBrush : MiniFloorBrush,
+                new Rect(offsetX + tx * miniScale, offsetY + ty * miniScale, miniScale, miniScale));
+        }
+
+        // Exit tiles (yellow)
+        foreach (var exit in map.ExitTiles)
+            context.FillRectangle(MiniExitBrush,
+                new Rect(offsetX + exit.TileX * miniScale, offsetY + exit.TileY * miniScale,
+                         miniScale, miniScale));
+
+        // Viewport rectangle (white outline shows what's on screen)
+        context.DrawRectangle(null, MiniVpPen,
+            new Rect(
+                offsetX + vm.CameraX * miniScale,
+                offsetY + vm.CameraY * miniScale,
+                Math.Min(vm.ViewportWidthTiles  * miniScale, miniW),
+                Math.Min(vm.ViewportHeightTiles * miniScale, miniH)));
+
+        // Entity dots
+        foreach (var entity in vm.Entities)
+        {
+            if (entity.TileX < 0 || entity.TileX >= map.Width  ||
+                entity.TileY < 0 || entity.TileY >= map.Height) continue;
+
+            IBrush dot;
+            if (entity.EntityType == "player")
+                dot = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
+                    ? SelfPlayerBrush : PlayerBrush;
+            else
+                dot = EnemyBrush;
+
+            var dotSize = Math.Max(2, miniScale);
+            context.FillRectangle(dot,
+                new Rect(offsetX + entity.TileX * miniScale, offsetY + entity.TileY * miniScale,
+                         dotSize, dotSize));
         }
     }
 
