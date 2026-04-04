@@ -13,7 +13,7 @@
     <Border Classes="panel-statusbar">
         <Grid VerticalAlignment="Center" ColumnDefinitions="Auto,*,Auto">
 
-            <!--  Left: navigation actions  -->
+            <!--  Left: inventory + combat actions  -->
             <StackPanel
                 Grid.Column="0"
                 VerticalAlignment="Center"
@@ -26,12 +26,29 @@
                     Command="{Binding ToggleInventoryCommand}"
                     Content="Inventory"
                     FontSize="13" />
-                <Button
-                    Height="34"
-                    Classes="ghost"
-                    Command="{Binding OpenMapCommand}"
-                    Content="Map"
-                    FontSize="13" />
+                <StackPanel
+                    IsVisible="{Binding IsInCombat}"
+                    Orientation="Horizontal"
+                    Spacing="4">
+                    <Button
+                        Height="34"
+                        Classes="accent"
+                        Command="{Binding AttackEnemyCommand}"
+                        Content="⚔ Attack"
+                        FontSize="13" />
+                    <Button
+                        Height="34"
+                        Classes="ghost"
+                        Command="{Binding DefendActionCommand}"
+                        Content="🛡 Defend"
+                        FontSize="13" />
+                    <Button
+                        Height="34"
+                        Classes="danger ghost"
+                        Command="{Binding FleeFromCombatCommand}"
+                        Content="🏃 Flee"
+                        FontSize="13" />
+                </StackPanel>
             </StackPanel>
 
             <!--  Center: ability hotbar — 6 always-visible slots  -->
@@ -59,7 +76,7 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!--  Right: context-sensitive + utility actions  -->
+            <!--  Right: utility actions  -->
             <StackPanel
                 Grid.Column="2"
                 VerticalAlignment="Center"
@@ -67,23 +84,9 @@
                 Spacing="8">
                 <Button
                     Height="34"
-                    Classes="accent"
-                    Command="{Binding RestAtLocationCommand}"
-                    Content="Rest at Inn"
-                    FontSize="13"
-                    IsVisible="{Binding HasInn}" />
-                <Button
-                    Height="34"
                     Classes="ghost"
-                    Command="{Binding VisitShopCommand}"
-                    Content="Shop"
-                    FontSize="13"
-                    IsVisible="{Binding HasMerchant}" />
-                <Button
-                    Height="34"
-                    Classes="ghost"
-                    Command="{Binding SearchAreaCommand}"
-                    Content="Search Area"
+                    Command="{Binding OpenJournalCommand}"
+                    Content="Journal"
                     FontSize="13" />
             </StackPanel>
 

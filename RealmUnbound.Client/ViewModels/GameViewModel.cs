@@ -769,6 +769,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Open the traversal-graph map screen.</summary>
     public ReactiveCommand<Unit, Unit> OpenMapCommand { get; }
 
+    /// <summary>Open the journal / quest log panel (stub — not yet implemented).</summary>
+    public ReactiveCommand<Unit, Unit> OpenJournalCommand { get; }
+
     // Combat commands
 
     /// <summary>Engage a specific enemy by its instance ID at the current location.</summary>
@@ -873,6 +876,11 @@ public class GameViewModel : ViewModelBase
         TravelToZoneCommand = ReactiveCommand.CreateFromTask<string>(DoTravelToZoneAsync);
         ViewRegionCommand = ReactiveCommand.CreateFromTask<string>(DoShowRegionDetailsAsync);
         OpenMapCommand = ReactiveCommand.Create(DoOpenMap);
+        OpenJournalCommand = ReactiveCommand.Create(() =>
+        {
+            StatusMessage = "Journal coming soon.";
+            IsStatusMessageDismissable = true;
+        });
 
         EngageEnemyCommand        = ReactiveCommand.CreateFromTask<Guid>(DoEngageEnemyAsync);
         AttackEnemyCommand        = ReactiveCommand.CreateFromTask(DoAttackEnemyAsync);
