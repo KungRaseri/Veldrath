@@ -1,0 +1,88 @@
+<UserControl
+    x:Class="RealmUnbound.Client.Views.GameJournalOverlayView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:RealmUnbound.Client.ViewModels"
+    d:DesignHeight="480"
+    d:DesignWidth="560"
+    x:DataType="vm:GameViewModel"
+    mc:Ignorable="d">
+
+    <Border Background="#B2000000" IsVisible="{Binding IsJournalOpen}">
+        <Border
+            MaxWidth="560"
+            MaxHeight="480"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="{DynamicResource GameBackground1Brush}"
+            BorderBrush="{DynamicResource GameBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4">
+            <DockPanel>
+
+                <!--  Header  -->
+                <Border
+                    Padding="16,10"
+                    Background="{DynamicResource GameBackground2Brush}"
+                    BorderBrush="{DynamicResource GameBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    DockPanel.Dock="Top">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Text="Quest Journal" />
+                        <Button
+                            Grid.Column="1"
+                            Width="32"
+                            Height="32"
+                            Classes="ghost icon"
+                            Command="{Binding CloseJournalCommand}"
+                            Content="✕" />
+                    </Grid>
+                </Border>
+
+                <!--  Quest list  -->
+                <ScrollViewer Margin="8">
+                    <Panel>
+                        <TextBlock
+                            Margin="0,32"
+                            HorizontalAlignment="Center"
+                            Classes="muted"
+                            IsVisible="{Binding !JournalQuests.Count}"
+                            Text="No quests recorded yet." />
+                        <ItemsControl IsVisible="{Binding JournalQuests.Count}" ItemsSource="{Binding JournalQuests}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:QuestLogEntryViewModel">
+                                    <Border
+                                        Padding="4,8"
+                                        BorderBrush="{DynamicResource GameBorderBrush}"
+                                        BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                VerticalAlignment="Center"
+                                                Text="{Binding Title}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Margin="12,0,0,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="12"
+                                                Text="{Binding Status}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Panel>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Border>
+    </Border>
+
+</UserControl>

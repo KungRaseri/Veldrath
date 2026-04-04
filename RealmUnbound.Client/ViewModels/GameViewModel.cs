@@ -466,6 +466,7 @@ public class GameViewModel : ViewModelBase
     private bool _isInventoryOpen;
     private bool _isShopOpen;
     private string _shopZoneName = string.Empty;
+    private bool _isJournalOpen;
 
     /// <summary>Whether the player's inventory panel is currently visible.</summary>
     public bool IsInventoryOpen
@@ -487,6 +488,16 @@ public class GameViewModel : ViewModelBase
         get => _shopZoneName;
         private set => this.RaiseAndSetIfChanged(ref _shopZoneName, value);
     }
+
+    /// <summary>Whether the quest journal panel is currently visible.</summary>
+    public bool IsJournalOpen
+    {
+        get => _isJournalOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isJournalOpen, value);
+    }
+
+    /// <summary>Quest log entries currently displayed in the journal panel.</summary>
+    public ObservableCollection<QuestLogEntryViewModel> JournalQuests { get; } = [];
 
     // Zone context flags
     private bool _hasInn;
@@ -684,6 +695,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Closes the town shop panel.</summary>
     public ReactiveCommand<Unit, Unit> CloseShopCommand { get; }
 
+    /// <summary>Closes the quest journal panel.</summary>
+    public ReactiveCommand<Unit, Unit> CloseJournalCommand { get; }
+
     /// <summary>Logs out the character, leaves the zone, and returns to the main menu.</summary>
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
 
@@ -783,7 +797,7 @@ public class GameViewModel : ViewModelBase
     /// <summary>Open the traversal-graph map screen.</summary>
     public ReactiveCommand<Unit, Unit> OpenMapCommand { get; }
 
-    /// <summary>Open the journal / quest log panel (stub — not yet implemented).</summary>
+    /// <summary>Opens the quest journal panel: sends <c>GetQuestLog</c> to the server and displays quests when the data arrives.</summary>
     public ReactiveCommand<Unit, Unit> OpenJournalCommand { get; }
 
     // Combat commands
@@ -849,7 +863,8 @@ public class GameViewModel : ViewModelBase
         var canDismiss = this.WhenAnyValue(x => x.IsStatusMessageDismissable);
         DismissStatusMessageCommand = ReactiveCommand.Create(() => { StatusMessage = string.Empty; }, canDismiss);
         ToggleInventoryCommand = ReactiveCommand.CreateFromTask(DoToggleInventoryAsync);
-        CloseShopCommand = ReactiveCommand.Create(() => { IsShopOpen = false; });
+        CloseShopCommand   = ReactiveCommand.Create(() => { IsShopOpen   = false; });
+        CloseJournalCommand = ReactiveCommand.Create(() => { IsJournalOpen = false; });
         LogoutCommand = ReactiveCommand.CreateFromTask(DoLogoutAsync);
         DevGainXpCommand = ReactiveCommand.CreateFromTask(() => DoGainExperienceAsync(100, "dev"));
         DevAddGoldCommand = ReactiveCommand.CreateFromTask(() => DoAddGoldAsync(50, "dev"));
@@ -890,11 +905,7 @@ public class GameViewModel : ViewModelBase
         TravelToZoneCommand = ReactiveCommand.CreateFromTask<string>(DoTravelToZoneAsync);
         ViewRegionCommand = ReactiveCommand.CreateFromTask<string>(DoShowRegionDetailsAsync);
         OpenMapCommand = ReactiveCommand.Create(DoOpenMap);
-        OpenJournalCommand = ReactiveCommand.Create(() =>
-        {
-            StatusMessage = "Journal coming soon.";
-            IsStatusMessageDismissable = true;
-        });
+        OpenJournalCommand = ReactiveCommand.CreateFromTask(DoOpenJournalAsync);
 
         EngageEnemyCommand        = ReactiveCommand.CreateFromTask<Guid>(DoEngageEnemyAsync);
         AttackEnemyCommand        = ReactiveCommand.CreateFromTask(DoAttackEnemyAsync);
@@ -2024,6 +2035,28 @@ public class GameViewModel : ViewModelBase
         }
     }
 
+    private async Task DoOpenJournalAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("GetQuestLog");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Quest log load failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Populates the journal with quest entries received from the server.</summary>
+    /// <param name="quests">Quest log entries returned by the server.</param>
+    public void OnQuestLogReceived(IReadOnlyList<QuestLogEntryDto> quests)
+    {
+        JournalQuests.Clear();
+        foreach (var q in quests)
+            JournalQuests.Add(new QuestLogEntryViewModel(q.Slug, q.Title, q.Status));
+        IsJournalOpen = true;
+    }
+
     private void AppendLog(string message)
     {
         ActionLog.Add($"[{DateTime.Now:HH:mm}] {message}");
@@ -2181,4 +2214,42 @@ public class SpawnedEnemyItemViewModel : ReactiveObject
 
     /// <summary>Gets a value indicating whether this enemy has any remaining health.</summary>
     public bool IsAlive => CurrentHealth > 0;
+}
+
+/// <summary>A slim quest log entry DTO received from the server's <c>QuestLogReceived</c> event.</summary>
+/// <param name="Slug">The quest's unique identifier slug.</param>
+/// <param name="Title">The human-readable quest title.</param>
+/// <param name="Status">The quest status: <c>"Active"</c>, <c>"Completed"</c>, or <c>"Failed"</c>.</param>
+public record QuestLogEntryDto(string Slug, string Title, string Status);
+
+/// <summary>View model for a single quest in the journal panel.</summary>
+public class QuestLogEntryViewModel
+{
+    /// <summary>Gets the quest's unique identifier slug.</summary>
+    public string Slug { get; }
+
+    /// <summary>Gets the human-readable quest title.</summary>
+    public string Title { get; }
+
+    /// <summary>Gets the quest status string: <c>"Active"</c>, <c>"Completed"</c>, or <c>"Failed"</c>.</summary>
+    public string Status { get; }
+
+    /// <summary>Gets a CSS-style hex colour string appropriate for the quest status.</summary>
+    public string StatusColor => Status switch
+    {
+        "Completed" => "#4ade80",
+        "Failed"    => "#f87171",
+        _           => "#94a3b8",
+    };
+
+    /// <summary>Initializes a new instance of <see cref="QuestLogEntryViewModel"/>.</summary>
+    /// <param name="slug">Quest slug.</param>
+    /// <param name="title">Quest title.</param>
+    /// <param name="status">Quest status string.</param>
+    public QuestLogEntryViewModel(string slug, string title, string status)
+    {
+        Slug   = slug;
+        Title  = title;
+        Status = status;
+    }
 }

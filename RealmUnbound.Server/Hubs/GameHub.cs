@@ -12,6 +12,7 @@ using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Features.LevelUp;
+using RealmUnbound.Server.Features.Quest;
 using RealmUnbound.Server.Features.Shop;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
@@ -1151,6 +1152,40 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in DropItem for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to drop item");
+        }
+    }
+
+    /// <summary>
+    /// Loads the quest log for the current character and sends <c>QuestLogReceived</c> to the caller.
+    /// </summary>
+    public async Task GetQuestLog()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetQuestLog");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new GetQuestLogHubCommand(characterId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load quest log");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("QuestLogReceived", result.Quests);
+
+            _logger.LogInformation(
+                "Quest log sent to character {CharacterId}: {Count} entries",
+                characterId, result.Quests.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetQuestLog for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to load quest log");
         }
     }
 
