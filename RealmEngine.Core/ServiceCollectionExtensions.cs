@@ -176,6 +176,9 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IEnchantmentRepository, EfCoreEnchantmentRepository>();
             services.AddScoped<IOrganizationRepository, EfCoreOrganizationRepository>();
             services.AddScoped<IZoneLocationRepository, EfCoreZoneLocationRepository>();
+            services.AddSingleton<ITileMapRepository>(sp => new JsonFileTileMapRepository(
+                Path.Combine(AppContext.BaseDirectory, "GameAssets", "tilemaps", "maps"),
+                sp.GetRequiredService<ILogger<JsonFileTileMapRepository>>()));
             services.AddScoped<IDialogueRepository, EfCoreDialogueRepository>();
             services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();
             services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();
@@ -209,6 +212,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IEnchantmentRepository, InMemoryEnchantmentRepository>();
             services.AddScoped<IOrganizationRepository, InMemoryOrganizationRepository>();
             services.AddScoped<IZoneLocationRepository, InMemoryZoneLocationRepository>();
+            services.AddSingleton<ITileMapRepository, InMemoryTileMapRepository>();
             services.AddScoped<IDialogueRepository, InMemoryDialogueRepository>();
             services.AddScoped<IActorInstanceRepository, InMemoryActorInstanceRepository>();
             services.AddScoped<IMaterialPropertyRepository, InMemoryMaterialPropertyRepository>();

@@ -201,6 +201,10 @@ try
     builder.Services.AddScoped<IWorldRepository, WorldRepository>();
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
     builder.Services.AddSingleton<ICharacterCreationSessionStore, InMemoryCharacterCreationSessionStore>();
+    builder.Services.AddSingleton<IZoneEntityTracker, ZoneEntityTracker>();
+    builder.Services.AddSingleton<RealmEngine.Shared.Abstractions.ITileMapRepository>(sp => new RealmEngine.Data.Repositories.JsonFileTileMapRepository(
+        Path.Combine(AppContext.BaseDirectory, "GameAssets", "tilemaps", "maps"),
+        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RealmEngine.Data.Repositories.JsonFileTileMapRepository>>()));
 
     // RealmEngine services
     builder.Services.AddRealmEngineMediatR();

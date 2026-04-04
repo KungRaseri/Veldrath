@@ -4,67 +4,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:RealmUnbound.Client.Controls"
     xmlns:vm="using:RealmUnbound.Client.ViewModels"
-    xmlns:views="using:RealmUnbound.Client.Views"
     d:DesignHeight="720"
     d:DesignWidth="800"
     x:DataType="vm:GameViewModel"
     mc:Ignorable="d">
 
-    <Border
-        Padding="24"
-        Background="{DynamicResource GameBackground0Brush}">
-        <DockPanel>
-
-            <!--  Header: zone description + view selector tabs  -->
-            <DockPanel Margin="0,0,0,16" DockPanel.Dock="Top">
-
-                <!--  View tabs (right-aligned)  -->
-                <StackPanel
-                    VerticalAlignment="Center"
-                    DockPanel.Dock="Right"
-                    Orientation="Horizontal"
-                    Spacing="2">
-                    <Button
-                        Height="28"
-                        Classes="ghost"
-                        Classes.accent="{Binding IsZoneViewActive}"
-                        Command="{Binding ShowZoneViewCommand}"
-                        Content="Zone"
-                        FontSize="12" />
-                    <Button
-                        Height="28"
-                        Classes="ghost"
-                        Classes.accent="{Binding IsRegionViewActive}"
-                        Command="{Binding ShowRegionViewCommand}"
-                        Content="Region"
-                        FontSize="12" />
-                    <Button
-                        Height="28"
-                        Classes="ghost"
-                        Classes.accent="{Binding IsWorldViewActive}"
-                        Command="{Binding ShowWorldViewCommand}"
-                        Content="World"
-                        FontSize="12" />
-                </StackPanel>
-
-                <!--  Zone description (fills remaining width)  -->
-                <TextBlock
-                    VerticalAlignment="Center"
-                    Classes="muted"
-                    FontStyle="Italic"
-                    Text="{Binding ZoneDescription}"
-                    TextWrapping="Wrap" />
-            </DockPanel>
-
-            <!--  Three panels stacked — only the active one is visible  -->
-            <Grid>
-                <views:GameZonePanelView IsVisible="{Binding IsZoneViewActive}" />
-                <views:GameRegionPanelView IsVisible="{Binding IsRegionViewActive}" />
-                <views:GameWorldPanelView IsVisible="{Binding IsWorldViewActive}" />
-            </Grid>
-
-        </DockPanel>
+    <Border Background="{DynamicResource GameBackground0Brush}">
+        <controls:TilemapControl ViewModel="{Binding Tilemap}" />
     </Border>
 
 </UserControl>

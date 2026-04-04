@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <!-- Game engine: catalog data (JSON), core logic, shared models -->
+    <ProjectReference Include="..\RealmUnbound.Assets\RealmUnbound.Assets.csproj" />
     <ProjectReference Include="..\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />

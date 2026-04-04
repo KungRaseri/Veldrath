@@ -41,4 +41,7 @@ public interface IZoneSessionRepository
 
     /// <summary>Removes the session associated with <paramref name="connectionId"/>, if one exists.</summary>
     Task RemoveByConnectionIdAsync(string connectionId);
+
+    /// <summary>Updates <see cref="ZoneSession.LastMovedAt"/> for the session belonging to <paramref name="characterId"/>.</summary>
+    Task UpdateLastMovedAtAsync(Guid characterId, DateTimeOffset time);
 }
