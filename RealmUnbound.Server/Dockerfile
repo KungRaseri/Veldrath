@@ -15,6 +15,8 @@ COPY RealmEngine.Data/RealmEngine.Data.csproj              RealmEngine.Data/
 COPY RealmEngine.Data/Directory.Build.props                RealmEngine.Data/
 COPY RealmEngine.Shared/RealmEngine.Shared.csproj          RealmEngine.Shared/
 COPY RealmEngine.Shared/Directory.Build.props              RealmEngine.Shared/
+COPY RealmUnbound.Assets/RealmUnbound.Assets.csproj        RealmUnbound.Assets/
+COPY RealmUnbound.Assets/Directory.Build.props             RealmUnbound.Assets/
 
 RUN dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
 
@@ -22,8 +24,9 @@ RUN dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
 COPY RealmUnbound.Server/     RealmUnbound.Server/
 COPY RealmUnbound.Contracts/  RealmUnbound.Contracts/
 COPY RealmEngine.Core/        RealmEngine.Core/
-COPY RealmEngine.Data/      RealmEngine.Data/
-COPY RealmEngine.Shared/    RealmEngine.Shared/
+COPY RealmEngine.Data/        RealmEngine.Data/
+COPY RealmEngine.Shared/      RealmEngine.Shared/
+COPY RealmUnbound.Assets/     RealmUnbound.Assets/
 
 WORKDIR /src/RealmUnbound.Server
 RUN dotnet publish RealmUnbound.Server.csproj -c Release -o /app/publish --no-restore
