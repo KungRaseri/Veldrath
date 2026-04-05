@@ -28,6 +28,7 @@ public sealed class EntityTextureCache : IDisposable
     /// </summary>
     public Bitmap? GetSheet(string spriteKey)
     {
+        if (string.IsNullOrEmpty(spriteKey)) return null;
         if (_byKey.TryGetValue(spriteKey, out var cached))
             return cached;
 
@@ -72,6 +73,7 @@ public sealed class EntityTextureCache : IDisposable
     /// </summary>
     public static Rect? GetSourceRect(string spriteKey, string direction)
     {
+        if (string.IsNullOrEmpty(spriteKey)) return null;
         if (!EntitySpriteAssets.All.TryGetValue(spriteKey, out var info))
             return null;
 
