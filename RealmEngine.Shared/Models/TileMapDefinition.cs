@@ -51,14 +51,16 @@ public class TileMapDefinition
     public bool IsBlocked(int x, int y)
     {
         if (x < 0 || y < 0 || x >= Width || y >= Height) return true;
-        return CollisionMask[y * Width + x];
+        var idx = y * Width + x;
+        return idx < CollisionMask.Length && CollisionMask[idx];
     }
 
     /// <summary>Returns the fog state at the given tile coordinates.</summary>
     public bool IsInFog(int x, int y)
     {
         if (x < 0 || y < 0 || x >= Width || y >= Height) return false;
-        return FogMask[y * Width + x];
+        var idx = y * Width + x;
+        return idx < FogMask.Length && FogMask[idx];
     }
 }
 
