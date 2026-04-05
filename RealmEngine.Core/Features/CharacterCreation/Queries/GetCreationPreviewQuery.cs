@@ -48,29 +48,26 @@ public class GetCreationPreviewHandler(
         if (session is null)
             return new GetCreationPreviewResult { Success = false, Message = $"Session {request.SessionId} not found." };
 
-        if (session.SelectedClass is null)
-            return new GetCreationPreviewResult { Success = false, Message = "No class selected yet." };
-
         var cls = session.SelectedClass;
         var allocations = session.AttributeAllocations;
 
         var character = new Character
         {
             Name      = session.CharacterName ?? string.Empty,
-            ClassName = cls.Name,
+            ClassName = cls?.Name ?? string.Empty,
             Level     = 1,
 
-            Strength     = (allocations?.GetValueOrDefault("Strength",     10) ?? 10) + cls.BonusStrength,
-            Dexterity    = (allocations?.GetValueOrDefault("Dexterity",    10) ?? 10) + cls.BonusDexterity,
-            Constitution = (allocations?.GetValueOrDefault("Constitution", 10) ?? 10) + cls.BonusConstitution,
-            Intelligence = (allocations?.GetValueOrDefault("Intelligence", 10) ?? 10) + cls.BonusIntelligence,
-            Wisdom       = (allocations?.GetValueOrDefault("Wisdom",       10) ?? 10) + cls.BonusWisdom,
-            Charisma     = (allocations?.GetValueOrDefault("Charisma",     10) ?? 10) + cls.BonusCharisma,
+            Strength     = (allocations?.GetValueOrDefault("Strength",     10) ?? 10) + (cls?.BonusStrength ?? 0),
+            Dexterity    = (allocations?.GetValueOrDefault("Dexterity",    10) ?? 10) + (cls?.BonusDexterity ?? 0),
+            Constitution = (allocations?.GetValueOrDefault("Constitution", 10) ?? 10) + (cls?.BonusConstitution ?? 0),
+            Intelligence = (allocations?.GetValueOrDefault("Intelligence", 10) ?? 10) + (cls?.BonusIntelligence ?? 0),
+            Wisdom       = (allocations?.GetValueOrDefault("Wisdom",       10) ?? 10) + (cls?.BonusWisdom ?? 0),
+            Charisma     = (allocations?.GetValueOrDefault("Charisma",     10) ?? 10) + (cls?.BonusCharisma ?? 0),
 
-            Health    = cls.StartingHealth,
-            MaxHealth = cls.StartingHealth,
-            Mana      = cls.StartingMana,
-            MaxMana   = cls.StartingMana,
+            Health    = cls?.StartingHealth ?? 50,
+            MaxHealth = cls?.StartingHealth ?? 50,
+            Mana      = cls?.StartingMana ?? 50,
+            MaxMana   = cls?.StartingMana ?? 50,
 
             BackgroundId = session.SelectedBackground?.GetBackgroundId(),
             SpeciesSlug  = session.SelectedSpecies?.Slug,

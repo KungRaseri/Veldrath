@@ -369,8 +369,15 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         // Standard point-buy that sums correctly
         var allocations = new
         {
-            Strength = 14, Dexterity = 12, Constitution = 13,
-            Intelligence = 8, Wisdom = 10, Charisma = 8
+            Allocations = new Dictionary<string, int>
+            {
+                ["Strength"]     = 14,
+                ["Dexterity"]    = 12,
+                ["Constitution"] = 13,
+                ["Intelligence"] = 8,
+                ["Wisdom"]       = 10,
+                ["Charisma"]     = 8,
+            }
         };
         var response = await _client.PatchAsJsonAsync(
             $"/api/character-creation/sessions/{begin.SessionId}/attributes",
@@ -610,11 +617,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var character = await response.Content.ReadFromJsonAsync<CharacterDto>();
-        // Look up the persisted character to verify CurrentZoneLocationSlug
-        var charResponse = await client.GetAsync($"/api/characters/{character!.Id}");
-        charResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await charResponse.Content.ReadAsStringAsync();
-        body.Should().ContainEquivalentOf("fenwick-market");
+        character!.CurrentZoneLocationSlug.Should().Be("fenwick-market");
     }
 
     [Fact]
@@ -642,13 +645,13 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
 
         // Second character with identical name should conflict
         var beginB = await BeginSessionWithClientAsync(clientB);
-        await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/name",  new { CharacterName = "Fernwick" });
         await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/class", new { ClassName = "warrior" });
         await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/species", new { SpeciesSlug = "human" });
         await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/background", new { BackgroundId = "soldier" });
+        // Pass the duplicate name directly in the finalize body (PatchName would return 400 since name is taken)
         var conflictResp = await clientB.PostAsJsonAsync(
             $"/api/character-creation/sessions/{beginB.SessionId}/finalize",
-            new { CharacterName = (string?)null, DifficultyMode = "normal" });
+            new { CharacterName = "Fernwick", DifficultyMode = "normal" });
 
         conflictResp.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }

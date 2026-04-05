@@ -20,6 +20,7 @@ public record CreateCharacterRequest(string Name, string ClassName, string Diffi
 /// <param name="IsHardcore">True if this character was created in hardcore mode.</param>
 /// <param name="BackgroundId">Identifier of the background chosen at creation, or <see langword="null"/> if none was selected.</param>
 /// <param name="SpeciesSlug">Slug of the species chosen at creation, or <see langword="null"/> if none was selected.</param>
+/// <param name="CurrentZoneLocationSlug">Slug of the zone location the character is currently at, or <see langword="null"/> if not at a specific location.</param>
 public record CharacterDto(
     Guid Id,
     int SlotIndex,
@@ -33,4 +34,5 @@ public record CharacterDto(
     bool IsOnline = false,
     bool IsHardcore = false,
     string? BackgroundId = null,
-    string? SpeciesSlug = null);
+    string? SpeciesSlug = null,
+    string? CurrentZoneLocationSlug = null);

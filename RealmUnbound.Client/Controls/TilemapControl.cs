@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.ViewModels;
@@ -174,37 +175,10 @@ public class TilemapControl : Control
         var vpWidthTiles  = (int)Math.Ceiling(Bounds.Width  / DisplayTileSize) + 1;
         var vpHeightTiles = (int)Math.Ceiling(Bounds.Height / DisplayTileSize) + 1;
 
-        // ── Tile layers ──────────────────────────────────────────────────────
-        foreach (var layer in map.Layers)
-        {
-            for (var ty = camY; ty < Math.Min(camY + vpHeightTiles, map.Height); ty++)
-            for (var tx = camX; tx < Math.Min(camX + vpWidthTiles,  map.Width);  tx++)
-            {
-                var idx = map.Width * ty + tx;
-                if (idx < 0 || idx >= layer.Data.Length) continue;
-
-                var tileIndex = layer.Data[idx];
-                if (tileIndex < 0) continue; // transparent
-
-                var destX = (tx - camX) * DisplayTileSize;
-                var destY = (ty - camY) * DisplayTileSize;
-                var dest  = new Rect(destX, destY, DisplayTileSize, DisplayTileSize);
-
-                if (sheet is not null)
-                {
-                    var srcRect = TileTextureCache.GetSourceRect(map.TilesetKey, tileIndex);
-                    if (srcRect.HasValue)
-                        context.DrawImage(sheet, srcRect.Value, dest);
-                    else
-                        context.FillRectangle(Brushes.DimGray, dest);
-                }
-                else
-                {
-                    // Fallback: colored debug tile
-                    context.FillRectangle(Brushes.DimGray, dest);
-                }
-            }
-        }
+        // ── Tile layers below entities (ZIndex < EntityZIndex) ───────────────
+        // Draws base terrain and ground-clutter objects under players/enemies.
+        DrawTileLayers(context, map.Layers.Where(l => l.ZIndex < EntityZIndex),
+                       sheet, map, camX, camY, vpWidthTiles, vpHeightTiles);
 
         // ── Exit tile highlights ─────────────────────────────────────────────
         // Tinted fill + yellow border on every exit tile within the viewport
@@ -257,6 +231,11 @@ public class TilemapControl : Control
             }
         }
 
+        // ── Tile layers above entities (ZIndex >= EntityZIndex) ──────────────
+        // Draws roofs, canopies, and other elements that should cover players/enemies.
+        DrawTileLayers(context, map.Layers.Where(l => l.ZIndex >= EntityZIndex),
+                       sheet, map, camX, camY, vpWidthTiles, vpHeightTiles);
+
         // ── Fog of war ────────────────────────────────────────────────────────
         if (map.FogMask.Any(f => f)) // Only applies if fog is enabled on this map
         {
@@ -277,6 +256,54 @@ public class TilemapControl : Control
         // Rendered on top of everything; toggled with M or the footer button.
         if (vm.IsMiniMapOpen)
             DrawMinimap(context, vm, map);
+    }
+
+    // ── Rendering constants ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Layers with <see cref="TileLayerDto.ZIndex"/> below this value draw under entities;
+    /// layers at or above this value draw over entities (roofs, canopies).
+    /// </summary>
+    private const int EntityZIndex = 2;
+
+    private void DrawTileLayers(
+        DrawingContext context,
+        IEnumerable<TileLayerDto> layers,
+        Bitmap? sheet,
+        TileMapDto map,
+        int camX, int camY,
+        int vpWidthTiles, int vpHeightTiles)
+    {
+        foreach (var layer in layers)
+        {
+            for (var ty = camY; ty < Math.Min(camY + vpHeightTiles, map.Height); ty++)
+            for (var tx = camX; tx < Math.Min(camX + vpWidthTiles,  map.Width);  tx++)
+            {
+                var idx = map.Width * ty + tx;
+                if (idx < 0 || idx >= layer.Data.Length) continue;
+
+                var tileIndex = layer.Data[idx];
+                if (tileIndex < 0) continue; // transparent
+
+                var dest = new Rect(
+                    (tx - camX) * DisplayTileSize,
+                    (ty - camY) * DisplayTileSize,
+                    DisplayTileSize, DisplayTileSize);
+
+                if (sheet is not null)
+                {
+                    var srcRect = TileTextureCache.GetSourceRect(map.TilesetKey, tileIndex);
+                    if (srcRect.HasValue)
+                        context.DrawImage(sheet, srcRect.Value, dest);
+                    else
+                        context.FillRectangle(Brushes.DimGray, dest);
+                }
+                else
+                {
+                    context.FillRectangle(Brushes.DimGray, dest);
+                }
+            }
+        }
     }
 
     private void DrawMinimap(DrawingContext context, TilemapViewModel vm, TileMapDto map)

@@ -65,7 +65,7 @@ public class TileMapDefinition
 /// <summary>A single render layer within a <see cref="TileMapDefinition"/>.</summary>
 public class TileLayerDefinition
 {
-    /// <summary>Logical layer name (e.g. <c>"ground"</c>, <c>"decor"</c>).</summary>
+    /// <summary>Logical layer name (e.g. <c>"base"</c>, <c>"objects"</c>).</summary>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
@@ -73,6 +73,13 @@ public class TileLayerDefinition
     /// Each value is the spritesheet tile index: <c>row * columns + col</c>. -1 means transparent.
     /// </summary>
     public int[] Data { get; set; } = [];
+
+    /// <summary>
+    /// Render z-order for this layer. Layers with <c>ZIndex &lt; 2</c> paint below entities;
+    /// layers with <c>ZIndex &gt;= 2</c> paint above entities (roofs, canopies).
+    /// Convention: 0 = base terrain, 1 = objects/ground clutter, 2 = roof/canopy.
+    /// </summary>
+    public int ZIndex { get; set; } = 0;
 }
 
 /// <summary>A tile that transitions the player to another zone when stepped on.</summary>
