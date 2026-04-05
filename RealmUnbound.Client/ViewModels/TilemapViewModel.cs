@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Reactive;
 using ReactiveUI;
 using RealmUnbound.Contracts.Tilemap;
+using Serilog;
 
 namespace RealmUnbound.Client.ViewModels;
 
@@ -114,6 +115,8 @@ public class TilemapViewModel : ViewModelBase
     {
         RequestMoveCommand = ReactiveCommand.CreateFromTask<(int ToX, int ToY, string Direction)>(
             args => onMove(args.ToX, args.ToY, args.Direction));
+        RequestMoveCommand.ThrownExceptions.Subscribe(ex =>
+            Log.Warning(ex, "Move command failed — server connection may be unavailable"));
 
         ToggleMiniMapCommand = ReactiveCommand.Create(() => { IsMiniMapOpen = !IsMiniMapOpen; });
     }

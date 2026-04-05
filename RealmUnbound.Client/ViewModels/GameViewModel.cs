@@ -1039,7 +1039,8 @@ public class GameViewModel : ViewModelBase
     {
         if (string.IsNullOrEmpty(toZoneId)) return;
         AppendLog($"Traveling to {toZoneId}...");
-        await DoTravelToZoneAsync(toZoneId);
+        try { await DoTravelToZoneAsync(toZoneId); }
+        catch (Exception ex) { AppendLog($"Zone transition failed: {ex.Message}"); }
     }
 
     /// <summary>Called from hub when an enemy moves one tile on the map.</summary>
@@ -1238,7 +1239,8 @@ public class GameViewModel : ViewModelBase
     public async void OnDungeonEntered(string dungeonId, string dungeonSlug)
     {
         AppendLog($"Entered dungeon '{dungeonSlug}' (ID: {dungeonId}).");
-        await DoTravelToZoneAsync(dungeonId);
+        try { await DoTravelToZoneAsync(dungeonId); }
+        catch (Exception ex) { AppendLog($"Dungeon entry failed: {ex.Message}"); }
     }
 
     private async Task LoadZoneCoreAsync(string zoneId)
