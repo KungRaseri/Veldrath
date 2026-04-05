@@ -1,22 +1,17 @@
-namespace RealmEngine.Shared.Models;
+﻿namespace RealmEngine.Shared.Models;
 
 // -- Tile Index Constants ---------------------------------------------------
 //
-// All indices reference the roguelike_base spritesheet (57 columns � 31 rows,
+// All indices reference the roguelike_base spritesheet (57 columns x 31 rows,
 // 16 px tiles, 1 px spacing).  Formula: index = row * 57 + col.
 //
-// Status markers in comments:
-//   // ? verified       value confirmed against roguelike_base_labeled.png
-//   // TODO: needs-verify   value is a best-guess; check against the labeled sheet
-//   // TODO: Needs value           value not yet looked up; placeholder -1 means tile won't render
-//
 // Layer convention:
-//   Layer 0 "base"    � opaque terrain fill.  Use Terrain.*.M or Fill constants.  Never -1.
-//   Layer 1 "objects" � transparent decorations (flora, paths, props).  Use -1 for empty cells.
+//   Layer 0 "base"    - opaque terrain fill.  Use Terrain.*.M or Fill constants.  Never -1.
+//   Layer 1 "objects" - transparent decorations (flora, paths, props).  Use -1 for empty cells.
 
 /// <summary>
 /// Compile-time tile index constants for the <c>roguelike_base</c> spritesheet
-/// (Kenney Roguelike Base Pack � 57 columns � 31 rows, 16 px tiles, 1 px spacing).
+/// (Kenney Roguelike Base Pack - 57 columns x 31 rows, 16 px tiles, 1 px spacing).
 /// </summary>
 /// <remarks>
 /// Index formula: <c>index = row * 57 + col</c>.
@@ -37,10 +32,10 @@ public static class TileIndex
     /// Confirmed blank / empty tile. Use <c>-1</c> on object layer for transparency;
     /// use this constant where an explicit opaque-blank is needed.
     /// </summary>
-    public const int Blank = 285; // ? verified
+    public const int Blank = 285; // <- verified
 
     // -------------------------------------------------------------------------
-    // TERRAIN  (base layer � always opaque)
+    // TERRAIN  (base layer - always opaque)
     // -------------------------------------------------------------------------
 
     /// <summary>
@@ -53,10 +48,10 @@ public static class TileIndex
         /// <summary>Green grass terrain. Use <see cref="M"/> for the base layer.</summary>
         public static class Grass
         {
-            /// <summary>Flat grass fill variant 1 � lighter tone.</summary>
-            public const int Fill1 = 5;   // ? verified
-            /// <summary>Flat grass fill variant 2 � slightly darker tone.</summary>
-            public const int Fill2 = 62;  // ? verified
+            /// <summary>Flat grass fill variant 1 - lighter tone.</summary>
+            public const int Fill1 = 5;   // <- verified
+            /// <summary>Flat grass fill variant 2 - slightly darker tone.</summary>
+            public const int Fill2 = 62;  // <- verified
             /// <summary>Top-left border tile.</summary>
             public const int TL = 857;    // TODO: needs-verify
             /// <summary>Top-centre border tile.</summary>
@@ -65,8 +60,8 @@ public static class TileIndex
             public const int TR = 859;    // TODO: needs-verify
             /// <summary>Middle-left border tile.</summary>
             public const int ML = 914;    // TODO: needs-verify
-            /// <summary>Solid grass centre � canonical base-layer fill for grassy zones.</summary>
-            public const int M  = 915;    // ? verified
+            /// <summary>Solid grass centre - canonical base-layer fill for grassy zones.</summary>
+            public const int M  = 915;    // <- verified
             /// <summary>Middle-right border tile.</summary>
             public const int MR = 916;    // TODO: needs-verify
             /// <summary>Bottom-left border tile.</summary>
@@ -82,13 +77,13 @@ public static class TileIndex
         {
             /// <summary>Plain stone floor.</summary>
             public const int Floor    = 7;   // TODO: needs-verify
-            /// <summary>Plain stone floor � alternate shade.</summary>
+            /// <summary>Plain stone floor - alternate shade.</summary>
             public const int FloorAlt = 64;  // TODO: needs-verify
             /// <summary>Cobblestone floor.</summary>
             public const int Cobble   = 9;   // TODO: needs-verify
             /// <summary>Tiled stone floor.</summary>
             public const int Tiled    = 120; // TODO: needs-verify
-            /// <summary>Tiled stone floor � alternate shade.</summary>
+            /// <summary>Tiled stone floor - alternate shade.</summary>
             public const int TiledAlt = 177; // TODO: needs-verify
             /// <summary>Top-left border tile.</summary>
             public const int TL = 862;  // TODO: needs-verify
@@ -98,8 +93,8 @@ public static class TileIndex
             public const int TR = 864;  // TODO: needs-verify
             /// <summary>Middle-left border tile.</summary>
             public const int ML = 919;  // TODO: needs-verify
-            /// <summary>Solid stone centre � canonical base-layer fill for stone/dungeon zones.</summary>
-            public const int M  = 920;  // ? verified
+            /// <summary>Solid stone centre - canonical base-layer fill for stone/dungeon zones.</summary>
+            public const int M  = 920;  // <- verified
             /// <summary>Middle-right border tile.</summary>
             public const int MR = 921;  // TODO: needs-verify
             /// <summary>Bottom-left border tile.</summary>
@@ -115,7 +110,7 @@ public static class TileIndex
         {
             /// <summary>Flat sand fill variant 1.</summary>
             public const int Fill1 = 8;   // TODO: needs-verify
-            /// <summary>Flat sand fill variant 2 � alternate shade.</summary>
+            /// <summary>Flat sand fill variant 2 - alternate shade.</summary>
             public const int Fill2 = 65;  // TODO: needs-verify
             /// <summary>Top-left border tile.</summary>
             public const int TL = 1204;   // TODO: needs-verify
@@ -125,8 +120,8 @@ public static class TileIndex
             public const int TR = 1206;   // TODO: needs-verify
             /// <summary>Middle-left border tile.</summary>
             public const int ML = 1261;   // TODO: needs-verify
-            /// <summary>Solid sand centre � canonical base-layer fill for sandy/coastal zones.</summary>
-            public const int M  = 1262;   // ? verified
+            /// <summary>Solid sand centre - canonical base-layer fill for sandy/coastal zones.</summary>
+            public const int M  = 1262;   // <- verified
             /// <summary>Middle-right border tile.</summary>
             public const int MR = 1263;   // TODO: needs-verify
             /// <summary>Bottom-left border tile.</summary>
@@ -142,7 +137,7 @@ public static class TileIndex
         {
             /// <summary>Flat dirt fill.</summary>
             public const int Fill1 = -1; // TODO: Needs value
-            /// <summary>Solid dirt centre � canonical base-layer fill for dirt terrain.</summary>
+            /// <summary>Solid dirt centre - canonical base-layer fill for dirt terrain.</summary>
             public const int M  = -1; // TODO: Needs value
             /// <summary>Top-left border tile.</summary>
             public const int TL = -1; // TODO: Needs value
@@ -167,7 +162,7 @@ public static class TileIndex
         {
             /// <summary>Flat mud fill.</summary>
             public const int Fill1 = -1; // TODO: Needs value
-            /// <summary>Solid mud centre � canonical base-layer fill for swamp/fen zones.</summary>
+            /// <summary>Solid mud centre - canonical base-layer fill for swamp/fen zones.</summary>
             public const int M  = -1; // TODO: Needs value
             /// <summary>Top-left border tile.</summary>
             public const int TL = -1; // TODO: Needs value
@@ -192,7 +187,7 @@ public static class TileIndex
         {
             /// <summary>Flat snow fill.</summary>
             public const int Fill1 = -1; // TODO: Needs value
-            /// <summary>Solid snow centre � canonical base-layer fill.</summary>
+            /// <summary>Solid snow centre - canonical base-layer fill.</summary>
             public const int M  = -1; // TODO: Needs value
             /// <summary>Top-left border tile.</summary>
             public const int TL = -1; // TODO: Needs value
@@ -273,12 +268,12 @@ public static class TileIndex
     /// </summary>
     public static class Water
     {
-        /// <summary>Solid deep water fill � canonical base-layer tile for water zones.</summary>
+        /// <summary>Solid deep water fill - canonical base-layer tile for water zones.</summary>
         public const int Deep  = -1; // TODO: Needs value
         /// <summary>Shallow water fill variant.</summary>
         public const int Shallow = -1; // TODO: Needs value
 
-        /// <summary>Shore/edge overlay tiles � place on the objects layer over the land base.</summary>
+        /// <summary>Shore/edge overlay tiles - place on the objects layer over the land base.</summary>
         public static class Shore
         {
             /// <summary>Shore edge facing north (water to the north).</summary>
@@ -289,22 +284,22 @@ public static class TileIndex
             public const int E  = -1; // TODO: Needs value
             /// <summary>Shore edge facing west.</summary>
             public const int W  = -1; // TODO: Needs value
-            /// <summary>Inner corner � water in NE quadrant only.</summary>
+            /// <summary>Inner corner - water in NE quadrant only.</summary>
             public const int CornerNE = -1; // TODO: Needs value
-            /// <summary>Inner corner � water in NW quadrant only.</summary>
+            /// <summary>Inner corner - water in NW quadrant only.</summary>
             public const int CornerNW = -1; // TODO: Needs value
-            /// <summary>Inner corner � water in SE quadrant only.</summary>
+            /// <summary>Inner corner - water in SE quadrant only.</summary>
             public const int CornerSE = -1; // TODO: Needs value
-            /// <summary>Inner corner � water in SW quadrant only.</summary>
+            /// <summary>Inner corner - water in SW quadrant only.</summary>
             public const int CornerSW = -1; // TODO: Needs value
         }
     }
 
     // -------------------------------------------------------------------------
-    // FLORA  (objects layer � transparent background)
+    // FLORA  (objects layer - transparent background)
     // -------------------------------------------------------------------------
 
-    /// <summary>Plant and tree object tiles. Transparent background � objects layer only.</summary>
+    /// <summary>Plant and tree object tiles. Transparent background - objects layer only.</summary>
     public static class Flora
     {
         /// <summary>Round oak-style tree variants.</summary>
@@ -361,13 +356,13 @@ public static class TileIndex
         /// <summary>Tall grass variant 2.</summary>
         public const int TallGrass2 = -1; // TODO: Needs value
 
-        /// <summary>Small flower � colour variant 1.</summary>
+        /// <summary>Small flower - colour variant 1.</summary>
         public const int FlowerA = -1; // TODO: Needs value
 
-        /// <summary>Small flower � colour variant 2.</summary>
+        /// <summary>Small flower - colour variant 2.</summary>
         public const int FlowerB = -1; // TODO: Needs value
 
-        /// <summary>Small flower � colour variant 3.</summary>
+        /// <summary>Small flower - colour variant 3.</summary>
         public const int FlowerC = -1; // TODO: Needs value
 
         /// <summary>Large mushroom.</summary>
@@ -393,10 +388,10 @@ public static class TileIndex
     }
 
     // -------------------------------------------------------------------------
-    // PATHS  (objects layer � transparent background)
+    // PATHS  (objects layer - transparent background)
     // -------------------------------------------------------------------------
 
-    /// <summary>Dirt path tiles for roads and trails. Transparent background � objects layer only.</summary>
+    /// <summary>Dirt path tiles for roads and trails. Transparent background - objects layer only.</summary>
     public static class DirtPath
     {
         /// <summary>4-way cross junction.</summary>
@@ -404,7 +399,7 @@ public static class TileIndex
         /// <summary>Isolated single-tile dirt patch / circle.</summary>
         public const int Circle  = 692;    // TODO: needs-verify
 
-        // -- End caps � path terminates in this direction ----------------------
+        // -- End caps - path terminates in this direction ----------------------
         /// <summary>Dead-end cap, open facing right (road coming from the left).</summary>
         public const int EndLeft   = 690;  // TODO: needs-verify
         /// <summary>Dead-end cap, open facing left (road coming from the right).</summary>
@@ -414,7 +409,7 @@ public static class TileIndex
         /// <summary>Dead-end cap, open facing up (road coming from below).</summary>
         public const int EndBottom = 632;  // TODO: needs-verify
 
-        // -- T-junctions � open in three directions ----------------------------
+        // -- T-junctions - open in three directions ----------------------------
         /// <summary>T-junction open Left, Bottom, Right (closed at Top).</summary>
         public const int TJunctionLBR = 404; // TODO: needs-verify
         /// <summary>T-junction open Left, Top, Bottom (closed at Right).</summary>
@@ -441,7 +436,7 @@ public static class TileIndex
         public const int StraightV = 465; // TODO: needs-verify
     }
 
-    /// <summary>Stone / cobblestone road tiles. Transparent background � objects layer only.</summary>
+    /// <summary>Stone / cobblestone road tiles. Transparent background - objects layer only.</summary>
     public static class StonePath
     {
         /// <summary>4-way cross junction.</summary>
@@ -480,7 +475,7 @@ public static class TileIndex
     // FENCES  (objects layer)
     // -------------------------------------------------------------------------
 
-    /// <summary>Wooden fence tiles. Transparent background � objects layer only.</summary>
+    /// <summary>Wooden fence tiles. Transparent background - objects layer only.</summary>
     public static class WoodFence
     {
         /// <summary>Horizontal fence segment.</summary>
@@ -515,28 +510,28 @@ public static class TileIndex
     // BRIDGES  (objects layer)
     // -------------------------------------------------------------------------
 
-    /// <summary>Bridge tiles placed on water. Transparent background � objects layer only.</summary>
+    /// <summary>Bridge tiles placed on water. Transparent background - objects layer only.</summary>
     public static class Bridge
     {
-        /// <summary>Horizontal bridge � left end.</summary>
+        /// <summary>Horizontal bridge - left end.</summary>
         public const int HLeft   = -1; // TODO: Needs value
-        /// <summary>Horizontal bridge � middle segment.</summary>
+        /// <summary>Horizontal bridge - middle segment.</summary>
         public const int HMid    = -1; // TODO: Needs value
-        /// <summary>Horizontal bridge � right end.</summary>
+        /// <summary>Horizontal bridge - right end.</summary>
         public const int HRight  = -1; // TODO: Needs value
-        /// <summary>Vertical bridge � top end.</summary>
+        /// <summary>Vertical bridge - top end.</summary>
         public const int VTop    = -1; // TODO: Needs value
-        /// <summary>Vertical bridge � middle segment.</summary>
+        /// <summary>Vertical bridge - middle segment.</summary>
         public const int VMid    = -1; // TODO: Needs value
-        /// <summary>Vertical bridge � bottom end.</summary>
+        /// <summary>Vertical bridge - bottom end.</summary>
         public const int VBottom = -1; // TODO: Needs value
     }
 
     // -------------------------------------------------------------------------
-    // BUILDINGS  (objects layer � walls, roofs, doors, windows)
+    // BUILDINGS  (objects layer - walls, roofs, doors, windows)
     // -------------------------------------------------------------------------
 
-    /// <summary>Wooden building exterior tiles. Transparent background � objects layer only.</summary>
+    /// <summary>Wooden building exterior tiles. Transparent background - objects layer only.</summary>
     public static class WoodWall
     {
         /// <summary>Plain wall top edge.</summary>
@@ -547,13 +542,13 @@ public static class TileIndex
         public const int Right      = -1; // TODO: Needs value
         /// <summary>Plain wall bottom edge.</summary>
         public const int Bottom     = -1; // TODO: Needs value
-        /// <summary>Outer corner � top-left.</summary>
+        /// <summary>Outer corner - top-left.</summary>
         public const int CornerTL   = -1; // TODO: Needs value
-        /// <summary>Outer corner � top-right.</summary>
+        /// <summary>Outer corner - top-right.</summary>
         public const int CornerTR   = -1; // TODO: Needs value
-        /// <summary>Outer corner � bottom-left.</summary>
+        /// <summary>Outer corner - bottom-left.</summary>
         public const int CornerBL   = -1; // TODO: Needs value
-        /// <summary>Outer corner � bottom-right.</summary>
+        /// <summary>Outer corner - bottom-right.</summary>
         public const int CornerBR   = -1; // TODO: Needs value
         /// <summary>Wall face (south-facing, visible front).</summary>
         public const int FaceS      = -1; // TODO: Needs value
@@ -565,7 +560,7 @@ public static class TileIndex
         public const int DoorOpenS  = -1; // TODO: Needs value
     }
 
-    /// <summary>Stone building exterior tiles. Transparent background � objects layer only.</summary>
+    /// <summary>Stone building exterior tiles. Transparent background - objects layer only.</summary>
     public static class StoneWall
     {
         /// <summary>Plain wall top edge.</summary>
@@ -576,13 +571,13 @@ public static class TileIndex
         public const int Right      = -1; // TODO: Needs value
         /// <summary>Plain wall bottom edge.</summary>
         public const int Bottom     = -1; // TODO: Needs value
-        /// <summary>Outer corner � top-left.</summary>
+        /// <summary>Outer corner - top-left.</summary>
         public const int CornerTL   = -1; // TODO: Needs value
-        /// <summary>Outer corner � top-right.</summary>
+        /// <summary>Outer corner - top-right.</summary>
         public const int CornerTR   = -1; // TODO: Needs value
-        /// <summary>Outer corner � bottom-left.</summary>
+        /// <summary>Outer corner - bottom-left.</summary>
         public const int CornerBL   = -1; // TODO: Needs value
-        /// <summary>Outer corner � bottom-right.</summary>
+        /// <summary>Outer corner - bottom-right.</summary>
         public const int CornerBR   = -1; // TODO: Needs value
         /// <summary>Wall face (south-facing, visible front).</summary>
         public const int FaceS      = -1; // TODO: Needs value
@@ -594,64 +589,64 @@ public static class TileIndex
         public const int DoorOpenS  = -1; // TODO: Needs value
     }
 
-    /// <summary>Roof tiles. Transparent background � place on a layer above entities (ZIndex &gt;= 2).</summary>
+    /// <summary>Roof tiles. Transparent background - place on a layer above entities (ZIndex &gt;= 2).</summary>
     public static class Roof
     {
-        /// <summary>Thatched roof � ridge (top centre).</summary>
+        /// <summary>Thatched roof - ridge (top centre).</summary>
         public const int ThatchRidge    = -1; // TODO: Needs value
-        /// <summary>Thatched roof � left slope.</summary>
+        /// <summary>Thatched roof - left slope.</summary>
         public const int ThatchLeft     = -1; // TODO: Needs value
-        /// <summary>Thatched roof � right slope.</summary>
+        /// <summary>Thatched roof - right slope.</summary>
         public const int ThatchRight    = -1; // TODO: Needs value
-        /// <summary>Thatched roof � left gable end-cap.</summary>
+        /// <summary>Thatched roof - left gable end-cap.</summary>
         public const int ThatchGableL   = -1; // TODO: Needs value
-        /// <summary>Thatched roof � right gable end-cap.</summary>
+        /// <summary>Thatched roof - right gable end-cap.</summary>
         public const int ThatchGableR   = -1; // TODO: Needs value
-        /// <summary>Tiled roof � ridge (top centre).</summary>
+        /// <summary>Tiled roof - ridge (top centre).</summary>
         public const int TileRidge      = -1; // TODO: Needs value
-        /// <summary>Tiled roof � left slope.</summary>
+        /// <summary>Tiled roof - left slope.</summary>
         public const int TileLeft       = -1; // TODO: Needs value
-        /// <summary>Tiled roof � right slope.</summary>
+        /// <summary>Tiled roof - right slope.</summary>
         public const int TileRight      = -1; // TODO: Needs value
-        /// <summary>Tiled roof � left gable end-cap.</summary>
+        /// <summary>Tiled roof - left gable end-cap.</summary>
         public const int TileGableL     = -1; // TODO: Needs value
-        /// <summary>Tiled roof � right gable end-cap.</summary>
+        /// <summary>Tiled roof - right gable end-cap.</summary>
         public const int TileGableR     = -1; // TODO: Needs value
     }
 
     // -------------------------------------------------------------------------
-    // DUNGEON  (objects layer � walls, floors, doors, special features)
+    // DUNGEON  (objects layer - walls, floors, doors, special features)
     // -------------------------------------------------------------------------
 
-    /// <summary>Dungeon / cave wall and tunnel tiles. Transparent background � objects layer only.</summary>
+    /// <summary>Dungeon / cave wall and tunnel tiles. Transparent background - objects layer only.</summary>
     public static class Dungeon
     {
-        /// <summary>Dungeon wall � solid front face.</summary>
+        /// <summary>Dungeon wall - solid front face.</summary>
         public const int WallFront    = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � top edge.</summary>
+        /// <summary>Dungeon wall - top edge.</summary>
         public const int WallTop      = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � left edge.</summary>
+        /// <summary>Dungeon wall - left edge.</summary>
         public const int WallLeft     = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � right edge.</summary>
+        /// <summary>Dungeon wall - right edge.</summary>
         public const int WallRight    = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � corner top-left.</summary>
+        /// <summary>Dungeon wall - corner top-left.</summary>
         public const int WallCornerTL = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � corner top-right.</summary>
+        /// <summary>Dungeon wall - corner top-right.</summary>
         public const int WallCornerTR = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � corner bottom-left.</summary>
+        /// <summary>Dungeon wall - corner bottom-left.</summary>
         public const int WallCornerBL = -1; // TODO: Needs value
-        /// <summary>Dungeon wall � corner bottom-right.</summary>
+        /// <summary>Dungeon wall - corner bottom-right.</summary>
         public const int WallCornerBR = -1; // TODO: Needs value
         /// <summary>Dungeon wall with cracks / damage.</summary>
         public const int WallCracked  = -1; // TODO: Needs value
 
-        /// <summary>Wooden door � closed (horizontal passage).</summary>
+        /// <summary>Wooden door - closed (horizontal passage).</summary>
         public const int DoorWoodClosed = -1; // TODO: Needs value
-        /// <summary>Wooden door � open (horizontal passage).</summary>
+        /// <summary>Wooden door - open (horizontal passage).</summary>
         public const int DoorWoodOpen   = -1; // TODO: Needs value
-        /// <summary>Iron door � closed.</summary>
+        /// <summary>Iron door - closed.</summary>
         public const int DoorIronClosed = -1; // TODO: Needs value
-        /// <summary>Iron door � open.</summary>
+        /// <summary>Iron door - open.</summary>
         public const int DoorIronOpen   = -1; // TODO: Needs value
         /// <summary>Iron bars / portcullis.</summary>
         public const int Bars           = -1; // TODO: Needs value
@@ -676,11 +671,11 @@ public static class TileIndex
     }
 
     // -------------------------------------------------------------------------
-    // PROPS  (objects layer � decorations and interactive objects)
+    // PROPS  (objects layer - decorations and interactive objects)
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Decorative and interactive prop tiles. Transparent background � objects layer only.
+    /// Decorative and interactive prop tiles. Transparent background - objects layer only.
     /// Multi-tile props must be placed as a group using all named positions.
     /// </summary>
     public static class Props
@@ -688,7 +683,7 @@ public static class TileIndex
         // -- Water / outdoor structures ----------------------------------------
 
         /// <summary>
-        /// Water fountain � 3-column � 3-row prop.
+        /// Water fountain - 3-column - 3-row prop.
         /// Layout: (TL, T, TR) / (ML, M, MR) / (BL, B, BR).
         /// </summary>
         public static class WaterFountain
@@ -713,7 +708,7 @@ public static class TileIndex
             public const int BR = 289; // TODO: needs-verify
         }
 
-        /// <summary>Stone well � 2-tile tall prop: (Top) / (Base).</summary>
+        /// <summary>Stone well - 2-tile tall prop: (Top) / (Base).</summary>
         public static class Well
         {
             /// <summary>Top tile of the well (rope, bucket, roof).</summary>
@@ -725,11 +720,11 @@ public static class TileIndex
         /// <summary>Wooden signpost / directional sign.</summary>
         public const int Sign = -1; // TODO: Needs value
 
-        /// <summary>Market stall awning � left end.</summary>
+        /// <summary>Market stall awning - left end.</summary>
         public const int StallLeft  = -1; // TODO: Needs value
-        /// <summary>Market stall awning � middle section.</summary>
+        /// <summary>Market stall awning - middle section.</summary>
         public const int StallMid   = -1; // TODO: Needs value
-        /// <summary>Market stall awning � right end.</summary>
+        /// <summary>Market stall awning - right end.</summary>
         public const int StallRight = -1; // TODO: Needs value
 
         // -- Containers --------------------------------------------------------
@@ -785,9 +780,9 @@ public static class TileIndex
 
         // -- Furniture ---------------------------------------------------------
 
-        /// <summary>Wooden table � horizontal (wider than tall).</summary>
+        /// <summary>Wooden table - horizontal (wider than tall).</summary>
         public const int TableH        = -1; // TODO: Needs value
-        /// <summary>Wooden table � vertical (taller than wide).</summary>
+        /// <summary>Wooden table - vertical (taller than wide).</summary>
         public const int TableV        = -1; // TODO: Needs value
         /// <summary>Chair facing south (seat visible from the front).</summary>
         public const int ChairS        = -1; // TODO: Needs value
@@ -797,24 +792,24 @@ public static class TileIndex
         public const int ChairE        = -1; // TODO: Needs value
         /// <summary>Chair facing west.</summary>
         public const int ChairW        = -1; // TODO: Needs value
-        /// <summary>Bed � top tile (pillow end).</summary>
+        /// <summary>Bed - top tile (pillow end).</summary>
         public const int BedTop        = -1; // TODO: Needs value
-        /// <summary>Bed � bottom tile (foot end).</summary>
+        /// <summary>Bed - bottom tile (foot end).</summary>
         public const int BedBottom     = -1; // TODO: Needs value
-        /// <summary>Bookshelf � filled with books.</summary>
+        /// <summary>Bookshelf - filled with books.</summary>
         public const int Bookshelf     = -1; // TODO: Needs value
-        /// <summary>Shelf � with items or empty.</summary>
+        /// <summary>Shelf - with items or empty.</summary>
         public const int Shelf         = -1; // TODO: Needs value
         /// <summary>Tall wardrobe / cabinet.</summary>
         public const int Wardrobe      = -1; // TODO: Needs value
 
         // -- Structures and monuments ------------------------------------------
 
-        /// <summary>Stone pillar � top cap.</summary>
+        /// <summary>Stone pillar - top cap.</summary>
         public const int PillarTop    = -1; // TODO: Needs value
-        /// <summary>Stone pillar � middle shaft segment.</summary>
+        /// <summary>Stone pillar - middle shaft segment.</summary>
         public const int PillarMid    = -1; // TODO: Needs value
-        /// <summary>Stone pillar � base.</summary>
+        /// <summary>Stone pillar - base.</summary>
         public const int PillarBase   = -1; // TODO: Needs value
         /// <summary>Stone statue.</summary>
         public const int Statue       = -1; // TODO: Needs value
@@ -866,11 +861,11 @@ public static class TileIndex
         public const int Button             = -1; // TODO: Needs value
         /// <summary>Mine cart.</summary>
         public const int MineCart           = -1; // TODO: Needs value
-        /// <summary>Mine cart rail � horizontal.</summary>
+        /// <summary>Mine cart rail - horizontal.</summary>
         public const int RailH              = -1; // TODO: Needs value
-        /// <summary>Mine cart rail � vertical.</summary>
+        /// <summary>Mine cart rail - vertical.</summary>
         public const int RailV              = -1; // TODO: Needs value
-        /// <summary>Mine cart rail � corner.</summary>
+        /// <summary>Mine cart rail - corner.</summary>
         public const int RailCorner         = -1; // TODO: Needs value
     }
 }
