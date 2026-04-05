@@ -136,5 +136,6 @@ public static class CharacterEndpoints
             IsOnline: isOnline,
             IsHardcore: c.DifficultyMode == "hardcore",
             BackgroundId: c.BackgroundId,
-            SpeciesSlug: c.SpeciesSlug);
+            SpeciesSlug: c.SpeciesSlug,
+            CurrentZoneLocationSlug: c.CurrentZoneLocationSlug);
 }

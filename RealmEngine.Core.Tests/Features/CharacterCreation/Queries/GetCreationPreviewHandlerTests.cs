@@ -40,15 +40,17 @@ public class GetCreationPreviewHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NoClassSelected_ReturnsFailed()
+    public async Task Handle_NoClassSelected_ReturnsPartialPreview()
     {
         var session = new CharacterCreationSession(); // SelectedClass = null
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
 
         var result = await CreateHandler().Handle(new GetCreationPreviewQuery(session.SessionId), default);
 
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("class");
+        result.Success.Should().BeTrue();
+        result.Character.Should().NotBeNull();
+        result.Character!.ClassName.Should().BeEmpty();
+        result.Character.Strength.Should().Be(10); // default when no class
     }
 
     [Fact]

@@ -56,7 +56,7 @@ public class GetZoneTileMapHubCommandHandler : IRequestHandler<GetZoneTileMapHub
             Width:         definition.Width,
             Height:        definition.Height,
             TileSize:      definition.TileSize,
-            Layers:        definition.Layers.Select(l => new TileLayerDto(l.Name, l.Data)).ToArray(),
+            Layers:        definition.Layers.Select(l => new TileLayerDto(l.Name, l.Data, l.ZIndex)).ToArray(),
             CollisionMask: definition.CollisionMask,
             FogMask:       definition.FogMask,
             ExitTiles:     definition.ExitTiles.Select(e => new ExitTileDto(e.TileX, e.TileY, e.ToZoneId)).ToArray(),

@@ -308,6 +308,11 @@ public static class CharacterCreationSessionEndpoints
         if (session.AccountId is not null && session.AccountId != accountId)
             return Results.Forbid();
 
+        if (session.Status == RealmEngine.Shared.Models.CreationSessionStatus.Finalized)
+            return Results.BadRequest(new { error = "Session has already been finalized." });
+        if (session.Status == RealmEngine.Shared.Models.CreationSessionStatus.Abandoned)
+            return Results.BadRequest(new { error = "Cannot finalize an abandoned session." });
+
         if (session.SelectedClass is null)
             return Results.BadRequest(new { error = "A character class must be selected before finalizing." });
         if (session.SelectedSpecies is null)
@@ -422,7 +427,8 @@ public static class CharacterCreationSessionEndpoints
                 IsOnline: false,
                 IsHardcore: created.DifficultyMode == "hardcore",
                 BackgroundId: created.BackgroundId,
-                SpeciesSlug: created.SpeciesSlug));
+                SpeciesSlug: created.SpeciesSlug,
+                CurrentZoneLocationSlug: created.CurrentZoneLocationSlug));
     }
 
     private static async Task<IResult> AbandonAsync(

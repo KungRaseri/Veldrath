@@ -107,8 +107,8 @@ public static class DungeonGenerator
             TileSize      = 16,
             Layers        =
             [
-                new TileLayerDefinition { Name = "base",    Data = baseData    },
-                new TileLayerDefinition { Name = "objects", Data = objectsData },
+                new TileLayerDefinition { Name = "base",    Data = baseData,    ZIndex = 0 },
+                new TileLayerDefinition { Name = "objects", Data = objectsData, ZIndex = 1 },
             ],
             CollisionMask = collisionMask,
             FogMask       = fogMask,

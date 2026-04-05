@@ -33,12 +33,16 @@ public record TileMapDto(
     IReadOnlyList<SpawnPointDto> SpawnPoints);
 
 /// <summary>A single render layer within a <see cref="TileMapDto"/>.</summary>
-/// <param name="Name">Logical layer name (e.g. <c>"ground"</c>, <c>"decor"</c>).</param>
+/// <param name="Name">Logical layer name (e.g. <c>"base"</c>, <c>"objects"</c>).</param>
 /// <param name="Data">
 /// Flat tile-index array of length <c>Width × Height</c>, row-major.
 /// Index into the spritesheet: <c>row * columnCount + col</c>. -1 means no tile (transparent).
 /// </param>
-public record TileLayerDto(string Name, int[] Data);
+/// <param name="ZIndex">
+/// Render z-order. Layers with <c>ZIndex &lt; 2</c> paint below entities;
+/// <c>ZIndex &gt;= 2</c> paints above entities (roofs, canopies). Default 0.
+/// </param>
+public record TileLayerDto(string Name, int[] Data, int ZIndex = 0);
 
 /// <summary>A tile that transitions the player to another zone when stepped on.</summary>
 /// <param name="TileX">Column of the exit tile.</param>
