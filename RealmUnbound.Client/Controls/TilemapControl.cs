@@ -51,7 +51,8 @@ public class TilemapControl : Control
         set => SetValue(ViewModelProperty, value);
     }
 
-    private readonly TileTextureCache _cache = new();
+    private readonly TileTextureCache   _cache        = new();
+    private readonly EntityTextureCache _entityCache  = new();
     private DispatcherTimer? _timer;
 
     static TilemapControl()
@@ -225,15 +226,34 @@ public class TilemapControl : Control
             if (scrX < -DisplayTileSize || scrX > Bounds.Width  + DisplayTileSize) continue;
             if (scrY < -DisplayTileSize || scrY > Bounds.Height + DisplayTileSize) continue;
 
-            var rect = new Rect(scrX + 4, scrY + 4, DisplayTileSize - 8, DisplayTileSize - 8);
-            IBrush fill;
-            if (entity.EntityType == "player")
-                fill = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
-                    ? SelfPlayerBrush
-                    : PlayerBrush;
+            // Try sprite sheet first; fall back to coloured box when no sheet is registered.
+            var spriteSheet = _entityCache.GetSheet(entity.SpriteKey);
+            var srcRect     = EntityTextureCache.GetSourceRect(entity.SpriteKey, entity.Direction);
+
+            if (spriteSheet is not null && srcRect.HasValue)
+            {
+                // Draw sprite scaled into the tile.  Bottom-align: sprites taller than the
+                // tile (e.g. 48×64 monsters) extend above the tile top for a natural look.
+                var si    = RealmUnbound.Assets.Manifest.EntitySpriteAssets.All[entity.SpriteKey];
+                var scale = (double)DisplayTileSize / si.FrameWidth;  // scale to fill tile width
+                var dw    = DisplayTileSize;
+                var dh    = (int)(si.FrameHeight * scale);
+                var dy    = scrY + DisplayTileSize - dh;               // bottom-align in tile
+                context.DrawImage(spriteSheet, srcRect.Value, new Rect(scrX, dy, dw, dh));
+            }
             else
-                fill = EnemyBrush;
-            context.FillRectangle(fill, rect, 4f);
+            {
+                // Coloured box fallback — visible whenever a sprite key has no registered sheet.
+                var rect = new Rect(scrX + 4, scrY + 4, DisplayTileSize - 8, DisplayTileSize - 8);
+                IBrush fill;
+                if (entity.EntityType == "player")
+                    fill = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
+                        ? SelfPlayerBrush
+                        : PlayerBrush;
+                else
+                    fill = EnemyBrush;
+                context.FillRectangle(fill, rect, 4f);
+            }
         }
 
         // ── Fog of war ────────────────────────────────────────────────────────
@@ -322,6 +342,7 @@ public class TilemapControl : Control
     protected override void OnDetachedFromLogicalTree(Avalonia.LogicalTree.LogicalTreeAttachmentEventArgs e)
     {
         _cache.Dispose();
+        _entityCache.Dispose();
         base.OnDetachedFromLogicalTree(e);
     }
 }
