@@ -82,16 +82,17 @@ public record CharacterMovedPayload(Guid CharacterId, int TileX, int TileY, stri
 
 /// <summary>Hub broadcast payload emitted after an enemy moves one tile.</summary>
 /// <param name="EntityId">Instance identifier of the enemy.</param>
+/// <param name="SpriteKey">Sprite key used to render the entity; matches a key in <c>EntitySpriteAssets.All</c>.</param>
 /// <param name="TileX">New tile column.</param>
 /// <param name="TileY">New tile row.</param>
 /// <param name="Direction">New facing direction.</param>
-public record EnemyMovedPayload(Guid EntityId, int TileX, int TileY, string Direction);
+public record EnemyMovedPayload(Guid EntityId, string SpriteKey, int TileX, int TileY, string Direction);
 
 /// <summary>
 /// Hub broadcast payload emitted when fog-of-war tiles are revealed for the requesting player.
 /// Only sent to the caller, not the whole zone group.
 /// </summary>
-/// <param name="TileKeys">Collection of newly-revealed tile keys in <c>"x,y"</c> format.</param>
+/// <param name="TileKeys">Collection of newly-revealed tile keys in <c>"x:y"</c> format.</param>
 public record FogRevealedPayload(IReadOnlyList<string> TileKeys);
 
 /// <summary>

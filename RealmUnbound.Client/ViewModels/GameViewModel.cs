@@ -1043,9 +1043,9 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Called from hub when an enemy moves one tile on the map.</summary>
-    public void OnEnemyMoved(Guid entityId, int tileX, int tileY, string direction)
+    public void OnEnemyMoved(Guid entityId, string spriteKey, int tileX, int tileY, string direction)
     {
-        Tilemap?.UpsertEntity(entityId, "enemy", "enemy", tileX, tileY, direction);
+        Tilemap?.UpsertEntity(entityId, "enemy", spriteKey, tileX, tileY, direction);
     }
 
     /// <summary>Called from hub when the zone's initial entity snapshot is received (e.g. on zone entry).</summary>

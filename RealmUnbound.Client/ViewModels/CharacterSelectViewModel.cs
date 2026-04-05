@@ -355,7 +355,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _tileExitSub = _connection.On<ExitTileDto>("TileExitTriggered", payload =>
                 _gameVm.OnTileExitTriggered(payload.ToZoneId));
             _enemyMovedSub = _connection.On<EnemyMovedPayload>("EnemyMoved", payload =>
-                _gameVm.OnEnemyMoved(payload.EntityId, payload.TileX, payload.TileY, payload.Direction));
+                _gameVm.OnEnemyMoved(payload.EntityId, payload.SpriteKey, payload.TileX, payload.TileY, payload.Direction));
             _zoneEntitiesSnapshotSub = _connection.On<ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", payload =>
                 _gameVm.OnZoneEntitiesSnapshot(payload.Entities));
             _questLogSub = _connection.On<IReadOnlyList<QuestLogEntryDto>>("QuestLogReceived", quests =>

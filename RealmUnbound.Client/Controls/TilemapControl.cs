@@ -37,6 +37,7 @@ public class TilemapControl : Control
     private static readonly IBrush MiniFloorBrush = new SolidColorBrush(Color.FromRgb(80,  80, 100));
     private static readonly IBrush MiniExitBrush  = new SolidColorBrush(Color.FromRgb(255, 220,   0));
     private static readonly IBrush MiniBgBrush    = new SolidColorBrush(Color.FromArgb(210,   8,  10,  20));
+    private static readonly IBrush MiniFogBrush   = new SolidColorBrush(Color.FromRgb(20,  20,  28));
     private static readonly IPen   MiniVpPen      = new Pen(Brushes.White, 1);
 
     // Avalonia styled property for the ViewModel
@@ -293,22 +294,34 @@ public class TilemapControl : Control
         context.FillRectangle(MiniBgBrush,
             new Rect(offsetX - 2, offsetY - 2, miniW + 4, miniH + 4));
 
-        // Terrain: blocked = dark wall colour, open = lighter floor colour
+        // Terrain: blocked = dark wall colour, open = lighter floor colour; fogged tiles are hidden
         for (var ty = 0; ty < map.Height; ty++)
         for (var tx = 0; tx < map.Width;  tx++)
         {
             var idx     = ty * map.Width + tx;
-            var blocked = idx < map.CollisionMask.Length && map.CollisionMask[idx];
-            context.FillRectangle(
-                blocked ? MiniWallBrush : MiniFloorBrush,
+            var fogged  = idx < map.FogMask.Length && map.FogMask[idx] && !vm.RevealedTiles.Contains($"{tx}:{ty}");
+            IBrush tile;
+            if (fogged)
+                tile = MiniFogBrush;
+            else
+            {
+                var blocked = idx < map.CollisionMask.Length && map.CollisionMask[idx];
+                tile = blocked ? MiniWallBrush : MiniFloorBrush;
+            }
+            context.FillRectangle(tile,
                 new Rect(offsetX + tx * miniScale, offsetY + ty * miniScale, miniScale, miniScale));
         }
 
-        // Exit tiles (yellow)
+        // Exit tiles (yellow) — only shown for revealed tiles
         foreach (var exit in map.ExitTiles)
-            context.FillRectangle(MiniExitBrush,
-                new Rect(offsetX + exit.TileX * miniScale, offsetY + exit.TileY * miniScale,
-                         miniScale, miniScale));
+        {
+            var exitIdx = exit.TileY * map.Width + exit.TileX;
+            var exitFogged = exitIdx < map.FogMask.Length && map.FogMask[exitIdx] && !vm.RevealedTiles.Contains($"{exit.TileX}:{exit.TileY}");
+            if (!exitFogged)
+                context.FillRectangle(MiniExitBrush,
+                    new Rect(offsetX + exit.TileX * miniScale, offsetY + exit.TileY * miniScale,
+                             miniScale, miniScale));
+        }
 
         // Viewport rectangle (white outline shows what's on screen)
         context.DrawRectangle(null, MiniVpPen,
