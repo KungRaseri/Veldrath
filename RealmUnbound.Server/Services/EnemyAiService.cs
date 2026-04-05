@@ -122,7 +122,7 @@ public class EnemyAiService : IHostedService, IDisposable
 
             _entityTracker.UpdatePosition(zoneId, enemy.EntityId, nx, ny, dir);
 
-            var payload = new EnemyMovedPayload(enemy.EntityId, nx, ny, dir);
+            var payload = new EnemyMovedPayload(enemy.EntityId, enemy.SpriteKey, nx, ny, dir);
             await _hubContext.Clients.Group(groupName).SendAsync("EnemyMoved", payload, ct);
         }
     }
