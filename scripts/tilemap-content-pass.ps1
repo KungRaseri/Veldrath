@@ -8,6 +8,12 @@ $maps = Join-Path $PSScriptRoot "..\RealmUnbound.Assets\GameAssets\tilemaps\maps
 $TreeE   = 54; $Pine = 51; $TreeB = 50; $TreeD = 53; $BigTree = 102
 $Cactus  = 55; $Boulder = 103; $DeadVine = 104
 $DirtV   = 343; $DirtH  = 192; $DirtTBR  = 299
+# Ground texture tiles (row 0): scatter on objects layer over the dark base
+$GrFill  = 7; $GrMed = 6; $GrLight = 5; $GrDead = 1
+# Ground scatter lookup tables — deterministic modulo pattern: (col*3 + row*7) % Count
+$LutGrass  = @(7, 7, 7, 7, 6, 6, 6, 5, 5, 0)   # 40% dense, 30% med, 20% light, 10% bare
+$LutHollow = @(6, 6, 5, 5, 1, 1, 0, 5, 6, 0)    # dark hollow: foliage + dead leaves
+$LutSwamp  = @(1, 1, 1, 0, 0, 5, 1, 0, 6, 1)    # swamp: muddy leaves + bare dark
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 # Load a map JSON
@@ -34,6 +40,18 @@ function FillArr([int]$sz, [int]$v) {
     $a = New-Object int[] $sz
     for ($i = 0; $i -lt $sz; $i++) { $a[$i] = $v }
     return $a
+}
+
+# Fill all cells with a ground-texture scatter using a lookup-table + deterministic modulo.
+# Call BEFORE stamping flora/paths so they overwrite the texture at their positions.
+# NOTE: $d/$lut must be untyped so PS5.1 passes arrays by reference (same rule as StBorder).
+function StGround($d, [int]$w, [int]$h, $lut) {
+    $n = $lut.Count
+    for ($y = 0; $y -lt $h; $y++) {
+        for ($x = 0; $x -lt $w; $x++) {
+            $d[$y * $w + $x] = $lut[(($x * 3 + $y * 7) % $n)]
+        }
+    }
 }
 
 # Stamp border cells onto flat array $d (top/bottom rows + left/right cols interior)
@@ -75,10 +93,13 @@ Save $j "tolvaren.json"
 
 # ─── Phase 2a: fenwick-crossing (patch existing objects) ─────────────────────
 Write-Host "`n--- Phase 2a: fenwick-crossing (enhance) ---"
-$j = Load "fenwick-crossing.json"; $w = [int]$j.width
-$d = (Layer $j "objects").data
-# PineTree scatter  [(5,5) already has 51]
-$d[5*$w+24] = $Pine; $d[16*$w+5] = $Pine; $d[16*$w+24] = $Pine
+$j = Load "fenwick-crossing.json"; $w = [int]$j.width; $h = [int]$j.height
+$d = EmptyObj ($w*$h)
+StGround $d $w $h $LutGrass
+# Pine scatter (10 positions — collision blocked by fenwick-second-pass.ps1 STEP 4)
+$d[3*$w+8]=$Pine;  $d[4*$w+22]=$Pine;  $d[5*$w+5]=$Pine;   $d[5*$w+24]=$Pine
+$d[8*$w+25]=$Pine; $d[15*$w+22]=$Pine; $d[16*$w+5]=$Pine;  $d[16*$w+24]=$Pine
+$d[17*$w+25]=$Pine; $d[18*$w+8]=$Pine
 (Layer $j "objects").data = $d
 Save $j "fenwick-crossing.json"
 
@@ -115,6 +136,7 @@ $d[18*$w+5]=$Cactus; $d[18*$w+33]=$Cactus; $d[23*$w+8]=$Cactus; $d[23*$w+30]=$Ca
 Write-Host "`n--- Phase 3a: greenveil-paths ---"
 $j = Load "greenveil-paths.json"; $w=[int]$j.width; $h=[int]$j.height
 $d = EmptyObj ($w*$h)
+StGround $d $w $h $LutGrass
 StBorder $d $w $h $TreeE @(15,15) @(0,$($h-1))   # exits: (15,0), (15,h-1)
 # Forest flanks: cols 1-3 and (w-4)..(w-2), interior rows
 for ($fy=1; $fy -lt ($h-1); $fy++) {
@@ -128,6 +150,7 @@ StVRoad $d $w 15 1 ($h-2)   # central road (col 15 not in flanks) - overwrites O
 Write-Host "`n--- Phase 3b: thornveil-hollow ---"
 $j = Load "thornveil-hollow.json"; $w=[int]$j.width; $h=[int]$j.height
 $d = EmptyObj ($w*$h)
+StGround $d $w $h $LutHollow
 # Exits: north (20,0), east wall (w-1=39, y=15), south (20,h-1=29)
 StBorder $d $w $h $Pine @(20,($w-1),20) @(0,15,($h-1))
 StVRoad  $d $w 20 1 14             # N segment y=1..14
@@ -149,6 +172,7 @@ $d[20*$w+5]=$Boulder; $d[20*$w+33]=$Boulder; $d[24*$w+15]=$DeadVine; $d[24*$w+22
 Write-Host "`n--- Phase 3d: soddenfen ---"
 $j = Load "soddenfen.json"; $w=[int]$j.width; $h=[int]$j.height
 $d = EmptyObj ($w*$h)
+StGround $d $w $h $LutSwamp
 # Exits: north (25,0), east wall (w-1=49,y=19), south (25,h-1=37)
 StBorder $d $w $h $BigTree @(25,($w-1),25) @(0,19,($h-1))
 StVRoad  $d $w 25 1 18             # N segment y=1..18
