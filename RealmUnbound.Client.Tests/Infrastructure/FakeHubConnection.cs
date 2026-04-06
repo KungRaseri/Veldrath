@@ -92,6 +92,13 @@ public class FakeHubConnection : IHubConnection
     public Task SimulateReconnectedAsync(string? connectionId = "new-conn-id")
         => _reconnectedHandler?.Invoke(connectionId) ?? Task.CompletedTask;
 
+    /// <summary>Simulates a server-to-client message with a typed payload.</summary>
+    public void SimulateReceive<T>(string methodName, T payload)
+    {
+        if (_onHandlers.TryGetValue(methodName, out var h))
+            ((Action<T>)h)(payload);
+    }
+
     private sealed class DummyDisposable : IDisposable { public void Dispose() { } }
 }
 

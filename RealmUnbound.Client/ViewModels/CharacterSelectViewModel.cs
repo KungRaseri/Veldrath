@@ -113,6 +113,9 @@ public class CharacterSelectViewModel : ViewModelBase
         // Auto-redirect if the hub drops while the character list is displayed.
         _connection.ConnectionLost += OnConnectionLost;
 
+        // Show a descriptive message if the server and client versions are incompatible.
+        _connection.VersionMismatch += OnVersionMismatch;
+
         // Load on construction
         _ = LoadAsync();
     }
@@ -390,6 +393,11 @@ public class CharacterSelectViewModel : ViewModelBase
     }
 
     private void OnConnectionLost() => _navigation.NavigateTo<MainMenuViewModel>();
+
+    private void OnVersionMismatch(string clientVer, string serverVer)
+    {
+        ErrorMessage = $"Version mismatch — client v{clientVer} / server v{serverVer}";
+    }
 
     // Payload shapes (matching server hub broadcasts)
     internal record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt);

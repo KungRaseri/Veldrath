@@ -3,5 +3,19 @@
   <PropertyGroup>
     <VersionMajor>0</VersionMajor>
     <VersionMinor>1</VersionMinor>
+    <!--
+      Oldest client version this server will accept.
+      Only bump when a breaking protocol change is introduced—never auto-track VersionMinor.
+    -->
+    <MinCompatibleClientVersion>0.1</MinCompatibleClientVersion>
+    <!--
+      Unconditional overrides so the MSBuild conditional fallbacks in root
+      Directory.Build.props (which lock AssemblyVersion to "0.0.0" before
+      this file is imported) are superseded with the correct component version.
+    -->
+    <Version>$(VersionMajor).$(VersionMinor).0</Version>
+    <AssemblyVersion>$(VersionMajor).$(VersionMinor).0</AssemblyVersion>
+    <FileVersion>$(VersionMajor).$(VersionMinor).0.0</FileVersion>
+    <InformationalVersion>$(VersionMajor).$(VersionMinor).0-dev</InformationalVersion>
   </PropertyGroup>
 </Project>

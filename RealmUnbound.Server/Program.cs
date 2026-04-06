@@ -29,6 +29,7 @@ using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
+using RealmUnbound.Server.Settings;
 using RealmEngine.Shared.Abstractions;
 using System.Text;
 
@@ -245,6 +246,12 @@ try
     builder.Services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();
     builder.Services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();
     builder.Services.AddScoped<ITraitDefinitionRepository, EfCoreTraitDefinitionRepository>();
+
+    // Version compatibility — MinCompatibleClientVersion is stamped into appsettings.Production.json
+    // at Release publish time by the MSBuild target in RealmUnbound.Server.csproj.
+    // Post-deploy override (no redeploy): VersionCompatibility__MinCompatibleClientVersion env var.
+    builder.Services.Configure<VersionCompatibilitySettings>(
+        builder.Configuration.GetSection("VersionCompatibility"));
 
     // Cookie policy
     // When running on plain HTTP (Docker dev, CI), browsers reject SameSite=None

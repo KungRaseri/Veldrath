@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
+using RealmUnbound.Contracts.Connection;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
@@ -18,6 +20,7 @@ using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Hubs;
 using RealmUnbound.Server.Services;
+using RealmUnbound.Server.Settings;
 using RealmUnbound.Server.Tests.Infrastructure;
 
 namespace RealmUnbound.Server.Tests.Features;
@@ -137,8 +140,10 @@ public class GameHubTests : IDisposable
     }
 
     private (GameHub Hub, FakeHubCallerClients Clients, FakeGroupManager Groups, FakeHubCallerContext Ctx)
-        CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null, IActiveCharacterTracker? tracker = null)
+        CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null, IActiveCharacterTracker? tracker = null,
+                  VersionCompatibilitySettings? versionSettings = null)
     {
+        var options = Options.Create(versionSettings ?? new VersionCompatibilitySettings());
         var hub     = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
@@ -147,7 +152,8 @@ public class GameHubTests : IDisposable
                                   mediator ?? Mock.Of<ISender>(),
                                   new ZoneEntityTracker(),
                                   Mock.Of<ITileMapRepository>(),
-                                  Mock.Of<IEnemyRepository>());
+                                  Mock.Of<IEnemyRepository>(),
+                                  options);
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();
         var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));
@@ -161,7 +167,7 @@ public class GameHubTests : IDisposable
 
     // OnConnectedAsync
     [Fact]
-    public async Task OnConnectedAsync_Should_Send_Connected_To_Caller()
+    public async Task OnConnectedAsync_Should_Send_ServerInfo_To_Caller()
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
@@ -170,7 +176,24 @@ public class GameHubTests : IDisposable
         await hub.OnConnectedAsync();
 
         clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "Connected");
+            .Should().ContainSingle(m => m.Method == "ServerInfo");
+    }
+
+    [Fact]
+    public async Task OnConnectedAsync_ServerInfo_Should_Contain_Version_And_MinCompatible()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var settings  = new VersionCompatibilitySettings { MinCompatibleClientVersion = "1.2" };
+        var (hub, clients, _, _) = CreateHub(db, accountId, versionSettings: settings);
+
+        await hub.OnConnectedAsync();
+
+        var msg     = clients.CallerProxy.SentMessages.Single(m => m.Method == "ServerInfo");
+        var payload = msg.Args[0].Should().BeOfType<ServerInfoPayload>().Subject;
+        payload.ServerVersion.Should().NotBeNullOrEmpty();
+        payload.MinCompatibleClientVersion.Should().Be("1.2");
+        payload.ConnectionId.Should().NotBeNullOrEmpty();
     }
 
     // OnDisconnectedAsync
@@ -1493,7 +1516,8 @@ public class GameHubTests : IDisposable
                                Mock.Of<ISender>(),
                                new ZoneEntityTracker(),
                                Mock.Of<ITileMapRepository>(),
-                               Mock.Of<IEnemyRepository>());
+                               Mock.Of<IEnemyRepository>(),
+                               Options.Create(new VersionCompatibilitySettings()));
         hub2.Clients = hub.Clients;
         hub2.Groups  = hub.Groups;
         hub2.Context = ctx;
@@ -1525,7 +1549,8 @@ public class GameHubTests : IDisposable
                               Mock.Of<ISender>(),
                               new ZoneEntityTracker(),
                               Mock.Of<ITileMapRepository>(),
-                              Mock.Of<IEnemyRepository>());
+                              Mock.Of<IEnemyRepository>(),
+                              Options.Create(new VersionCompatibilitySettings()));
         hub.Clients = new FakeHubCallerClients();
         hub.Groups  = new FakeGroupManager();
         hub.Context = ctx;

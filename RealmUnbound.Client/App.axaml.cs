@@ -151,6 +151,7 @@ public partial class App : Application
         services.AddSingleton<IHubConnectionFactory, HubConnectionFactory>();
         services.AddSingleton<IServerConnectionService, ServerConnectionService>();
         services.AddSingleton<IServerStatusService, ServerStatusService>();
+        services.AddSingleton<ISessionAlertService, SessionAlertService>();
         services.AddSingleton<ContentCache>();
         services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')));
 
