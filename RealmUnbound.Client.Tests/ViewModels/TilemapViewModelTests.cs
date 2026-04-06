@@ -25,7 +25,7 @@ public class TilemapViewModelTests : TestBase
 
         return new TileMapDto(
             ZoneId:        "test-zone",
-            TilesetKey:    "roguelike_base",
+            TilesetKey:    "onebit_packed",
             Width:         width,
             Height:        height,
             TileSize:      16,

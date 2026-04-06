@@ -8,7 +8,7 @@ namespace RealmEngine.Shared.Models;
 /// </summary>
 public static class DungeonGenerator
 {
-    // Tile indices within the roguelike_base spritesheet (57 columns × 31 rows, 16 px, 1 px spacing).
+    // Tile indices within the onebit_packed spritesheet (49 columns × 22 rows, 16 px, 0 px spacing).
     // Layer 0 "base"    — Stone.Floor (7) everywhere (opaque ground visible under all cells).
     // Layer 1 "objects" — Stone.M (920) for wall cells; -1 (transparent) for carved floor cells.
     private const int TileWall  = TileIndex.Terrain.Stone.M;     // 920 — solid centre stone
@@ -101,7 +101,7 @@ public static class DungeonGenerator
         return new TileMapDefinition
         {
             ZoneId        = zoneId,
-            TilesetKey    = "roguelike_base",
+            TilesetKey    = "onebit_packed",
             Width         = mapW,
             Height        = mapH,
             TileSize      = 16,

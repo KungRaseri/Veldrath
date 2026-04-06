@@ -2,877 +2,179 @@
 
 // -- Tile Index Constants ---------------------------------------------------
 //
-// All indices reference the roguelike_base spritesheet (57 columns x 31 rows,
-// 16 px tiles, 1 px spacing).  Formula: index = row * 57 + col.
+// All indices reference the onebit_packed spritesheet (49 columns x 22 rows,
+// 16 px tiles, 0 px spacing).  Formula: index = row * 49 + col.
 //
 // Layer convention:
-//   Layer 0 "base"    - opaque terrain fill.  Use Terrain.*.M or Fill constants.  Never -1.
-//   Layer 1 "objects" - transparent decorations (flora, paths, props).  Use -1 for empty cells.
+//   Layer 0 "base"    - opaque terrain fill.  Use Terrain.*.M constants.  Never -1.
+//   Layer 1 "objects" - decorations (flora, paths, props).  Use -1 for empty cells.
+//
+// Background color: R71 G45 B60 (dark maroon).  All tile pixels are fully opaque.
+// The background is the tile's "empty" area; colored pixels are the tile content.
 
 /// <summary>
-/// Compile-time tile index constants for the <c>roguelike_base</c> spritesheet
-/// (Kenney Roguelike Base Pack - 57 columns x 31 rows, 16 px tiles, 1 px spacing).
+/// Compile-time tile index constants for the <c>onebit_packed</c> spritesheet
+/// (Kenney 1-Bit Pack — 49 columns x 22 rows, 16 px tiles, 0 px spacing).
 /// </summary>
 /// <remarks>
-/// Index formula: <c>index = row * 57 + col</c>.
+/// Index formula: <c>index = row * 49 + col</c>.
 /// <para>
-/// All object/decoration tiles have transparent backgrounds and belong on
-/// <em>Layer 1 "objects"</em>.  Opaque terrain fills belong on <em>Layer 0 "base"</em>.
+/// Base-layer fills use solid opaque tiles.  Object-layer decorations (flora, paths)
+/// are placed over the base.  Use <c>-1</c> on the objects layer for empty cells.
 /// </para>
 /// <para>
-/// Unverified constants use <c>-1</c> as a placeholder so they compile but render nothing
-/// until filled in from <c>scripts/roguelike_base_labeled.png</c>.
+/// Reference image: <c>scripts/onebit_labeled.png</c> — each tile labelled with its index.
 /// </para>
 /// </remarks>
 public static class TileIndex
 {
-    // -- Blank ----------------------------------------------------------------
+    // -- Special ---------------------------------------------------------------
+
+    /// <summary>Solid dark-maroon tile (r0c0). Use where an explicit opaque blank is needed.</summary>
+    public const int Blank = 0;
 
     /// <summary>
-    /// Confirmed blank / empty tile. Use <c>-1</c> on object layer for transparency;
-    /// use this constant where an explicit opaque-blank is needed.
+    /// Pending / unresolved placeholder. Rendered as magenta at runtime so unfinished
+    /// cells are immediately visible. Replace with a real constant once identified.
     /// </summary>
-    public const int Blank = 285; // <- verified
-
-    /// <summary>
-    /// Pending / unresolved placeholder tile. Rendered as a solid magenta square at runtime
-    /// so unfinished map cells are immediately visible in-game.
-    /// Replace with a real <see cref="TileIndex"/> constant once the tile is identified.
-    /// </summary>
-    public const int Pending = -2; // <- draw magenta at runtime; replace with real index when known
+    public const int Pending = -2;
 
     // -------------------------------------------------------------------------
-    // TERRAIN  (base layer - always opaque)
+    // TERRAIN  (base layer — always opaque)
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Opaque terrain fill and 9-patch border tiles.
-    /// The <c>M</c> (middle-centre) constant is the canonical solid base-layer fill.
-    /// Border tiles (TL/T/TR/ML/MR/BL/B/BR) are used where two terrain types meet.
+    /// Opaque terrain fill tiles. The <c>M</c> constant is the canonical base-layer fill.
+    /// No 9-patch border tiles exist in the 1-bit pack — zone edges use flora objects instead.
     /// </summary>
     public static class Terrain
     {
-        /// <summary>Green grass terrain. Use <see cref="M"/> for the base layer.</summary>
+        /// <summary>Green grass terrain.</summary>
         public static class Grass
         {
-            /// <summary>Flat grass fill variant 1 - lighter tone.</summary>
-            public const int Fill1 = 5;   // <- verified
-            /// <summary>Flat grass fill variant 2 - slightly darker tone.</summary>
-            public const int Fill2 = 62;  // <- verified
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 857;    // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 858;    // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 859;    // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 914;    // TODO: needs-verify
-            /// <summary>Solid grass centre - canonical base-layer fill for grassy zones.</summary>
-            public const int M  = 915;    // <- verified
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 916;    // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 971;    // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 972;    // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 973;    // TODO: needs-verify
+            /// <summary>Solid grass fill — canonical base-layer fill for grassy zones.</summary>
+            public const int M = 265; // r5c20 — 8/9 sample points green (R56 G217 B115)
         }
 
-        /// <summary>Grey stone / dungeon floor terrain. Use <see cref="M"/> for the base layer.</summary>
+        /// <summary>Grey stone terrain.</summary>
         public static class Stone
         {
-            /// <summary>Plain stone floor.</summary>
-            public const int Floor    = 7;   // TODO: needs-verify
-            /// <summary>Plain stone floor - alternate shade.</summary>
-            public const int FloorAlt = 64;  // TODO: needs-verify
-            /// <summary>Cobblestone floor.</summary>
-            public const int Cobble   = 9;   // TODO: needs-verify
-            /// <summary>Tiled stone floor.</summary>
-            public const int Tiled    = 120; // TODO: needs-verify
-            /// <summary>Tiled stone floor - alternate shade.</summary>
-            public const int TiledAlt = 177; // TODO: needs-verify
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 862;  // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 863;  // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 864;  // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 919;  // TODO: needs-verify
-            /// <summary>Solid stone centre - canonical base-layer fill for stone/dungeon zones.</summary>
-            public const int M  = 920;  // <- verified
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 921;  // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 976;  // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 977;  // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 978;  // TODO: needs-verify
+            /// <summary>Solid stone fill — canonical base-layer fill for stone zones and dungeon walls.</summary>
+            public const int M = 202; // r4c6 — all-points warm grey (R207 G198 B184)
+            /// <summary>Open dungeon floor — dark background tile used under walkable dungeon cells.</summary>
+            public const int Floor = 0; // r0c0 — all-points dark maroon (R71 G45 B60)
         }
 
-        /// <summary>Sandy / coastal terrain. Use <see cref="M"/> for the base layer.</summary>
+        /// <summary>Sandy / coastal terrain.</summary>
         public static class Sand
         {
-            /// <summary>Flat sand fill variant 1.</summary>
-            public const int Fill1 = 8;   // TODO: needs-verify
-            /// <summary>Flat sand fill variant 2 - alternate shade.</summary>
-            public const int Fill2 = 65;  // TODO: needs-verify
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 1204;   // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 1205;   // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 1206;   // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 1261;   // TODO: needs-verify
-            /// <summary>Solid sand centre - canonical base-layer fill for sandy/coastal zones.</summary>
-            public const int M  = 1262;   // <- verified
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 1263;   // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 1318;   // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 1319;   // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 1320;   // TODO: needs-verify
-        }
-
-        /// <summary>Bare dirt / earth terrain. Use <see cref="M"/> for the base layer.</summary>
-        public static class Dirt
-        {
-            /// <summary>Flat dirt fill.</summary>
-            public const int Fill1 = 10;   // TODO: needs-verify
-            /// <summary>Solid dirt centre - canonical base-layer fill for dirt terrain.</summary>
-            public const int M  = 1086; // TODO: needs-verify
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 1028; // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 1029; // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 1030; // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 1085; // TODO: needs-verify
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 1087; // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 1142; // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 1143; // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 1144; // TODO: needs-verify
-        }
-
-        /// <summary>Swamp / muddy terrain. Use <see cref="M"/> for the base layer.</summary>
-        public static class Mud
-        {
-            /// <summary>Flat mud fill.</summary>
-            public const int Fill1 = 11;   // TODO: needs-verify
-            /// <summary>Solid mud centre - canonical base-layer fill for swamp/fen zones.</summary>
-            public const int M  = 1265; // TODO: needs-verify
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 1207; // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 1208; // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 1209; // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 1264; // TODO: needs-verify
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 1266; // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 1321; // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 1322; // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 1323; // TODO: needs-verify
-        }
-
-        /// <summary>Snow / tundra terrain. Use <see cref="M"/> for the base layer.</summary>
-        public static class Snow
-        {
-            /// <summary>Flat snow fill.</summary>
-            public const int Fill1 = 31;   // TODO: needs-verify
-            /// <summary>Solid snow centre - canonical base-layer fill.</summary>
-            public const int M  = 1486; // TODO: needs-verify
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 1428; // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 1429; // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 1430; // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 1485; // TODO: needs-verify
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 1487; // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 1542; // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 1543; // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 1544; // TODO: needs-verify
-        }
-
-        /// <summary>Dark obsidian / magma-rock terrain. Use <see cref="M"/> for the base layer in volcanic zones.</summary>
-        public static class DarkRock
-        {
-            /// <summary>Flat dark rock fill.</summary>
-            public const int Fill1 = 12;   // TODO: needs-verify
-            /// <summary>Solid dark rock centre.</summary>
-            public const int M  = -1; // TODO: Needs value
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = -1; // TODO: Needs value
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = -1; // TODO: Needs value
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = -1; // TODO: Needs value
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = -1; // TODO: Needs value
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = -1; // TODO: Needs value
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = -1; // TODO: Needs value
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = -1; // TODO: Needs value
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = -1; // TODO: Needs value
-        }
-
-        /// <summary>Wooden plank / interior floor. Use <see cref="M"/> for the base layer in buildings.</summary>
-        public static class WoodFloor
-        {
-            /// <summary>Flat wood plank fill.</summary>
-            public const int Fill1 = 16;   // TODO: needs-verify
-            /// <summary>Solid wood floor centre.</summary>
-            public const int M  = 1483; // TODO: needs-verify
-            /// <summary>Top-left border tile.</summary>
-            public const int TL = 1425; // TODO: needs-verify
-            /// <summary>Top-centre border tile.</summary>
-            public const int T  = 1426; // TODO: needs-verify
-            /// <summary>Top-right border tile.</summary>
-            public const int TR = 1427; // TODO: needs-verify
-            /// <summary>Middle-left border tile.</summary>
-            public const int ML = 1482; // TODO: needs-verify
-            /// <summary>Middle-right border tile.</summary>
-            public const int MR = 1484; // TODO: needs-verify
-            /// <summary>Bottom-left border tile.</summary>
-            public const int BL = 1539; // TODO: needs-verify
-            /// <summary>Bottom-centre border tile.</summary>
-            public const int B  = 1540; // TODO: needs-verify
-            /// <summary>Bottom-right border tile.</summary>
-            public const int BR = 1541; // TODO: needs-verify
+            /// <summary>Solid brown fill — canonical base-layer fill for sandy/coastal zones.</summary>
+            public const int M = 445; // r9c4 — all-points brown (R191 G121 B88)
         }
     }
 
     // -------------------------------------------------------------------------
-    // WATER  (base-layer deep water + object-layer edge/shore overlays)
+    // WATER  (base layer — deep water fill)
     // -------------------------------------------------------------------------
 
-    /// <summary>
-    /// Water terrain tiles. Deep water goes on the base layer.
-    /// Shore/edge blending tiles go on the objects layer over the adjacent terrain.
-    /// </summary>
+    /// <summary>Water terrain tiles.</summary>
     public static class Water
     {
-        /// <summary>Solid deep water fill - canonical base-layer tile for water zones.</summary>
-        public const int Deep  = 3; // TODO: needs-verify
-        /// <summary>Shallow water fill variant.</summary>
-        public const int Shallow = 2; // TODO: needs-verify
-
-        /// <summary>Shore/edge overlay tiles - place on the objects layer over the land base.</summary>
-        public static class Shore
-        {
-            /// <summary>Shore edge facing north (water to the north).</summary>
-            public const int N  = -1; // TODO: Needs value
-            /// <summary>Shore edge facing south.</summary>
-            public const int S  = -1; // TODO: Needs value
-            /// <summary>Shore edge facing east.</summary>
-            public const int E  = -1; // TODO: Needs value
-            /// <summary>Shore edge facing west.</summary>
-            public const int W  = -1; // TODO: Needs value
-            /// <summary>Inner corner - water in NE quadrant only.</summary>
-            public const int CornerNE = -1; // TODO: Needs value
-            /// <summary>Inner corner - water in NW quadrant only.</summary>
-            public const int CornerNW = -1; // TODO: Needs value
-            /// <summary>Inner corner - water in SE quadrant only.</summary>
-            public const int CornerSE = -1; // TODO: Needs value
-            /// <summary>Inner corner - water in SW quadrant only.</summary>
-            public const int CornerSW = -1; // TODO: Needs value
-        }
+        /// <summary>Solid deep water fill — canonical base-layer tile for water zones.</summary>
+        public const int Deep = 207; // r4c11 — all-points blue (R60 G172 B215)
     }
 
     // -------------------------------------------------------------------------
-    // FLORA  (objects layer - transparent background)
+    // FLORA  (objects layer)
     // -------------------------------------------------------------------------
 
-    /// <summary>Plant and tree object tiles. Transparent background - objects layer only.</summary>
+    /// <summary>Plant and tree object tiles placed on the objects layer.</summary>
     public static class Flora
     {
         /// <summary>Round oak-style tree variants.</summary>
         public static class OakTree
         {
-            /// <summary>Light green oak tree.</summary>
-            public const int LightGreen = 526; // TODO: needs-verify
-            /// <summary>Autumn orange oak tree.</summary>
-            public const int Orange     = 527; // TODO: needs-verify
-            /// <summary>Dark green oak tree.</summary>
-            public const int DarkGreen  = 528; // TODO: needs-verify
-        }
-
-        /// <summary>Tall pine / conifer tree variants.</summary>
-        public static class PineTree
-        {
-            /// <summary>Light green pine tree.</summary>
-            public const int LightGreen = 529; // TODO: needs-verify
-            /// <summary>Autumn orange pine tree.</summary>
-            public const int Orange     = 530; // TODO: needs-verify
-            /// <summary>Dark green pine tree.</summary>
-            public const int DarkGreen  = 531; // TODO: needs-verify
+            /// <summary>Sparse light green oak tree.</summary>
+            public const int LightGreen = 49;  // r1c0 — 5/9 green
+            /// <summary>Medium round oak tree.</summary>
+            public const int Orange     = 53;  // r1c4 — 7/9 green (no orange variant; maps to medium round)
+            /// <summary>Dense round dark green oak tree.</summary>
+            public const int DarkGreen  = 55;  // r1c6 — 7/9 green
         }
 
         /// <summary>Round bush / shrub variants.</summary>
         public static class Bush
         {
             /// <summary>Light green bush.</summary>
-            public const int LightGreen = 532; // TODO: needs-verify
-            /// <summary>Autumn orange bush.</summary>
-            public const int Orange     = 533; // TODO: needs-verify
-            /// <summary>Dark green bush.</summary>
-            public const int DarkGreen  = 534; // TODO: needs-verify
+            public const int LightGreen = 50;  // r1c1 — 5/9 green sparse
+            /// <summary>Medium bush variant.</summary>
+            public const int Orange     = 53;  // r1c4 — round medium (no orange; reuses medium round)
+            /// <summary>Dense dark green bush.</summary>
+            public const int DarkGreen  = 102; // r2c4 — 6/9 green dense
         }
-
-        /// <summary>Fruit-bearing tree.</summary>
-        public const int FruitTree = 536; // TODO: needs-verify
-
-        /// <summary>Dead / bare tree (no leaves).</summary>
-        public const int DeadTree  = 654; // TODO: needs-verify
-
-        /// <summary>Tree stump.</summary>
-        public const int Stump = -1; // TODO: Needs value
-
-        /// <summary>Small cactus.</summary>
-        public const int CactusSmall = -1; // TODO: Needs value
-
-        /// <summary>Large cactus.</summary>
-        public const int CactusLarge = -1; // TODO: Needs value
-
-        /// <summary>Tall grass / weeds.</summary>
-        public const int TallGrass = -1; // TODO: Needs value
-
-        /// <summary>Tall grass variant 2.</summary>
-        public const int TallGrass2 = -1; // TODO: Needs value
-
-        /// <summary>Small flower - colour variant 1.</summary>
-        public const int FlowerA = -1; // TODO: Needs value
-
-        /// <summary>Small flower - colour variant 2.</summary>
-        public const int FlowerB = -1; // TODO: Needs value
-
-        /// <summary>Small flower - colour variant 3.</summary>
-        public const int FlowerC = -1; // TODO: Needs value
-
-        /// <summary>Large mushroom.</summary>
-        public const int MushroomLarge = -1; // TODO: Needs value
-
-        /// <summary>Small mushroom cluster.</summary>
-        public const int MushroomSmall = -1; // TODO: Needs value
-
-        /// <summary>Lily pad (water surface).</summary>
-        public const int LilyPad = -1; // TODO: Needs value
-
-        /// <summary>Seaweed / aquatic plant.</summary>
-        public const int Seaweed = -1; // TODO: Needs value
-
-        /// <summary>Vine / ivy hanging vertical.</summary>
-        public const int VineV = -1; // TODO: Needs value
-
-        /// <summary>Crop / wheat stalk.</summary>
-        public const int Wheat = -1; // TODO: Needs value
-
-        /// <summary>Palm tree.</summary>
-        public const int PalmTree = -1; // TODO: Needs value
     }
 
     // -------------------------------------------------------------------------
-    // PATHS  (objects layer - transparent background)
-    // -------------------------------------------------------------------------
-
-    /// <summary>Dirt path tiles for roads and trails. Transparent background - objects layer only.</summary>
-    public static class DirtPath
-    {
-        /// <summary>4-way cross junction.</summary>
-        public const int FourWay = 691;    // <- verified (r12c7: all 4 edges open/light; exits N+S+W+E)
-        /// <summary>Isolated single-tile dirt patch / circle.</summary>
-        public const int Circle  = 692;    // <- verified (r12c8: T=R197, B=R143, L=R197, R=R143; no exits)
-
-        // -- End caps - path terminates in this direction ----------------------
-        /// <summary>Dead-end cap, open facing right (road coming from the left). Index not yet located; 690 is StraightH.</summary>
-        public const int EndLeft   = -1;   // TODO: needs-verify — r12c6 (690) has W+E exits (StraightH), not a single-exit cap
-        /// <summary>Dead-end cap, open facing left (road coming from the right).</summary>
-        public const int EndRight  = 689;  // <- verified (r12c5: T=R197 closed, B=R143 closed, L=open W, R=R197 closed; exits W only)
-        /// <summary>Dead-end cap, open facing down (road coming from above). Index not yet located; 633 is StraightV.</summary>
-        public const int EndTop    = -1;   // TODO: needs-verify — r11c6 (633) has N+S exits (StraightV), not a single-exit cap
-        /// <summary>Dead-end cap, open facing up (road coming from below).</summary>
-        public const int EndBottom = 632;  // <- verified (r11c5: T=open N, B=R197 closed, L=R197 closed, R=R143 closed; exits N only)
-
-        // -- T-junctions - open in three directions ----------------------------
-        /// <summary>T-junction open Left, Bottom, Right (closed at Top).</summary>
-        public const int TJunctionLBR = 404; // <- verified (r7c5: T=R197 closed N, B=open S, L=open W, R=open E)
-        /// <summary>T-junction open Left, Top, Bottom (closed at Right).</summary>
-        public const int TJunctionLTB = 405; // <- verified (r7c6: T=open N, B=open S, L=R160 open W, R=R143 closed E)
-        /// <summary>T-junction open Top, Bottom, Right (closed at Left).</summary>
-        public const int TJunctionTBR = 461; // <- verified (r8c5: T=open N, B=open S, L=R197 closed W, R=open E)
-        /// <summary>T-junction open Left, Top, Right (closed at Bottom).</summary>
-        public const int TJunctionLTR = 462; // <- verified (r8c6: T=open N, B=R143 closed S, L=open W, R=open E)
-
-        // -- Rounded corners ---------------------------------------------------
-        /// <summary>Corner connecting Top exit and Left exit.</summary>
-        public const int CornerTL = 464; // <- verified (r8c8: T=open N=open, B=TRANS closed, L=open W, R=TRANS closed; exits N+W)
-        /// <summary>Corner connecting Top exit and Right exit.</summary>
-        public const int CornerTR = 463; // <- verified (r8c7: T=open N, B=TRANS closed, L=TRANS closed, R=open E; exits N+E)
-        /// <summary>Corner connecting Bottom exit and Left exit.</summary>
-        public const int CornerBL = 407; // <- verified (r7c8: T=TRANS closed, B=open S, L=open W, R=TRANS closed; exits S+W)
-        /// <summary>Corner connecting Bottom exit and Right exit.</summary>
-        public const int CornerBR = 406; // <- verified (r7c7: T=R143 closed, B=open S, L=R143 closed, R=open E; exits S+E)
-
-        // -- Straight segments -------------------------------------------------
-        /// <summary>Straight horizontal segment (exits left and right).</summary>
-        public const int StraightH = 465; // <- verified (r8c9: T=R143 closed, B=TRANS closed, L=open W, R=open E; exits W+E)
-        /// <summary>Straight vertical segment (exits top and bottom).</summary>
-        public const int StraightV = 408; // <- verified (r7c9: T=open N, M=dark-stripe, B=open S, L=R197 closed, R=R143 closed; exits N+S)
-    }
-
-    /// <summary>Stone / cobblestone road tiles. Transparent background - objects layer only.</summary>
-    public static class StonePath
-    {
-        /// <summary>4-way cross junction.</summary>
-        public const int FourWay   = -1; // TODO: Needs value
-        /// <summary>Dead-end cap, open facing right.</summary>
-        public const int EndLeft   = -1; // TODO: Needs value
-        /// <summary>Dead-end cap, open facing left.</summary>
-        public const int EndRight  = -1; // TODO: Needs value
-        /// <summary>Dead-end cap, open facing down.</summary>
-        public const int EndTop    = -1; // TODO: Needs value
-        /// <summary>Dead-end cap, open facing up.</summary>
-        public const int EndBottom = -1; // TODO: Needs value
-        /// <summary>T-junction open Left, Bottom, Right.</summary>
-        public const int TJunctionLBR = -1; // TODO: Needs value
-        /// <summary>T-junction open Left, Top, Bottom.</summary>
-        public const int TJunctionLTB = -1; // TODO: Needs value
-        /// <summary>T-junction open Top, Bottom, Right.</summary>
-        public const int TJunctionTBR = -1; // TODO: Needs value
-        /// <summary>T-junction open Left, Top, Right.</summary>
-        public const int TJunctionLTR = -1; // TODO: Needs value
-        /// <summary>Corner connecting Top and Left.</summary>
-        public const int CornerTL  = -1; // TODO: Needs value
-        /// <summary>Corner connecting Top and Right.</summary>
-        public const int CornerTR  = -1; // TODO: Needs value
-        /// <summary>Corner connecting Bottom and Left.</summary>
-        public const int CornerBL  = -1; // TODO: Needs value
-        /// <summary>Corner connecting Bottom and Right.</summary>
-        public const int CornerBR  = -1; // TODO: Needs value
-        /// <summary>Straight horizontal segment.</summary>
-        public const int StraightH = -1; // TODO: Needs value
-        /// <summary>Straight vertical segment.</summary>
-        public const int StraightV = -1; // TODO: Needs value
-    }
-
-    // -------------------------------------------------------------------------
-    // FENCES  (objects layer)
-    // -------------------------------------------------------------------------
-
-    /// <summary>Wooden fence tiles. Transparent background - objects layer only.</summary>
-    public static class WoodFence
-    {
-        /// <summary>Horizontal fence segment.</summary>
-        public const int H         = -1; // TODO: Needs value
-        /// <summary>Vertical fence segment.</summary>
-        public const int V         = -1; // TODO: Needs value
-        /// <summary>Corner connecting Top and Left.</summary>
-        public const int CornerTL  = -1; // TODO: Needs value
-        /// <summary>Corner connecting Top and Right.</summary>
-        public const int CornerTR  = -1; // TODO: Needs value
-        /// <summary>Corner connecting Bottom and Left.</summary>
-        public const int CornerBL  = -1; // TODO: Needs value
-        /// <summary>Corner connecting Bottom and Right.</summary>
-        public const int CornerBR  = -1; // TODO: Needs value
-        /// <summary>T-junction open Left, Bottom, Right.</summary>
-        public const int TJunctionLBR = -1; // TODO: Needs value
-        /// <summary>T-junction open Top, Bottom, Right.</summary>
-        public const int TJunctionTBR = -1; // TODO: Needs value
-        /// <summary>T-junction open Left, Top, Bottom.</summary>
-        public const int TJunctionLTB = -1; // TODO: Needs value
-        /// <summary>T-junction open Left, Top, Right.</summary>
-        public const int TJunctionLTR = -1; // TODO: Needs value
-        /// <summary>Gate (closed).</summary>
-        public const int GateClosed = -1; // TODO: Needs value
-        /// <summary>Gate (open).</summary>
-        public const int GateOpen   = -1; // TODO: Needs value
-        /// <summary>4-way cross junction.</summary>
-        public const int FourWay    = -1; // TODO: Needs value
-    }
-
-    // -------------------------------------------------------------------------
-    // BRIDGES  (objects layer)
-    // -------------------------------------------------------------------------
-
-    /// <summary>Bridge tiles placed on water. Transparent background - objects layer only.</summary>
-    public static class Bridge
-    {
-        /// <summary>Horizontal bridge - left end.</summary>
-        public const int HLeft   = -1; // TODO: Needs value
-        /// <summary>Horizontal bridge - middle segment.</summary>
-        public const int HMid    = -1; // TODO: Needs value
-        /// <summary>Horizontal bridge - right end.</summary>
-        public const int HRight  = -1; // TODO: Needs value
-        /// <summary>Vertical bridge - top end.</summary>
-        public const int VTop    = -1; // TODO: Needs value
-        /// <summary>Vertical bridge - middle segment.</summary>
-        public const int VMid    = -1; // TODO: Needs value
-        /// <summary>Vertical bridge - bottom end.</summary>
-        public const int VBottom = -1; // TODO: Needs value
-    }
-
-    // -------------------------------------------------------------------------
-    // BUILDINGS  (objects layer - walls, roofs, doors, windows)
-    // -------------------------------------------------------------------------
-
-    /// <summary>Wooden building exterior tiles. Transparent background - objects layer only.</summary>
-    public static class WoodWall
-    {
-        /// <summary>Plain wall top edge.</summary>
-        public const int Top        = -1; // TODO: Needs value
-        /// <summary>Plain wall left edge.</summary>
-        public const int Left       = -1; // TODO: Needs value
-        /// <summary>Plain wall right edge.</summary>
-        public const int Right      = -1; // TODO: Needs value
-        /// <summary>Plain wall bottom edge.</summary>
-        public const int Bottom     = -1; // TODO: Needs value
-        /// <summary>Outer corner - top-left.</summary>
-        public const int CornerTL   = -1; // TODO: Needs value
-        /// <summary>Outer corner - top-right.</summary>
-        public const int CornerTR   = -1; // TODO: Needs value
-        /// <summary>Outer corner - bottom-left.</summary>
-        public const int CornerBL   = -1; // TODO: Needs value
-        /// <summary>Outer corner - bottom-right.</summary>
-        public const int CornerBR   = -1; // TODO: Needs value
-        /// <summary>Wall face (south-facing, visible front).</summary>
-        public const int FaceS      = -1; // TODO: Needs value
-        /// <summary>Wall face with window.</summary>
-        public const int WindowS    = -1; // TODO: Needs value
-        /// <summary>Wall face with door (closed).</summary>
-        public const int DoorS      = -1; // TODO: Needs value
-        /// <summary>Wall face with door (open).</summary>
-        public const int DoorOpenS  = -1; // TODO: Needs value
-    }
-
-    /// <summary>Stone building exterior tiles. Transparent background - objects layer only.</summary>
-    public static class StoneWall
-    {
-        /// <summary>Plain wall top edge.</summary>
-        public const int Top        = -1; // TODO: Needs value
-        /// <summary>Plain wall left edge.</summary>
-        public const int Left       = -1; // TODO: Needs value
-        /// <summary>Plain wall right edge.</summary>
-        public const int Right      = -1; // TODO: Needs value
-        /// <summary>Plain wall bottom edge.</summary>
-        public const int Bottom     = -1; // TODO: Needs value
-        /// <summary>Outer corner - top-left.</summary>
-        public const int CornerTL   = -1; // TODO: Needs value
-        /// <summary>Outer corner - top-right.</summary>
-        public const int CornerTR   = -1; // TODO: Needs value
-        /// <summary>Outer corner - bottom-left.</summary>
-        public const int CornerBL   = -1; // TODO: Needs value
-        /// <summary>Outer corner - bottom-right.</summary>
-        public const int CornerBR   = -1; // TODO: Needs value
-        /// <summary>Wall face (south-facing, visible front).</summary>
-        public const int FaceS      = -1; // TODO: Needs value
-        /// <summary>Wall face with window.</summary>
-        public const int WindowS    = -1; // TODO: Needs value
-        /// <summary>Wall face with door (closed).</summary>
-        public const int DoorS      = -1; // TODO: Needs value
-        /// <summary>Wall face with door (open).</summary>
-        public const int DoorOpenS  = -1; // TODO: Needs value
-    }
-
-    /// <summary>Roof tiles. Transparent background - place on a layer above entities (ZIndex &gt;= 2).</summary>
-    public static class Roof
-    {
-        /// <summary>Thatched roof - ridge (top centre).</summary>
-        public const int ThatchRidge    = -1; // TODO: Needs value
-        /// <summary>Thatched roof - left slope.</summary>
-        public const int ThatchLeft     = -1; // TODO: Needs value
-        /// <summary>Thatched roof - right slope.</summary>
-        public const int ThatchRight    = -1; // TODO: Needs value
-        /// <summary>Thatched roof - left gable end-cap.</summary>
-        public const int ThatchGableL   = -1; // TODO: Needs value
-        /// <summary>Thatched roof - right gable end-cap.</summary>
-        public const int ThatchGableR   = -1; // TODO: Needs value
-        /// <summary>Tiled roof - ridge (top centre).</summary>
-        public const int TileRidge      = -1; // TODO: Needs value
-        /// <summary>Tiled roof - left slope.</summary>
-        public const int TileLeft       = -1; // TODO: Needs value
-        /// <summary>Tiled roof - right slope.</summary>
-        public const int TileRight      = -1; // TODO: Needs value
-        /// <summary>Tiled roof - left gable end-cap.</summary>
-        public const int TileGableL     = -1; // TODO: Needs value
-        /// <summary>Tiled roof - right gable end-cap.</summary>
-        public const int TileGableR     = -1; // TODO: Needs value
-    }
-
-    // -------------------------------------------------------------------------
-    // DUNGEON  (objects layer - walls, floors, doors, special features)
-    // -------------------------------------------------------------------------
-
-    /// <summary>Dungeon / cave wall and tunnel tiles. Transparent background - objects layer only.</summary>
-    public static class Dungeon
-    {
-        /// <summary>Dungeon wall - solid front face.</summary>
-        public const int WallFront    = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - top edge.</summary>
-        public const int WallTop      = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - left edge.</summary>
-        public const int WallLeft     = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - right edge.</summary>
-        public const int WallRight    = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - corner top-left.</summary>
-        public const int WallCornerTL = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - corner top-right.</summary>
-        public const int WallCornerTR = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - corner bottom-left.</summary>
-        public const int WallCornerBL = -1; // TODO: Needs value
-        /// <summary>Dungeon wall - corner bottom-right.</summary>
-        public const int WallCornerBR = -1; // TODO: Needs value
-        /// <summary>Dungeon wall with cracks / damage.</summary>
-        public const int WallCracked  = -1; // TODO: Needs value
-
-        /// <summary>Wooden door - closed (horizontal passage).</summary>
-        public const int DoorWoodClosed = -1; // TODO: Needs value
-        /// <summary>Wooden door - open (horizontal passage).</summary>
-        public const int DoorWoodOpen   = -1; // TODO: Needs value
-        /// <summary>Iron door - closed.</summary>
-        public const int DoorIronClosed = -1; // TODO: Needs value
-        /// <summary>Iron door - open.</summary>
-        public const int DoorIronOpen   = -1; // TODO: Needs value
-        /// <summary>Iron bars / portcullis.</summary>
-        public const int Bars           = -1; // TODO: Needs value
-
-        /// <summary>Stone stairs going up.</summary>
-        public const int StairsUp   = -1; // TODO: Needs value
-        /// <summary>Stone stairs going down.</summary>
-        public const int StairsDown = -1; // TODO: Needs value
-        /// <summary>Ladder going up.</summary>
-        public const int LadderUp   = -1; // TODO: Needs value
-        /// <summary>Ladder going down.</summary>
-        public const int LadderDown = -1; // TODO: Needs value
-        /// <summary>Pit / trapdoor opening.</summary>
-        public const int Pit        = -1; // TODO: Needs value
-
-        /// <summary>Wall-mounted torch (south-facing wall).</summary>
-        public const int TorchWallS = -1; // TODO: Needs value
-        /// <summary>Wall-mounted torch (east-facing wall).</summary>
-        public const int TorchWallE = -1; // TODO: Needs value
-        /// <summary>Floor-standing torch / brazier.</summary>
-        public const int TorchFloor = -1; // TODO: Needs value
-    }
-
-    // -------------------------------------------------------------------------
-    // PROPS  (objects layer - decorations and interactive objects)
+    // PATHS  (objects layer)
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Decorative and interactive prop tiles. Transparent background - objects layer only.
-    /// Multi-tile props must be placed as a group using all named positions.
+    /// Dirt path tiles for roads and trails placed on the objects layer.
+    /// All use brown (R191 G121 B88) over the dark background.
     /// </summary>
-    public static class Props
+    public static class DirtPath
     {
-        // -- Water / outdoor structures ----------------------------------------
+        /// <summary>4-way cross junction — open in all four directions.</summary>
+        public const int FourWay = 444; // r9c3 — T+B+L+R brown, hollow centre
 
-        /// <summary>
-        /// Water fountain - 3-column - 3-row prop.
-        /// Layout: (TL, T, TR) / (ML, M, MR) / (BL, B, BR).
-        /// </summary>
-        public static class WaterFountain
-        {
-            /// <summary>Top-left tile.</summary>
-            public const int TL = 229; // TODO: needs-verify
-            /// <summary>Top-centre tile.</summary>
-            public const int T  = -1;  // TODO: Needs value  (check if 3-wide or 2-wide)
-            /// <summary>Top-right tile.</summary>
-            public const int TR = 228; // TODO: needs-verify
-            /// <summary>Middle-left tile.</summary>
-            public const int ML = 230; // TODO: needs-verify
-            /// <summary>Middle-centre tile.</summary>
-            public const int M  = 231; // TODO: needs-verify
-            /// <summary>Middle-right tile.</summary>
-            public const int MR = 232; // TODO: needs-verify
-            /// <summary>Bottom-left tile.</summary>
-            public const int BL = 287; // TODO: needs-verify
-            /// <summary>Bottom-centre tile.</summary>
-            public const int B  = 288; // TODO: needs-verify
-            /// <summary>Bottom-right tile.</summary>
-            public const int BR = 289; // TODO: needs-verify
-        }
+        /// <summary>Isolated single-tile dirt patch.</summary>
+        public const int Circle = 191; // r3c44 — centre-only brown dot
 
-        /// <summary>Stone well - 2-tile tall prop: (Top) / (Base).</summary>
-        public static class Well
-        {
-            /// <summary>Top tile of the well (rope, bucket, roof).</summary>
-            public const int Top  = -1; // TODO: Needs value
-            /// <summary>Base tile of the well (stone surround).</summary>
-            public const int Base = -1; // TODO: Needs value
-        }
+        // -- Straight segments -----------------------------------------------
 
-        /// <summary>Wooden signpost / directional sign.</summary>
-        public const int Sign = -1; // TODO: Needs value
+        /// <summary>Straight horizontal segment — exits west and east.</summary>
+        public const int StraightH = 192; // r3c45 — L+R+M brown, T/B bg
 
-        /// <summary>Market stall awning - left end.</summary>
-        public const int StallLeft  = -1; // TODO: Needs value
-        /// <summary>Market stall awning - middle section.</summary>
-        public const int StallMid   = -1; // TODO: Needs value
-        /// <summary>Market stall awning - right end.</summary>
-        public const int StallRight = -1; // TODO: Needs value
+        /// <summary>Straight vertical segment — exits north and south.</summary>
+        public const int StraightV = 343; // r7c0 — T+B+M brown, L/R bg
 
-        // -- Containers --------------------------------------------------------
+        // -- Corners ---------------------------------------------------------
 
-        /// <summary>Closed wooden chest.</summary>
-        public const int ChestClosed = -1; // TODO: Needs value
-        /// <summary>Open wooden chest (empty or looted).</summary>
-        public const int ChestOpen   = -1; // TODO: Needs value
-        /// <summary>Locked iron chest.</summary>
-        public const int ChestLocked = -1; // TODO: Needs value
-        /// <summary>Small closed chest.</summary>
-        public const int ChestSmall  = -1; // TODO: Needs value
-        /// <summary>Sealed barrel.</summary>
-        public const int BarrelSealed  = -1; // TODO: Needs value
-        /// <summary>Open barrel.</summary>
-        public const int BarrelOpen    = -1; // TODO: Needs value
-        /// <summary>Broken / empty barrel.</summary>
-        public const int BarrelBroken  = -1; // TODO: Needs value
-        /// <summary>Wooden crate.</summary>
-        public const int Crate  = -1; // TODO: Needs value
-        /// <summary>Burlap sack.</summary>
-        public const int Sack   = -1; // TODO: Needs value
-        /// <summary>Small pot / vase.</summary>
-        public const int PotSmall  = -1; // TODO: Needs value
-        /// <summary>Large pot / vase.</summary>
-        public const int PotLarge  = -1; // TODO: Needs value
+        /// <summary>Corner connecting north exit and west exit.</summary>
+        public const int CornerTL = 292; // r5c47 — T+L+M brown
 
-        // -- Lights ------------------------------------------------------------
+        /// <summary>Corner connecting north exit and east exit.</summary>
+        public const int CornerTR = 348; // r7c5 — T+R brown (hollow centre)
 
-        /// <summary>Floor-standing lamp post / lantern.</summary>
-        public const int LampPost = -1; // TODO: Needs value
-        /// <summary>Lit campfire.</summary>
-        public const int Campfire = -1; // TODO: Needs value
-        /// <summary>Unlit campfire / fire pit.</summary>
-        public const int CampfireUnlit = -1; // TODO: Needs value
-        /// <summary>Candle / candlestick.</summary>
-        public const int Candle   = -1; // TODO: Needs value
-        /// <summary>Brazier (iron fire basket).</summary>
-        public const int Brazier  = -1; // TODO: Needs value
+        /// <summary>Corner connecting south exit and west exit.</summary>
+        public const int CornerBL = 184; // r3c37 — B+L+M brown
 
-        // -- Crafting and workstations -----------------------------------------
+        /// <summary>Corner connecting south exit and east exit.</summary>
+        public const int CornerBR = 260; // r5c15 — B+R+M brown
 
-        /// <summary>Blacksmith anvil.</summary>
-        public const int Anvil      = -1; // TODO: Needs value
-        /// <summary>Forge / furnace.</summary>
-        public const int Forge      = -1; // TODO: Needs value
-        /// <summary>Cauldron / cooking pot.</summary>
-        public const int Cauldron   = -1; // TODO: Needs value
-        /// <summary>Crafting workbench / table.</summary>
-        public const int Workbench  = -1; // TODO: Needs value
-        /// <summary>Alchemy / potion table.</summary>
-        public const int AlchemyTable = -1; // TODO: Needs value
+        // -- T-junctions -----------------------------------------------------
 
-        // -- Furniture ---------------------------------------------------------
+        /// <summary>T-junction open south, west, east (closed north).</summary>
+        public const int TJunctionLBR = 261; // r5c16 — B+L+R+M brown
 
-        /// <summary>Wooden table - horizontal (wider than tall).</summary>
-        public const int TableH        = -1; // TODO: Needs value
-        /// <summary>Wooden table - vertical (taller than wide).</summary>
-        public const int TableV        = -1; // TODO: Needs value
-        /// <summary>Chair facing south (seat visible from the front).</summary>
-        public const int ChairS        = -1; // TODO: Needs value
-        /// <summary>Chair facing north.</summary>
-        public const int ChairN        = -1; // TODO: Needs value
-        /// <summary>Chair facing east.</summary>
-        public const int ChairE        = -1; // TODO: Needs value
-        /// <summary>Chair facing west.</summary>
-        public const int ChairW        = -1; // TODO: Needs value
-        /// <summary>Bed - top tile (pillow end).</summary>
-        public const int BedTop        = -1; // TODO: Needs value
-        /// <summary>Bed - bottom tile (foot end).</summary>
-        public const int BedBottom     = -1; // TODO: Needs value
-        /// <summary>Bookshelf - filled with books.</summary>
-        public const int Bookshelf     = -1; // TODO: Needs value
-        /// <summary>Shelf - with items or empty.</summary>
-        public const int Shelf         = -1; // TODO: Needs value
-        /// <summary>Tall wardrobe / cabinet.</summary>
-        public const int Wardrobe      = -1; // TODO: Needs value
+        /// <summary>T-junction open north, west, east (closed south).</summary>
+        public const int TJunctionLTR = 345; // r7c2 — T+L+R+M brown
 
-        // -- Structures and monuments ------------------------------------------
+        /// <summary>T-junction open north, south, east (closed west).</summary>
+        public const int TJunctionTBR = 299; // r6c5 — T+B+R+M brown
 
-        /// <summary>Stone pillar - top cap.</summary>
-        public const int PillarTop    = -1; // TODO: Needs value
-        /// <summary>Stone pillar - middle shaft segment.</summary>
-        public const int PillarMid    = -1; // TODO: Needs value
-        /// <summary>Stone pillar - base.</summary>
-        public const int PillarBase   = -1; // TODO: Needs value
-        /// <summary>Stone statue.</summary>
-        public const int Statue       = -1; // TODO: Needs value
-        /// <summary>Altar / offering stone.</summary>
-        public const int Altar        = -1; // TODO: Needs value
-        /// <summary>Pedestal (for holding an item or orb).</summary>
-        public const int Pedestal     = -1; // TODO: Needs value
-        /// <summary>Gravestone / tombstone style A.</summary>
-        public const int GravestoneA  = -1; // TODO: Needs value
-        /// <summary>Gravestone / tombstone style B.</summary>
-        public const int GravestoneB  = -1; // TODO: Needs value
-        /// <summary>Grave cross.</summary>
-        public const int GraveCross   = -1; // TODO: Needs value
+        /// <summary>T-junction open north, south, west (closed east).</summary>
+        public const int TJunctionLTB = 451; // r9c10 — T+B+L+M brown
 
-        // -- Ground decorations ------------------------------------------------
+        // -- End caps --------------------------------------------------------
 
-        /// <summary>Small rock.</summary>
-        public const int RockSmall  = -1; // TODO: Needs value
-        /// <summary>Medium rock.</summary>
-        public const int RockMedium = -1; // TODO: Needs value
-        /// <summary>Large boulder.</summary>
-        public const int RockLarge  = -1; // TODO: Needs value
-        /// <summary>Rock cluster / rubble pile.</summary>
-        public const int RockPile   = -1; // TODO: Needs value
-        /// <summary>Crystal formation (small).</summary>
-        public const int CrystalSmall = -1; // TODO: Needs value
-        /// <summary>Crystal formation (large).</summary>
-        public const int CrystalLarge = -1; // TODO: Needs value
-        /// <summary>Bone / skeleton remains.</summary>
-        public const int Bones      = -1; // TODO: Needs value
-        /// <summary>Skull.</summary>
-        public const int Skull      = -1; // TODO: Needs value
-        /// <summary>Hay bale.</summary>
-        public const int HayBale    = -1; // TODO: Needs value
-        /// <summary>Log (chopped wood).</summary>
-        public const int Log        = -1; // TODO: Needs value
-        /// <summary>Wood pile (stacked logs).</summary>
-        public const int WoodPile   = -1; // TODO: Needs value
+        /// <summary>Dead-end cap — exit south only (cap face at north).</summary>
+        public const int EndTop = 244; // r4c48 — B+M brown, T/L/R bg
 
-        // -- Interactable / mechanical -----------------------------------------
+        /// <summary>Dead-end cap — exit north only (cap face at south).</summary>
+        public const int EndBottom = 243; // r4c47 — T+M brown, B/L/R bg
 
-        /// <summary>Pressure plate (untriggered).</summary>
-        public const int PressurePlate      = -1; // TODO: Needs value
-        /// <summary>Lever (up / off position).</summary>
-        public const int LeverOff           = -1; // TODO: Needs value
-        /// <summary>Lever (down / on position).</summary>
-        public const int LeverOn            = -1; // TODO: Needs value
-        /// <summary>Wall button / switch.</summary>
-        public const int Button             = -1; // TODO: Needs value
-        /// <summary>Mine cart.</summary>
-        public const int MineCart           = -1; // TODO: Needs value
-        /// <summary>Mine cart rail - horizontal.</summary>
-        public const int RailH              = -1; // TODO: Needs value
-        /// <summary>Mine cart rail - vertical.</summary>
-        public const int RailV              = -1; // TODO: Needs value
-        /// <summary>Mine cart rail - corner.</summary>
-        public const int RailCorner         = -1; // TODO: Needs value
+        /// <summary>Dead-end cap — exit west only (cap face at east).</summary>
+        public const int EndRight = 359; // r7c16 — L+M brown, T/B/R bg
     }
 }

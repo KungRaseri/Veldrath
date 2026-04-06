@@ -4,11 +4,10 @@
 
 $maps = Join-Path $PSScriptRoot "..\RealmUnbound.Assets\GameAssets\tilemaps\maps"
 
-# ─── Tile constants (roguelike_base, formula: row*57+col) ────────────────────
-$OakDG    = 528; $PineDG = 531; $BushLight = 532; $BushOr = 533; $BushDark = 534
-$FruitT   = 536; $DeadT  = 654
-$DirtV    = 465; $DirtH  = 408; $DirtTBR   = 461
-$WF_TL=229; $WF_TR=228; $WF_ML=230; $WF_M=231; $WF_MR=232; $WF_BL=287; $WF_B=288; $WF_BR=289
+# ─── Tile constants (onebit_packed, formula: row*49+col) ─────────────────────
+$OakDG    = 55; $PineDG = 51; $BushLight = 50; $BushOr = 53; $BushDark = 102
+$FruitT   = 55; $DeadT  = 55
+$DirtV    = 343; $DirtH  = 192; $DirtTBR   = 299
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 # Load a map JSON
@@ -54,11 +53,11 @@ function StBorder($d, [int]$w, [int]$h, [int]$tile, [int[]]$excX, [int[]]$excY) 
 }
 # Stamp vertical road DirtV onto flat array $d
 function StVRoad($d, [int]$w, [int]$x, [int]$y1, [int]$y2) {
-    for ($y = $y1; $y -le $y2; $y++) { $d[$y*$w+$x] = 465 }
+    for ($y = $y1; $y -le $y2; $y++) { $d[$y*$w+$x] = 343 }
 }
 # Stamp horizontal road DirtH onto flat array $d
 function StHRoad($d, [int]$w, [int]$y, [int]$x1, [int]$x2) {
-    for ($x = $x1; $x -le $x2; $x++) { $d[$y*$w+$x] = 408 }
+    for ($x = $x1; $x -le $x2; $x++) { $d[$y*$w+$x] = 192 }
 }
 
 Write-Host "=== Tilemap Content Pass ==="
@@ -66,12 +65,12 @@ Write-Host "=== Tilemap Content Pass ==="
 # ─── Phase 0: Base tile corrections ──────────────────────────────────────────
 Write-Host "`n--- Phase 0: Base tile corrections ---"
 
-$j = Load "skarhold.json"   # Stone.M 920 -> Sand.M 1262 (coastal, 50x38)
-(Layer $j "base").data = FillArr ($j.width * $j.height) 1262
+$j = Load "skarhold.json"   # Stone.M 202 -> Sand.M 445 (coastal, 50x38)
+(Layer $j "base").data = FillArr ($j.width * $j.height) 445
 Save $j "skarhold.json"
 
-$j = Load "tolvaren.json"   # Sand.M 1262 -> Stone.M 920 (volcanic stand-in, 40x30)
-(Layer $j "base").data = FillArr ($j.width * $j.height) 920
+$j = Load "tolvaren.json"   # Sand.M 445 -> Stone.M 202 (volcanic stand-in, 40x30)
+(Layer $j "base").data = FillArr ($j.width * $j.height) 202
 Save $j "tolvaren.json"
 
 # ─── Phase 2a: fenwick-crossing (patch existing objects) ─────────────────────
@@ -80,10 +79,6 @@ $j = Load "fenwick-crossing.json"; $w = [int]$j.width
 $d = (Layer $j "objects").data
 # PineTree.DarkGreen scatter  [(5,5) already has 531]
 $d[5*$w+24] = $PineDG; $d[16*$w+5] = $PineDG; $d[16*$w+24] = $PineDG
-# WaterFountain 3x3 at (12-14, 8-10): top-row TL/TR (blank at 13,8), mid ML/M/MR, bot BL/B/BR
-$d[8*$w+12]=$WF_TL; $d[8*$w+14]=$WF_TR
-$d[9*$w+12]=$WF_ML; $d[9*$w+13]=$WF_M;  $d[9*$w+14]=$WF_MR
-$d[10*$w+12]=$WF_BL;$d[10*$w+13]=$WF_B; $d[10*$w+14]=$WF_BR
 (Layer $j "objects").data = $d
 Save $j "fenwick-crossing.json"
 

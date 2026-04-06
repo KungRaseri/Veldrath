@@ -4,7 +4,7 @@ namespace RealmUnbound.Contracts.Tilemap;
 
 /// <summary>Full tilemap definition for a single zone, sent to the client on zone entry.</summary>
 /// <param name="ZoneId">The zone this map belongs to.</param>
-/// <param name="TilesetKey">Identifier for the spritesheet used by this map. All zones use <c>"roguelike_base"</c>.</param>
+/// <param name="TilesetKey">Identifier for the spritesheet used by this map. All zones use <c>"onebit_packed"</c>.</param>
 /// <param name="Width">Map width in tiles.</param>
 /// <param name="Height">Map height in tiles.</param>
 /// <param name="TileSize">Native tile size in pixels (always 16 for Kenney Tiny packs).</param>

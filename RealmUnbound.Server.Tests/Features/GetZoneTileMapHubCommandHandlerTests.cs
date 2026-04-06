@@ -16,7 +16,7 @@ public class GetZoneTileMapHubCommandHandlerTests
         new()
         {
             ZoneId        = zoneId,
-            TilesetKey    = "roguelike_base",
+            TilesetKey    = "onebit_packed",
             Width         = width,
             Height        = height,
             TileSize      = 16,
@@ -130,6 +130,6 @@ public class GetZoneTileMapHubCommandHandlerTests
         var result = await MakeHandler(repo.Object)
             .Handle(new GetZoneTileMapHubCommand("fenwick-crossing"), CancellationToken.None);
 
-        result.TileMap!.TilesetKey.Should().Be("roguelike_base");
+        result.TileMap!.TilesetKey.Should().Be("onebit_packed");
     }
 }
