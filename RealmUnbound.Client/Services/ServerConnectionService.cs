@@ -1,4 +1,6 @@
+using System.Reflection;
 using Microsoft.Extensions.Logging;
+using RealmUnbound.Contracts.Connection;
 
 namespace RealmUnbound.Client.Services;
 
@@ -25,6 +27,13 @@ public interface IServerConnectionService
     event Action<ConnectionState>? StateChanged;
     /// <summary>Raised when the hub connection is closed — including after a failed token refresh.</summary>
     event Action? ConnectionLost;
+    /// <summary>
+    /// Raised when the server reports a client version that is incompatible, or when the
+    /// server version is older than this client requires. The connection is already
+    /// disconnected when this event fires.
+    /// Parameters: <c>(clientVersion, serverVersion)</c>.
+    /// </summary>
+    event Action<string, string>? VersionMismatch;
     Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default);
     Task DisconnectAsync();
     Task SendCommandAsync(string method);
@@ -61,6 +70,9 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     /// <inheritdoc />
     public event Action? ConnectionLost;
+
+    /// <inheritdoc />
+    public event Action<string, string>? VersionMismatch;
 
     /// <summary>Initializes a new instance of <see cref="ServerConnectionService"/>.</summary>
     public ServerConnectionService(
@@ -100,6 +112,10 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
                 }
                 return _tokens.AccessToken;
             });
+
+        // Subscribe persistently to ServerInfo so version compatibility is checked on every
+        // connect and reconnect (catches mid-session server updates too).
+        _connection.On<ServerInfoPayload>("ServerInfo", HandleServerInfo);
 
         _connection.Closed += async (error) =>
         {
@@ -227,6 +243,59 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         _pingTimer?.Stop();
         _pingTimer?.Dispose();
         _pingTimer = null;
+    }
+
+    private void HandleServerInfo(ServerInfoPayload payload)
+    {
+        var v = typeof(ServerConnectionService).Assembly.GetName().Version ?? new Version(0, 1);
+        var clientVersion = $"{v.Major}.{v.Minor}";
+
+        // Server rejects this client (authoritative check — enforced server-side too)
+        if (!IsVersionCompatible(clientVersion, payload.MinCompatibleClientVersion))
+        {
+            _logger.LogWarning(
+                "Version mismatch: client v{Client} is below server minimum v{Min}",
+                clientVersion, payload.MinCompatibleClientVersion);
+            VersionMismatch?.Invoke(clientVersion, payload.ServerVersion);
+            _ = DisconnectAsync();
+            return;
+        }
+
+        // Client rejects this server (UX gate — client requires a feature the server lacks)
+        var minServerAttr = typeof(ServerConnectionService).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "MinCompatibleServerVersion");
+        var minServerVersion = minServerAttr?.Value ?? "0.1";
+
+        if (!IsVersionCompatible(payload.ServerVersion, minServerVersion))
+        {
+            _logger.LogWarning(
+                "Version mismatch: server v{Server} is below client minimum v{Min}",
+                payload.ServerVersion, minServerVersion);
+            VersionMismatch?.Invoke(clientVersion, payload.ServerVersion);
+            _ = DisconnectAsync();
+        }
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="version"/> meets or exceeds
+    /// <paramref name="minVersion"/>. Requires the same major; minor must be ≥ min minor.
+    /// Patch numbers carry no compatibility meaning and are ignored.
+    /// </summary>
+    private static bool IsVersionCompatible(string version, string minVersion)
+    {
+        if (!TryParseVersion(version,    out var maj,    out var min))    return false;
+        if (!TryParseVersion(minVersion, out var minMaj, out var minMin)) return false;
+        return maj == minMaj && min >= minMin;
+    }
+
+    private static bool TryParseVersion(string v, out int major, out int minor)
+    {
+        major = 0;
+        minor = 0;
+        var parts = v.Split('.');
+        if (parts.Length < 2) return false;
+        return int.TryParse(parts[0], out major) && int.TryParse(parts[1], out minor);
     }
 
     public async ValueTask DisposeAsync()

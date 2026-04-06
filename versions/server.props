@@ -3,5 +3,10 @@
   <PropertyGroup>
     <VersionMajor>0</VersionMajor>
     <VersionMinor>1</VersionMinor>
+    <!--
+      Oldest client version this server will accept.
+      Only bump when a breaking protocol change is introduced—never auto-track VersionMinor.
+    -->
+    <MinCompatibleClientVersion>0.1</MinCompatibleClientVersion>
   </PropertyGroup>
 </Project>
