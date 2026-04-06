@@ -38,6 +38,9 @@ public class TilemapControl : Control
     private static readonly IBrush MiniFloorBrush = new SolidColorBrush(Color.FromRgb(80,  80, 100));
     private static readonly IBrush MiniExitBrush  = new SolidColorBrush(Color.FromRgb(255, 220,   0));
     private static readonly IBrush MiniBgBrush    = new SolidColorBrush(Color.FromArgb(210,   8,  10,  20));
+
+    // Pending tile placeholder — bright magenta so unresolved map cells are immediately visible
+    private static readonly IBrush PendingBrush   = new SolidColorBrush(Color.FromRgb(255,   0, 255));
     private static readonly IBrush MiniFogBrush   = new SolidColorBrush(Color.FromRgb(20,  20,  28));
     private static readonly IPen   MiniVpPen      = new Pen(Brushes.White, 1);
 
@@ -283,12 +286,20 @@ public class TilemapControl : Control
                 if (idx < 0 || idx >= layer.Data.Length) continue;
 
                 var tileIndex = layer.Data[idx];
-                if (tileIndex < 0) continue; // transparent
+                if (tileIndex < -2) continue; // skip invalid sentinel values
 
                 var dest = new Rect(
                     (tx - camX) * DisplayTileSize,
                     (ty - camY) * DisplayTileSize,
                     DisplayTileSize, DisplayTileSize);
+
+                if (tileIndex == -1) continue; // transparent / empty cell
+
+                if (tileIndex == -2) // pending placeholder — draw magenta square
+                {
+                    context.FillRectangle(PendingBrush, dest);
+                    continue;
+                }
 
                 if (sheet is not null)
                 {
