@@ -43,26 +43,26 @@ $obj[316] = 102 ; $col[316] = $true   # (16,10) Bush.DarkGreen
 # ---------------------------------------------------------------------------
 
 # NW quadrant
-$obj[62]  = 49  ; $col[62]  = $true   # (2,2)  Oak.LightGreen
-$obj[71]  = 53  ; $col[71]  = $true   # (11,2) Oak.Orange
-$obj[123] = 55  ; $col[123] = $true   # (3,4)  Oak.DarkGreen
-$obj[190] = 53  ; $col[190] = $true   # (10,6) Oak.Orange
+$obj[62]  = 49  ; $col[62]  = $true   # (2,2)  TreeA
+$obj[71]  = 53  ; $col[71]  = $true   # (11,2) TreeD
+$obj[123] = 54  ; $col[123] = $true   # (3,4)  TreeE
+$obj[190] = 53  ; $col[190] = $true   # (10,6) TreeD
 
 # NE quadrant
-$obj[78]  = 53  ; $col[78]  = $true   # (18,2) Oak.Orange
-$obj[86]  = 55  ; $col[86]  = $true   # (26,2) Oak.DarkGreen
+$obj[78]  = 53  ; $col[78]  = $true   # (18,2) TreeD
+$obj[86]  = 54  ; $col[86]  = $true   # (26,2) TreeE
 
 # SW quadrant
-$obj[392] = 55  ; $col[392] = $true   # (2,13) Oak.DarkGreen
-$obj[399] = 51  ; $col[399] = $true   # (9,13) Pine.DarkGreen
-$obj[513] = 53  ; $col[513] = $true   # (3,17) Oak.Orange
-$obj[520] = 55  ; $col[520] = $true   # (10,17) Oak.DarkGreen
+$obj[392] = 54  ; $col[392] = $true   # (2,13) TreeE
+$obj[399] = 51  ; $col[399] = $true   # (9,13) Pine
+$obj[513] = 53  ; $col[513] = $true   # (3,17) TreeD
+$obj[520] = 54  ; $col[520] = $true   # (10,17) TreeE
 
 # SE quadrant
-$obj[438] = 55  ; $col[438] = $true   # (18,14) Oak.DarkGreen
-$obj[446] = 51  ; $col[446] = $true   # (26,14) Pine.DarkGreen
-$obj[588] = 53  ; $col[588] = $true   # (18,19) Oak.Orange
-$obj[596] = 55  ; $col[596] = $true   # (26,19) Oak.DarkGreen
+$obj[438] = 54  ; $col[438] = $true   # (18,14) TreeE
+$obj[446] = 51  ; $col[446] = $true   # (26,14) Pine
+$obj[588] = 53  ; $col[588] = $true   # (18,19) TreeD
+$obj[596] = 54  ; $col[596] = $true   # (26,19) TreeE
 
 # ---------------------------------------------------------------------------
 # STEP 4 — Fix collisionMask for all existing interior flora and fountain tiles
@@ -119,8 +119,8 @@ Check "(2,2) tile"   $o[62]  49
 Check "(2,2) block"  $c[62]  $true
 Check "(9,13) tile"  $o[399] 51
 Check "(9,13) block" $c[399] $true
-Check "(18,14) tile" $o[438] 55
-Check "(26,19) tile" $o[596] 55
+Check "(18,14) tile" $o[438] 54
+Check "(26,19) tile" $o[596] 54
 
 # Collision fixes — fountain
 Check "fountain(12,8) block" $c[252] $true
