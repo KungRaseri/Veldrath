@@ -8,16 +8,18 @@ namespace RealmUnbound.Client.Tests;
 public class GameViewModelTests : TestBase
 {
     private static GameViewModel MakeVm(
-        FakeServerConnectionService? conn  = null,
-        FakeZoneService?              zones = null,
-        TokenStore?                   tokens = null,
-        FakeNavigationService?        nav  = null)
+        FakeServerConnectionService? conn         = null,
+        FakeZoneService?              zones        = null,
+        TokenStore?                   tokens       = null,
+        FakeNavigationService?        nav          = null,
+        ISessionAlertService?         sessionAlert = null)
     {
         return new GameViewModel(
-            conn   ?? new FakeServerConnectionService(),
-            zones  ?? new FakeZoneService(),
-            tokens ?? new TokenStore(),
-            nav    ?? new FakeNavigationService());
+            conn         ?? new FakeServerConnectionService(),
+            zones        ?? new FakeZoneService(),
+            tokens       ?? new TokenStore(),
+            nav          ?? new FakeNavigationService(),
+            sessionAlert: sessionAlert);
     }
 
     // Initial state
@@ -1399,5 +1401,20 @@ public class GameViewModelTests : TestBase
         await vm.CloseShopCommand.Execute();
 
         vm.IsShopOpen.Should().BeFalse();
+    }
+
+    // Version mismatch
+    [Fact]
+    public void VersionMismatch_Should_Set_PendingAlert_And_Navigate_To_MainMenu()
+    {
+        var conn  = new FakeServerConnectionService();
+        var nav   = new FakeNavigationService();
+        var alert = new SessionAlertService();
+        var vm    = MakeVm(conn: conn, nav: nav, sessionAlert: alert);
+
+        conn.SimulateVersionMismatch("0.1", "9.0");
+
+        alert.PendingAlert.Should().Be("Version mismatch — client v0.1 / server v9.0");
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
 }

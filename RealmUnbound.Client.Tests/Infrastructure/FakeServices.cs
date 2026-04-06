@@ -140,6 +140,7 @@ public class FakeServerConnectionService : IServerConnectionService
 
     public event Action<ConnectionState>? StateChanged;
     public event Action? ConnectionLost;
+    public event Action<string, string>? VersionMismatch;
 
     public Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
     {
@@ -182,6 +183,14 @@ public class FakeServerConnectionService : IServerConnectionService
         _state = ConnectionState.Disconnected;
         StateChanged?.Invoke(_state);
         ConnectionLost?.Invoke();
+    }
+
+    /// <summary>Simulates a version mismatch event as if the server rejected the client version.</summary>
+    public void SimulateVersionMismatch(string clientVer, string serverVer)
+    {
+        _state = ConnectionState.Disconnected;
+        StateChanged?.Invoke(_state);
+        VersionMismatch?.Invoke(clientVer, serverVer);
     }
 
     public Task SendCommandAsync(string method)

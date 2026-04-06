@@ -41,4 +41,24 @@
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
   </ItemGroup>
 
+  <!--
+    Stamp MinCompatibleClientVersion from versions/server.props into
+    appsettings.Production.json at Release publish time. The Dockerfile
+    picks this up via COPY from the publish output. ASP.NET Core defaults
+    to the Production environment in Docker, so this file overrides the
+    dev default in appsettings.json. Dev builds skip this target entirely.
+  -->
+  <Target Name="StampVersionCompatibility" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <_VersionCompatJson>{"VersionCompatibility":{"MinCompatibleClientVersion":"$(MinCompatibleClientVersion)"}}</_VersionCompatJson>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(PublishDir)appsettings.Production.json"
+      Lines="$(_VersionCompatJson)"
+      Overwrite="false"
+      WriteOnlyWhenDifferent="true" />
+    <Message Importance="high"
+             Text="[StampVersionCompatibility] appsettings.Production.json → MinCompatibleClientVersion=$(MinCompatibleClientVersion)" />
+  </Target>
+
 </Project>

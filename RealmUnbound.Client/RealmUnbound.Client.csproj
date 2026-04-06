@@ -10,6 +10,15 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>RealmUnbound.Client.Tests</_Parameter1>
     </AssemblyAttribute>
+    <!--
+      Stamp the minimum compatible server version into assembly metadata so it can be
+      read at runtime via AssemblyMetadataAttribute. Updated in versions/client.props
+      only when the client requires a server feature unavailable in older releases.
+    -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>MinCompatibleServerVersion</_Parameter1>
+      <_Parameter2>$(MinCompatibleServerVersion)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>

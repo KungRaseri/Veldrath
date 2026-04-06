@@ -80,9 +80,17 @@ public class MainMenuViewModel : ViewModelBase
         IAudioPlayer? audioPlayer = null,
         IServerStatusService? serverStatus = null,
         IAnnouncementService? announcementService = null,
-        ClientSettings? settings = null)
+        ClientSettings? settings = null,
+        ISessionAlertService? sessionAlert = null)
     {
         var doExit = exit ?? (() => System.Environment.Exit(0));
+
+        // Consume any pending alert (e.g. a version mismatch message) set before navigating here.
+        if (sessionAlert?.PendingAlert is { } alert)
+        {
+            ErrorMessage = alert;
+            sessionAlert.PendingAlert = null;
+        }
 
         // Mirror token state reactively so XAML bindings update automatically
         IsLoggedIn = tokenStore.IsAuthenticated;
