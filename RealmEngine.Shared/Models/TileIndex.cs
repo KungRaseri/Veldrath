@@ -52,8 +52,9 @@ public static class TileIndex
         /// <summary>Green grass terrain.</summary>
         public static class Grass
         {
-            /// <summary>Solid grass fill — canonical base-layer fill for grassy zones.</summary>
-            public const int M = 265; // r5c20 — 8/9 sample points green (R56 G217 B115)
+            /// <summary>Base-layer fill for grassy zones — uses the dark maroon background (Blank).
+            /// Flora tiles on the objects layer provide the green visual character.</summary>
+            public const int M = 0;   // r0c0 — dark maroon ground; flora decorates on objects layer
         }
 
         /// <summary>Grey stone terrain.</summary>

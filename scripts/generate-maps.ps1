@@ -30,7 +30,7 @@
 $mapsDir = "C:\code\RealmEngine\RealmUnbound.Assets\GameAssets\tilemaps\maps"
 
 # Base tile constants (TileIndex.Terrain.*. M)
-$Grass  = 265   # TileIndex.Terrain.Grass.M
+$Grass  = 0     # TileIndex.Terrain.Grass.M  (dark ground; flora on objects layer gives the green)
 $Stone  = 202   # TileIndex.Terrain.Stone.M
 $Sand   = 445   # TileIndex.Terrain.Sand.M
 
@@ -116,7 +116,7 @@ Write-Host "Generating 16 zone tilemaps (all using onebit_packed)..."
 #
 # Exit tile positions are expressed in the tile-coordinate space of THIS zone's own map.
 
-# -- Grass biome (Terrain.Grass.M = 915) --------------------------------------
+# -- Grass biome (Terrain.Grass.M = 0) ----------------------------------------
 
 # Small starting town — bottom exit to greenveil paths
 Write-Map "fenwick-crossing"  $Grass @(e 15 21 "greenveil-paths")                               -w 30 -h 22
@@ -132,7 +132,7 @@ Write-Map "thornveil-hollow"  $Grass `
 Write-Map "soddenfen"         $Grass `
     @(e 25  0 "pale-moor"; e 49 19 "barrow-deeps"; e 25 37 "tolvaren")                          -w 50 -h 38
 
-# -- Stone biome (Terrain.Stone.M = 920) --------------------------------------
+# -- Stone biome (Terrain.Stone.M = 202) --------------------------------------
 
 Write-Map "verdant-barrow"    $Stone @(e  0 15 "thornveil-hollow")
 
@@ -158,7 +158,7 @@ Write-Map "smoldering-reach"  $Stone `
 
 Write-Map "kaldrek-maw"       $Stone @(e 25  0 "smoldering-reach")                              -w 50 -h 38
 
-# -- Sand biome (Terrain.Sand.M = 1262) ----------------------------------------
+# -- Sand biome (Terrain.Sand.M = 445) ----------------------------------------
 Write-Map "tolvaren"          $Sand  @(e 20  0 "soddenfen"; e 20 29 "tidewrack-flats")
 
 Write-Map "tidewrack-flats"   $Sand  @(e 20  0 "tolvaren"; e 20 29 "saltcliff-heights")
