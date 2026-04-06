@@ -1,8 +1,8 @@
 # generate-maps.ps1
 # Generates / overwrites stub tilemap JSON files for all 16 Draveth zones.
 #
-# ALL zones use the roguelike_base tileset (57×31, 16px, 1px spacing).
-# Tile index constants: TileIndex.Terrain.Grass.M = 915, Stone.M = 920, Sand.M = 1262.
+# ALL zones use the onebit_packed tileset (49×22, 16px, 0px spacing).
+# Tile index constants: updated in Phase 3 — see TileIndex.cs for current values.
 # See RealmEngine.Shared/Models/TileIndex.cs for the full catalog.
 #
 # Layer architecture (all maps):
@@ -30,9 +30,9 @@
 $mapsDir = "C:\code\RealmEngine\RealmUnbound.Assets\GameAssets\tilemaps\maps"
 
 # Base tile constants (TileIndex.Terrain.*. M)
-$Grass  = 915   # TileIndex.Terrain.Grass.M
-$Stone  = 920   # TileIndex.Terrain.Stone.M
-$Sand   = 1262  # TileIndex.Terrain.Sand.M
+$Grass  = 265   # TileIndex.Terrain.Grass.M
+$Stone  = 202   # TileIndex.Terrain.Stone.M
+$Sand   = 445   # TileIndex.Terrain.Sand.M
 
 function e($x, $y, $to) { [pscustomobject]@{ x = $x; y = $y; z = $to } }
 
@@ -84,7 +84,7 @@ function Write-Map {
     $json = @"
 {
   "zoneId": "$id",
-  "tilesetKey": "roguelike_base",
+  "tilesetKey": "onebit_packed",
   "width": $w,
   "height": $h,
   "tileSize": 16,
@@ -107,7 +107,7 @@ $el
     Write-Host "  Written: $id.json  (${w}x${h})"
 }
 
-Write-Host "Generating 16 zone tilemaps (all using roguelike_base)..."
+Write-Host "Generating 16 zone tilemaps (all using onebit_packed)..."
 
 # Zone size categories:
 #   Small  (30×22) — starter towns and short paths (fenwick-crossing, greenveil-paths, aldenmere)

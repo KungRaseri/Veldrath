@@ -24,7 +24,7 @@ public class GetTileMapQueryHandlerTests
         var expected = new TileMapDefinition
         {
             ZoneId = "fenwick-crossing",
-            TilesetKey = "roguelike_base",
+            TilesetKey = "onebit_packed",
             Width = 40,
             Height = 30
         };

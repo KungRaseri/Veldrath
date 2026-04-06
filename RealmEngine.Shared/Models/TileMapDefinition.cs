@@ -13,7 +13,7 @@ public class TileMapDefinition
 
     /// <summary>
     /// Tileset key used to look up the spritesheet in <c>TilemapAssets.All</c>.
-    /// All zones use <c>"roguelike_base"</c>. Tile index constants are in <see cref="TileIndex"/>.
+    /// All zones use <c>"onebit_packed"</c>. Tile index constants are in <see cref="TileIndex"/>.
     /// </summary>
     public string TilesetKey { get; set; } = string.Empty;
 
