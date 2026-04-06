@@ -334,7 +334,7 @@ public class ServerConnectionServiceTests : TestBase
         var fired = false;
         svc.VersionMismatch += (_, _) => fired = true;
 
-        // MinCompatibleClientVersion = "0.0" — debug build is at 0.0, so this is compatible
+        // MinCompatibleClientVersion = "0.0" — client assembly is at 0.1 (≥ 0.0), so compatible
         factory.Connection.SimulateReceive("ServerInfo",
             new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.1", "0.0"));
 
