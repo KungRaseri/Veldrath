@@ -7,112 +7,182 @@
 //
 // Layer convention:
 //   Layer 0 "base"    - opaque terrain fill.  Use Terrain.*.M constants.  Never -1.
-//   Layer 1 "objects" - decorations (flora, paths, props).  Use -1 for empty cells.
+//   Layer 1 "objects" - decorations (flora, ground texture, paths, props).  -1 = empty cell.
 //
 // Background color: R71 G45 B60 (dark maroon).  All tile pixels are fully opaque.
-// The background is the tile's "empty" area; colored pixels are the tile content.
+// The background is the implicit empty area of every tile.
+//
+// Ground-texture strategy for grass zones:
+//   base[]=0 (dark maroon), then scatter Ground.* tiles on the objects layer for
+//   visual variety (dead leaves, gravel, foliage patches, grass tufts).
 
 /// <summary>
 /// Compile-time tile index constants for the <c>onebit_packed</c> spritesheet
-/// (Kenney 1-Bit Pack — 49 columns x 22 rows, 16 px tiles, 0 px spacing).
+/// (Kenney 1-Bit Pack — 49 columns × 22 rows, 16 px tiles, 0 px spacing).
 /// </summary>
 /// <remarks>
 /// Index formula: <c>index = row * 49 + col</c>.
-/// <para>
-/// Base-layer fills use solid opaque tiles.  Object-layer decorations (flora, paths)
-/// are placed over the base.  Use <c>-1</c> on the objects layer for empty cells.
-/// </para>
-/// <para>
-/// Reference image: <c>scripts/onebit_labeled.png</c> — each tile labelled with its index.
-/// </para>
+/// Reference image: <c>scripts/onebit_labeled.png</c> — every tile labelled with its index.
 /// </remarks>
 public static class TileIndex
 {
-    // -- Special ---------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // SPECIAL
+    // -------------------------------------------------------------------------
 
-    /// <summary>Solid dark-maroon tile (r0c0). Use where an explicit opaque blank is needed.</summary>
+    /// <summary>
+    /// Dark maroon blank tile (r0c0). Base-layer fill for grass zones and dungeon floors.
+    /// </summary>
     public const int Blank = 0;
 
     /// <summary>
-    /// Pending / unresolved placeholder. Rendered as magenta at runtime so unfinished
-    /// cells are immediately visible. Replace with a real constant once identified.
+    /// Pending / unresolved placeholder. Renders as magenta at runtime — replace
+    /// with a real constant before shipping. Look up the index in
+    /// <c>scripts/onebit_labeled.png</c>.
     /// </summary>
     public const int Pending = -2;
 
     // -------------------------------------------------------------------------
-    // TERRAIN  (base layer — always opaque)
+    // GROUND TEXTURE  (objects layer — scattered over a base=0 fill)
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Opaque terrain fill tiles. The <c>M</c> constant is the canonical base-layer fill.
-    /// No 9-patch border tiles exist in the 1-bit pack — zone edges use flora objects instead.
+    /// Ground-texture tiles from row 0.  Scatter on the objects layer over a dark
+    /// base to add visual variety without changing the terrain type.
     /// </summary>
+    public static class Ground
+    {
+        /// <summary>Dead leaves / sparse dirt dots.</summary>
+        public const int DeadLeaves = 1;    // r0c1
+
+        /// <summary>Light gravel — fine pebble scatter.</summary>
+        public const int LightGravel = 2;   // r0c2
+
+        /// <summary>Tighter cobblestone / gravel.</summary>
+        public const int Cobblestone = 3;   // r0c3
+
+        /// <summary>Larger tiled stone slabs.</summary>
+        public const int StoneTile = 4;     // r0c4
+
+        /// <summary>Light foliage / sparse grass dots.</summary>
+        public const int LightFoliage = 5;  // r0c5
+
+        /// <summary>Medium grass and foliage.</summary>
+        public const int MedFoliage = 6;    // r0c6
+
+        /// <summary>Dense tileable grass — heaviest ground-texture fill.</summary>
+        public const int GrassFill = 7;     // r0c7
+    }
+
+    // -------------------------------------------------------------------------
+    // TERRAIN  (base layer — always opaque, never -1)
+    // -------------------------------------------------------------------------
+
+    /// <summary>Opaque terrain fill tiles used as the map base layer.</summary>
     public static class Terrain
     {
-        /// <summary>Green grass terrain.</summary>
+        /// <summary>Green grass terrain zones.</summary>
         public static class Grass
         {
-            /// <summary>Base-layer fill for grassy zones — uses the dark maroon background (Blank).
-            /// Flora tiles on the objects layer provide the green visual character.</summary>
-            public const int M = 0;   // r0c0 — dark maroon ground; flora decorates on objects layer
+            /// <summary>
+            /// Base fill for grassy zones — dark maroon ground (same as <see cref="TileIndex.Blank"/>).
+            /// Use <see cref="Ground"/> tiles on the objects layer to add green texture.
+            /// </summary>
+            public const int M = 0;     // r0c0 — dark maroon; Ground.* objects layer adds grass character
         }
 
-        /// <summary>Grey stone terrain.</summary>
+        /// <summary>Stone / dungeon terrain.</summary>
         public static class Stone
         {
-            /// <summary>Solid stone fill — canonical base-layer fill for stone zones and dungeon walls.</summary>
-            public const int M = 202; // r4c6 — all-points warm grey (R207 G198 B184)
-            /// <summary>Open dungeon floor — dark background tile used under walkable dungeon cells.</summary>
-            public const int Floor = 0; // r0c0 — all-points dark maroon (R71 G45 B60)
+            /// <summary>Solid warm-grey stone fill — walls, stone zones, dungeon surrounds.</summary>
+            public const int M = 202;   // r4c6 — all-points warm grey (R207 G198 B184)
+
+            /// <summary>Open dungeon floor — same dark background as <see cref="TileIndex.Blank"/>.</summary>
+            public const int Floor = 0; // r0c0 — dark maroon walkable floor
         }
 
         /// <summary>Sandy / coastal terrain.</summary>
         public static class Sand
         {
-            /// <summary>Solid brown fill — canonical base-layer fill for sandy/coastal zones.</summary>
-            public const int M = 445; // r9c4 — all-points brown (R191 G121 B88)
+            /// <summary>Solid brown fill — coastal and desert zones.</summary>
+            public const int M = 445;   // r9c4 — all-points brown (R191 G121 B88)
         }
     }
 
     // -------------------------------------------------------------------------
-    // WATER  (base layer — deep water fill)
+    // WATER  (base layer)
     // -------------------------------------------------------------------------
 
-    /// <summary>Water terrain tiles.</summary>
+    /// <summary>Water terrain base-layer tiles.</summary>
     public static class Water
     {
-        /// <summary>Solid deep water fill — canonical base-layer tile for water zones.</summary>
-        public const int Deep = 207; // r4c11 — all-points blue (R60 G172 B215)
+        /// <summary>Solid deep-water fill.</summary>
+        public const int Deep = 207;    // r4c11 — all-points blue (R60 G172 B215)
     }
 
     // -------------------------------------------------------------------------
     // FLORA  (objects layer)
     // -------------------------------------------------------------------------
 
-    /// <summary>Plant and tree object tiles placed on the objects layer.</summary>
+    /// <summary>
+    /// Flora object tiles placed on the objects layer.
+    /// Rows 1 and 2 of the spritesheet contain trees, cacti, ground cover and props.
+    /// </summary>
     public static class Flora
     {
-        /// <summary>Round oak-style tree variants.</summary>
-        public static class OakTree
-        {
-            /// <summary>Sparse light green oak tree.</summary>
-            public const int LightGreen = 49;  // r1c0 — 5/9 green
-            /// <summary>Medium round oak tree.</summary>
-            public const int Orange     = 53;  // r1c4 — 7/9 green (no orange variant; maps to medium round)
-            /// <summary>Dense round dark green oak tree.</summary>
-            public const int DarkGreen  = 55;  // r1c6 — 7/9 green
-        }
+        // -- Trees (row 1, indices 49-54) ------------------------------------
 
-        /// <summary>Round bush / shrub variants.</summary>
-        public static class Bush
-        {
-            /// <summary>Light green bush.</summary>
-            public const int LightGreen = 50;  // r1c1 — 5/9 green sparse
-            /// <summary>Medium bush variant.</summary>
-            public const int Orange     = 53;  // r1c4 — round medium (no orange; reuses medium round)
-            /// <summary>Dense dark green bush.</summary>
-            public const int DarkGreen  = 102; // r2c4 — 6/9 green dense
-        }
+        /// <summary>Sparse round tree — lightest canopy.</summary>
+        public const int TreeA = 49;        // r1c0
+
+        /// <summary>Round tree, medium density.</summary>
+        public const int TreeB = 50;        // r1c1
+
+        /// <summary>Single pine / fir tree (pointed top).</summary>
+        public const int Pine = 51;         // r1c2
+
+        /// <summary>Round tree variant C.</summary>
+        public const int TreeC = 52;        // r1c3
+
+        /// <summary>Round tree variant D — medium-dense.</summary>
+        public const int TreeD = 53;        // r1c4
+
+        /// <summary>Dense round tree — best all-purpose forest fill.</summary>
+        public const int TreeE = 54;        // r1c5
+
+        // -- Cacti (row 1, indices 55-56) ------------------------------------
+
+        /// <summary>Single cactus — arid / desert / volcanic zones.</summary>
+        public const int Cactus = 55;       // r1c6
+
+        /// <summary>Dual (branching) cactus — taller arid decoration.</summary>
+        public const int CactusDual = 56;   // r1c7
+
+        // -- Ground cover and props (row 2, indices 98-105) ------------------
+
+        /// <summary>Tall grass tuft.</summary>
+        public const int TallGrass = 98;    // r2c0
+
+        /// <summary>Green vines / leafy creeper.</summary>
+        public const int Vines = 99;        // r2c1
+
+        /// <summary>Single climbing vine.</summary>
+        public const int ClimbingVine = 100; // r2c2
+
+        /// <summary>Dual pine trees side-by-side.</summary>
+        public const int DualPine = 101;    // r2c3
+
+        /// <summary>Large round tree with visible trunk — good swamp/deep-forest anchor.</summary>
+        public const int BigTree = 102;     // r2c4
+
+        /// <summary>Rocky boulders / stone outcrop.</summary>
+        public const int Boulder = 103;     // r2c5
+
+        /// <summary>Dead / withered vines.</summary>
+        public const int DeadVines = 104;   // r2c6
+
+        /// <summary>Green mushroom.</summary>
+        public const int Mushroom = 105;    // r2c7
     }
 
     // -------------------------------------------------------------------------
@@ -120,62 +190,54 @@ public static class TileIndex
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Dirt path tiles for roads and trails placed on the objects layer.
+    /// Dirt path tiles for roads and trails on the objects layer.
     /// All use brown (R191 G121 B88) over the dark background.
     /// </summary>
     public static class DirtPath
     {
         /// <summary>4-way cross junction — open in all four directions.</summary>
-        public const int FourWay = 444; // r9c3 — T+B+L+R brown, hollow centre
+        public const int FourWay = 444;         // r9c3
 
         /// <summary>Isolated single-tile dirt patch.</summary>
-        public const int Circle = 191; // r3c44 — centre-only brown dot
-
-        // -- Straight segments -----------------------------------------------
+        public const int Circle = 191;          // r3c44
 
         /// <summary>Straight horizontal segment — exits west and east.</summary>
-        public const int StraightH = 192; // r3c45 — L+R+M brown, T/B bg
+        public const int StraightH = 192;       // r3c45
 
         /// <summary>Straight vertical segment — exits north and south.</summary>
-        public const int StraightV = 343; // r7c0 — T+B+M brown, L/R bg
+        public const int StraightV = 343;       // r7c0
 
-        // -- Corners ---------------------------------------------------------
+        /// <summary>Corner connecting north and west exits.</summary>
+        public const int CornerTL = 292;        // r5c47
 
-        /// <summary>Corner connecting north exit and west exit.</summary>
-        public const int CornerTL = 292; // r5c47 — T+L+M brown
+        /// <summary>Corner connecting north and east exits.</summary>
+        public const int CornerTR = 348;        // r7c5
 
-        /// <summary>Corner connecting north exit and east exit.</summary>
-        public const int CornerTR = 348; // r7c5 — T+R brown (hollow centre)
+        /// <summary>Corner connecting south and west exits.</summary>
+        public const int CornerBL = 184;        // r3c37
 
-        /// <summary>Corner connecting south exit and west exit.</summary>
-        public const int CornerBL = 184; // r3c37 — B+L+M brown
-
-        /// <summary>Corner connecting south exit and east exit.</summary>
-        public const int CornerBR = 260; // r5c15 — B+R+M brown
-
-        // -- T-junctions -----------------------------------------------------
+        /// <summary>Corner connecting south and east exits.</summary>
+        public const int CornerBR = 260;        // r5c15
 
         /// <summary>T-junction open south, west, east (closed north).</summary>
-        public const int TJunctionLBR = 261; // r5c16 — B+L+R+M brown
+        public const int TJunctionLBR = 261;    // r5c16
 
         /// <summary>T-junction open north, west, east (closed south).</summary>
-        public const int TJunctionLTR = 345; // r7c2 — T+L+R+M brown
+        public const int TJunctionLTR = 345;    // r7c2
 
         /// <summary>T-junction open north, south, east (closed west).</summary>
-        public const int TJunctionTBR = 299; // r6c5 — T+B+R+M brown
+        public const int TJunctionTBR = 299;    // r6c5
 
         /// <summary>T-junction open north, south, west (closed east).</summary>
-        public const int TJunctionLTB = 451; // r9c10 — T+B+L+M brown
+        public const int TJunctionLTB = 451;    // r9c10
 
-        // -- End caps --------------------------------------------------------
+        /// <summary>Dead-end cap — exit south only.</summary>
+        public const int EndTop = 244;          // r4c48
 
-        /// <summary>Dead-end cap — exit south only (cap face at north).</summary>
-        public const int EndTop = 244; // r4c48 — B+M brown, T/L/R bg
+        /// <summary>Dead-end cap — exit north only.</summary>
+        public const int EndBottom = 243;       // r4c47
 
-        /// <summary>Dead-end cap — exit north only (cap face at south).</summary>
-        public const int EndBottom = 243; // r4c47 — T+M brown, B/L/R bg
-
-        /// <summary>Dead-end cap — exit west only (cap face at east).</summary>
-        public const int EndRight = 359; // r7c16 — L+M brown, T/B/R bg
+        /// <summary>Dead-end cap — exit west only.</summary>
+        public const int EndRight = 359;        // r7c16
     }
 }
