@@ -664,4 +664,16 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().Contain(msg => msg.Contains("Welcome to the shop at Fenwick Crossing"));
     }
 
+    // Version mismatch
+    [Fact]
+    public void VersionMismatch_Should_Set_ErrorMessage_With_Both_Versions()
+    {
+        var conn = new FakeServerConnectionService();
+        var vm   = MakeVm(conn: conn);
+
+        conn.SimulateVersionMismatch("0.1", "9.0");
+
+        vm.ErrorMessage.Should().Be("Version mismatch \u2014 client v0.1 / server v9.0");
+    }
+
 }

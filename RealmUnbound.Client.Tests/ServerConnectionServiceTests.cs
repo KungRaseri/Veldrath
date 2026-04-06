@@ -323,4 +323,74 @@ public class ServerConnectionServiceTests : TestBase
 
         connectionLostFired.Should().BeTrue();
     }
+
+    // Version compatibility checks (HandleServerInfo)
+    [Fact]
+    public async Task HandleServerInfo_Should_Not_Fire_VersionMismatch_When_Versions_Are_Compatible()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+
+        var fired = false;
+        svc.VersionMismatch += (_, _) => fired = true;
+
+        // MinCompatibleClientVersion = "0.0" — debug build is at 0.0, so this is compatible
+        factory.Connection.SimulateReceive("ServerInfo",
+            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.1", "0.0"));
+
+        fired.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task HandleServerInfo_Should_Fire_VersionMismatch_When_Client_Is_Too_Old()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+
+        string? capturedClient = null;
+        string? capturedServer = null;
+        svc.VersionMismatch += (c, s) => { capturedClient = c; capturedServer = s; };
+
+        // Server requires minimum 9.99 — current client is well below that
+        factory.Connection.SimulateReceive("ServerInfo",
+            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "9.99", "9.99"));
+
+        capturedClient.Should().NotBeNullOrEmpty();
+        capturedServer.Should().Be("9.99");
+    }
+
+    [Fact]
+    public async Task HandleServerInfo_Should_Fire_VersionMismatch_When_Server_Is_Too_Old()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+
+        string? capturedServer = null;
+        svc.VersionMismatch += (_, s) => capturedServer = s;
+
+        // Server version is 0.0 — client requires MinCompatibleServerVersion = "0.1"
+        // so this fires VersionMismatch only if the assembly attribute is present.
+        // In the test assembly the attribute is absent; fall-back minServer is "0.1",
+        // so a server at 0.0 is rejected.
+        factory.Connection.SimulateReceive("ServerInfo",
+            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.0", "0.0"));
+
+        capturedServer.Should().Be("0.0");
+    }
+
+    [Fact]
+    public async Task HandleServerInfo_Compatible_Allows_Higher_Minor_Than_MinCompatible()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+
+        var fired = false;
+        svc.VersionMismatch += (_, _) => fired = true;
+
+        // Server min is 0.0, client is at 0.x (anything ≥ 0) → compatible
+        factory.Connection.SimulateReceive("ServerInfo",
+            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.5", "0.0"));
+
+        fired.Should().BeFalse();
+    }
 }

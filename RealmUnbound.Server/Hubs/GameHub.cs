@@ -4,8 +4,10 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmUnbound.Contracts.Connection;
 using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
@@ -16,6 +18,7 @@ using RealmUnbound.Server.Features.Quest;
 using RealmUnbound.Server.Features.Shop;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
+using RealmUnbound.Server.Settings;
 
 namespace RealmUnbound.Server.Hubs;
 
@@ -42,6 +45,7 @@ public class GameHub : Hub
     private readonly IZoneEntityTracker _entityTracker;
     private readonly ITileMapRepository _tilemapRepo;
     private readonly IEnemyRepository _enemyRepo;
+    private readonly IOptions<VersionCompatibilitySettings> _versionOptions;
 
     /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
@@ -53,7 +57,8 @@ public class GameHub : Hub
         ISender mediator,
         IZoneEntityTracker entityTracker,
         ITileMapRepository tilemapRepo,
-        IEnemyRepository enemyRepo)
+        IEnemyRepository enemyRepo,
+        IOptions<VersionCompatibilitySettings> versionOptions)
     {
         _logger           = logger;
         _characterRepo    = characterRepo;
@@ -64,6 +69,7 @@ public class GameHub : Hub
         _entityTracker    = entityTracker;
         _tilemapRepo      = tilemapRepo;
         _enemyRepo        = enemyRepo;
+        _versionOptions   = versionOptions;
     }
 
     public override async Task OnConnectedAsync()
@@ -74,8 +80,17 @@ public class GameHub : Hub
         // Join the per-account group so this connection receives CharacterStatusChanged broadcasts
         await Groups.AddToGroupAsync(Context.ConnectionId, AccountGroup(accountId));
 
-        _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
-        await Clients.Caller.SendAsync("Connected", Context.ConnectionId);
+        // Resolve server version from the assembly (Major.Minor only — patch carries no protocol meaning)
+        var v = GetType().Assembly.GetName().Version ?? new Version(0, 1);
+        var serverVersion = $"{v.Major}.{v.Minor}";
+        var minCompatible = _versionOptions.Value.MinCompatibleClientVersion;
+
+        _logger.LogInformation("Client connected: {ConnectionId} (server v{ServerVersion}, minClient v{MinCompat})",
+            Context.ConnectionId, serverVersion, minCompatible);
+
+        await Clients.Caller.SendAsync("ServerInfo",
+            new ServerInfoPayload(Context.ConnectionId, serverVersion, minCompatible));
+
         await base.OnConnectedAsync();
     }
 

@@ -44,6 +44,7 @@ public class GameViewModel : ViewModelBase
     private readonly IZoneService _zoneService;
     private readonly TokenStore _tokens;
     private readonly INavigationService _navigation;
+    private readonly ISessionAlertService? _sessionAlert;
     private readonly IAssetStore? _assetStore;
     private readonly IAudioPlayer? _audioPlayer;
 
@@ -832,6 +833,7 @@ public class GameViewModel : ViewModelBase
         IZoneService zoneService,
         TokenStore tokens,
         INavigationService navigation,
+        ISessionAlertService? sessionAlert = null,
         IAssetStore? assetStore = null,
         IAudioPlayer? audioPlayer = null)
     {
@@ -839,6 +841,7 @@ public class GameViewModel : ViewModelBase
         _zoneService = zoneService;
         _tokens = tokens;
         _navigation = navigation;
+        _sessionAlert = sessionAlert;
         _assetStore = assetStore;
         _audioPlayer = audioPlayer;
 
@@ -960,6 +963,9 @@ public class GameViewModel : ViewModelBase
 
         // Auto-redirect to main menu if the hub drops (e.g. failed token refresh mid-session).
         _connection.ConnectionLost += OnConnectionLost;
+
+        // Auto-redirect with a descriptive message when server and client versions are incompatible.
+        _connection.VersionMismatch += OnVersionMismatch;
     }
 
     /// <summary>Called by <see cref="CharacterSelectViewModel"/> after SelectCharacter + EnterZone succeeds.</summary>
@@ -1409,6 +1415,14 @@ public class GameViewModel : ViewModelBase
     private void OnConnectionLost()
     {
         // Hub dropped mid-session (e.g. token refresh failed). Stop audio and redirect.
+        _audioPlayer?.StopMusic();
+        _navigation.NavigateTo<MainMenuViewModel>();
+    }
+
+    private void OnVersionMismatch(string clientVer, string serverVer)
+    {
+        if (_sessionAlert is not null)
+            _sessionAlert.PendingAlert = $"Version mismatch — client v{clientVer} / server v{serverVer}";
         _audioPlayer?.StopMusic();
         _navigation.NavigateTo<MainMenuViewModel>();
     }
