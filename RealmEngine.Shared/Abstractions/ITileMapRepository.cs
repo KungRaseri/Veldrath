@@ -1,4 +1,4 @@
-using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 
 namespace RealmEngine.Shared.Abstractions;
 
@@ -6,8 +6,8 @@ namespace RealmEngine.Shared.Abstractions;
 public interface ITileMapRepository
 {
     /// <summary>
-    /// Returns the <see cref="TileMapDefinition"/> for <paramref name="zoneId"/>,
+    /// Returns the <see cref="TiledMap"/> for <paramref name="zoneId"/>,
     /// or <see langword="null"/> if no map is registered for that zone.
     /// </summary>
-    Task<TileMapDefinition?> GetByZoneIdAsync(string zoneId);
+    Task<TiledMap?> GetByZoneIdAsync(string zoneId);
 }

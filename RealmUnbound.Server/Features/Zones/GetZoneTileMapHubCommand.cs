@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models.Tiled;
 using RealmUnbound.Contracts.Tilemap;
 
 namespace RealmUnbound.Server.Features.Zones;
@@ -23,7 +24,7 @@ public record GetZoneTileMapHubResult
 }
 
 /// <summary>
-/// Handles <see cref="GetZoneTileMapHubCommand"/> by loading the <see cref="RealmEngine.Shared.Models.TileMapDefinition"/>
+/// Handles <see cref="GetZoneTileMapHubCommand"/> by loading the <see cref="TiledMap"/>
 /// from the tilemap repository and projecting it into a <see cref="TileMapDto"/> for the client.
 /// </summary>
 public class GetZoneTileMapHubCommandHandler : IRequestHandler<GetZoneTileMapHubCommand, GetZoneTileMapHubResult>
@@ -43,24 +44,38 @@ public class GetZoneTileMapHubCommandHandler : IRequestHandler<GetZoneTileMapHub
     /// <inheritdoc/>
     public async Task<GetZoneTileMapHubResult> Handle(GetZoneTileMapHubCommand request, CancellationToken cancellationToken)
     {
-        var definition = await _tilemapRepo.GetByZoneIdAsync(request.ZoneId);
-        if (definition is null)
+        var map = await _tilemapRepo.GetByZoneIdAsync(request.ZoneId);
+        if (map is null)
         {
             _logger.LogWarning("No tilemap definition found for zone '{ZoneId}'", request.ZoneId);
             return new GetZoneTileMapHubResult { Success = false, ErrorMessage = $"No map found for zone '{request.ZoneId}'" };
         }
 
+        var firstGid = map.GetFirstGid();
+
+        // Convert tilelayers to engine layer DTOs: GIDs → 0-based spritesheet indices
+        var layers = map.Layers
+            .Where(l => l.Type == "tilelayer" && l.Data is not null)
+            .Select((l, i) => new TileLayerDto(
+                l.Name,
+                TiledMapGameExtensions.ToEngineLayerData(l.Data!, firstGid),
+                l.Properties.Find(p => p.Name == "zIndex")?.AsInt(i) ?? i))
+            .ToArray();
+
+        var exitTiles   = map.GetExitTiles();
+        var spawnPoints = map.GetSpawnPoints();
+
         var dto = new TileMapDto(
-            ZoneId:        definition.ZoneId,
-            TilesetKey:    definition.TilesetKey,
-            Width:         definition.Width,
-            Height:        definition.Height,
-            TileSize:      definition.TileSize,
-            Layers:        definition.Layers.Select(l => new TileLayerDto(l.Name, l.Data, l.ZIndex)).ToArray(),
-            CollisionMask: definition.CollisionMask,
-            FogMask:       definition.FogMask,
-            ExitTiles:     definition.ExitTiles.Select(e => new ExitTileDto(e.TileX, e.TileY, e.ToZoneId)).ToArray(),
-            SpawnPoints:   definition.SpawnPoints.Select(s => new SpawnPointDto(s.TileX, s.TileY)).ToArray());
+            ZoneId:        map.GetZoneId(),
+            TilesetKey:    map.GetTilesetKey(),
+            Width:         map.Width,
+            Height:        map.Height,
+            TileSize:      map.TileWidth,
+            Layers:        layers,
+            CollisionMask: map.GetCollisionMask(),
+            FogMask:       map.GetFogMask(),
+            ExitTiles:     exitTiles.Select(e => new ExitTileDto(e.TileX, e.TileY, e.ToZoneId)).ToArray(),
+            SpawnPoints:   spawnPoints.Select(s => new SpawnPointDto(s.TileX, s.TileY)).ToArray());
 
         return new GetZoneTileMapHubResult { Success = true, TileMap = dto };
     }

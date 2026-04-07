@@ -1,16 +1,16 @@
 using FluentValidation;
 using MediatR;
 using RealmEngine.Shared.Abstractions;
-using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 
 namespace RealmEngine.Core.Features.Tilemap.Queries;
 
-/// <summary>Query that loads a <see cref="TileMapDefinition"/> for the given zone.</summary>
+/// <summary>Query that loads a <see cref="TiledMap"/> for the given zone.</summary>
 /// <param name="ZoneId">Identifier of the zone whose map to load (e.g. <c>"fenwick-crossing"</c>).</param>
-public record GetTileMapQuery(string ZoneId) : IRequest<TileMapDefinition?>;
+public record GetTileMapQuery(string ZoneId) : IRequest<TiledMap?>;
 
 /// <summary>Handles <see cref="GetTileMapQuery"/> by loading the map from the tilemap repository.</summary>
-public class GetTileMapQueryHandler : IRequestHandler<GetTileMapQuery, TileMapDefinition?>
+public class GetTileMapQueryHandler : IRequestHandler<GetTileMapQuery, TiledMap?>
 {
     private readonly ITileMapRepository _repository;
 
@@ -20,7 +20,7 @@ public class GetTileMapQueryHandler : IRequestHandler<GetTileMapQuery, TileMapDe
         _repository = repository;
 
     /// <inheritdoc/>
-    public Task<TileMapDefinition?> Handle(GetTileMapQuery request, CancellationToken cancellationToken) =>
+    public Task<TiledMap?> Handle(GetTileMapQuery request, CancellationToken cancellationToken) =>
         _repository.GetByZoneIdAsync(request.ZoneId);
 }
 

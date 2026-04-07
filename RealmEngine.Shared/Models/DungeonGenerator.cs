@@ -1,10 +1,12 @@
+using System.Text.Json;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 
 namespace RealmEngine.Shared.Models;
 
 /// <summary>
 /// Procedural dungeon map generator using Binary Space Partitioning (BSP).
-/// Produces a <see cref="TileMapDefinition"/> suitable for a dungeon zone.
+/// Produces a <see cref="TiledMap"/> suitable for a dungeon zone.
 /// </summary>
 public static class DungeonGenerator
 {
@@ -13,6 +15,14 @@ public static class DungeonGenerator
     // Layer 1 "objects" — Stone.M (920) for wall cells; -1 (transparent) for carved floor cells.
     private const int TileWall  = TileIndex.Terrain.Stone.M;     // 920 — solid centre stone
     private const int TileFloor = TileIndex.Terrain.Stone.Floor; // 7   — lighter dungeon floor
+
+    // GIDs are 1-based: GID = engine index + 1
+    private const int Gid0     = 0;                // empty / transparent
+    private const int GidWall  = TileWall  + 1;   // 921
+    private const int GidFloor = TileFloor + 1;   //   8
+
+    private const int FirstGid  = 1;
+    private const int TileSize  = 16;
 
     private const int MinRoomW  = 5;
     private const int MinRoomH  = 5;
@@ -32,88 +42,119 @@ public static class DungeonGenerator
     };
 
     /// <summary>
-    /// Generates a deterministic dungeon <see cref="TileMapDefinition"/> for the given zone identifier.
+    /// Generates a deterministic dungeon <see cref="TiledMap"/> for the given zone identifier.
     /// The same <paramref name="zoneId"/> always produces the same layout.
     /// Map dimensions scale with dungeon depth: level 1 = 40×30, level 2 = 50×38, level 3 = 60×45, level 4+ = 70×50.
+    /// The returned map contains an inline tileset with collision shapes for the wall tile so that
+    /// <see cref="TiledMapGameExtensions.IsBlocked"/> works without loading any external file.
     /// </summary>
     /// <param name="zoneId">Dungeon zone identifier (e.g. <c>"dungeon-1"</c>).</param>
     /// <param name="seed">
     /// Optional explicit seed. When 0 (default) the seed is derived from <paramref name="zoneId"/>'s hash code,
     /// ensuring deterministic but zone-unique layouts.
     /// </param>
-    /// <returns>A fully-formed <see cref="TileMapDefinition"/> with rooms, corridors, spawn points, and one exit tile.</returns>
-    public static TileMapDefinition Generate(string zoneId, int seed = 0)
+    /// <returns>A fully-formed <see cref="TiledMap"/> with rooms, corridors, spawn points, and one exit tile.</returns>
+    public static TiledMap Generate(string zoneId, int seed = 0)
     {
         var level = ParseLevel(zoneId);
         var (mapW, mapH) = DimensionsForLevel(level);
 
         var rng = new Random(seed == 0 ? zoneId.GetHashCode() : seed);
 
-        // Build flat ground layer (all walls) — used for carving, then split into 2 layers
-        var groundData = new int[mapW * mapH];
-        Array.Fill(groundData, TileWall);
+        // Build flat GID arrays: start with all wall GIDs
+        var baseGids    = new int[mapW * mapH];
+        var objectsGids = new int[mapW * mapH];
 
-        var collisionMask = new bool[mapW * mapH];
-        Array.Fill(collisionMask, true); // everything starts blocked
-
-        var fogMask = new bool[mapW * mapH];
-        Array.Fill(fogMask, true); // dungeons start fully hidden
+        Array.Fill(baseGids, GidFloor); // base layer is always floor
+        Array.Fill(objectsGids, GidWall); // objects layer starts all-wall; carved = Gid0
 
         // Generate rooms via BSP partitioning
         var rooms = GenerateRooms(rng, mapW, mapH);
 
         // Carve floor tiles for each room
         foreach (var room in rooms)
-            CarveRoom(room, groundData, collisionMask, mapW);
+            CarveRoom(room, objectsGids, mapW);
 
         // Connect rooms with L-shaped corridors
         for (var i = 0; i < rooms.Count - 1; i++)
-            CarveCorridorBetween(rooms[i], rooms[i + 1], groundData, collisionMask, rng, mapW, mapH);
-
-        // Build 2-layer data from the carved groundData:
-        //   Layer 0 "base"    — Stone.Floor everywhere (opaque, never -1)
-        //   Layer 1 "objects" — Stone.M where walls remain; -1 where floor was carved
-        var baseData    = new int[mapW * mapH];
-        var objectsData = new int[mapW * mapH];
-        Array.Fill(baseData, TileFloor);
-        for (var i = 0; i < groundData.Length; i++)
-            objectsData[i] = groundData[i] == TileWall ? TileWall : -1;
+            CarveCorridorBetween(rooms[i], rooms[i + 1], objectsGids, rng, mapW, mapH);
 
         // Spawn points: two positions in the first room's centre
         var firstRoom = rooms[0];
         var spawnX    = firstRoom.X + firstRoom.W / 2;
         var spawnY    = firstRoom.Y + firstRoom.H / 2;
-        var spawnPoints = new List<SpawnPointDefinition>
-        {
-            new() { TileX = spawnX,     TileY = spawnY },
-            new() { TileX = spawnX + 1, TileY = spawnY },
-        };
 
         // Exit tile: floor tile on the border of the last room
         var lastRoom = rooms[^1];
-        var exitTile = new ExitTileDefinition
-        {
-            TileX    = lastRoom.X + lastRoom.W / 2,
-            TileY    = lastRoom.Y + lastRoom.H - 1,
-            ToZoneId = DeeperZoneId(zoneId),
-        };
+        var exitX    = lastRoom.X + lastRoom.W / 2;
+        var exitY    = lastRoom.Y + lastRoom.H - 1;
 
-        return new TileMapDefinition
+        return new TiledMap
         {
-            ZoneId        = zoneId,
-            TilesetKey    = "onebit_packed",
-            Width         = mapW,
-            Height        = mapH,
-            TileSize      = 16,
-            Layers        =
+            Width      = mapW,
+            Height     = mapH,
+            TileWidth  = TileSize,
+            TileHeight = TileSize,
+            Properties =
             [
-                new TileLayerDefinition { Name = "base",    Data = baseData,    ZIndex = 0 },
-                new TileLayerDefinition { Name = "objects", Data = objectsData, ZIndex = 1 },
+                MakeStringProp("zoneId",      zoneId),
+                MakeStringProp("tilesetKey",  "onebit_packed"),
+                MakeStringProp("fogMode",     "full"),
             ],
-            CollisionMask = collisionMask,
-            FogMask       = fogMask,
-            SpawnPoints   = spawnPoints,
-            ExitTiles     = [exitTile],
+            Tilesets = [BuildInlineTileset()],
+            Layers   =
+            [
+                new TiledLayer
+                {
+                    Id     = 1,
+                    Type   = "tilelayer",
+                    Name   = "base",
+                    Width  = mapW,
+                    Height = mapH,
+                    Data   = [..baseGids],
+                },
+                new TiledLayer
+                {
+                    Id     = 2,
+                    Type   = "tilelayer",
+                    Name   = "objects",
+                    Width  = mapW,
+                    Height = mapH,
+                    Data   = [..objectsGids],
+                },
+                new TiledLayer
+                {
+                    Id        = 3,
+                    Type      = "objectgroup",
+                    Name      = "spawns",
+                    DrawOrder = "topdown",
+                    Objects   =
+                    [
+                        new TiledObject { Id = 1, Type = "spawn", X = spawnX * TileSize, Y = spawnY * TileSize, Point = true },
+                        new TiledObject { Id = 2, Type = "spawn", X = (spawnX + 1) * TileSize, Y = spawnY * TileSize, Point = true },
+                    ],
+                },
+                new TiledLayer
+                {
+                    Id        = 4,
+                    Type      = "objectgroup",
+                    Name      = "exits",
+                    DrawOrder = "topdown",
+                    Objects   =
+                    [
+                        new TiledObject
+                        {
+                            Id     = 3,
+                            Type   = "exit",
+                            X      = exitX * TileSize,
+                            Y      = exitY * TileSize,
+                            Width  = TileSize,
+                            Height = TileSize,
+                            Properties = [MakeStringProp("toZoneId", DeeperZoneId(zoneId))],
+                        },
+                    ],
+                },
+            ],
         };
     }
 
@@ -146,56 +187,48 @@ public static class DungeonGenerator
         return rooms;
     }
 
-    private static void CarveRoom(Rect room, int[] ground, bool[] collision, int mapW)
+    private static void CarveRoom(Rect room, int[] objectsGids, int mapW)
     {
         for (var y = room.Y; y < room.Y + room.H; y++)
         for (var x = room.X; x < room.X + room.W; x++)
-        {
-            var idx = y * mapW + x;
-            ground[idx]    = TileFloor;
-            collision[idx] = false;
-        }
+            objectsGids[y * mapW + x] = Gid0;
     }
 
-    private static void CarveCorridorBetween(Rect a, Rect b, int[] ground, bool[] collision, Random rng, int mapW, int mapH)
+    private static void CarveCorridorBetween(Rect a, Rect b, int[] objectsGids, Random rng, int mapW, int mapH)
     {
-        // Centre points
         var (ax, ay) = (a.X + a.W / 2, a.Y + a.H / 2);
         var (bx, by) = (b.X + b.W / 2, b.Y + b.H / 2);
 
-        // Randomly choose horizontal-first or vertical-first
         if (rng.Next(2) == 0)
         {
-            CarveHorizontalTunnel(ay, ax, bx, ground, collision, mapW, mapH);
-            CarveVerticalTunnel(bx, ay, by, ground, collision, mapW, mapH);
+            CarveHorizontalTunnel(ay, ax, bx, objectsGids, mapW, mapH);
+            CarveVerticalTunnel(bx, ay, by, objectsGids, mapW, mapH);
         }
         else
         {
-            CarveVerticalTunnel(ax, ay, by, ground, collision, mapW, mapH);
-            CarveHorizontalTunnel(by, ax, bx, ground, collision, mapW, mapH);
+            CarveVerticalTunnel(ax, ay, by, objectsGids, mapW, mapH);
+            CarveHorizontalTunnel(by, ax, bx, objectsGids, mapW, mapH);
         }
     }
 
-    private static void CarveHorizontalTunnel(int y, int x1, int x2, int[] ground, bool[] collision, int mapW, int mapH)
+    private static void CarveHorizontalTunnel(int y, int x1, int x2, int[] objectsGids, int mapW, int mapH)
     {
         var (minX, maxX) = x1 < x2 ? (x1, x2) : (x2, x1);
         for (var x = minX; x <= maxX; x++)
-            CarveTile(x, y, ground, collision, mapW, mapH);
+            CarveTile(x, y, objectsGids, mapW, mapH);
     }
 
-    private static void CarveVerticalTunnel(int x, int y1, int y2, int[] ground, bool[] collision, int mapW, int mapH)
+    private static void CarveVerticalTunnel(int x, int y1, int y2, int[] objectsGids, int mapW, int mapH)
     {
         var (minY, maxY) = y1 < y2 ? (y1, y2) : (y2, y1);
         for (var y = minY; y <= maxY; y++)
-            CarveTile(x, y, ground, collision, mapW, mapH);
+            CarveTile(x, y, objectsGids, mapW, mapH);
     }
 
-    private static void CarveTile(int x, int y, int[] ground, bool[] collision, int mapW, int mapH)
+    private static void CarveTile(int x, int y, int[] objectsGids, int mapW, int mapH)
     {
         if (x < 0 || x >= mapW || y < 0 || y >= mapH) return;
-        var idx = y * mapW + x;
-        ground[idx]    = TileFloor;
-        collision[idx] = false;
+        objectsGids[y * mapW + x] = Gid0;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -222,6 +255,44 @@ public static class DungeonGenerator
             return $"{prefix}{level + 1}";
         return "dungeon-1";
     }
+
+    // Builds a minimal inline TiledTileset that includes only the wall tile's collision shape.
+    // Engine collision detection (BuildSolidTileIds) only needs tiles with non-empty ObjectGroups.
+    private static TiledTileset BuildInlineTileset() => new()
+    {
+        FirstGid   = FirstGid,
+        Name       = "onebit",
+        TileWidth  = TileSize,
+        TileHeight = TileSize,
+        Spacing    = 2,
+        Columns    = 49,
+        TileCount  = 1078,
+        Image      = "../sheets/onebit_packed.png",
+        ImageWidth  = 800,
+        ImageHeight = 368,
+        Tiles =
+        [
+            // Wall tile — has a full-tile collision box → marked solid by BuildSolidTileIds
+            new TiledTileDefinition
+            {
+                Id          = TileWall,  // local ID 920 → GID 921
+                ObjectGroup = new TiledLayer
+                {
+                    Type      = "objectgroup",
+                    Name      = "collision",
+                    DrawOrder = "index",
+                    Objects   = [new TiledObject { Id = 1, X = 0, Y = 0, Width = TileSize, Height = TileSize }],
+                },
+            },
+        ],
+    };
+
+    private static TiledProperty MakeStringProp(string name, string value) => new()
+    {
+        Name  = name,
+        Type  = "string",
+        Value = JsonSerializer.SerializeToElement(value),
+    };
 
     private readonly record struct Rect(int X, int Y, int W, int H)
     {

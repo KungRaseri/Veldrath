@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models.Tiled;
 using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Data.Repositories;
 
@@ -132,7 +133,7 @@ public class MoveCharacterHubCommandHandler : IRequestHandler<MoveCharacterHubCo
         ExitTileDto? exitTriggered = null;
         if (map is not null)
         {
-            var exit = map.ExitTiles.FirstOrDefault(e => e.TileX == request.ToX && e.TileY == request.ToY);
+            var exit = map.GetExitTiles().FirstOrDefault(e => e.TileX == request.ToX && e.TileY == request.ToY);
             if (exit is not null)
                 exitTriggered = new ExitTileDto(exit.TileX, exit.TileY, exit.ToZoneId);
         }
