@@ -1,9 +1,10 @@
+using System.Text.Json;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using RealmEngine.Core.Features.Tilemap.Queries;
 using RealmEngine.Shared.Abstractions;
-using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 
 namespace RealmEngine.Core.Tests.Features.Tilemap;
 
@@ -16,18 +17,25 @@ public class GetTileMapQueryHandlerTests
     private static GetTileMapQueryHandler CreateHandler(ITileMapRepository repository) =>
         new(repository);
 
+    private static TiledMap MakeTiledMap(string zoneId) => new()
+    {
+        Width      = 40,
+        Height     = 30,
+        TileWidth  = 16,
+        TileHeight = 16,
+        Properties =
+        [
+            new TiledProperty { Name = "zoneId",     Type = "string", Value = JsonSerializer.SerializeToElement(zoneId) },
+            new TiledProperty { Name = "tilesetKey", Type = "string", Value = JsonSerializer.SerializeToElement("onebit_packed") },
+        ],
+    };
+
     // ── Handler tests ──────────────────────────────────────────────────────
 
     [Fact]
     public async Task Handle_ReturnsTileMap_WhenRepositoryReturnsDefinition()
     {
-        var expected = new TileMapDefinition
-        {
-            ZoneId = "fenwick-crossing",
-            TilesetKey = "onebit_packed",
-            Width = 40,
-            Height = 30
-        };
+        var expected = MakeTiledMap("fenwick-crossing");
         var repo = new Mock<ITileMapRepository>();
         repo.Setup(r => r.GetByZoneIdAsync("fenwick-crossing")).ReturnsAsync(expected);
 
@@ -41,7 +49,7 @@ public class GetTileMapQueryHandlerTests
     public async Task Handle_ReturnsNull_WhenRepositoryReturnsNull()
     {
         var repo = new Mock<ITileMapRepository>();
-        repo.Setup(r => r.GetByZoneIdAsync(It.IsAny<string>())).ReturnsAsync((TileMapDefinition?)null);
+        repo.Setup(r => r.GetByZoneIdAsync(It.IsAny<string>())).ReturnsAsync((TiledMap?)null);
 
         var result = await CreateHandler(repo.Object).Handle(
             new GetTileMapQuery("unknown-zone"), CancellationToken.None);
@@ -54,7 +62,7 @@ public class GetTileMapQueryHandlerTests
     {
         const string zoneId = "barrow-deeps";
         var repo = new Mock<ITileMapRepository>();
-        repo.Setup(r => r.GetByZoneIdAsync(zoneId)).ReturnsAsync((TileMapDefinition?)null);
+        repo.Setup(r => r.GetByZoneIdAsync(zoneId)).ReturnsAsync((TiledMap?)null);
 
         await CreateHandler(repo.Object).Handle(new GetTileMapQuery(zoneId), CancellationToken.None);
 
@@ -68,7 +76,7 @@ public class GetTileMapQueryHandlerTests
     [InlineData("tidewrack-flats")]
     public async Task Handle_ForwardsCorrectZoneId_ForVariousZones(string zoneId)
     {
-        var map = new TileMapDefinition { ZoneId = zoneId };
+        var map = MakeTiledMap(zoneId);
         var repo = new Mock<ITileMapRepository>();
         repo.Setup(r => r.GetByZoneIdAsync(zoneId)).ReturnsAsync(map);
 
@@ -76,7 +84,7 @@ public class GetTileMapQueryHandlerTests
             new GetTileMapQuery(zoneId), CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.ZoneId.Should().Be(zoneId);
+        result!.GetZoneId().Should().Be(zoneId);
     }
 }
 
