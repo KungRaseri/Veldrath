@@ -183,39 +183,3 @@ public class GetZoneTileMapHubCommandHandlerTests
         result.TileMap!.TilesetKey.Should().Be("onebit_packed");
     }
 }
-
-            .Handle(new GetZoneTileMapHubCommand("fenwick-crossing"), CancellationToken.None);
-
-        result.TileMap!.ExitTiles.Should().HaveCount(1);
-        result.TileMap.ExitTiles[0].ToZoneId.Should().Be("greenveil-paths");
-        result.TileMap.ExitTiles[0].TileX.Should().Be(15);
-    }
-
-    [Fact]
-    public async Task Handle_MapsSpawnPoints_IntoDto()
-    {
-        var definition = MakeDefinition("fenwick-crossing");
-        var repo = new Mock<ITileMapRepository>();
-        repo.Setup(r => r.GetByZoneIdAsync(It.IsAny<string>())).ReturnsAsync(definition);
-
-        var result = await MakeHandler(repo.Object)
-            .Handle(new GetZoneTileMapHubCommand("fenwick-crossing"), CancellationToken.None);
-
-        result.TileMap!.SpawnPoints.Should().HaveCount(1);
-        result.TileMap.SpawnPoints[0].TileX.Should().Be(5);
-        result.TileMap.SpawnPoints[0].TileY.Should().Be(5);
-    }
-
-    [Fact]
-    public async Task Handle_MapsTilesetKey_IntoDto()
-    {
-        var repo = new Mock<ITileMapRepository>();
-        repo.Setup(r => r.GetByZoneIdAsync(It.IsAny<string>()))
-            .ReturnsAsync(MakeDefinition("fenwick-crossing"));
-
-        var result = await MakeHandler(repo.Object)
-            .Handle(new GetZoneTileMapHubCommand("fenwick-crossing"), CancellationToken.None);
-
-        result.TileMap!.TilesetKey.Should().Be("onebit_packed");
-    }
-}
