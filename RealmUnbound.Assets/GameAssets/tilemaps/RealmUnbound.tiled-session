@@ -1,9 +1,29 @@
 {
     "activeFile": "",
     "expandedProjectPaths": [
+        "sheets",
+        ".",
+        "maps"
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
+        "maps/fenwick-crossing.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 289.3333333333333,
+                "y": 431.33333333333337
+            }
+        },
+        "sheets/onebit.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "sheets/roguelike_base.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 2
+        }
     },
     "last.imagePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/sheets",
     "map.height": 22,
@@ -14,8 +34,13 @@
     ],
     "project": "RealmUnbound.tiled-project",
     "recentFiles": [
+        "sheets/roguelike_base.tsx",
+        "maps/fenwick-crossing.tmx",
+        "sheets/onebit.tsx"
     ],
     "tileset.lastUsedFormat": "tsx",
+    "tileset.margin": 1,
+    "tileset.spacing": 1,
     "tileset.tileSize": {
         "height": 16,
         "width": 16
