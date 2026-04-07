@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 using RealmUnbound.Contracts.Connection;
 using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Data.Entities;
@@ -288,8 +289,9 @@ public class GameHub : Hub
 
         // Determine spawn position (first spawn point or tile 1,1 fallback)
         var map = await _tilemapRepo.GetByZoneIdAsync(zoneId);
-        var spawnX = map?.SpawnPoints.Count > 0 ? map.SpawnPoints[0].TileX : 1;
-        var spawnY = map?.SpawnPoints.Count > 0 ? map.SpawnPoints[0].TileY : 1;
+        var spawns = map?.GetSpawnPoints();
+        var spawnX = spawns is { Count: > 0 } ? spawns[0].TileX : 1;
+        var spawnY = spawns is { Count: > 0 } ? spawns[0].TileY : 1;
         _entityTracker.TrackPlayer(zoneId, characterId, spawnX, spawnY);
 
         // Persist the spawn tile so MoveCharacter can validate 1-tile steps from the correct origin.
@@ -1923,14 +1925,14 @@ public class GameHub : Hub
     /// Picks up to 3 archetypes from the enemy repository and places them at random
     /// non-blocked, non-spawn-point tiles.
     /// </summary>
-    private async Task<IReadOnlyList<ZoneEntitySnapshot>> SpawnEnemiesForZoneAsync(string zoneId, TileMapDefinition map)
+    private async Task<IReadOnlyList<ZoneEntitySnapshot>> SpawnEnemiesForZoneAsync(string zoneId, TiledMap map)
     {
         try
         {
             var archetypes = (await _enemyRepo.GetAllAsync()).Take(3).ToList();
             if (archetypes.Count == 0) return [];
 
-            var spawnPointSet = map.SpawnPoints
+            var spawnPointSet = map.GetSpawnPoints()
                 .Select(p => (p.TileX, p.TileY))
                 .ToHashSet();
 
@@ -1964,7 +1966,7 @@ public class GameHub : Hub
         }
     }
 
-    private static (int x, int y) FindSpawnTile(TileMapDefinition map, HashSet<(int, int)> exclusions, Random rng)
+    private static (int x, int y) FindSpawnTile(TiledMap map, HashSet<(int, int)> exclusions, Random rng)
     {
         // Make up to 50 attempts to find a valid non-blocked, non-spawn-point tile
         for (var attempt = 0; attempt < 50; attempt++)

@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using RealmEngine.Shared.Abstractions;
-using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Hubs;
 
@@ -21,7 +21,7 @@ public class EnemyAiService : IHostedService, IDisposable
     private readonly ILogger<EnemyAiService> _logger;
 
     // Per-zone map cache; populated lazily and never invalidated (maps are static assets)
-    private readonly ConcurrentDictionary<string, TileMapDefinition> _mapCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, TiledMap> _mapCache = new(StringComparer.OrdinalIgnoreCase);
 
     private PeriodicTimer? _timer;
     private Task? _loopTask;
@@ -127,7 +127,7 @@ public class EnemyAiService : IHostedService, IDisposable
         }
     }
 
-    private async Task<TileMapDefinition?> GetMapAsync(string zoneId)
+    private async Task<TiledMap?> GetMapAsync(string zoneId)
     {
         if (_mapCache.TryGetValue(zoneId, out var cached)) return cached;
 
@@ -161,7 +161,7 @@ public class EnemyAiService : IHostedService, IDisposable
     }
 
     private static (int x, int y, string dir) StepToward(
-        int ex, int ey, int px, int py, TileMapDefinition map)
+        int ex, int ey, int px, int py, TiledMap map)
     {
         // Greedy step: pick whichever adjacent tile minimises remaining Manhattan distance
         Span<(int dx, int dy, string dir)> candidates =
@@ -195,7 +195,7 @@ public class EnemyAiService : IHostedService, IDisposable
         return (bestX, bestY, bestDir);
     }
 
-    private static (int x, int y, string dir) RandomWander(int ex, int ey, TileMapDefinition map, Random rng)
+    private static (int x, int y, string dir) RandomWander(int ex, int ey, TiledMap map, Random rng)
     {
         // 40 % chance to stay still
         if (rng.Next(10) < 4) return (ex, ey, "S");

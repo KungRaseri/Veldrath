@@ -1,5 +1,5 @@
 using RealmEngine.Shared.Abstractions;
-using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Models.Tiled;
 
 namespace RealmEngine.Data.Repositories;
 
@@ -10,6 +10,6 @@ namespace RealmEngine.Data.Repositories;
 public class InMemoryTileMapRepository : ITileMapRepository
 {
     /// <inheritdoc />
-    public Task<TileMapDefinition?> GetByZoneIdAsync(string zoneId) =>
-        Task.FromResult((TileMapDefinition?)null);
+    public Task<TiledMap?> GetByZoneIdAsync(string zoneId) =>
+        Task.FromResult((TiledMap?)null);
 }
