@@ -1,21 +1,20 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 
 namespace RealmEngine.Data.Seeders;
 
 /// <summary>
-/// Seeds all <see cref="ZoneLocation"/> rows and their <see cref="ZoneLocationConnection"/> edges into
-/// <see cref="ContentDbContext"/>.  Every zone in the world geography has at least two locations so that
-/// the zone-level map view has meaningful nodes and traversal edges to display.
+/// Seeds all <see cref="ZoneLocation"/> rows into <see cref="ContentDbContext"/>.
+/// Every zone in the world geography has at least two locations so that
+/// the zone-level map view has meaningful nodes to display.
 /// </summary>
 public static class ZoneLocationsSeeder
 {
-    /// <summary>Seeds all zone location rows and their connections (idempotent).</summary>
+    /// <summary>Seeds all zone location rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
         await SeedLocationsAsync(db);
-        await SeedConnectionsAsync(db);
     }
 
     private static async Task SeedLocationsAsync(ContentDbContext db)
@@ -31,9 +30,9 @@ public static class ZoneLocationsSeeder
     private static ZoneLocation[] GetAllLocations(DateTimeOffset now) =>
     [
 
-            // ── Varenmark region ─────────────────────────────────────────────
+            // â”€â”€ Varenmark region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            // crestfall (Town, L0) ────────────────────────────────────────────
+            // crestfall (Town, L0) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "crestfall-square",     DisplayName = "The Crestfall Square",
@@ -67,7 +66,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsTown = true },
             },
 
-            // the-droveway (Wilderness, L1) ───────────────────────────────────
+            // the-droveway (Wilderness, L1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "drove-road",           DisplayName = "The Drove Road",
@@ -93,7 +92,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
             },
 
-            // ashlen-wood (Wilderness, L1) ────────────────────────────────────
+            // ashlen-wood (Wilderness, L1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "wood-road",            DisplayName = "The Wood Road",
@@ -119,7 +118,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
             },
 
-            // grevenmire (Wilderness, L3) ─────────────────────────────────────
+            // grevenmire (Wilderness, L3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "mire-crossing",        DisplayName = "The Mire Crossing",
@@ -145,7 +144,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 8 },
             },
 
-            // the-halrow (Dungeon, L4) ─────────────────────────────────────────
+            // the-halrow (Dungeon, L4) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "halrow-threshold",     DisplayName = "The Halrow Threshold",
@@ -171,7 +170,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
             },
 
-            // drowning-pits (Dungeon, L4) ─────────────────────────────────────
+            // drowning-pits (Dungeon, L4) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "pit-descent",          DisplayName = "The Pit Descent",
@@ -197,9 +196,9 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
             },
 
-            // ── Greymoor region ─────────────────────────────────────────────
+            // â”€â”€ Greymoor region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            // aldenmere (Town, L5) ────────────────────────────────────────────
+            // aldenmere (Town, L5) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "ironhollow-keep",      DisplayName = "Ironhollow Keep",
@@ -225,7 +224,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsTown = true },
             },
 
-            // pale-moor (Wilderness, L7) ──────────────────────────────────────
+            // pale-moor (Wilderness, L7) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "ashveil-highlands",    DisplayName = "Ashveil Highlands",
@@ -251,7 +250,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 10 },
             },
 
-            // soddenfen (Wilderness, L9) ──────────────────────────────────────
+            // soddenfen (Wilderness, L9) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "fenland-crossing",     DisplayName = "Fenland Crossing",
@@ -269,7 +268,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 12 },
             },
 
-            // barrow-deeps (Dungeon, L11) ─────────────────────────────────────
+            // barrow-deeps (Dungeon, L11) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "deeps-entrance",       DisplayName = "Deeps Entrance",
@@ -295,9 +294,9 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
             },
 
-            // ── Saltcliff region ────────────────────────────────────────────
+            // â”€â”€ Saltcliff region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            // tolvaren (Town, L10) ────────────────────────────────────────────
+            // tolvaren (Town, L10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "tolvaren-harbour",     DisplayName = "Tolvaren Harbour",
@@ -323,7 +322,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsTown = true },
             },
 
-            // tidewrack-flats (Wilderness, L12) ──────────────────────────────
+            // tidewrack-flats (Wilderness, L12) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "wrack-shore",          DisplayName = "Wrack Shore",
@@ -349,7 +348,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 14 },
             },
 
-            // saltcliff-heights (Wilderness, L14) ────────────────────────────
+            // saltcliff-heights (Wilderness, L14) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "clifftop-ruins",       DisplayName = "The Clifftop Ruins",
@@ -375,7 +374,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "achievement" },
             },
 
-            // sunken-name (Dungeon, L16) ──────────────────────────────────────
+            // sunken-name (Dungeon, L16) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "drowned-threshold",    DisplayName = "The Drowned Threshold",
@@ -401,9 +400,9 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
             },
 
-            // ── Cinderplain region ───────────────────────────────────────────
+            // â”€â”€ Cinderplain region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            // skarhold (Town, L18) ────────────────────────────────────────────
+            // skarhold (Town, L18) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "forge-quarter",        DisplayName = "The Forge Quarter",
@@ -429,7 +428,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsTown = true },
             },
 
-            // ashfields (Wilderness, L20) ─────────────────────────────────────
+            // ashfields (Wilderness, L20) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "obsidian-grove",       DisplayName = "The Obsidian Grove",
@@ -455,7 +454,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "quest" },
             },
 
-            // smoldering-reach (Wilderness, L23) ─────────────────────────────
+            // smoldering-reach (Wilderness, L23) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "vent-fields",          DisplayName = "The Vent Fields",
@@ -481,7 +480,7 @@ public static class ZoneLocationsSeeder
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 18 },
             },
 
-            // kaldrek-maw (Dungeon, L26) ──────────────────────────────────────
+            // kaldrek-maw (Dungeon, L26) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             new ZoneLocation
             {
                 Slug = "maw-descent",          DisplayName = "The Maw Descent",
@@ -508,118 +507,4 @@ public static class ZoneLocationsSeeder
             }
     ];
 
-    private static async Task SeedConnectionsAsync(ContentDbContext db)
-    {
-        var existing = (await db.ZoneLocationConnections.AsNoTracking()
-                .Select(c => new { c.FromLocationSlug, c.ToLocationSlug })
-                .ToListAsync())
-            .Select(c => (c.FromLocationSlug, c.ToLocationSlug))
-            .ToHashSet();
-        var missing = GetAllConnections()
-            .Where(c => !existing.Contains((c.FromLocationSlug, c.ToLocationSlug!)))
-            .ToList();
-        if (missing.Count == 0) return;
-        db.ZoneLocationConnections.AddRange(missing);
-        await db.SaveChangesAsync();
-    }
-
-    private static ZoneLocationConnection[] GetAllConnections() =>
-    [
-
-            // ── crestfall ────────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "crestfall-square",    ToLocationSlug = "aurelian-market",   ConnectionType = "path", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "aurelian-market",     ToLocationSlug = "crestfall-square",  ConnectionType = "path", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "crestfall-square",    ToLocationSlug = "hearthbound-inn",   ConnectionType = "path", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "hearthbound-inn",     ToLocationSlug = "crestfall-square",  ConnectionType = "path", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "crestfall-square",    ToLocationSlug = "low-quarter",       ConnectionType = "path", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "low-quarter",         ToLocationSlug = "crestfall-square",  ConnectionType = "path", IsTraversable = true },
-
-            // ── the-droveway ─────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "drove-road",          ToLocationSlug = "weathered-waypost", ConnectionType = "path",           IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "weathered-waypost",   ToLocationSlug = "drove-road",        ConnectionType = "path",           IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "weathered-waypost",   ToLocationSlug = "sunken-fields",     ConnectionType = "secret_passage", IsTraversable = true },
-
-            // ── ashlen-wood ──────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "wood-road",           ToLocationSlug = "old-clearing",      ConnectionType = "path",           IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "old-clearing",        ToLocationSlug = "wood-road",         ConnectionType = "path",           IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "old-clearing",        ToLocationSlug = "strangled-oak",     ConnectionType = "secret_passage", IsTraversable = true },
-
-            // ── grevenmire ───────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "mire-crossing",       ToLocationSlug = "sunken-estate",     ConnectionType = "path",           IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "sunken-estate",       ToLocationSlug = "mire-crossing",     ConnectionType = "path",           IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "sunken-estate",       ToLocationSlug = "bone-hollow",       ConnectionType = "secret_passage", IsTraversable = true },
-
-            // ── the-halrow ───────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "halrow-threshold",    ToLocationSlug = "rootbound-cellars", ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "rootbound-cellars",   ToLocationSlug = "halrow-threshold",  ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "rootbound-cellars",   ToLocationSlug = "collapsed-vault",   ConnectionType = "path",             IsTraversable = true },
-
-            // ── drowning-pits ────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "pit-descent",         ToLocationSlug = "flooded-workings",  ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "flooded-workings",    ToLocationSlug = "pit-descent",       ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "flooded-workings",    ToLocationSlug = "deepest-chamber",   ConnectionType = "path",             IsTraversable = true },
-
-            // ── aldenmere ───────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "ironhollow-keep",      ToLocationSlug = "aldenmere-marketplace",   ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "aldenmere-marketplace",ToLocationSlug = "ironhollow-keep",         ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "aldenmere-marketplace",ToLocationSlug = "grey-cup",                ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "grey-cup",             ToLocationSlug = "aldenmere-marketplace",   ConnectionType = "path",             IsTraversable = true },
-
-            // ── pale-moor ───────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "ashveil-highlands",    ToLocationSlug = "moorstone-cairns",        ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "moorstone-cairns",     ToLocationSlug = "ashveil-highlands",       ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "moorstone-cairns",     ToLocationSlug = "shifting-waymark",        ConnectionType = "secret_passage",   IsTraversable = true },
-
-            // ── soddenfen ───────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "fenland-crossing",     ToLocationSlug = "submerged-ruins",         ConnectionType = "dungeon_entrance", IsTraversable = true },
-
-            // ── barrow-deeps ────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "deeps-entrance",       ToLocationSlug = "ancestor-vault",          ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "ancestor-vault",       ToLocationSlug = "deeps-entrance",          ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "ancestor-vault",       ToLocationSlug = "relic-chamber",           ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "deeps-entrance",       ToLocationSlug = "forge-quarter",           ConnectionType = "path",             IsTraversable = true, IsHidden = true },
-            new ZoneLocationConnection { FromLocationSlug = "forge-quarter",        ToLocationSlug = "deeps-entrance",          ConnectionType = "path",             IsTraversable = true, IsHidden = true },
-
-            // ── tolvaren ────────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "tolvaren-harbour",     ToLocationSlug = "cliff-road-market",       ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "cliff-road-market",    ToLocationSlug = "tolvaren-harbour",        ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "cliff-road-market",    ToLocationSlug = "saltcrow-inn",            ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "saltcrow-inn",         ToLocationSlug = "cliff-road-market",       ConnectionType = "path",             IsTraversable = true },
-
-            // ── tidewrack-flats ─────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "wrack-shore",          ToLocationSlug = "bone-strand",             ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "bone-strand",          ToLocationSlug = "wrack-shore",             ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "bone-strand",          ToLocationSlug = "tidal-grotto",            ConnectionType = "secret_passage",   IsTraversable = true },
-
-            // ── saltcliff-heights ───────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "clifftop-ruins",       ToLocationSlug = "gull-rider-camp",         ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "gull-rider-camp",      ToLocationSlug = "clifftop-ruins",          ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "gull-rider-camp",      ToLocationSlug = "storm-watch-peak",        ConnectionType = "path",             IsTraversable = true },
-
-            // ── sunken-name ─────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "drowned-threshold",    ToLocationSlug = "flooded-throne-room",     ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "flooded-throne-room",  ToLocationSlug = "drowned-threshold",       ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "flooded-throne-room",  ToLocationSlug = "tidelocked-vault",        ConnectionType = "path",             IsTraversable = true },
-
-            // ── skarhold ────────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "forge-quarter",        ToLocationSlug = "caldera-market",          ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "caldera-market",       ToLocationSlug = "forge-quarter",           ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "caldera-market",       ToLocationSlug = "ashbrand-lodge",          ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "ashbrand-lodge",       ToLocationSlug = "caldera-market",          ConnectionType = "path",             IsTraversable = true },
-
-            // ── ashfields ───────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "obsidian-grove",       ToLocationSlug = "scorched-battlefield",    ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "scorched-battlefield", ToLocationSlug = "obsidian-grove",          ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "scorched-battlefield", ToLocationSlug = "ash-shrine",              ConnectionType = "secret_passage",   IsTraversable = true },
-
-            // ── smoldering-reach ────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "vent-fields",          ToLocationSlug = "pyreling-den",            ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "pyreling-den",         ToLocationSlug = "vent-fields",             ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "pyreling-den",         ToLocationSlug = "lava-bridge",             ConnectionType = "path",             IsTraversable = true },
-
-            // ── kaldrek-maw ─────────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "maw-descent",            ToLocationSlug = "fire-ancients-chamber",   ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fire-ancients-chamber",ToLocationSlug = "maw-descent",             ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fire-ancients-chamber",ToLocationSlug = "kaldreks-heart",          ConnectionType = "path",             IsTraversable = true }
-        ];
 }

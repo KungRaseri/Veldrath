@@ -1238,11 +1238,7 @@ public class GameHub : Hub
                 CharacterId          = characterId,
                 LocationSlug         = result.LocationSlug,
                 LocationDisplayName  = result.LocationDisplayName,
-                LocationType         = result.LocationType,
-                AvailableConnections = result.AvailableConnections.Select(c => new
-                {
-                    c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable,
-                }),
+                TypeKey              = result.TypeKey,
                 SpawnedEnemies = result.SpawnedEnemies.Select(e => new
                 {
                     e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth,
@@ -1262,7 +1258,7 @@ public class GameHub : Hub
                     CharacterId         = characterId,
                     LocationSlug        = discovery.Slug,
                     LocationDisplayName = discovery.DisplayName,
-                    LocationType        = discovery.LocationType,
+                    TypeKey             = discovery.TypeKey,
                     UnlockSource        = "skill_check_passive",
                 });
             }
@@ -1308,7 +1304,7 @@ public class GameHub : Hub
                     CharacterId         = characterId,
                     LocationSlug        = result.LocationSlug,
                     LocationDisplayName = result.LocationDisplayName,
-                    LocationType        = result.LocationType,
+                    TypeKey             = result.TypeKey,
                     UnlockSource        = request.UnlockSource,
                 });
             }
@@ -1361,7 +1357,7 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 result.RollValue,
                 result.AnyFound,
-                Discovered  = result.Discovered.Select(d => new { d.Slug, d.DisplayName, d.LocationType }),
+                Discovered  = result.Discovered.Select(d => new { d.Slug, d.DisplayName, d.TypeKey }),
             });
 
             foreach (var discovery in result.Discovered)
@@ -1371,7 +1367,7 @@ public class GameHub : Hub
                     CharacterId         = characterId,
                     LocationSlug        = discovery.Slug,
                     LocationDisplayName = discovery.DisplayName,
-                    LocationType        = discovery.LocationType,
+                    TypeKey             = discovery.TypeKey,
                     UnlockSource        = "skill_check_active",
                 });
             }

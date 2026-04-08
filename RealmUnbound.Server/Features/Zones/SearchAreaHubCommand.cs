@@ -19,8 +19,8 @@ public record SearchAreaHubCommand(Guid CharacterId, string ZoneId)
 /// <summary>A single location discovered during an active area search.</summary>
 /// <param name="Slug">Slug of the discovered location.</param>
 /// <param name="DisplayName">Display name of the discovered location.</param>
-/// <param name="LocationType">Type of the discovered location.</param>
-public record DiscoveredLocation(string Slug, string DisplayName, string LocationType);
+/// <param name="TypeKey">Type key of the discovered location.</param>
+public record DiscoveredLocation(string Slug, string DisplayName, string TypeKey);
 
 /// <summary>Result returned by <see cref="SearchAreaHubCommandHandler"/>.</summary>
 public record SearchAreaHubResult
@@ -109,7 +109,7 @@ public class SearchAreaHubCommandHandler
             await _unlockedRepo.AddUnlockAsync(
                 request.CharacterId, location.Slug, ActiveCheckType, cancellationToken);
 
-            discovered.Add(new DiscoveredLocation(location.Slug, location.DisplayName, location.LocationType));
+            discovered.Add(new DiscoveredLocation(location.Slug, location.DisplayName, location.TypeKey));
 
             _logger.LogInformation(
                 "Character {CharacterIdPrefix} discovered {LocationSlug} via active search (roll {Roll} vs DC {Threshold})",

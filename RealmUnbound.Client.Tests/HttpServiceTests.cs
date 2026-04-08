@@ -642,7 +642,7 @@ public class HttpZoneServiceTests : TestBase
 
     // GetZoneLocationsAsync
     private static readonly ZoneLocationDto SampleLocation =
-        new("fenwick-market", "Fenwick Market", "locations", "fenwick-crossing", "location", 10, 1, 10);
+        new("fenwick-market", "Fenwick Market", "locations", "fenwick-crossing", 10, 1, 10);
 
     [Fact]
     public async Task GetZoneLocationsAsync_Should_Return_List_On_Success()

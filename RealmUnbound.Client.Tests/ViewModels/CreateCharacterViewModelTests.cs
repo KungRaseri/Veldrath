@@ -412,8 +412,8 @@ public class CreateCharacterViewModelTests : TestBase
         {
             ZoneLocations =
             [
-                new("starter-town", "Starter Town", "town", "zone-1", "landmark", 10, 1, 5),
-                new("riverside",    "Riverside",    "outdoor", "zone-1", "outpost", 8, 1, 5),
+                new("starter-town", "Starter Town", "town", "zone-1", 10, 1, 5),
+                new("riverside",    "Riverside",    "outdoor", "zone-1", 8, 1, 5),
             ]
         };
         // Location step is removed from the wizard — AvailableLocations is no longer exposed.
@@ -459,7 +459,7 @@ public class CreateCharacterViewModelTests : TestBase
     {
         var content = new FakeContentService
         {
-            ZoneLocations = [new("town-square", "Town Square", "town", "zone-1", "landmark", 10, 1, 5)]
+            ZoneLocations = [new("town-square", "Town Square", "town", "zone-1", 10, 1, 5)]
         };
         var creation = new FakeCharacterCreationService();
         var vm = MakeVm(creation: creation, content: content);

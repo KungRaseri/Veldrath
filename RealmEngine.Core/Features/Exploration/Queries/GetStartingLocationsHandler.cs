@@ -54,7 +54,7 @@ public class GetStartingLocationsHandler : IRequestHandler<GetStartingLocationsQ
                 Name = l.DisplayName ?? l.TypeKey,
                 Description = l.DisplayName ?? l.TypeKey,
                 Type = l.TypeKey,
-                LocationType = l.LocationType,
+                LocationType = l.TypeKey,
                 IsStartingZone = true,
                 IsSafeZone = l.Traits.IsTown == true,
                 Level = l.Stats.MinLevel ?? 1,

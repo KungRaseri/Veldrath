@@ -237,7 +237,7 @@ public class SetCreationChoiceCommandHandlerTests
         _sessionStoreMock.Setup(s => s.GetSessionAsync(It.IsAny<Guid>())).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
         _zoneLocationRepoMock.Setup(r => r.GetBySlugAsync("loc-1"))
-            .ReturnsAsync(new ZoneLocationEntry("loc-1", "Loc One", "location", "zone-1", "outpost", 10, 1, 5));
+            .ReturnsAsync(new ZoneLocationEntry("loc-1", "Loc One", "location", "zone-1", 10, 1, 5));
         var handler = new SetCreationLocationHandler(_sessionStoreMock.Object, _zoneLocationRepoMock.Object);
 
         var result = await handler.Handle(new SetCreationLocationCommand(session.SessionId, "loc-1"), default);

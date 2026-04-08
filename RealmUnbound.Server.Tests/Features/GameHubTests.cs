@@ -3460,7 +3460,7 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<NavigateToLocationHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", LocationType = "location" });
+            .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", TypeKey = "location" });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]  = character.Id;
@@ -3486,7 +3486,7 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<NavigateToLocationHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", LocationType = "location" });
+            .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", TypeKey = "location" });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"]  = character.Id;
@@ -3551,8 +3551,8 @@ public class GameHubTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
-    private static ZoneLocation MakeZoneLocation(string slug, string zoneId, string locationType = "location") =>
-        new() { Slug = slug, ZoneId = zoneId, LocationType = locationType, IsActive = true, DisplayName = slug };
+    private static ZoneLocation MakeZoneLocation(string slug, string zoneId, string typeKey = "location") =>
+        new() { Slug = slug, ZoneId = zoneId, TypeKey = typeKey, IsActive = true, DisplayName = slug };
 
     [Fact]
     public async Task NavigateToLocation_Handler_Should_Persist_Location_And_Return_Info()
@@ -3578,7 +3578,7 @@ public class GameHubTests : IDisposable
 
         result.Success.Should().BeTrue();
         result.LocationSlug.Should().Be("fenwick-market");
-        result.LocationType.Should().Be("location");
+        result.TypeKey.Should().Be("location");
 
         var updated = await new CharacterRepository(db).GetByIdAsync(character.Id);
         updated!.CurrentZoneLocationSlug.Should().Be("fenwick-market");
@@ -3678,7 +3678,7 @@ public class GameHubTests : IDisposable
             {
                 Slug         = "hidden-grotto",
                 ZoneId       = "fenwick-crossing",
-                LocationType = "dungeon",
+                TypeKey = "dungeon",
                 IsActive     = true,
                 DisplayName  = "Hidden Grotto",
                 Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits
@@ -3736,7 +3736,7 @@ public class GameHubTests : IDisposable
                 Success             = true,
                 LocationSlug        = "secret-cave",
                 LocationDisplayName = "Secret Cave",
-                LocationType        = "dungeon",
+                TypeKey = "dungeon",
                 WasAlreadyUnlocked  = false,
             });
 
@@ -3825,7 +3825,7 @@ public class GameHubTests : IDisposable
         {
             Slug         = "secret-cave",
             ZoneId       = "fenwick-crossing",
-            LocationType = "dungeon",
+            TypeKey = "dungeon",
             IsActive     = true,
             DisplayName  = "Secret Cave",
             Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
@@ -3860,7 +3860,7 @@ public class GameHubTests : IDisposable
         {
             Slug         = "secret-cave",
             ZoneId       = "fenwick-crossing",
-            LocationType = "dungeon",
+            TypeKey = "dungeon",
             IsActive     = true,
             DisplayName  = "Secret Cave",
             Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
@@ -3949,7 +3949,7 @@ public class GameHubTests : IDisposable
         {
             Slug         = "hidden-altar",
             ZoneId       = "fenwick-crossing",
-            LocationType = "location",
+            TypeKey = "location",
             IsActive     = true,
             DisplayName  = "Hidden Altar",
             Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits

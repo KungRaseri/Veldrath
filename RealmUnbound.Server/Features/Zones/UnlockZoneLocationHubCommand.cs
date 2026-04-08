@@ -30,8 +30,8 @@ public record UnlockZoneLocationHubResult
     /// <summary>Gets the display name of the unlocked location, or <see langword="null"/> on failure.</summary>
     public string? LocationDisplayName { get; init; }
 
-    /// <summary>Gets the location type, or <see langword="null"/> on failure.</summary>
-    public string? LocationType { get; init; }
+    /// <summary>Gets the type key of the unlocked location, or <see langword="null"/> on failure.</summary>
+    public string? TypeKey { get; init; }
 
     /// <summary>True when the location was already unlocked before this call (idempotent).</summary>
     public bool WasAlreadyUnlocked { get; init; }
@@ -107,7 +107,7 @@ public class UnlockZoneLocationHubCommandHandler
             Success             = true,
             LocationSlug        = location.Slug,
             LocationDisplayName = location.DisplayName,
-            LocationType        = location.LocationType,
+            TypeKey             = location.TypeKey,
             WasAlreadyUnlocked  = alreadyUnlocked,
         };
     }

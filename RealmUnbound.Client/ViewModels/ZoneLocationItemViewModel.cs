@@ -11,16 +11,16 @@ public sealed class ZoneLocationItemViewModel : ViewModelBase
     /// <summary>Initializes a new instance of <see cref="ZoneLocationItemViewModel"/>.</summary>
     /// <param name="slug">The slug identifier of this location.</param>
     /// <param name="displayName">The display name.</param>
-    /// <param name="locationType">The location type (e.g. "dungeon", "town", "environment").</param>
+    /// <param name="typeKey">The location type key (e.g. "dungeon", "town", "environment").</param>
     /// <param name="minLevel">Optional minimum character level recommendation.</param>
     /// <param name="isCurrent">Whether the character is currently at this location.</param>
     /// <param name="onNavigate">Async callback invoked when the player navigates to this location.</param>
-    public ZoneLocationItemViewModel(string slug, string displayName, string locationType,
+    public ZoneLocationItemViewModel(string slug, string displayName, string typeKey,
         int? minLevel, bool isCurrent, Func<Task>? onNavigate = null)
     {
         Slug         = slug;
         DisplayName  = displayName;
-        LocationType = locationType;
+        TypeKey      = typeKey;
         MinLevel     = minLevel;
         _isCurrent   = isCurrent;
         NavigateCommand = onNavigate is not null && !isCurrent
@@ -34,8 +34,8 @@ public sealed class ZoneLocationItemViewModel : ViewModelBase
     /// <summary>Gets the display name of this location.</summary>
     public string DisplayName { get; }
 
-    /// <summary>Gets the location type classification.</summary>
-    public string LocationType { get; }
+    /// <summary>Gets the location type key classification.</summary>
+    public string TypeKey { get; }
 
     /// <summary>Gets the minimum recommended character level, or <see langword="null"/> if not specified.</summary>
     public int? MinLevel { get; }

@@ -46,7 +46,6 @@ public class GetStartingLocationsHandlerTests : IDisposable
             TypeKey = type,
             DisplayName = slug,
             ZoneId = "test-zone",
-            LocationType = "settlement",
             IsActive = true,
             Traits = new ZoneLocationTraits { IsTown = true, HasMerchant = true },
             Stats = new ZoneLocationStats { MinLevel = 1, DangerLevel = 0 }
@@ -59,7 +58,6 @@ public class GetStartingLocationsHandlerTests : IDisposable
             TypeKey = "wilderness",
             DisplayName = slug,
             ZoneId = "test-zone",
-            LocationType = "wilderness",
             IsActive = true,
             Traits = new ZoneLocationTraits { IsTown = false },
             Stats = new ZoneLocationStats { MinLevel = minLevel, DangerLevel = 3 }
@@ -122,7 +120,7 @@ public class GetStartingLocationsHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ReturnsAllLocations_WhenFilterByRecommendedIsFalse()
     {
-        await SeedAsync(MakeTown("riverside"), MakeWilderness("darkwood"));
+        await SeedAsync(MakeTown("riverside", "settlement"), MakeWilderness("darkwood"));
         _bgRepo.Setup(r => r.GetBackgroundByIdAsync(It.IsAny<string>()))
                .ReturnsAsync(new SharedBackground { Name = "Wanderer", RecommendedLocationTypes = ["settlement"] });
 
@@ -138,7 +136,7 @@ public class GetStartingLocationsHandlerTests : IDisposable
     [Fact]
     public async Task Handle_FiltersToRecommendedTypes_WhenBackgroundProvided()
     {
-        await SeedAsync(MakeTown("riverside"), MakeWilderness("darkwood"));
+        await SeedAsync(MakeTown("riverside", "settlement"), MakeWilderness("darkwood"));
         var bg = new SharedBackground
         {
             Name = "Farmer",

@@ -19,7 +19,7 @@ public class ZoneRepositoryTests : IDisposable
             Id        = id,
             Name      = name,
             IsStarter = isStarter,
-            Type      = ZoneType.Tutorial,
+            Type      = ZoneType.Wilderness,
         };
 
     private static async Task<Guid> SeedAccountAsync(ApplicationDbContext db)
