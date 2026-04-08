@@ -50,19 +50,19 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Return_All_Zones()
     {
         await using var db = _factory.CreateContext();
-        // DB is pre-seeded with 16 zones via HasData(); verify all are returned
+        // DB is pre-seeded with 18 zones; verify all are returned
         var repo   = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
 
-        result.Should().HaveCount(16);
-        result.Should().Contain(z => z.Id == "fenwick-crossing");
+        result.Should().HaveCount(18);
+        result.Should().Contain(z => z.Id == "crestfall");
     }
 
     [Fact]
     public async Task GetAllAsync_Should_Return_Starter_Zones_First()
     {
         await using var db = _factory.CreateContext();
-        // Seeded data has "fenwick-crossing" as the only starter zone
+        // Seeded data has "crestfall" as the only starter zone
         var repo   = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
 
@@ -89,12 +89,12 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByIdAsync_Should_Return_Zone_When_Found()
     {
         await using var db = _factory.CreateContext();
-        // "fenwick-crossing" is pre-seeded via HasData()
+        // "crestfall" is pre-seeded; verify lookup by Id
         var repo   = new ZoneRepository(db);
-        var result = await repo.GetByIdAsync("fenwick-crossing");
+        var result = await repo.GetByIdAsync("crestfall");
 
         result.Should().NotBeNull();
-        result!.Name.Should().Be("Fenwick's Crossing");
+        result!.Name.Should().Be("Crestfall");
     }
 
     [Fact]
@@ -110,14 +110,14 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByRegionIdAsync_Should_Return_Zones_In_Region()
     {
         await using var db = _factory.CreateContext();
-        // "thornveil" has 4 seeded zones: fenwick-crossing, greenveil-paths, thornveil-hollow, verdant-barrow
+        // "varenmark" has 6 seeded zones: crestfall, the-droveway, ashlen-wood, grevenmire, the-halrow, drowning-pits
         var repo   = new ZoneRepository(db);
-        var result = await repo.GetByRegionIdAsync("thornveil");
+        var result = await repo.GetByRegionIdAsync("varenmark");
 
-        result.Should().HaveCount(4);
-        result.Should().OnlyContain(z => z.RegionId == "thornveil");
-        result.Should().Contain(z => z.Id == "fenwick-crossing");
-        result.Should().Contain(z => z.Id == "verdant-barrow");
+        result.Should().HaveCount(6);
+        result.Should().OnlyContain(z => z.RegionId == "varenmark");
+        result.Should().Contain(z => z.Id == "crestfall");
+        result.Should().Contain(z => z.Id == "drowning-pits");
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId    = character.Id,
             CharacterName  = character.Name,
             ConnectionId   = "conn-1",
-            ZoneId         = "fenwick-crossing",
+            ZoneId         = "crestfall",
         };
 
         var repo = new ZoneSessionRepository(db);
@@ -171,18 +171,18 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByZoneIdAsync_Should_Return_Sessions_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        // Reuse pre-seeded zones (fenwick-crossing and aldenmere)
+        // Reuse pre-seeded zones (crestfall and aldenmere)
         var accountId = await SeedAccountAsync(db);
         var char1     = await SeedCharacterAsync(db, accountId, slotIndex: 1);
         var char2     = await SeedCharacterAsync(db, accountId, slotIndex: 2);
 
         db.ZoneSessions.AddRange(
-            new ZoneSession { CharacterId = char1.Id, CharacterName = char1.Name, ConnectionId = "c1", ZoneId = "fenwick-crossing" },
+            new ZoneSession { CharacterId = char1.Id, CharacterName = char1.Name, ConnectionId = "c1", ZoneId = "crestfall" },
             new ZoneSession { CharacterId = char2.Id, CharacterName = char2.Name, ConnectionId = "c2", ZoneId = "aldenmere" });
         await db.SaveChangesAsync();
 
         var repo   = new ZoneSessionRepository(db);
-        var result = await repo.GetByZoneIdAsync("fenwick-crossing");
+        var result = await repo.GetByZoneIdAsync("crestfall");
 
         result.Should().ContainSingle(s => s.ConnectionId == "c1");
     }
@@ -200,7 +200,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-abc",
-            ZoneId        = "fenwick-crossing",
+            ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -232,7 +232,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-xyz",
-            ZoneId        = "fenwick-crossing",
+            ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -265,7 +265,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-del",
-            ZoneId        = "fenwick-crossing",
+            ZoneId        = "crestfall",
         };
         db.ZoneSessions.Add(session);
         await db.SaveChangesAsync();
@@ -290,7 +290,7 @@ public class ZoneRepositoryTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-rem",
-            ZoneId        = "fenwick-crossing",
+            ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
 

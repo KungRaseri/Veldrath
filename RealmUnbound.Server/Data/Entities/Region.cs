@@ -56,4 +56,7 @@ public enum RegionType
 
     /// <summary>Volcanic plains and ash wastes.</summary>
     Volcanic,
+
+    /// <summary>Rolling farmland and pastoral countryside on the edge of the wild.</summary>
+    Countryside,
 }

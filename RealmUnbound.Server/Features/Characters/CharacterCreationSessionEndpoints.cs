@@ -34,7 +34,7 @@ public static class CharacterCreationSessionEndpoints
 {
     // All new characters start at this location regardless of wizard choices.
     // Location selection is not exposed in the wizard; this will remain static until zone progression is designed.
-    private const string DefaultStartingLocationSlug = "fenwick-market";
+    private const string DefaultStartingLocationSlug = "crestfall-square";
 
     private const int NameMinLength = 2;
     private const int NameMaxLength = 20;

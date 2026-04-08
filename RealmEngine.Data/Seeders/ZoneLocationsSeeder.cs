@@ -31,109 +31,169 @@ public static class ZoneLocationsSeeder
     private static ZoneLocation[] GetAllLocations(DateTimeOffset now) =>
     [
 
-            // ── Thornveil region ────────────────────────────────────────────
+            // ── Varenmark region ─────────────────────────────────────────────
 
-            // fenwick-crossing (Town, L0) ────────────────────────────────────
+            // crestfall (Town, L0) ────────────────────────────────────────────
             new ZoneLocation
             {
-                Slug = "thornveil-village",    DisplayName = "Thornveil Village",
-                ZoneId = "fenwick-crossing",   TypeKey = "locations",  LocationType = "location",
+                Slug = "crestfall-square",     DisplayName = "The Crestfall Square",
+                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 3, DangerLevel = 1, Population = 50, MinLevel = 0 },
+                Traits = new() { IsTown = true },
+            },
+            new ZoneLocation
+            {
+                Slug = "aurelian-market",      DisplayName = "The Aurelian Market",
+                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 1, Population = 40, MinLevel = 1 },
                 Traits = new() { IsTown = true, HasMerchant = true },
             },
             new ZoneLocation
             {
-                Slug = "fenwick-market",       DisplayName = "Fenwick Market",
-                ZoneId = "fenwick-crossing",   TypeKey = "locations",  LocationType = "location",
+                Slug = "hearthbound-inn",      DisplayName = "The Hearthbound Inn",
+                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 1, Population = 30, MinLevel = 1 },
-                Traits = new() { IsTown = true, HasMerchant = true },
+                Traits = new() { IsTown = true },
             },
             new ZoneLocation
             {
-                Slug = "wayward-pilgrim",      DisplayName = "The Wayward Pilgrim",
-                ZoneId = "fenwick-crossing",   TypeKey = "locations",  LocationType = "location",
+                Slug = "low-quarter",          DisplayName = "The Low Quarter",
+                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 1, DangerLevel = 1, Population = 20, MinLevel = 1 },
-                Traits = new() { IsTown = true, HasMerchant = false },
+                Stats  = new() { Size = 2, DangerLevel = 1, Population = 25, MinLevel = 1 },
+                Traits = new() { IsTown = true },
             },
 
-            // greenveil-paths (Wilderness, L1) ───────────────────────────────
+            // the-droveway (Wilderness, L1) ───────────────────────────────────
             new ZoneLocation
             {
-                Slug = "darkwood-forest",      DisplayName = "Darkwood Forest",
-                ZoneId = "greenveil-paths",    TypeKey = "environments", LocationType = "environment",
+                Slug = "drove-road",           DisplayName = "The Drove Road",
+                ZoneId = "the-droveway",       TypeKey = "environments", LocationType = "environment",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 8, DangerLevel = 3, Population = 120, MinLevel = 1, MaxLevel = 6 },
+                Stats  = new() { Size = 6, DangerLevel = 2, Population = 30, MinLevel = 1, MaxLevel = 4 },
                 Traits = new() { IsIndoor = false },
             },
             new ZoneLocation
             {
-                Slug = "old-oak-crossing",     DisplayName = "Old Oak Crossing",
-                ZoneId = "greenveil-paths",    TypeKey = "locations",  LocationType = "location",
+                Slug = "weathered-waypost",    DisplayName = "The Weathered Waypost",
+                ZoneId = "the-droveway",       TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 1, DangerLevel = 2, Population = 10, MinLevel = 1, MaxLevel = 5 },
+                Stats  = new() { Size = 1, DangerLevel = 2, Population = 5, MinLevel = 1, MaxLevel = 4 },
                 Traits = new() { IsIndoor = false },
             },
             new ZoneLocation
             {
-                Slug = "sprite-hollow",        DisplayName = "Sprite Hollow",
-                ZoneId = "greenveil-paths",    TypeKey = "environments", LocationType = "environment",
+                Slug = "sunken-fields",        DisplayName = "The Sunken Fields",
+                ZoneId = "the-droveway",       TypeKey = "environments", LocationType = "environment",
                 RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 2, DangerLevel = 1, Population = 15, MinLevel = 2, MaxLevel = 5 },
-                Traits = new() { IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 5 },
+                Stats  = new() { Size = 3, DangerLevel = 3, MinLevel = 2, MaxLevel = 4 },
+                Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
             },
 
-            // thornveil-hollow (Wilderness, L3) ──────────────────────────────
+            // ashlen-wood (Wilderness, L1) ────────────────────────────────────
             new ZoneLocation
             {
-                Slug = "rotwood-thicket",      DisplayName = "Rotwood Thicket",
-                ZoneId = "thornveil-hollow",   TypeKey = "environments", LocationType = "environment",
+                Slug = "wood-road",            DisplayName = "The Wood Road",
+                ZoneId = "ashlen-wood",        TypeKey = "environments", LocationType = "environment",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 5, DangerLevel = 3, Population = 40, MinLevel = 3, MaxLevel = 6 },
+                Stats  = new() { Size = 5, DangerLevel = 2, Population = 40, MinLevel = 1, MaxLevel = 5 },
                 Traits = new() { IsIndoor = false },
             },
             new ZoneLocation
             {
-                Slug = "goblin-warrens",       DisplayName = "Goblin Warrens",
-                ZoneId = "thornveil-hollow",   TypeKey = "dungeons",   LocationType = "dungeon",
+                Slug = "old-clearing",         DisplayName = "The Old Clearing",
+                ZoneId = "ashlen-wood",        TypeKey = "environments", LocationType = "environment",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 4, DangerLevel = 3, Population = 50, MinLevel = 2, MaxLevel = 5 },
-                Traits = new() { IsIndoor = true, IsDungeon = true },
+                Stats  = new() { Size = 3, DangerLevel = 3, Population = 15, MinLevel = 2, MaxLevel = 5 },
+                Traits = new() { IsIndoor = false },
             },
             new ZoneLocation
             {
-                Slug = "failed-ward-stone",    DisplayName = "The Failed Ward-Stone",
-                ZoneId = "thornveil-hollow",   TypeKey = "locations",  LocationType = "location",
+                Slug = "strangled-oak",        DisplayName = "The Strangled Oak",
+                ZoneId = "ashlen-wood",        TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 1, DangerLevel = 4, MinLevel = 3, MaxLevel = 7 },
+                Stats  = new() { Size = 1, DangerLevel = 4, MinLevel = 2, MaxLevel = 5 },
+                Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
+            },
+
+            // grevenmire (Wilderness, L3) ─────────────────────────────────────
+            new ZoneLocation
+            {
+                Slug = "mire-crossing",        DisplayName = "The Mire Crossing",
+                ZoneId = "grevenmire",         TypeKey = "environments", LocationType = "environment",
+                RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 6, DangerLevel = 4, Population = 20, MinLevel = 3, MaxLevel = 6 },
+                Traits = new() { IsIndoor = false },
+            },
+            new ZoneLocation
+            {
+                Slug = "sunken-estate",        DisplayName = "The Sunken Estate",
+                ZoneId = "grevenmire",         TypeKey = "locations",  LocationType = "location",
+                RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 3, DangerLevel = 5, Population = 10, MinLevel = 3, MaxLevel = 6 },
+                Traits = new() { IsIndoor = false },
+            },
+            new ZoneLocation
+            {
+                Slug = "bone-hollow",          DisplayName = "The Bone Hollow",
+                ZoneId = "grevenmire",         TypeKey = "environments", LocationType = "environment",
+                RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 6, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 8 },
             },
 
-            // verdant-barrow (Dungeon, L4) ────────────────────────────────────
+            // the-halrow (Dungeon, L4) ─────────────────────────────────────────
             new ZoneLocation
             {
-                Slug = "barrow-entrance",      DisplayName = "Barrow Entrance",
-                ZoneId = "verdant-barrow",     TypeKey = "locations",  LocationType = "location",
+                Slug = "halrow-threshold",     DisplayName = "The Halrow Threshold",
+                ZoneId = "the-halrow",         TypeKey = "locations",  LocationType = "location",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 2, DangerLevel = 3, Population = 5, MinLevel = 4, MaxLevel = 7 },
+                Stats  = new() { Size = 2, DangerLevel = 3, Population = 5, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsDungeon = false },
             },
             new ZoneLocation
             {
-                Slug = "burial-halls",         DisplayName = "The Burial Halls",
-                ZoneId = "verdant-barrow",     TypeKey = "dungeons",   LocationType = "dungeon",
+                Slug = "rootbound-cellars",    DisplayName = "The Rootbound Cellars",
+                ZoneId = "the-halrow",         TypeKey = "dungeons",   LocationType = "dungeon",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 5, DangerLevel = 4, Population = 30, MinLevel = 4, MaxLevel = 7 },
+                Stats  = new() { Size = 5, DangerLevel = 4, Population = 30, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsIndoor = true, IsDungeon = true },
             },
             new ZoneLocation
             {
-                Slug = "roots-tomb",           DisplayName = "The Roots-Tomb",
-                ZoneId = "verdant-barrow",     TypeKey = "dungeons",   LocationType = "dungeon",
+                Slug = "collapsed-vault",      DisplayName = "The Collapsed Vault",
+                ZoneId = "the-halrow",         TypeKey = "dungeons",   LocationType = "dungeon",
                 RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
-                Stats  = new() { Size = 3, DangerLevel = 5, Population = 15, MinLevel = 5, MaxLevel = 7 },
+                Stats  = new() { Size = 3, DangerLevel = 5, Population = 15, MinLevel = 5, MaxLevel = 6 },
+                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
+            },
+
+            // drowning-pits (Dungeon, L4) ─────────────────────────────────────
+            new ZoneLocation
+            {
+                Slug = "pit-descent",          DisplayName = "The Pit Descent",
+                ZoneId = "drowning-pits",      TypeKey = "locations",  LocationType = "location",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 4, Population = 5, MinLevel = 4, MaxLevel = 6 },
+                Traits = new() { IsDungeon = false },
+            },
+            new ZoneLocation
+            {
+                Slug = "flooded-workings",     DisplayName = "The Flooded Workings",
+                ZoneId = "drowning-pits",      TypeKey = "dungeons",   LocationType = "dungeon",
+                RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 5, DangerLevel = 5, Population = 30, MinLevel = 4, MaxLevel = 6 },
+                Traits = new() { IsIndoor = true, IsDungeon = true },
+            },
+            new ZoneLocation
+            {
+                Slug = "deepest-chamber",      DisplayName = "The Deepest Chamber",
+                ZoneId = "drowning-pits",      TypeKey = "dungeons",   LocationType = "dungeon",
+                RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 3, DangerLevel = 6, Population = 10, MinLevel = 5, MaxLevel = 6 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
             },
 
@@ -466,25 +526,38 @@ public static class ZoneLocationsSeeder
     private static ZoneLocationConnection[] GetAllConnections() =>
     [
 
-            // ── fenwick-crossing ────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "thornveil-village",    ToLocationSlug = "fenwick-market",          ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fenwick-market",       ToLocationSlug = "thornveil-village",       ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "fenwick-market",       ToLocationSlug = "wayward-pilgrim",         ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "wayward-pilgrim",      ToLocationSlug = "fenwick-market",          ConnectionType = "path",             IsTraversable = true },
+            // ── crestfall ────────────────────────────────────────────────────
+            new ZoneLocationConnection { FromLocationSlug = "crestfall-square",    ToLocationSlug = "aurelian-market",   ConnectionType = "path", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "aurelian-market",     ToLocationSlug = "crestfall-square",  ConnectionType = "path", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "crestfall-square",    ToLocationSlug = "hearthbound-inn",   ConnectionType = "path", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "hearthbound-inn",     ToLocationSlug = "crestfall-square",  ConnectionType = "path", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "crestfall-square",    ToLocationSlug = "low-quarter",       ConnectionType = "path", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "low-quarter",         ToLocationSlug = "crestfall-square",  ConnectionType = "path", IsTraversable = true },
 
-            // ── greenveil-paths ─────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "darkwood-forest",      ToLocationSlug = "old-oak-crossing",        ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "old-oak-crossing",     ToLocationSlug = "darkwood-forest",         ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "old-oak-crossing",     ToLocationSlug = "sprite-hollow",           ConnectionType = "secret_passage",   IsTraversable = true },
+            // ── the-droveway ─────────────────────────────────────────────────
+            new ZoneLocationConnection { FromLocationSlug = "drove-road",          ToLocationSlug = "weathered-waypost", ConnectionType = "path",           IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "weathered-waypost",   ToLocationSlug = "drove-road",        ConnectionType = "path",           IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "weathered-waypost",   ToLocationSlug = "sunken-fields",     ConnectionType = "secret_passage", IsTraversable = true },
 
-            // ── thornveil-hollow ────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "rotwood-thicket",      ToLocationSlug = "goblin-warrens",          ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "rotwood-thicket",      ToLocationSlug = "failed-ward-stone",       ConnectionType = "secret_passage",   IsTraversable = true },
+            // ── ashlen-wood ──────────────────────────────────────────────────
+            new ZoneLocationConnection { FromLocationSlug = "wood-road",           ToLocationSlug = "old-clearing",      ConnectionType = "path",           IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "old-clearing",        ToLocationSlug = "wood-road",         ConnectionType = "path",           IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "old-clearing",        ToLocationSlug = "strangled-oak",     ConnectionType = "secret_passage", IsTraversable = true },
 
-            // ── verdant-barrow ──────────────────────────────────────────────
-            new ZoneLocationConnection { FromLocationSlug = "barrow-entrance",      ToLocationSlug = "burial-halls",            ConnectionType = "dungeon_entrance", IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "burial-halls",         ToLocationSlug = "barrow-entrance",         ConnectionType = "path",             IsTraversable = true },
-            new ZoneLocationConnection { FromLocationSlug = "burial-halls",         ToLocationSlug = "roots-tomb",              ConnectionType = "path",             IsTraversable = true },
+            // ── grevenmire ───────────────────────────────────────────────────
+            new ZoneLocationConnection { FromLocationSlug = "mire-crossing",       ToLocationSlug = "sunken-estate",     ConnectionType = "path",           IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "sunken-estate",       ToLocationSlug = "mire-crossing",     ConnectionType = "path",           IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "sunken-estate",       ToLocationSlug = "bone-hollow",       ConnectionType = "secret_passage", IsTraversable = true },
+
+            // ── the-halrow ───────────────────────────────────────────────────
+            new ZoneLocationConnection { FromLocationSlug = "halrow-threshold",    ToLocationSlug = "rootbound-cellars", ConnectionType = "dungeon_entrance", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "rootbound-cellars",   ToLocationSlug = "halrow-threshold",  ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "rootbound-cellars",   ToLocationSlug = "collapsed-vault",   ConnectionType = "path",             IsTraversable = true },
+
+            // ── drowning-pits ────────────────────────────────────────────────
+            new ZoneLocationConnection { FromLocationSlug = "pit-descent",         ToLocationSlug = "flooded-workings",  ConnectionType = "dungeon_entrance", IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "flooded-workings",    ToLocationSlug = "pit-descent",       ConnectionType = "path",             IsTraversable = true },
+            new ZoneLocationConnection { FromLocationSlug = "flooded-workings",    ToLocationSlug = "deepest-chamber",   ConnectionType = "path",             IsTraversable = true },
 
             // ── aldenmere ───────────────────────────────────────────────────
             new ZoneLocationConnection { FromLocationSlug = "ironhollow-keep",      ToLocationSlug = "aldenmere-marketplace",   ConnectionType = "path",             IsTraversable = true },

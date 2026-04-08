@@ -40,7 +40,7 @@ public static class ApplicationDataSeeder
             return;
 
         db.Regions.AddRange(
-            new Region { Id = "thornveil",   Name = "Thornveil",   Description = "A dense Eiraveth forest shrouding ruins of the first kingdoms, where moss-covered paths lead beginners into adventure.", Type = RegionType.Forest,   MinLevel = 0,  MaxLevel = 6,  IsStarter = true,  IsDiscoverable = true, WorldId = "draveth" },
+            new Region { Id = "varenmark",   Name = "Varenmark",   Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", Type = RegionType.Countryside, MinLevel = 0, MaxLevel = 6, IsStarter = true, IsDiscoverable = true, WorldId = "draveth" },
             new Region { Id = "greymoor",    Name = "Greymoor",    Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.",    Type = RegionType.Highland, MinLevel = 5,  MaxLevel = 14, IsStarter = false, IsDiscoverable = true, WorldId = "draveth" },
             new Region { Id = "saltcliff",   Name = "Saltcliff",   Description = "Thysmara sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remnants of a sunken empire.",  Type = RegionType.Coastal,  MinLevel = 10, MaxLevel = 20, IsStarter = false, IsDiscoverable = true, WorldId = "draveth" },
             new Region { Id = "cinderplain", Name = "Cinderplain", Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.", Type = RegionType.Volcanic, MinLevel = 18, MaxLevel = 30, IsStarter = false, IsDiscoverable = true, WorldId = "draveth" }
@@ -56,8 +56,8 @@ public static class ApplicationDataSeeder
             return;
 
         db.RegionConnections.AddRange(
-            new RegionConnection { FromRegionId = "thornveil",   ToRegionId = "greymoor"    },
-            new RegionConnection { FromRegionId = "greymoor",    ToRegionId = "thornveil"   },
+            new RegionConnection { FromRegionId = "varenmark",   ToRegionId = "greymoor"    },
+            new RegionConnection { FromRegionId = "greymoor",    ToRegionId = "varenmark"   },
             new RegionConnection { FromRegionId = "greymoor",    ToRegionId = "saltcliff"   },
             new RegionConnection { FromRegionId = "saltcliff",   ToRegionId = "greymoor"    },
             new RegionConnection { FromRegionId = "greymoor",    ToRegionId = "cinderplain" },
@@ -74,11 +74,13 @@ public static class ApplicationDataSeeder
             return;
 
         db.Zones.AddRange(
-            // Thornveil
-            new Zone { Id = "fenwick-crossing",  Name = "Fenwick's Crossing",    Description = "A well-worn crossroads inn and market at the forest's edge, where new adventurers take their first uncertain steps.",              Type = ZoneType.Town,       MinLevel = 0,  MaxPlayers = 0, IsStarter = true,  HasInn = true,  HasMerchant = true,  IsPvpEnabled = false, IsDiscoverable = true, RegionId = "thornveil"   },
-            new Zone { Id = "greenveil-paths",   Name = "The Greenveil Paths",   Description = "Winding root-bound trails beneath a canopy of ancient oaks, alive with sprites and overly curious wildlife.",                    Type = ZoneType.Wilderness, MinLevel = 1,  MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "thornveil"   },
-            new Zone { Id = "thornveil-hollow",  Name = "Thornveil Hollow",      Description = "A shaded hollow deep in the forest where old Eiraveth wards have begun to fail and darker things stir.",                         Type = ZoneType.Wilderness, MinLevel = 3,  MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "thornveil"   },
-            new Zone { Id = "verdant-barrow",    Name = "The Verdant Barrow",    Description = "A barrow complex reclaimed by roots and bioluminescent fungi, prowled by the restless dead of a forgotten village.",              Type = ZoneType.Dungeon,    MinLevel = 4,  MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "thornveil"   },
+            // Varenmark
+            new Zone { Id = "crestfall",     Name = "Crestfall",         Description = "A prosperous crossroads market town where three old drove roads meet. Warm lanterns, merchant stalls, and the last comfortable beds for many miles.",    Type = ZoneType.Town,       MinLevel = 0, MaxPlayers = 0, IsStarter = true,  HasInn = true,  HasMerchant = true,  IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "the-droveway",  Name = "The Droveway",      Description = "An old cattle track heading north from Crestfall. Dry-stone walls, pastures gone to seed, and a quiet that feels like it is waiting for something.",   Type = ZoneType.Wilderness, MinLevel = 1, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "ashlen-wood",   Name = "The Ashlen Wood",   Description = "Old-growth forest south of Crestfall. The light is wrong here. Animals behave strangely and old clearings refuse to grow back.",                         Type = ZoneType.Wilderness, MinLevel = 1, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "grevenmire",    Name = "Grevenmire",        Description = "Deep boggy country beyond the Ashlen Wood. Half-sunken ruins, fog that does not lift, and a hostility that feels personal.",                              Type = ZoneType.Wilderness, MinLevel = 3, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "the-halrow",    Name = "The Halrow",        Description = "A buried estate at the end of the Droveway, walls still standing but roof long collapsed. Something has lived in the cellars for a very long time.",      Type = ZoneType.Dungeon,    MinLevel = 4, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "drowning-pits", Name = "The Drowning Pits", Description = "Subterranean chambers beneath Grevenmire, half-flooded and ancient. Whatever built this was not building for humans.",                                    Type = ZoneType.Dungeon,    MinLevel = 4, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
             // Greymoor
             new Zone { Id = "aldenmere",         Name = "Aldenmere",             Description = "A grey-stoned Dravan waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.",             Type = ZoneType.Town,       MinLevel = 5,  MaxPlayers = 0, IsStarter = false, HasInn = true,  HasMerchant = true,  IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor"    },
             new Zone { Id = "pale-moor",         Name = "The Pale Moor",         Description = "Endless fog-blanketed moors where waymarks shift overnight and travellers learn quickly to trust local guides.",                   Type = ZoneType.Wilderness, MinLevel = 7,  MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor"    },
@@ -106,16 +108,20 @@ public static class ApplicationDataSeeder
             return;
 
         db.ZoneConnections.AddRange(
-            // Thornveil internal
-            new ZoneConnection { FromZoneId = "fenwick-crossing",  ToZoneId = "greenveil-paths"  },
-            new ZoneConnection { FromZoneId = "greenveil-paths",   ToZoneId = "fenwick-crossing" },
-            new ZoneConnection { FromZoneId = "greenveil-paths",   ToZoneId = "thornveil-hollow" },
-            new ZoneConnection { FromZoneId = "thornveil-hollow",  ToZoneId = "greenveil-paths"  },
-            new ZoneConnection { FromZoneId = "thornveil-hollow",  ToZoneId = "verdant-barrow"   },
-            new ZoneConnection { FromZoneId = "verdant-barrow",    ToZoneId = "thornveil-hollow" },
-            // Thornveil → Greymoor border
-            new ZoneConnection { FromZoneId = "thornveil-hollow",  ToZoneId = "aldenmere"        },
-            new ZoneConnection { FromZoneId = "aldenmere",         ToZoneId = "thornveil-hollow" },
+            // Varenmark internal
+            new ZoneConnection { FromZoneId = "crestfall",     ToZoneId = "the-droveway"  },
+            new ZoneConnection { FromZoneId = "the-droveway",  ToZoneId = "crestfall"     },
+            new ZoneConnection { FromZoneId = "crestfall",     ToZoneId = "ashlen-wood"   },
+            new ZoneConnection { FromZoneId = "ashlen-wood",   ToZoneId = "crestfall"     },
+            new ZoneConnection { FromZoneId = "the-droveway",  ToZoneId = "the-halrow"    },
+            new ZoneConnection { FromZoneId = "the-halrow",    ToZoneId = "the-droveway"  },
+            new ZoneConnection { FromZoneId = "ashlen-wood",   ToZoneId = "grevenmire"    },
+            new ZoneConnection { FromZoneId = "grevenmire",    ToZoneId = "ashlen-wood"   },
+            new ZoneConnection { FromZoneId = "grevenmire",    ToZoneId = "drowning-pits" },
+            new ZoneConnection { FromZoneId = "drowning-pits", ToZoneId = "grevenmire"    },
+            // Varenmark → Greymoor border
+            new ZoneConnection { FromZoneId = "grevenmire",    ToZoneId = "aldenmere"     },
+            new ZoneConnection { FromZoneId = "aldenmere",     ToZoneId = "grevenmire"    },
             // Greymoor internal
             new ZoneConnection { FromZoneId = "aldenmere",         ToZoneId = "pale-moor"        },
             new ZoneConnection { FromZoneId = "pale-moor",         ToZoneId = "aldenmere"        },

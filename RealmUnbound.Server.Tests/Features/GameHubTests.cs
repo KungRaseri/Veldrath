@@ -221,7 +221,7 @@ public class GameHubTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-disc",
-            ZoneId        = "fenwick-crossing",
+            ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -230,7 +230,7 @@ public class GameHubTests : IDisposable
         await hub.OnDisconnectedAsync(null);
 
         db.ZoneSessions.Should().BeEmpty();
-        groups.RemovedGroups.Should().Contain("zone:fenwick-crossing");
+        groups.RemovedGroups.Should().Contain("zone:crestfall");
     }
 
     // SelectCharacter
@@ -429,7 +429,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("fenwick-crossing"); // seeded zone
+        await hub.EnterZone("crestfall"); // seeded zone
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ZoneEntered");
@@ -446,9 +446,9 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("fenwick-crossing");
+        await hub.EnterZone("crestfall");
 
-        groups.AddedGroups.Should().Contain("zone:fenwick-crossing");
+        groups.AddedGroups.Should().Contain("zone:crestfall");
     }
 
     [Fact]
@@ -462,7 +462,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("fenwick-crossing");
+        await hub.EnterZone("crestfall");
 
         db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "conn-enter");
     }
@@ -493,7 +493,7 @@ public class GameHubTests : IDisposable
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-leave",
-            ZoneId        = "fenwick-crossing",
+            ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -502,7 +502,7 @@ public class GameHubTests : IDisposable
         await hub.LeaveZone();
 
         db.ZoneSessions.Should().BeEmpty();
-        groups.RemovedGroups.Should().Contain("zone:fenwick-crossing");
+        groups.RemovedGroups.Should().Contain("zone:crestfall");
     }
 
     // EnterZone with stale session handling
@@ -527,7 +527,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("fenwick-crossing");
+        await hub.EnterZone("crestfall");
 
         // Old stale session should be gone; new one created
         db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "new-conn");
@@ -546,7 +546,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"] = character.Id;
         // CharacterName intentionally omitted
 
-        await hub.EnterZone("fenwick-crossing");
+        await hub.EnterZone("crestfall");
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -563,7 +563,7 @@ public class GameHubTests : IDisposable
         ctx.Items["CharacterId"]   = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
-        await hub.EnterZone("fenwick-crossing");
+        await hub.EnterZone("crestfall");
 
         var snapshotMsg = clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "ZoneEntitiesSnapshot")
@@ -3200,11 +3200,11 @@ public class GameHubTests : IDisposable
             NullLogger<EnterDungeonHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, "verdant-barrow"),
+            new EnterDungeonHubCommand(accountId, "the-halrow"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        result.DungeonId.Should().Be("verdant-barrow");
+        result.DungeonId.Should().Be("the-halrow");
     }
 
     [Fact]
@@ -3269,7 +3269,7 @@ public class GameHubTests : IDisposable
         var accountId      = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
-        await hub.VisitShop(new VisitShopHubRequest("fenwick-crossing"));
+        await hub.VisitShop(new VisitShopHubRequest("crestfall"));
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
@@ -3285,16 +3285,16 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<VisitShopHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new VisitShopHubResult { Success = true, ZoneId = "fenwick-crossing", ZoneName = "Fenwick's Crossing" });
+            .ReturnsAsync(new VisitShopHubResult { Success = true, ZoneId = "crestfall", ZoneName = "Crestfall" });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
 
-        await hub.VisitShop(new VisitShopHubRequest("fenwick-crossing"));
+        await hub.VisitShop(new VisitShopHubRequest("crestfall"));
 
         mediatorMock.Verify(
             m => m.Send(It.Is<VisitShopHubCommand>(
-                c => c.CharacterId == character.Id && c.ZoneId == "fenwick-crossing"),
+                c => c.CharacterId == character.Id && c.ZoneId == "crestfall"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
