@@ -8,13 +8,13 @@ namespace RealmEngine.Core.Tests.Features.ZoneLocationCatalog;
 public class GetZoneLocationCatalogQueryHandlerTests
 {
     private static ZoneLocationEntry MakeLoc() =>
-        new("slug", "Display", "zone", "fenwick-crossing", "dungeon", 1, null, null);
+        new("slug", "Display", "zone", "fenwick-crossing", 1, null, null);
 
     private static IZoneLocationRepository BuildRepo(IEnumerable<ZoneLocationEntry> data)
     {
         var mock = new Mock<IZoneLocationRepository>();
         mock.Setup(r => r.GetAllAsync()).ReturnsAsync(data.ToList());
-        mock.Setup(r => r.GetByLocationTypeAsync(It.IsAny<string>())).ReturnsAsync(data.ToList());
+        mock.Setup(r => r.GetByTypeKeyAsync(It.IsAny<string>())).ReturnsAsync(data.ToList());
         return mock.Object;
     }
 
@@ -33,12 +33,12 @@ public class GetZoneLocationCatalogQueryHandlerTests
     public async Task Handle_WithFilter_CallsFilteredMethod()
     {
         var mock = new Mock<IZoneLocationRepository>();
-        mock.Setup(r => r.GetByLocationTypeAsync(It.IsAny<string>())).ReturnsAsync([MakeLoc()]);
+        mock.Setup(r => r.GetByTypeKeyAsync(It.IsAny<string>())).ReturnsAsync([MakeLoc()]);
         var handler = new GetZoneLocationCatalogQueryHandler(mock.Object);
 
         await handler.Handle(new GetZoneLocationCatalogQuery("dungeon"), CancellationToken.None);
 
-        mock.Verify(r => r.GetByLocationTypeAsync(It.IsAny<string>()), Times.Once);
+        mock.Verify(r => r.GetByTypeKeyAsync(It.IsAny<string>()), Times.Once);
         mock.Verify(r => r.GetAllAsync(), Times.Never);
     }
 
@@ -46,12 +46,12 @@ public class GetZoneLocationCatalogQueryHandlerTests
     public async Task Handle_WithFilter_PassesFilterValueToRepository()
     {
         var mock = new Mock<IZoneLocationRepository>();
-        mock.Setup(r => r.GetByLocationTypeAsync(It.IsAny<string>())).ReturnsAsync([]);
+        mock.Setup(r => r.GetByTypeKeyAsync(It.IsAny<string>())).ReturnsAsync([]);
         var handler = new GetZoneLocationCatalogQueryHandler(mock.Object);
 
         await handler.Handle(new GetZoneLocationCatalogQuery("town"), CancellationToken.None);
 
-        mock.Verify(r => r.GetByLocationTypeAsync("town"), Times.Once);
+        mock.Verify(r => r.GetByTypeKeyAsync("town"), Times.Once);
     }
 
     [Fact]

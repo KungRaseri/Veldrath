@@ -6,7 +6,6 @@ public record ZoneLocationEntry(
     string DisplayName,
     string TypeKey,
     string ZoneId,
-    string LocationType,
     int RarityWeight,
     int? MinLevel,
     int? MaxLevel,
@@ -20,13 +19,3 @@ public record ZoneLocationEntry(
 /// <param name="ArchetypeSlug">Slug of the archetype that can spawn at this location.</param>
 /// <param name="Weight">Relative spawn weight (higher = more likely).</param>
 public record ActorPoolEntry(string ArchetypeSlug, int Weight);
-
-/// <summary>A traversal edge linking one ZoneLocation to another location or zone.</summary>
-public record ZoneLocationConnectionEntry(
-    int ConnectionId,
-    string FromLocationSlug,
-    string? ToLocationSlug,
-    string? ToZoneId,
-    string ConnectionType,
-    bool IsTraversable,
-    bool IsHidden = false);

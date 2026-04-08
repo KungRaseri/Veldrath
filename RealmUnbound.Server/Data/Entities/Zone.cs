@@ -12,7 +12,7 @@ public class Zone
 
     public string Description { get; set; } = string.Empty;
 
-    public ZoneType Type { get; set; } = ZoneType.Tutorial;
+    public ZoneType Type { get; set; } = ZoneType.Wilderness;
 
     /// <summary>Minimum character level to enter (0 = no restriction).</summary>
     public int MinLevel { get; set; }
@@ -48,14 +48,10 @@ public class Zone
 
     /// <summary>Active player sessions currently inside this zone.</summary>
     public ICollection<ZoneSession> Sessions { get; set; } = [];
-
-    /// <summary>Directed connections to adjacent zones (exits from this zone).</summary>
-    public ICollection<ZoneConnection> Exits { get; set; } = [];
 }
 
 public enum ZoneType
 {
-    Tutorial,
     Town,
     Dungeon,
     Wilderness,

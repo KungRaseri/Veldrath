@@ -25,9 +25,6 @@ public record RegionDto(
     bool IsStarter,
     string WorldId);
 
-/// <summary>A directed travel edge between two adjacent zones.</summary>
-public record ZoneConnectionDto(string FromZoneId, string ToZoneId);
-
 /// <summary>Summary of a world container.</summary>
 public record WorldDto(
     string Id,

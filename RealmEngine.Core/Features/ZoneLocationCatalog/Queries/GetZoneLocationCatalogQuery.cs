@@ -5,9 +5,9 @@ using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.ZoneLocationCatalog.Queries;
 
-/// <summary>Query that retrieves zone location entries from the catalog, optionally filtered by location type.</summary>
-/// <param name="LocationType">When provided, limits results to locations of this type.</param>
-public record GetZoneLocationCatalogQuery(string? LocationType = null) : IRequest<IReadOnlyList<ZoneLocationEntry>>;
+/// <summary>Query that retrieves zone location entries from the catalog, optionally filtered by type key.</summary>
+/// <param name="TypeKey">When provided, limits results to locations with this type key.</param>
+public record GetZoneLocationCatalogQuery(string? TypeKey = null) : IRequest<IReadOnlyList<ZoneLocationEntry>>;
 
 /// <summary>Handles <see cref="GetZoneLocationCatalogQuery"/> by querying the zone location repository.</summary>
 public class GetZoneLocationCatalogQueryHandler : IRequestHandler<GetZoneLocationCatalogQuery, IReadOnlyList<ZoneLocationEntry>>
@@ -22,8 +22,8 @@ public class GetZoneLocationCatalogQueryHandler : IRequestHandler<GetZoneLocatio
     /// <inheritdoc/>
     public async Task<IReadOnlyList<ZoneLocationEntry>> Handle(GetZoneLocationCatalogQuery request, CancellationToken cancellationToken)
     {
-        if (request.LocationType is not null)
-            return await _repository.GetByLocationTypeAsync(request.LocationType);
+        if (request.TypeKey is not null)
+            return await _repository.GetByTypeKeyAsync(request.TypeKey);
 
         return await _repository.GetAllAsync();
     }
@@ -35,9 +35,9 @@ public class GetZoneLocationCatalogQueryValidator : AbstractValidator<GetZoneLoc
     /// <summary>Initializes a new instance of <see cref="GetZoneLocationCatalogQueryValidator"/>.</summary>
     public GetZoneLocationCatalogQueryValidator()
     {
-        When(q => q.LocationType is not null, () =>
+        When(q => q.TypeKey is not null, () =>
         {
-            RuleFor(q => q.LocationType).NotEmpty().MaximumLength(100);
+            RuleFor(q => q.TypeKey).NotEmpty().MaximumLength(100);
         });
     }
 }

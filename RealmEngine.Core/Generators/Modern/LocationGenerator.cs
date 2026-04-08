@@ -27,7 +27,7 @@ public class LocationGenerator
         try
         {
             var all = await _db.ZoneLocations.AsNoTracking()
-                .Where(l => l.IsActive && l.LocationType == locationType)
+                .Where(l => l.IsActive && l.TypeKey == locationType)
                 .ToListAsync();
 
             if (all.Count == 0) return [];
@@ -102,14 +102,14 @@ public class LocationGenerator
         Id = e.Slug,
         Name = e.DisplayName ?? e.Slug,
         Description = string.Empty,
-        Type = e.LocationType,
+        Type = e.TypeKey,
         Level = e.Stats.MinLevel ?? 1,
         DangerRating = e.Stats.DangerLevel ?? 1,
         HasShop = e.Traits.HasMerchant ?? false,
         HasInn = e.Traits.IsTown ?? false,
         IsSafeZone = e.Traits.IsTown ?? false,
         IsStartingZone = false,
-        LocationType = e.LocationType,
+        LocationType = e.TypeKey,
     };
 
     /// <summary>Generates an enemy appropriate for the given location's level range and type.</summary>

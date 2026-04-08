@@ -35,10 +35,7 @@ public record NavigateToLocationHubResult
     public string? LocationDisplayName { get; init; }
 
     /// <summary>Gets the location type (e.g. "dungeon", "location", "environment"), or <see langword="null"/> on failure.</summary>
-    public string? LocationType { get; init; }
-
-    /// <summary>Gets the traversal edges available from the arrived location.</summary>
-    public IReadOnlyList<ZoneLocationConnectionEntry> AvailableConnections { get; init; } = [];
+    public string? TypeKey { get; init; }
 
     /// <summary>Gets hidden locations newly discovered by the passive skill-check sweep.</summary>
     public IReadOnlyList<ZoneLocationEntry> PassiveDiscoveries { get; init; } = [];
@@ -127,9 +124,6 @@ public class NavigateToLocationHubCommandHandler
             "Character {CharacterIdPrefix} navigated to {LocationSlug} in zone {ZoneId}",
             request.CharacterId.ToString()[..8], location.Slug, request.ZoneId);
 
-        // Load connections from the arrived location.
-        var connections = await _locationRepo.GetConnectionsFromAsync(location.Slug);
-
         // Passive discovery sweep: unlock hidden locations the character is high-level enough to notice.
         var passiveDiscoveries = await RunPassiveDiscoveryAsync(
             request.CharacterId, request.ZoneId, unlockedSlugs, cancellationToken);
@@ -157,8 +151,7 @@ public class NavigateToLocationHubCommandHandler
             Success              = true,
             LocationSlug         = location.Slug,
             LocationDisplayName  = location.DisplayName,
-            LocationType         = location.LocationType,
-            AvailableConnections = connections,
+            TypeKey              = location.TypeKey,
             PassiveDiscoveries   = passiveDiscoveries,
             SpawnedEnemies       = spawnedEnemies,
         };

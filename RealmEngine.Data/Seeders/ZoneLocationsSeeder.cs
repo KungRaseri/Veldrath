@@ -37,7 +37,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "crestfall-square",     DisplayName = "The Crestfall Square",
-                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "crestfall",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 1, Population = 50, MinLevel = 0 },
                 Traits = new() { IsTown = true },
@@ -45,7 +45,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "aurelian-market",      DisplayName = "The Aurelian Market",
-                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "crestfall",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 1, Population = 40, MinLevel = 1 },
                 Traits = new() { IsTown = true, HasMerchant = true },
@@ -53,7 +53,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "hearthbound-inn",      DisplayName = "The Hearthbound Inn",
-                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "crestfall",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 1, Population = 30, MinLevel = 1 },
                 Traits = new() { IsTown = true },
@@ -61,7 +61,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "low-quarter",          DisplayName = "The Low Quarter",
-                ZoneId = "crestfall",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "crestfall",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 1, Population = 25, MinLevel = 1 },
                 Traits = new() { IsTown = true },
@@ -71,7 +71,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "drove-road",           DisplayName = "The Drove Road",
-                ZoneId = "the-droveway",       TypeKey = "environments", LocationType = "environment",
+                ZoneId = "the-droveway",       TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 2, Population = 30, MinLevel = 1, MaxLevel = 4 },
                 Traits = new() { IsIndoor = false },
@@ -79,7 +79,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "weathered-waypost",    DisplayName = "The Weathered Waypost",
-                ZoneId = "the-droveway",       TypeKey = "locations",  LocationType = "location",
+                ZoneId = "the-droveway",       TypeKey = "locations",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 2, Population = 5, MinLevel = 1, MaxLevel = 4 },
                 Traits = new() { IsIndoor = false },
@@ -87,7 +87,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "sunken-fields",        DisplayName = "The Sunken Fields",
-                ZoneId = "the-droveway",       TypeKey = "environments", LocationType = "environment",
+                ZoneId = "the-droveway",       TypeKey = "environments",
                 RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 3, MinLevel = 2, MaxLevel = 4 },
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
@@ -97,7 +97,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "wood-road",            DisplayName = "The Wood Road",
-                ZoneId = "ashlen-wood",        TypeKey = "environments", LocationType = "environment",
+                ZoneId = "ashlen-wood",        TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 2, Population = 40, MinLevel = 1, MaxLevel = 5 },
                 Traits = new() { IsIndoor = false },
@@ -105,7 +105,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "old-clearing",         DisplayName = "The Old Clearing",
-                ZoneId = "ashlen-wood",        TypeKey = "environments", LocationType = "environment",
+                ZoneId = "ashlen-wood",        TypeKey = "environments",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 3, Population = 15, MinLevel = 2, MaxLevel = 5 },
                 Traits = new() { IsIndoor = false },
@@ -113,7 +113,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "strangled-oak",        DisplayName = "The Strangled Oak",
-                ZoneId = "ashlen-wood",        TypeKey = "locations",  LocationType = "location",
+                ZoneId = "ashlen-wood",        TypeKey = "locations",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 4, MinLevel = 2, MaxLevel = 5 },
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
@@ -123,7 +123,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "mire-crossing",        DisplayName = "The Mire Crossing",
-                ZoneId = "grevenmire",         TypeKey = "environments", LocationType = "environment",
+                ZoneId = "grevenmire",         TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 4, Population = 20, MinLevel = 3, MaxLevel = 6 },
                 Traits = new() { IsIndoor = false },
@@ -131,7 +131,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "sunken-estate",        DisplayName = "The Sunken Estate",
-                ZoneId = "grevenmire",         TypeKey = "locations",  LocationType = "location",
+                ZoneId = "grevenmire",         TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 5, Population = 10, MinLevel = 3, MaxLevel = 6 },
                 Traits = new() { IsIndoor = false },
@@ -139,7 +139,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "bone-hollow",          DisplayName = "The Bone Hollow",
-                ZoneId = "grevenmire",         TypeKey = "environments", LocationType = "environment",
+                ZoneId = "grevenmire",         TypeKey = "environments",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 6, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 8 },
@@ -149,7 +149,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "halrow-threshold",     DisplayName = "The Halrow Threshold",
-                ZoneId = "the-halrow",         TypeKey = "locations",  LocationType = "location",
+                ZoneId = "the-halrow",         TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 3, Population = 5, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsDungeon = false },
@@ -157,7 +157,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "rootbound-cellars",    DisplayName = "The Rootbound Cellars",
-                ZoneId = "the-halrow",         TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "the-halrow",         TypeKey = "dungeons",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 4, Population = 30, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsIndoor = true, IsDungeon = true },
@@ -165,7 +165,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "collapsed-vault",      DisplayName = "The Collapsed Vault",
-                ZoneId = "the-halrow",         TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "the-halrow",         TypeKey = "dungeons",
                 RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 5, Population = 15, MinLevel = 5, MaxLevel = 6 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
@@ -175,7 +175,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "pit-descent",          DisplayName = "The Pit Descent",
-                ZoneId = "drowning-pits",      TypeKey = "locations",  LocationType = "location",
+                ZoneId = "drowning-pits",      TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 4, Population = 5, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsDungeon = false },
@@ -183,7 +183,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "flooded-workings",     DisplayName = "The Flooded Workings",
-                ZoneId = "drowning-pits",      TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "drowning-pits",      TypeKey = "dungeons",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 5, Population = 30, MinLevel = 4, MaxLevel = 6 },
                 Traits = new() { IsIndoor = true, IsDungeon = true },
@@ -191,7 +191,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "deepest-chamber",      DisplayName = "The Deepest Chamber",
-                ZoneId = "drowning-pits",      TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "drowning-pits",      TypeKey = "dungeons",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 6, Population = 10, MinLevel = 5, MaxLevel = 6 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
@@ -203,7 +203,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "ironhollow-keep",      DisplayName = "Ironhollow Keep",
-                ZoneId = "aldenmere",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "aldenmere",          TypeKey = "locations",
                 RarityWeight = 60, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 4, Population = 80, MinLevel = 5, MaxLevel = 12 },
                 Traits = new() { IsTown = true, HasMerchant = true },
@@ -211,7 +211,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "aldenmere-marketplace", DisplayName = "Aldenmere Marketplace",
-                ZoneId = "aldenmere",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "aldenmere",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 2, Population = 60, MinLevel = 5 },
                 Traits = new() { IsTown = true, HasMerchant = true },
@@ -219,7 +219,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "grey-cup",             DisplayName = "The Grey Cup",
-                ZoneId = "aldenmere",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "aldenmere",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 1, Population = 25, MinLevel = 5 },
                 Traits = new() { IsTown = true },
@@ -229,7 +229,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "ashveil-highlands",    DisplayName = "Ashveil Highlands",
-                ZoneId = "pale-moor",          TypeKey = "environments", LocationType = "environment",
+                ZoneId = "pale-moor",          TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 7, DangerLevel = 5, Population = 60, MinLevel = 7, MaxLevel = 12 },
                 Traits = new() { IsDiscoverable = true },
@@ -237,7 +237,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "moorstone-cairns",     DisplayName = "The Moorstone Cairns",
-                ZoneId = "pale-moor",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "pale-moor",          TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 4, Population = 10, MinLevel = 7, MaxLevel = 12 },
                 Traits = new() { IsDiscoverable = true },
@@ -245,7 +245,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "shifting-waymark",     DisplayName = "The Shifting Waymark",
-                ZoneId = "pale-moor",          TypeKey = "environments", LocationType = "environment",
+                ZoneId = "pale-moor",          TypeKey = "environments",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 6, MinLevel = 8, MaxLevel = 14 },
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 10 },
@@ -255,7 +255,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "fenland-crossing",     DisplayName = "Fenland Crossing",
-                ZoneId = "soddenfen",          TypeKey = "environments", LocationType = "environment",
+                ZoneId = "soddenfen",          TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 5, Population = 30, MinLevel = 9, MaxLevel = 13 },
                 Traits = new() { IsIndoor = false },
@@ -263,7 +263,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "submerged-ruins",      DisplayName = "The Submerged Ruins",
-                ZoneId = "soddenfen",          TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "soddenfen",          TypeKey = "dungeons",
                 RarityWeight = 50, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 7, Population = 40, MinLevel = 10, MaxLevel = 14 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 12 },
@@ -273,7 +273,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "deeps-entrance",       DisplayName = "Deeps Entrance",
-                ZoneId = "barrow-deeps",       TypeKey = "locations",  LocationType = "location",
+                ZoneId = "barrow-deeps",       TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 6, Population = 5, MinLevel = 11, MaxLevel = 14 },
                 Traits = new() { IsDungeon = false },
@@ -281,7 +281,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "ancestor-vault",       DisplayName = "The Ancestor Vault",
-                ZoneId = "barrow-deeps",       TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "barrow-deeps",       TypeKey = "dungeons",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 7, Population = 50, MinLevel = 11, MaxLevel = 14 },
                 Traits = new() { IsIndoor = true, IsDungeon = true },
@@ -289,7 +289,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "relic-chamber",        DisplayName = "The Relic Chamber",
-                ZoneId = "barrow-deeps",       TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "barrow-deeps",       TypeKey = "dungeons",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 8, Population = 20, MinLevel = 12, MaxLevel = 14 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
@@ -301,7 +301,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "tolvaren-harbour",     DisplayName = "Tolvaren Harbour",
-                ZoneId = "tolvaren",           TypeKey = "locations",  LocationType = "location",
+                ZoneId = "tolvaren",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 2, Population = 100, MinLevel = 10 },
                 Traits = new() { IsTown = true },
@@ -309,7 +309,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "cliff-road-market",    DisplayName = "Cliff Road Market",
-                ZoneId = "tolvaren",           TypeKey = "locations",  LocationType = "location",
+                ZoneId = "tolvaren",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 2, Population = 60, MinLevel = 10 },
                 Traits = new() { IsTown = true, HasMerchant = true },
@@ -317,7 +317,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "saltcrow-inn",         DisplayName = "The Saltcrow Inn",
-                ZoneId = "tolvaren",           TypeKey = "locations",  LocationType = "location",
+                ZoneId = "tolvaren",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 1, Population = 20, MinLevel = 10 },
                 Traits = new() { IsTown = true },
@@ -327,7 +327,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "wrack-shore",          DisplayName = "Wrack Shore",
-                ZoneId = "tidewrack-flats",    TypeKey = "environments", LocationType = "environment",
+                ZoneId = "tidewrack-flats",    TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 5, Population = 40, MinLevel = 12, MaxLevel = 18 },
                 Traits = new() { IsIndoor = false },
@@ -335,7 +335,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "bone-strand",          DisplayName = "The Bone Strand",
-                ZoneId = "tidewrack-flats",    TypeKey = "environments", LocationType = "environment",
+                ZoneId = "tidewrack-flats",    TypeKey = "environments",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 6, Population = 35, MinLevel = 13, MaxLevel = 18 },
                 Traits = new() { IsIndoor = false },
@@ -343,7 +343,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "tidal-grotto",         DisplayName = "The Tidal Grotto",
-                ZoneId = "tidewrack-flats",    TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "tidewrack-flats",    TypeKey = "dungeons",
                 RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 7, Population = 25, MinLevel = 14, MaxLevel = 18 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 14 },
@@ -353,7 +353,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "clifftop-ruins",       DisplayName = "The Clifftop Ruins",
-                ZoneId = "saltcliff-heights",  TypeKey = "locations",  LocationType = "location",
+                ZoneId = "saltcliff-heights",  TypeKey = "locations",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 6, Population = 20, MinLevel = 14, MaxLevel = 20 },
                 Traits = new() { IsDiscoverable = true },
@@ -361,7 +361,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "gull-rider-camp",      DisplayName = "Gull-Rider Camp",
-                ZoneId = "saltcliff-heights",  TypeKey = "environments", LocationType = "environment",
+                ZoneId = "saltcliff-heights",  TypeKey = "environments",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 7, Population = 30, MinLevel = 15, MaxLevel = 20 },
                 Traits = new() { IsDiscoverable = true },
@@ -369,7 +369,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "storm-watch-peak",     DisplayName = "Storm-Watch Peak",
-                ZoneId = "saltcliff-heights",  TypeKey = "locations",  LocationType = "location",
+                ZoneId = "saltcliff-heights",  TypeKey = "locations",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 8, MinLevel = 16, MaxLevel = 20 },
                 Traits = new() { IsHidden = true, UnlockType = "achievement" },
@@ -379,7 +379,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "drowned-threshold",    DisplayName = "The Drowned Threshold",
-                ZoneId = "sunken-name",        TypeKey = "locations",  LocationType = "location",
+                ZoneId = "sunken-name",        TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 7, Population = 5, MinLevel = 16, MaxLevel = 20 },
                 Traits = new() { IsDungeon = false },
@@ -387,7 +387,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "flooded-throne-room",  DisplayName = "The Flooded Throne Room",
-                ZoneId = "sunken-name",        TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "sunken-name",        TypeKey = "dungeons",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 9, Population = 60, MinLevel = 16, MaxLevel = 20 },
                 Traits = new() { IsIndoor = true, IsDungeon = true },
@@ -395,7 +395,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "tidelocked-vault",     DisplayName = "The Tidelocked Vault",
-                ZoneId = "sunken-name",        TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "sunken-name",        TypeKey = "dungeons",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 10, Population = 20, MinLevel = 17, MaxLevel = 20 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
@@ -407,7 +407,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "forge-quarter",        DisplayName = "The Forge Quarter",
-                ZoneId = "skarhold",           TypeKey = "locations",  LocationType = "location",
+                ZoneId = "skarhold",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 3, Population = 80, MinLevel = 18 },
                 Traits = new() { IsTown = true, HasMerchant = true },
@@ -415,7 +415,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "caldera-market",       DisplayName = "Caldera Market",
-                ZoneId = "skarhold",           TypeKey = "locations",  LocationType = "location",
+                ZoneId = "skarhold",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 2, Population = 60, MinLevel = 18 },
                 Traits = new() { IsTown = true, HasMerchant = true },
@@ -423,7 +423,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "ashbrand-lodge",       DisplayName = "The Ashbrand Lodge",
-                ZoneId = "skarhold",           TypeKey = "locations",  LocationType = "location",
+                ZoneId = "skarhold",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 1, Population = 30, MinLevel = 18 },
                 Traits = new() { IsTown = true },
@@ -433,7 +433,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "obsidian-grove",       DisplayName = "The Obsidian Grove",
-                ZoneId = "ashfields",          TypeKey = "environments", LocationType = "environment",
+                ZoneId = "ashfields",          TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 6, DangerLevel = 8, Population = 50, MinLevel = 20, MaxLevel = 25 },
                 Traits = new() { IsIndoor = false },
@@ -441,7 +441,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "scorched-battlefield", DisplayName = "The Scorched Battlefield",
-                ZoneId = "ashfields",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "ashfields",          TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 8, DangerLevel = 9, Population = 70, MinLevel = 21, MaxLevel = 25 },
                 Traits = new() { IsIndoor = false },
@@ -449,7 +449,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "ash-shrine",           DisplayName = "The Ash Shrine",
-                ZoneId = "ashfields",          TypeKey = "locations",  LocationType = "location",
+                ZoneId = "ashfields",          TypeKey = "locations",
                 RarityWeight = 25, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 7, MinLevel = 20, MaxLevel = 25 },
                 Traits = new() { IsHidden = true, UnlockType = "quest" },
@@ -459,7 +459,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "vent-fields",          DisplayName = "The Vent Fields",
-                ZoneId = "smoldering-reach",   TypeKey = "environments", LocationType = "environment",
+                ZoneId = "smoldering-reach",   TypeKey = "environments",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 7, DangerLevel = 9, Population = 45, MinLevel = 23, MaxLevel = 26 },
                 Traits = new() { IsIndoor = false },
@@ -467,7 +467,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "pyreling-den",         DisplayName = "The Pyreling Den",
-                ZoneId = "smoldering-reach",   TypeKey = "environments", LocationType = "environment",
+                ZoneId = "smoldering-reach",   TypeKey = "environments",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 35, MinLevel = 24, MaxLevel = 26 },
                 Traits = new() { IsIndoor = false },
@@ -475,7 +475,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "lava-bridge",          DisplayName = "The Lava Bridge",
-                ZoneId = "smoldering-reach",   TypeKey = "locations",  LocationType = "location",
+                ZoneId = "smoldering-reach",   TypeKey = "locations",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 10, MinLevel = 24, MaxLevel = 26 },
                 Traits = new() { IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 18 },
@@ -485,7 +485,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "maw-descent",          DisplayName = "The Maw Descent",
-                ZoneId = "kaldrek-maw",        TypeKey = "locations",  LocationType = "location",
+                ZoneId = "kaldrek-maw",        TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 10, Population = 5, MinLevel = 26, MaxLevel = 30 },
                 Traits = new() { IsDungeon = false },
@@ -493,7 +493,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "fire-ancients-chamber", DisplayName = "The Fire-Ancient's Chamber",
-                ZoneId = "kaldrek-maw",        TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "kaldrek-maw",        TypeKey = "dungeons",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 8, DangerLevel = 10, Population = 30, MinLevel = 26, MaxLevel = 30 },
                 Traits = new() { IsIndoor = true, IsDungeon = true },
@@ -501,7 +501,7 @@ public static class ZoneLocationsSeeder
             new ZoneLocation
             {
                 Slug = "kaldreks-heart",       DisplayName = "Kaldrek's Heart",
-                ZoneId = "kaldrek-maw",        TypeKey = "dungeons",   LocationType = "dungeon",
+                ZoneId = "kaldrek-maw",        TypeKey = "dungeons",
                 RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 10, MinLevel = 28, MaxLevel = 30 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },

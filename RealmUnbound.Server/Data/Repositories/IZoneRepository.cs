@@ -13,9 +13,6 @@ public interface IZoneRepository
 
     /// <summary>Returns all zones belonging to the given <paramref name="regionId"/>.</summary>
     Task<List<Zone>> GetByRegionIdAsync(string regionId);
-
-    /// <summary>Returns all zone-to-zone travel edges originating from the given <paramref name="zoneId"/>.</summary>
-    Task<List<ZoneConnection>> GetConnectionsAsync(string zoneId);
 }
 
 /// <summary>Tracks active player connections within a zone.</summary>

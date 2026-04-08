@@ -210,29 +210,13 @@ public record OrganizationDto(string Slug, string DisplayName, string TypeKey, s
 /// <param name="DisplayName">Human-readable name.</param>
 /// <param name="TypeKey">Domain type key (e.g. "dungeons", "locations", "environments").</param>
 /// <param name="ZoneId">The Zone this location belongs to.</param>
-/// <param name="LocationType">Location sub-type: "dungeon", "location", or "environment".</param>
 /// <param name="RarityWeight">Selection weight for random draws.</param>
 /// <param name="MinLevel">Minimum recommended character level, or <see langword="null"/> if unconstrained.</param>
 /// <param name="MaxLevel">Maximum recommended character level, or <see langword="null"/> if unconstrained.</param>
 /// <param name="IsHidden">True if this location must be unlocked before it is visible to the character.</param>
 public record ZoneLocationDto(string Slug, string DisplayName, string TypeKey,
-    string ZoneId, string LocationType, int RarityWeight, int? MinLevel, int? MaxLevel,
+    string ZoneId, int RarityWeight, int? MinLevel, int? MaxLevel,
     bool IsHidden = false);
-
-/// <summary>A traversal edge leading from one ZoneLocation to another location or zone.</summary>
-/// <param name="ConnectionId">Primary key of the underlying <c>ZoneLocationConnection</c> record.</param>
-/// <param name="FromLocationSlug">Slug of the location that contains this exit.</param>
-/// <param name="ToLocationSlug">Destination ZoneLocation slug, or <see langword="null"/> when the destination is a whole zone.</param>
-/// <param name="ToZoneId">Destination zone slug, or <see langword="null"/> when the destination is a specific location.</param>
-/// <param name="ConnectionType">Travel method: "path" | "portal" | "dungeon_entrance" | "secret_passage".</param>
-/// <param name="IsTraversable">False when the connection is blocked (e.g. quest gate, locked door).</param>
-public record ZoneLocationConnectionDto(
-    int ConnectionId,
-    string FromLocationSlug,
-    string? ToLocationSlug,
-    string? ToZoneId,
-    string ConnectionType,
-    bool IsTraversable);
 
 // Dialogue
 /// <summary>A dialogue catalog entry belonging to a speaker type.</summary>

@@ -23,8 +23,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<Entities.Character> Characters => Set<Entities.Character>();
     /// <summary>Zone locations that characters have unlocked through discovery or quests.</summary>
     public DbSet<CharacterUnlockedLocation> CharacterUnlockedLocations => Set<CharacterUnlockedLocation>();
-    /// <summary>Zone location connections that characters have unlocked through discovery or quests.</summary>
-    public DbSet<CharacterUnlockedConnection> CharacterUnlockedConnections => Set<CharacterUnlockedConnection>();
     /// <summary>JWT refresh tokens.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     /// <summary>Top-level world containers (currently only Draveth).</summary>
@@ -35,8 +33,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<RegionConnection> RegionConnections => Set<RegionConnection>();
     /// <summary>Zone catalog — static and procedurally generated areas.</summary>
     public DbSet<Zone> Zones => Set<Zone>();
-    /// <summary>Directed travel edges between adjacent zones.</summary>
-    public DbSet<ZoneConnection> ZoneConnections => Set<ZoneConnection>();
     /// <summary>Live records of characters currently inside a zone.</summary>
     public DbSet<ZoneSession> ZoneSessions => Set<ZoneSession>();
     /// <summary>Community content submissions for the Foundry portal.</summary>
@@ -144,20 +140,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithOne(s => s.Zone)
              .HasForeignKey(s => s.ZoneId)
              .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ZoneConnection Configuration
-        builder.Entity<ZoneConnection>(e =>
-        {
-            e.HasKey(zc => new { zc.FromZoneId, zc.ToZoneId });
-            e.HasOne(zc => zc.FromZone)
-             .WithMany(z => z.Exits)
-             .HasForeignKey(zc => zc.FromZoneId)
-             .OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(zc => zc.ToZone)
-             .WithMany()
-             .HasForeignKey(zc => zc.ToZoneId)
-             .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<ZoneSession>(e =>

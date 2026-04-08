@@ -250,13 +250,9 @@ public class FakeZoneService : IZoneService
     public List<RegionDto> Regions { get; set; } = [];
     public List<WorldDto> Worlds { get; set; } = [];
     public List<ZoneLocationDto> Locations { get; set; } = [];
-    public List<ZoneLocationConnectionDto> LocationConnections { get; set; } = [];
 
     /// <summary>Maps a region ID to the IDs of regions it connects to (used by <see cref="GetRegionConnectionsAsync"/>).</summary>
     public Dictionary<string, List<string>> RegionConnections { get; set; } = [];
-
-    /// <summary>Maps a zone ID to the IDs of zones it connects to (used by <see cref="GetZoneConnectionsAsync"/>).</summary>
-    public Dictionary<string, List<string>> ZoneConnections { get; set; } = [];
 
     public Task<List<ZoneDto>> GetZonesAsync()
         => Task.FromResult(new List<ZoneDto>(Zones));
@@ -288,16 +284,6 @@ public class FakeZoneService : IZoneService
 
     public Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId, Guid? characterId = null)
         => Task.FromResult(Locations.Where(l => l.ZoneId == zoneId).ToList());
-
-    public Task<List<ZoneConnectionDto>> GetZoneConnectionsAsync(string zoneId)
-    {
-        if (!ZoneConnections.TryGetValue(zoneId, out var ids))
-            return Task.FromResult(new List<ZoneConnectionDto>());
-        return Task.FromResult(ids.Select(id => new ZoneConnectionDto(zoneId, id)).ToList());
-    }
-
-    public Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId, Guid? characterId = null)
-        => Task.FromResult(LocationConnections.Where(c => Locations.Any(l => l.ZoneId == zoneId && l.Slug == c.FromLocationSlug)).ToList());
 }
 
 // Content service stub

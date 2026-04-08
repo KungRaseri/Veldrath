@@ -9,9 +9,6 @@ public class ZoneLocation : ContentBase
     /// <summary>The Zone this location belongs to (loose cross-context reference).</summary>
     public string ZoneId { get; set; } = string.Empty;
 
-    /// <summary>"dungeon" | "location" | "environment"</summary>
-    public string LocationType { get; set; } = string.Empty;
-
     /// <summary>Size, danger, and level-range statistics.</summary>
     public ZoneLocationStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags classifying this location.</summary>
@@ -67,29 +64,4 @@ public class ActorPoolEntry
 
     /// <summary>Relative spawn weight for this archetype (higher = more likely).</summary>
     public int Weight { get; set; } = 1;
-}
-
-/// <summary>A directed traversal edge linking one ZoneLocation to another location or zone.</summary>
-public class ZoneLocationConnection
-{
-    /// <summary>Primary key.</summary>
-    public int Id { get; set; }
-
-    /// <summary>Slug of the ZoneLocation that contains this exit.</summary>
-    public string FromLocationSlug { get; set; } = string.Empty;
-
-    /// <summary>Slug of the destination ZoneLocation, or <see langword="null"/> when the destination is a whole zone.</summary>
-    public string? ToLocationSlug { get; set; }
-
-    /// <summary>Zone slug to enter when this connection is traversed (set when the destination is an entire zone).</summary>
-    public string? ToZoneId { get; set; }
-
-    /// <summary>"path" | "portal" | "dungeon_entrance" | "secret_passage"</summary>
-    public string ConnectionType { get; set; } = "path";
-
-    /// <summary>False when the connection is temporarily blocked (quest gate, locked door, etc.).</summary>
-    public bool IsTraversable { get; set; } = true;
-
-    /// <summary>True when this connection is hidden and only returned for characters who have unlocked it.</summary>
-    public bool IsHidden { get; set; } = false;
 }

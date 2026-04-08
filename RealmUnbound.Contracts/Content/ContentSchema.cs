@@ -667,8 +667,6 @@ public static class ContentSchemaRegistry
             new("Location", [
                 new("zoneId",      "Zone ID",      ContentFieldType.Text, Required: true,
                     Hint: "Slug of the owning Zone (e.g. \"fenwick-crossing\")"),
-                new("locationType","Location Type",ContentFieldType.EnumString, Required: true,
-                    EnumValues: ["dungeon", "location", "environment"]),
             ]),
             new("Stats", [
                 new("stats.size",       "Size (1–10)",       ContentFieldType.Integer, Min: 1, Max: 10),
