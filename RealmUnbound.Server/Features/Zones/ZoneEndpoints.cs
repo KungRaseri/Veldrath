@@ -69,29 +69,6 @@ public static class ZoneEndpoints
             }
             return Results.Ok((await locations.GetByZoneIdAsync(id)).Select(ToLocationDto));
         });
-
-        // Returns all zone-to-zone travel edges originating from the given zone.
-        group.MapGet("/{id}/connections", async (string id, IZoneRepository zones) =>
-            Results.Ok((await zones.GetConnectionsAsync(id))
-                .Select(c => new ZoneConnectionDto(c.FromZoneId, c.ToZoneId))));
-
-        // Returns all location-to-location traversal edges for every location within the given zone.
-        // Hidden connections are included only when characterId is supplied and the character has unlocked them.
-        group.MapGet("/{id}/location-connections", async (
-            string id,
-            Guid? characterId,
-            IZoneLocationRepository locations,
-            ICharacterUnlockedConnectionRepository? unlockedRepo) =>
-        {
-            if (characterId.HasValue && unlockedRepo is not null)
-            {
-                var unlocked = await unlockedRepo.GetUnlockedIdsAsync(characterId.Value);
-                return Results.Ok((await locations.GetAllConnectionsForZoneAsync(id, unlocked))
-                    .Select(ToConnectionDto));
-            }
-            return Results.Ok((await locations.GetAllConnectionsForZoneAsync(id))
-                .Select(ToConnectionDto));
-        });
     }
 
     private static void MapRegions(IEndpointRouteBuilder app)
@@ -138,8 +115,5 @@ public static class ZoneEndpoints
         new(r.Id, r.Name, r.Description, r.Type.ToString(), r.MinLevel, r.MaxLevel, r.IsStarter, r.WorldId);
 
     private static ZoneLocationDto ToLocationDto(RealmEngine.Shared.Models.ZoneLocationEntry e) =>
-        new(e.Slug, e.DisplayName, e.TypeKey, e.ZoneId, e.LocationType, e.RarityWeight, e.MinLevel, e.MaxLevel, e.IsHidden);
-
-    private static ZoneLocationConnectionDto ToConnectionDto(RealmEngine.Shared.Models.ZoneLocationConnectionEntry c) =>
-        new(c.ConnectionId, c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable);
+        new(e.Slug, e.DisplayName, e.TypeKey, e.ZoneId, e.RarityWeight, e.MinLevel, e.MaxLevel, e.IsHidden);
 }

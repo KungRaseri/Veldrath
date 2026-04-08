@@ -592,10 +592,10 @@ public static class ContentEndpoints
         new(o.Slug, o.DisplayName, o.TypeKey, o.OrgType, o.RarityWeight);
 
     // Zone Locations
-    private static async Task<IResult> GetZoneLocationsAsync(IZoneLocationRepository repo, string? locationType = null)
+    private static async Task<IResult> GetZoneLocationsAsync(IZoneLocationRepository repo, string? typeKey = null)
     {
-        var items = locationType is not null
-            ? await repo.GetByLocationTypeAsync(locationType)
+        var items = typeKey is not null
+            ? await repo.GetByTypeKeyAsync(typeKey)
             : await repo.GetAllAsync();
         return Results.Ok(items.Select(ToZoneLocationDto));
     }
@@ -607,7 +607,7 @@ public static class ContentEndpoints
     }
 
     private static ZoneLocationDto ToZoneLocationDto(ZoneLocationEntry w) =>
-        new(w.Slug, w.DisplayName, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight, w.MinLevel, w.MaxLevel);
+        new(w.Slug, w.DisplayName, w.TypeKey, w.ZoneId, w.RarityWeight, w.MinLevel, w.MaxLevel);
 
     // Dialogues
     private static async Task<IResult> GetDialoguesAsync(IDialogueRepository repo, string? speaker = null)

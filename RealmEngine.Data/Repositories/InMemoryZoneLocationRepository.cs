@@ -18,7 +18,7 @@ public class InMemoryZoneLocationRepository : IZoneLocationRepository
         Task.FromResult((ZoneLocationEntry?)null);
 
     /// <inheritdoc />
-    public Task<List<ZoneLocationEntry>> GetByLocationTypeAsync(string locationType) =>
+    public Task<List<ZoneLocationEntry>> GetByTypeKeyAsync(string typeKey) =>
         Task.FromResult(new List<ZoneLocationEntry>());
 
     /// <inheritdoc />
@@ -32,20 +32,4 @@ public class InMemoryZoneLocationRepository : IZoneLocationRepository
     /// <inheritdoc />
     public Task<List<ZoneLocationEntry>> GetHiddenByZoneIdAsync(string zoneId) =>
         Task.FromResult(new List<ZoneLocationEntry>());
-
-    /// <inheritdoc />
-    public Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug) =>
-        Task.FromResult(new List<ZoneLocationConnectionEntry>());
-
-    /// <inheritdoc />
-    public Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug, IEnumerable<int> unlockedConnectionIds) =>
-        Task.FromResult(new List<ZoneLocationConnectionEntry>());
-
-    /// <inheritdoc />
-    public Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId) =>
-        Task.FromResult(new List<ZoneLocationConnectionEntry>());
-
-    /// <inheritdoc />
-    public Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId, IEnumerable<int> unlockedConnectionIds) =>
-        Task.FromResult(new List<ZoneLocationConnectionEntry>());
 }

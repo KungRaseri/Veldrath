@@ -19,13 +19,6 @@ public interface IZoneService
     /// </summary>
     Task<List<ZoneLocationDto>> GetZoneLocationsAsync(string zoneId, Guid? characterId = null);
 
-    /// <summary>Fetches all zone-to-zone travel edges originating from the given zone.</summary>
-    Task<List<ZoneConnectionDto>> GetZoneConnectionsAsync(string zoneId);
-
-    /// <summary>Fetches all location-to-location traversal edges for every location within the given zone.
-    /// When <paramref name="characterId"/> is provided, unlocked hidden connections are included.</summary>
-    Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId, Guid? characterId = null);
-
     Task<List<RegionDto>> GetRegionsAsync();
     Task<RegionDto?> GetRegionAsync(string regionId);
     Task<List<RegionDto>> GetRegionConnectionsAsync(string regionId);
@@ -198,40 +191,4 @@ public class HttpZoneService(
         }
     }
 
-    public async Task<List<ZoneConnectionDto>> GetZoneConnectionsAsync(string zoneId)
-    {
-        try
-        {
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/zones/{zoneId}/connections");
-            request.Headers.Authorization = BearerHeader;
-            var response = await http.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<List<ZoneConnectionDto>>() ?? [];
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to fetch zone connections for {ZoneId}", zoneId);
-            return [];
-        }
-    }
-
-    public async Task<List<ZoneLocationConnectionDto>> GetZoneLocationConnectionsAsync(string zoneId, Guid? characterId = null)
-    {
-        try
-        {
-            var url = characterId.HasValue
-                ? $"api/zones/{zoneId}/location-connections?characterId={characterId.Value}"
-                : $"api/zones/{zoneId}/location-connections";
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = BearerHeader;
-            var response = await http.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<List<ZoneLocationConnectionDto>>() ?? [];
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to fetch location connections for zone {ZoneId}", zoneId);
-            return [];
-        }
-    }
 }

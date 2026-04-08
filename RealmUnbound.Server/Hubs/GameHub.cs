@@ -1387,85 +1387,6 @@ public class GameHub : Hub
         }
     }
 
-    /// <summary>
-    /// Traverses a connection from the character's current ZoneLocation to a destination
-    /// location or zone. Handles cross-zone transitions including SignalR group management.
-    /// Broadcasts <c>ConnectionTraversed</c> to the caller on success.
-    /// Broadcasts zone entry/exit events when the destination is a different zone.
-    /// </summary>
-    /// <param name="request">Request containing the origin location slug and connection type.</param>
-    public async Task TraverseConnection(TraverseConnectionHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TraverseConnection");
-            return;
-        }
-
-        if (!TryGetCharacterName(out var characterName))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TraverseConnection");
-            return;
-        }
-
-        var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string sz ? sz : string.Empty;
-
-        try
-        {
-            var result = await _mediator.Send(new TraverseConnectionHubCommand(
-                characterId, request.FromLocationSlug, request.ConnectionType));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Traversal failed");
-                return;
-            }
-
-            if (result.IsCrossZone && result.ToZoneId is not null)
-            {
-                // Leave the current zone group and join the destination zone group.
-                await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
-
-                var destZone = await _zoneRepo.GetByIdAsync(result.ToZoneId);
-                var dm2 = Context.Items.TryGetValue("DifficultyMode", out var d2) && d2 is string s2 ? s2 : "normal";
-                var newZoneGroup = ComputeZoneGroup(destZone?.Type ?? ZoneType.Town, result.ToZoneId, dm2);
-                await Groups.AddToGroupAsync(Context.ConnectionId, newZoneGroup);
-                Context.Items["CurrentZoneId"] = result.ToZoneId;
-                Context.Items["CurrentZoneGroupName"] = newZoneGroup;
-
-                await Clients.Group(newZoneGroup).SendAsync("PlayerEntered", new
-                {
-                    CharacterId   = characterId,
-                    CharacterName = characterName,
-                    ZoneId        = result.ToZoneId,
-                });
-
-                _logger.LogInformation(
-                    "Character {Name} crossed zone boundary into {ZoneId} via {ConnectionType}",
-                    characterName, result.ToZoneId, result.ConnectionType);
-            }
-
-            await Clients.Caller.SendAsync("ConnectionTraversed", new
-            {
-                CharacterId          = characterId,
-                FromLocation         = request.FromLocationSlug,
-                result.ToLocationSlug,
-                result.ToZoneId,
-                result.IsCrossZone,
-                result.ConnectionType,
-                AvailableConnections = result.AvailableConnections.Select(c => new
-                {
-                    c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable,
-                }),
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in TraverseConnection for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Connection traversal failed");
-        }
-    }
-
     /// <summary>Fetches the active character's inventory and sends it back to the caller as <c>InventoryLoaded</c>.</summary>
     public async Task GetInventory()
     {
@@ -2069,11 +1990,6 @@ public record NavigateToLocationHubRequest(string LocationSlug);
 /// <param name="LocationSlug">Slug of the hidden location to unlock.</param>
 /// <param name="UnlockSource">How the unlock was triggered (e.g. <c>"quest"</c>, <c>"item"</c>, <c>"manual"</c>).</param>
 public record UnlockZoneLocationHubRequest(string LocationSlug, string UnlockSource);
-
-/// <summary>Request DTO sent by the client when calling <see cref="GameHub.TraverseConnection"/>.</summary>
-/// <param name="FromLocationSlug">Slug of the ZoneLocation the character is departing from.</param>
-/// <param name="ConnectionType">Type of the connection to use (e.g. <c>"path"</c>, <c>"portal"</c>).</param>
-public record TraverseConnectionHubRequest(string FromLocationSlug, string ConnectionType);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.SendZoneMessage"/>.</summary>
 /// <param name="Message">The chat message text. Must not be empty or whitespace.</param>

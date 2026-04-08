@@ -53,8 +53,6 @@ public class ContentDbContext : DbContext
     public DbSet<MaterialProperty> MaterialProperties => Set<MaterialProperty>();
     /// <summary>World locations and regions.</summary>
     public DbSet<ZoneLocation> ZoneLocations => Set<ZoneLocation>();
-    /// <summary>Traversal edges linking zone locations to other locations or zones.</summary>
-    public DbSet<ZoneLocationConnection> ZoneLocationConnections => Set<ZoneLocationConnection>();
     /// <summary>NPC dialogue trees.</summary>
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
 

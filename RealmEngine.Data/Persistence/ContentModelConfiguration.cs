@@ -266,21 +266,9 @@ public static class ContentModelConfiguration
         {
             ConfigureContent(e);
             e.Property(x => x.ZoneId).HasMaxLength(128).IsRequired();
-            e.Property(x => x.LocationType).HasMaxLength(32).IsRequired();
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
             e.OwnsMany(x => x.ActorPool, o => o.ToJson("ActorPool"));
-        });
-
-        // Zone location traversal edges
-        builder.Entity<ZoneLocationConnection>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.Property(x => x.FromLocationSlug).HasMaxLength(128).IsRequired();
-            e.Property(x => x.ToLocationSlug).HasMaxLength(128);
-            e.Property(x => x.ToZoneId).HasMaxLength(128);
-            e.Property(x => x.ConnectionType).HasMaxLength(32).IsRequired();
-            e.HasIndex(x => x.FromLocationSlug);
         });
 
         // Dialogue

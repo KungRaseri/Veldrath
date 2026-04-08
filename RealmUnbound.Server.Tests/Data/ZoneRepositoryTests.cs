@@ -75,8 +75,6 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Return_Empty_When_No_Zones()
     {
         await using var db = _factory.CreateContext();
-        // Remove connection records first (FK constraint: ZoneConnection references Zone)
-        db.ZoneConnections.RemoveRange(db.ZoneConnections);
         db.Zones.RemoveRange(db.Zones);
         await db.SaveChangesAsync();
 

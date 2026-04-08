@@ -128,7 +128,6 @@ public class MapViewModel : ViewModelBase
             foreach (var node in regionHeaderMap.Values) Nodes.Add(node);
 
             // Zone nodes — grouped under their parent region header
-            var zoneNodeMap = new Dictionary<string, MapNodeViewModel>();
             foreach (var region in regions)
             {
                 var zones = await _zoneService.GetZonesByRegionAsync(region.Id);
@@ -142,24 +141,7 @@ public class MapViewModel : ViewModelBase
                         RegionId     = region.Id,
                         RegionLabel  = region.Name,
                     };
-                    zoneNodeMap[zone.Id] = zoneNode;
                     Nodes.Add(zoneNode);
-                }
-            }
-
-            // Zone-exit edges — deduplicated undirected pairs
-            var seenZoneEdges = new HashSet<(string, string)>();
-            foreach (var zoneNode in zoneNodeMap.Values)
-            {
-                var connections = await _zoneService.GetZoneConnectionsAsync(zoneNode.Id);
-                foreach (var conn in connections)
-                {
-                    if (!zoneNodeMap.TryGetValue(conn.ToZoneId, out var toNode)) continue;
-                    var a   = conn.FromZoneId;
-                    var b   = conn.ToZoneId;
-                    var key = string.Compare(a, b, StringComparison.Ordinal) < 0 ? (a, b) : (b, a);
-                    if (!seenZoneEdges.Add(key)) continue;
-                    Edges.Add(new MapEdgeViewModel(zoneNode, toNode, "zone_exit"));
                 }
             }
 

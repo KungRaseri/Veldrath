@@ -13,7 +13,6 @@ public static class ApplicationDataSeeder
         await SeedRegionsAsync(db);
         await SeedRegionConnectionsAsync(db);
         await SeedZonesAsync(db);
-        await SeedZoneConnectionsAsync(db);
     }
 
     // World
@@ -101,56 +100,4 @@ public static class ApplicationDataSeeder
         await db.SaveChangesAsync();
     }
 
-    // Zone Connections
-    private static async Task SeedZoneConnectionsAsync(ApplicationDbContext db)
-    {
-        if (await db.ZoneConnections.AnyAsync())
-            return;
-
-        db.ZoneConnections.AddRange(
-            // Varenmark internal
-            new ZoneConnection { FromZoneId = "crestfall",     ToZoneId = "the-droveway"  },
-            new ZoneConnection { FromZoneId = "the-droveway",  ToZoneId = "crestfall"     },
-            new ZoneConnection { FromZoneId = "crestfall",     ToZoneId = "ashlen-wood"   },
-            new ZoneConnection { FromZoneId = "ashlen-wood",   ToZoneId = "crestfall"     },
-            new ZoneConnection { FromZoneId = "the-droveway",  ToZoneId = "the-halrow"    },
-            new ZoneConnection { FromZoneId = "the-halrow",    ToZoneId = "the-droveway"  },
-            new ZoneConnection { FromZoneId = "ashlen-wood",   ToZoneId = "grevenmire"    },
-            new ZoneConnection { FromZoneId = "grevenmire",    ToZoneId = "ashlen-wood"   },
-            new ZoneConnection { FromZoneId = "grevenmire",    ToZoneId = "drowning-pits" },
-            new ZoneConnection { FromZoneId = "drowning-pits", ToZoneId = "grevenmire"    },
-            // Varenmark → Greymoor border
-            new ZoneConnection { FromZoneId = "grevenmire",    ToZoneId = "aldenmere"     },
-            new ZoneConnection { FromZoneId = "aldenmere",     ToZoneId = "grevenmire"    },
-            // Greymoor internal
-            new ZoneConnection { FromZoneId = "aldenmere",         ToZoneId = "pale-moor"        },
-            new ZoneConnection { FromZoneId = "pale-moor",         ToZoneId = "aldenmere"        },
-            new ZoneConnection { FromZoneId = "pale-moor",         ToZoneId = "soddenfen"        },
-            new ZoneConnection { FromZoneId = "soddenfen",         ToZoneId = "pale-moor"        },
-            new ZoneConnection { FromZoneId = "soddenfen",         ToZoneId = "barrow-deeps"     },
-            new ZoneConnection { FromZoneId = "barrow-deeps",      ToZoneId = "soddenfen"        },
-            // Greymoor → Saltcliff border
-            new ZoneConnection { FromZoneId = "soddenfen",         ToZoneId = "tolvaren"         },
-            new ZoneConnection { FromZoneId = "tolvaren",          ToZoneId = "soddenfen"        },
-            // Saltcliff internal
-            new ZoneConnection { FromZoneId = "tolvaren",          ToZoneId = "tidewrack-flats"  },
-            new ZoneConnection { FromZoneId = "tidewrack-flats",   ToZoneId = "tolvaren"         },
-            new ZoneConnection { FromZoneId = "tidewrack-flats",   ToZoneId = "saltcliff-heights"},
-            new ZoneConnection { FromZoneId = "saltcliff-heights", ToZoneId = "tidewrack-flats"  },
-            new ZoneConnection { FromZoneId = "saltcliff-heights", ToZoneId = "sunken-name"      },
-            new ZoneConnection { FromZoneId = "sunken-name",       ToZoneId = "saltcliff-heights"},
-            // Greymoor → Cinderplain border (hidden secret passage — must not appear on world map)
-            new ZoneConnection { FromZoneId = "barrow-deeps",      ToZoneId = "skarhold",         IsHidden = true },
-            new ZoneConnection { FromZoneId = "skarhold",          ToZoneId = "barrow-deeps",     IsHidden = true },
-            // Cinderplain internal
-            new ZoneConnection { FromZoneId = "skarhold",          ToZoneId = "ashfields"        },
-            new ZoneConnection { FromZoneId = "ashfields",         ToZoneId = "skarhold"         },
-            new ZoneConnection { FromZoneId = "ashfields",         ToZoneId = "smoldering-reach" },
-            new ZoneConnection { FromZoneId = "smoldering-reach",  ToZoneId = "ashfields"        },
-            new ZoneConnection { FromZoneId = "smoldering-reach",  ToZoneId = "kaldrek-maw"      },
-            new ZoneConnection { FromZoneId = "kaldrek-maw",       ToZoneId = "smoldering-reach" }
-        );
-
-        await db.SaveChangesAsync();
-    }
 }

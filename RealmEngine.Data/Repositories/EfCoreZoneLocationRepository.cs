@@ -32,11 +32,11 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
     }
 
     /// <inheritdoc />
-    public async Task<List<ZoneLocationEntry>> GetByLocationTypeAsync(string locationType)
+    public async Task<List<ZoneLocationEntry>> GetByTypeKeyAsync(string typeKey)
     {
-        var lower = locationType.ToLowerInvariant();
+        var lower = typeKey.ToLowerInvariant();
         var entities = await db.ZoneLocations.AsNoTracking()
-            .Where(w => w.IsActive && w.LocationType.ToLower() == lower)
+            .Where(w => w.IsActive && w.TypeKey.ToLower() == lower)
             .ToListAsync();
 
         return entities.Select(MapToModel).ToList();
@@ -74,64 +74,9 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
         return entities.Select(MapToModel).ToList();
     }
 
-    /// <inheritdoc />
-    public async Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug)
-    {
-        var entities = await db.ZoneLocationConnections.AsNoTracking()
-            .Where(c => c.FromLocationSlug == locationSlug && !c.IsHidden)
-            .ToListAsync();
-
-        return entities.Select(MapConnectionToModel).ToList();
-    }
-
-    /// <inheritdoc />
-    public async Task<List<ZoneLocationConnectionEntry>> GetConnectionsFromAsync(string locationSlug, IEnumerable<int> unlockedConnectionIds)
-    {
-        var unlocked = unlockedConnectionIds.ToHashSet();
-        var entities = await db.ZoneLocationConnections.AsNoTracking()
-            .Where(c => c.FromLocationSlug == locationSlug && (!c.IsHidden || unlocked.Contains(c.Id)))
-            .ToListAsync();
-
-        return entities.Select(MapConnectionToModel).ToList();
-    }
-
-    /// <inheritdoc />
-    public async Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId)
-    {
-        var slugs = await db.ZoneLocations.AsNoTracking()
-            .Where(l => l.IsActive && l.ZoneId == zoneId)
-            .Select(l => l.Slug)
-            .ToListAsync();
-
-        var entities = await db.ZoneLocationConnections.AsNoTracking()
-            .Where(c => slugs.Contains(c.FromLocationSlug) && !c.IsHidden)
-            .ToListAsync();
-
-        return entities.Select(MapConnectionToModel).ToList();
-    }
-
-    /// <inheritdoc />
-    public async Task<List<ZoneLocationConnectionEntry>> GetAllConnectionsForZoneAsync(string zoneId, IEnumerable<int> unlockedConnectionIds)
-    {
-        var unlocked = unlockedConnectionIds.ToHashSet();
-        var slugs = await db.ZoneLocations.AsNoTracking()
-            .Where(l => l.IsActive && l.ZoneId == zoneId)
-            .Select(l => l.Slug)
-            .ToListAsync();
-
-        var entities = await db.ZoneLocationConnections.AsNoTracking()
-            .Where(c => slugs.Contains(c.FromLocationSlug) && (!c.IsHidden || unlocked.Contains(c.Id)))
-            .ToListAsync();
-
-        return entities.Select(MapConnectionToModel).ToList();
-    }
-
     private static ZoneLocationEntry MapToModel(Entities.ZoneLocation w) =>
-        new(w.Slug, w.DisplayName ?? w.Slug, w.TypeKey, w.ZoneId, w.LocationType, w.RarityWeight,
+        new(w.Slug, w.DisplayName ?? w.Slug, w.TypeKey, w.ZoneId, w.RarityWeight,
             w.Stats.MinLevel, w.Stats.MaxLevel,
             w.Traits.IsHidden ?? false, w.Traits.UnlockType, w.Traits.UnlockKey, w.Traits.DiscoverThreshold,
             w.ActorPool.Select(e => new ActorPoolEntry(e.ArchetypeSlug, e.Weight)).ToList());
-
-    private static ZoneLocationConnectionEntry MapConnectionToModel(Entities.ZoneLocationConnection c) =>
-        new(c.Id, c.FromLocationSlug, c.ToLocationSlug, c.ToZoneId, c.ConnectionType, c.IsTraversable, c.IsHidden);
 }
