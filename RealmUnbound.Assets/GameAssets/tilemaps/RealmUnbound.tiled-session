@@ -33,7 +33,7 @@
             "selectedLayer": 6,
             "viewCenter": {
                 "x": 304,
-                "y": 74
+                "y": 71.33333333333331
             }
         },
         "maps/greenveil-paths.tmx": {
@@ -146,6 +146,7 @@
     "loadedWorlds": [
         "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world/Draveth.world"
     ],
+    "map.fixedSize": false,
     "map.height": 22,
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 16,
