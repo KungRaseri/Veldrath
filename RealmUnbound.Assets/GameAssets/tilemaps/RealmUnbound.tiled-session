@@ -29,11 +29,11 @@
             }
         },
         "maps/crestfall.tmx": {
-            "scale": 1.1223790322580645,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 247.6881623854859,
-                "y": 199.57607328902458
+                "x": 304,
+                "y": 74
             }
         },
         "maps/greenveil-paths.tmx": {
@@ -142,6 +142,10 @@
         }
     },
     "last.imagePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/sheets",
+    "last.worldFilePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world",
+    "loadedWorlds": [
+        "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world/Draveth.world"
+    ],
     "map.height": 22,
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 16,
@@ -150,6 +154,7 @@
     ],
     "project": "RealmUnbound.tiled-project",
     "recentFiles": [
+        "maps/crestfall.tmx",
         "maps/verdant-barrow.tmx",
         "maps/tolvaren.tmx",
         "maps/tidewrack-flats.tmx",
@@ -159,7 +164,6 @@
         "maps/aldenmere.tmx",
         "maps/ashfields.tmx",
         "maps/barrow-deeps.tmx",
-        "maps/crestfall.tmx",
         "maps/greenveil-paths.tmx",
         "maps/pale-moor.tmx"
     ],
