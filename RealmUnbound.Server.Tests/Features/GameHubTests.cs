@@ -147,7 +147,7 @@ public class GameHubTests : IDisposable
         var hub     = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
-                                  new ZoneSessionRepository(db),
+                                  new PlayerSessionRepository(db),
                                   tracker ?? new ActiveCharacterTracker(),
                                   mediator ?? Mock.Of<ISender>(),
                                   new ZoneEntityTracker(),
@@ -216,11 +216,12 @@ public class GameHubTests : IDisposable
         var character = await SeedCharacterAsync(db, accountId);
 
         // Add a zone session for this connection
-        db.ZoneSessions.Add(new ZoneSession
+        db.PlayerSessions.Add(new PlayerSession
         {
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-disc",
+            RegionId      = "varenmark",
             ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
@@ -229,7 +230,7 @@ public class GameHubTests : IDisposable
 
         await hub.OnDisconnectedAsync(null);
 
-        db.ZoneSessions.Should().BeEmpty();
+        db.PlayerSessions.Should().BeEmpty();
         groups.RemovedGroups.Should().Contain("zone:crestfall");
     }
 
@@ -452,7 +453,7 @@ public class GameHubTests : IDisposable
     }
 
     [Fact]
-    public async Task EnterZone_Should_Create_ZoneSession_In_Database()
+    public async Task EnterZone_Should_Create_PlayerSession_In_Database()
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
@@ -464,7 +465,7 @@ public class GameHubTests : IDisposable
 
         await hub.EnterZone("crestfall");
 
-        db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "conn-enter");
+        db.PlayerSessions.Should().ContainSingle(s => s.ConnectionId == "conn-enter");
     }
 
     // LeaveZone
@@ -488,11 +489,12 @@ public class GameHubTests : IDisposable
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
-        db.ZoneSessions.Add(new ZoneSession
+        db.PlayerSessions.Add(new PlayerSession
         {
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "conn-leave",
+            RegionId      = "varenmark",
             ZoneId        = "crestfall",
         });
         await db.SaveChangesAsync();
@@ -501,7 +503,7 @@ public class GameHubTests : IDisposable
 
         await hub.LeaveZone();
 
-        db.ZoneSessions.Should().BeEmpty();
+        db.PlayerSessions.Should().BeEmpty();
         groups.RemovedGroups.Should().Contain("zone:crestfall");
     }
 
@@ -514,11 +516,12 @@ public class GameHubTests : IDisposable
         var character = await SeedCharacterAsync(db, accountId);
 
         // Simulate a stale session from a previous connection
-        db.ZoneSessions.Add(new ZoneSession
+        db.PlayerSessions.Add(new PlayerSession
         {
             CharacterId   = character.Id,
             CharacterName = character.Name,
             ConnectionId  = "stale-conn",
+            RegionId      = "greymoor",
             ZoneId        = "aldenmere",
         });
         await db.SaveChangesAsync();
@@ -530,7 +533,7 @@ public class GameHubTests : IDisposable
         await hub.EnterZone("crestfall");
 
         // Old stale session should be gone; new one created
-        db.ZoneSessions.Should().ContainSingle(s => s.ConnectionId == "new-conn");
+        db.PlayerSessions.Should().ContainSingle(s => s.ConnectionId == "new-conn");
     }
 
     // TryGetCharacterName false branch
@@ -1511,7 +1514,7 @@ public class GameHubTests : IDisposable
         var hub2 = new GameHub(NullLogger<GameHub>.Instance,
                                new CharacterRepository(db),
                                new ZoneRepository(db),
-                               new ZoneSessionRepository(db),
+                               new PlayerSessionRepository(db),
                                tracker,
                                Mock.Of<ISender>(),
                                new ZoneEntityTracker(),
@@ -1544,7 +1547,7 @@ public class GameHubTests : IDisposable
         var hub = new GameHub(NullLogger<GameHub>.Instance,
                               new CharacterRepository(db),
                               new ZoneRepository(db),
-                              new ZoneSessionRepository(db),
+                              new PlayerSessionRepository(db),
                               tracker,
                               Mock.Of<ISender>(),
                               new ZoneEntityTracker(),

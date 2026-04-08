@@ -33,8 +33,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<RegionConnection> RegionConnections => Set<RegionConnection>();
     /// <summary>Zone catalog — static and procedurally generated areas.</summary>
     public DbSet<Zone> Zones => Set<Zone>();
-    /// <summary>Live records of characters currently inside a zone.</summary>
-    public DbSet<ZoneSession> ZoneSessions => Set<ZoneSession>();
+    /// <summary>Live records of characters currently in the world (on a region map or inside a zone).</summary>
+    public DbSet<PlayerSession> PlayerSessions => Set<PlayerSession>();
     /// <summary>Community content submissions for the Foundry portal.</summary>
     public DbSet<FoundrySubmission> FoundrySubmissions => Set<FoundrySubmission>();
     /// <summary>User votes on Foundry submissions.</summary>
@@ -136,23 +136,30 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithMany(r => r.Zones)
              .HasForeignKey(z => z.RegionId)
              .OnDelete(DeleteBehavior.Cascade);
-            e.HasMany(z => z.Sessions)
-             .WithOne(s => s.Zone)
-             .HasForeignKey(s => s.ZoneId)
-             .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<ZoneSession>(e =>
+        builder.Entity<PlayerSession>(e =>
         {
             e.HasKey(s => s.Id);
-            // Each connection can only be in one zone at a time
+            // Each connection can only have one session at a time
             e.HasIndex(s => s.ConnectionId).IsUnique();
-            // A character can only be in one zone session at any given time
+            // A character can only have one active session at any given time
             e.HasIndex(s => s.CharacterId).IsUnique();
+            e.Property(s => s.RegionId).HasMaxLength(64).IsRequired();
+            e.Property(s => s.ZoneId).HasMaxLength(64).IsRequired(false);
             e.HasOne(s => s.Character)
              .WithMany()
              .HasForeignKey(s => s.CharacterId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(s => s.Region)
+             .WithMany()
+             .HasForeignKey(s => s.RegionId)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(s => s.Zone)
+             .WithMany(z => z.Sessions)
+             .HasForeignKey(s => s.ZoneId)
+             .IsRequired(false)
+             .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<FoundrySubmission>(e =>

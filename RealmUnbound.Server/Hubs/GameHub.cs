@@ -40,7 +40,7 @@ public class GameHub : Hub
     private readonly ILogger<GameHub> _logger;
     private readonly ICharacterRepository _characterRepo;
     private readonly IZoneRepository _zoneRepo;
-    private readonly IZoneSessionRepository _zoneSessionRepo;
+    private readonly IPlayerSessionRepository _playerSessionRepo;
     private readonly IActiveCharacterTracker _activeCharacters;
     private readonly ISender _mediator;
     private readonly IZoneEntityTracker _entityTracker;
@@ -53,7 +53,7 @@ public class GameHub : Hub
         ILogger<GameHub> logger,
         ICharacterRepository characterRepo,
         IZoneRepository zoneRepo,
-        IZoneSessionRepository zoneSessionRepo,
+        IPlayerSessionRepository playerSessionRepo,
         IActiveCharacterTracker activeCharacters,
         ISender mediator,
         IZoneEntityTracker entityTracker,
@@ -63,9 +63,9 @@ public class GameHub : Hub
     {
         _logger           = logger;
         _characterRepo    = characterRepo;
-        _zoneRepo         = zoneRepo;
-        _zoneSessionRepo  = zoneSessionRepo;
-        _activeCharacters = activeCharacters;
+        _zoneRepo           = zoneRepo;
+        _playerSessionRepo  = playerSessionRepo;
+        _activeCharacters   = activeCharacters;
         _mediator         = mediator;
         _entityTracker    = entityTracker;
         _tilemapRepo      = tilemapRepo;
@@ -236,19 +236,20 @@ public class GameHub : Hub
         // Remove only genuinely stale sessions for this character (from a previous disconnect that
         // didn't clean up). If the session belongs to a different live connection, SelectCharacter
         // would have already rejected this attempt via IActiveCharacterTracker.
-        var stale = await _zoneSessionRepo.GetByCharacterIdAsync(characterId);
+        var stale = await _playerSessionRepo.GetByCharacterIdAsync(characterId);
         if (stale is not null && stale.ConnectionId != Context.ConnectionId)
-            await _zoneSessionRepo.RemoveAsync(stale);
+            await _playerSessionRepo.RemoveAsync(stale);
 
         // Create new session
-        var session = new ZoneSession
+        var session = new PlayerSession
         {
             CharacterId   = characterId,
             CharacterName = characterName,
             ConnectionId  = Context.ConnectionId,
+            RegionId      = zone.RegionId,
             ZoneId        = zoneId,
         };
-        await _zoneSessionRepo.AddAsync(session);
+        await _playerSessionRepo.AddAsync(session);
 
         // Persist last-known zone on the character row
         await _characterRepo.UpdateCurrentZoneAsync(characterId, zoneId);
@@ -275,7 +276,7 @@ public class GameHub : Hub
         });
 
         // Send current zone occupants back to caller
-        var occupants = (await _zoneSessionRepo.GetByZoneIdAsync(zoneId))
+        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(zoneId))
             .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
 
         await Clients.Caller.SendAsync("ZoneEntered", new
@@ -1706,14 +1707,17 @@ public class GameHub : Hub
     // Helpers
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
     {
-        var session = await _zoneSessionRepo.GetByConnectionIdAsync(connectionId);
+        var session = await _playerSessionRepo.GetByConnectionIdAsync(connectionId);
         if (session is null) return;
 
         var zoneId        = session.ZoneId;
         var characterId   = session.CharacterId;
         var characterName = session.CharacterName;
 
-        await _zoneSessionRepo.RemoveAsync(session);
+        await _playerSessionRepo.RemoveAsync(session);
+
+        // No zone cleanup needed when the player is on the region map
+        if (zoneId is null) return;
 
         // Untrack player; if zone is now empty of players, despawn all entities
         _entityTracker.UntrackPlayer(zoneId, characterId);
@@ -1817,7 +1821,7 @@ public class GameHub : Hub
         if (string.IsNullOrWhiteSpace(request.Message) || string.IsNullOrWhiteSpace(request.TargetCharacterName))
             return;
 
-        var targetSession = await _zoneSessionRepo.GetByCharacterNameAsync(request.TargetCharacterName);
+        var targetSession = await _playerSessionRepo.GetByCharacterNameAsync(request.TargetCharacterName);
         if (targetSession is null)
         {
             await Clients.Caller.SendAsync("Error", $"Player '{request.TargetCharacterName}' is not online.");

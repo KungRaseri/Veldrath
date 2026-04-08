@@ -24,7 +24,7 @@ public static class ZoneEndpoints
         var group = app.MapGroup("/api/zones").WithTags("zones");
 
         // Returns all available zones with current online player counts.
-        group.MapGet("/", async (IZoneRepository zones, IZoneSessionRepository sessions) =>
+        group.MapGet("/", async (IZoneRepository zones, IPlayerSessionRepository sessions) =>
         {
             var all = await zones.GetAllAsync();
             var counts = new Dictionary<string, int>();
@@ -35,7 +35,7 @@ public static class ZoneEndpoints
         });
 
         // Returns details of a single zone.
-        group.MapGet("/{id}", async (string id, IZoneRepository zones, IZoneSessionRepository sessions) =>
+        group.MapGet("/{id}", async (string id, IZoneRepository zones, IPlayerSessionRepository sessions) =>
         {
             var zone = await zones.GetByIdAsync(id);
             if (zone is null) return Results.NotFound();
@@ -45,7 +45,7 @@ public static class ZoneEndpoints
         });
 
         // Returns all zones belonging to the given region.
-        group.MapGet("/by-region/{regionId}", async (string regionId, IZoneRepository zones, IZoneSessionRepository sessions) =>
+        group.MapGet("/by-region/{regionId}", async (string regionId, IZoneRepository zones, IPlayerSessionRepository sessions) =>
         {
             var all = await zones.GetByRegionIdAsync(regionId);
             var counts = new Dictionary<string, int>();

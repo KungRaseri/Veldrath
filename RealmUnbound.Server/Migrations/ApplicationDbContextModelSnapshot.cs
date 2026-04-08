@@ -534,6 +534,59 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CharacterName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("EnteredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("LastMovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RegionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("TileX")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TileY")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ZoneId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId")
+                        .IsUnique();
+
+                    b.HasIndex("ConnectionId")
+                        .IsUnique();
+
+                    b.HasIndex("RegionId");
+
+                    b.HasIndex("ZoneId");
+
+                    b.ToTable("PlayerSessions");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -712,46 +765,6 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Zones");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CharacterId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CharacterName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConnectionId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("EnteredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("LastMovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ZoneId")
-                        .IsRequired()
-                        .HasColumnType("character varying(64)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CharacterId")
-                        .IsUnique();
-
-                    b.HasIndex("ConnectionId")
-                        .IsUnique();
-
-                    b.HasIndex("ZoneId");
-
-                    b.ToTable("ZoneSessions");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -881,6 +894,32 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Voter");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerSession", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "Zone")
+                        .WithMany("Sessions")
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Character");
+
+                    b.Navigation("Region");
+
+                    b.Navigation("Zone");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RefreshToken", b =>
                 {
                     b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Account")
@@ -931,25 +970,6 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Region");
-                });
-
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
-                {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
-                        .WithMany()
-                        .HasForeignKey("CharacterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "Zone")
-                        .WithMany("Sessions")
-                        .HasForeignKey("ZoneId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Character");
-
-                    b.Navigation("Zone");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>

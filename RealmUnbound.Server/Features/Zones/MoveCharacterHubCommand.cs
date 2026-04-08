@@ -53,11 +53,11 @@ public record MoveCharacterHubResult
 /// Handles <see cref="MoveCharacterHubCommand"/> by enforcing:
 /// <list type="bullet">
 ///   <item>Exactly one-tile Manhattan step (|Δx|+|Δy| == 1).</item>
-///   <item>100 ms per-character move rate limit (checked via <see cref="IZoneSessionRepository"/>).</item>
+///   <item>100 ms per-character move rate limit (checked via <see cref="IPlayerSessionRepository"/>).</item>
 ///   <item>Walkability (collision mask loaded from <see cref="ITileMapRepository"/>).</item>
 /// </list>
 /// On success, persists the new tile position via <see cref="ICharacterRepository"/> and updates
-/// <see cref="Data.Entities.ZoneSession.LastMovedAt"/> via <see cref="IZoneSessionRepository"/>.
+/// <see cref="Data.Entities.PlayerSession.LastMovedAt"/> via <see cref="IPlayerSessionRepository"/>.
 /// </summary>
 public class MoveCharacterHubCommandHandler : IRequestHandler<MoveCharacterHubCommand, MoveCharacterHubResult>
 {
@@ -66,18 +66,18 @@ public class MoveCharacterHubCommandHandler : IRequestHandler<MoveCharacterHubCo
 
     private readonly ITileMapRepository _tilemapRepo;
     private readonly ICharacterRepository _characterRepo;
-    private readonly IZoneSessionRepository _sessionRepo;
+    private readonly IPlayerSessionRepository _sessionRepo;
     private readonly ILogger<MoveCharacterHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="MoveCharacterHubCommandHandler"/>.</summary>
     /// <param name="tilemapRepo">Tilemap repository for collision data.</param>
     /// <param name="characterRepo">Character repository to persist the new tile position.</param>
-    /// <param name="sessionRepo">Zone session repository for rate-limit tracking.</param>
+    /// <param name="sessionRepo">Player session repository for rate-limit tracking.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public MoveCharacterHubCommandHandler(
         ITileMapRepository tilemapRepo,
         ICharacterRepository characterRepo,
-        IZoneSessionRepository sessionRepo,
+        IPlayerSessionRepository sessionRepo,
         ILogger<MoveCharacterHubCommandHandler> logger)
     {
         _tilemapRepo    = tilemapRepo;
