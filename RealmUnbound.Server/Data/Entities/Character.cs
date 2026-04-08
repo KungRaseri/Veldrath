@@ -46,10 +46,10 @@ public class Character
     public string InventoryBlob { get; set; } = "[]";
 
     /// <summary>Zone the character starts in (fixed on creation).</summary>
-    public string StartingZoneId { get; set; } = "fenwick-crossing";
+    public string StartingZoneId { get; set; } = "crestfall";
 
     /// <summary>Zone the character is currently in (updated on EnterZone).</summary>
-    public string CurrentZoneId { get; set; } = "fenwick-crossing";
+    public string CurrentZoneId { get; set; } = "crestfall";
 
     /// <summary>Slug of the ZoneLocation the character is currently at within the zone, or <see langword="null"/> if not at a specific location.</summary>
     public string? CurrentZoneLocationSlug { get; set; }

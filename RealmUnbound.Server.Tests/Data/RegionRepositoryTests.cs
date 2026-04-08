@@ -18,7 +18,7 @@ public class RegionRepositoryTests : IDisposable
         var result = await repo.GetAllAsync();
 
         result.Should().HaveCount(4);
-        result.Should().Contain(r => r.Id == "thornveil");
+        result.Should().Contain(r => r.Id == "varenmark");
         result.Should().Contain(r => r.Id == "greymoor");
         result.Should().Contain(r => r.Id == "saltcliff");
         result.Should().Contain(r => r.Id == "cinderplain");
@@ -32,7 +32,7 @@ public class RegionRepositoryTests : IDisposable
         var result = await repo.GetAllAsync();
 
         result.Select(r => r.MinLevel).Should().BeInAscendingOrder();
-        result[0].Id.Should().Be("thornveil"); // L0 first
+        result[0].Id.Should().Be("varenmark"); // L0 first
     }
 
     [Fact]
@@ -62,23 +62,23 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetConnectedAsync_Should_Return_Adjacent_Regions_For_Greymoor()
     {
         await using var db = _factory.CreateContext();
-        // greymoor connects outward to thornveil, saltcliff, cinderplain
+        // greymoor connects outward to varenmark, saltcliff, cinderplain
         var repo   = new RegionRepository(db);
         var result = await repo.GetConnectedAsync("greymoor");
 
         result.Should().HaveCount(3);
-        result.Should().Contain(r => r.Id == "thornveil");
+        result.Should().Contain(r => r.Id == "varenmark");
         result.Should().Contain(r => r.Id == "saltcliff");
         result.Should().Contain(r => r.Id == "cinderplain");
     }
 
     [Fact]
-    public async Task GetConnectedAsync_Should_Return_One_Region_For_Thornveil()
+    public async Task GetConnectedAsync_Should_Return_One_Region_For_Varenmark()
     {
         await using var db = _factory.CreateContext();
-        // thornveil only connects outward to greymoor
+        // varenmark only connects outward to greymoor
         var repo   = new RegionRepository(db);
-        var result = await repo.GetConnectedAsync("thornveil");
+        var result = await repo.GetConnectedAsync("varenmark");
 
         result.Should().ContainSingle(r => r.Id == "greymoor");
     }
@@ -101,6 +101,6 @@ public class RegionRepositoryTests : IDisposable
         var result = await repo.GetAllAsync();
 
         result.Should().ContainSingle(r => r.IsStarter);
-        result.Single(r => r.IsStarter).Id.Should().Be("thornveil");
+        result.Single(r => r.IsStarter).Id.Should().Be("varenmark");
     }
 }
