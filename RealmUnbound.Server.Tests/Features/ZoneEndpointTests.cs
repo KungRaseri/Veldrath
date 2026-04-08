@@ -17,7 +17,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var zones = await response.Content.ReadFromJsonAsync<ZoneDto[]>();
         zones.Should().NotBeNull();
-        zones!.Length.Should().Be(16);
+        zones!.Length.Should().Be(18);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
 
         var starter = zones!.SingleOrDefault(z => z.IsStarter);
         starter.Should().NotBeNull();
-        starter!.Id.Should().Be("fenwick-crossing");
+        starter!.Id.Should().Be("crestfall");
     }
 
     [Fact]
@@ -50,11 +50,11 @@ public class ZoneEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
     [Fact]
     public async Task GetZoneById_Should_Return_Zone_Details()
     {
-        var response = await _client.GetAsync("/api/zones/fenwick-crossing");
+        var response = await _client.GetAsync("/api/zones/crestfall");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var zone = await response.Content.ReadFromJsonAsync<ZoneDto>();
-        zone!.Id.Should().Be("fenwick-crossing");
+        zone!.Id.Should().Be("crestfall");
         zone.IsStarter.Should().BeTrue();
         zone.MinLevel.Should().Be(0);
     }
