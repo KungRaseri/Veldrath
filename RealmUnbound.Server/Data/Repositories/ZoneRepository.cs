@@ -18,29 +18,35 @@ public class ZoneRepository(ApplicationDbContext db) : IZoneRepository
         db.Zones.Where(z => z.RegionId == regionId).OrderBy(z => z.MinLevel).ThenBy(z => z.Name).ToListAsync();
 }
 
-public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionRepository
+public class PlayerSessionRepository(ApplicationDbContext db) : IPlayerSessionRepository
 {
-    public Task<List<ZoneSession>> GetByZoneIdAsync(string zoneId) =>
-        db.ZoneSessions.Where(s => s.ZoneId == zoneId).ToListAsync();
+    public Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId) =>
+        db.PlayerSessions.Where(s => s.ZoneId == zoneId).ToListAsync();
 
-    public Task<ZoneSession?> GetByConnectionIdAsync(string connectionId) =>
-        db.ZoneSessions.FirstOrDefaultAsync(s => s.ConnectionId == connectionId);
+    public Task<List<PlayerSession>> GetByRegionIdAsync(string regionId) =>
+        db.PlayerSessions.Where(s => s.RegionId == regionId).ToListAsync();
 
-    public Task<ZoneSession?> GetByCharacterIdAsync(Guid characterId) =>
-        db.ZoneSessions.FirstOrDefaultAsync(s => s.CharacterId == characterId);
+    public Task<List<PlayerSession>> GetOnRegionMapAsync(string regionId) =>
+        db.PlayerSessions.Where(s => s.RegionId == regionId && s.ZoneId == null).ToListAsync();
 
-    public Task<ZoneSession?> GetByCharacterNameAsync(string characterName) =>
-        db.ZoneSessions.FirstOrDefaultAsync(s => s.CharacterName == characterName);
+    public Task<PlayerSession?> GetByConnectionIdAsync(string connectionId) =>
+        db.PlayerSessions.FirstOrDefaultAsync(s => s.ConnectionId == connectionId);
 
-    public async Task AddAsync(ZoneSession session)
+    public Task<PlayerSession?> GetByCharacterIdAsync(Guid characterId) =>
+        db.PlayerSessions.FirstOrDefaultAsync(s => s.CharacterId == characterId);
+
+    public Task<PlayerSession?> GetByCharacterNameAsync(string characterName) =>
+        db.PlayerSessions.FirstOrDefaultAsync(s => s.CharacterName == characterName);
+
+    public async Task AddAsync(PlayerSession session)
     {
-        db.ZoneSessions.Add(session);
+        db.PlayerSessions.Add(session);
         await db.SaveChangesAsync();
     }
 
-    public async Task RemoveAsync(ZoneSession session)
+    public async Task RemoveAsync(PlayerSession session)
     {
-        db.ZoneSessions.Remove(session);
+        db.PlayerSessions.Remove(session);
         await db.SaveChangesAsync();
     }
 
@@ -49,7 +55,7 @@ public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionReposi
         var session = await GetByConnectionIdAsync(connectionId);
         if (session is not null)
         {
-            db.ZoneSessions.Remove(session);
+            db.PlayerSessions.Remove(session);
             await db.SaveChangesAsync();
         }
     }
@@ -59,6 +65,23 @@ public class ZoneSessionRepository(ApplicationDbContext db) : IZoneSessionReposi
         var session = await GetByCharacterIdAsync(characterId);
         if (session is null) return;
         session.LastMovedAt = time;
+        await db.SaveChangesAsync();
+    }
+
+    public async Task UpdatePositionAsync(Guid characterId, int tileX, int tileY)
+    {
+        var session = await GetByCharacterIdAsync(characterId);
+        if (session is null) return;
+        session.TileX = tileX;
+        session.TileY = tileY;
+        await db.SaveChangesAsync();
+    }
+
+    public async Task SetZoneAsync(Guid characterId, string? zoneId)
+    {
+        var session = await GetByCharacterIdAsync(characterId);
+        if (session is null) return;
+        session.ZoneId = zoneId;
         await db.SaveChangesAsync();
     }
 }

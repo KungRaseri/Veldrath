@@ -15,30 +15,45 @@ public interface IZoneRepository
     Task<List<Zone>> GetByRegionIdAsync(string regionId);
 }
 
-/// <summary>Tracks active player connections within a zone.</summary>
-public interface IZoneSessionRepository
+/// <summary>Tracks active player sessions across the world (region maps and zones).</summary>
+public interface IPlayerSessionRepository
 {
-    /// <summary>Returns all active sessions in the specified zone.</summary>
-    Task<List<ZoneSession>> GetByZoneIdAsync(string zoneId);
+    /// <summary>Returns all active sessions currently inside the specified zone.</summary>
+    Task<List<PlayerSession>> GetByZoneIdAsync(string zoneId);
+
+    /// <summary>Returns all active sessions within the specified region (zone or region map).</summary>
+    Task<List<PlayerSession>> GetByRegionIdAsync(string regionId);
+
+    /// <summary>Returns sessions in the specified region where the character is on the region map (not inside a zone).</summary>
+    Task<List<PlayerSession>> GetOnRegionMapAsync(string regionId);
 
     /// <summary>Returns the session associated with <paramref name="connectionId"/>, or <see langword="null"/> if not found.</summary>
-    Task<ZoneSession?> GetByConnectionIdAsync(string connectionId);
+    Task<PlayerSession?> GetByConnectionIdAsync(string connectionId);
 
     /// <summary>Returns the active session for the given <paramref name="characterId"/>, or <see langword="null"/> if not found.</summary>
-    Task<ZoneSession?> GetByCharacterIdAsync(Guid characterId);
+    Task<PlayerSession?> GetByCharacterIdAsync(Guid characterId);
 
     /// <summary>Returns the active session for the character with the given <paramref name="characterName"/>, or <see langword="null"/> if not found.</summary>
-    Task<ZoneSession?> GetByCharacterNameAsync(string characterName);
+    Task<PlayerSession?> GetByCharacterNameAsync(string characterName);
 
-    /// <summary>Persists a new zone session.</summary>
-    Task AddAsync(ZoneSession session);
+    /// <summary>Persists a new player session.</summary>
+    Task AddAsync(PlayerSession session);
 
     /// <summary>Removes the specified session.</summary>
-    Task RemoveAsync(ZoneSession session);
+    Task RemoveAsync(PlayerSession session);
 
     /// <summary>Removes the session associated with <paramref name="connectionId"/>, if one exists.</summary>
     Task RemoveByConnectionIdAsync(string connectionId);
 
-    /// <summary>Updates <see cref="ZoneSession.LastMovedAt"/> for the session belonging to <paramref name="characterId"/>.</summary>
+    /// <summary>Updates <see cref="PlayerSession.LastMovedAt"/> for the session belonging to <paramref name="characterId"/>.</summary>
     Task UpdateLastMovedAtAsync(Guid characterId, DateTimeOffset time);
+
+    /// <summary>Updates <see cref="PlayerSession.TileX"/> and <see cref="PlayerSession.TileY"/> for the session belonging to <paramref name="characterId"/>.</summary>
+    Task UpdatePositionAsync(Guid characterId, int tileX, int tileY);
+
+    /// <summary>
+    /// Sets <see cref="PlayerSession.ZoneId"/> for the session belonging to <paramref name="characterId"/>.
+    /// Pass <see langword="null"/> to indicate the character has returned to the region map.
+    /// </summary>
+    Task SetZoneAsync(Guid characterId, string? zoneId);
 }

@@ -47,7 +47,7 @@ public class Zone
     public Region Region { get; set; } = null!;
 
     /// <summary>Active player sessions currently inside this zone.</summary>
-    public ICollection<ZoneSession> Sessions { get; set; } = [];
+    public ICollection<PlayerSession> Sessions { get; set; } = [];
 }
 
 public enum ZoneType
