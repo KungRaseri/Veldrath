@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RealmEngine.Data.Migrations
+namespace RealmEngine.Data.Migrations.GameDb
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
