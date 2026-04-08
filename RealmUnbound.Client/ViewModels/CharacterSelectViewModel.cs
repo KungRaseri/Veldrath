@@ -304,15 +304,12 @@ public class CharacterSelectViewModel : ViewModelBase
             _inventoryLoadedSub = _connection.On<InventoryLoadedPayload>("InventoryLoaded", payload =>
                 _gameVm.OnInventoryLoaded(payload.Items));
             _locationEnteredSub = _connection.On<LocationEnteredPayload>("LocationEntered", payload =>
-                _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType,
+                _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.TypeKey,
                     payload.SpawnedEnemies
                         .Select(e => new SpawnedEnemyItemViewModel { Id = e.Id, Name = e.Name, Level = e.Level, CurrentHealth = e.CurrentHealth, MaxHealth = e.MaxHealth })
-                        .ToList(),
-                    payload.AvailableConnections?
-                        .Select(c => (c.ToLocationSlug, c.ConnectionType, c.IsTraversable))
                         .ToList()));
             _zoneLocationUnlockedSub = _connection.On<ZoneLocationUnlockedPayload>("ZoneLocationUnlocked", payload =>
-                _gameVm.OnZoneLocationUnlocked(payload.LocationSlug, payload.LocationDisplayName, payload.LocationType, payload.UnlockSource));
+                _gameVm.OnZoneLocationUnlocked(payload.LocationSlug, payload.LocationDisplayName, payload.TypeKey, payload.UnlockSource));
             _areaSearchedSub = _connection.On<AreaSearchedPayload>("AreaSearched", payload =>
                 _gameVm.OnAreaSearched(payload.RollValue, payload.AnyFound));
             _connectionTraversedSub = _connection.On<ConnectionTraversedPayload>("ConnectionTraversed", payload =>
@@ -417,7 +414,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
     internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items);
-    internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType, IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies, IReadOnlyList<ConnectionEntry>? AvailableConnections = null);
+    internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string TypeKey, IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies);
     internal record SpawnedEnemyEntry(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
     internal record ConnectionEntry(string FromLocationSlug, string ToLocationSlug, string? ToZoneId, string ConnectionType, bool IsTraversable);
     internal record CombatStartedPayload(Guid CharacterId, Guid EnemyId, string EnemyName, int EnemyLevel, int EnemyCurrentHealth, int EnemyMaxHealth, IReadOnlyList<string> EnemyAbilityNames);
@@ -427,7 +424,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record EnemyEngagedPayload(Guid CharacterId, Guid EnemyId, string EnemyName);
     internal record EnemySpawnedPayload(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
     internal record CharacterRespawnedPayload(Guid CharacterId, int CurrentHealth, int CurrentMana);
-    internal record ZoneLocationUnlockedPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string LocationType, string UnlockSource);
+    internal record ZoneLocationUnlockedPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string TypeKey, string UnlockSource);
     internal record AreaSearchedPayload(Guid CharacterId, int RollValue, bool AnyFound, IReadOnlyList<object> Discovered);
     internal record ConnectionTraversedPayload(Guid CharacterId, string FromLocation, string? ToLocationSlug, string? ToZoneId, bool IsCrossZone, string? ConnectionType, IReadOnlyList<ConnectionEntry>? AvailableConnections = null);
     internal record ShopCatalogPayload(Guid CharacterId, IReadOnlyList<ShopCatalogItemEntry> Items);

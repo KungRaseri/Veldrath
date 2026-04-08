@@ -1207,11 +1207,6 @@ namespace RealmEngine.Data.Migrations.ContentDb
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("LocationType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.Property<int>("RarityWeight")
                         .HasColumnType("integer");
 
@@ -1244,45 +1239,6 @@ namespace RealmEngine.Data.Migrations.ContentDb
                         .IsUnique();
 
                     b.ToTable("ZoneLocations");
-                });
-
-            modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocationConnection", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ConnectionType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("FromLocationSlug")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsTraversable")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ToLocationSlug")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ToZoneId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FromLocationSlug");
-
-                    b.ToTable("ZoneLocationConnections");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>

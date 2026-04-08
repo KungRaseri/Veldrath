@@ -634,7 +634,7 @@ public class HttpContentServiceTests : TestBase
     {
         var expected = new List<ZoneLocationDto>
         {
-            new("darkwood-forest", "Darkwood Forest", "environments", "greenveil-paths", "environment", 60, 5, 15),
+            new("darkwood-forest", "Darkwood Forest", "environments", "greenveil-paths", 60, 5, 15),
         };
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
@@ -657,7 +657,7 @@ public class HttpContentServiceTests : TestBase
     [Fact]
     public async Task GetZoneLocationAsync_Should_Return_Dto_On_Success()
     {
-        var expected = new ZoneLocationDto("darkwood-forest", "Darkwood Forest", "environments", "greenveil-paths", "environment", 60, 5, 15);
+        var expected = new ZoneLocationDto("darkwood-forest", "Darkwood Forest", "environments", "greenveil-paths", 60, 5, 15);
         var sut = MakeSut(FakeHttpHandler.Json(expected));
 
         var result = await sut.GetZoneLocationAsync("darkwood-forest");

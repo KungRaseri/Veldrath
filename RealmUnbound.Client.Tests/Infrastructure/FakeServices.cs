@@ -321,9 +321,9 @@ public class FakeContentService : IContentService
     /// <summary>Gets or sets the list of zone locations returned by <see cref="GetZoneLocationsAsync"/>.</summary>
     public List<ZoneLocationDto> ZoneLocations { get; set; } =
     [
-        new("town-square",   "Town Square",   "town",    "starter-zone", "landmark", 10, 1, 5),
-        new("forest-outpost","Forest Outpost","outdoor", "starter-zone", "outpost",   8, 1, 5),
-        new("docks",         "Docks",         "coastal", "starter-zone", "dock",      6, 1, 5),
+        new("town-square",   "Town Square",   "town",    "starter-zone", 10, 1, 5),
+        new("forest-outpost","Forest Outpost","outdoor", "starter-zone",  8, 1, 5),
+        new("docks",         "Docks",         "coastal", "starter-zone",  6, 1, 5),
     ];
 
     public Task<List<PowerDto>>     GetAbilitiesAsync()            => Task.FromResult(new List<PowerDto>());

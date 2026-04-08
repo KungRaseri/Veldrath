@@ -1275,7 +1275,7 @@ public class GameViewModel : ViewModelBase
         {
             var slug = loc.Slug;
             ZoneLocations.Add(new ZoneLocationItemViewModel(
-                loc.Slug, loc.DisplayName, loc.LocationType, loc.MinLevel,
+                loc.Slug, loc.DisplayName, loc.TypeKey, loc.MinLevel,
                 isCurrent: loc.Slug == CurrentZoneLocationSlug,
                 onNavigate: () => DoNavigateToLocationAsync(slug)));
         }
@@ -1876,10 +1876,10 @@ public class GameViewModel : ViewModelBase
     /// <summary>Called from hub when the server confirms the character has entered a zone location.</summary>
     /// <param name="locationSlug">The slug of the location entered.</param>
     /// <param name="locationDisplayName">The display name of the location.</param>
-    /// <param name="locationType">The type of location (e.g. "dungeon", "location", "environment").</param>
+    /// <param name="typeKey">The location type key (e.g. "dungeon", "location", "environment").</param>
     /// <param name="spawnedEnemies">Enemy roster at the arrived location.</param>
     /// <param name="availableConnections">Outgoing connections from this location.</param>
-    public void OnLocationEntered(string locationSlug, string locationDisplayName, string locationType,
+    public void OnLocationEntered(string locationSlug, string locationDisplayName, string typeKey,
         IReadOnlyList<SpawnedEnemyItemViewModel>? spawnedEnemies = null,
         IReadOnlyList<(string ToSlug, string ConnectionType, bool IsTraversable)>? availableConnections = null)
     {
@@ -1893,7 +1893,7 @@ public class GameViewModel : ViewModelBase
 
         PopulateConnections(locationSlug, availableConnections);
 
-        AppendLog($"Arrived at {locationDisplayName} ({locationType}).");
+        AppendLog($"Arrived at {locationDisplayName} ({typeKey}).");
         if (SpawnedEnemies.Count > 0)
             AppendLog($"{SpawnedEnemies.Count} enemy/enemies present.");
     }
@@ -1901,9 +1901,9 @@ public class GameViewModel : ViewModelBase
     /// <summary>Called from hub when a hidden zone location has been newly unlocked for this character.</summary>
     /// <param name="locationSlug">The slug of the unlocked location.</param>
     /// <param name="locationDisplayName">The display name of the unlocked location.</param>
-    /// <param name="locationType">The location type.</param>
+    /// <param name="typeKey">The location type key.</param>
     /// <param name="unlockSource">How the location was unlocked (e.g. "skill_check_passive", "quest").</param>
-    public void OnZoneLocationUnlocked(string locationSlug, string locationDisplayName, string locationType, string unlockSource)
+    public void OnZoneLocationUnlocked(string locationSlug, string locationDisplayName, string typeKey, string unlockSource)
     {
         var sourceLabel = unlockSource switch
         {
@@ -1913,7 +1913,7 @@ public class GameViewModel : ViewModelBase
             "item"                => "An item reveals",
             _                     => "Discovered",
         };
-        AppendLog($"{sourceLabel}: {locationDisplayName} ({locationType}).");
+        AppendLog($"{sourceLabel}: {locationDisplayName} ({typeKey}).");
     }
 
     /// <summary>Called from hub when an active area search completes.</summary>

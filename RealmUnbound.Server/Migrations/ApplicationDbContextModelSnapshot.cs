@@ -291,34 +291,6 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Characters");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedConnection", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<Guid>("CharacterId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ConnectionId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UnlockSource")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("UnlockedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CharacterId");
-
-                    b.ToTable("CharacterUnlockedConnections");
-                });
-
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
                 {
                     b.Property<int>("Id")
@@ -740,24 +712,6 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Zones");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneConnection", b =>
-                {
-                    b.Property<string>("FromZoneId")
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("ToZoneId")
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("FromZoneId", "ToZoneId");
-
-                    b.HasIndex("ToZoneId");
-
-                    b.ToTable("ZoneConnections");
-                });
-
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -858,17 +812,6 @@ namespace RealmUnbound.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
-                });
-
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedConnection", b =>
-                {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
-                        .WithMany()
-                        .HasForeignKey("CharacterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
@@ -990,25 +933,6 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Region");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneConnection", b =>
-                {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "FromZone")
-                        .WithMany("Exits")
-                        .HasForeignKey("FromZoneId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "ToZone")
-                        .WithMany()
-                        .HasForeignKey("ToZoneId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FromZone");
-
-                    b.Navigation("ToZone");
-                });
-
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.ZoneSession", b =>
                 {
                     b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
@@ -1047,8 +971,6 @@ namespace RealmUnbound.Server.Migrations
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
                 {
-                    b.Navigation("Exits");
-
                     b.Navigation("Sessions");
                 });
 #pragma warning restore 612, 618
