@@ -4,9 +4,141 @@
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
+        "maps/aldenmere.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 239.12340578408478
+            }
+        },
+        "maps/ashfields.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/barrow-deeps.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/crestfall.tmx": {
+            "scale": 1.1223790322580645,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 247.6881623854859,
+                "y": 199.57607328902458
+            }
+        },
+        "maps/greenveil-paths.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/kaldrek-maw.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/pale-moor.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/saltcliff-heights.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/skarhold.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/smoldering-reach.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/soddenfen.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/sunken-name.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/thornveil-hollow.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/tidewrack-flats.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/tolvaren.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/verdant-barrow.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
         "sheets/onebit.tsx": {
             "scaleInDock": 8.1667,
             "scaleInEditor": 2
+        },
+        "sheets/roguelike_base.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         }
     },
     "last.imagePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/sheets",
@@ -18,7 +150,18 @@
     ],
     "project": "RealmUnbound.tiled-project",
     "recentFiles": [
-        "sheets/onebit.tsx"
+        "maps/verdant-barrow.tmx",
+        "maps/tolvaren.tmx",
+        "maps/tidewrack-flats.tmx",
+        "maps/thornveil-hollow.tmx",
+        "maps/sunken-name.tmx",
+        "maps/soddenfen.tmx",
+        "maps/aldenmere.tmx",
+        "maps/ashfields.tmx",
+        "maps/barrow-deeps.tmx",
+        "maps/crestfall.tmx",
+        "maps/greenveil-paths.tmx",
+        "maps/pale-moor.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.margin": 1,
