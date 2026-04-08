@@ -228,7 +228,10 @@ namespace RealmUnbound.Server.Migrations
                     LastPlayedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DifficultyMode = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false, defaultValue: "normal"),
-                    AbilitiesBlob = table.Column<string>(type: "text", nullable: false)
+                    AbilitiesBlob = table.Column<string>(type: "text", nullable: false),
+                    TileX = table.Column<int>(type: "integer", nullable: false),
+                    TileY = table.Column<int>(type: "integer", nullable: false),
+                    TileZoneId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -321,28 +324,6 @@ namespace RealmUnbound.Server.Migrations
                         name: "FK_Regions_Worlds_WorldId",
                         column: x => x.WorldId,
                         principalTable: "Worlds",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CharacterUnlockedConnections",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    CharacterId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ConnectionId = table.Column<int>(type: "integer", nullable: false),
-                    UnlockedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UnlockSource = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CharacterUnlockedConnections", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CharacterUnlockedConnections_Characters_CharacterId",
-                        column: x => x.CharacterId,
-                        principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -479,31 +460,6 @@ namespace RealmUnbound.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ZoneConnections",
-                columns: table => new
-                {
-                    FromZoneId = table.Column<string>(type: "character varying(64)", nullable: false),
-                    ToZoneId = table.Column<string>(type: "character varying(64)", nullable: false),
-                    IsHidden = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ZoneConnections", x => new { x.FromZoneId, x.ToZoneId });
-                    table.ForeignKey(
-                        name: "FK_ZoneConnections_Zones_FromZoneId",
-                        column: x => x.FromZoneId,
-                        principalTable: "Zones",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ZoneConnections_Zones_ToZoneId",
-                        column: x => x.ToZoneId,
-                        principalTable: "Zones",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ZoneSessions",
                 columns: table => new
                 {
@@ -512,7 +468,8 @@ namespace RealmUnbound.Server.Migrations
                     CharacterName = table.Column<string>(type: "text", nullable: false),
                     ConnectionId = table.Column<string>(type: "text", nullable: false),
                     ZoneId = table.Column<string>(type: "character varying(64)", nullable: false),
-                    EnteredAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                    EnteredAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    LastMovedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -584,11 +541,6 @@ namespace RealmUnbound.Server.Migrations
                 table: "Characters",
                 column: "Name",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CharacterUnlockedConnections_CharacterId",
-                table: "CharacterUnlockedConnections",
-                column: "CharacterId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CharacterUnlockedLocations_CharacterId_LocationSlug",
@@ -664,11 +616,6 @@ namespace RealmUnbound.Server.Migrations
                 column: "WorldId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ZoneConnections_ToZoneId",
-                table: "ZoneConnections",
-                column: "ToZoneId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Zones_RegionId",
                 table: "Zones",
                 column: "RegionId");
@@ -713,9 +660,6 @@ namespace RealmUnbound.Server.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "CharacterUnlockedConnections");
-
-            migrationBuilder.DropTable(
                 name: "CharacterUnlockedLocations");
 
             migrationBuilder.DropTable(
@@ -732,9 +676,6 @@ namespace RealmUnbound.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "RegionConnections");
-
-            migrationBuilder.DropTable(
-                name: "ZoneConnections");
 
             migrationBuilder.DropTable(
                 name: "ZoneSessions");

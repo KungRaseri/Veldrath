@@ -1,10 +1,9 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RealmEngine.Data.Migrations.ContentDb
+namespace RealmEngine.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -39,6 +38,7 @@ namespace RealmEngine.Data.Migrations.ContentDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -369,6 +369,7 @@ namespace RealmEngine.Data.Migrations.ContentDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     IsPlayerSelectable = table.Column<bool>(type: "boolean", nullable: false),
                     Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
@@ -400,30 +401,11 @@ namespace RealmEngine.Data.Migrations.ContentDb
                 });
 
             migrationBuilder.CreateTable(
-                name: "ZoneLocationConnections",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FromLocationSlug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    ToLocationSlug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    ToZoneId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    ConnectionType = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    IsTraversable = table.Column<bool>(type: "boolean", nullable: false),
-                    IsHidden = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ZoneLocationConnections", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ZoneLocations",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ZoneId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    LocationType = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -977,11 +959,6 @@ namespace RealmEngine.Data.Migrations.ContentDb
                 column: "PowerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ZoneLocationConnections_FromLocationSlug",
-                table: "ZoneLocationConnections",
-                column: "FromLocationSlug");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ZoneLocations_TypeKey",
                 table: "ZoneLocations",
                 column: "TypeKey");
@@ -1055,9 +1032,6 @@ namespace RealmEngine.Data.Migrations.ContentDb
 
             migrationBuilder.DropTable(
                 name: "TraitDefinitions");
-
-            migrationBuilder.DropTable(
-                name: "ZoneLocationConnections");
 
             migrationBuilder.DropTable(
                 name: "ZoneLocations");

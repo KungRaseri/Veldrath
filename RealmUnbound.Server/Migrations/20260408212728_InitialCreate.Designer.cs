@@ -12,8 +12,8 @@ using RealmUnbound.Server.Data;
 namespace RealmUnbound.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260408210422_RemoveZoneConnectionsAndCharacterUnlockedConnections")]
-    partial class RemoveZoneConnectionsAndCharacterUnlockedConnections
+    [Migration("20260408212728_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

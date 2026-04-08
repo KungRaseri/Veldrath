@@ -9,10 +9,10 @@ using RealmEngine.Data.Persistence;
 
 #nullable disable
 
-namespace RealmEngine.Data.Migrations
+namespace RealmEngine.Data.Migrations.GameDb
 {
     [DbContext(typeof(GameDbContext))]
-    [Migration("20260403005032_InitialCreate")]
+    [Migration("20260408212758_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

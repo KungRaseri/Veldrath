@@ -8,7 +8,7 @@ using RealmEngine.Data.Persistence;
 
 #nullable disable
 
-namespace RealmEngine.Data.Migrations
+namespace RealmEngine.Data.Migrations.GameDb
 {
     [DbContext(typeof(GameDbContext))]
     partial class GameDbContextModelSnapshot : ModelSnapshot
