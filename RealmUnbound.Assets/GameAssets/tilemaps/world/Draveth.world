@@ -1,4 +1,13 @@
 {
+    "maps": [
+        {
+            "fileName": "../maps/Varenmark.tmx",
+            "height": 16,
+            "width": 16,
+            "x": 0,
+            "y": 0
+        }
+    ],
     "onlyShowAdjacentMaps": false,
     "type": "world"
 }

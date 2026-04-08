@@ -1,9 +1,21 @@
 {
-    "activeFile": "sheets/roguelike_base.tsx",
+    "activeFile": "maps/Varenmark.tmx",
     "expandedProjectPaths": [
+        "maps",
+        ".",
+        "sheets",
+        "world"
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
+        "maps/Varenmark.tmx": {
+            "scale": 23,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 23.58695652173913,
+                "y": 8.043478260869566
+            }
+        },
         "maps/aldenmere.tmx": {
             "scale": 0.86984375,
             "selectedLayer": 0,
@@ -152,10 +164,13 @@
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "openFiles": [
+        "maps/crestfall.tmx",
+        "maps/Varenmark.tmx"
     ],
     "project": "RealmUnbound.tiled-project",
     "recentFiles": [
         "maps/crestfall.tmx",
+        "maps/Varenmark.tmx",
         "maps/verdant-barrow.tmx",
         "maps/tolvaren.tmx",
         "maps/tidewrack-flats.tmx",
@@ -165,8 +180,7 @@
         "maps/aldenmere.tmx",
         "maps/ashfields.tmx",
         "maps/barrow-deeps.tmx",
-        "maps/greenveil-paths.tmx",
-        "maps/pale-moor.tmx"
+        "maps/greenveil-paths.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.margin": 1,
