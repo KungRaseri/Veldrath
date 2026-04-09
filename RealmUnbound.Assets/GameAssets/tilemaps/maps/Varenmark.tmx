@@ -1,6 +1,168 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="30" height="22" tilewidth="16" tileheight="16" infinite="1" nextlayerid="2" nextobjectid="1">
- <layer id="1" name="Tile Layer 1" width="30" height="22">
-  <data encoding="csv"/>
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="30" height="22" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="21">
+ <properties>
+  <property name="regionId" value="varenmark"/>
+  <property name="tilesetKey" value="roguelike_base"/>
+ </properties>
+ <tileset firstgid="1" source="../sheets/roguelike_base.tsx"/>
+ <objectgroup id="2" name="zones">
+  <object id="1" name="crestfall" x="224" y="176" width="16" height="16">
+   <properties>
+    <property name="displayName" value="Crestfall"/>
+    <property name="maxLevel" type="int" value="2"/>
+    <property name="minLevel" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="2" name="the-droveway" x="224" y="64" width="16" height="16">
+   <properties>
+    <property name="displayName" value="The Droveway"/>
+    <property name="maxLevel" type="int" value="2"/>
+    <property name="minLevel" type="int" value="1"/>
+   </properties>
+  </object>
+  <object id="3" name="ashlen-wood" x="80" y="176" width="16" height="16">
+   <properties>
+    <property name="displayName" value="The Ashlen Wood"/>
+    <property name="maxLevel" type="int" value="2"/>
+    <property name="minLevel" type="int" value="1"/>
+   </properties>
+  </object>
+  <object id="4" name="grevenmire" x="368" y="176" width="16" height="16">
+   <properties>
+    <property name="displayName" value="Grevenmire"/>
+    <property name="maxLevel" type="int" value="3"/>
+    <property name="minLevel" type="int" value="3"/>
+   </properties>
+  </object>
+  <object id="5" name="the-halrow" x="352" y="112" width="16" height="16">
+   <properties>
+    <property name="displayName" value="The Halrow"/>
+    <property name="maxLevel" type="int" value="6"/>
+    <property name="minLevel" type="int" value="4"/>
+   </properties>
+  </object>
+  <object id="6" name="drowning-pits" x="352" y="256" width="16" height="16">
+   <properties>
+    <property name="displayName" value="The Drowning Pits"/>
+    <property name="maxLevel" type="int" value="6"/>
+    <property name="minLevel" type="int" value="4"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="3" name="region_exits">
+  <object id="7" name="greymoor" x="464" y="176" width="16" height="16"/>
+ </objectgroup>
+ <layer id="4" name="ground" width="30" height="22">
+  <data encoding="csv">
+64,7,64,7,64,7,64,64,7,7,7,64,64,64,7,64,7,579,579,64,579,64,7,7,7,7,579,579,7,7,
+579,7,579,64,64,7,64,7,7,579,64,579,64,64,64,64,579,579,64,7,64,7,579,579,579,64,579,64,64,7,
+579,64,579,64,64,64,64,64,579,64,64,579,579,579,7,64,7,64,7,7,7,579,579,7,7,579,64,579,7,579,
+579,7,579,7,64,64,64,579,64,7,579,579,7,64,7,64,579,7,579,64,64,64,579,7,64,7,64,7,7,64,
+579,7,579,64,579,64,64,579,579,579,7,64,64,64,64,579,64,7,64,7,64,64,579,64,64,579,64,64,579,64,
+64,64,7,579,7,579,579,7,64,7,579,579,64,579,579,7,64,64,579,579,7,7,7,579,579,64,7,579,7,579,
+7,579,7,579,7,7,579,579,579,579,7,579,64,64,7,7,7,7,579,579,7,7,64,579,579,64,64,579,7,579,
+579,579,579,64,7,64,579,64,579,579,64,64,579,64,579,7,579,579,64,64,64,7,7,7,64,7,7,579,579,7,
+64,579,64,64,7,579,64,64,7,64,64,579,579,579,7,64,7,64,7,7,7,579,64,7,579,579,64,7,64,7,
+64,579,579,64,64,64,64,64,7,7,579,64,7,64,7,64,7,64,7,7,7,7,579,7,7,7,7,7,7,64,
+579,579,579,579,579,579,64,7,579,64,7,579,7,64,64,7,579,7,7,64,579,64,7,7,64,579,7,579,579,579,
+64,7,64,579,7,7,7,579,579,64,7,579,579,64,64,7,579,7,7,64,64,7,7,579,7,7,579,7,64,7,
+579,64,579,579,7,579,579,7,7,64,64,64,579,7,7,64,64,579,7,64,7,64,64,64,579,7,579,579,7,579,
+7,7,7,7,579,7,64,64,64,7,7,64,579,579,7,579,64,64,64,64,579,7,579,579,579,7,7,64,7,7,
+64,7,64,7,579,7,7,64,7,64,64,7,7,64,579,64,7,64,7,7,7,64,579,64,7,579,7,7,579,7,
+7,579,64,64,64,64,7,579,579,579,579,579,7,579,7,64,64,579,64,579,7,64,579,64,7,64,7,64,7,64,
+64,7,64,7,7,579,64,64,7,7,7,64,579,579,579,64,7,64,579,7,7,64,7,579,7,7,7,64,64,64,
+579,64,579,64,7,7,7,64,7,579,64,7,7,64,7,7,579,7,579,7,579,64,7,7,7,7,579,64,64,64,
+7,7,64,579,579,7,64,7,579,579,579,579,64,64,579,579,579,579,7,64,579,7,64,579,64,64,64,579,64,7,
+7,579,7,579,579,7,7,64,7,64,64,64,7,7,64,579,579,7,579,7,579,7,64,7,64,7,579,64,7,7,
+579,579,64,7,64,7,64,7,579,7,7,7,64,64,64,579,7,7,579,7,579,7,579,7,64,7,579,579,7,7,
+64,64,64,579,64,64,579,64,64,64,64,64,579,7,64,579,579,579,7,64,7,7,7,579,7,579,7,7,7,579
+</data>
  </layer>
+ <layer id="5" name="terrain" width="30" height="22">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,7,7,7,7,7,7,7,0,0,0,0,0,0,64,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,7,7,7,7,7,7,7,0,0,0,0,0,0,64,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,7,7,7,7,7,7,7,0,0,0,0,0,0,64,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,7,7,7,7,0,64,64,64,64,64,64,64,64,0,64,64,64,64,64,64,64,64,0,64,64,64,64,64,0,
+0,7,7,7,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,7,7,7,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,7,7,7,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,7,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="6" name="labels">
+  <object id="8" name="Crestfall" x="224" y="168">
+   <properties>
+    <property name="zoneSlug" value="crestfall"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="9" name="The Droveway" x="224" y="56">
+   <properties>
+    <property name="zoneSlug" value="the-droveway"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="10" name="The Ashlen Wood" x="80" y="168">
+   <properties>
+    <property name="zoneSlug" value="ashlen-wood"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="11" name="Grevenmire" x="368" y="168">
+   <properties>
+    <property name="zoneSlug" value="grevenmire"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="12" name="The Halrow" x="352" y="104">
+   <properties>
+    <property name="zoneSlug" value="the-halrow"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="13" name="The Drowning Pits" x="352" y="248">
+   <properties>
+    <property name="zoneSlug" value="drowning-pits"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="14" name="Greymoor" x="464" y="168">
+   <point/>
+  </object>
+ </objectgroup>
+ <objectgroup id="7" name="paths">
+  <object id="15" name="droveway-road" x="224" y="80">
+   <polyline points="0,0 0,96"/>
+  </object>
+  <object id="16" name="ashlenwood-road" x="96" y="176">
+   <polyline points="0,0 128,0"/>
+  </object>
+  <object id="17" name="grevenmire-road" x="240" y="176">
+   <polyline points="0,0 128,0"/>
+  </object>
+  <object id="18" name="halrow-road" x="352" y="176">
+   <polyline points="0,0 0,-64"/>
+  </object>
+  <object id="19" name="drowningpits-road" x="352" y="192">
+   <polyline points="0,0 0,64"/>
+  </object>
+  <object id="20" name="greymoor-road" x="384" y="176">
+   <polyline points="0,0 80,0"/>
+  </object>
+ </objectgroup>
 </map>

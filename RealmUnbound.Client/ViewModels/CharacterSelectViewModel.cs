@@ -65,6 +65,12 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _enemyMovedSub;
     private IDisposable? _zoneEntitiesSnapshotSub;
     private IDisposable? _questLogSub;
+    private IDisposable? _regionMapDataSub;
+    private IDisposable? _regionPlayerMovedSub;
+    private IDisposable? _zoneEntryTriggeredSub;
+    private IDisposable? _regionExitTriggeredSub;
+    private IDisposable? _zoneExitedSub;
+    private IDisposable? _regionChangedSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -227,6 +233,12 @@ public class CharacterSelectViewModel : ViewModelBase
             _enemyMovedSub?.Dispose();
             _zoneEntitiesSnapshotSub?.Dispose();
             _questLogSub?.Dispose();
+            _regionMapDataSub?.Dispose();
+            _regionPlayerMovedSub?.Dispose();
+            _zoneEntryTriggeredSub?.Dispose();
+            _regionExitTriggeredSub?.Dispose();
+            _zoneExitedSub?.Dispose();
+            _regionChangedSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -361,6 +373,20 @@ public class CharacterSelectViewModel : ViewModelBase
             _questLogSub = _connection.On<IReadOnlyList<QuestLogEntryDto>>("QuestLogReceived", quests =>
                 _gameVm.OnQuestLogReceived(quests));
 
+            // Region-map subscriptions
+            _regionMapDataSub = _connection.On<RegionMapDto>("RegionMapData", dto =>
+                _gameVm.OnRegionMapReceived(dto));
+            _regionPlayerMovedSub = _connection.On<RegionPlayerMovedPayload>("RegionPlayerMoved", payload =>
+                _gameVm.OnRegionPlayerMoved(payload.CharacterId, payload.TileX, payload.TileY, payload.Direction));
+            _zoneEntryTriggeredSub = _connection.On<ZoneObjectDto>("ZoneEntryTriggered", dto =>
+                _gameVm.OnZoneEntryTriggered(dto));
+            _regionExitTriggeredSub = _connection.On<RegionExitDto>("RegionExitTriggered", dto =>
+                _gameVm.OnRegionExitTriggered(dto));
+            _zoneExitedSub = _connection.On<ZoneExitedPayload>("ZoneExited", payload =>
+                _gameVm.OnZoneExited(payload.RegionId, payload.TileX, payload.TileY));
+            _regionChangedSub = _connection.On<RegionChangedPayload>("RegionChanged", payload =>
+                _gameVm.OnRegionChanged(payload.NewRegionId, payload.TileX, payload.TileY));
+
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
             _tokenRefreshTimer?.Dispose();
@@ -368,6 +394,7 @@ public class CharacterSelectViewModel : ViewModelBase
                 .Subscribe(tick => { _ = DoProactiveTokenRefreshAsync(); });
 
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
+            await _connection.SendCommandAsync("GetRegionMap");
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
         }
@@ -409,7 +436,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record GoldChangedPayload(Guid CharacterId, int GoldAdded, int NewGoldTotal, string? Source);
     internal record DamageTakenPayload(Guid CharacterId, int DamageAmount, int CurrentHealth, int MaxHealth, bool IsDead, string? Source);
     internal record ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source);
-    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, int Strength, int Dexterity, int Constitution, int Intelligence, int Wisdom, int Charisma, IReadOnlyList<string> LearnedAbilities, DateTimeOffset SelectedAt);
+    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, string RegionId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, int Strength, int Dexterity, int Constitution, int Intelligence, int Wisdom, int Charisma, IReadOnlyList<string> LearnedAbilities, DateTimeOffset SelectedAt);
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
@@ -431,6 +458,8 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ItemTransactionPayload(Guid CharacterId, string ItemRef, string ItemDisplayName, int GoldDelta, int NewGoldTotal, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ItemDroppedPayload(Guid CharacterId, string ItemRef, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ChatMessagePayload(string Channel, string Sender, string Message, DateTimeOffset Timestamp);
+    internal record ZoneExitedPayload(string RegionId, int TileX, int TileY);
+    internal record RegionChangedPayload(string NewRegionId, int TileX, int TileY);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

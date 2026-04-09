@@ -595,7 +595,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
     }
 
     [Fact]
-    public async Task Finalize_Sets_StartingLocationSlug_To_FenwickMarket()
+    public async Task Finalize_Sets_StartingLocationSlug_To_CrestfallSquare()
     {
         using var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization =
@@ -617,7 +617,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var character = await response.Content.ReadFromJsonAsync<CharacterDto>();
-        character!.CurrentZoneLocationSlug.Should().Be("fenwick-market");
+        character!.CurrentZoneLocationSlug.Should().Be("crestfall-square");
     }
 
     [Fact]
