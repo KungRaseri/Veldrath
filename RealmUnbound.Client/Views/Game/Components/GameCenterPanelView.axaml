@@ -12,7 +12,60 @@
     mc:Ignorable="d">
 
     <Border Background="{DynamicResource GameBackground0Brush}">
-        <controls:TilemapControl ViewModel="{Binding Tilemap}" />
+        <Grid>
+            <!-- Zone tilemap (default view) -->
+            <controls:TilemapControl
+                ViewModel="{Binding Tilemap}"
+                IsVisible="{Binding IsZoneViewActive}" />
+
+            <!-- Region map view -->
+            <Grid IsVisible="{Binding IsRegionViewActive}">
+                <controls:RegionTilemapControl ViewModel="{Binding RegionTilemap}" />
+
+                <!-- Zone-entry confirmation prompt -->
+                <Border
+                    IsVisible="{Binding PendingZoneEntry, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,16"
+                    Padding="12,8"
+                    CornerRadius="6"
+                    Background="#CC1a1a2e">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="White"
+                            Text="{Binding PendingZoneEntry.DisplayName, StringFormat='Enter {0}?'}" />
+                        <Button
+                            Content="Enter [E]"
+                            Command="{Binding ConfirmZoneEntryCommand}"
+                            Padding="10,4" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Region-exit confirmation prompt -->
+                <Border
+                    IsVisible="{Binding PendingRegionExit, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,16"
+                    Padding="12,8"
+                    CornerRadius="6"
+                    Background="#CC1a1a2e">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="White"
+                            Text="{Binding PendingRegionExit.TargetRegionId, StringFormat='Cross into {0}?'}" />
+                        <Button
+                            Content="Cross [E]"
+                            Command="{Binding ConfirmRegionCrossCommand}"
+                            Padding="10,4" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
     </Border>
 
 </UserControl>
+

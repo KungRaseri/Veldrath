@@ -106,12 +106,21 @@ public class RegionTilemapViewModel : ViewModelBase
     /// <summary>Command that toggles the mini-map overlay.</summary>
     public ReactiveCommand<Unit, Unit> ToggleMiniMapCommand { get; }
 
+    /// <summary>Command that confirms a pending zone-entry or region-exit transition (E key).</summary>
+    public ReactiveCommand<Unit, Unit> ConfirmContextActionCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="RegionTilemapViewModel"/>.</summary>
     /// <param name="onMove">
     /// Callback invoked when the player requests a move on the region map.
     /// Receives the <c>(toX, toY, direction)</c> tuple and must forward it to the server hub.
     /// </param>
-    public RegionTilemapViewModel(Func<int, int, string, System.Threading.Tasks.Task> onMove)
+    /// <param name="onConfirm">
+    /// Optional callback invoked when the player presses E on the region map to confirm entering
+    /// a pending zone or crossing a region border. Null disables the confirmation action.
+    /// </param>
+    public RegionTilemapViewModel(
+        Func<int, int, string, System.Threading.Tasks.Task> onMove,
+        Func<System.Threading.Tasks.Task>? onConfirm = null)
     {
         RequestMoveCommand = ReactiveCommand.CreateFromTask<(int ToX, int ToY, string Direction)>(
             args => onMove(args.ToX, args.ToY, args.Direction));
@@ -119,6 +128,10 @@ public class RegionTilemapViewModel : ViewModelBase
             Log.Warning(ex, "Region move command failed — server connection may be unavailable"));
 
         ToggleMiniMapCommand = ReactiveCommand.Create(() => { IsMiniMapOpen = !IsMiniMapOpen; });
+
+        ConfirmContextActionCommand = onConfirm is not null
+            ? ReactiveCommand.CreateFromTask(onConfirm)
+            : ReactiveCommand.Create(() => { });
     }
 
     // ── Entity helpers ────────────────────────────────────────────────────────

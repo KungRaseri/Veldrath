@@ -84,4 +84,13 @@ public class PlayerSessionRepository(ApplicationDbContext db) : IPlayerSessionRe
         session.ZoneId = zoneId;
         await db.SaveChangesAsync();
     }
+
+    public async Task SetRegionAsync(Guid characterId, string regionId)
+    {
+        var session = await GetByCharacterIdAsync(characterId);
+        if (session is null) return;
+        session.RegionId = regionId;
+        session.ZoneId   = null;
+        await db.SaveChangesAsync();
+    }
 }

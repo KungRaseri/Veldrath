@@ -56,4 +56,11 @@ public interface IPlayerSessionRepository
     /// Pass <see langword="null"/> to indicate the character has returned to the region map.
     /// </summary>
     Task SetZoneAsync(Guid characterId, string? zoneId);
+
+    /// <summary>
+    /// Updates <see cref="PlayerSession.RegionId"/> and clears <see cref="PlayerSession.ZoneId"/> for
+    /// the session belonging to <paramref name="characterId"/>.
+    /// Called when a character crosses a region boundary.
+    /// </summary>
+    Task SetRegionAsync(Guid characterId, string regionId);
 }
