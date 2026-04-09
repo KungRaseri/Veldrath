@@ -81,7 +81,7 @@ public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubComm
             .ToArray();
 
         var labels = map.GetZoneLabels()
-            .Select(l => new ZoneLabelDto(l.TileX, l.TileY, l.Text, l.ZoneSlug))
+            .Select(l => new ZoneLabelDto(l.TileX, l.TileY, l.Text, l.ZoneSlug, l.IsHidden))
             .ToArray();
 
         var paths = map.GetRegionPaths()

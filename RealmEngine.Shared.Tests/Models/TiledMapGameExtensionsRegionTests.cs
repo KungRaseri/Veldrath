@@ -14,6 +14,9 @@ public class TiledMapGameExtensionsRegionTests
     private static TiledProperty IntProp(string name, int value) =>
         new() { Name = name, Type = "int", Value = JsonSerializer.SerializeToElement(value) };
 
+    private static TiledProperty BoolProp(string name, bool value) =>
+        new() { Name = name, Type = "bool", Value = JsonSerializer.SerializeToElement(value) };
+
     private static TiledMap MakeMap(string? regionId = "thornveil", int tileW = 16, int tileH = 16) =>
         new()
         {
@@ -266,6 +269,31 @@ public class TiledMapGameExtensionsRegionTests
         label.TileY.Should().Be(10);
         label.Text.Should().Be("Crestfall");
         label.ZoneSlug.Should().Be("crestfall");
+        label.IsHidden.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetZoneLabels_Returns_IsHidden_True_When_Property_Set()
+    {
+        var map = MakeMap(tileW: 16, tileH: 16);
+        map.Layers =
+        [
+            new TiledLayer
+            {
+                Id = 1, Type = "objectgroup", Name = "labels",
+                Objects =
+                [
+                    new TiledObject
+                    {
+                        Id = 1, Name = "The Sunken Fields", X = 80, Y = 240, Point = true,
+                        Properties = [StringProp("zoneSlug", "sunken-fields"), BoolProp("isHidden", true)],
+                    },
+                ],
+            },
+        ];
+
+        var label = map.GetZoneLabels().Single();
+        label.IsHidden.Should().BeTrue();
     }
 
     // ── GetRegionPaths ─────────────────────────────────────────────────────────

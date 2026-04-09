@@ -72,6 +72,9 @@ public class ZoneLabelDefinition
 
     /// <summary>Zone slug this label refers to. Empty for region-exit labels.</summary>
     public string ZoneSlug { get; set; } = string.Empty;
+
+    /// <summary>Whether this location is hidden and requires discovery before being shown to the player.</summary>
+    public bool IsHidden { get; set; }
 }
 
 /// <summary>A road or path on a region map, placed in the <c>paths</c> objectgroup layer.</summary>
