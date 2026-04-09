@@ -35,9 +35,22 @@ public static class TilemapAssets
         Columns: 49,
         Rows: 22);
 
+    /// <summary>
+    /// Roguelike tileset — used for all zone maps.
+    /// 57 columns × 31 rows, 16 px tiles, 1 px spacing.
+    /// </summary>
+    public static readonly TilesetInfo RoguelikeBase = new(
+        Key: "roguelike_base",
+        RelativePath: "GameAssets/tilemaps/sheets/roguelike_base.png",
+        TileSize: 16,
+        Spacing: 1,
+        Columns: 57,
+        Rows: 31);
+
     /// <summary>All registered tilesets, keyed by <see cref="TilesetInfo.Key"/>.</summary>
     public static readonly IReadOnlyDictionary<string, TilesetInfo> All = new Dictionary<string, TilesetInfo>(StringComparer.OrdinalIgnoreCase)
     {
-        [OneBitPacked.Key] = OneBitPacked,
+        [OneBitPacked.Key]  = OneBitPacked,
+        [RoguelikeBase.Key] = RoguelikeBase,
     };
 }
