@@ -163,12 +163,24 @@ public class RealmFoundryApiClient(HttpClient http)
 
     // ── Admin ────────────────────────────────────────────────────────────────
 
-    /// <summary>Returns a paged list of player accounts matching the optional search string.</summary>
+    /// <summary>Returns a paged list of player accounts with optional filtering.</summary>
     public async Task<AdminUserListResponse?> GetUsersAsync(
-        string? search = null, int page = 1, int pageSize = 25, CancellationToken ct = default)
+        string? search   = null,
+        string? role     = null,
+        string? status   = null,
+        string? sort     = null,
+        int     page     = 1,
+        int     pageSize = 25,
+        CancellationToken ct = default)
     {
         var url = "/api/admin/users";
-        var qs  = BuildQuery(("search", search), ("page", page.ToString()), ("pageSize", pageSize.ToString()));
+        var qs  = BuildQuery(
+            ("search",   search),
+            ("role",     role),
+            ("status",   status),
+            ("sort",     sort),
+            ("page",     page.ToString()),
+            ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
 
         var resp = await http.GetAsync(url, ct);
@@ -249,6 +261,92 @@ public class RealmFoundryApiClient(HttpClient http)
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
+
+    /// <summary>Issues a formal warning to a player account.</summary>
+    public async Task<(bool Ok, string? Error)> WarnPlayerAsync(WarnPlayerRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/admin/players/warn", request, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Mutes a player's chat for an optional duration.</summary>
+    public async Task<(bool Ok, string? Error)> MutePlayerAsync(MutePlayerRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/admin/players/mute", request, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Lifts an active chat mute from an account.</summary>
+    public async Task<(bool Ok, string? Error)> UnmutePlayerAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"/api/admin/players/unmute?id={id}", null, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Returns a paged admin audit log, optionally filtered by target account.</summary>
+    public async Task<PagedAdminResult<AuditEntryDto>?> GetAuditLogAsync(
+        int page = 1, int pageSize = 50, Guid? targetId = null, CancellationToken ct = default)
+    {
+        var url = "/api/admin/audit";
+        var qs  = BuildQuery(
+            ("targetId", targetId?.ToString()),
+            ("page",     page.ToString()),
+            ("pageSize", pageSize.ToString()));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedAdminResult<AuditEntryDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Returns all active player sessions, optionally filtered by region or zone.</summary>
+    public async Task<IReadOnlyList<ActiveSessionDto>> GetSessionsAsync(
+        string? regionId = null, string? zoneId = null, CancellationToken ct = default)
+    {
+        var url = "/api/admin/sessions";
+        var qs  = BuildQuery(("regionId", regionId), ("zoneId", zoneId));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<ActiveSessionDto>>(ct) ?? []
+            : [];
+    }
+
+    /// <summary>Returns a paged list of player reports, optionally filtered by resolution status.</summary>
+    public async Task<PagedAdminResult<PlayerReportDto>?> GetReportsAsync(
+        int page = 1, int pageSize = 50, bool? resolved = null, CancellationToken ct = default)
+    {
+        var url = "/api/admin/reports";
+        var qs  = BuildQuery(
+            ("resolved", resolved?.ToString().ToLowerInvariant()),
+            ("page",     page.ToString()),
+            ("pageSize", pageSize.ToString()));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedAdminResult<PlayerReportDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Marks a player report as resolved.</summary>
+    public async Task<(bool Ok, string? Error)> ResolveReportAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsync($"/api/admin/reports/{id}/resolve", null, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Returns the live server status snapshot including zone populations.</summary>
+    public async Task<ServerStatusDto?> GetServerStatusAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/admin/status", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<ServerStatusDto>(ct)
+            : null;
+    }
 }
 
 /// <summary>Paged response for the admin user list endpoint.</summary>
@@ -257,3 +355,11 @@ public class RealmFoundryApiClient(HttpClient http)
 /// <param name="PageSize">Number of items per page.</param>
 /// <param name="Items">Accounts on the current page.</param>
 public record AdminUserListResponse(int Total, int Page, int PageSize, IReadOnlyList<PlayerSummaryDto> Items);
+
+/// <summary>Generic paged response wrapper used by admin list endpoints.</summary>
+/// <typeparam name="T">The item type returned in each page.</typeparam>
+/// <param name="Total">Total number of matching records.</param>
+/// <param name="Page">Current page number.</param>
+/// <param name="PageSize">Number of items per page.</param>
+/// <param name="Items">Items on the current page.</param>
+public record PagedAdminResult<T>(int Total, int Page, int PageSize, IReadOnlyList<T> Items);

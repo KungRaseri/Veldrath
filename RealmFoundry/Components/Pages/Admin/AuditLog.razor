@@ -1,0 +1,134 @@
+@page "/admin/audit"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Audit Log — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <h1>Audit Log</h1>
+
+    <div class="toolbar">
+        <input class="filter-input" placeholder="Target Account ID (GUID)…"
+               @bind="_targetIdRaw" @bind:event="oninput" />
+        <button class="btn" @onclick="ApplyFilterAsync">Filter</button>
+        <button class="btn btn-secondary" @onclick="ClearFilterAsync">Clear</button>
+        <a class="btn btn-secondary" href="/admin">← Back</a>
+        <span class="total-count">@(_result?.Total ?? 0) total entries</span>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_result is null)
+    {
+        <p class="error">Failed to load audit log.</p>
+    }
+    else if (_result.Items.Count == 0)
+    {
+        <p class="muted">No entries found.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in _result.Items)
+                {
+                    <tr>
+                        <td class="muted nowrap">@e.OccurredAt.ToLocalTime().ToString("g")</td>
+                        <td>@e.ActorUsername</td>
+                        <td><span class="badge badge-action">@e.Action</span></td>
+                        <td class="muted">
+                            @if (e.TargetAccountId.HasValue)
+                            {
+                                <a href="/admin/users/@e.TargetAccountId">@(e.TargetUsername ?? e.TargetAccountId.ToString())</a>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="muted detail-cell">@(e.Details ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button class="btn btn-sm" disabled="@(_page <= 1)" @onclick="PrevPageAsync">← Prev</button>
+            <span>Page @_page of @((_result.Total + _pageSize - 1) / _pageSize)</span>
+            <button class="btn btn-sm" disabled="@(_page * _pageSize >= _result.Total)" @onclick="NextPageAsync">Next →</button>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? TargetId { get; set; }
+
+    private string? _targetIdRaw;
+    private bool    _loading;
+    private int     _page     = 1;
+    private int     _pageSize = 50;
+    private PagedAdminResult<AuditEntryDto>? _result;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        if (AuthState.IsAdmin)
+        {
+            if (!string.IsNullOrEmpty(TargetId)) _targetIdRaw = TargetId;
+            await LoadAsync();
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        Guid? targetId = Guid.TryParse(_targetIdRaw, out var g) ? g : null;
+        _result  = await Api.GetAuditLogAsync(_page, _pageSize, targetId);
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task ApplyFilterAsync() { _page = 1; await LoadAsync(); }
+    private async Task ClearFilterAsync()  { _targetIdRaw = null; _page = 1; await LoadAsync(); }
+    private async Task PrevPageAsync() { if (_page > 1) { _page--; await LoadAsync(); } }
+    private async Task NextPageAsync() { _page++; await LoadAsync(); }
+}
+
+<style>
+    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+    .filter-input { padding: .45rem .75rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; width: 260px; }
+    .total-count { margin-left: auto; color: var(--muted, #888); font-size: .9rem; }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--border, #333); text-align: left; vertical-align: top; }
+    .admin-table th { font-weight: 600; color: var(--muted, #888); font-size: .85rem; }
+    .muted { color: var(--muted, #888); font-size: .9rem; }
+    .nowrap { white-space: nowrap; }
+    .detail-cell { max-width: 320px; overflow-wrap: break-word; font-size: .85rem; }
+    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; }
+    .badge-action { background: #1e3a6e; color: #7fb3f8; }
+    .error { color: #f87171; }
+    .btn-sm { padding: .2rem .6rem; font-size: .85rem; }
+    .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+    a { color: var(--accent, #7fb3f8); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+</style>

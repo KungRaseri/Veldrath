@@ -56,7 +56,7 @@ public class AuthRefreshHandlerTests
         if (tokenExpiresSoon)
             api.SetRefreshResult(new AuthResponse(
                 "new-tok", "new-refresh", DateTimeOffset.UtcNow.AddHours(1),
-                Guid.NewGuid(), "alice", false));
+                Guid.NewGuid(), "alice", [], [], false));
 
         var auth = new AuthStateService(js.Object, api);
 
@@ -66,7 +66,7 @@ public class AuthRefreshHandlerTests
                 ? DateTimeOffset.UtcNow.AddSeconds(30)
                 : DateTimeOffset.UtcNow.AddHours(1);
             auth.SetTokensAsync(new AuthResponse(
-                "tok", "refresh-tok", expiry, Guid.NewGuid(), "alice", false))
+                "tok", "refresh-tok", expiry, Guid.NewGuid(), "alice", [], [], false))
                 .GetAwaiter().GetResult();
         }
 

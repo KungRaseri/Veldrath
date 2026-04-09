@@ -21,6 +21,7 @@ using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Hubs;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Settings;
+using Microsoft.AspNetCore.Identity;
 using RealmUnbound.Server.Tests.Infrastructure;
 
 namespace RealmUnbound.Server.Tests.Features;
@@ -143,8 +144,10 @@ public class GameHubTests : IDisposable
         CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null, IActiveCharacterTracker? tracker = null,
                   VersionCompatibilitySettings? versionSettings = null)
     {
-        var options = Options.Create(versionSettings ?? new VersionCompatibilitySettings());
-        var hub     = new GameHub(NullLogger<GameHub>.Instance,
+        var options     = Options.Create(versionSettings ?? new VersionCompatibilitySettings());
+        var modOptions  = Options.Create(new ModerationOptions());
+        var userManager = new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object;
+        var hub         = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
                                   new RegionRepository(db),
@@ -154,7 +157,10 @@ public class GameHubTests : IDisposable
                                   new ZoneEntityTracker(),
                                   Mock.Of<ITileMapRepository>(),
                                   Mock.Of<IEnemyRepository>(),
-                                  options);
+                                  options,
+                                  userManager,
+                                  modOptions,
+                                  db);
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();
         var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));
@@ -1522,7 +1528,10 @@ public class GameHubTests : IDisposable
                                new ZoneEntityTracker(),
                                Mock.Of<ITileMapRepository>(),
                                Mock.Of<IEnemyRepository>(),
-                               Options.Create(new VersionCompatibilitySettings()));
+                               Options.Create(new VersionCompatibilitySettings()),
+                               new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object,
+                               Options.Create(new ModerationOptions()),
+                               db);
         hub2.Clients = hub.Clients;
         hub2.Groups  = hub.Groups;
         hub2.Context = ctx;
@@ -1556,7 +1565,10 @@ public class GameHubTests : IDisposable
                               new ZoneEntityTracker(),
                               Mock.Of<ITileMapRepository>(),
                               Mock.Of<IEnemyRepository>(),
-                              Options.Create(new VersionCompatibilitySettings()));
+                              Options.Create(new VersionCompatibilitySettings()),
+                              new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object,
+                              Options.Create(new ModerationOptions()),
+                              db);
         hub.Clients = new FakeHubCallerClients();
         hub.Groups  = new FakeGroupManager();
         hub.Context = ctx;

@@ -17,6 +17,8 @@ using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Hubs;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Settings;
+using Microsoft.AspNetCore.Identity;
+using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Tests.Infrastructure;
 
 namespace RealmUnbound.Server.Tests.Features;
@@ -60,8 +62,10 @@ public class GameHubRegionTests : IDisposable
     private (GameHub Hub, FakeHubCallerClients Clients, FakeGroupManager Groups, FakeHubCallerContext Ctx)
         CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null)
     {
-        var options = Options.Create(new VersionCompatibilitySettings());
-        var hub     = new GameHub(
+        var options     = Options.Create(new VersionCompatibilitySettings());
+        var modOptions  = Options.Create(new ModerationOptions());
+        var userManager = new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object;
+        var hub         = new GameHub(
             NullLogger<GameHub>.Instance,
             new CharacterRepository(db),
             new ZoneRepository(db),
@@ -72,7 +76,10 @@ public class GameHubRegionTests : IDisposable
             new ZoneEntityTracker(),
             Mock.Of<ITileMapRepository>(),
             Mock.Of<IEnemyRepository>(),
-            options);
+            options,
+            userManager,
+            modOptions,
+            db);
 
         var clients = new FakeHubCallerClients();
         var groups  = new FakeGroupManager();

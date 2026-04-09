@@ -152,6 +152,50 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.AdminAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("ActorAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorUsername")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TargetAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TargetUsername")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorAccountId");
+
+                    b.HasIndex("OccurredAt");
+
+                    b.HasIndex("TargetAccountId");
+
+                    b.ToTable("AdminAuditEntries");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Announcement", b =>
                 {
                     b.Property<int>("Id")
@@ -492,6 +536,9 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<bool>("IsBanned")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsMuted")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset?>("LastSeenAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -503,6 +550,12 @@ namespace RealmUnbound.Server.Migrations
 
                     b.Property<int>("MaxCharacterSlots")
                         .HasColumnType("integer");
+
+                    b.Property<string>("MuteReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("MutedUntil")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -531,6 +584,9 @@ namespace RealmUnbound.Server.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<int>("WarnCount")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
@@ -541,6 +597,56 @@ namespace RealmUnbound.Server.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("ReporterCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReporterName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TargetCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TargetName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsResolved");
+
+                    b.HasIndex("SubmittedAt");
+
+                    b.HasIndex("TargetCharacterId");
+
+                    b.ToTable("PlayerReports");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerSession", b =>
