@@ -27,8 +27,9 @@ public record GetRegionMapHubResult
 /// Handles <see cref="GetRegionMapHubCommand"/> by loading the <see cref="TiledMap"/>
 /// from the tilemap repository using <see cref="ITileMapRepository.GetByRegionIdAsync"/>
 /// and projecting it into a <see cref="RegionMapDto"/> for the client.
-/// If no TMX file is found for the region the result is still a success with an empty map
-/// so the client gracefully renders nothing rather than disconnecting.
+/// If no TMX file is found for the region, <see cref="GetRegionMapHubResult.Success"/> is
+/// <see langword="false"/> and <see cref="GetRegionMapHubResult.ErrorMessage"/> contains a
+/// descriptive message indicating which region ID was not found.
 /// </summary>
 public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubCommand, GetRegionMapHubResult>
 {

@@ -207,7 +207,7 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
             new { Name = "StarterZoneChar", ClassName = "Mage" });
 
         var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        body.GetProperty("currentZoneId").GetString().Should().Be("fenwick-crossing");
+        body.GetProperty("currentZoneId").GetString().Should().Be("crestfall");
     }
 
     [Fact]

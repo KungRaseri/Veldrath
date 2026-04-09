@@ -65,6 +65,7 @@ public class GameHubRegionTests : IDisposable
             NullLogger<GameHub>.Instance,
             new CharacterRepository(db),
             new ZoneRepository(db),
+            new RegionRepository(db),
             new PlayerSessionRepository(db),
             new ActiveCharacterTracker(),
             mediator ?? Mock.Of<ISender>(),

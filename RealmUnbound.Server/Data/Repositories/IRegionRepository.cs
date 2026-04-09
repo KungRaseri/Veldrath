@@ -14,6 +14,9 @@ public interface IRegionRepository
 
     /// <summary>Returns all regions connected (adjacent) to the region with the given <paramref name="regionId"/>.</summary>
     Task<List<Region>> GetConnectedAsync(string regionId);
+
+    /// <summary>Returns the region flagged as the starter region, or <see langword="null"/> if none is configured.</summary>
+    Task<Region?> GetStarterAsync();
 }
 
 /// <summary>EF Core implementation of <see cref="IRegionRepository"/>.</summary>
@@ -34,4 +37,8 @@ public class RegionRepository(ApplicationDbContext db) : IRegionRepository
           .Select(rc => rc.ToRegion)
           .OrderBy(r => r.MinLevel)
           .ToListAsync();
+
+    /// <inheritdoc/>
+    public Task<Region?> GetStarterAsync() =>
+        db.Regions.FirstOrDefaultAsync(r => r.IsStarter);
 }
