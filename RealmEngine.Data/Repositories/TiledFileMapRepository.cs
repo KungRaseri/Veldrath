@@ -36,6 +36,10 @@ public class TiledFileMapRepository : ITileMapRepository
     }
 
     /// <inheritdoc />
+    public Task<TiledMap?> GetByRegionIdAsync(string regionId) =>
+        GetByZoneIdAsync(regionId);
+
+    /// <inheritdoc />
     public async Task<TiledMap?> GetByZoneIdAsync(string zoneId)
     {
         var filePath = Path.Combine(_mapsBasePath, $"{zoneId}.tmx");

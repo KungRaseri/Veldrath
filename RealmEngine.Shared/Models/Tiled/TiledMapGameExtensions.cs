@@ -226,6 +226,79 @@ public static class TiledMapGameExtensions
         map.GetStringProperty("tilesetKey") ?? string.Empty;
 
     /// <summary>
+    /// Returns the <c>regionId</c> custom property, used to identify which region this map belongs to
+    /// (e.g. <c>"thornveil"</c>). Returns an empty string when absent.
+    /// </summary>
+    public static string GetRegionId(this TiledMap map) =>
+        map.GetStringProperty("regionId") ?? string.Empty;
+
+    // ── Region map: zone entries ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all zone-entry definitions from the objectgroup layer named <c>"zones"</c>.
+    /// Each object's <c>name</c> attribute is the zone slug.
+    /// Optional custom properties: <c>displayName</c> (string), <c>minLevel</c> (int), <c>maxLevel</c> (int).
+    /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
+    /// </summary>
+    public static IReadOnlyList<ZoneObjectDefinition> GetZoneEntries(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("zones", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var entries = new List<ZoneObjectDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (string.IsNullOrEmpty(obj.Name)) continue;
+
+            entries.Add(new ZoneObjectDefinition
+            {
+                TileX       = (int)(obj.X / map.TileWidth),
+                TileY       = (int)(obj.Y / map.TileHeight),
+                ZoneSlug    = obj.Name,
+                DisplayName = obj.Properties.Find(p => p.Name == "displayName")?.AsString() ?? obj.Name,
+                MinLevel    = obj.Properties.Find(p => p.Name == "minLevel")?.AsInt(0)      ?? 0,
+                MaxLevel    = obj.Properties.Find(p => p.Name == "maxLevel")?.AsInt(0)      ?? 0,
+            });
+        }
+
+        return entries;
+    }
+
+    // ── Region map: region exits ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all region-exit definitions from the objectgroup layer named <c>"region_exits"</c>.
+    /// Each object's <c>name</c> attribute is the target region slug.
+    /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
+    /// </summary>
+    public static IReadOnlyList<RegionExitDefinition> GetRegionExits(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("region_exits", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var exits = new List<RegionExitDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (string.IsNullOrEmpty(obj.Name)) continue;
+
+            exits.Add(new RegionExitDefinition
+            {
+                TileX          = (int)(obj.X / map.TileWidth),
+                TileY          = (int)(obj.Y / map.TileHeight),
+                TargetRegionId = obj.Name,
+            });
+        }
+
+        return exits;
+    }
+
+    /// <summary>
     /// Returns the <see cref="TiledTileset.FirstGid"/> of the first tileset in the map,
     /// which is 1 for all standard single-tileset maps. Returns 1 when no tilesets are present.
     /// </summary>

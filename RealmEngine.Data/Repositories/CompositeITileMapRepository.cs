@@ -34,6 +34,10 @@ public class CompositeITileMapRepository : ITileMapRepository
     }
 
     /// <inheritdoc />
+    public Task<TiledMap?> GetByRegionIdAsync(string regionId) =>
+        _tmx.GetByRegionIdAsync(regionId);
+
+    /// <inheritdoc />
     public async Task<TiledMap?> GetByZoneIdAsync(string zoneId)
     {
         // 1. Try TMX asset first
