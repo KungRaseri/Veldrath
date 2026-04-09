@@ -27,6 +27,7 @@ namespace RealmUnbound.Client.ViewModels;
 /// <param name="LearnedAbilities">Ability slugs the character has learned.</param>
 /// <param name="CharacterId">The character's unique identifier.</param>
 /// <param name="ClassName">The character class name.</param>
+/// <param name="CurrentRegionId">The region the character is in when selected.</param>
 public record SeedInitialStatsArgs(
     int Level, long Experience,
     int CurrentHealth, int MaxHealth,
@@ -36,7 +37,8 @@ public record SeedInitialStatsArgs(
     int Intelligence = 10, int Wisdom = 10, int Charisma = 10,
     IReadOnlyList<string>? LearnedAbilities = null,
     Guid? CharacterId = null,
-    string ClassName = "");
+    string ClassName = "",
+    string CurrentRegionId = "");
 
 /// <summary>In-game view model. Active after a character has entered a zone.</summary>
 public class GameViewModel : ViewModelBase

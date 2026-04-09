@@ -3,6 +3,7 @@ using RealmUnbound.Client;
 using RealmUnbound.Client.Services;
 using RealmUnbound.Client.Tests.Infrastructure;
 using RealmUnbound.Client.ViewModels;
+using RealmUnbound.Contracts.Tilemap;
 
 namespace RealmUnbound.Client.Tests;
 
@@ -676,6 +677,110 @@ public class CharacterSelectViewModelTests : TestBase
         conn.SimulateVersionMismatch("0.1", "9.0");
 
         vm.ErrorMessage.Should().Be("Version mismatch \u2014 client v0.1 / server v9.0");
+    }
+
+    // ── Region-map hub subscriptions ──────────────────────────────────────────
+
+    [Fact]
+    public async Task SelectCommand_Should_Set_RegionTilemap_MapData_When_RegionMapData_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
+        var map = new RegionMapDto("thornveil", "overworld", 10, 10, 16,
+            [], new bool[100], [], [], [], []);
+        conn.FireEvent("RegionMapData", map);
+
+        gameVm.RegionTilemap!.RegionMapData.Should().Be(map);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Upsert_Region_Player_When_RegionPlayerMoved_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var otherId = Guid.NewGuid();
+
+        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
+        conn.FireEvent("RegionPlayerMoved",
+            new RegionPlayerMovedPayload(otherId, 4, 9, "right"));
+
+        gameVm.RegionTilemap!.Entities.Should().ContainSingle(e =>
+            e.EntityId == otherId && e.TileX == 4 && e.TileY == 9);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Set_PendingZoneEntry_When_ZoneEntryTriggered_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var entry = new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5);
+
+        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
+        conn.FireEvent("ZoneEntryTriggered", entry);
+
+        gameVm.PendingZoneEntry.Should().Be(entry);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Set_PendingRegionExit_When_RegionExitTriggered_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var exit = new RegionExitDto(29, 10, "varenmark");
+
+        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
+        conn.FireEvent("RegionExitTriggered", exit);
+
+        gameVm.PendingRegionExit.Should().Be(exit);
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Clear_Pending_When_ZoneExited_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
+        conn.FireEvent("ZoneEntryTriggered",
+            new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5));
+        conn.FireEvent("ZoneExited",
+            new CharacterSelectViewModel.ZoneExitedPayload("thornveil", 5, 8));
+
+        gameVm.PendingZoneEntry.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SelectCommand_Should_Clear_PendingRegionExit_When_RegionChanged_Fires()
+    {
+        var conn   = new FakeServerConnectionService();
+        var gameVm = MakeGameVm(conn: conn);
+        var vm     = MakeVm(conn: conn, gameVm: gameVm);
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+
+        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
+        conn.FireEvent("RegionExitTriggered", new RegionExitDto(29, 10, "varenmark"));
+        conn.FireEvent("RegionChanged",
+            new CharacterSelectViewModel.RegionChangedPayload("varenmark", 0, 5));
+
+        gameVm.PendingRegionExit.Should().BeNull();
     }
 
 }
