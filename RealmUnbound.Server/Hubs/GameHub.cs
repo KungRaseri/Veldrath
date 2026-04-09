@@ -631,6 +631,73 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Moves the caller's character across a region boundary into an adjacent region.
+    /// Only valid when the character is on the region map (not inside a zone) and
+    /// a pending region-exit has been highlighted by <c>MoveOnRegion</c>.
+    /// Leaves the current region SignalR group, joins the new one, and sends
+    /// <c>RegionMapData</c> and <c>RegionChanged</c> to the caller.
+    /// </summary>
+    /// <param name="request">Target region identifier.</param>
+    public async Task ChangeRegion(ChangeRegionHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before ChangeRegion");
+            return;
+        }
+
+        if (!Context.Items.TryGetValue("CurrentRegionId", out var r) || r is not string currentRegionId)
+        {
+            await Clients.Caller.SendAsync("Error", "No active region context; call SelectCharacter first");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zs ? zs : string.Empty;
+        if (!string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "Cannot change region while inside a zone; exit first");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new ChangeRegionHubCommand(characterId, currentRegionId, request.TargetRegionId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to change region");
+                return;
+            }
+
+            // Leave old region group, join new one
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, RegionGroup(currentRegionId));
+            Context.Items["CurrentRegionId"] = result.NewRegionId;
+            await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(result.NewRegionId));
+
+            // Send the new region's tilemap
+            var mapResult = await _mediator.Send(new GetRegionMapHubCommand(result.NewRegionId));
+            if (mapResult.Success && mapResult.RegionMap is not null)
+                await Clients.Caller.SendAsync("RegionMapData", mapResult.RegionMap);
+
+            await Clients.Caller.SendAsync("RegionChanged", new
+            {
+                result.NewRegionId,
+                result.TileX,
+                result.TileY,
+            });
+
+            _logger.LogInformation(
+                "Character {CharacterId} changed region '{From}' → '{To}' at ({X},{Y})",
+                characterId, currentRegionId, result.NewRegionId, result.TileX, result.TileY);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ChangeRegion for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to change region");
+        }
+    }
+
+    /// <summary>
     /// Award experience points to the caller's active character.
     /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
     /// the command to the MediatR pipeline. Broadcasts the outcome to the character's current
@@ -2230,4 +2297,7 @@ public record EngageEnemyHubRequest(string LocationSlug, Guid EnemyId);
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.UseAbilityInCombat"/>.</summary>
 /// <param name="AbilityId">Identifier of the ability to activate.</param>
 public record UseAbilityInCombatHubRequest(string AbilityId);
+
+/// <summary>Request payload for <see cref="GameHub.ChangeRegion"/>.</summary>
+public record ChangeRegionHubRequest(string TargetRegionId);
 

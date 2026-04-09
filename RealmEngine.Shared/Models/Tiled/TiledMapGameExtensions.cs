@@ -130,7 +130,9 @@ public static class TiledMapGameExtensions
 
     /// <summary>
     /// Extracts all exit tile definitions from the objectgroup layer named <c>"exits"</c>.
-    /// Each object must have <c>type="exit"</c> and a custom string property <c>toZoneId</c>.
+    /// Each object must have <c>type="exit"</c>. The optional custom string property <c>toZoneId</c>
+    /// identifies the destination zone; omitting it (or leaving it empty) signals an exit back to
+    /// the region map rather than into another zone.
     /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
     /// </summary>
     public static IReadOnlyList<ExitTileDefinition> GetExitTiles(this TiledMap map)
@@ -149,7 +151,6 @@ public static class TiledMapGameExtensions
             var toZoneId = obj.Properties
                               .Find(p => p.Name == "toZoneId")
                               ?.AsString() ?? string.Empty;
-            if (string.IsNullOrEmpty(toZoneId)) continue;
 
             exits.Add(new ExitTileDefinition
             {

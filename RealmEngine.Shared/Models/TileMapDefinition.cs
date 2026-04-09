@@ -9,7 +9,7 @@ public class ExitTileDefinition
     /// <summary>Row of the exit tile.</summary>
     public int TileY { get; set; }
 
-    /// <summary>Destination zone identifier.</summary>
+    /// <summary>Destination zone identifier, or empty string when the exit returns the player to the region map.</summary>
     public string ToZoneId { get; set; } = string.Empty;
 }
 

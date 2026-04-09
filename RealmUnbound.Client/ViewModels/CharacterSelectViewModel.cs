@@ -70,6 +70,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _zoneEntryTriggeredSub;
     private IDisposable? _regionExitTriggeredSub;
     private IDisposable? _zoneExitedSub;
+    private IDisposable? _regionChangedSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -237,6 +238,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _zoneEntryTriggeredSub?.Dispose();
             _regionExitTriggeredSub?.Dispose();
             _zoneExitedSub?.Dispose();
+            _regionChangedSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -382,6 +384,8 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnRegionExitTriggered(dto));
             _zoneExitedSub = _connection.On<ZoneExitedPayload>("ZoneExited", payload =>
                 _gameVm.OnZoneExited(payload.RegionId, payload.TileX, payload.TileY));
+            _regionChangedSub = _connection.On<RegionChangedPayload>("RegionChanged", payload =>
+                _gameVm.OnRegionChanged(payload.NewRegionId, payload.TileX, payload.TileY));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -455,6 +459,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ItemDroppedPayload(Guid CharacterId, string ItemRef, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ChatMessagePayload(string Channel, string Sender, string Message, DateTimeOffset Timestamp);
     internal record ZoneExitedPayload(string RegionId, int TileX, int TileY);
+    internal record RegionChangedPayload(string NewRegionId, int TileX, int TileY);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {
