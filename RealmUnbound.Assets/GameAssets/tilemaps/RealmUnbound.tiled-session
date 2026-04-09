@@ -12,8 +12,8 @@
             "scale": 23,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 23.58695652173913,
-                "y": 8.043478260869566
+                "x": 36.04347826086956,
+                "y": 14.782608695652172
             }
         },
         "maps/aldenmere.tmx": {
@@ -45,7 +45,7 @@
             "selectedLayer": 6,
             "viewCenter": {
                 "x": 304,
-                "y": 71.33333333333331
+                "y": 70.66666666666674
             }
         },
         "maps/greenveil-paths.tmx": {

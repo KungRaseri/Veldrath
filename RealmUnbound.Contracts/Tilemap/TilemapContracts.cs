@@ -105,3 +105,53 @@ public record FogRevealedPayload(IReadOnlyList<string> TileKeys);
 /// </summary>
 /// <param name="Entities">Snapshot of all live entities currently in the zone.</param>
 public record ZoneEntitiesSnapshotPayload(IReadOnlyList<TileEntityDto> Entities);
+
+// ── Region Map Definition ──────────────────────────────────────────────────
+
+/// <summary>Full tilemap definition for a region overview map, sent to the client on character selection.</summary>
+/// <param name="RegionId">The region this map belongs to (e.g. <c>"thornveil"</c>).</param>
+/// <param name="TilesetKey">Identifier for the spritesheet used by this map.</param>
+/// <param name="Width">Map width in tiles.</param>
+/// <param name="Height">Map height in tiles.</param>
+/// <param name="TileSize">Native tile size in pixels.</param>
+/// <param name="Layers">Ordered render layers (ground first, decoration on top).</param>
+/// <param name="CollisionMask">
+/// Flat array of length <c>Width × Height</c>. <see langword="true"/> at index <c>y * Width + x</c>
+/// means tile (x,y) is solid and blocks movement.
+/// </param>
+/// <param name="ZoneEntries">Zone-entry points placed on this region map (from the <c>zones</c> objectgroup layer).</param>
+/// <param name="RegionExits">Border crossings to adjacent regions (from the <c>region_exits</c> objectgroup layer).</param>
+public record RegionMapDto(
+    string RegionId,
+    string TilesetKey,
+    int Width,
+    int Height,
+    int TileSize,
+    IReadOnlyList<TileLayerDto> Layers,
+    bool[] CollisionMask,
+    IReadOnlyList<ZoneObjectDto> ZoneEntries,
+    IReadOnlyList<RegionExitDto> RegionExits);
+
+/// <summary>A zone-entry point on a region map.</summary>
+/// <param name="TileX">Tile column of the entry point.</param>
+/// <param name="TileY">Tile row of the entry point.</param>
+/// <param name="ZoneSlug">Slug of the zone to enter (e.g. <c>"fenwick-crossing"</c>).</param>
+/// <param name="DisplayName">Human-readable zone name.</param>
+/// <param name="MinLevel">Minimum suggested character level. 0 when unset.</param>
+/// <param name="MaxLevel">Maximum suggested character level. 0 when unset.</param>
+public record ZoneObjectDto(int TileX, int TileY, string ZoneSlug, string DisplayName, int MinLevel, int MaxLevel);
+
+/// <summary>A border crossing on a region map that leads to an adjacent region.</summary>
+/// <param name="TileX">Tile column of the crossing.</param>
+/// <param name="TileY">Tile row of the crossing.</param>
+/// <param name="TargetRegionId">Slug of the adjacent region (e.g. <c>"greymoor"</c>).</param>
+public record RegionExitDto(int TileX, int TileY, string TargetRegionId);
+
+// ── Region Movement Payloads ───────────────────────────────────────────────
+
+/// <summary>Hub broadcast payload emitted after a character successfully moves one tile on the region map.</summary>
+/// <param name="CharacterId">The character that moved.</param>
+/// <param name="TileX">New tile column.</param>
+/// <param name="TileY">New tile row.</param>
+/// <param name="Direction">New facing direction.</param>
+public record RegionPlayerMovedPayload(Guid CharacterId, int TileX, int TileY, string Direction);
