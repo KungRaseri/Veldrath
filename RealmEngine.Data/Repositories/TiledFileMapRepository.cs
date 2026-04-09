@@ -36,6 +36,10 @@ public class TiledFileMapRepository : ITileMapRepository
     }
 
     /// <inheritdoc />
+    public Task<TiledMap?> GetByRegionIdAsync(string regionId) =>
+        GetByZoneIdAsync(regionId);
+
+    /// <inheritdoc />
     public async Task<TiledMap?> GetByZoneIdAsync(string zoneId)
     {
         var filePath = Path.Combine(_mapsBasePath, $"{zoneId}.tmx");
@@ -151,7 +155,7 @@ public class TiledFileMapRepository : ITileMapRepository
 
         var dataEl = el.Element("data");
         if (dataEl is not null)
-            layer.Data = ParseTileData(dataEl);
+            layer.Data = ParseTileData(dataEl, layer.Width, layer.Height);
 
         return layer;
     }
@@ -196,8 +200,23 @@ public class TiledFileMapRepository : ITileMapRepository
         if (el.Element("point") is not null)   obj.Point   = true;
         if (el.Element("ellipse") is not null) obj.Ellipse = true;
 
+        var polylineEl = el.Element("polyline");
+        if (polylineEl is not null)
+            obj.Polyline = ParsePoints((string?)polylineEl.Attribute("points") ?? string.Empty);
+
         return obj;
     }
+
+    private static List<TiledPoint> ParsePoints(string pointsStr) =>
+        pointsStr.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Split(','))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => new TiledPoint
+            {
+                X = double.Parse(parts[0], CultureInfo.InvariantCulture),
+                Y = double.Parse(parts[1], CultureInfo.InvariantCulture),
+            })
+            .ToList();
 
     // ── Tileset parsing ───────────────────────────────────────────────────────
 
@@ -260,11 +279,25 @@ public class TiledFileMapRepository : ITileMapRepository
 
     // ── Tile data decoding ────────────────────────────────────────────────────
 
-    private static List<int> ParseTileData(XElement dataEl)
+    private static List<int> ParseTileData(XElement dataEl, int mapWidth, int mapHeight)
     {
         var encoding    = (string?)dataEl.Attribute("encoding");
         var compression = (string?)dataEl.Attribute("compression");
-        var raw         = dataEl.Value.Trim();
+
+        // Infinite maps use <chunk> children instead of inline text. Each chunk covers a
+        // sub-rectangle of the map. We must reassemble them into a single row-major flat
+        // array so the renderer can address tiles as data[ty * mapWidth + tx].
+        var chunkEls = dataEl.Elements("chunk").ToList();
+        if (chunkEls.Count > 0)
+        {
+            if (string.IsNullOrEmpty(encoding) || encoding == "csv")
+                return ParseChunkedCsv(chunkEls, mapWidth, mapHeight);
+
+            // base64-encoded chunked data is not used by any of our authored maps; skip gracefully.
+            return [];
+        }
+
+        var raw = dataEl.Value.Trim();
 
         if (string.IsNullOrEmpty(encoding) || encoding == "csv")
             return ParseCsv(raw);
@@ -292,6 +325,42 @@ public class TiledFileMapRepository : ITileMapRepository
             if (int.TryParse(part, out var gid))
                 result.Add(gid);
         return result;
+    }
+
+    // Reassembles chunked infinite-map tile data into a single row-major flat array
+    // sized mapWidth × mapHeight so that tile (tx, ty) is at index ty * mapWidth + tx.
+    private static List<int> ParseChunkedCsv(List<XElement> chunkEls, int mapWidth, int mapHeight)
+    {
+        var flat = new int[mapWidth * mapHeight]; // default 0 = empty GID
+
+        foreach (var chunk in chunkEls)
+        {
+            var chunkX = (int?)chunk.Attribute("x")      ?? 0;
+            var chunkY = (int?)chunk.Attribute("y")      ?? 0;
+            var chunkW = (int?)chunk.Attribute("width")  ?? 16;
+            var chunkH = (int?)chunk.Attribute("height") ?? 16;
+
+            var gids = ParseCsv(chunk.Value.Trim());
+
+            for (var r = 0; r < chunkH; r++)
+            {
+                var flatRow = chunkY + r;
+                if (flatRow < 0 || flatRow >= mapHeight) continue;
+
+                for (var c = 0; c < chunkW; c++)
+                {
+                    var flatCol = chunkX + c;
+                    if (flatCol < 0 || flatCol >= mapWidth) continue;
+
+                    var gidIdx = r * chunkW + c;
+                    if (gidIdx >= gids.Count) continue;
+
+                    flat[flatRow * mapWidth + flatCol] = gids[gidIdx];
+                }
+            }
+        }
+
+        return [.. flat];
     }
 
     private static List<int> ReadGids(byte[] bytes)

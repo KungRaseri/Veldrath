@@ -13,7 +13,7 @@ public interface ITileMapRepository
 
     /// <summary>
     /// Returns the <see cref="TiledMap"/> for <paramref name="regionId"/>,
-    /// or <see langword="null"/> if no region map file exists.
+    /// or <see langword="null"/> if no map is registered for that region.
     /// </summary>
     Task<TiledMap?> GetByRegionIdAsync(string regionId);
 }

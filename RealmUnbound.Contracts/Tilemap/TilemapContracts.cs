@@ -106,21 +106,23 @@ public record FogRevealedPayload(IReadOnlyList<string> TileKeys);
 /// <param name="Entities">Snapshot of all live entities currently in the zone.</param>
 public record ZoneEntitiesSnapshotPayload(IReadOnlyList<TileEntityDto> Entities);
 
-// ── Region Map ────────────────────────────────────────────────────────────────
+// ── Region Map Definition ──────────────────────────────────────────────────
 
-/// <summary>Full tilemap definition for a region map, sent to the client after zone exit or login.</summary>
-/// <param name="RegionId">Identifier of the region this map belongs to.</param>
-/// <param name="TilesetKey">Identifier for the spritesheet (e.g. <c>"onebit_packed"</c>).</param>
+/// <summary>Full tilemap definition for a region overview map, sent to the client on character selection.</summary>
+/// <param name="RegionId">The region this map belongs to (e.g. <c>"thornveil"</c>).</param>
+/// <param name="TilesetKey">Identifier for the spritesheet used by this map.</param>
 /// <param name="Width">Map width in tiles.</param>
 /// <param name="Height">Map height in tiles.</param>
 /// <param name="TileSize">Native tile size in pixels.</param>
 /// <param name="Layers">Ordered render layers (ground first, decoration on top).</param>
 /// <param name="CollisionMask">
 /// Flat array of length <c>Width × Height</c>. <see langword="true"/> at index <c>y * Width + x</c>
-/// means the tile blocks movement.
+/// means tile (x,y) is solid and blocks movement.
 /// </param>
-/// <param name="Zones">Zone entry objects extracted from the <c>zones</c> object group.</param>
-/// <param name="RegionExits">Region exit objects extracted from the <c>region_exits</c> object group.</param>
+/// <param name="ZoneEntries">Zone-entry points placed on this region map (from the <c>zones</c> objectgroup layer).</param>
+/// <param name="RegionExits">Border crossings to adjacent regions (from the <c>region_exits</c> objectgroup layer).</param>
+/// <param name="Labels">Zone-label overlays for this region map (from the <c>labels</c> objectgroup layer).</param>
+/// <param name="Paths">Road and path polylines for this region map (from the <c>paths</c> objectgroup layer).</param>
 public record RegionMapDto(
     string RegionId,
     string TilesetKey,
@@ -129,42 +131,49 @@ public record RegionMapDto(
     int TileSize,
     IReadOnlyList<TileLayerDto> Layers,
     bool[] CollisionMask,
-    IReadOnlyList<ZoneObjectDto> Zones,
-    IReadOnlyList<RegionExitDto> RegionExits);
+    IReadOnlyList<ZoneObjectDto> ZoneEntries,
+    IReadOnlyList<RegionExitDto> RegionExits,
+    IReadOnlyList<ZoneLabelDto> Labels,
+    IReadOnlyList<RegionPathDto> Paths);
 
-/// <summary>A zone entry object placed on the region map.</summary>
-/// <param name="ZoneId">Slug of the zone this object leads into.</param>
-/// <param name="DisplayName">Human-readable zone name shown in the entry dialog.</param>
-/// <param name="MinLevel">Minimum recommended level, or <see langword="null"/> if unrestricted.</param>
-/// <param name="MaxLevel">Maximum recommended level, or <see langword="null"/> if unrestricted.</param>
-/// <param name="TileX">Tile column of the entry object.</param>
-/// <param name="TileY">Tile row of the entry object.</param>
-public record ZoneObjectDto(string ZoneId, string DisplayName, int? MinLevel, int? MaxLevel, int TileX, int TileY);
+/// <summary>A zone-entry point on a region map.</summary>
+/// <param name="TileX">Tile column of the entry point.</param>
+/// <param name="TileY">Tile row of the entry point.</param>
+/// <param name="ZoneSlug">Slug of the zone to enter (e.g. <c>"fenwick-crossing"</c>).</param>
+/// <param name="DisplayName">Human-readable zone name.</param>
+/// <param name="MinLevel">Minimum suggested character level. 0 when unset.</param>
+/// <param name="MaxLevel">Maximum suggested character level. 0 when unset.</param>
+public record ZoneObjectDto(int TileX, int TileY, string ZoneSlug, string DisplayName, int MinLevel, int MaxLevel);
 
-/// <summary>A region exit object placed on the region map border.</summary>
-/// <param name="ToRegionId">Slug of the adjacent region this exit leads to.</param>
-/// <param name="TileX">Tile column of the exit object.</param>
-/// <param name="TileY">Tile row of the exit object.</param>
-public record RegionExitDto(string ToRegionId, int TileX, int TileY);
+/// <summary>A border crossing on a region map that leads to an adjacent region.</summary>
+/// <param name="TileX">Tile column of the crossing.</param>
+/// <param name="TileY">Tile row of the crossing.</param>
+/// <param name="TargetRegionId">Slug of the adjacent region (e.g. <c>"greymoor"</c>).</param>
+public record RegionExitDto(int TileX, int TileY, string TargetRegionId);
 
-/// <summary>Hub broadcast payload emitted after a character moves one tile on the region map.</summary>
+/// <summary>A zone-label overlay on a region map.</summary>
+/// <param name="TileX">Tile column of the label anchor point.</param>
+/// <param name="TileY">Tile row of the label anchor point.</param>
+/// <param name="Text">Display text for the label.</param>
+/// <param name="ZoneSlug">Zone slug this label refers to. Empty for region-exit labels.</param>
+/// <param name="IsHidden">Whether this location is hidden and requires discovery before being shown.</param>
+public record ZoneLabelDto(int TileX, int TileY, string Text, string ZoneSlug, bool IsHidden);
+
+/// <summary>A road or path polyline on a region map.</summary>
+/// <param name="Name">Unique name of the path.</param>
+/// <param name="Points">Ordered tile-space points that make up the polyline.</param>
+public record RegionPathDto(string Name, IReadOnlyList<RegionPathPointDto> Points);
+
+/// <summary>A single tile-space point on a <see cref="RegionPathDto"/>.</summary>
+/// <param name="TileX">Tile column.</param>
+/// <param name="TileY">Tile row.</param>
+public record RegionPathPointDto(float TileX, float TileY);
+
+// ── Region Movement Payloads ───────────────────────────────────────────────
+
+/// <summary>Hub broadcast payload emitted after a character successfully moves one tile on the region map.</summary>
 /// <param name="CharacterId">The character that moved.</param>
 /// <param name="TileX">New tile column.</param>
 /// <param name="TileY">New tile row.</param>
 /// <param name="Direction">New facing direction.</param>
-public record PlayerMovedOnRegionPayload(Guid CharacterId, int TileX, int TileY, string Direction);
-
-/// <summary>
-/// Sent to the caller when they step onto a zone-entry tile on the region map.
-/// The client should prompt the player with an "Enter Zone?" dialog.
-/// </summary>
-/// <param name="ZoneId">Slug of the zone the player is about to enter.</param>
-/// <param name="DisplayName">Human-readable zone name to show in the prompt.</param>
-public record ZoneEntryNearbyPayload(string ZoneId, string DisplayName);
-
-/// <summary>
-/// Sent to the caller when they step onto a region-exit tile on the region map.
-/// The client should prompt the player with a "Travel to [region]?" dialog.
-/// </summary>
-/// <param name="ToRegionId">Slug of the adjacent region the player can travel to.</param>
-public record RegionExitNearbyPayload(string ToRegionId);
+public record RegionPlayerMovedPayload(Guid CharacterId, int TileX, int TileY, string Direction);

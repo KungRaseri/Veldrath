@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Tiled;
 using RealmUnbound.Contracts.Tilemap;
-using RealmUnbound.Server.Data.Repositories;
 
 namespace RealmUnbound.Server.Features.Zones;
 
@@ -21,34 +20,28 @@ public record GetRegionMapHubResult
     public string? ErrorMessage { get; init; }
 
     /// <summary>Gets the region map DTO to send to the client, or <see langword="null"/> on failure.</summary>
-    public RegionMapDto? Map { get; init; }
-
-    /// <summary>Gets the snapshot of players currently on the region map (not inside a zone).</summary>
-    public IReadOnlyList<TileEntityDto> Players { get; init; } = [];
+    public RegionMapDto? RegionMap { get; init; }
 }
 
 /// <summary>
-/// Handles <see cref="GetRegionMapHubCommand"/> by loading the region <see cref="TiledMap"/>
+/// Handles <see cref="GetRegionMapHubCommand"/> by loading the <see cref="TiledMap"/>
+/// from the tilemap repository using <see cref="ITileMapRepository.GetByRegionIdAsync"/>
 /// and projecting it into a <see cref="RegionMapDto"/> for the client.
-/// Also queries all player sessions on the region map to populate the live entity snapshot.
+/// If no TMX file is found for the region, <see cref="GetRegionMapHubResult.Success"/> is
+/// <see langword="false"/> and <see cref="GetRegionMapHubResult.ErrorMessage"/> contains a
+/// descriptive message indicating which region ID was not found.
 /// </summary>
 public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubCommand, GetRegionMapHubResult>
 {
     private readonly ITileMapRepository _tilemapRepo;
-    private readonly IPlayerSessionRepository _sessionRepo;
     private readonly ILogger<GetRegionMapHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="GetRegionMapHubCommandHandler"/>.</summary>
-    /// <param name="tilemapRepo">Tilemap repository for loading region map definitions.</param>
-    /// <param name="sessionRepo">Player session repository for live entity snapshots.</param>
+    /// <param name="tilemapRepo">The tilemap repository used to load region map definitions.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
-    public GetRegionMapHubCommandHandler(
-        ITileMapRepository tilemapRepo,
-        IPlayerSessionRepository sessionRepo,
-        ILogger<GetRegionMapHubCommandHandler> logger)
+    public GetRegionMapHubCommandHandler(ITileMapRepository tilemapRepo, ILogger<GetRegionMapHubCommandHandler> logger)
     {
         _tilemapRepo = tilemapRepo;
-        _sessionRepo = sessionRepo;
         _logger      = logger;
     }
 
@@ -56,13 +49,17 @@ public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubComm
     public async Task<GetRegionMapHubResult> Handle(GetRegionMapHubCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.RegionId))
-            return Fail("Region ID cannot be empty.");
+            return new GetRegionMapHubResult { Success = false, ErrorMessage = "Region ID cannot be empty" };
 
         var map = await _tilemapRepo.GetByRegionIdAsync(request.RegionId);
         if (map is null)
         {
             _logger.LogWarning("No tilemap definition found for region '{RegionId}'", request.RegionId);
-            return Fail($"No map found for region '{request.RegionId}'");
+            return new GetRegionMapHubResult
+            {
+                Success      = false,
+                ErrorMessage = $"No map found for region '{request.RegionId}'",
+            };
         }
 
         var firstGid = map.GetFirstGid();
@@ -75,30 +72,37 @@ public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubComm
                 l.Properties.Find(p => p.Name == "zIndex")?.AsInt(i) ?? i))
             .ToArray();
 
-        var zoneObjs    = map.GetZoneObjects();
-        var regionExits = map.GetRegionExits();
-        var tilesetKey  = map.GetStringProperty("tilesetKey") ?? "onebit_packed";
-
-        var dto = new RegionMapDto(
-            RegionId:      request.RegionId,
-            TilesetKey:    tilesetKey,
-            Width:         map.Width,
-            Height:        map.Height,
-            TileSize:      map.TileWidth,
-            Layers:        layers,
-            CollisionMask: map.GetCollisionMask(),
-            Zones:         zoneObjs.Select(z => new ZoneObjectDto(z.ZoneId, z.DisplayName, z.MinLevel, z.MaxLevel, z.TileX, z.TileY)).ToArray(),
-            RegionExits:   regionExits.Select(r => new RegionExitDto(r.ToRegionId, r.TileX, r.TileY)).ToArray());
-
-        // Build live entity snapshot for players currently on the region map
-        var sessions = await _sessionRepo.GetOnRegionMapAsync(request.RegionId);
-        var players  = sessions
-            .Select(s => new TileEntityDto(s.CharacterId, "player", "player_default", s.TileX, s.TileY, "S"))
+        var zoneEntries = map.GetZoneEntries()
+            .Select(e => new ZoneObjectDto(e.TileX, e.TileY, e.ZoneSlug, e.DisplayName, e.MinLevel, e.MaxLevel))
             .ToArray();
 
-        return new GetRegionMapHubResult { Success = true, Map = dto, Players = players };
-    }
+        var regionExits = map.GetRegionExits()
+            .Select(e => new RegionExitDto(e.TileX, e.TileY, e.TargetRegionId))
+            .ToArray();
 
-    private static GetRegionMapHubResult Fail(string message) =>
-        new() { Success = false, ErrorMessage = message };
+        var labels = map.GetZoneLabels()
+            .Select(l => new ZoneLabelDto(l.TileX, l.TileY, l.Text, l.ZoneSlug, l.IsHidden))
+            .ToArray();
+
+        var paths = map.GetRegionPaths()
+            .Select(p => new RegionPathDto(
+                p.Name,
+                p.Points.Select(pt => new RegionPathPointDto(pt.TileX, pt.TileY)).ToArray()))
+            .ToArray();
+
+        var dto = new RegionMapDto(
+            RegionId:        map.GetRegionId().Length > 0 ? map.GetRegionId() : request.RegionId,
+            TilesetKey:      map.GetTilesetKey(),
+            Width:           map.Width,
+            Height:          map.Height,
+            TileSize:        map.TileWidth,
+            Layers:          layers,
+            CollisionMask:   map.GetCollisionMask(),
+            ZoneEntries:     zoneEntries,
+            RegionExits:     regionExits,
+            Labels:          labels,
+            Paths:           paths);
+
+        return new GetRegionMapHubResult { Success = true, RegionMap = dto };
+    }
 }

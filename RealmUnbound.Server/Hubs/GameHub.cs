@@ -40,6 +40,7 @@ public class GameHub : Hub
     private readonly ILogger<GameHub> _logger;
     private readonly ICharacterRepository _characterRepo;
     private readonly IZoneRepository _zoneRepo;
+    private readonly IRegionRepository _regionRepo;
     private readonly IPlayerSessionRepository _playerSessionRepo;
     private readonly IActiveCharacterTracker _activeCharacters;
     private readonly ISender _mediator;
@@ -53,6 +54,7 @@ public class GameHub : Hub
         ILogger<GameHub> logger,
         ICharacterRepository characterRepo,
         IZoneRepository zoneRepo,
+        IRegionRepository regionRepo,
         IPlayerSessionRepository playerSessionRepo,
         IActiveCharacterTracker activeCharacters,
         ISender mediator,
@@ -64,6 +66,7 @@ public class GameHub : Hub
         _logger           = logger;
         _characterRepo    = characterRepo;
         _zoneRepo           = zoneRepo;
+        _regionRepo         = regionRepo;
         _playerSessionRepo  = playerSessionRepo;
         _activeCharacters   = activeCharacters;
         _mediator         = mediator;
@@ -150,20 +153,41 @@ public class GameHub : Hub
             return;
         }
 
-        Context.Items["CharacterId"]    = character.Id;
-        Context.Items["CharacterName"]  = character.Name;
-        Context.Items["CurrentZoneId"]  = character.CurrentZoneId;
+        Context.Items["CharacterId"]   = character.Id;
+        Context.Items["CharacterName"] = character.Name;
+        Context.Items["CurrentZoneId"] = character.CurrentZoneId;
         Context.Items["DifficultyMode"] = character.DifficultyMode;
 
-        // Seed the current region — try active session first, fall back via zone lookup, then default.
-        var existingSession = await _playerSessionRepo.GetByCharacterIdAsync(character.Id);
-        var currentRegionId = existingSession?.RegionId;
-        if (currentRegionId is null)
+        // Start the character on the region map — derive region from last known zone, then fall back to the seeded starter region
+        var zone     = string.IsNullOrEmpty(character.CurrentZoneId) ? null : await _zoneRepo.GetByIdAsync(character.CurrentZoneId);
+        var starterRegion = zone is null ? await _regionRepo.GetStarterAsync() : null;
+        if (zone is null && starterRegion is null)
         {
-            var currentZone  = await _zoneRepo.GetByIdAsync(character.CurrentZoneId);
-            currentRegionId  = currentZone?.RegionId ?? "thornveil";
+            await Clients.Caller.SendAsync("Error", "No starter region is configured on this server");
+            return;
         }
-        Context.Items["CurrentRegionId"] = currentRegionId;
+        var regionId = zone?.RegionId ?? starterRegion!.Id;
+        Context.Items["CurrentRegionId"] = regionId;
+
+        // Remove any stale session left by an earlier disconnect that did not clean up
+        var staleRegionSession = await _playerSessionRepo.GetByCharacterIdAsync(character.Id);
+        if (staleRegionSession is not null)
+            await _playerSessionRepo.RemoveAsync(staleRegionSession);
+
+        // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
+        await _playerSessionRepo.AddAsync(new PlayerSession
+        {
+            CharacterId   = character.Id,
+            CharacterName = character.Name,
+            ConnectionId  = Context.ConnectionId,
+            RegionId      = regionId,
+            ZoneId        = null,
+            TileX         = 1,
+            TileY         = 1,
+        });
+
+        // Join the per-region broadcast group for RegionPlayerMoved broadcasts
+        await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(regionId));
 
         _logger.LogInformation(
             "Character {CharacterName} ({CharacterId}) selected by {ConnectionId}",
@@ -196,7 +220,7 @@ public class GameHub : Hub
             character.Level,
             character.Experience,
             character.CurrentZoneId,
-            CurrentRegionId        = currentRegionId,
+            RegionId               = regionId,
             CurrentHealth          = initAttrs.GetValueOrDefault("CurrentHealth", initMaxHealth),
             MaxHealth              = initMaxHealth,
             CurrentMana            = initAttrs.GetValueOrDefault("CurrentMana", initMaxMana),
@@ -439,21 +463,21 @@ public class GameHub : Hub
 
     // Region map
     /// <summary>
-    /// Returns the region tilemap and live player snapshot for the caller's current region.
-    /// Call this immediately after <see cref="SelectCharacter"/> (or after receiving
-    /// <c>ExitedZone</c> / <c>RegionMap</c>) to populate the region-map view.
+    /// Loads and returns the <see cref="RealmUnbound.Contracts.Tilemap.RegionMapDto"/> for the
+    /// caller's current region. Sends <c>RegionMapData</c> to the caller on success.
     /// </summary>
     public async Task GetRegionMap()
     {
-        if (!TryGetCharacterId(out var characterId))
+        if (!TryGetCharacterId(out _))
         {
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetRegionMap");
             return;
         }
 
-        if (!TryGetCurrentRegionId(out var regionId))
+        var regionId = Context.Items.TryGetValue("CurrentRegionId", out var r) && r is string rs ? rs : string.Empty;
+        if (string.IsNullOrEmpty(regionId))
         {
-            await Clients.Caller.SendAsync("Error", "No current region — call SelectCharacter first");
+            await Clients.Caller.SendAsync("Error", "No active region. Call SelectCharacter first");
             return;
         }
 
@@ -467,24 +491,25 @@ public class GameHub : Hub
                 return;
             }
 
-            await Clients.Caller.SendAsync("RegionMap", new { result.Map, result.Players });
+            await Clients.Caller.SendAsync("RegionMapData", result.RegionMap);
 
             _logger.LogDebug("Sent region map for '{RegionId}' to {ConnectionId}", regionId, Context.ConnectionId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in GetRegionMap for region '{RegionId}'", regionId);
+            _logger.LogError(ex, "Error in GetRegionMap for region {RegionId}", regionId);
             await Clients.Caller.SendAsync("Error", "Failed to load region map");
         }
     }
 
     /// <summary>
-    /// Move the caller's character one tile on the region map.
-    /// Broadcasts <c>PlayerMovedOnRegion</c> to the region group on success.
-    /// If the destination tile contains a zone entry the server sends <c>ZoneEntryNearby</c>
-    /// to the caller. If it contains a region exit the server sends <c>RegionExitNearby</c>.
+    /// Requests a one-tile movement for the caller's active character on the region map.
+    /// The server validates the step (1-tile distance, collision mask, 100 ms cooldown) and,
+    /// on success, persists the new position and broadcasts <c>RegionPlayerMoved</c> to the region group.
+    /// If the destination is a zone-entry tile the caller additionally receives <c>ZoneEntryTriggered</c>;
+    /// if it is a region-exit tile the caller receives <c>RegionExitTriggered</c>.
     /// </summary>
-    /// <param name="request">Target tile coordinates and movement direction.</param>
+    /// <param name="request">Target tile coordinates and facing direction.</param>
     public async Task MoveOnRegion(MoveOnRegionHubRequest request)
     {
         if (!TryGetCharacterId(out var characterId))
@@ -493,9 +518,10 @@ public class GameHub : Hub
             return;
         }
 
-        if (!TryGetCurrentRegionId(out var regionId))
+        var regionId = Context.Items.TryGetValue("CurrentRegionId", out var r) && r is string rs ? rs : string.Empty;
+        if (string.IsNullOrEmpty(regionId))
         {
-            await Clients.Caller.SendAsync("Error", "No current region — call SelectCharacter first");
+            await Clients.Caller.SendAsync("Error", "Not on a region map");
             return;
         }
 
@@ -510,39 +536,25 @@ public class GameHub : Hub
                 return;
             }
 
-            await Clients.Group(RegionGroup(regionId)).SendAsync("PlayerMovedOnRegion", new
-            {
-                CharacterId = characterId,
-                result.TileX,
-                result.TileY,
-                result.Direction,
-            });
+            var payload = new RegionPlayerMovedPayload(characterId, result.TileX, result.TileY, result.Direction);
+            await Clients.Group(RegionGroup(regionId)).SendAsync("RegionPlayerMoved", payload);
 
             if (result.ZoneEntryTriggered is not null)
-                await Clients.Caller.SendAsync("ZoneEntryNearby", new
-                {
-                    result.ZoneEntryTriggered.ZoneId,
-                    result.ZoneEntryTriggered.DisplayName,
-                });
-
-            if (result.RegionExitTriggered is not null)
-                await Clients.Caller.SendAsync("RegionExitNearby", new
-                {
-                    result.RegionExitTriggered.ToRegionId,
-                });
+                await Clients.Caller.SendAsync("ZoneEntryTriggered", result.ZoneEntryTriggered);
+            else if (result.RegionExitTriggered is not null)
+                await Clients.Caller.SendAsync("RegionExitTriggered", result.RegionExitTriggered);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in MoveOnRegion for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to process region movement");
+            await Clients.Caller.SendAsync("Error", "Failed to process region move");
         }
     }
 
     /// <summary>
-    /// Exit an active zone session and return to the caller's region map.
-    /// Notifies zone peers that the character has left, adds the connection to the region
-    /// group, then sends <c>ExitedZone</c> to the caller. The client should follow up
-    /// with a <see cref="GetRegionMap"/> call to receive the full map payload (pull model).
+    /// Exits the caller's current zone and returns them to the region map at the zone-entry tile.
+    /// Leaves the zone SignalR group, joins the region group, and notifies zone peers of the departure.
+    /// Sends <c>ZoneExited</c> to the caller with the region ID and spawn tile coordinates.
     /// </summary>
     public async Task ExitZone()
     {
@@ -552,19 +564,22 @@ public class GameHub : Hub
             return;
         }
 
-        if (!Context.Items.ContainsKey("CurrentZoneId") ||
-            Context.Items["CurrentZoneId"] is not string currentZoneId ||
-            string.IsNullOrEmpty(currentZoneId))
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zs ? zs : string.Empty;
+        if (string.IsNullOrEmpty(zoneId))
         {
             await Clients.Caller.SendAsync("Error", "Not currently in a zone");
             return;
         }
 
+        if (!Context.Items.TryGetValue("CurrentRegionId", out var r) || r is not string regionId)
+        {
+            await Clients.Caller.SendAsync("Error", "No active region context; call SelectCharacter first");
+            return;
+        }
+
         try
         {
-            await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
-
-            var result = await _mediator.Send(new ExitZoneHubCommand(characterId));
+            var result = await _mediator.Send(new ExitZoneHubCommand(characterId, regionId, zoneId));
 
             if (!result.Success)
             {
@@ -572,29 +587,41 @@ public class GameHub : Hub
                 return;
             }
 
-            var regionId = result.RegionId;
-            Context.Items["CurrentRegionId"] = regionId;
-            Context.Items.Remove("CurrentZoneId");
+            // Notify zone peers and leave zone SignalR group
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+            {
+                TryGetCharacterName(out var characterName);
+                await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerLeft", new
+                {
+                    CharacterId   = characterId,
+                    CharacterName = characterName,
+                    ZoneId        = zoneId,
+                });
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, zoneGroup);
+            }
 
+            // Clean up entity tracking for the zone we just left
+            _entityTracker.UntrackPlayer(zoneId, characterId);
+            if (_entityTracker.GetPlayerPositions(zoneId).Count == 0)
+                _entityTracker.ClearZone(zoneId);
+
+            // Clear zone context items so subsequent hub calls see the region-map state
+            Context.Items["CurrentZoneId"]        = null;
+            Context.Items["CurrentZoneGroupName"] = null;
+
+            // Join the region broadcast group
             await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(regionId));
-            await Clients.Group(RegionGroup(regionId)).SendAsync("PlayerEnteredRegionMap", new
-            {
-                CharacterId = characterId,
-                result.SpawnTileX,
-                result.SpawnTileY,
-            });
 
-            // Pull model — client calls GetRegionMap() after receiving this
-            await Clients.Caller.SendAsync("ExitedZone", new
+            await Clients.Caller.SendAsync("ZoneExited", new
             {
-                regionId,
-                result.SpawnTileX,
-                result.SpawnTileY,
+                RegionId   = regionId,
+                result.TileX,
+                result.TileY,
             });
 
             _logger.LogInformation(
-                "Character {CharacterId} exited zone and returned to region '{RegionId}' at ({X},{Y})",
-                characterId, regionId, result.SpawnTileX, result.SpawnTileY);
+                "Character {CharacterId} exited zone '{ZoneId}' → region '{RegionId}' at ({X},{Y})",
+                characterId, zoneId, regionId, result.TileX, result.TileY);
         }
         catch (Exception ex)
         {
@@ -604,54 +631,69 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Transition the caller's character to a different region.
-    /// Removes the connection from the old region group, updates the session, adds the
-    /// connection to the new region group, then sends <c>RegionMap</c> to the caller.
+    /// Moves the caller's character across a region boundary into an adjacent region.
+    /// Only valid when the character is on the region map (not inside a zone) and
+    /// a pending region-exit has been highlighted by <c>MoveOnRegion</c>.
+    /// Leaves the current region SignalR group, joins the new one, and sends
+    /// <c>RegionMapData</c> and <c>RegionChanged</c> to the caller.
     /// </summary>
     /// <param name="request">Target region identifier.</param>
-    public async Task TransitionToRegion(TransitionToRegionHubRequest request)
+    public async Task ChangeRegion(ChangeRegionHubRequest request)
     {
         if (!TryGetCharacterId(out var characterId))
         {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TransitionToRegion");
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before ChangeRegion");
+            return;
+        }
+
+        if (!Context.Items.TryGetValue("CurrentRegionId", out var r) || r is not string currentRegionId)
+        {
+            await Clients.Caller.SendAsync("Error", "No active region context; call SelectCharacter first");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zs ? zs : string.Empty;
+        if (!string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "Cannot change region while inside a zone; exit first");
             return;
         }
 
         try
         {
-            TryGetCurrentRegionId(out var oldRegionId);
-
-            var result = await _mediator.Send(new TransitionToRegionHubCommand(characterId, request.TargetRegionId));
+            var result = await _mediator.Send(new ChangeRegionHubCommand(characterId, currentRegionId, request.TargetRegionId));
 
             if (!result.Success)
             {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Region transition failed");
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to change region");
                 return;
             }
 
-            if (oldRegionId is not null)
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, RegionGroup(oldRegionId));
+            // Leave old region group, join new one
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, RegionGroup(currentRegionId));
+            Context.Items["CurrentRegionId"] = result.NewRegionId;
+            await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(result.NewRegionId));
 
-            Context.Items["CurrentRegionId"] = request.TargetRegionId;
+            // Send the new region's tilemap
+            var mapResult = await _mediator.Send(new GetRegionMapHubCommand(result.NewRegionId));
+            if (mapResult.Success && mapResult.RegionMap is not null)
+                await Clients.Caller.SendAsync("RegionMapData", mapResult.RegionMap);
 
-            await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(request.TargetRegionId));
-            await Clients.Group(RegionGroup(request.TargetRegionId)).SendAsync("PlayerEnteredRegionMap", new
+            await Clients.Caller.SendAsync("RegionChanged", new
             {
-                CharacterId = characterId,
-                result.SpawnTileX,
-                result.SpawnTileY,
+                result.NewRegionId,
+                result.TileX,
+                result.TileY,
             });
 
-            await Clients.Caller.SendAsync("RegionMap", new { result.Map, result.SpawnTileX, result.SpawnTileY });
-
             _logger.LogInformation(
-                "Character {CharacterId} transitioned to region '{RegionId}' at ({X},{Y})",
-                characterId, request.TargetRegionId, result.SpawnTileX, result.SpawnTileY);
+                "Character {CharacterId} changed region '{From}' → '{To}' at ({X},{Y})",
+                characterId, currentRegionId, result.NewRegionId, result.TileX, result.TileY);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in TransitionToRegion for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to transition to region");
+            _logger.LogError(ex, "Error in ChangeRegion for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to change region");
         }
     }
 
@@ -1945,8 +1987,13 @@ public class GameHub : Hub
 
         await _playerSessionRepo.RemoveAsync(session);
 
-        // No zone cleanup needed when the player is on the region map
-        if (zoneId is null) return;
+        // Player is on the region map — only leave the region group, no zone cleanup needed
+        if (zoneId is null)
+        {
+            if (Context.Items.TryGetValue("CurrentRegionId", out var rid) && rid is string regionMapId)
+                await Groups.RemoveFromGroupAsync(connectionId, RegionGroup(regionMapId));
+            return;
+        }
 
         // Untrack player; if zone is now empty of players, despawn all entities
         _entityTracker.UntrackPlayer(zoneId, characterId);
@@ -2144,19 +2191,9 @@ public class GameHub : Hub
         return false;
     }
 
-    private bool TryGetCurrentRegionId([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? regionId)
-    {
-        if (Context.Items.TryGetValue("CurrentRegionId", out var val) && val is string s)
-        {
-            regionId = s;
-            return true;
-        }
-        regionId = null;
-        return false;
-    }
+    private static string AccountGroup(Guid accountId) => $"account:{accountId}";
 
-    private static string RegionGroup(string regionId)    => $"region:{regionId}";
-    private static string AccountGroup(Guid accountId)    => $"account:{accountId}";
+    private static string RegionGroup(string regionId) => $"region:{regionId}";
 
     private Guid GetAccountId()
     {
@@ -2260,4 +2297,7 @@ public record EngageEnemyHubRequest(string LocationSlug, Guid EnemyId);
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.UseAbilityInCombat"/>.</summary>
 /// <param name="AbilityId">Identifier of the ability to activate.</param>
 public record UseAbilityInCombatHubRequest(string AbilityId);
+
+/// <summary>Request payload for <see cref="GameHub.ChangeRegion"/>.</summary>
+public record ChangeRegionHubRequest(string TargetRegionId);
 

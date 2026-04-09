@@ -2,10 +2,10 @@ using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
+using System.Reactive.Linq;
 using RealmUnbound.Assets;
 using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
-using RealmUnbound.Contracts.Tilemap;
 
 namespace RealmUnbound.Client.ViewModels;
 
@@ -27,7 +27,6 @@ namespace RealmUnbound.Client.ViewModels;
 /// <param name="LearnedAbilities">Ability slugs the character has learned.</param>
 /// <param name="CharacterId">The character's unique identifier.</param>
 /// <param name="ClassName">The character class name.</param>
-/// <param name="CurrentRegionId">The region the character is currently in. Seeds <c>_regionId</c> on the view model.</param>
 public record SeedInitialStatsArgs(
     int Level, long Experience,
     int CurrentHealth, int MaxHealth,
@@ -37,8 +36,7 @@ public record SeedInitialStatsArgs(
     int Intelligence = 10, int Wisdom = 10, int Charisma = 10,
     IReadOnlyList<string>? LearnedAbilities = null,
     Guid? CharacterId = null,
-    string ClassName = "",
-    string CurrentRegionId = "");
+    string ClassName = "");
 
 /// <summary>In-game view model. Active after a character has entered a zone.</summary>
 public class GameViewModel : ViewModelBase
@@ -54,6 +52,10 @@ public class GameViewModel : ViewModelBase
     // Tilemap
     private TilemapViewModel? _tilemapViewModel;
     private RegionTilemapViewModel? _regionTilemapViewModel;
+
+    // Region pending tile transitions
+    private RealmUnbound.Contracts.Tilemap.ZoneObjectDto? _pendingZoneEntry;
+    private RealmUnbound.Contracts.Tilemap.RegionExitDto? _pendingRegionExit;
 
     // Zone state
     private string _zoneName = string.Empty;
@@ -534,11 +536,25 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _tilemapViewModel, value);
     }
 
-    /// <summary>View model for the region-map canvas. Active when the character is on the region map (not inside a zone).</summary>
+    /// <summary>View model for the region-map tilemap canvas. Initialized when the character selects a character.</summary>
     public RegionTilemapViewModel? RegionTilemap
     {
         get => _regionTilemapViewModel;
         private set => this.RaiseAndSetIfChanged(ref _regionTilemapViewModel, value);
+    }
+
+    /// <summary>Zone-entry tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
+    public RealmUnbound.Contracts.Tilemap.ZoneObjectDto? PendingZoneEntry
+    {
+        get => _pendingZoneEntry;
+        private set => this.RaiseAndSetIfChanged(ref _pendingZoneEntry, value);
+    }
+
+    /// <summary>Region-exit tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
+    public RealmUnbound.Contracts.Tilemap.RegionExitDto? PendingRegionExit
+    {
+        get => _pendingRegionExit;
+        private set => this.RaiseAndSetIfChanged(ref _pendingRegionExit, value);
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -838,6 +854,21 @@ public class GameViewModel : ViewModelBase
     /// <summary>Respawn the character after defeat in normal mode.</summary>
     public ReactiveCommand<Unit, Unit> RespawnCommand { get; }
 
+    /// <summary>Request the region tilemap from the server.</summary>
+    public ReactiveCommand<Unit, Unit> GetRegionMapCommand { get; }
+
+    /// <summary>Request a one-tile region-map move. Tuple: (toX, toY, direction).</summary>
+    public ReactiveCommand<(int ToX, int ToY, string Direction), Unit> MoveOnRegionCommand { get; }
+
+    /// <summary>Exit the current zone and return to the region map.</summary>
+    public ReactiveCommand<Unit, Unit> ExitZoneCommand { get; }
+
+    /// <summary>Confirms entering the pending zone from the region map (E key or button).</summary>
+    public ReactiveCommand<Unit, Unit> ConfirmZoneEntryCommand { get; }
+
+    /// <summary>Confirms crossing to the adjacent region when standing on a region-exit tile.</summary>
+    public ReactiveCommand<Unit, Unit> ConfirmRegionCrossCommand { get; }
+
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
         IServerConnectionService connection,
@@ -944,17 +975,30 @@ public class GameViewModel : ViewModelBase
                 new { ToX = toX, ToY = toY, Direction = dir });
         });
 
-        // Region-map VM — callbacks forward to the appropriate hub methods
+        // Region tilemap VM — forward region move requests to the hub, confirm zone/region transitions on E
         RegionTilemap = new RegionTilemapViewModel(
             onMove: async (toX, toY, dir) =>
-                await _connection.SendCommandAsync<object>("MoveOnRegion", new { ToX = toX, ToY = toY, Direction = dir }),
-            onEnterZone: async zoneId =>
             {
-                await InitializeAsync(CharacterName, zoneId);
-                await _connection.SendCommandAsync<object>("EnterZone", zoneId);
+                await _connection.SendCommandAsync<object>(
+                    "MoveOnRegion",
+                    new { ToX = toX, ToY = toY, Direction = dir });
             },
-            onTransitionRegion: async toRegionId =>
-                await _connection.SendCommandAsync<object>("TransitionToRegion", new { TargetRegionId = toRegionId }));
+            onConfirm: async () =>
+            {
+                if (PendingZoneEntry is not null)
+                    await DoConfirmZoneEntryAsync();
+                else if (PendingRegionExit is not null)
+                    await DoConfirmRegionCrossAsync();
+            });
+
+        GetRegionMapCommand  = ReactiveCommand.CreateFromTask(DoGetRegionMapAsync);
+        MoveOnRegionCommand  = ReactiveCommand.CreateFromTask<(int, int, string)>(t => DoMoveOnRegionAsync(t.Item1, t.Item2, t.Item3));
+        ExitZoneCommand      = ReactiveCommand.CreateFromTask(DoExitZoneAsync);
+
+        var canConfirmZoneEntry  = this.WhenAnyValue(x => x.PendingZoneEntry).Select(e  => e is not null);
+        var canConfirmRegionExit = this.WhenAnyValue(x => x.PendingRegionExit).Select(e => e is not null);
+        ConfirmZoneEntryCommand  = ReactiveCommand.CreateFromTask(DoConfirmZoneEntryAsync,  canConfirmZoneEntry);
+        ConfirmRegionCrossCommand = ReactiveCommand.CreateFromTask(DoConfirmRegionCrossAsync, canConfirmRegionExit);
 
         // Settings + audio mute commands
         ToggleSettingsCommand  = ReactiveCommand.Create(() => { IsSettingsOpen = !IsSettingsOpen; });
@@ -1014,6 +1058,94 @@ public class GameViewModel : ViewModelBase
         AppendLog($"Welcome to {ZoneName}, {CharacterName}!");
     }
 
+    // ── Region-map hub handlers ───────────────────────────────────────────────
+
+    /// <summary>Called from hub when a <c>RegionMapData</c> message arrives with the region's tilemap.</summary>
+    /// <param name="regionMap">The region map DTO received from the server.</param>
+    public void OnRegionMapReceived(RealmUnbound.Contracts.Tilemap.RegionMapDto regionMap)
+    {
+        if (RegionTilemap is null) return;
+        RegionTilemap.RegionMapData = regionMap;
+        RegionTilemap.RevealedTiles.Clear();
+    }
+
+    /// <summary>Called from hub when any player moves on the region map.</summary>
+    /// <param name="characterId">The character who moved.</param>
+    /// <param name="tileX">New tile column.</param>
+    /// <param name="tileY">New tile row.</param>
+    /// <param name="direction">Cardinal facing direction.</param>
+    public void OnRegionPlayerMoved(Guid characterId, int tileX, int tileY, string direction)
+    {
+        if (RegionTilemap is null) return;
+        RegionTilemap.UpsertEntity(characterId, "player", "player", tileX, tileY, direction);
+
+        if (characterId == _characterId)
+        {
+            RegionTilemap.CenterCameraOn(tileX, tileY);
+            RegionTilemap.RevealAround(tileX, tileY);
+        }
+    }
+
+    /// <summary>Called from hub when the character steps onto a zone-entry tile on the region map.</summary>
+    /// <param name="entry">The zone-entry object at the destination tile.</param>
+    public void OnZoneEntryTriggered(RealmUnbound.Contracts.Tilemap.ZoneObjectDto entry)
+    {
+        PendingZoneEntry  = entry;
+        PendingRegionExit = null;
+        AppendLog($"Zone entry detected: {entry.DisplayName} (level {entry.MinLevel}\u2013{entry.MaxLevel}).");
+    }
+
+    /// <summary>Called from hub when the character steps onto a region-exit tile on the region map.</summary>
+    /// <param name="exit">The region-exit object at the destination tile.</param>
+    public void OnRegionExitTriggered(RealmUnbound.Contracts.Tilemap.RegionExitDto exit)
+    {
+        PendingRegionExit = exit;
+        PendingZoneEntry  = null;
+        AppendLog($"Region border reached: exit to '{exit.TargetRegionId}'.");
+    }
+
+    /// <summary>Called from hub when the character successfully exits a zone and returns to the region map.</summary>
+    /// <param name="regionId">The region the character returned to.</param>
+    /// <param name="tileX">Spawn tile column.</param>
+    /// <param name="tileY">Spawn tile row.</param>
+    public void OnZoneExited(string regionId, int tileX, int tileY)
+    {
+        ZoneViewMode      = "Region";
+        PendingZoneEntry  = null;
+        PendingRegionExit = null;
+
+        if (RegionTilemap is not null && _characterId.HasValue)
+        {
+            RegionTilemap.UpsertEntity(_characterId.Value, "player", "player", tileX, tileY, "S");
+            RegionTilemap.CenterCameraOn(tileX, tileY);
+            RegionTilemap.RevealAround(tileX, tileY);
+        }
+
+        AppendLog($"Returned to region map at ({tileX},{tileY}).");
+    }
+
+    /// <summary>Called from hub when the character successfully crosses to a different region.</summary>
+    /// <param name="newRegionId">The region the character has entered.</param>
+    /// <param name="tileX">Spawn tile column on the new region map.</param>
+    /// <param name="tileY">Spawn tile row on the new region map.</param>
+    public void OnRegionChanged(string newRegionId, int tileX, int tileY)
+    {
+        _regionId         = newRegionId;
+        PendingRegionExit = null;
+        PendingZoneEntry  = null;
+
+        if (RegionTilemap is not null && _characterId.HasValue)
+        {
+            RegionTilemap.UpsertEntity(_characterId.Value, "player", "player", tileX, tileY, "S");
+            RegionTilemap.CenterCameraOn(tileX, tileY);
+            RegionTilemap.RevealAround(tileX, tileY);
+        }
+
+        AppendLog($"Crossed into region '{newRegionId}' at ({tileX},{tileY}).");
+    }
+
+    // ── Zone tilemap hub handlers ─────────────────────────────────────────────
+
     /// <summary>Called from hub when another player enters the zone.</summary>
     public void OnPlayerEntered(string playerName)
     {
@@ -1066,7 +1198,12 @@ public class GameViewModel : ViewModelBase
     /// <summary>Called from hub when the character steps on an exit tile and triggers a zone transition.</summary>
     public async void OnTileExitTriggered(string toZoneId)
     {
-        if (string.IsNullOrEmpty(toZoneId)) return;
+        if (string.IsNullOrEmpty(toZoneId))
+        {
+            // Empty toZoneId means "exit to region map" — same as ExitZoneCommand.
+            await DoExitZoneAsync();
+            return;
+        }
         AppendLog($"Traveling to {toZoneId}...");
         try { await DoTravelToZoneAsync(toZoneId); }
         catch (Exception ex) { AppendLog($"Zone transition failed: {ex.Message}"); }
@@ -1096,76 +1233,6 @@ public class GameViewModel : ViewModelBase
                 Tilemap.RevealAround(self.TileX, self.TileY);
             }
         }
-    }
-
-    // ── Region-map hub handlers ──────────────────────────────────────────────
-
-    /// <summary>
-    /// Requests the region map payload from the server.
-    /// The server reads <c>Context.Items["CurrentRegionId"]</c> so no argument is required.
-    /// </summary>
-    public async Task LoadRegionMapAsync() =>
-        await _connection.SendCommandAsync("GetRegionMap");
-
-    /// <summary>Called from hub when the <c>RegionMap</c> message arrives with the region's full map and live players.</summary>
-    public void OnRegionMapReceived(RegionMapDto map, IReadOnlyList<TileEntityDto> players)
-    {
-        if (RegionTilemap is null) return;
-        RegionTilemap.MapData = map;
-        RegionTilemap.OtherPlayers.Clear();
-        foreach (var p in players)
-        {
-            if (p.EntityId == _characterId) continue;
-            RegionTilemap.UpsertPlayer(p.EntityId, p.TileX, p.TileY);
-        }
-    }
-
-    /// <summary>Called from hub when any player (including self) moves on the region map.</summary>
-    public void OnPlayerMovedOnRegion(Guid characterId, int tileX, int tileY)
-    {
-        if (RegionTilemap is null) return;
-        if (characterId == _characterId)
-        {
-            RegionTilemap.PlayerTileX = tileX;
-            RegionTilemap.PlayerTileY = tileY;
-            RegionTilemap.CenterCameraOn(tileX, tileY);
-        }
-        else
-        {
-            RegionTilemap.UpsertPlayer(characterId, tileX, tileY);
-        }
-    }
-
-    /// <summary>Called from hub when the local player steps onto a zone-entry tile; shows the zone-entry prompt.</summary>
-    public void OnZoneEntryNearby(string zoneId, string displayName)
-    {
-        if (RegionTilemap is null) return;
-        RegionTilemap.PendingZoneEntry = new ZoneEntryInfo(zoneId, displayName);
-    }
-
-    /// <summary>Called from hub when the local player steps onto a region-exit tile; shows the region-exit prompt.</summary>
-    public void OnRegionExitNearby(string toRegionId)
-    {
-        if (RegionTilemap is null) return;
-        RegionTilemap.PendingRegionExit = toRegionId;
-    }
-
-    /// <summary>
-    /// Called from hub when the character successfully exits a zone and returns to the region map.
-    /// Switches view mode to <c>"RegionMap"</c> and triggers a pull of the region map from the server.
-    /// </summary>
-    public void OnExitedZone(string regionId, int spawnTileX, int spawnTileY)
-    {
-        _regionId = regionId;
-        if (RegionTilemap is not null)
-        {
-            RegionTilemap.PlayerTileX       = spawnTileX;
-            RegionTilemap.PlayerTileY       = spawnTileY;
-            RegionTilemap.PendingZoneEntry  = null;
-            RegionTilemap.PendingRegionExit = null;
-        }
-        ZoneViewMode = "RegionMap";
-        _ = LoadRegionMapAsync();
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -1486,10 +1553,10 @@ public class GameViewModel : ViewModelBase
             _characterId = args.CharacterId;
             if (Tilemap is not null)
                 Tilemap.SelfEntityId = _characterId;
+            if (RegionTilemap is not null)
+                RegionTilemap.SelfEntityId = _characterId;
         }
         ClassName = args.ClassName;
-        if (!string.IsNullOrEmpty(args.CurrentRegionId))
-            _regionId = args.CurrentRegionId;
 
         LearnedAbilities.Clear();
         if (args.LearnedAbilities is not null)
@@ -1538,6 +1605,74 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Rest failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoGetRegionMapAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("GetRegionMap");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Region map load failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoMoveOnRegionAsync(int toX, int toY, string direction)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>(
+                "MoveOnRegion",
+                new { ToX = toX, ToY = toY, Direction = direction });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Region move failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoExitZoneAsync()
+    {
+        try
+        {
+            await _connection.SendCommandAsync("ExitZone");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Zone exit failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoConfirmZoneEntryAsync()
+    {
+        if (PendingZoneEntry is null) return;
+        var zoneId = PendingZoneEntry.ZoneSlug;
+        PendingZoneEntry = null;
+        await DoTravelToZoneAsync(zoneId);
+    }
+
+    private async Task DoConfirmRegionCrossAsync()
+    {
+        if (PendingRegionExit is null) return;
+        var targetRegionId = PendingRegionExit.TargetRegionId;
+        PendingRegionExit = null;
+        await DoChangeRegionAsync(targetRegionId);
+    }
+
+    private async Task DoChangeRegionAsync(string targetRegionId)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>(
+                "ChangeRegion",
+                new { TargetRegionId = targetRegionId });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Region change failed: {ex.Message}");
         }
     }
 

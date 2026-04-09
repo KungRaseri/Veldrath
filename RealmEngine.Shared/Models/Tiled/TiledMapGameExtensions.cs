@@ -130,7 +130,9 @@ public static class TiledMapGameExtensions
 
     /// <summary>
     /// Extracts all exit tile definitions from the objectgroup layer named <c>"exits"</c>.
-    /// Each object must have <c>type="exit"</c> and a custom string property <c>toZoneId</c>.
+    /// Each object must have <c>type="exit"</c>. The optional custom string property <c>toZoneId</c>
+    /// identifies the destination zone; omitting it (or leaving it empty) signals an exit back to
+    /// the region map rather than into another zone.
     /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
     /// </summary>
     public static IReadOnlyList<ExitTileDefinition> GetExitTiles(this TiledMap map)
@@ -149,7 +151,6 @@ public static class TiledMapGameExtensions
             var toZoneId = obj.Properties
                               .Find(p => p.Name == "toZoneId")
                               ?.AsString() ?? string.Empty;
-            if (string.IsNullOrEmpty(toZoneId)) continue;
 
             exits.Add(new ExitTileDefinition
             {
@@ -224,6 +225,149 @@ public static class TiledMapGameExtensions
     /// </summary>
     public static string GetTilesetKey(this TiledMap map) =>
         map.GetStringProperty("tilesetKey") ?? string.Empty;
+
+    /// <summary>
+    /// Returns the <c>regionId</c> custom property, used to identify which region this map belongs to
+    /// (e.g. <c>"thornveil"</c>). Returns an empty string when absent.
+    /// </summary>
+    /// <returns>The region identifier, or an empty string if the <c>regionId</c> property is absent.</returns>
+    public static string GetRegionId(this TiledMap map) =>
+        map.GetStringProperty("regionId") ?? string.Empty;
+
+    // ── Region map: zone entries ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all zone-entry definitions from the objectgroup layer named <c>"zones"</c>.
+    /// Each object's <c>name</c> attribute is the zone slug.
+    /// Optional custom properties: <c>displayName</c> (string), <c>minLevel</c> (int), <c>maxLevel</c> (int).
+    /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
+    /// </summary>
+    /// <returns>A read-only list of zone-entry definitions. Returns an empty list if the <c>zones</c> objectgroup layer is absent.</returns>
+    public static IReadOnlyList<ZoneObjectDefinition> GetZoneEntries(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("zones", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var entries = new List<ZoneObjectDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (string.IsNullOrEmpty(obj.Name)) continue;
+
+            entries.Add(new ZoneObjectDefinition
+            {
+                TileX       = (int)(obj.X / map.TileWidth),
+                TileY       = (int)(obj.Y / map.TileHeight),
+                ZoneSlug    = obj.Name,
+                DisplayName = obj.Properties.Find(p => p.Name == "displayName")?.AsString() ?? obj.Name,
+                MinLevel    = obj.Properties.Find(p => p.Name == "minLevel")?.AsInt(0)      ?? 0,
+                MaxLevel    = obj.Properties.Find(p => p.Name == "maxLevel")?.AsInt(0)      ?? 0,
+            });
+        }
+
+        return entries;
+    }
+
+    // ── Region map: region exits ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all region-exit definitions from the objectgroup layer named <c>"region_exits"</c>.
+    /// Each object's <c>name</c> attribute is the target region slug.
+    /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
+    /// </summary>
+    /// <returns>A read-only list of region-exit definitions. Returns an empty list if the <c>region_exits</c> objectgroup layer is absent.</returns>
+    public static IReadOnlyList<RegionExitDefinition> GetRegionExits(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("region_exits", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var exits = new List<RegionExitDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (string.IsNullOrEmpty(obj.Name)) continue;
+
+            exits.Add(new RegionExitDefinition
+            {
+                TileX          = (int)(obj.X / map.TileWidth),
+                TileY          = (int)(obj.Y / map.TileHeight),
+                TargetRegionId = obj.Name,
+            });
+        }
+
+        return exits;
+    }
+
+    // ── Region map: zone labels ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all zone-label definitions from the objectgroup layer named <c>"labels"</c>.
+    /// Point objects only. The object's <c>name</c> is the display text; the optional
+    /// <c>zoneSlug</c> custom property links the label to a zone entry.
+    /// </summary>
+    /// <returns>A read-only list of label definitions. Returns an empty list if the <c>labels</c> objectgroup layer is absent.</returns>
+    public static IReadOnlyList<ZoneLabelDefinition> GetZoneLabels(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("labels", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var labels = new List<ZoneLabelDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (obj.Point != true || string.IsNullOrEmpty(obj.Name)) continue;
+
+            labels.Add(new ZoneLabelDefinition
+            {
+                TileX    = (int)(obj.X / map.TileWidth),
+                TileY    = (int)(obj.Y / map.TileHeight),
+                Text     = obj.Name,
+                ZoneSlug  = obj.Properties.Find(p => p.Name == "zoneSlug")?.AsString() ?? string.Empty,
+                IsHidden  = obj.Properties.Find(p => p.Name == "isHidden")?.AsBool() ?? false,
+            });
+        }
+
+        return labels;
+    }
+
+    // ── Region map: paths ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all path definitions from the objectgroup layer named <c>"paths"</c>.
+    /// Polyline objects only. Points are converted from pixel coordinates to tile coordinates.
+    /// The polyline points are relative to the object origin; this method returns absolute tile positions.
+    /// </summary>
+    /// <returns>A read-only list of path definitions. Returns an empty list if the <c>paths</c> objectgroup layer is absent.</returns>
+    public static IReadOnlyList<RegionPathDefinition> GetRegionPaths(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("paths", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var paths = new List<RegionPathDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (obj.Polyline is null || obj.Polyline.Count == 0) continue;
+
+            var points = obj.Polyline
+                .Select(p => new RegionPathPoint(
+                    TileX: (float)((obj.X + p.X) / map.TileWidth),
+                    TileY: (float)((obj.Y + p.Y) / map.TileHeight)))
+                .ToList();
+
+            paths.Add(new RegionPathDefinition { Name = obj.Name, Points = points });
+        }
+
+        return paths;
+    }
 
     /// <summary>
     /// Returns the <see cref="TiledTileset.FirstGid"/> of the first tileset in the map,
