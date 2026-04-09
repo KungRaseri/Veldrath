@@ -1,0 +1,96 @@
+@page "/admin/server"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Server Commands — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <div class="back-bar"><a href="/admin">← Back to Admin</a></div>
+    <h1>Server Commands</h1>
+
+    @* ── Broadcast Announcement ────────────────────────────────── *@
+    <section class="card">
+        <h2>Broadcast Announcement</h2>
+        <p class="muted">
+            Sends a server-wide announcement to every connected player via SignalR.
+        </p>
+
+        <div class="form-group">
+            <label>Message <span class="req">*</span></label>
+            <textarea rows="3" @bind="_message" placeholder="Enter announcement text…"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Severity</label>
+            <select @bind="_severity">
+                <option value="info">Info (blue)</option>
+                <option value="warning">Warning (yellow)</option>
+                <option value="danger">Danger (red)</option>
+            </select>
+        </div>
+
+        <button class="btn" @onclick="SendAsync"
+                disabled="@(string.IsNullOrWhiteSpace(_message) || _sending)">
+            @(_sending ? "Sending…" : "Send Announcement")
+        </button>
+    </section>
+
+    @if (!string.IsNullOrEmpty(_resultMessage))
+    {
+        <div class="toast @(_resultOk ? "toast-ok" : "toast-err")">@_resultMessage</div>
+    }
+}
+
+@code {
+    private string _message  = string.Empty;
+    private string _severity = "info";
+    private bool   _sending;
+    private string? _resultMessage;
+    private bool    _resultOk;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        StateHasChanged();
+    }
+
+    private async Task SendAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_message)) return;
+        _sending = true;
+        StateHasChanged();
+
+        var (ok, err) = await Api.BroadcastAnnouncementAsync(new BroadcastAnnouncementRequest(_message.Trim(), _severity));
+        var result = (Success: ok, Message: err ?? (ok ? "Announcement sent." : "Failed to send."));
+        _resultOk      = result.Success;
+        _resultMessage = result.Message;
+
+        if (_resultOk) _message = string.Empty;
+        _sending = false;
+        StateHasChanged();
+    }
+}
+
+<style>
+    .back-bar { margin-bottom: 1rem; }
+    .back-bar a { color: var(--accent, #7fb3f8); text-decoration: none; }
+    .card { background: var(--card-bg, #111); border: 1px solid var(--border, #333); border-radius: 8px; padding: 1.25rem; max-width: 540px; margin-top: 1.25rem; }
+    .card h2 { margin: 0 0 .5rem; font-size: 1rem; }
+    .muted { color: var(--muted, #888); font-size: .9rem; }
+    .req { color: #f87171; }
+    .form-group { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .75rem; }
+    .form-group textarea, .form-group select {
+        padding: .45rem .65rem; border: 1px solid var(--border, #333); border-radius: 6px;
+        background: var(--input-bg, #1a1a1a); color: inherit; resize: vertical;
+    }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: .6rem 1rem; border-radius: 8px; font-weight: 600; }
+    .toast-ok  { background: #1a4030; color: #6ee7b7; border: 1px solid #065f46; }
+    .toast-err { background: #5c1c1c; color: #f87171; border: 1px solid #991b1b; }
+</style>

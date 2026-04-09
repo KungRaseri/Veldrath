@@ -1,0 +1,249 @@
+@page "/admin/users/{Id:guid}"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>User Detail — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <div class="back-bar"><a href="/admin/users">← Back to User Management</a></div>
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_detail is null)
+    {
+        <p class="error">@_error</p>
+    }
+    else
+    {
+        <h1>@_detail.Username</h1>
+        <p class="muted">@_detail.Email &nbsp;|&nbsp; Joined @_detail.CreatedAt.ToLocalTime().ToString("d") &nbsp;|&nbsp; Last seen @(_detail.LastSeenAt?.ToLocalTime().ToString("g") ?? "never")</p>
+
+        <div class="sections">
+            @* ── Roles ─────────────────────────────── *@
+            <section class="card">
+                <h2>Roles</h2>
+                @foreach (var role in _allRoles)
+                {
+                    var has = _detail.Roles.Contains(role);
+                    <div class="role-row">
+                        <span class="@(has ? "badge badge-blue" : "badge badge-off")">@role</span>
+                        @if (has)
+                        {
+                            <button class="btn btn-sm btn-danger" @onclick="() => RevokeRoleAsync(role)">Remove</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm" @onclick="() => AssignRoleAsync(role)">Add</button>
+                        }
+                    </div>
+                }
+            </section>
+
+            @* ── Per-user permissions ──────────────── *@
+            <section class="card">
+                <h2>Extra Permissions</h2>
+                <p class="muted small">Override grants not inherited from any role.</p>
+                @foreach (var perm in _allPermissions)
+                {
+                    var roleHas = _detail.EffectivePermissions.Contains(perm) && !_detail.UserPermissions.Contains(perm);
+                    var userHas = _detail.UserPermissions.Contains(perm);
+                    <div class="perm-row">
+                        <span class="@(userHas ? "badge badge-green" : roleHas ? "badge badge-grey" : "badge badge-off")">
+                            @perm @(roleHas ? " (role)" : "")
+                        </span>
+                        @if (userHas)
+                        {
+                            <button class="btn btn-sm btn-danger" @onclick="() => RevokePermAsync(perm)">Revoke</button>
+                        }
+                        else if (!roleHas)
+                        {
+                            <button class="btn btn-sm" @onclick="() => GrantPermAsync(perm)">Grant</button>
+                        }
+                    </div>
+                }
+            </section>
+
+            @* ── Ban / Unban ───────────────────────── *@
+            <section class="card">
+                <h2>Moderation</h2>
+                @if (_detail.IsBanned)
+                {
+                    <p><span class="badge badge-red">Banned</span>
+                    @if (_detail.BannedUntil.HasValue)
+                    {
+                        <span class="muted"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</span>
+                    }
+                    else
+                    {
+                        <span class="muted"> (permanent)</span>
+                    }
+                    @if (!string.IsNullOrEmpty(_detail.BanReason))
+                    {
+                        <span class="muted"> — @_detail.BanReason</span>
+                    }
+                    </p>
+                    <button class="btn" @onclick="UnbanAsync">Unban Player</button>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label>Ban Reason <span class="req">*</span></label>
+                        <input @bind="_banReason" placeholder="Reason for ban…" />
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes, blank = permanent)</label>
+                        <input type="number" @bind="_banDuration" placeholder="e.g. 1440 for 24 hours" />
+                    </div>
+                    <button class="btn btn-danger" @onclick="BanAsync" disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban Player</button>
+                    <button class="btn btn-warning" style="margin-left:.5rem" @onclick="KickAsync">Kick Player</button>
+                    <div class="form-group" style="margin-top:.5rem">
+                        <label>Kick Reason</label>
+                        <input @bind="_kickReason" placeholder="Optional…" />
+                    </div>
+                }
+            </section>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_actionMessage))
+        {
+            <div class="toast @(_actionOk ? "toast-ok" : "toast-err")">@_actionMessage</div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private PlayerDetailDto? _detail;
+    private bool             _loading = true;
+    private string?          _error;
+    private string?          _actionMessage;
+    private bool             _actionOk;
+
+
+    private string? _banReason;
+    private int?    _banDuration;
+    private string? _kickReason;
+
+    private static readonly string[] _allRoles =
+        ["Admin", "Moderator", "Curator", "GameMaster", "Developer", "ContentEditor"];
+
+    private static readonly string[] _allPermissions =
+    [
+        "ban_players", "kick_players", "warn_players", "view_players",
+        "teleport_players", "give_items", "run_events", "manage_content",
+        "view_content", "manage_roles", "manage_users", "debug_access",
+        "send_announcements", "review_submissions"
+    ];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        if (AuthState.IsAdmin) await RefreshAsync();
+        StateHasChanged();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _loading = true;
+        _detail  = null;
+        StateHasChanged();
+        _detail  = await Api.GetUserAsync(Id);
+        if (_detail is null) _error = "User not found.";
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task AssignRoleAsync(string role)
+    {
+        var (ok, err) = await Api.AssignRoleAsync(Id, role);
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task RevokeRoleAsync(string role)
+    {
+        var (ok, err) = await Api.RevokeRoleAsync(Id, role);
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task GrantPermAsync(string perm)
+    {
+        var (ok, err) = await Api.GrantPermissionAsync(Id, perm);
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task RevokePermAsync(string perm)
+    {
+        var (ok, err) = await Api.RevokePermissionAsync(Id, perm);
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task KickAsync()
+    {
+        var (ok, err) = await Api.KickPlayerAsync(new KickPlayerRequest(Id, _kickReason));
+        ShowResult(ok, err);
+    }
+
+    private async Task BanAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_banReason)) return;
+        var (ok, err) = await Api.BanPlayerAsync(new BanPlayerRequest(Id, _banReason, _banDuration));
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task UnbanAsync()
+    {
+        var (ok, err) = await Api.UnbanPlayerAsync(Id);
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private void ShowResult(bool ok, string? err)
+    {
+        _actionOk      = ok;
+        _actionMessage = ok ? "Action applied successfully." : (err ?? "Operation failed.");
+        StateHasChanged();
+    }
+}
+
+<style>
+    .back-bar { margin-bottom: 1rem; }
+    .back-bar a { color: var(--accent, #7fb3f8); text-decoration: none; }
+    .sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .card { background: var(--card-bg, #111); border: 1px solid var(--border, #333); border-radius: 8px; padding: 1rem 1.25rem; }
+    .card h2 { margin: 0 0 .75rem; font-size: 1rem; }
+    .role-row, .perm-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; }
+    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; }
+    .badge-blue  { background: #1e3a6e; color: #7fb3f8; }
+    .badge-green { background: #1a4030; color: #6ee7b7; }
+    .badge-red   { background: #5c1c1c; color: #f87171; }
+    .badge-grey  { background: #2a2a2a; color: #aaa; }
+    .badge-off   { background: #1a1a1a; color: #555; border: 1px solid #333; }
+    .muted  { color: var(--muted, #888); }
+    .small  { font-size: .85rem; }
+    .req    { color: #f87171; }
+    .error  { color: #f87171; }
+    .form-group { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .5rem; }
+    .form-group input { padding: .4rem .65rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; }
+    .btn-danger  { background: #7f1d1d; border-color: #b91c1c; }
+    .btn-warning { background: #713f12; border-color: #b45309; }
+    .btn-sm { padding: .2rem .6rem; font-size: .82rem; }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: .6rem 1rem; border-radius: 8px; font-weight: 600; }
+    .toast-ok  { background: #1a4030; color: #6ee7b7; border: 1px solid #065f46; }
+    .toast-err { background: #5c1c1c; color: #f87171; border: 1px solid #991b1b; }
+</style>

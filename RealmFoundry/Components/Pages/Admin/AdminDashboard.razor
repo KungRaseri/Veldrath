@@ -1,0 +1,40 @@
+@page "/admin"
+@inject AuthStateService AuthState
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Admin Dashboard — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied. You need the <strong>Admin</strong> role to view this page.</p>
+}
+else
+{
+    <h1>Admin Dashboard</h1>
+
+    <div class="admin-grid">
+        <a class="admin-card" href="/admin/users">
+            <h2>User Management</h2>
+            <p>View accounts, assign roles, grant or revoke per-user permissions, kick and ban players.</p>
+        </a>
+
+        <a class="admin-card" href="/admin/roles">
+            <h2>Roles &amp; Permissions</h2>
+            <p>Review the permission set for each role.</p>
+        </a>
+
+        <a class="admin-card" href="/admin/server">
+            <h2>Server Commands</h2>
+            <p>Broadcast server-wide announcements to all connected players.</p>
+        </a>
+    </div>
+}
+
+<style>
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .admin-card { display: block; padding: 1.25rem 1.5rem; border: 1px solid var(--border, #333); border-radius: 8px; text-decoration: none; color: inherit; transition: border-color .15s; }
+    .admin-card:hover { border-color: var(--accent, #6c7eff); }
+    .admin-card h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
+    .admin-card p { margin: 0; color: var(--muted, #888); font-size: .9rem; }
+</style>
