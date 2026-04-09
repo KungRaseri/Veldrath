@@ -56,4 +56,11 @@ public interface IPlayerSessionRepository
     /// Pass <see langword="null"/> to indicate the character has returned to the region map.
     /// </summary>
     Task SetZoneAsync(Guid characterId, string? zoneId);
+
+    /// <summary>
+    /// Updates <see cref="PlayerSession.RegionId"/>, <see cref="PlayerSession.TileX"/>, and
+    /// <see cref="PlayerSession.TileY"/> atomically when a character transitions between regions.
+    /// Also clears <see cref="PlayerSession.ZoneId"/> since the character is now on the region map.
+    /// </summary>
+    Task UpdateRegionAsync(Guid characterId, string regionId, int tileX, int tileY);
 }

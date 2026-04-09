@@ -55,6 +55,26 @@ public class TiledFileMapRepository : ITileMapRepository
         return map;
     }
 
+    /// <inheritdoc />
+    public async Task<TiledMap?> GetByRegionIdAsync(string regionId)
+    {
+        var filePath = Path.Combine(_mapsBasePath, $"{regionId}.tmx");
+        if (!File.Exists(filePath))
+        {
+            _logger.LogDebug("No TMX asset found for region '{RegionId}' at {Path}", regionId, filePath);
+            return null;
+        }
+
+        await using var stream = File.OpenRead(filePath);
+        var doc = await XDocument.LoadAsync(stream, LoadOptions.None, CancellationToken.None);
+        var map = ParseMap(doc, filePath);
+
+        // Resolve and merge each external tileset reference
+        await MergeExternalTilesetsAsync(map, filePath);
+
+        return map;
+    }
+
     // ── Map parsing ───────────────────────────────────────────────────────────
 
     private static TiledMap ParseMap(XDocument doc, string mapFilePath)

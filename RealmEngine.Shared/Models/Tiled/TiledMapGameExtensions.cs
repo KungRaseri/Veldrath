@@ -258,4 +258,75 @@ public static class TiledMapGameExtensions
         }
         return result;
     }
+
+    // ── Region map objects ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all zone entry objects from the objectgroup layer named <c>"zones"</c>.
+    /// Each object's <see cref="TiledObject.Name"/> is used as the zone slug.
+    /// The following custom properties are read when present:
+    /// <c>displayName</c> (string, falls back to the object name), <c>minLevel</c> (int), <c>maxLevel</c> (int).
+    /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
+    /// </summary>
+    public static IReadOnlyList<ZoneObjectDefinition> GetZoneObjects(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("zones", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var result = new List<ZoneObjectDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            var zoneId = obj.Name;
+            if (string.IsNullOrEmpty(zoneId)) continue;
+
+            var displayName  = obj.Properties.Find(p => p.Name == "displayName")?.AsString(zoneId) ?? zoneId;
+            var minLevelProp = obj.Properties.Find(p => p.Name == "minLevel");
+            var maxLevelProp = obj.Properties.Find(p => p.Name == "maxLevel");
+
+            result.Add(new ZoneObjectDefinition
+            {
+                ZoneId      = zoneId,
+                DisplayName = displayName,
+                MinLevel    = minLevelProp is not null ? (int?)minLevelProp.AsInt() : null,
+                MaxLevel    = maxLevelProp is not null ? (int?)maxLevelProp.AsInt() : null,
+                TileX       = (int)(obj.X / map.TileWidth),
+                TileY       = (int)(obj.Y / map.TileHeight),
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Extracts all region exit objects from the objectgroup layer named <c>"region_exits"</c>.
+    /// Each object's <see cref="TiledObject.Name"/> is used as the target region slug.
+    /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
+    /// </summary>
+    public static IReadOnlyList<RegionExitDefinition> GetRegionExits(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("region_exits", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var result = new List<RegionExitDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            var toRegionId = obj.Name;
+            if (string.IsNullOrEmpty(toRegionId)) continue;
+
+            result.Add(new RegionExitDefinition
+            {
+                ToRegionId = toRegionId,
+                TileX      = (int)(obj.X / map.TileWidth),
+                TileY      = (int)(obj.Y / map.TileHeight),
+            });
+        }
+
+        return result;
+    }
 }
