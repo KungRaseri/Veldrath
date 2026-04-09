@@ -20,6 +20,8 @@
                 sessionStorage.setItem('rf_account_id',   d.i);
                 sessionStorage.setItem('rf_is_curator',   d.c ? 'true' : 'false');
                 sessionStorage.setItem('rf_token_expiry', d.e);
+                sessionStorage.setItem('rf_roles',        JSON.stringify(d.roles));
+                sessionStorage.setItem('rf_permissions',  JSON.stringify(d.perms));
             } catch (_) { /* storage quota or unavailable */ }
             window.location.replace('/');
         })();
@@ -80,9 +82,11 @@ else
             return;
         }
 
-        var isCurator = claims.TryGetValue("role", out var roleEl)
-            && roleEl.ValueKind == JsonValueKind.String
-            && roleEl.GetString() == "Curator";
+        // Role claim may be a single string or a JSON array depending on token size.
+        // Extract all roles into a list so multi-role accounts are handled correctly.
+        var roles = ExtractStringClaim(claims, "role");
+        var permissions = ExtractStringClaim(claims, "permission");
+        var isCurator = roles.Contains("Curator", StringComparer.OrdinalIgnoreCase);
 
         var expiry = long.TryParse(Expires, out var unix)
             ? DateTimeOffset.FromUnixTimeSeconds(unix).ToString("O")
@@ -91,12 +95,33 @@ else
         // JavaScriptEncoder.Default escapes <, >, &, ' and " as \uXXXX — safe to embed in <script>.
         _payload = JsonSerializer.Serialize(new
         {
-            a = Jwt,
-            r = Refresh ?? "",
-            u = username,
-            i = accountId.ToString(),
-            c = isCurator,
-            e = expiry
+            a     = Jwt,
+            r     = Refresh ?? "",
+            u     = username,
+            i     = accountId.ToString(),
+            c     = isCurator,
+            e     = expiry,
+            roles = roles,
+            perms = permissions,
         }, new JsonSerializerOptions { Encoder = JavaScriptEncoder.Default });
+    }
+
+    /// <summary>
+    /// Extracts a claim that may appear as a single <c>string</c> or a <c>string[]</c> in the JWT payload.
+    /// ASP.NET Core serialises multiple claims of the same type as a JSON array.
+    /// </summary>
+    private static List<string> ExtractStringClaim(Dictionary<string, JsonElement> claims, string key)
+    {
+        if (!claims.TryGetValue(key, out var el)) return [];
+
+        return el.ValueKind switch
+        {
+            JsonValueKind.String => [el.GetString()!],
+            JsonValueKind.Array  => el.EnumerateArray()
+                                     .Where(e => e.ValueKind == JsonValueKind.String)
+                                     .Select(e => e.GetString()!)
+                                     .ToList(),
+            _                    => [],
+        };
     }
 }

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
@@ -12,6 +13,7 @@ using RealmUnbound.Contracts.Connection;
 using RealmUnbound.Contracts.Tilemap;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Characters.Combat;
 using RealmUnbound.Server.Features.LevelUp;
@@ -48,6 +50,7 @@ public class GameHub : Hub
     private readonly ITileMapRepository _tilemapRepo;
     private readonly IEnemyRepository _enemyRepo;
     private readonly IOptions<VersionCompatibilitySettings> _versionOptions;
+    private readonly UserManager<PlayerAccount> _userManager;
 
     /// <summary>Initializes a new instance of <see cref="GameHub"/>.</summary>
     public GameHub(
@@ -61,7 +64,8 @@ public class GameHub : Hub
         IZoneEntityTracker entityTracker,
         ITileMapRepository tilemapRepo,
         IEnemyRepository enemyRepo,
-        IOptions<VersionCompatibilitySettings> versionOptions)
+        IOptions<VersionCompatibilitySettings> versionOptions,
+        UserManager<PlayerAccount> userManager)
     {
         _logger           = logger;
         _characterRepo    = characterRepo;
@@ -74,11 +78,26 @@ public class GameHub : Hub
         _tilemapRepo      = tilemapRepo;
         _enemyRepo        = enemyRepo;
         _versionOptions   = versionOptions;
+        _userManager      = userManager;
     }
 
     public override async Task OnConnectedAsync()
     {
         var accountId = GetAccountId();
+
+        // Ban check — reject the connection before it joins any groups.
+        var user = await _userManager.FindByIdAsync(accountId.ToString());
+        if (user is not null && user.IsBanned &&
+            (user.BannedUntil is null || user.BannedUntil > DateTimeOffset.UtcNow))
+        {
+            var banMsg = user.BannedUntil.HasValue
+                ? $"Your account is banned until {user.BannedUntil:u}. Reason: {user.BanReason}"
+                : $"Your account is permanently banned. Reason: {user.BanReason}";
+            await Clients.Caller.SendAsync("OnKicked", new KickedPayload(banMsg));
+            Context.Abort();
+            return;
+        }
+
         Context.Items["AccountId"] = accountId;
 
         // Join the per-account group so this connection receives CharacterStatusChanged broadcasts
@@ -2194,6 +2213,124 @@ public class GameHub : Hub
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";
 
     private static string RegionGroup(string regionId) => $"region:{regionId}";
+
+    // ── Chat + Commands ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sends a chat message to all players in the caller's current zone, or processes a
+    /// slash-command if the message begins with <c>/</c>.
+    /// The caller must have an active character selected and be inside a zone.
+    /// </summary>
+    /// <param name="request">The chat message or slash-command.</param>
+    public async Task SendChatMessage(ChatMessageHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "Select a character before chatting.");
+            return;
+        }
+        if (!TryGetCurrentZoneGroup(out var zoneGroup))
+        {
+            await Clients.Caller.SendAsync("Error", "Enter a zone before chatting.");
+            return;
+        }
+
+        var text = request.Message?.Trim() ?? string.Empty;
+        if (text.Length == 0) return;
+        if (text.Length > 500) text = text[..500];
+
+        if (text.StartsWith('/'))
+        {
+            await HandleChatCommandAsync(text, characterId, zoneGroup);
+            return;
+        }
+
+        var character = await _characterRepo.GetByIdAsync(characterId);
+        var senderName = character?.Name ?? "Unknown";
+
+        await Clients.Group(zoneGroup).SendAsync("ChatMessage",
+            new ChatMessagePayload(characterId, senderName, text, DateTimeOffset.UtcNow));
+    }
+
+    private async Task HandleChatCommandAsync(string raw, Guid characterId, string zoneGroup)
+    {
+        var parts = raw[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return;
+
+        var cmd = parts[0].ToLowerInvariant();
+
+        switch (cmd)
+        {
+            case "help":
+                await Clients.Caller.SendAsync("SystemMessage", BuildHelpText());
+                return;
+
+            case "announce":
+                if (!CallerHasPermission(Permissions.SendAnnouncements))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to send announcements.");
+                    return;
+                }
+                var msg = string.Join(' ', parts[1..]);
+                if (string.IsNullOrWhiteSpace(msg)) { await Clients.Caller.SendAsync("SystemMessage", "Usage: /announce <message>"); return; }
+                await Clients.All.SendAsync("OnAnnouncement", new AnnouncementPayload(msg, "info"));
+                return;
+
+            case "kick":
+                if (!CallerHasPermission(Permissions.KickPlayers))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to kick players.");
+                    return;
+                }
+                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var kickCharId))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /kick <characterId>");
+                    return;
+                }
+                var kickSession = await _playerSessionRepo.GetByCharacterIdAsync(kickCharId);
+                if (kickSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
+                await Clients.Client(kickSession.ConnectionId).SendAsync("OnKicked", new KickedPayload("You have been kicked by a moderator."));
+                await Clients.Caller.SendAsync("SystemMessage", $"Kick sent to character {kickCharId}.");
+                return;
+
+            case "tp":
+                if (!CallerHasPermission(Permissions.TeleportPlayers))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to teleport players.");
+                    return;
+                }
+                await Clients.Caller.SendAsync("SystemMessage", "Teleport via chat command not yet implemented. Use the admin panel.");
+                return;
+
+            case "give":
+                if (!CallerHasPermission(Permissions.GiveItems))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to give items.");
+                    return;
+                }
+                await Clients.Caller.SendAsync("SystemMessage", "Give via chat command not yet implemented. Use the admin panel.");
+                return;
+
+            default:
+                await Clients.Caller.SendAsync("SystemMessage", $"Unknown command '/{cmd}'. Type /help for a list of commands.");
+                return;
+        }
+    }
+
+    private bool CallerHasPermission(string permission)
+        => Context.User?.HasClaim("permission", permission) == true;
+
+    private static string BuildHelpText()
+    {
+        return """
+            Available commands:
+              /help                  — Show this list
+              /announce <msg>        — Broadcast a server announcement  [send_announcements]
+              /kick <characterId>    — Disconnect a player              [kick_players]
+              /tp <charId> <zoneId>  — Teleport a player                [teleport_players]
+              /give <charId> <slug>  — Give an item to a player         [give_items]
+            """;
+    }
 
     private Guid GetAccountId()
     {

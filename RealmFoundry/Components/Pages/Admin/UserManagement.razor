@@ -1,0 +1,134 @@
+@page "/admin/users"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>User Management — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <h1>User Management</h1>
+
+    <div class="toolbar">
+        <input class="search-input" placeholder="Search username or email…"
+               @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
+        <button class="btn" @onclick="LoadUsersAsync">Search</button>
+        <a class="btn btn-secondary" href="/admin">← Back</a>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_users is null)
+    {
+        <p>@_error</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Status</th>
+                    <th>Last Seen</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in _users.Items)
+                {
+                    <tr>
+                        <td>@u.Username</td>
+                        <td class="muted">@u.Email</td>
+                        <td>
+                            @foreach (var r in u.Roles)
+                            {
+                                <span class="badge badge-blue">@r</span>
+                            }
+                        </td>
+                        <td>
+                            @if (u.IsBanned)
+                            {
+                                <span class="badge badge-red">Banned</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-green">Active</span>
+                            }
+                        </td>
+                        <td class="muted">@(u.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</td>
+                        <td><a class="btn btn-sm" href="/admin/users/@u.Id">Manage</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button class="btn btn-sm" disabled="@(_page <= 1)" @onclick="PrevPageAsync">← Prev</button>
+            <span>Page @_page of @((_users.Total + _pageSize - 1) / _pageSize)</span>
+            <button class="btn btn-sm" disabled="@(_page * _pageSize >= _users.Total)" @onclick="NextPageAsync">Next →</button>
+        </div>
+    }
+}
+
+@code {
+    private string?              _search;
+    private bool                 _loading;
+    private string?              _error;
+    private AdminUserListResponse? _users;
+    private int _page     = 1;
+    private int _pageSize = 25;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        if (AuthState.IsAdmin)
+            await LoadUsersAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _loading = true;
+        _error   = null;
+        StateHasChanged();
+
+        _users = await Api.GetUsersAsync(_search, _page, _pageSize);
+        if (_users is null) _error = "Failed to load users.";
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") { _page = 1; await LoadUsersAsync(); }
+    }
+
+    private async Task PrevPageAsync() { if (_page > 1) { _page--; await LoadUsersAsync(); } }
+    private async Task NextPageAsync() { _page++; await LoadUsersAsync(); }
+}
+
+<style>
+    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; }
+    .search-input { flex: 1; padding: .45rem .75rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--border, #333); text-align: left; }
+    .admin-table th { font-weight: 600; color: var(--muted, #888); font-size: .85rem; }
+    .muted { color: var(--muted, #888); font-size: .9rem; }
+    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; margin-right: .25rem; }
+    .badge-blue { background: #1e3a6e; color: #7fb3f8; }
+    .badge-red  { background: #5c1c1c; color: #f87171; }
+    .badge-green { background: #1a4030; color: #6ee7b7; }
+    .btn-sm { padding: .2rem .6rem; font-size: .85rem; }
+    .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+</style>

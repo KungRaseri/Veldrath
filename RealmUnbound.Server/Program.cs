@@ -20,6 +20,7 @@ using RealmEngine.Data.Services;
 using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
+using RealmUnbound.Server.Features.Admin;
 using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Announcements;
 using RealmUnbound.Server.Features.Characters;
@@ -129,7 +130,14 @@ try
         });
 
     builder.Services.AddAuthorization(options =>
-        options.AddPolicy("Curator", p => p.RequireRole("Curator")));
+    {
+        // Legacy Curator role policy (kept for backward compat with existing Foundry endpoints).
+        options.AddPolicy("Curator", p => p.RequireRole(Roles.Curator));
+
+        // Fine-grained permission policies — each permission string maps to a JWT claim.
+        foreach (var permission in Permissions.All)
+            options.AddPolicy(permission, p => p.RequireClaim("permission", permission));
+    });
 
     var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
     builder.Services.AddRateLimiter(opts =>
@@ -347,14 +355,13 @@ try
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
 
-            // Ensure the Curator identity role exists (idempotent).
-            var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-            if (!await roleManager.RoleExistsAsync("Curator"))
-                await roleManager.CreateAsync(new IdentityRole<Guid>("Curator"));
         }
+
+        // Seed all identity roles and their default permission claims (runs for all DB providers).
+        await SeedRolesAsync(scope.ServiceProvider);
     }
 
-    // Auth, character, zone & content catalog endpoints
+    // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
     app.MapExternalAuthEndpoints();
     app.MapAnnouncementEndpoints();
@@ -363,6 +370,7 @@ try
     app.MapCharacterCreationSessionEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();
+    app.MapAdminEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game");
@@ -445,6 +453,32 @@ static async Task RepairStaleMigrationsAsync(DbContext db, bool isDevelopment, I
 
     await db.Database.EnsureDeletedAsync();
     Log.Information("Development database dropped; migrations will be re-applied from scratch.");
+}
+
+// Seeds all RBAC roles and their default permission claims idempotently.
+// Runs for every DB provider (including SQLite in tests) so the test host always has the full role set.
+static async Task SeedRolesAsync(IServiceProvider services)
+{
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+    foreach (var roleName in Roles.All)
+    {
+        if (!await roleManager.RoleExistsAsync(roleName))
+            await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
+
+        var role = (await roleManager.FindByNameAsync(roleName))!;
+        var existingClaims = await roleManager.GetClaimsAsync(role);
+        var existingPermissions = existingClaims
+            .Where(c => c.Type == "permission")
+            .Select(c => c.Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var perm in Roles.DefaultPermissionsFor(roleName))
+        {
+            if (!existingPermissions.Contains(perm))
+                await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("permission", perm));
+        }
+    }
 }
 
 // Required for WebApplicationFactory<Program> in integration tests.

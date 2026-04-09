@@ -1,4 +1,5 @@
 using RealmUnbound.Contracts.Auth;
+using RealmUnbound.Contracts.Admin;
 using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Foundry;
 
@@ -159,4 +160,100 @@ public class RealmFoundryApiClient(HttpClient http)
             .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value!)}");
         return string.Join("&", parts);
     }
+
+    // ── Admin ────────────────────────────────────────────────────────────────
+
+    /// <summary>Returns a paged list of player accounts matching the optional search string.</summary>
+    public async Task<AdminUserListResponse?> GetUsersAsync(
+        string? search = null, int page = 1, int pageSize = 25, CancellationToken ct = default)
+    {
+        var url = "/api/admin/users";
+        var qs  = BuildQuery(("search", search), ("page", page.ToString()), ("pageSize", pageSize.ToString()));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<AdminUserListResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Returns the full detail for a single player account.</summary>
+    public async Task<PlayerDetailDto?> GetUserAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/admin/users/{id}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PlayerDetailDto>(ct)
+            : null;
+    }
+
+    /// <summary>Assigns a role to an account. Returns (true, null) on success or (false, errorMessage) on failure.</summary>
+    public async Task<(bool Ok, string? Error)> AssignRoleAsync(Guid id, string role, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync($"/api/admin/users/{id}/roles", new AssignRoleRequest(role), ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Revokes a role from an account.</summary>
+    public async Task<(bool Ok, string? Error)> RevokeRoleAsync(Guid id, string role, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/admin/users/{id}/roles/{Uri.EscapeDataString(role)}", ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Grants a per-user permission claim to an account.</summary>
+    public async Task<(bool Ok, string? Error)> GrantPermissionAsync(Guid id, string permission, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync($"/api/admin/users/{id}/permissions", new GrantPermissionRequest(permission), ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Revokes a per-user permission claim from an account.</summary>
+    public async Task<(bool Ok, string? Error)> RevokePermissionAsync(Guid id, string permission, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/admin/users/{id}/permissions/{Uri.EscapeDataString(permission)}", ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Sends a kick signal to all active sessions for the specified account.</summary>
+    public async Task<(bool Ok, string? Error)> KickPlayerAsync(KickPlayerRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/admin/players/kick", request, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Bans an account and kicks its active sessions.</summary>
+    public async Task<(bool Ok, string? Error)> BanPlayerAsync(BanPlayerRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/admin/players/ban", request, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Lifts a ban from an account.</summary>
+    public async Task<(bool Ok, string? Error)> UnbanPlayerAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"/api/admin/players/unban?id={id}", null, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Broadcasts an announcement to all connected game clients.</summary>
+    public async Task<(bool Ok, string? Error)> BroadcastAnnouncementAsync(BroadcastAnnouncementRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/admin/broadcast", request, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
 }
+
+/// <summary>Paged response for the admin user list endpoint.</summary>
+/// <param name="Total">Total number of matching accounts.</param>
+/// <param name="Page">Current page number.</param>
+/// <param name="PageSize">Number of items per page.</param>
+/// <param name="Items">Accounts on the current page.</param>
+public record AdminUserListResponse(int Total, int Page, int PageSize, IReadOnlyList<PlayerSummaryDto> Items);

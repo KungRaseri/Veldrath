@@ -20,6 +20,7 @@ namespace RealmUnbound.Server.Features.Auth;
 public class AuthService(
     UserManager<PlayerAccount> userManager,
     SignInManager<PlayerAccount> signInManager,
+    RoleManager<IdentityRole<Guid>> roleManager,
     IRefreshTokenRepository refreshTokenRepo,
     IConfiguration config)
 {
@@ -91,9 +92,9 @@ public class AuthService(
 
         await refreshTokenRepo.RevokeAsync(stored.Id, clientIp, newRefreshId, ct);
 
-        var isCurator = await userManager.IsInRoleAsync(user, "Curator");
-        var (jwt, expiry) = GenerateJwt(user, isCurator);
-        return (new AuthResponse(jwt, rawNew, expiry, user.Id, user.UserName!, isCurator), null);
+        var (roles, permissions) = await ResolveRolesAndPermissionsAsync(user);
+        var (jwt, expiry) = GenerateJwt(user, roles, permissions);
+        return (new AuthResponse(jwt, rawNew, expiry, user.Id, user.UserName!, roles, permissions, roles.Contains(Roles.Curator)), null);
     }
 
     public async Task RevokeAsync(
@@ -147,12 +148,13 @@ public class AuthService(
         return (await IssueTokenPairAsync(user, clientIp, ct), null);
     }
 
-    // Internals
+    // Private helpers
+
     private async Task<AuthResponse> IssueTokenPairAsync(
         PlayerAccount user, string clientIp, CancellationToken ct)
     {
-        var isCurator = await userManager.IsInRoleAsync(user, "Curator");
-        var (jwt, expiry) = GenerateJwt(user, isCurator);
+        var (roles, permissions) = await ResolveRolesAndPermissionsAsync(user);
+        var (jwt, expiry) = GenerateJwt(user, roles, permissions);
         var (rawRefresh, hashRefresh) = GenerateRefreshToken();
         var refreshDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "30");
 
@@ -164,10 +166,45 @@ public class AuthService(
             CreatedByIp = clientIp,
         }, ct);
 
-        return new AuthResponse(jwt, rawRefresh, expiry, user.Id, user.UserName!, isCurator);
+        return new AuthResponse(jwt, rawRefresh, expiry, user.Id, user.UserName!,
+            roles, permissions, roles.Contains(Roles.Curator));
     }
 
-    private (string Jwt, DateTimeOffset Expiry) GenerateJwt(PlayerAccount user, bool isCurator = false)
+    /// <summary>
+    /// Resolves the full effective role and permission sets for a user.
+    /// Role claims are accumulated from <see cref="RoleManager{TRole}.GetClaimsAsync"/> and
+    /// per-user overrides are read from <see cref="UserManager{TUser}.GetClaimsAsync"/>.
+    /// The union of both sets forms the effective permission list embedded in the JWT.
+    /// </summary>
+    private async Task<(IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions)>
+        ResolveRolesAndPermissionsAsync(PlayerAccount user)
+    {
+        var roleNames = (await userManager.GetRolesAsync(user)).ToList();
+
+        var permissions = new HashSet<string>(StringComparer.Ordinal);
+
+        // Collect permissions granted to each role.
+        foreach (var roleName in roleNames)
+        {
+            var role = await roleManager.FindByNameAsync(roleName);
+            if (role is null) continue;
+            var roleClaims = await roleManager.GetClaimsAsync(role);
+            foreach (var c in roleClaims.Where(c => c.Type == "permission"))
+                permissions.Add(c.Value);
+        }
+
+        // Merge per-user permission grants (individual overrides on top of role defaults).
+        var userClaims = await userManager.GetClaimsAsync(user);
+        foreach (var c in userClaims.Where(c => c.Type == "permission"))
+            permissions.Add(c.Value);
+
+        return (roleNames, permissions.ToList());
+    }
+
+    private (string Jwt, DateTimeOffset Expiry) GenerateJwt(
+        PlayerAccount user,
+        IReadOnlyList<string> roles,
+        IReadOnlyList<string> permissions)
     {
         var keyBytes = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
         var creds = new SigningCredentials(
@@ -183,8 +220,15 @@ public class AuthService(
             new(JwtRegisteredClaimNames.UniqueName, user.UserName!),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
-        if (isCurator)
-            claims.Add(new Claim(ClaimTypes.Role, "Curator"));
+
+        // Embed all role names as ClaimTypes.Role so ASP.NET Core policy evaluation works.
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
+        // Embed all effective permissions so permission-based policies evaluate from the JWT
+        // without a database round-trip per request.
+        foreach (var perm in permissions)
+            claims.Add(new Claim("permission", perm));
 
         var token = new JwtSecurityToken(
             issuer: config["Jwt:Issuer"],

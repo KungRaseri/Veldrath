@@ -1,0 +1,85 @@
+@page "/admin/roles"
+@inject AuthStateService AuthState
+@rendermode InteractiveServer
+
+<PageTitle>Role Management — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <div class="back-bar"><a href="/admin">← Back to Admin</a></div>
+    <h1>Role Management</h1>
+    <p class="muted">
+        Roles are seeded at server startup. The table below shows each role's default 
+        permission set. To adjust a specific player's roles or per-user permission 
+        overrides, use <a href="/admin/users">User Management</a>.
+    </p>
+
+    <div class="role-grid">
+        @foreach (var role in _roles)
+        {
+            <div class="role-card">
+                <div class="role-header">
+                    <span class="role-name">@role.Name</span>
+                </div>
+                <p class="role-desc">@role.Description</p>
+                <ul class="perm-list">
+                    @foreach (var p in role.Permissions)
+                    {
+                        <li><span class="badge badge-blue">@p</span></li>
+                    }
+                    @if (role.Permissions.Length == 0)
+                    {
+                        <li class="muted small">No default permissions.</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private static readonly RoleInfo[] _roles =
+    [
+        new("Admin",         "Full system access — all permissions granted.", [
+            "ban_players","kick_players","warn_players","view_players","teleport_players",
+            "give_items","run_events","manage_content","view_content","manage_roles",
+            "manage_users","debug_access","send_announcements","review_submissions"
+        ]),
+        new("Moderator",     "Player-facing moderation: ban, kick, warn, view players.", [
+            "ban_players","kick_players","warn_players","view_players","send_announcements"
+        ]),
+        new("Curator",       "Community content curation: review and approve/reject Foundry submissions.", [
+            "review_submissions","view_content"
+        ]),
+        new("GameMaster",    "In-game powers: teleport, give items, run events, view players.", [
+            "teleport_players","give_items","run_events","view_players","kick_players","send_announcements"
+        ]),
+        new("Developer",     "Debug and diagnostic access plus content read access.", [
+            "debug_access","view_content","view_players"
+        ]),
+        new("ContentEditor", "Manage and view canonical game content in the database.", [
+            "manage_content","view_content"
+        ]),
+    ];
+
+    private sealed record RoleInfo(string Name, string Description, string[] Permissions);
+}
+
+<style>
+    .back-bar { margin-bottom: 1rem; }
+    .back-bar a { color: var(--accent, #7fb3f8); text-decoration: none; }
+    .muted { color: var(--muted, #888); }
+    .small { font-size: .85rem; }
+    .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+    .role-card { background: var(--card-bg, #111); border: 1px solid var(--border, #333); border-radius: 8px; padding: 1rem 1.25rem; }
+    .role-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+    .role-name { font-size: 1.05rem; font-weight: 700; }
+    .role-desc { color: var(--muted, #888); font-size: .87rem; margin: 0 0 .75rem; }
+    .perm-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .3rem; }
+    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; }
+    .badge-blue { background: #1e3a6e; color: #7fb3f8; }
+</style>
