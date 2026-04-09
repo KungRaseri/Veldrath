@@ -38,7 +38,7 @@ public class RegionEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFa
 
         var starter = regions!.SingleOrDefault(r => r.IsStarter);
         starter.Should().NotBeNull();
-        starter!.Id.Should().Be("thornveil");
+        starter!.Id.Should().Be("varenmark");
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class RegionEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFa
     {
         var regions = await _client.GetFromJsonAsync<RegionDto[]>("/api/regions");
 
-        regions!.Should().Contain(r => r.Type == "Forest");
+        regions!.Should().Contain(r => r.Type == "Countryside");
         regions!.Should().Contain(r => r.Type == "Highland");
         regions!.Should().Contain(r => r.Type == "Coastal");
         regions!.Should().Contain(r => r.Type == "Volcanic");
@@ -83,14 +83,14 @@ public class RegionEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFa
     [Fact]
     public async Task GetRegionConnections_Should_Return_Adjacent_Regions()
     {
-        // greymoor connects to: thornveil, saltcliff, cinderplain
+        // greymoor connects to: varenmark, saltcliff, cinderplain
         var response = await _client.GetAsync("/api/regions/greymoor/connections");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var connected = await response.Content.ReadFromJsonAsync<RegionDto[]>();
         connected.Should().NotBeNull();
         connected!.Length.Should().Be(3);
-        connected.Should().Contain(r => r.Id == "thornveil");
+        connected.Should().Contain(r => r.Id == "varenmark");
         connected.Should().Contain(r => r.Id == "saltcliff");
         connected.Should().Contain(r => r.Id == "cinderplain");
     }
@@ -114,15 +114,15 @@ public class RegionEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFa
     }
 
     [Fact]
-    public async Task GetZonesByRegion_Should_Return_Zones_For_Thornveil()
+    public async Task GetZonesByRegion_Should_Return_Zones_For_Varenmark()
     {
-        var response = await _client.GetAsync("/api/zones/by-region/thornveil");
+        var response = await _client.GetAsync("/api/zones/by-region/varenmark");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var zones = await response.Content.ReadFromJsonAsync<ZoneDto[]>();
         zones.Should().NotBeNull();
-        zones!.Length.Should().Be(4);
-        zones.Should().OnlyContain(z => z.RegionId == "thornveil");
+        zones!.Length.Should().Be(6);
+        zones.Should().OnlyContain(z => z.RegionId == "varenmark");
     }
 
     [Fact]

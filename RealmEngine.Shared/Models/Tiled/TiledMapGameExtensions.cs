@@ -229,6 +229,7 @@ public static class TiledMapGameExtensions
     /// Returns the <c>regionId</c> custom property, used to identify which region this map belongs to
     /// (e.g. <c>"thornveil"</c>). Returns an empty string when absent.
     /// </summary>
+    /// <returns>The region identifier, or an empty string if the <c>regionId</c> property is absent.</returns>
     public static string GetRegionId(this TiledMap map) =>
         map.GetStringProperty("regionId") ?? string.Empty;
 
@@ -240,6 +241,7 @@ public static class TiledMapGameExtensions
     /// Optional custom properties: <c>displayName</c> (string), <c>minLevel</c> (int), <c>maxLevel</c> (int).
     /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
     /// </summary>
+    /// <returns>A read-only list of zone-entry definitions. Returns an empty list if the <c>zones</c> objectgroup layer is absent.</returns>
     public static IReadOnlyList<ZoneObjectDefinition> GetZoneEntries(this TiledMap map)
     {
         var layer = map.Layers.Find(l =>
@@ -274,6 +276,7 @@ public static class TiledMapGameExtensions
     /// Each object's <c>name</c> attribute is the target region slug.
     /// Pixel coordinates are converted to tile coordinates using the map's tile dimensions.
     /// </summary>
+    /// <returns>A read-only list of region-exit definitions. Returns an empty list if the <c>region_exits</c> objectgroup layer is absent.</returns>
     public static IReadOnlyList<RegionExitDefinition> GetRegionExits(this TiledMap map)
     {
         var layer = map.Layers.Find(l =>

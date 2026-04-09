@@ -147,6 +147,7 @@ public class GameHubTests : IDisposable
         var hub     = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
+                                  new RegionRepository(db),
                                   new PlayerSessionRepository(db),
                                   tracker ?? new ActiveCharacterTracker(),
                                   mediator ?? Mock.Of<ISender>(),
@@ -1514,6 +1515,7 @@ public class GameHubTests : IDisposable
         var hub2 = new GameHub(NullLogger<GameHub>.Instance,
                                new CharacterRepository(db),
                                new ZoneRepository(db),
+                               new RegionRepository(db),
                                new PlayerSessionRepository(db),
                                tracker,
                                Mock.Of<ISender>(),
@@ -1547,6 +1549,7 @@ public class GameHubTests : IDisposable
         var hub = new GameHub(NullLogger<GameHub>.Instance,
                               new CharacterRepository(db),
                               new ZoneRepository(db),
+                              new RegionRepository(db),
                               new PlayerSessionRepository(db),
                               tracker,
                               Mock.Of<ISender>(),
@@ -3367,8 +3370,7 @@ public class GameHubTests : IDisposable
 
     // VisitShopHubCommandHandler
     [Fact]
-    public async Task VisitShop_Handler_Should_Return_Zone_Info_For_Merchant_Zone()
-    {
+    public async Task VisitShop_Handler_Should_Return_Zone_Info_For_Merchant_Zone()    {
         await using var db = _factory.CreateContext();
         var accountId      = await SeedAccountAsync(db);
 
@@ -3377,12 +3379,12 @@ public class GameHubTests : IDisposable
             NullLogger<VisitShopHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new VisitShopHubCommand(accountId, "fenwick-crossing"),
+            new VisitShopHubCommand(accountId, "crestfall"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        result.ZoneId.Should().Be("fenwick-crossing");
-        result.ZoneName.Should().Be("Fenwick's Crossing");
+        result.ZoneId.Should().Be("crestfall");
+        result.ZoneName.Should().Be("Crestfall");
     }
 
     [Fact]
@@ -3414,7 +3416,7 @@ public class GameHubTests : IDisposable
             NullLogger<VisitShopHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new VisitShopHubCommand(accountId, "greenveil-paths"),
+            new VisitShopHubCommand(accountId, "the-droveway"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();

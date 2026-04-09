@@ -40,6 +40,7 @@ public class GameHub : Hub
     private readonly ILogger<GameHub> _logger;
     private readonly ICharacterRepository _characterRepo;
     private readonly IZoneRepository _zoneRepo;
+    private readonly IRegionRepository _regionRepo;
     private readonly IPlayerSessionRepository _playerSessionRepo;
     private readonly IActiveCharacterTracker _activeCharacters;
     private readonly ISender _mediator;
@@ -53,6 +54,7 @@ public class GameHub : Hub
         ILogger<GameHub> logger,
         ICharacterRepository characterRepo,
         IZoneRepository zoneRepo,
+        IRegionRepository regionRepo,
         IPlayerSessionRepository playerSessionRepo,
         IActiveCharacterTracker activeCharacters,
         ISender mediator,
@@ -64,6 +66,7 @@ public class GameHub : Hub
         _logger           = logger;
         _characterRepo    = characterRepo;
         _zoneRepo           = zoneRepo;
+        _regionRepo         = regionRepo;
         _playerSessionRepo  = playerSessionRepo;
         _activeCharacters   = activeCharacters;
         _mediator         = mediator;
@@ -155,9 +158,15 @@ public class GameHub : Hub
         Context.Items["CurrentZoneId"] = character.CurrentZoneId;
         Context.Items["DifficultyMode"] = character.DifficultyMode;
 
-        // Start the character on the region map — derive region from last known zone or fall back to "thornveil"
+        // Start the character on the region map — derive region from last known zone, then fall back to the seeded starter region
         var zone     = string.IsNullOrEmpty(character.CurrentZoneId) ? null : await _zoneRepo.GetByIdAsync(character.CurrentZoneId);
-        var regionId = zone?.RegionId ?? "thornveil";
+        var starterRegion = zone is null ? await _regionRepo.GetStarterAsync() : null;
+        if (zone is null && starterRegion is null)
+        {
+            await Clients.Caller.SendAsync("Error", "No starter region is configured on this server");
+            return;
+        }
+        var regionId = zone?.RegionId ?? starterRegion!.Id;
         Context.Items["CurrentRegionId"] = regionId;
 
         // Remove any stale session left by an earlier disconnect that did not clean up
@@ -562,7 +571,11 @@ public class GameHub : Hub
             return;
         }
 
-        var regionId = Context.Items.TryGetValue("CurrentRegionId", out var r) && r is string rs ? rs : "thornveil";
+        if (!Context.Items.TryGetValue("CurrentRegionId", out var r) || r is not string regionId)
+        {
+            await Clients.Caller.SendAsync("Error", "No active region context; call SelectCharacter first");
+            return;
+        }
 
         try
         {
