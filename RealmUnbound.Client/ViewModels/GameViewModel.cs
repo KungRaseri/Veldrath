@@ -5,6 +5,7 @@ using System.Reactive;
 using RealmUnbound.Assets;
 using RealmUnbound.Assets.Manifest;
 using RealmUnbound.Client.Services;
+using RealmUnbound.Contracts.Tilemap;
 
 namespace RealmUnbound.Client.ViewModels;
 
@@ -26,6 +27,7 @@ namespace RealmUnbound.Client.ViewModels;
 /// <param name="LearnedAbilities">Ability slugs the character has learned.</param>
 /// <param name="CharacterId">The character's unique identifier.</param>
 /// <param name="ClassName">The character class name.</param>
+/// <param name="CurrentRegionId">The region the character is currently in. Seeds <c>_regionId</c> on the view model.</param>
 public record SeedInitialStatsArgs(
     int Level, long Experience,
     int CurrentHealth, int MaxHealth,
@@ -35,7 +37,8 @@ public record SeedInitialStatsArgs(
     int Intelligence = 10, int Wisdom = 10, int Charisma = 10,
     IReadOnlyList<string>? LearnedAbilities = null,
     Guid? CharacterId = null,
-    string ClassName = "");
+    string ClassName = "",
+    string CurrentRegionId = "");
 
 /// <summary>In-game view model. Active after a character has entered a zone.</summary>
 public class GameViewModel : ViewModelBase
@@ -50,6 +53,7 @@ public class GameViewModel : ViewModelBase
 
     // Tilemap
     private TilemapViewModel? _tilemapViewModel;
+    private RegionTilemapViewModel? _regionTilemapViewModel;
 
     // Zone state
     private string _zoneName = string.Empty;
@@ -530,6 +534,13 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _tilemapViewModel, value);
     }
 
+    /// <summary>View model for the region-map canvas. Active when the character is on the region map (not inside a zone).</summary>
+    public RegionTilemapViewModel? RegionTilemap
+    {
+        get => _regionTilemapViewModel;
+        private set => this.RaiseAndSetIfChanged(ref _regionTilemapViewModel, value);
+    }
+
     // ────────────────────────────────────────────────────────────────────────
 
     /// <summary>Whether the current zone has an inn available for resting.</summary>
@@ -933,6 +944,18 @@ public class GameViewModel : ViewModelBase
                 new { ToX = toX, ToY = toY, Direction = dir });
         });
 
+        // Region-map VM — callbacks forward to the appropriate hub methods
+        RegionTilemap = new RegionTilemapViewModel(
+            onMove: async (toX, toY, dir) =>
+                await _connection.SendCommandAsync<object>("MoveOnRegion", new { ToX = toX, ToY = toY, Direction = dir }),
+            onEnterZone: async zoneId =>
+            {
+                await InitializeAsync(CharacterName, zoneId);
+                await _connection.SendCommandAsync<object>("EnterZone", zoneId);
+            },
+            onTransitionRegion: async toRegionId =>
+                await _connection.SendCommandAsync<object>("TransitionToRegion", new { TargetRegionId = toRegionId }));
+
         // Settings + audio mute commands
         ToggleSettingsCommand  = ReactiveCommand.Create(() => { IsSettingsOpen = !IsSettingsOpen; });
         ToggleMusicMuteCommand = ReactiveCommand.Create(() =>
@@ -1073,6 +1096,76 @@ public class GameViewModel : ViewModelBase
                 Tilemap.RevealAround(self.TileX, self.TileY);
             }
         }
+    }
+
+    // ── Region-map hub handlers ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Requests the region map payload from the server.
+    /// The server reads <c>Context.Items["CurrentRegionId"]</c> so no argument is required.
+    /// </summary>
+    public async Task LoadRegionMapAsync() =>
+        await _connection.SendCommandAsync("GetRegionMap");
+
+    /// <summary>Called from hub when the <c>RegionMap</c> message arrives with the region's full map and live players.</summary>
+    public void OnRegionMapReceived(RegionMapDto map, IReadOnlyList<TileEntityDto> players)
+    {
+        if (RegionTilemap is null) return;
+        RegionTilemap.MapData = map;
+        RegionTilemap.OtherPlayers.Clear();
+        foreach (var p in players)
+        {
+            if (p.EntityId == _characterId) continue;
+            RegionTilemap.UpsertPlayer(p.EntityId, p.TileX, p.TileY);
+        }
+    }
+
+    /// <summary>Called from hub when any player (including self) moves on the region map.</summary>
+    public void OnPlayerMovedOnRegion(Guid characterId, int tileX, int tileY)
+    {
+        if (RegionTilemap is null) return;
+        if (characterId == _characterId)
+        {
+            RegionTilemap.PlayerTileX = tileX;
+            RegionTilemap.PlayerTileY = tileY;
+            RegionTilemap.CenterCameraOn(tileX, tileY);
+        }
+        else
+        {
+            RegionTilemap.UpsertPlayer(characterId, tileX, tileY);
+        }
+    }
+
+    /// <summary>Called from hub when the local player steps onto a zone-entry tile; shows the zone-entry prompt.</summary>
+    public void OnZoneEntryNearby(string zoneId, string displayName)
+    {
+        if (RegionTilemap is null) return;
+        RegionTilemap.PendingZoneEntry = new ZoneEntryInfo(zoneId, displayName);
+    }
+
+    /// <summary>Called from hub when the local player steps onto a region-exit tile; shows the region-exit prompt.</summary>
+    public void OnRegionExitNearby(string toRegionId)
+    {
+        if (RegionTilemap is null) return;
+        RegionTilemap.PendingRegionExit = toRegionId;
+    }
+
+    /// <summary>
+    /// Called from hub when the character successfully exits a zone and returns to the region map.
+    /// Switches view mode to <c>"RegionMap"</c> and triggers a pull of the region map from the server.
+    /// </summary>
+    public void OnExitedZone(string regionId, int spawnTileX, int spawnTileY)
+    {
+        _regionId = regionId;
+        if (RegionTilemap is not null)
+        {
+            RegionTilemap.PlayerTileX       = spawnTileX;
+            RegionTilemap.PlayerTileY       = spawnTileY;
+            RegionTilemap.PendingZoneEntry  = null;
+            RegionTilemap.PendingRegionExit = null;
+        }
+        ZoneViewMode = "RegionMap";
+        _ = LoadRegionMapAsync();
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -1395,6 +1488,8 @@ public class GameViewModel : ViewModelBase
                 Tilemap.SelfEntityId = _characterId;
         }
         ClassName = args.ClassName;
+        if (!string.IsNullOrEmpty(args.CurrentRegionId))
+            _regionId = args.CurrentRegionId;
 
         LearnedAbilities.Clear();
         if (args.LearnedAbilities is not null)

@@ -12,4 +12,8 @@ public class InMemoryTileMapRepository : ITileMapRepository
     /// <inheritdoc />
     public Task<TiledMap?> GetByZoneIdAsync(string zoneId) =>
         Task.FromResult((TiledMap?)null);
+
+    /// <inheritdoc />
+    public Task<TiledMap?> GetByRegionIdAsync(string regionId) =>
+        Task.FromResult((TiledMap?)null);
 }

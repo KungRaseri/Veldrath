@@ -53,4 +53,8 @@ public class CompositeITileMapRepository : ITileMapRepository
 
         return null;
     }
+
+    /// <inheritdoc />
+    public Task<TiledMap?> GetByRegionIdAsync(string regionId) =>
+        _tmx.GetByRegionIdAsync(regionId);
 }
