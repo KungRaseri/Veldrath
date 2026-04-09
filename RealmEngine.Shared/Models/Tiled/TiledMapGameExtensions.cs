@@ -301,6 +301,72 @@ public static class TiledMapGameExtensions
         return exits;
     }
 
+    // ── Region map: zone labels ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all zone-label definitions from the objectgroup layer named <c>"labels"</c>.
+    /// Point objects only. The object's <c>name</c> is the display text; the optional
+    /// <c>zoneSlug</c> custom property links the label to a zone entry.
+    /// </summary>
+    /// <returns>A read-only list of label definitions. Returns an empty list if the <c>labels</c> objectgroup layer is absent.</returns>
+    public static IReadOnlyList<ZoneLabelDefinition> GetZoneLabels(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("labels", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var labels = new List<ZoneLabelDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (obj.Point != true || string.IsNullOrEmpty(obj.Name)) continue;
+
+            labels.Add(new ZoneLabelDefinition
+            {
+                TileX    = (int)(obj.X / map.TileWidth),
+                TileY    = (int)(obj.Y / map.TileHeight),
+                Text     = obj.Name,
+                ZoneSlug = obj.Properties.Find(p => p.Name == "zoneSlug")?.AsString() ?? string.Empty,
+            });
+        }
+
+        return labels;
+    }
+
+    // ── Region map: paths ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all path definitions from the objectgroup layer named <c>"paths"</c>.
+    /// Polyline objects only. Points are converted from pixel coordinates to tile coordinates.
+    /// The polyline points are relative to the object origin; this method returns absolute tile positions.
+    /// </summary>
+    /// <returns>A read-only list of path definitions. Returns an empty list if the <c>paths</c> objectgroup layer is absent.</returns>
+    public static IReadOnlyList<RegionPathDefinition> GetRegionPaths(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("paths", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var paths = new List<RegionPathDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            if (obj.Polyline is null || obj.Polyline.Count == 0) continue;
+
+            var points = obj.Polyline
+                .Select(p => new RegionPathPoint(
+                    TileX: (float)((obj.X + p.X) / map.TileWidth),
+                    TileY: (float)((obj.Y + p.Y) / map.TileHeight)))
+                .ToList();
+
+            paths.Add(new RegionPathDefinition { Name = obj.Name, Points = points });
+        }
+
+        return paths;
+    }
+
     /// <summary>
     /// Returns the <see cref="TiledTileset.FirstGid"/> of the first tileset in the map,
     /// which is 1 for all standard single-tileset maps. Returns 1 when no tilesets are present.
