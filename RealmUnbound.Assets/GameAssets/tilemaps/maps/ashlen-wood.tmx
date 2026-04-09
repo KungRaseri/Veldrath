@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="31" height="25" tilewidth="16" tileheight="16" infinite="1" nextlayerid="10" nextobjectid="7">
+ <properties>
+  <property name="tilesetKey" value="roguelike_base"/>
+ </properties>
  <tileset firstgid="1" source="../sheets/roguelike_base.tsx"/>
  <objectgroup id="3" name="interactables"/>
  <objectgroup id="6" name="exits"/>
