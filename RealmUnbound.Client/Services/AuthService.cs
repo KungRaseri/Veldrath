@@ -191,7 +191,9 @@ public class HttpAuthService(
             result.RefreshToken,
             result.AccessTokenExpiry,
             accountId,
-            username);
+            username,
+            [],
+            []);
 
         tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
                     response.AccessTokenExpiry, response.IsCurator);

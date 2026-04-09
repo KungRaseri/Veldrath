@@ -1,0 +1,164 @@
+@page "/admin/reports"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Player Reports — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <h1>Player Reports</h1>
+
+    <div class="toolbar">
+        <select class="filter-select" @bind="_showResolved" @bind:after="OnFilterChangedAsync">
+            <option value="">All Reports</option>
+            <option value="false">Open Only</option>
+            <option value="true">Resolved Only</option>
+        </select>
+        <a class="btn btn-secondary" href="/admin">← Back</a>
+        <span class="total-count">@(_result?.Total ?? 0) total</span>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_actionMessage))
+    {
+        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+    }
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_result is null)
+    {
+        <p class="error">Failed to load reports.</p>
+    }
+    else if (_result.Items.Count == 0)
+    {
+        <p class="muted">No reports found.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Submitted</th>
+                    <th>Reporter</th>
+                    <th>Target</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in _result.Items)
+                {
+                    <tr>
+                        <td class="muted nowrap">@r.SubmittedAt.ToLocalTime().ToString("g")</td>
+                        <td>@r.ReporterName</td>
+                        <td>@r.TargetName</td>
+                        <td class="reason-cell">@r.Reason</td>
+                        <td>
+                            @if (r.IsResolved)
+                            {
+                                <span class="badge badge-green">Resolved</span>
+                                @if (r.ResolvedAt.HasValue)
+                                {
+                                    <span class="muted small"> @r.ResolvedAt.Value.ToLocalTime().ToString("g")</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge badge-orange">Open</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!r.IsResolved)
+                            {
+                                <button class="btn btn-sm" @onclick="() => ResolveAsync(r.Id)">Resolve</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button class="btn btn-sm" disabled="@(_page <= 1)" @onclick="PrevPageAsync">← Prev</button>
+            <span>Page @_page of @((_result.Total + _pageSize - 1) / _pageSize)</span>
+            <button class="btn btn-sm" disabled="@(_page * _pageSize >= _result.Total)" @onclick="NextPageAsync">Next →</button>
+        </div>
+    }
+}
+
+@code {
+    private string? _showResolved;
+    private bool    _loading;
+    private string? _actionMessage;
+    private bool    _actionError;
+    private int     _page     = 1;
+    private int     _pageSize = 50;
+    private PagedAdminResult<PlayerReportDto>? _result;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        if (AuthState.IsAdmin) await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading       = true;
+        _actionMessage = null;
+        StateHasChanged();
+        bool? resolved = _showResolved switch
+        {
+            "true"  => true,
+            "false" => false,
+            _       => null,
+        };
+        _result  = await Api.GetReportsAsync(_page, _pageSize, resolved);
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnFilterChangedAsync() { _page = 1; await LoadAsync(); }
+    private async Task PrevPageAsync() { if (_page > 1) { _page--; await LoadAsync(); } }
+    private async Task NextPageAsync() { _page++; await LoadAsync(); }
+
+    private async Task ResolveAsync(Guid id)
+    {
+        var (ok, err) = await Api.ResolveReportAsync(id);
+        _actionError   = !ok;
+        _actionMessage = ok ? "Report resolved." : (err ?? "Failed to resolve report.");
+        if (ok) await LoadAsync();
+        else StateHasChanged();
+    }
+}
+
+<style>
+    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+    .filter-select { padding: .45rem .6rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; }
+    .total-count { margin-left: auto; color: var(--muted, #888); font-size: .9rem; }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--border, #333); text-align: left; vertical-align: top; }
+    .admin-table th { font-weight: 600; color: var(--muted, #888); font-size: .85rem; }
+    .muted { color: var(--muted, #888); font-size: .9rem; }
+    .small { font-size: .82rem; }
+    .nowrap { white-space: nowrap; }
+    .reason-cell { max-width: 360px; overflow-wrap: break-word; }
+    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; margin-right: .25rem; }
+    .badge-green  { background: #1a4030; color: #6ee7b7; }
+    .badge-orange { background: #5c3b0a; color: #fbbf24; }
+    .error { color: #f87171; }
+    .alert { padding: .6rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+    .alert-success { background: #1a4030; color: #6ee7b7; border: 1px solid #2d6a4f; }
+    .alert-error   { background: #5c1c1c; color: #f87171; border: 1px solid #7c2020; }
+    .btn-sm { padding: .2rem .6rem; font-size: .85rem; }
+    .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+</style>

@@ -93,7 +93,7 @@ public class RealmFoundryApiClientTests
     {
         var (client, handler) = Build();
         var expected = new AuthResponse("new-jwt", "new-refresh", DateTimeOffset.UtcNow.AddHours(1),
-            Guid.NewGuid(), "alice", true);
+            Guid.NewGuid(), "alice", [], [], true);
         SetupResponse(handler, HttpStatusCode.OK, expected);
 
         var result = await client.RefreshTokenAsync("old-refresh");

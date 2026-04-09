@@ -75,41 +75,96 @@ else
             @* ── Ban / Unban ───────────────────────── *@
             <section class="card">
                 <h2>Moderation</h2>
-                @if (_detail.IsBanned)
-                {
-                    <p><span class="badge badge-red">Banned</span>
-                    @if (_detail.BannedUntil.HasValue)
+
+                @* Warnings *@
+                <div class="mod-subsection">
+                    <h3>Warnings <span class="badge @(_detail.WarnCount > 0 ? "badge-orange" : "badge-off")">@_detail.WarnCount</span></h3>
+                    <div class="form-inline">
+                        <input @bind="_warnReason" placeholder="Warning reason…" class="input-sm" />
+                        <button class="btn btn-sm btn-warn" @onclick="WarnAsync">Issue Warning</button>
+                    </div>
+                </div>
+
+                @* Mute *@
+                <div class="mod-subsection">
+                    <h3>Chat Mute</h3>
+                    @if (_detail.IsMuted)
                     {
-                        <span class="muted"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</span>
+                        <p>
+                            <span class="badge badge-orange">Muted</span>
+                            @if (_detail.MutedUntil.HasValue)
+                            {
+                                <span class="muted"> until @_detail.MutedUntil.Value.ToLocalTime().ToString("g")</span>
+                            }
+                            else
+                            {
+                                <span class="muted"> (permanent)</span>
+                            }
+                            @if (!string.IsNullOrEmpty(_detail.MuteReason))
+                            {
+                                <span class="muted"> — @_detail.MuteReason</span>
+                            }
+                        </p>
+                        <button class="btn btn-sm" @onclick="UnmuteAsync">Lift Mute</button>
                     }
                     else
                     {
-                        <span class="muted"> (permanent)</span>
+                        <div class="form-group">
+                            <label>Mute Reason</label>
+                            <input @bind="_muteReason" placeholder="Reason…" />
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (minutes, blank = permanent)</label>
+                            <input type="number" @bind="_muteDuration" placeholder="e.g. 60" />
+                        </div>
+                        <button class="btn btn-sm btn-warn" @onclick="MuteAsync">Mute Player</button>
                     }
-                    @if (!string.IsNullOrEmpty(_detail.BanReason))
+                </div>
+
+                @* Ban *@
+                <div class="mod-subsection">
+                    <h3>Ban</h3>
+                    @if (_detail.IsBanned)
                     {
-                        <span class="muted"> — @_detail.BanReason</span>
+                        <p><span class="badge badge-red">Banned</span>
+                        @if (_detail.BannedUntil.HasValue)
+                        {
+                            <span class="muted"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</span>
+                        }
+                        else
+                        {
+                            <span class="muted"> (permanent)</span>
+                        }
+                        @if (!string.IsNullOrEmpty(_detail.BanReason))
+                        {
+                            <span class="muted"> — @_detail.BanReason</span>
+                        }
+                        </p>
+                        <button class="btn" @onclick="UnbanAsync">Unban Player</button>
                     }
-                    </p>
-                    <button class="btn" @onclick="UnbanAsync">Unban Player</button>
-                }
-                else
-                {
-                    <div class="form-group">
-                        <label>Ban Reason <span class="req">*</span></label>
-                        <input @bind="_banReason" placeholder="Reason for ban…" />
-                    </div>
-                    <div class="form-group">
-                        <label>Duration (minutes, blank = permanent)</label>
-                        <input type="number" @bind="_banDuration" placeholder="e.g. 1440 for 24 hours" />
-                    </div>
-                    <button class="btn btn-danger" @onclick="BanAsync" disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban Player</button>
-                    <button class="btn btn-warning" style="margin-left:.5rem" @onclick="KickAsync">Kick Player</button>
-                    <div class="form-group" style="margin-top:.5rem">
-                        <label>Kick Reason</label>
-                        <input @bind="_kickReason" placeholder="Optional…" />
-                    </div>
-                }
+                    else
+                    {
+                        <div class="form-group">
+                            <label>Ban Reason <span class="req">*</span></label>
+                            <input @bind="_banReason" placeholder="Reason for ban…" />
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (minutes, blank = permanent)</label>
+                            <input type="number" @bind="_banDuration" placeholder="e.g. 1440 for 24 hours" />
+                        </div>
+                        <button class="btn btn-danger" @onclick="BanAsync" disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban Player</button>
+                        <button class="btn btn-warning" style="margin-left:.5rem" @onclick="KickAsync">Kick Player</button>
+                        <div class="form-group" style="margin-top:.5rem">
+                            <label>Kick Reason</label>
+                            <input @bind="_kickReason" placeholder="Optional…" />
+                        </div>
+                    }
+                </div>
+
+                <div class="mod-links">
+                    <a class="btn btn-sm btn-secondary" href="/admin/audit?targetId=@Id">View Audit Log</a>
+                    <a class="btn btn-sm btn-secondary" href="/admin/reports">Player Reports</a>
+                </div>
             </section>
         </div>
 
@@ -133,6 +188,9 @@ else
     private string? _banReason;
     private int?    _banDuration;
     private string? _kickReason;
+    private string? _warnReason;
+    private string? _muteReason;
+    private int?    _muteDuration;
 
     private static readonly string[] _allRoles =
         ["Admin", "Moderator", "Curator", "GameMaster", "Developer", "ContentEditor"];
@@ -192,6 +250,28 @@ else
         if (ok) await RefreshAsync();
     }
 
+    private async Task WarnAsync()
+    {
+        var (ok, err) = await Api.WarnPlayerAsync(new WarnPlayerRequest(Id, _warnReason ?? "Warned by admin."));
+        ShowResult(ok, err);
+        _warnReason = null;
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task MuteAsync()
+    {
+        var (ok, err) = await Api.MutePlayerAsync(new MutePlayerRequest(Id, _muteReason, _muteDuration));
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task UnmuteAsync()
+    {
+        var (ok, err) = await Api.UnmutePlayerAsync(Id);
+        ShowResult(ok, err);
+        if (ok) await RefreshAsync();
+    }
+
     private async Task KickAsync()
     {
         var (ok, err) = await Api.KickPlayerAsync(new KickPlayerRequest(Id, _kickReason));
@@ -243,6 +323,14 @@ else
     .btn-danger  { background: #7f1d1d; border-color: #b91c1c; }
     .btn-warning { background: #713f12; border-color: #b45309; }
     .btn-sm { padding: .2rem .6rem; font-size: .82rem; }
+    .badge-orange { background: #5c3b0a; color: #fbbf24; }
+    .btn-warn { background: #5c3b0a; color: #fbbf24; border: 1px solid #7c5a20; }
+    .btn-warn:hover { background: #7c5a20; }
+    .mod-subsection { border-top: 1px solid var(--border, #333); padding-top: .75rem; margin-top: .75rem; }
+    .mod-subsection h3 { margin: 0 0 .5rem; font-size: .9rem; font-weight: 600; color: var(--muted, #888); }
+    .mod-links { border-top: 1px solid var(--border, #333); padding-top: .75rem; margin-top: .75rem; display: flex; gap: .5rem; }
+    .form-inline { display: flex; gap: .5rem; align-items: center; }
+    .input-sm { padding: .3rem .6rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; flex: 1; }
     .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: .6rem 1rem; border-radius: 8px; font-weight: 600; }
     .toast-ok  { background: #1a4030; color: #6ee7b7; border: 1px solid #065f46; }
     .toast-err { background: #5c1c1c; color: #f87171; border: 1px solid #991b1b; }

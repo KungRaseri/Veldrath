@@ -45,6 +45,10 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<Announcement> Announcements => Set<Announcement>();
     /// <summary>Server-wide key/value counters (e.g. global rescue fund total).</summary>
     public DbSet<GlobalStat> GlobalStats => Set<GlobalStat>();
+    /// <summary>Immutable audit trail of all moderation and administrative actions.</summary>
+    public DbSet<AdminAuditEntry> AdminAuditEntries => Set<AdminAuditEntry>();
+    /// <summary>Player-submitted reports about other players' behaviour.</summary>
+    public DbSet<PlayerReport> PlayerReports => Set<PlayerReport>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -230,6 +234,29 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
         {
             e.HasKey(g => g.Key);
             e.Property(g => g.Key).HasMaxLength(64);
+        });
+
+        builder.Entity<AdminAuditEntry>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.Property(a => a.Action).HasMaxLength(64).IsRequired();
+            e.Property(a => a.ActorUsername).HasMaxLength(256).IsRequired();
+            e.Property(a => a.TargetUsername).HasMaxLength(256).IsRequired(false);
+            e.Property(a => a.Details).HasMaxLength(1000).IsRequired(false);
+            e.HasIndex(a => a.ActorAccountId);
+            e.HasIndex(a => a.TargetAccountId);
+            e.HasIndex(a => a.OccurredAt);
+        });
+
+        builder.Entity<PlayerReport>(e =>
+        {
+            e.HasKey(r => r.Id);
+            e.Property(r => r.ReporterName).HasMaxLength(64).IsRequired();
+            e.Property(r => r.TargetName).HasMaxLength(64).IsRequired();
+            e.Property(r => r.Reason).HasMaxLength(1000).IsRequired();
+            e.HasIndex(r => r.IsResolved);
+            e.HasIndex(r => r.SubmittedAt);
+            e.HasIndex(r => r.TargetCharacterId);
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

@@ -49,3 +49,66 @@ public record ChatMessagePayload(
     string SenderName,
     string Message,
     DateTimeOffset Timestamp);
+
+// ── Teleport / Summon ────────────────────────────────────────────────────────
+
+/// <summary>
+/// Server-to-client push: the caller's character has been teleported by a staff member.
+/// The client should transition to the specified zone.
+/// </summary>
+/// <param name="ZoneId">Target zone identifier.</param>
+/// <param name="ZoneName">Human-readable zone name shown in the notification.</param>
+public record TeleportedPayload(string ZoneId, string ZoneName);
+
+/// <summary>
+/// Server-to-client push: a staff member is summoning the caller's character to their location.
+/// The client should prompt acceptance or auto-accept per settings, then transition to the zone.
+/// </summary>
+/// <param name="ByCharacterName">Name of the staff character performing the summon.</param>
+/// <param name="ZoneId">Destination zone identifier.</param>
+public record SummonedPayload(string ByCharacterName, string ZoneId);
+
+// ── Item / Resource Grants ───────────────────────────────────────────────────
+
+/// <summary>
+/// Server-to-client push: a staff member has added an item directly to the caller's inventory.
+/// </summary>
+/// <param name="ItemSlug">The item reference slug.</param>
+/// <param name="Quantity">How many were added.</param>
+/// <param name="GivenByUsername">Account username of the staff member who granted the item.</param>
+public record ItemReceivedPayload(string ItemSlug, int Quantity, string GivenByUsername);
+
+// ── Social ───────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Server-to-client push: a character in the zone performed a roleplay emote.
+/// </summary>
+/// <param name="CharacterId">Emoting character's identifier.</param>
+/// <param name="CharacterName">Emoting character's display name.</param>
+/// <param name="Action">Emote action text (e.g. <c>"waves hello"</c>).</param>
+public record EmotePayload(Guid CharacterId, string CharacterName, string Action);
+
+/// <summary>
+/// Server-to-client push: a private message directed at the caller's character.
+/// </summary>
+/// <param name="FromCharacterId">Sender's character identifier.</param>
+/// <param name="FromCharacterName">Sender's display name.</param>
+/// <param name="Message">Private message text.</param>
+public record WhisperPayload(Guid FromCharacterId, string FromCharacterName, string Message);
+
+// ── Moderation Notifications ─────────────────────────────────────────────────
+
+/// <summary>
+/// Server-to-client push: the caller's account has received a formal warning.
+/// </summary>
+/// <param name="Reason">Reason for the warning.</param>
+/// <param name="NewWarnCount">Updated total warning count on the account.</param>
+public record WarnedPayload(string Reason, int NewWarnCount);
+
+/// <summary>
+/// Server-to-client push: the caller's account has been muted.
+/// The client should display the reason and suppress the chat input field.
+/// </summary>
+/// <param name="Reason">Optional reason for the mute.</param>
+/// <param name="Until">UTC expiry of the mute, or <c>null</c> if permanent.</param>
+public record MutedPayload(string? Reason, DateTimeOffset? Until);

@@ -19,10 +19,10 @@ namespace RealmUnbound.Client.Tests.Infrastructure;
 public class FakeAuthService : IAuthService
 {
     public (AuthResponse? Response, AppError? Error) RegisterResult { get; set; } =
-        (new AuthResponse("access", "refresh", DateTimeOffset.UtcNow.AddMinutes(15), Guid.NewGuid(), "TestUser"), null);
+        (new AuthResponse("access", "refresh", DateTimeOffset.UtcNow.AddMinutes(15), Guid.NewGuid(), "TestUser", [], []), null);
 
     public (AuthResponse? Response, AppError? Error) LoginResult { get; set; } =
-        (new AuthResponse("access", "refresh", DateTimeOffset.UtcNow.AddMinutes(15), Guid.NewGuid(), "TestUser"), null);
+        (new AuthResponse("access", "refresh", DateTimeOffset.UtcNow.AddMinutes(15), Guid.NewGuid(), "TestUser", [], []), null);
 
     public bool RefreshResult { get; set; } = true;
 

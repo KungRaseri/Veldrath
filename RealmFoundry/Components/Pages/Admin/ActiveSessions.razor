@@ -1,0 +1,110 @@
+@page "/admin/sessions"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Active Sessions — Admin — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied.</p>
+}
+else
+{
+    <h1>Active Sessions</h1>
+
+    <div class="toolbar">
+        <input class="filter-input" placeholder="Region ID…" @bind="_regionId" @bind:event="oninput" />
+        <input class="filter-input" placeholder="Zone ID…"   @bind="_zoneId"   @bind:event="oninput" />
+        <button class="btn" @onclick="LoadAsync">Filter</button>
+        <button class="btn btn-secondary" @onclick="ClearFiltersAsync">Clear</button>
+        <a class="btn btn-secondary" href="/admin">← Back</a>
+        <span class="player-count">@(_sessions?.Count ?? 0) player(s) online</span>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_sessions is null)
+    {
+        <p class="error">Failed to load sessions.</p>
+    }
+    else if (_sessions.Count == 0)
+    {
+        <p class="muted">No active sessions match the current filter.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Character</th>
+                    <th>Account</th>
+                    <th>Region</th>
+                    <th>Zone</th>
+                    <th>Since</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in _sessions)
+                {
+                    <tr>
+                        <td>@s.CharacterName</td>
+                        <td class="muted">@s.AccountUsername</td>
+                        <td class="muted">@s.RegionId</td>
+                        <td class="muted">@(s.ZoneId ?? "—")</td>
+                        <td class="muted">@s.EnteredAt.ToLocalTime().ToString("g")</td>
+                        <td><a class="btn btn-sm" href="/admin/users/@s.AccountId">Manage Account</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private string? _regionId;
+    private string? _zoneId;
+    private bool    _loading;
+    private IReadOnlyList<ActiveSessionDto>? _sessions;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await AuthState.InitialiseAsync();
+        if (AuthState.IsAdmin) await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        _sessions = await Api.GetSessionsAsync(
+            string.IsNullOrWhiteSpace(_regionId) ? null : _regionId,
+            string.IsNullOrWhiteSpace(_zoneId)   ? null : _zoneId);
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _regionId = null;
+        _zoneId   = null;
+        await LoadAsync();
+    }
+}
+
+<style>
+    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+    .filter-input { padding: .45rem .75rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; width: 160px; }
+    .player-count { margin-left: auto; font-weight: 600; color: var(--accent, #7fb3f8); }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--border, #333); text-align: left; }
+    .admin-table th { font-weight: 600; color: var(--muted, #888); font-size: .85rem; }
+    .muted { color: var(--muted, #888); font-size: .9rem; }
+    .error { color: #f87171; }
+    .btn-sm { padding: .2rem .6rem; font-size: .85rem; }
+</style>

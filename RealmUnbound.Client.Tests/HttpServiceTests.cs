@@ -48,7 +48,7 @@ public class HttpAuthServiceTests : TestBase
     private static readonly AuthResponse SampleAuth = new(
         "access-token", "refresh-token",
         DateTimeOffset.UtcNow.AddMinutes(15),
-        Guid.NewGuid(), "TestUser");
+        Guid.NewGuid(), "TestUser", [], []);
 
     private static HttpAuthService MakeSut(FakeHttpHandler handler, TokenStore? tokens = null)
     {

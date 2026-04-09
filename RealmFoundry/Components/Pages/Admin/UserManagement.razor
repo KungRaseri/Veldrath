@@ -17,9 +17,32 @@ else
     <div class="toolbar">
         <input class="search-input" placeholder="Search username or email…"
                @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
+        <select class="filter-select" @bind="_filterRole" @bind:after="OnFilterChanged">
+            <option value="">All Roles</option>
+            <option value="Admin">Admin</option>
+            <option value="Moderator">Moderator</option>
+            <option value="Player">Player</option>
+        </select>
+        <select class="filter-select" @bind="_filterStatus" @bind:after="OnFilterChanged">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+            <option value="muted">Muted</option>
+        </select>
+        <select class="filter-select" @bind="_sort" @bind:after="OnFilterChanged">
+            <option value="">Sort: Default</option>
+            <option value="username">Username</option>
+            <option value="lastseen">Last Seen</option>
+            <option value="warncount">Warn Count</option>
+        </select>
         <button class="btn" @onclick="LoadUsersAsync">Search</button>
         <a class="btn btn-secondary" href="/admin">← Back</a>
     </div>
+
+    @if (!string.IsNullOrEmpty(_actionMessage))
+    {
+        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+    }
 
     @if (_loading)
     {
@@ -38,8 +61,9 @@ else
                     <th>Email</th>
                     <th>Roles</th>
                     <th>Status</th>
+                    <th>Warns</th>
                     <th>Last Seen</th>
-                    <th></th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,13 +83,29 @@ else
                             {
                                 <span class="badge badge-red">Banned</span>
                             }
+                            else if (u.IsMuted)
+                            {
+                                <span class="badge badge-orange">Muted</span>
+                            }
                             else
                             {
                                 <span class="badge badge-green">Active</span>
                             }
                         </td>
+                        <td class="@(u.WarnCount > 0 ? "warn-count" : "muted")">@u.WarnCount</td>
                         <td class="muted">@(u.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</td>
-                        <td><a class="btn btn-sm" href="/admin/users/@u.Id">Manage</a></td>
+                        <td class="actions-cell">
+                            <a class="btn btn-sm" href="/admin/users/@u.Id">Manage</a>
+                            <button class="btn btn-sm btn-warn" @onclick="() => QuickWarnAsync(u.Id, u.Username)">Warn</button>
+                            @if (u.IsMuted)
+                            {
+                                <button class="btn btn-sm btn-secondary" @onclick="() => QuickUnmuteAsync(u.Id, u.Username)">Unmute</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-warn" @onclick="() => QuickMuteAsync(u.Id, u.Username)">Mute</button>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -81,8 +121,13 @@ else
 
 @code {
     private string?              _search;
+    private string?              _filterRole;
+    private string?              _filterStatus;
+    private string?              _sort;
     private bool                 _loading;
     private string?              _error;
+    private string?              _actionMessage;
+    private bool                 _actionError;
     private AdminUserListResponse? _users;
     private int _page     = 1;
     private int _pageSize = 25;
@@ -98,15 +143,22 @@ else
 
     private async Task LoadUsersAsync()
     {
-        _loading = true;
-        _error   = null;
+        _loading       = true;
+        _error         = null;
+        _actionMessage = null;
         StateHasChanged();
 
-        _users = await Api.GetUsersAsync(_search, _page, _pageSize);
+        _users = await Api.GetUsersAsync(_search, _filterRole, _filterStatus, _sort, _page, _pageSize);
         if (_users is null) _error = "Failed to load users.";
 
         _loading = false;
         StateHasChanged();
+    }
+
+    private async Task OnFilterChanged()
+    {
+        _page = 1;
+        await LoadUsersAsync();
     }
 
     private async Task OnSearchKeyUp(KeyboardEventArgs e)
@@ -116,19 +168,56 @@ else
 
     private async Task PrevPageAsync() { if (_page > 1) { _page--; await LoadUsersAsync(); } }
     private async Task NextPageAsync() { _page++; await LoadUsersAsync(); }
+
+    private async Task QuickWarnAsync(Guid accountId, string username)
+    {
+        var (ok, err) = await Api.WarnPlayerAsync(new WarnPlayerRequest(accountId, "Warned via user list."));
+        SetActionResult(ok, err, $"{username} warned.");
+        if (ok) await LoadUsersAsync();
+    }
+
+    private async Task QuickMuteAsync(Guid accountId, string username)
+    {
+        var (ok, err) = await Api.MutePlayerAsync(new MutePlayerRequest(accountId, "Muted via user list.", null));
+        SetActionResult(ok, err, $"{username} muted.");
+        if (ok) await LoadUsersAsync();
+    }
+
+    private async Task QuickUnmuteAsync(Guid accountId, string username)
+    {
+        var (ok, err) = await Api.UnmutePlayerAsync(accountId);
+        SetActionResult(ok, err, $"{username} unmuted.");
+        if (ok) await LoadUsersAsync();
+    }
+
+    private void SetActionResult(bool ok, string? err, string successMsg)
+    {
+        _actionError   = !ok;
+        _actionMessage = ok ? successMsg : (err ?? "Action failed.");
+        StateHasChanged();
+    }
 }
 
 <style>
-    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; }
-    .search-input { flex: 1; padding: .45rem .75rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; }
+    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+    .search-input { flex: 1; min-width: 160px; padding: .45rem .75rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; }
+    .filter-select { padding: .45rem .6rem; border: 1px solid var(--border, #333); border-radius: 6px; background: var(--input-bg, #1a1a1a); color: inherit; }
     .admin-table { width: 100%; border-collapse: collapse; }
     .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--border, #333); text-align: left; }
     .admin-table th { font-weight: 600; color: var(--muted, #888); font-size: .85rem; }
     .muted { color: var(--muted, #888); font-size: .9rem; }
+    .warn-count { color: #f59e0b; font-weight: 600; }
+    .actions-cell { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
     .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; margin-right: .25rem; }
-    .badge-blue { background: #1e3a6e; color: #7fb3f8; }
-    .badge-red  { background: #5c1c1c; color: #f87171; }
-    .badge-green { background: #1a4030; color: #6ee7b7; }
-    .btn-sm { padding: .2rem .6rem; font-size: .85rem; }
+    .badge-blue   { background: #1e3a6e; color: #7fb3f8; }
+    .badge-red    { background: #5c1c1c; color: #f87171; }
+    .badge-green  { background: #1a4030; color: #6ee7b7; }
+    .badge-orange { background: #5c3b0a; color: #fbbf24; }
+    .btn-sm   { padding: .2rem .6rem; font-size: .85rem; }
+    .btn-warn { background: #5c3b0a; color: #fbbf24; border: 1px solid #7c5a20; }
+    .btn-warn:hover { background: #7c5a20; }
     .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+    .alert { padding: .6rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+    .alert-success { background: #1a4030; color: #6ee7b7; border: 1px solid #2d6a4f; }
+    .alert-error   { background: #5c1c1c; color: #f87171; border: 1px solid #7c2020; }
 </style>

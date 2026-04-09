@@ -33,4 +33,24 @@ public class PlayerAccount : IdentityUser<Guid>
 
     /// <summary>Human-readable reason recorded at ban time and shown to the player on reconnect.</summary>
     public string? BanReason { get; set; }
+
+    /// <summary>
+    /// Number of formal warnings this account has received. When this reaches the configured
+    /// <c>Moderation:AutoBanWarnThreshold</c>, the account is automatically banned.
+    /// </summary>
+    public int WarnCount { get; set; } = 0;
+
+    /// <summary>
+    /// When <c>true</c> the account cannot send chat messages until <see cref="MutedUntil"/> has passed
+    /// or a moderator unmutes them.
+    /// </summary>
+    public bool IsMuted { get; set; } = false;
+
+    /// <summary>
+    /// UTC expiry of a temporary mute. <c>null</c> means the mute is permanent (when <see cref="IsMuted"/> is <c>true</c>).
+    /// </summary>
+    public DateTimeOffset? MutedUntil { get; set; }
+
+    /// <summary>Human-readable reason recorded at mute time.</summary>
+    public string? MuteReason { get; set; }
 }

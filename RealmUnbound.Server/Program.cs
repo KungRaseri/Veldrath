@@ -139,6 +139,9 @@ try
             options.AddPolicy(permission, p => p.RequireClaim("permission", permission));
     });
 
+    builder.Services.Configure<RealmUnbound.Server.Settings.ModerationOptions>(
+        builder.Configuration.GetSection("Moderation"));
+
     var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
     builder.Services.AddRateLimiter(opts =>
     {

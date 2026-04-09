@@ -57,7 +57,7 @@ public class AuthStateServiceTests
     private static AuthResponse MakeResponse(string username = "alice", bool isCurator = false) =>
         new("jwt-token", "refresh-token",
             DateTimeOffset.UtcNow.AddHours(1),
-            Guid.NewGuid(), username, isCurator);
+            Guid.NewGuid(), username, [], [], isCurator);
 
     // InitialiseAsync
     [Fact]
