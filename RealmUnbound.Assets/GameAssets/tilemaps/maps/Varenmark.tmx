@@ -9,43 +9,43 @@
   <object id="1" name="crestfall" x="224" y="176" width="16" height="16">
    <properties>
     <property name="displayName" value="Crestfall"/>
-    <property name="minLevel" type="int" value="0"/>
     <property name="maxLevel" type="int" value="2"/>
+    <property name="minLevel" type="int" value="0"/>
    </properties>
   </object>
   <object id="2" name="the-droveway" x="224" y="64" width="16" height="16">
    <properties>
     <property name="displayName" value="The Droveway"/>
-    <property name="minLevel" type="int" value="1"/>
     <property name="maxLevel" type="int" value="2"/>
+    <property name="minLevel" type="int" value="1"/>
    </properties>
   </object>
   <object id="3" name="ashlen-wood" x="80" y="176" width="16" height="16">
    <properties>
     <property name="displayName" value="The Ashlen Wood"/>
-    <property name="minLevel" type="int" value="1"/>
     <property name="maxLevel" type="int" value="2"/>
+    <property name="minLevel" type="int" value="1"/>
    </properties>
   </object>
   <object id="4" name="grevenmire" x="368" y="176" width="16" height="16">
    <properties>
     <property name="displayName" value="Grevenmire"/>
-    <property name="minLevel" type="int" value="3"/>
     <property name="maxLevel" type="int" value="3"/>
+    <property name="minLevel" type="int" value="3"/>
    </properties>
   </object>
   <object id="5" name="the-halrow" x="352" y="112" width="16" height="16">
    <properties>
     <property name="displayName" value="The Halrow"/>
-    <property name="minLevel" type="int" value="4"/>
     <property name="maxLevel" type="int" value="6"/>
+    <property name="minLevel" type="int" value="4"/>
    </properties>
   </object>
   <object id="6" name="drowning-pits" x="352" y="256" width="16" height="16">
    <properties>
     <property name="displayName" value="The Drowning Pits"/>
-    <property name="minLevel" type="int" value="4"/>
     <property name="maxLevel" type="int" value="6"/>
+    <property name="minLevel" type="int" value="4"/>
    </properties>
   </object>
  </objectgroup>
