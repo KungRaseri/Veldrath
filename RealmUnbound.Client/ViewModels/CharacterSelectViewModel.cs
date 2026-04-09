@@ -300,7 +300,8 @@ public class CharacterSelectViewModel : ViewModelBase
                     payload.Intelligence, payload.Wisdom, payload.Charisma,
                     payload.LearnedAbilities,
                     payload.Id,
-                    payload.ClassName)));
+                    payload.ClassName,
+                    payload.RegionId)));
 
             _itemCraftedSub = _connection.On<ItemCraftedPayload>("ItemCrafted", payload =>
                 _gameVm.OnItemCrafted(payload.RecipeSlug, payload.GoldSpent, payload.RemainingGold));

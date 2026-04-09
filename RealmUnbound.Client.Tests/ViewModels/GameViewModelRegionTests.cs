@@ -218,4 +218,59 @@ public class GameViewModelRegionTests : TestBase
         var act = () => vm.OnZoneExited("thornveil", 1, 1);
         act.Should().NotThrow();
     }
+
+    // ── OnRegionChanged ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnRegionChanged_Clears_PendingRegionExit()
+    {
+        var vm   = MakeVm();
+        var exit = new RegionExitDto(29, 10, "varenmark");
+        vm.OnRegionExitTriggered(exit);
+        vm.OnRegionChanged("varenmark", 0, 5);
+        vm.PendingRegionExit.Should().BeNull();
+    }
+
+    [Fact]
+    public void OnRegionChanged_Clears_PendingZoneEntry()
+    {
+        var vm    = MakeVm();
+        var entry = new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5);
+        vm.OnZoneEntryTriggered(entry);
+        vm.OnRegionChanged("varenmark", 0, 5);
+        vm.PendingZoneEntry.Should().BeNull();
+    }
+
+    [Fact]
+    public void OnRegionChanged_Places_Self_Entity_At_New_Tile()
+    {
+        var vm = MakeVm(characterId: CharId);
+        vm.OnRegionChanged("varenmark", 3, 7);
+        vm.RegionTilemap!.Entities.Should().ContainSingle(e =>
+            e.EntityId == CharId && e.TileX == 3 && e.TileY == 7);
+    }
+
+    [Fact]
+    public void OnRegionChanged_Reveals_Around_New_Tile()
+    {
+        var vm = MakeVm(characterId: CharId);
+        vm.OnRegionChanged("varenmark", 3, 7);
+        vm.RegionTilemap!.RevealedTiles.Should().Contain("3:7");
+    }
+
+    [Fact]
+    public void OnRegionChanged_Does_Not_Throw_Without_CharacterId()
+    {
+        var vm  = MakeVm();
+        var act = () => vm.OnRegionChanged("varenmark", 0, 0);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void OnRegionChanged_Appends_Log_Entry()
+    {
+        var vm = MakeVm();
+        vm.OnRegionChanged("varenmark", 2, 4);
+        vm.ActionLog.Should().ContainSingle(msg => msg.Contains("varenmark"));
+    }
 }
