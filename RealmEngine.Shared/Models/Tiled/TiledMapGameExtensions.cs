@@ -327,7 +327,8 @@ public static class TiledMapGameExtensions
                 TileX    = (int)(obj.X / map.TileWidth),
                 TileY    = (int)(obj.Y / map.TileHeight),
                 Text     = obj.Name,
-                ZoneSlug = obj.Properties.Find(p => p.Name == "zoneSlug")?.AsString() ?? string.Empty,
+                ZoneSlug  = obj.Properties.Find(p => p.Name == "zoneSlug")?.AsString() ?? string.Empty,
+                IsHidden  = obj.Properties.Find(p => p.Name == "isHidden")?.AsBool() ?? false,
             });
         }
 

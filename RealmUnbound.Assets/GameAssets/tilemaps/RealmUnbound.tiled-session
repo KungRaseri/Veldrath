@@ -8,12 +8,28 @@
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
-        "maps/Varenmark.tmx": {
-            "scale": 1,
-            "selectedLayer": 1,
+        "maps/Crestfall.tmx": {
+            "expandedObjectLayers": [
+                8,
+                7,
+                9
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 244,
-                "y": 228
+                "x": 232,
+                "y": 40
+            }
+        },
+        "maps/Varenmark.tmx": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 2,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 266,
+                "y": 150.5
             }
         },
         "maps/aldenmere.tmx": {
@@ -32,6 +48,14 @@
                 "y": 240.2730375426621
             }
         },
+        "maps/ashlen-wood.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 244.09723861222565,
+                "y": 187.30233655888603
+            }
+        },
         "maps/barrow-deeps.tmx": {
             "scale": 0.86984375,
             "selectedLayer": 0,
@@ -42,10 +66,18 @@
         },
         "maps/crestfall.tmx": {
             "scale": 0.75,
-            "selectedLayer": 3,
+            "selectedLayer": 2,
             "viewCenter": {
                 "x": 304,
-                "y": 70.66666666666674
+                "y": 42.66666666666674
+            }
+        },
+        "maps/drowning-pits.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
             }
         },
         "maps/greenveil-paths.tmx": {
@@ -54,6 +86,14 @@
             "viewCenter": {
                 "x": 319.59762888449785,
                 "y": 240.2730375426621
+            }
+        },
+        "maps/grevenmire.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
             }
         },
         "maps/kaldrek-maw.tmx": {
@@ -170,8 +210,9 @@
     ],
     "project": "RealmUnbound.tiled-project",
     "recentFiles": [
-        "maps/crestfall.tmx",
         "maps/Varenmark.tmx",
+        "maps/Crestfall.tmx",
+        "maps/crestfall.tmx",
         "maps/verdant-barrow.tmx",
         "maps/tolvaren.tmx",
         "maps/tidewrack-flats.tmx",
@@ -180,8 +221,7 @@
         "maps/soddenfen.tmx",
         "maps/aldenmere.tmx",
         "maps/ashfields.tmx",
-        "maps/barrow-deeps.tmx",
-        "maps/greenveil-paths.tmx"
+        "maps/barrow-deeps.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.margin": 1,

@@ -156,7 +156,8 @@ public record RegionExitDto(int TileX, int TileY, string TargetRegionId);
 /// <param name="TileY">Tile row of the label anchor point.</param>
 /// <param name="Text">Display text for the label.</param>
 /// <param name="ZoneSlug">Zone slug this label refers to. Empty for region-exit labels.</param>
-public record ZoneLabelDto(int TileX, int TileY, string Text, string ZoneSlug);
+/// <param name="IsHidden">Whether this location is hidden and requires discovery before being shown.</param>
+public record ZoneLabelDto(int TileX, int TileY, string Text, string ZoneSlug, bool IsHidden);
 
 /// <summary>A road or path polyline on a region map.</summary>
 /// <param name="Name">Unique name of the path.</param>
