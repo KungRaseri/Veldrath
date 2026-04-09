@@ -57,3 +57,34 @@ public class RegionExitDefinition
     /// <summary>Slug of the target region this crossing leads to (e.g. <c>"greymoor"</c>).</summary>
     public string TargetRegionId { get; set; } = string.Empty;
 }
+
+/// <summary>A label overlay on a region map, placed in the <c>labels</c> objectgroup layer.</summary>
+public class ZoneLabelDefinition
+{
+    /// <summary>Tile column of the label anchor point.</summary>
+    public int TileX { get; set; }
+
+    /// <summary>Tile row of the label anchor point.</summary>
+    public int TileY { get; set; }
+
+    /// <summary>Display text for the label.</summary>
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>Zone slug this label refers to. Empty for region-exit labels.</summary>
+    public string ZoneSlug { get; set; } = string.Empty;
+}
+
+/// <summary>A road or path on a region map, placed in the <c>paths</c> objectgroup layer.</summary>
+public class RegionPathDefinition
+{
+    /// <summary>Unique name of the path.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Ordered tile-space points that make up the polyline.</summary>
+    public IReadOnlyList<RegionPathPoint> Points { get; set; } = [];
+}
+
+/// <summary>A tile-space point on a <see cref="RegionPathDefinition"/>.</summary>
+/// <param name="TileX">Tile column.</param>
+/// <param name="TileY">Tile row.</param>
+public record RegionPathPoint(float TileX, float TileY);

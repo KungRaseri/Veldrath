@@ -26,7 +26,9 @@ public class RegionTilemapViewModelTests : TestBase
             Layers:        [],
             CollisionMask: collision,
             ZoneEntries:   [],
-            RegionExits:   []);
+            RegionExits:   [],
+            Labels:        [],
+            Paths:         []);
     }
 
     // ── HasMap ─────────────────────────────────────────────────────────────────

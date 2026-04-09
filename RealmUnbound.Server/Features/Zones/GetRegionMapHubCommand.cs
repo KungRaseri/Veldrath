@@ -80,6 +80,16 @@ public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubComm
             .Select(e => new RegionExitDto(e.TileX, e.TileY, e.TargetRegionId))
             .ToArray();
 
+        var labels = map.GetZoneLabels()
+            .Select(l => new ZoneLabelDto(l.TileX, l.TileY, l.Text, l.ZoneSlug))
+            .ToArray();
+
+        var paths = map.GetRegionPaths()
+            .Select(p => new RegionPathDto(
+                p.Name,
+                p.Points.Select(pt => new RegionPathPointDto(pt.TileX, pt.TileY)).ToArray()))
+            .ToArray();
+
         var dto = new RegionMapDto(
             RegionId:        map.GetRegionId().Length > 0 ? map.GetRegionId() : request.RegionId,
             TilesetKey:      map.GetTilesetKey(),
@@ -89,7 +99,9 @@ public class GetRegionMapHubCommandHandler : IRequestHandler<GetRegionMapHubComm
             Layers:          layers,
             CollisionMask:   map.GetCollisionMask(),
             ZoneEntries:     zoneEntries,
-            RegionExits:     regionExits);
+            RegionExits:     regionExits,
+            Labels:          labels,
+            Paths:           paths);
 
         return new GetRegionMapHubResult { Success = true, RegionMap = dto };
     }

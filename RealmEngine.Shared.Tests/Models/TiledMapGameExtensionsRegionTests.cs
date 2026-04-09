@@ -231,4 +231,82 @@ public class TiledMapGameExtensionsRegionTests
         exit.TileX.Should().Be(5);
         exit.TileY.Should().Be(12);
     }
+
+    // ── GetZoneLabels ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GetZoneLabels_Returns_Empty_When_Labels_Layer_Absent()
+    {
+        var map = MakeMap();
+        map.GetZoneLabels().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetZoneLabels_Returns_Labels_From_Point_Objects()
+    {
+        var map = MakeMap(tileW: 16, tileH: 16);
+        map.Layers =
+        [
+            new TiledLayer
+            {
+                Id = 1, Type = "objectgroup", Name = "labels",
+                Objects =
+                [
+                    new TiledObject
+                    {
+                        Id = 1, Name = "Crestfall", X = 224, Y = 168, Point = true,
+                        Properties = [StringProp("zoneSlug", "crestfall")],
+                    },
+                ],
+            },
+        ];
+
+        var label = map.GetZoneLabels().Single();
+        label.TileX.Should().Be(14);
+        label.TileY.Should().Be(10);
+        label.Text.Should().Be("Crestfall");
+        label.ZoneSlug.Should().Be("crestfall");
+    }
+
+    // ── GetRegionPaths ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GetRegionPaths_Returns_Empty_When_Paths_Layer_Absent()
+    {
+        var map = MakeMap();
+        map.GetRegionPaths().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetRegionPaths_Returns_Paths_With_Converted_Tile_Coords()
+    {
+        var map = MakeMap(tileW: 16, tileH: 16);
+        map.Layers =
+        [
+            new TiledLayer
+            {
+                Id = 1, Type = "objectgroup", Name = "paths",
+                Objects =
+                [
+                    new TiledObject
+                    {
+                        Id = 1, Name = "droveway-road", X = 224, Y = 80,
+                        Polyline =
+                        [
+                            new TiledPoint { X = 0, Y = 0 },
+                            new TiledPoint { X = 0, Y = 96 },
+                        ],
+                    },
+                ],
+            },
+        ];
+
+        var path = map.GetRegionPaths().Single();
+        path.Name.Should().Be("droveway-road");
+        path.Points.Should().HaveCount(2);
+        path.Points[0].TileX.Should().Be(14f);
+        path.Points[0].TileY.Should().Be(5f);
+        path.Points[1].TileX.Should().Be(14f);
+        path.Points[1].TileY.Should().Be(11f);
+    }
 }

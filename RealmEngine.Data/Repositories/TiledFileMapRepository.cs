@@ -180,8 +180,23 @@ public class TiledFileMapRepository : ITileMapRepository
         if (el.Element("point") is not null)   obj.Point   = true;
         if (el.Element("ellipse") is not null) obj.Ellipse = true;
 
+        var polylineEl = el.Element("polyline");
+        if (polylineEl is not null)
+            obj.Polyline = ParsePoints((string?)polylineEl.Attribute("points") ?? string.Empty);
+
         return obj;
     }
+
+    private static List<TiledPoint> ParsePoints(string pointsStr) =>
+        pointsStr.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Split(','))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => new TiledPoint
+            {
+                X = double.Parse(parts[0], CultureInfo.InvariantCulture),
+                Y = double.Parse(parts[1], CultureInfo.InvariantCulture),
+            })
+            .ToList();
 
     // ── Tileset parsing ───────────────────────────────────────────────────────
 

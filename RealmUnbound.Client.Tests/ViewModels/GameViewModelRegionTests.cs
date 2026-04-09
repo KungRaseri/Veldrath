@@ -40,7 +40,9 @@ public class GameViewModelRegionTests : TestBase
             Layers:        [],
             CollisionMask: new bool[40 * 30],
             ZoneEntries:   [],
-            RegionExits:   []);
+            RegionExits:   [],
+            Labels:        [],
+            Paths:         []);
 
     // ── Construction ───────────────────────────────────────────────────────────
 

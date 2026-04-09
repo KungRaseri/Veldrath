@@ -121,6 +121,8 @@ public record ZoneEntitiesSnapshotPayload(IReadOnlyList<TileEntityDto> Entities)
 /// </param>
 /// <param name="ZoneEntries">Zone-entry points placed on this region map (from the <c>zones</c> objectgroup layer).</param>
 /// <param name="RegionExits">Border crossings to adjacent regions (from the <c>region_exits</c> objectgroup layer).</param>
+/// <param name="Labels">Zone-label overlays for this region map (from the <c>labels</c> objectgroup layer).</param>
+/// <param name="Paths">Road and path polylines for this region map (from the <c>paths</c> objectgroup layer).</param>
 public record RegionMapDto(
     string RegionId,
     string TilesetKey,
@@ -130,7 +132,9 @@ public record RegionMapDto(
     IReadOnlyList<TileLayerDto> Layers,
     bool[] CollisionMask,
     IReadOnlyList<ZoneObjectDto> ZoneEntries,
-    IReadOnlyList<RegionExitDto> RegionExits);
+    IReadOnlyList<RegionExitDto> RegionExits,
+    IReadOnlyList<ZoneLabelDto> Labels,
+    IReadOnlyList<RegionPathDto> Paths);
 
 /// <summary>A zone-entry point on a region map.</summary>
 /// <param name="TileX">Tile column of the entry point.</param>
@@ -146,6 +150,23 @@ public record ZoneObjectDto(int TileX, int TileY, string ZoneSlug, string Displa
 /// <param name="TileY">Tile row of the crossing.</param>
 /// <param name="TargetRegionId">Slug of the adjacent region (e.g. <c>"greymoor"</c>).</param>
 public record RegionExitDto(int TileX, int TileY, string TargetRegionId);
+
+/// <summary>A zone-label overlay on a region map.</summary>
+/// <param name="TileX">Tile column of the label anchor point.</param>
+/// <param name="TileY">Tile row of the label anchor point.</param>
+/// <param name="Text">Display text for the label.</param>
+/// <param name="ZoneSlug">Zone slug this label refers to. Empty for region-exit labels.</param>
+public record ZoneLabelDto(int TileX, int TileY, string Text, string ZoneSlug);
+
+/// <summary>A road or path polyline on a region map.</summary>
+/// <param name="Name">Unique name of the path.</param>
+/// <param name="Points">Ordered tile-space points that make up the polyline.</param>
+public record RegionPathDto(string Name, IReadOnlyList<RegionPathPointDto> Points);
+
+/// <summary>A single tile-space point on a <see cref="RegionPathDto"/>.</summary>
+/// <param name="TileX">Tile column.</param>
+/// <param name="TileY">Tile row.</param>
+public record RegionPathPointDto(float TileX, float TileY);
 
 // ── Region Movement Payloads ───────────────────────────────────────────────
 

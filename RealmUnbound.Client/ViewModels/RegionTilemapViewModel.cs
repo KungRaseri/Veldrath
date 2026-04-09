@@ -29,11 +29,19 @@ public class RegionTilemapViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref _regionMapData, value);
             this.RaisePropertyChanged(nameof(HasMap));
+            this.RaisePropertyChanged(nameof(Labels));
+            this.RaisePropertyChanged(nameof(Paths));
         }
     }
 
     /// <summary>Whether a region tilemap has been loaded.</summary>
     public bool HasMap => _regionMapData is not null;
+
+    /// <summary>Zone label overlays for the current region map. Empty when no map is loaded.</summary>
+    public IReadOnlyList<ZoneLabelDto> Labels => _regionMapData?.Labels ?? [];
+
+    /// <summary>Road and path polylines for the current region map. Empty when no map is loaded.</summary>
+    public IReadOnlyList<RegionPathDto> Paths => _regionMapData?.Paths ?? [];
 
     // ── Camera (tile-space origin of the viewport top-left corner) ────────────
 
