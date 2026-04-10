@@ -418,4 +418,53 @@ public class CharacterEndpointTests(WebAppFactory factory) : IClassFixture<WebAp
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task CreateCharacter_WithTooShortName_Returns400()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_ShortName_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "A", ClassName = "Warrior" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_WithTooLongName_Returns400()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_LongName_User"));
+
+        var name = new string('A', 31);
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = name, ClassName = "Warrior" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_WithInvalidCharacters_Returns400()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_BadChars_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "Evil<script>", ClassName = "Warrior" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateCharacter_WithValidSpecialChars_Returns201()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SpecialOk_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "O'Brien-the_Bold", ClassName = "Warrior" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
 }

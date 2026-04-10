@@ -53,6 +53,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
         builder.UseSetting("RateLimit:FoundryWritesPerMinute",  "100000");
         builder.UseSetting("RateLimit:AdminActionsPerMinute",   "100000");
         builder.UseSetting("RateLimit:AuthAttemptsPerMinute",   "100000");
+        builder.UseSetting("RateLimit:HubCommandsPerMinute",    "100000");
 
         // Replace the production Postgres contexts with in-memory SQLite instances.
         // EF Core 8+ registers IDbContextOptionsConfiguration<T> (not DbContextOptions<T>),
