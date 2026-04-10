@@ -200,6 +200,9 @@ try
                 o.ClientSecret = discordSecret;
                 o.Scope.Add("email");
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
+                // Correlation cookie must not require Secure on plain HTTP (Docker dev).
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
             });
 
     var googleId = builder.Configuration["OAuth:Google:ClientId"];
@@ -212,6 +215,9 @@ try
                 o.ClientId = googleId;
                 o.ClientSecret = googleSecret;
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
+                // Correlation cookie must not require Secure on plain HTTP (Docker dev).
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
             });
 
     var msId = builder.Configuration["OAuth:Microsoft:ClientId"];
@@ -224,6 +230,9 @@ try
                 o.ClientId = msId;
                 o.ClientSecret = msSecret;
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
+                // Correlation cookie must not require Secure on plain HTTP (Docker dev).
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
             });
 
 
