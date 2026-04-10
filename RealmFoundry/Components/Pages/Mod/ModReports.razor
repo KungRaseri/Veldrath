@@ -1,0 +1,138 @@
+@page "/mod/reports"
+@using RealmUnbound.Contracts.Admin
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Player Reports — Moderation — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsModerator)
+{
+    <p>Access denied. You need the <strong>Moderator</strong> role to view this page.</p>
+}
+else
+{
+    <div class="toolbar">
+        <h1>Player Reports</h1>
+        <select class="filter-select" @bind="_showResolved" @bind:after="OnFilterChangedAsync">
+            <option value="">All Reports</option>
+            <option value="false">Open Only</option>
+            <option value="true">Resolved Only</option>
+        </select>
+        <a class="btn btn-secondary" href="/mod">← Back</a>
+        @if (_result is not null)
+        {
+            <span class="muted">@_result.Total total</span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_actionMessage))
+    {
+        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+    }
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_result is null)
+    {
+        <p class="error">Failed to load reports.</p>
+    }
+    else if (_result.Items.Count == 0)
+    {
+        <p class="muted">No reports found.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Submitted</th>
+                    <th>Reporter</th>
+                    <th>Target</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in _result.Items)
+                {
+                    <tr>
+                        <td class="muted nowrap">@r.SubmittedAt.ToLocalTime().ToString("g")</td>
+                        <td>@r.ReporterName</td>
+                        <td>@r.TargetName</td>
+                        <td>@r.Reason</td>
+                        <td>
+                            @if (r.IsResolved)
+                            {
+                                <span class="badge badge-green">Resolved</span>
+                                @if (r.ResolvedAt.HasValue)
+                                {
+                                    <span class="muted small"> @r.ResolvedAt.Value.ToLocalTime().ToString("g")</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge badge-orange">Open</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!r.IsResolved)
+                            {
+                                <button class="btn btn-sm btn-green" @onclick="() => ResolveAsync(r.Id)">Resolve</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (_result.Total > _result.PageSize)
+        {
+            <div class="pagination">
+                <button class="btn btn-sm" @onclick="PrevPageAsync" disabled="@(_page <= 1)">← Prev</button>
+                <span class="muted">Page @_page of @((int)Math.Ceiling(_result.Total / (double)_result.PageSize))</span>
+                <button class="btn btn-sm" @onclick="NextPageAsync" disabled="@(_page * _result.PageSize >= _result.Total)">Next →</button>
+            </div>
+        }
+    }
+}
+
+@code {
+    private PagedAdminResult<PlayerReportDto>? _result;
+    private bool    _loading      = true;
+    private int     _page         = 1;
+    private string? _showResolved;
+    private string? _actionMessage;
+    private bool    _actionError;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnFilterChangedAsync() { _page = 1; await LoadAsync(); }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        bool? resolved = _showResolved switch
+        {
+            "true"  => true,
+            "false" => false,
+            _       => null,
+        };
+        _result  = await Api.GetModReportsAsync(page: _page, resolved: resolved);
+        _loading = false;
+    }
+
+    private async Task ResolveAsync(Guid id)
+    {
+        var (ok, err) = await Api.ResolveModReportAsync(id);
+        _actionError   = !ok;
+        _actionMessage = ok ? "Report resolved." : (err ?? "Could not resolve report.");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task PrevPageAsync() { _page--; await LoadAsync(); }
+    private async Task NextPageAsync() { _page++; await LoadAsync(); }
+}

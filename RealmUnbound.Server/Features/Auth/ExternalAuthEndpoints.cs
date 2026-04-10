@@ -26,13 +26,13 @@ public static class ExternalAuthEndpoints
     /// <summary>
     /// Registered on every OAuth provider's <c>OnTicketReceived</c> event.
     /// Issues JWT tokens directly from the OAuth ticket and redirects to
-    /// <c>returnUrl</c> — bypassing the external-cookie round-trip that
-    /// fails on plain HTTP because <see cref="SignInManager{TUser}.GetExternalLoginInfoAsync"/>
-    /// requires a <c>LoginProvider</c> key the framework never writes.
+    /// <c>returnUrl</c> with a single-use opaque exchange code instead of the
+    /// raw token pair, preventing tokens from appearing in browser history or server logs.
     /// </summary>
     public static async Task HandleOAuthTicket(TicketReceivedContext ctx)
     {
         var authSvc     = ctx.HttpContext.RequestServices.GetRequiredService<AuthService>();
+        var exchangeSvc = ctx.HttpContext.RequestServices.GetRequiredService<AuthExchangeCodeService>();
         var principal   = ctx.Principal!;
         var email       = principal.FindFirstValue(ClaimTypes.Email);
         var displayName = principal.FindFirstValue(ClaimTypes.Name);
@@ -55,11 +55,11 @@ public static class ExternalAuthEndpoints
 
         if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
         {
+            // Mint a single-use exchange code — never expose the raw tokens in a URL.
+            var code         = exchangeSvc.CreateCode(response);
             var uriBuilder   = new UriBuilder(returnUrl);
             var query        = HttpUtility.ParseQueryString(uriBuilder.Query);
-            query["jwt"]     = response.AccessToken;
-            query["refresh"] = response.RefreshToken;
-            query["expires"] = response.AccessTokenExpiry.ToUnixTimeSeconds().ToString();
+            query["code"]    = code;
             uriBuilder.Query = query.ToString();
 
             ctx.HandleResponse();
@@ -99,7 +99,8 @@ public static class ExternalAuthEndpoints
     private static async Task<IResult> Callback(
         HttpContext       context,
         SignInManager<PlayerAccount> signInManager,
-        AuthService       authService)
+        AuthService       authService,
+        AuthExchangeCodeService exchangeService)
     {
         // SignInManager reads the transient external cookie (IdentityConstants.ExternalScheme)
         // that the OAuth middleware wrote during the callback exchange.
@@ -118,17 +119,16 @@ public static class ExternalAuthEndpoints
             return Results.Problem(error ?? "Authentication failed.", statusCode: 400);
 
         // If the caller provided a returnUrl (Avalonia desktop auth flow), redirect there
-        // with the tokens as query parameters so the local HTTP listener can pick them up.
+        // with an exchange code so the local HTTP listener can pick it up safely.
         if (info.AuthenticationProperties?.Items.TryGetValue("returnUrl", out var returnUrl) == true
             && returnUrl is not null
             && IsAllowedReturnUrl(returnUrl))
         {
+            var code    = exchangeService.CreateCode(response);
             var builder = new UriBuilder(returnUrl);
             var query   = HttpUtility.ParseQueryString(builder.Query);
-            query["jwt"]     = response.AccessToken;
-            query["refresh"] = response.RefreshToken;
-            query["expires"] = response.AccessTokenExpiry.ToUnixTimeSeconds().ToString();
-            builder.Query    = query.ToString();
+            query["code"]  = code;
+            builder.Query  = query.ToString();
             return Results.Redirect(builder.ToString(), permanent: false);
         }
 

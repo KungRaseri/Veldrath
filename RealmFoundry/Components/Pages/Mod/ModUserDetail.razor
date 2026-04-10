@@ -1,0 +1,204 @@
+@page "/mod/users/{Id:guid}"
+@using RealmUnbound.Contracts.Admin
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>@(_user?.Username ?? "Player") — Moderation — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsModerator)
+{
+    <p>Access denied. You need the <strong>Moderator</strong> role to view this page.</p>
+}
+else if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_user is null)
+{
+    <p class="error">Player not found. <a href="/mod/users">← Back</a></p>
+}
+else
+{
+    <div class="toolbar">
+        <h1>@_user.Username</h1>
+        <a class="btn btn-secondary" href="/mod/users">← Back</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_actionMessage))
+    {
+        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+    }
+
+    <div class="profile-card">
+        <div class="profile-row">
+            <span class="label">Account ID</span>
+            <span class="value muted">@_user.Id</span>
+        </div>
+        <div class="profile-row">
+            <span class="label">Roles</span>
+            <span class="value">@string.Join(", ", _user.Roles)</span>
+        </div>
+        <div class="profile-row">
+            <span class="label">Warnings</span>
+            <span class="value">@_user.WarnCount</span>
+        </div>
+        <div class="profile-row">
+            <span class="label">Status</span>
+            <span class="value">
+                @if (_user.IsBanned)
+                {
+                    <span class="badge badge-red">Banned</span>
+                    @if (_user.BannedUntil.HasValue) { <span class="muted"> until @_user.BannedUntil.Value.ToLocalTime().ToString("g")</span> }
+                    @if (_user.BanReason is not null)  { <span class="muted"> — @_user.BanReason</span> }
+                }
+                else if (_user.IsMuted)
+                {
+                    <span class="badge badge-orange">Muted</span>
+                    @if (_user.MutedUntil.HasValue) { <span class="muted"> until @_user.MutedUntil.Value.ToLocalTime().ToString("g")</span> }
+                    @if (_user.MuteReason is not null)  { <span class="muted"> — @_user.MuteReason</span> }
+                }
+                else
+                {
+                    <span class="badge badge-green">Active</span>
+                }
+            </span>
+        </div>
+        <div class="profile-row">
+            <span class="label">Last Seen</span>
+            <span class="value muted">@(_user.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</span>
+        </div>
+        <div class="profile-row">
+            <span class="label">Created</span>
+            <span class="value muted">@_user.CreatedAt.ToLocalTime().ToString("g")</span>
+        </div>
+    </div>
+
+    <div class="moderation-actions">
+        <h2>Actions</h2>
+
+        <div class="action-group">
+            <button class="btn btn-sm btn-orange" @onclick="() => KickAsync()">Kick</button>
+        </div>
+
+        <div class="action-group">
+            <input class="search-input" placeholder="Warn reason…" @bind="_warnReason" />
+            <button class="btn btn-sm btn-orange" @onclick="WarnAsync" disabled="@string.IsNullOrWhiteSpace(_warnReason)">Warn</button>
+        </div>
+
+        @if (!_user.IsMuted)
+        {
+            <div class="action-group">
+                <input class="search-input" placeholder="Mute reason…" @bind="_muteReason" />
+                <input type="number" class="duration-input" placeholder="Minutes (blank = permanent)" @bind="_muteDuration" min="1" />
+                <button class="btn btn-sm btn-orange" @onclick="MuteAsync" disabled="@string.IsNullOrWhiteSpace(_muteReason)">Mute</button>
+            </div>
+        }
+        else
+        {
+            <div class="action-group">
+                <button class="btn btn-sm" @onclick="UnmuteAsync">Unmute</button>
+            </div>
+        }
+
+        @if (!_user.IsBanned)
+        {
+            <div class="action-group">
+                <input class="search-input" placeholder="Ban reason…" @bind="_banReason" />
+                <input type="number" class="duration-input" placeholder="Minutes (blank = permanent)" @bind="_banDuration" min="1" />
+                <button class="btn btn-sm btn-red" @onclick="BanAsync" disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban</button>
+            </div>
+        }
+        else
+        {
+            <div class="action-group">
+                <button class="btn btn-sm" @onclick="UnbanAsync">Unban</button>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .toolbar h1 { margin: 0; }
+    .moderation-actions { margin-top: 1.5rem; }
+    .moderation-actions h2 { margin-bottom: .75rem; }
+    .action-group { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; flex-wrap: wrap; }
+    .duration-input { width: 200px; padding: .35rem .6rem; background: var(--input-bg, #1e1e1e);
+        border: 1px solid var(--border, #333); border-radius: 4px; color: inherit; }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private PlayerDetailDto? _user;
+    private bool    _loading      = true;
+    private string? _actionMessage;
+    private bool    _actionError;
+
+    private string? _warnReason;
+    private string? _muteReason;
+    private int?    _muteDuration;
+    private string? _banReason;
+    private int?    _banDuration;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user    = await Api.GetModUserAsync(Id);
+        _loading = false;
+    }
+
+    private async Task KickAsync()
+    {
+        var (ok, err) = await Api.KickPlayerAsync(new KickPlayerRequest(Id));
+        SetMessage(ok, err, "Player kicked.");
+    }
+
+    private async Task WarnAsync()
+    {
+        var (ok, err) = await Api.WarnPlayerAsync(new WarnPlayerRequest(Id, _warnReason!));
+        SetMessage(ok, err, "Warning issued.");
+        if (ok) { _warnReason = null; await RefreshAsync(); }
+    }
+
+    private async Task MuteAsync()
+    {
+        var (ok, err) = await Api.MutePlayerAsync(new MutePlayerRequest(Id, _muteReason!, _muteDuration));
+        SetMessage(ok, err, "Player muted.");
+        if (ok) { _muteReason = null; _muteDuration = null; await RefreshAsync(); }
+    }
+
+    private async Task UnmuteAsync()
+    {
+        var (ok, err) = await Api.UnmutePlayerAsync(Id);
+        SetMessage(ok, err, "Player unmuted.");
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task BanAsync()
+    {
+        var (ok, err) = await Api.BanPlayerAsync(new BanPlayerRequest(Id, _banReason!, _banDuration));
+        SetMessage(ok, err, "Player banned.");
+        if (ok) { _banReason = null; _banDuration = null; await RefreshAsync(); }
+    }
+
+    private async Task UnbanAsync()
+    {
+        var (ok, err) = await Api.UnbanPlayerAsync(Id);
+        SetMessage(ok, err, "Player unbanned.");
+        if (ok) await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _user = await Api.GetModUserAsync(Id);
+        StateHasChanged();
+    }
+
+    private void SetMessage(bool ok, string? err, string successMsg)
+    {
+        _actionError   = !ok;
+        _actionMessage = ok ? successMsg : (err ?? "Action failed.");
+    }
+}

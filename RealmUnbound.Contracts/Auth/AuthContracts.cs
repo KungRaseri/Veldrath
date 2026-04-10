@@ -6,6 +6,13 @@ public record RefreshRequest(string RefreshToken);
 public record LogoutRequest(string RefreshToken);
 
 /// <summary>
+/// Sent by the Foundry callback page to redeem a single-use exchange code for a full
+/// <see cref="AuthResponse"/>. The code is valid for 60 seconds and can only be used once.
+/// </summary>
+/// <param name="Code">Opaque 64-character hex exchange code issued by the server OAuth callback.</param>
+public record ExchangeCodeRequest(string Code);
+
+/// <summary>
 /// Returned after successful authentication. Contains the JWT access token, a refresh token,
 /// and the full set of roles and permissions the account currently holds.
 /// </summary>

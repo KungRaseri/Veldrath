@@ -37,6 +37,11 @@ public sealed class AuthStateService(
     /// <summary>True when the user holds the <c>Admin</c> role.</summary>
     public bool IsAdmin => Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>True when the user holds the <c>Moderator</c> or <c>Admin</c> role.</summary>
+    public bool IsModerator => Roles.Any(r =>
+        r.Equals("Moderator", StringComparison.OrdinalIgnoreCase) ||
+        r.Equals("Admin",     StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Returns <c>true</c> when the user holds the specified permission.</summary>
     /// <param name="permission">Permission string constant (e.g. <c>"ban_players"</c>).</param>
     public bool HasPermission(string permission)
