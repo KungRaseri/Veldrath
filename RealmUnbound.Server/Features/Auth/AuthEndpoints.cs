@@ -17,11 +17,11 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/api/auth").WithTags("Auth");
 
-        group.MapPost("/register", RegisterAsync);
-        group.MapPost("/login",    LoginAsync);
-        group.MapPost("/refresh",  RefreshAsync);
-        group.MapPost("/logout",   LogoutAsync).RequireAuthorization();
-        group.MapPost("/exchange", ExchangeAsync);
+        group.MapPost("/register", RegisterAsync).RequireRateLimiting("auth-attempts");
+        group.MapPost("/login",    LoginAsync)   .RequireRateLimiting("auth-attempts");
+        group.MapPost("/refresh",  RefreshAsync) .RequireRateLimiting("auth-attempts");
+        group.MapPost("/logout",   LogoutAsync)  .RequireAuthorization();
+        group.MapPost("/exchange", ExchangeAsync).RequireRateLimiting("auth-attempts");
 
         return app;
     }
@@ -80,7 +80,7 @@ public static class AuthEndpoints
         [FromBody] ExchangeCodeRequest request,
         AuthExchangeCodeService exchangeService)
     {
-        if (!exchangeService.TryConsume(request.Code, out var response))
+        if (!exchangeService.TryConsume(request.Code, request.AccountId, out var response))
             return Results.BadRequest(new { error = "Invalid or expired exchange code." });
 
         return Results.Ok(response);

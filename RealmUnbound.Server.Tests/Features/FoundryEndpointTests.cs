@@ -18,9 +18,9 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
     {
         var email = $"{username.ToLower()}@test.com";
         await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "Pass1234!" });
+            new { Email = email, Username = username, Password = "TestP@ssword123" });
         var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "Pass1234!" });
+            new { Email = email, Password = "TestP@ssword123" });
         var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
         return auth!.AccessToken;
     }
@@ -31,7 +31,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
     {
         var email = $"{username.ToLower()}@test.com";
         await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "Pass1234!" });
+            new { Email = email, Username = username, Password = "TestP@ssword123" });
 
         using var scope = factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
@@ -44,7 +44,7 @@ public class FoundryEndpointTests(WebAppFactory factory) : IClassFixture<WebAppF
         await userManager.AddToRoleAsync(user!, "Curator");
 
         var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "Pass1234!" });
+            new { Email = email, Password = "TestP@ssword123" });
         var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
         return auth!.AccessToken;
     }

@@ -1,0 +1,84 @@
+@page "/players/{Id:guid}"
+@using RealmUnbound.Contracts.Players
+@inject RealmFoundryApiClient Api
+@rendermode InteractiveServer
+
+<PageTitle>Player Profile — RealmFoundry</PageTitle>
+
+@if (_loading)
+{
+    <p class="loading">Loading profile…</p>
+}
+else if (_profile is null)
+{
+    <p class="error">Player not found.</p>
+    <a href="/">← Back to Home</a>
+}
+else
+{
+    <div class="profile-card">
+        <h1>@_profile.Username</h1>
+
+        <div class="profile-row">
+            <span class="label">Account ID</span>
+            <span class="value muted">@_profile.AccountId</span>
+        </div>
+
+        <div class="profile-row">
+            <span class="label">Registered</span>
+            <span class="value">@_profile.RegisteredAt.ToLocalTime().ToString("d")</span>
+        </div>
+
+        @if (_profile.Level > 0)
+        {
+            <div class="profile-row">
+                <span class="label">Level</span>
+                <span class="value">@_profile.Level</span>
+            </div>
+
+            @if (_profile.CharacterClass is not null)
+            {
+                <div class="profile-row">
+                    <span class="label">Class</span>
+                    <span class="value">@_profile.CharacterClass</span>
+                </div>
+            }
+
+            @if (_profile.Species is not null)
+            {
+                <div class="profile-row">
+                    <span class="label">Species</span>
+                    <span class="value">@_profile.Species</span>
+                </div>
+            }
+
+            @if (_profile.CurrentZone is not null)
+            {
+                <div class="profile-row">
+                    <span class="label">Current Zone</span>
+                    <span class="value">@_profile.CurrentZone</span>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="muted" style="margin-top:1rem">This player has no active characters.</p>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Account ID supplied via the route.</summary>
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private PlayerProfileDto? _profile;
+    private bool _loading = true;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await Api.GetPlayerProfileAsync(Id);
+        _loading = false;
+    }
+}

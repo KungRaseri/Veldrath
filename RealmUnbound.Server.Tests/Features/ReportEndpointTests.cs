@@ -14,9 +14,9 @@ public class ReportEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFa
     {
         var email = $"{username.ToLower()}@test.com";
         await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "Pass1234!" });
+            new { Email = email, Username = username, Password = "TestP@ssword123" });
         var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "Pass1234!" });
+            new { Email = email, Password = "TestP@ssword123" });
         var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
         return (auth!.AccessToken, username);
     }

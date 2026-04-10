@@ -44,6 +44,11 @@ public static class ReportEndpoints
         if (target is null)
             return Results.NotFound(new { error = $"User '{request.TargetUsername}' not found." });
 
+        // Prevent players from reporting themselves.
+        var reporterIdStr = actor.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(reporterIdStr, out var reporterId) && reporterId == target.Id)
+            return Results.BadRequest(new { error = "You cannot report yourself." });
+
         var reporterUsername = actor.FindFirstValue(ClaimTypes.Name) ?? "unknown";
 
         db.PlayerReports.Add(new PlayerReport
