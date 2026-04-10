@@ -21,6 +21,7 @@
   <ItemGroup>
     <Using Include="Moq" />
     <Using Include="MediatR" />
+    <Using Include="RealmUnbound.Contracts.Account" />
     <Using Include="RealmUnbound.Contracts.Admin" />
     <Using Include="RealmUnbound.Contracts.Auth" />
     <Using Include="RealmUnbound.Contracts.Characters" />

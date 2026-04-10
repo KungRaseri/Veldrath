@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using RealmUnbound.Contracts.Account;
 using RealmUnbound.Contracts.Admin;
 using RealmUnbound.Contracts.Connection;
 using RealmUnbound.Server.Data;
@@ -563,7 +565,8 @@ public static class AdminEndpoints
     }
 
     private static async Task<IResult> GetServerStatusAsync(
-        [FromServices] ApplicationDbContext db)
+        [FromServices] ApplicationDbContext db,
+        [FromServices] HealthCheckService healthCheckService)
     {
         var sessions = await db.PlayerSessions
             .AsNoTracking()
@@ -575,8 +578,18 @@ public static class AdminEndpoints
             .ToListAsync();
 
         var total = await db.PlayerSessions.AsNoTracking().CountAsync();
+        var registeredAccounts = await db.Users.AsNoTracking().CountAsync();
+        var totalCharacters = await db.Characters.AsNoTracking().CountAsync();
 
-        return Results.Ok(new ServerStatusDto(total, sessions, _serverStartedAt));
+        var healthReport = await healthCheckService.CheckHealthAsync();
+        var healthChecks = healthReport.Entries
+            .Select(e => new HealthCheckEntryDto(
+                e.Key,
+                e.Value.Status.ToString(),
+                e.Value.Description ?? e.Value.Exception?.Message))
+            .ToList();
+
+        return Results.Ok(new ServerStatusDto(total, sessions, _serverStartedAt, registeredAccounts, totalCharacters, healthChecks));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

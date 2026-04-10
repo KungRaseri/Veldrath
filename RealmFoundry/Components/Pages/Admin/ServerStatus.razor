@@ -1,5 +1,6 @@
 @page "/admin/status"
 @using RealmUnbound.Contracts.Admin
+@using RealmUnbound.Contracts.Account
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 @rendermode InteractiveServer
@@ -26,6 +27,14 @@ else
         <div class="status-stat">
             <span class="stat-label">Connected Players</span>
             <span class="stat-value">@_status.ConnectedPlayers</span>
+        </div>
+        <div class="status-stat">
+            <span class="stat-label">Registered Accounts</span>
+            <span class="stat-value">@_status.RegisteredAccounts</span>
+        </div>
+        <div class="status-stat">
+            <span class="stat-label">Total Characters</span>
+            <span class="stat-value">@_status.TotalCharacters</span>
         </div>
         <div class="status-stat">
             <span class="stat-label">Uptime</span>
@@ -65,6 +74,30 @@ else
         <p class="muted">No active zones.</p>
     }
 
+    @if (_status.HealthChecks is { Count: > 0 })
+    {
+        <h2>Health Checks</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Check</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var check in _status.HealthChecks)
+                {
+                    <tr>
+                        <td>@check.Name</td>
+                        <td><span class="badge @HealthBadgeClass(check.Status)">@check.Status</span></td>
+                        <td class="muted">@(check.Description ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
     <div style="margin-top:1rem">
         <button class="btn btn-sm" @onclick="RefreshAsync">Refresh</button>
     </div>
@@ -76,6 +109,9 @@ else
         border: 1px solid var(--border, #333); border-radius: 8px; min-width: 160px; }
     .stat-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted, #888); }
     .stat-value { font-size: 1.5rem; font-weight: 600; }
+    .badge-healthy { background: #166534; color: #bbf7d0; }
+    .badge-degraded { background: #78350f; color: #fde68a; }
+    .badge-unhealthy { background: #7f1d1d; color: #fecaca; }
 </style>
 
 @code {
@@ -103,4 +139,11 @@ else
         if (span.TotalHours >= 1) return $"{(int)span.TotalHours}h {span.Minutes}m";
         return $"{span.Minutes}m";
     }
+
+    private static string HealthBadgeClass(string status) => status switch
+    {
+        "Healthy"   => "badge badge-healthy",
+        "Degraded"  => "badge badge-degraded",
+        _           => "badge badge-unhealthy"
+    };
 }

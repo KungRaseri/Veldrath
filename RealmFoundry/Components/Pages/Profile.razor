@@ -1,5 +1,7 @@
 @page "/profile"
+@using RealmUnbound.Contracts.Account
 @inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
 @rendermode InteractiveServer
 
@@ -9,34 +11,353 @@
 {
     <p>You must <a href="/login">sign in</a> to view your profile.</p>
 }
+else if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_profile is null)
+{
+    <p class="error">Could not load profile.</p>
+}
 else
 {
-    <h1>@AuthState.Username</h1>
+    <h1>@_profile.Username</h1>
 
-    <div class="profile-card">
-        <div class="profile-row">
-            <span class="label">Account ID</span>
-            <span class="value muted">@AuthState.AccountId</span>
+    @* ── Section: Account Info ─────────────────────────────────────────────── *@
+    <section class="profile-section">
+        <h2>Account Info</h2>
+        <div class="profile-card">
+            <div class="profile-row">
+                <span class="label">Account ID</span>
+                <span class="value muted">@_profile.AccountId</span>
+            </div>
+            <div class="profile-row">
+                <span class="label">Email</span>
+                <span class="value muted">@(_profile.Email ?? "—")</span>
+            </div>
+            <div class="profile-row">
+                <span class="label">Member since</span>
+                <span class="value">@_profile.CreatedAt.ToLocalTime().ToString("d")</span>
+            </div>
+            @if (_profile.LastSeenAt.HasValue)
+            {
+                <div class="profile-row">
+                    <span class="label">Last seen</span>
+                    <span class="value muted">@_profile.LastSeenAt.Value.ToLocalTime().ToString("g")</span>
+                </div>
+            }
+            <div class="profile-row">
+                <span class="label">Roles</span>
+                <span class="value badges">
+                    @foreach (var role in _profile.Roles)
+                    {
+                        <span class="badge badge-blue">@role</span>
+                    }
+                    @if (!_profile.Roles.Any())
+                    {
+                        <span class="muted">Player</span>
+                    }
+                </span>
+            </div>
         </div>
+    </section>
 
-        @if (AuthState.IsCurator)
-        {
-            <div class="profile-row">
-                <span class="label">Role</span>
-                <span class="badge badge-blue">Curator</span>
-            </div>
-        }
+    @* ── Section: Profile Details ──────────────────────────────────────────── *@
+    <section class="profile-section">
+        <h2>Profile Details</h2>
+        <div class="profile-card">
+            <label class="field-label">Display Name</label>
+            <input class="field-input" @bind="_editDisplayName" maxlength="64" placeholder="Optional display name" />
 
-        @if (AuthState.TokenExpiry.HasValue)
-        {
-            <div class="profile-row">
-                <span class="label">Session expires</span>
-                <span class="value muted">@AuthState.TokenExpiry.Value.ToLocalTime().ToString("g")</span>
+            <label class="field-label" style="margin-top:.75rem">Bio</label>
+            <textarea class="field-input" @bind="_editBio" maxlength="300" rows="3" placeholder="Tell the community a bit about yourself…"></textarea>
+
+            @if (_profileSaveError is not null)
+            {
+                <p class="error">@_profileSaveError</p>
+            }
+            @if (_profileSaved)
+            {
+                <p class="success">Profile saved.</p>
+            }
+            <button class="btn" @onclick="SaveProfileAsync" disabled="@_profileSaving">
+                @(_profileSaving ? "Saving…" : "Save Profile")
+            </button>
+        </div>
+    </section>
+
+    @* ── Section: Change Password ──────────────────────────────────────────── *@
+    @if (_profile.HasPassword)
+    {
+        <section class="profile-section">
+            <h2>Change Password</h2>
+            <div class="profile-card">
+                <label class="field-label">Current Password</label>
+                <input type="password" class="field-input" @bind="_currentPassword" />
+
+                <label class="field-label" style="margin-top:.75rem">New Password</label>
+                <input type="password" class="field-input" @bind="_newPassword" />
+
+                <label class="field-label" style="margin-top:.75rem">Confirm New Password</label>
+                <input type="password" class="field-input" @bind="_confirmPassword" />
+
+                @if (_passwordError is not null)
+                {
+                    <p class="error">@_passwordError</p>
+                }
+                @if (_passwordSaved)
+                {
+                    <p class="success">Password changed.</p>
+                }
+                <button class="btn" @onclick="ChangePasswordAsync" disabled="@_passwordSaving">
+                    @(_passwordSaving ? "Saving…" : "Change Password")
+                </button>
             </div>
-        }
-    </div>
+        </section>
+    }
+
+    @* ── Section: Linked Providers ─────────────────────────────────────────── *@
+    <section class="profile-section">
+        <h2>Linked Accounts</h2>
+        <div class="profile-card">
+            @foreach (var providerName in new[] { "Discord", "Google", "Microsoft" })
+            {
+                var linked = _profile.LinkedProviders.FirstOrDefault(p =>
+                    p.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+                var canUnlink = _profile.HasPassword || _profile.LinkedProviders.Count > 1;
+                <div class="profile-row provider-row">
+                    <span class="label">@providerName</span>
+                    @if (linked is not null)
+                    {
+                        <span class="badge badge-green">Linked</span>
+                        <button class="btn btn-sm btn-danger"
+                                @onclick="() => UnlinkAsync(linked.ProviderName, linked.ProviderKey)"
+                                disabled="@(!canUnlink)">
+                            Unlink
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="muted">Not linked</span>
+                        <a class="btn btn-sm"
+                           href="/api/auth/external/@providerName.ToLowerInvariant()?mode=link&accountId=@_profile.AccountId&returnUrl=http://localhost">
+                            Link
+                        </a>
+                    }
+                </div>
+            }
+            @if (_providerError is not null)
+            {
+                <p class="error">@_providerError</p>
+            }
+        </div>
+    </section>
+
+    @* ── Section: Active Sessions ──────────────────────────────────────────── *@
+    <section class="profile-section">
+        <h2>Active Sessions</h2>
+        <div class="profile-card">
+            @if (_sessions is null)
+            {
+                <p class="muted">Loading sessions…</p>
+            }
+            else if (!_sessions.Any())
+            {
+                <p class="muted">No active sessions found.</p>
+            }
+            else
+            {
+                <table class="profile-table">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Created</th>
+                            <th>Expires</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in _sessions)
+                        {
+                            <tr>
+                                <td>@s.CreatedByIp @if (s.IsCurrent) { <span class="badge badge-blue">this session</span> }</td>
+                                <td class="muted">@s.CreatedAt.ToLocalTime().ToString("g")</td>
+                                <td class="muted">@s.ExpiresAt.ToLocalTime().ToString("g")</td>
+                                <td>
+                                    @if (!s.IsCurrent)
+                                    {
+                                        <button class="btn btn-sm btn-danger"
+                                                @onclick="() => RevokeSessionAsync(s.Id)">
+                                            Revoke
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (_sessions.Count(s => !s.IsCurrent) > 0)
+                {
+                    <button class="btn btn-danger" style="margin-top:.75rem" @onclick="RevokeAllOtherSessionsAsync">
+                        Log out all other devices
+                    </button>
+                }
+            }
+            @if (_sessionError is not null)
+            {
+                <p class="error">@_sessionError</p>
+            }
+        </div>
+    </section>
 
     <div style="margin-top:1.5rem">
         <a class="btn" href="/submissions?submitter=me">My Submissions</a>
     </div>
+}
+
+<style>
+    .profile-section { margin-bottom: 2rem; }
+    .profile-section h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .06em;
+        color: var(--muted, #888); margin-bottom: .75rem; }
+    .profile-card { padding: 1rem 1.5rem; border: 1px solid var(--border, #333); border-radius: 8px; }
+    .profile-row { display: flex; align-items: center; gap: .75rem; padding: .35rem 0;
+        border-bottom: 1px solid var(--border-subtle, #222); }
+    .profile-row:last-child { border-bottom: none; }
+    .label { min-width: 140px; font-size: .85rem; color: var(--muted, #888); }
+    .value { font-size: .95rem; }
+    .muted { color: var(--muted, #888); font-size: .85rem; }
+    .badges { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .field-label { display: block; font-size: .85rem; color: var(--muted, #888); margin-bottom: .35rem; }
+    .field-input { width: 100%; max-width: 420px; padding: .4rem .6rem; border-radius: 4px;
+        border: 1px solid var(--border, #333); background: var(--input-bg, #111); color: inherit; font-size: .95rem; }
+    .profile-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .profile-table th { text-align: left; padding: .4rem .5rem;
+        border-bottom: 1px solid var(--border, #333); color: var(--muted, #888); font-weight: 500; }
+    .profile-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--border-subtle, #222); }
+    .provider-row { justify-content: flex-start; gap: 1rem; }
+    .success { color: #4caf50; font-size: .9rem; margin-top: .5rem; }
+    .error { color: #f44336; font-size: .9rem; margin-top: .5rem; }
+    .btn-danger { background: #7f1d1d; border-color: #991b1b; }
+    .btn-danger:hover { background: #991b1b; }
+</style>
+
+@code {
+    private AccountProfileDto? _profile;
+    private IReadOnlyList<AccountSessionDto>? _sessions;
+    private bool _loading = true;
+
+    // Profile editing
+    private string? _editDisplayName;
+    private string? _editBio;
+    private bool _profileSaving;
+    private bool _profileSaved;
+    private string? _profileSaveError;
+
+    // Password change
+    private string _currentPassword = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _confirmPassword = string.Empty;
+    private bool _passwordSaving;
+    private bool _passwordSaved;
+    private string? _passwordError;
+
+    // Provider management
+    private string? _providerError;
+
+    // Session management
+    private string? _sessionError;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthState.IsLoggedIn) return;
+
+        _profile = await Api.GetAccountProfileAsync();
+        _editDisplayName = _profile?.DisplayName;
+        _editBio = _profile?.Bio;
+        _sessions = await Api.GetAccountSessionsAsync();
+        _loading = false;
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        _profileSaving = true;
+        _profileSaved = false;
+        _profileSaveError = null;
+
+        var (ok, error) = await Api.UpdateProfileAsync(new UpdateProfileRequest(_editDisplayName, _editBio));
+        if (ok)
+        {
+            _profileSaved = true;
+            if (_profile is not null)
+                _profile = _profile with { DisplayName = _editDisplayName, Bio = _editBio };
+        }
+        else
+        {
+            _profileSaveError = error ?? "Failed to save profile.";
+        }
+
+        _profileSaving = false;
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        _passwordError = null;
+        _passwordSaved = false;
+
+        if (_newPassword != _confirmPassword)
+        {
+            _passwordError = "New passwords do not match.";
+            return;
+        }
+
+        _passwordSaving = true;
+        var (ok, error) = await Api.ChangePasswordAsync(new ChangePasswordRequest(_currentPassword, _newPassword));
+        if (ok)
+        {
+            _passwordSaved = true;
+            _currentPassword = string.Empty;
+            _newPassword = string.Empty;
+            _confirmPassword = string.Empty;
+        }
+        else
+        {
+            _passwordError = error ?? "Failed to change password.";
+        }
+
+        _passwordSaving = false;
+    }
+
+    private async Task UnlinkAsync(string provider, string providerKey)
+    {
+        _providerError = null;
+        var (ok, error) = await Api.UnlinkProviderAsync(provider, providerKey);
+        if (ok)
+            _profile = await Api.GetAccountProfileAsync();
+        else
+            _providerError = error ?? "Failed to unlink provider.";
+    }
+
+    private async Task RevokeSessionAsync(Guid sessionId)
+    {
+        _sessionError = null;
+        var (ok, error) = await Api.RevokeSessionAsync(sessionId);
+        if (ok)
+            _sessions = await Api.GetAccountSessionsAsync();
+        else
+            _sessionError = error ?? "Failed to revoke session.";
+    }
+
+    private async Task RevokeAllOtherSessionsAsync()
+    {
+        _sessionError = null;
+        var current = _sessions?.FirstOrDefault(s => s.IsCurrent);
+        if (current is null) return;
+
+        var (ok, error) = await Api.RevokeAllOtherSessionsAsync(current.Id);
+        if (ok)
+            _sessions = await Api.GetAccountSessionsAsync();
+        else
+            _sessionError = error ?? "Failed to revoke sessions.";
+    }
 }

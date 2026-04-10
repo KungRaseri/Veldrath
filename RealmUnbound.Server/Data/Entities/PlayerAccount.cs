@@ -53,4 +53,15 @@ public class PlayerAccount : IdentityUser<Guid>
 
     /// <summary>Human-readable reason recorded at mute time.</summary>
     public string? MuteReason { get; set; }
+
+    // ── Public Profile ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Optional public display name shown on the player's profile page and in community features.
+    /// Distinct from <see cref="IdentityUser{TKey}.UserName"/>, which is the login credential.
+    /// </summary>
+    public string? DisplayName { get; set; }
+
+    /// <summary>Optional short biography displayed on the public player profile.</summary>
+    public string? Bio { get; set; }
 }
