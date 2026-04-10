@@ -1,3 +1,4 @@
+using RealmUnbound.Contracts.Account;
 using RealmUnbound.Contracts.Auth;
 using RealmUnbound.Contracts.Admin;
 using RealmUnbound.Contracts.Content;
@@ -354,6 +355,86 @@ public class RealmFoundryApiClient(HttpClient http)
         var resp = await http.PutAsync($"/api/admin/reports/{id}/resolve", null, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    // ── Self-Service Account Management ──────────────────────────────────────
+
+    /// <summary>Returns the authenticated user's own account profile.</summary>
+    public async Task<AccountProfileDto?> GetAccountProfileAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/account/profile", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<AccountProfileDto>(ct)
+            : null;
+    }
+
+    /// <summary>Updates the authenticated user's optional display name and bio.</summary>
+    public async Task<(bool Ok, string? Error)> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync("/api/account/profile", request, ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Changes the authenticated user's password.</summary>
+    public async Task<(bool Ok, string? Error)> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/account/password", request, ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Changes the authenticated user's username.</summary>
+    public async Task<(bool Ok, string? Error)> ChangeUsernameAsync(ChangeUsernameRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync("/api/account/username", request, ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Returns all active refresh-token sessions for the authenticated user.</summary>
+    public async Task<IReadOnlyList<AccountSessionDto>?> GetAccountSessionsAsync(Guid? currentSessionId = null, CancellationToken ct = default)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/api/account/sessions");
+        if (currentSessionId.HasValue)
+            req.Headers.TryAddWithoutValidation("X-Current-Session-Id", currentSessionId.Value.ToString());
+        var resp = await http.SendAsync(req, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<AccountSessionDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Revokes the specified active session.</summary>
+    public async Task<(bool Ok, string? Error)> RevokeSessionAsync(Guid sessionId, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/account/sessions/{sessionId}", ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Revokes all active sessions except the one identified by <paramref name="currentSessionId"/>.</summary>
+    public async Task<(bool Ok, string? Error)> RevokeAllOtherSessionsAsync(Guid currentSessionId, CancellationToken ct = default)
+    {
+        var resp = await http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/account/sessions")
+        {
+            Content = JsonContent.Create(new RevokeOtherSessionsRequest(currentSessionId))
+        }, ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Returns all OAuth providers linked to the authenticated user's account.</summary>
+    public async Task<IReadOnlyList<LinkedProviderDto>?> GetLinkedProvidersAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/account/providers", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<LinkedProviderDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Removes the specified OAuth provider from the authenticated user's account.</summary>
+    public async Task<(bool Ok, string? Error)> UnlinkProviderAsync(string provider, string providerKey, CancellationToken ct = default)
+    {
+        var resp = await http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/account/providers/{provider}")
+        {
+            Content = JsonContent.Create(new UnlinkProviderRequest(providerKey))
+        }, ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
     /// <summary>Returns the live server status snapshot including zone populations.</summary>

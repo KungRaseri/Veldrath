@@ -179,10 +179,16 @@ public record ZonePopulationDto(string ZoneId, string ZoneName, int PlayerCount)
 /// <param name="ConnectedPlayers">Total number of active player sessions.</param>
 /// <param name="ZonePopulations">Per-zone player counts, sorted descending by population.</param>
 /// <param name="ServerStartedAt">UTC timestamp when the server process started.</param>
+/// <param name="RegisteredAccounts">Total number of registered player accounts.</param>
+/// <param name="TotalCharacters">Total number of characters across all accounts.</param>
+/// <param name="HealthChecks">Per-check breakdown returned by the ASP.NET Core health check system.</param>
 public record ServerStatusDto(
     int ConnectedPlayers,
     IReadOnlyList<ZonePopulationDto> ZonePopulations,
-    DateTimeOffset ServerStartedAt);
+    DateTimeOffset ServerStartedAt,
+    int RegisteredAccounts = 0,
+    int TotalCharacters = 0,
+    IReadOnlyList<RealmUnbound.Contracts.Account.HealthCheckEntryDto>? HealthChecks = null);
 
 // ── Active Sessions ──────────────────────────────────────────────────────────
 

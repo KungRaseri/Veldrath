@@ -21,6 +21,7 @@ using RealmUnbound.Server.Data;
 using RealmUnbound.Server.Data.Entities;
 using RealmUnbound.Server.Data.Repositories;
 using RealmUnbound.Server.Features.Admin;
+using RealmUnbound.Server.Features.Account;
 using RealmUnbound.Server.Features.Auth;
 using RealmUnbound.Server.Features.Announcements;
 using RealmUnbound.Server.Features.Characters;
@@ -227,6 +228,7 @@ try
 
 
     builder.Services.AddScoped<AuthService>();
+    builder.Services.AddScoped<AccountService>();
     builder.Services.AddScoped<FoundryService>();
 
     // Repositories
@@ -414,6 +416,7 @@ try
     // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
     app.MapExternalAuthEndpoints();
+    app.MapAccountEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();
     app.MapReportEndpoints();
