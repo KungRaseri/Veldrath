@@ -56,6 +56,10 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
+    // Cap request body at 512 KB to prevent unbounded memory exhaustion on large payloads.
+    // SignalR frames have their own internal limits; this covers REST endpoints.
+    builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 524_288);
+
     // SignalR
     builder.Services.AddSignalR();
 
@@ -64,8 +68,9 @@ try
     {
         options.AddPolicy("AllowLocalClient", policy =>
             policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
+                  // Explicit allow-list prevents TRACE/CONNECT and limits header exposure.
+                  .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                  .WithHeaders("Authorization", "Content-Type", "X-Requested-With")
                   .AllowCredentials());
     });
 
@@ -144,13 +149,13 @@ try
     builder.Services.Configure<RealmUnbound.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
 
-    // IMemoryCache is required by AuthExchangeCodeService for single-use OAuth exchange codes.
-    builder.Services.AddMemoryCache();
-    builder.Services.AddScoped<AuthExchangeCodeService>();
+    // AuthExchangeCodeService uses an internal ConcurrentDictionary — no IMemoryCache dependency.
+    builder.Services.AddSingleton<AuthExchangeCodeService>();
 
     var foundryWriteLimit  = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
     var adminActionsLimit  = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute",  20);
     var authAttemptsLimit  = builder.Configuration.GetValue<int>("RateLimit:AuthAttemptsPerMinute",  10);
+    var hubCommandsLimit   = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute",   120);
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
@@ -168,6 +173,12 @@ try
         {
             o.Window = TimeSpan.FromMinutes(1);
             o.PermitLimit = authAttemptsLimit;
+        });
+        // Throttles authenticated SignalR hub commands to prevent spam from modded clients.
+        opts.AddFixedWindowLimiter("hub-commands", o =>
+        {
+            o.Window = TimeSpan.FromMinutes(1);
+            o.PermitLimit = hubCommandsLimit;
         });
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
@@ -339,6 +350,8 @@ try
         ctx.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
         ctx.Response.Headers["X-Frame-Options"]        = "DENY";
         ctx.Response.Headers["Permissions-Policy"]     = "camera=(), microphone=(), geolocation=()";
+        // API-only server: no content to render, so a strict CSP is safe.
+        ctx.Response.Headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
         await next(ctx);
     });
 
@@ -412,7 +425,7 @@ try
     app.MapPlayerEndpoints();
 
     // Hubs
-    app.MapHub<GameHub>("/hubs/game");
+    app.MapHub<GameHub>("/hubs/game").RequireRateLimiting("hub-commands");
 
     // Health checks
     // /health        — overall status (Healthy / Degraded / Unhealthy)

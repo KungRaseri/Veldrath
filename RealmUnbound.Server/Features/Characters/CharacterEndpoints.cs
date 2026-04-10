@@ -57,6 +57,12 @@ public static class CharacterEndpoints
         if (string.IsNullOrWhiteSpace(request.Name))
             return Results.BadRequest(new { error = "Character name is required" });
 
+        if (request.Name.Length < 2 || request.Name.Length > 30)
+            return Results.BadRequest(new { error = "Character name must be between 2 and 30 characters" });
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(request.Name, @"^[a-zA-Z0-9 \-'_]+$"))
+            return Results.BadRequest(new { error = "Character name may only contain letters, numbers, spaces, hyphens, apostrophes, and underscores" });
+
         var normalizedMode = request.DifficultyMode?.ToLowerInvariant() ?? "normal";
         if (normalizedMode is not "normal" and not "hardcore")
             return Results.BadRequest(new { error = "DifficultyMode must be \"normal\" or \"hardcore\"" });

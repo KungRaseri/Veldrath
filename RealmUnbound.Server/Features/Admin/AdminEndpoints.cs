@@ -373,18 +373,25 @@ public static class AdminEndpoints
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
-        user.WarnCount++;
+        // Atomic increment — avoids the race condition where two concurrent warns
+        // both read the pre-increment WarnCount and apply the auto-ban threshold check twice.
+        await db.Database.ExecuteSqlRawAsync(
+            "UPDATE \"AspNetUsers\" SET \"WarnCount\" = \"WarnCount\" + 1 WHERE \"Id\" = {0}",
+            request.AccountId);
+
+        // Re-fetch the post-increment state from the DB (EF change-tracker holds the stale value).
+        await db.Entry(user).ReloadAsync();
+
         var threshold  = options.Value.AutoBanWarnThreshold;
         var autoBanned = false;
 
-        if (threshold > 0 && user.WarnCount >= threshold)
+        if (threshold > 0 && user.WarnCount >= threshold && !user.IsBanned)
         {
             user.IsBanned  = true;
             user.BanReason = $"Automatic ban: {user.WarnCount} warnings accumulated.";
-            autoBanned     = true;
+            await userManager.UpdateAsync(user);
+            autoBanned = true;
         }
-
-        await userManager.UpdateAsync(user);
 
         // Notify the player in-game.
         await hub.Clients.Group($"account:{request.AccountId}")
