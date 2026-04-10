@@ -27,8 +27,8 @@ internal sealed class OAuthLocalListener : IDisposable
     }
 
     /// <summary>
-    /// Waits for the browser to hit the callback URL and parses the JWT parameters.
-    /// Returns <c>null</c> on timeout or cancellation.
+    /// Waits for the browser to hit the callback URL and parses the single-use exchange code.
+    /// Returns <c>null</c> on timeout, cancellation, or a malformed callback.
     /// </summary>
     public async Task<OAuthCallbackResult?> WaitForCallbackAsync(CancellationToken ct = default)
     {
@@ -60,17 +60,14 @@ internal sealed class OAuthLocalListener : IDisposable
             await ctx.Response.OutputStream.WriteAsync(bytes, ct);
             ctx.Response.Close();
 
-            var jwt     = query["jwt"];
-            var refresh = query["refresh"];
-            var expires = query["expires"];
+            // Server redirects with ?code=<exchange-code>&aid=<account-id>
+            var code = query["code"];
+            var aid  = query["aid"];
 
-            if (string.IsNullOrEmpty(jwt)) return null;
+            if (string.IsNullOrEmpty(code) || !Guid.TryParse(aid, out var accountId))
+                return null;
 
-            var expiry = long.TryParse(expires, out var sec)
-                ? DateTimeOffset.FromUnixTimeSeconds(sec)
-                : DateTimeOffset.UtcNow.AddMinutes(15);
-
-            return new OAuthCallbackResult(jwt, refresh ?? string.Empty, expiry);
+            return new OAuthCallbackResult(code, accountId);
         }
         catch (OperationCanceledException)
         {
@@ -95,7 +92,9 @@ internal sealed class OAuthLocalListener : IDisposable
     }
 }
 
+/// <summary>Carries the single-use exchange code returned by the server OAuth callback.</summary>
 internal sealed record OAuthCallbackResult(
-    string AccessToken,
-    string RefreshToken,
-    DateTimeOffset AccessTokenExpiry);
+    /// <summary>64-character hex exchange code; valid for 60 seconds.</summary>
+    string Code,
+    /// <summary>Account ID the code was issued for.</summary>
+    Guid AccountId);

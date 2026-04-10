@@ -40,6 +40,7 @@ public class RegisterViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> RegisterCommand { get; }
     public ReactiveCommand<Unit, Unit> BackCommand { get; }
+    public ReactiveCommand<string, Unit> LoginExternalCommand { get; }
 
     public RegisterViewModel(IAuthService auth, INavigationService navigation)
     {
@@ -55,12 +56,13 @@ public class RegisterViewModel : ViewModelBase
                 p == cp &&
                 !busy);
 
-        RegisterCommand = ReactiveCommand.CreateFromTask(DoRegisterAsync, canSubmit);
-        BackCommand     = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
+        RegisterCommand      = ReactiveCommand.CreateFromTask(DoRegisterAsync, canSubmit);
+        LoginExternalCommand = ReactiveCommand.CreateFromTask<string>(DoLoginExternalAsync,
+            this.WhenAnyValue(x => x.IsBusy, busy => !busy));
+        BackCommand          = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
     }
 
-    internal async Task DoRegisterAsync()
-    {
+    internal async Task DoRegisterAsync()    {
         if (Password != ConfirmPassword)
         {
             ErrorMessage = "Passwords do not match.";
@@ -77,6 +79,24 @@ public class RegisterViewModel : ViewModelBase
             else
             {
                 ErrorMessage = error?.Message ?? "Registration failed.";
+                ErrorDetails = error?.Details ?? string.Empty;
+            }
+        }
+        finally { IsBusy = false; }
+    }
+
+    private async Task DoLoginExternalAsync(string provider)
+    {
+        IsBusy = true;
+        ClearError();
+        try
+        {
+            var (response, error) = await _auth.LoginExternalAsync(provider);
+            if (response is not null)
+                _navigation.NavigateTo<CharacterSelectViewModel>();
+            else
+            {
+                ErrorMessage = error?.Message ?? "Sign-in failed.";
                 ErrorDetails = error?.Details ?? string.Empty;
             }
         }

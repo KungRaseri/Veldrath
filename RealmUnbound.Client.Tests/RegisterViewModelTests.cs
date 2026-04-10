@@ -199,4 +199,38 @@ public class RegisterViewModelTests : TestBase
 
         vm.ErrorMessage.Should().Be("Passwords do not match.");
     }
+
+    // OAuth external sign-in
+    [Fact]
+    public async Task LoginExternalCommand_Should_Navigate_To_CharacterSelect_On_Success()
+    {
+        var auth = new FakeAuthService(); // LoginResult defaults to success
+        var nav  = new FakeNavigationService();
+        var vm   = MakeVm(auth: auth, nav: nav);
+
+        await vm.LoginExternalCommand.Execute("discord");
+
+        nav.NavigationLog.Should().Contain(typeof(CharacterSelectViewModel));
+    }
+
+    [Fact]
+    public async Task LoginExternalCommand_Should_Set_Error_On_Failure()
+    {
+        var auth = new FakeAuthService { LoginResult = (null, new AppError("OAuth failed")) };
+        var vm   = MakeVm(auth: auth);
+
+        await vm.LoginExternalCommand.Execute("google");
+
+        vm.ErrorMessage.Should().Be("OAuth failed");
+    }
+
+    [Fact]
+    public async Task LoginExternalCommand_Should_Clear_IsBusy_After_Completion()
+    {
+        var vm = MakeVm();
+
+        await vm.LoginExternalCommand.Execute("microsoft");
+
+        vm.IsBusy.Should().BeFalse();
+    }
 }
