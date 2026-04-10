@@ -27,6 +27,7 @@ using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Content;
 using RealmUnbound.Server.Features.Foundry;
 using RealmUnbound.Server.Features.Reports;
+using RealmUnbound.Server.Features.Players;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
@@ -84,8 +85,8 @@ try
     builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
         {
             options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 8;
-            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredLength = 12;
+            options.Password.RequireNonAlphanumeric = true;
             options.Password.RequireUppercase = false;
             options.User.RequireUniqueEmail = true;
             options.Lockout.MaxFailedAccessAttempts = 5;
@@ -149,6 +150,7 @@ try
 
     var foundryWriteLimit  = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
     var adminActionsLimit  = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute",  20);
+    var authAttemptsLimit  = builder.Configuration.GetValue<int>("RateLimit:AuthAttemptsPerMinute",  10);
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
@@ -160,6 +162,12 @@ try
         {
             o.Window = TimeSpan.FromMinutes(1);
             o.PermitLimit = adminActionsLimit;
+        });
+        // Protects login, register, and refresh from brute-force and credential stuffing.
+        opts.AddFixedWindowLimiter("auth-attempts", o =>
+        {
+            o.Window = TimeSpan.FromMinutes(1);
+            o.PermitLimit = authAttemptsLimit;
         });
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
@@ -401,6 +409,7 @@ try
     app.MapZoneEndpoints();
     app.MapContentEndpoints();
     app.MapAdminEndpoints();
+    app.MapPlayerEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game");

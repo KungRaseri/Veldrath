@@ -25,6 +25,7 @@
     <Using Include="RealmUnbound.Contracts.Auth" />
     <Using Include="RealmUnbound.Contracts.Characters" />
     <Using Include="RealmUnbound.Contracts.Foundry" />
+    <Using Include="RealmUnbound.Contracts.Players" />
     <Using Include="RealmUnbound.Contracts.Zones" />
   </ItemGroup>
 

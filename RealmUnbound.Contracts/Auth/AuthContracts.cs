@@ -10,7 +10,8 @@ public record LogoutRequest(string RefreshToken);
 /// <see cref="AuthResponse"/>. The code is valid for 60 seconds and can only be used once.
 /// </summary>
 /// <param name="Code">Opaque 64-character hex exchange code issued by the server OAuth callback.</param>
-public record ExchangeCodeRequest(string Code);
+/// <param name="AccountId">Account identifier of the user the code was issued for.</param>
+public record ExchangeCodeRequest(string Code, Guid AccountId);
 
 /// <summary>
 /// Returned after successful authentication. Contains the JWT access token, a refresh token,

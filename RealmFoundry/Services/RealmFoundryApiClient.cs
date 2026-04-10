@@ -2,6 +2,7 @@ using RealmUnbound.Contracts.Auth;
 using RealmUnbound.Contracts.Admin;
 using RealmUnbound.Contracts.Content;
 using RealmUnbound.Contracts.Foundry;
+using RealmUnbound.Contracts.Players;
 
 namespace RealmFoundry.Services;
 
@@ -33,9 +34,9 @@ public class RealmFoundryApiClient(HttpClient http)
     }
 
     /// <summary>Redeems a single-use exchange code issued by the OAuth callback for a full auth response.</summary>
-    public async Task<AuthResponse?> ExchangeCodeAsync(string code, CancellationToken ct = default)
+    public async Task<AuthResponse?> ExchangeCodeAsync(string code, Guid accountId, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/auth/exchange", new ExchangeCodeRequest(code), ct);
+        var resp = await http.PostAsJsonAsync("/api/auth/exchange", new ExchangeCodeRequest(code, accountId), ct);
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
     }
 
@@ -202,6 +203,15 @@ public class RealmFoundryApiClient(HttpClient http)
         var resp = await http.GetAsync($"/api/admin/users/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PlayerDetailDto>(ct)
+            : null;
+    }
+
+    /// <summary>Returns the public profile for a player account including their top character info.</summary>
+    public async Task<PlayerProfileDto?> GetPlayerProfileAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/players/{id}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PlayerProfileDto>(ct)
             : null;
     }
 

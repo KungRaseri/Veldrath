@@ -1,72 +1,44 @@
 @page "/auth/callback"
-@using System.Text.Json
-@using System.Text.Encodings.Web
 @inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
+@inject NavigationManager Nav
 
-<PageTitle>Signing in… — RealmFoundry</PageTitle>
+<PageTitle>Signing in\u2026 \u2014 RealmFoundry</PageTitle>
 
-@if (_payload is not null)
+@if (_error is not null)
 {
-    <p>Signing you in…</p>
-    @* Inline script runs immediately on page load — before blazor.web.js even initialises.
-       JavaScriptEncoder.Default renders <, >, &, ' as Unicode escapes so the JSON blob is
-       safe to embed inside a <script> tag without any risk of script injection. *@
-    <script>
-        (function () {
-            try {
-                var d = @((MarkupString)_payload);
-                sessionStorage.setItem('rf_access',       d.a);
-                sessionStorage.setItem('rf_refresh',      d.r);
-                sessionStorage.setItem('rf_username',     d.u);
-                sessionStorage.setItem('rf_account_id',   d.i);
-                sessionStorage.setItem('rf_is_curator',   d.c ? 'true' : 'false');
-                sessionStorage.setItem('rf_token_expiry', d.e);
-                sessionStorage.setItem('rf_roles',        JSON.stringify(d.roles));
-                sessionStorage.setItem('rf_permissions',  JSON.stringify(d.perms));
-            } catch (_) { /* storage quota or unavailable */ }
-            window.location.replace('/');
-        })();
-    </script>
+    <p class="error">@_error <a href="/login">Try again</a>.</p>
 }
 else
 {
-    <p class="error">Login failed: @_error. <a href="/login">Try again</a>.</p>
+    <p>Signing you in\u2026</p>
 }
 
 @code {
-    // Server redirects to /auth/callback?code=<exchange-code> — a single-use 64-char hex value
-    // that the server redeems for a full AuthResponse. The JWT never appears in the URL or logs.
+    // Server redirects to /auth/callback?code=<exchange-code>&aid=<account-id>.
+    // Both parameters are required; the code expires in 60 seconds and is single-use.
     [SupplyParameterFromQuery] private string? Code { get; set; }
+    [SupplyParameterFromQuery] private Guid?   Aid  { get; set; }
 
-    private string? _payload;
-    private string  _error = "Login failed.";
+    private string? _error;
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrWhiteSpace(Code))
+        if (string.IsNullOrWhiteSpace(Code) || !Aid.HasValue)
         {
             _error = "No exchange code received.";
             return;
         }
 
-        var response = await Api.ExchangeCodeAsync(Code);
+        var response = await Api.ExchangeCodeAsync(Code, Aid.Value);
         if (response is null)
         {
             _error = "Exchange code was invalid or expired.";
             return;
         }
 
-        // JavaScriptEncoder.Default escapes <, >, &, ' and " as \uXXXX — safe to embed in <script>.
-        _payload = JsonSerializer.Serialize(new
-        {
-            a     = response.AccessToken,
-            r     = response.RefreshToken,
-            u     = response.Username,
-            i     = response.AccountId.ToString(),
-            c     = response.IsCurator,
-            e     = response.AccessTokenExpiry.ToString("O"),
-            roles = response.Roles,
-            perms = response.Permissions,
-        }, new JsonSerializerOptions { Encoder = JavaScriptEncoder.Default });
+        await AuthState.SetTokensAsync(response);
+        Nav.NavigateTo("/", forceLoad: false);
     }
 }
+

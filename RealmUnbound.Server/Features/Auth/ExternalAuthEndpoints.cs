@@ -55,11 +55,12 @@ public static class ExternalAuthEndpoints
 
         if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
         {
-            // Mint a single-use exchange code — never expose the raw tokens in a URL.
-            var code         = exchangeSvc.CreateCode(response);
+            // Mint a single-use exchange code bound to this account — never expose the raw tokens in a URL.
+            var code         = exchangeSvc.CreateCode(response, response.AccountId);
             var uriBuilder   = new UriBuilder(returnUrl);
             var query        = HttpUtility.ParseQueryString(uriBuilder.Query);
             query["code"]    = code;
+            query["aid"]     = response.AccountId.ToString();
             uriBuilder.Query = query.ToString();
 
             ctx.HandleResponse();
@@ -124,10 +125,11 @@ public static class ExternalAuthEndpoints
             && returnUrl is not null
             && IsAllowedReturnUrl(returnUrl))
         {
-            var code    = exchangeService.CreateCode(response);
+            var code    = exchangeService.CreateCode(response, response.AccountId);
             var builder = new UriBuilder(returnUrl);
             var query   = HttpUtility.ParseQueryString(builder.Query);
             query["code"]  = code;
+            query["aid"]   = response.AccountId.ToString();
             builder.Query  = query.ToString();
             return Results.Redirect(builder.ToString(), permanent: false);
         }

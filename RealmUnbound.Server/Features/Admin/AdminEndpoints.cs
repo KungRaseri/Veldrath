@@ -321,6 +321,9 @@ public static class AdminEndpoints
         [FromServices] ApplicationDbContext db,
         [FromServices] IHubContext<GameHub> hub)
     {
+        if (request.DurationMinutes.HasValue && (request.DurationMinutes.Value < 1 || request.DurationMinutes.Value > 525600))
+            return Results.BadRequest(new { error = "DurationMinutes must be between 1 and 525600 (1 year)." });
+
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
@@ -407,6 +410,9 @@ public static class AdminEndpoints
         [FromServices] ApplicationDbContext db,
         [FromServices] IHubContext<GameHub> hub)
     {
+        if (request.DurationMinutes.HasValue && (request.DurationMinutes.Value < 1 || request.DurationMinutes.Value > 525600))
+            return Results.BadRequest(new { error = "DurationMinutes must be between 1 and 525600 (1 year)." });
+
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
