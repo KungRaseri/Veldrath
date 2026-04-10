@@ -1,4 +1,5 @@
 @page "/auth/callback"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
