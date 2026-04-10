@@ -47,6 +47,8 @@
     <!-- Audio -->
     <PackageReference Include="LibVLCSharp" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" />
+    <!-- Security: pin patched version of Tmds.DBus.Protocol (GHSA-xrw6-gwf8-vvr9) -->
+    <PackageReference Include="Tmds.DBus.Protocol" />
   </ItemGroup>
 
   <ItemGroup>

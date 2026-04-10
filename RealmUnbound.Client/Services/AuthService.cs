@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Web;
 using Microsoft.Extensions.Logging;
 using RealmUnbound.Contracts.Auth;
@@ -181,54 +180,35 @@ public class HttpAuthService(
         if (result is null)
             return (null, new AppError("Authentication timed out or was cancelled."));
 
-        // Decode the JWT payload to extract username + account ID claims.
-        var (username, accountId) = ExtractClaims(result.AccessToken);
-        if (accountId == Guid.Empty)
-            return (null, new AppError("Invalid token received from server."));
+        // Redeem the exchange code for a full token pair — server validates and returns AuthResponse.
+        HttpResponseMessage exchangeResponse;
+        try
+        {
+            exchangeResponse = await http.PostAsJsonAsync(
+                "api/auth/exchange",
+                new ExchangeCodeRequest(result.Code, result.AccountId),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "OAuth exchange request failed");
+            return (null, new AppError("Could not complete sign-in. Please try again."));
+        }
 
-        var response = new AuthResponse(
-            result.AccessToken,
-            result.RefreshToken,
-            result.AccessTokenExpiry,
-            accountId,
-            username,
-            [],
-            []);
+        if (!exchangeResponse.IsSuccessStatusCode)
+        {
+            var err = await ReadErrorAsync(exchangeResponse, "OAuth exchange");
+            return (null, err);
+        }
+
+        var response = await exchangeResponse.Content.ReadFromJsonAsync<AuthResponse>(cancellationToken: ct);
+        if (response is null)
+            return (null, new AppError("Invalid response from server."));
 
         tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
-                    response.AccessTokenExpiry, response.IsCurator);
+                   response.AccessTokenExpiry, response.IsCurator);
         persistence.SaveCurrent(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
                                 response.AccessTokenExpiry, response.IsCurator);
         return (response, null);
-    }
-
-    // Decodes JWT claims without signature verification (server already validated the token).
-    private static (string Username, Guid AccountId) ExtractClaims(string jwt)
-    {
-        try
-        {
-            var parts = jwt.Split('.');
-            if (parts.Length != 3) return ("unknown", Guid.Empty);
-
-            var padded = parts[1].Replace('-', '+').Replace('_', '/');
-            padded = padded.PadRight(padded.Length + (4 - padded.Length % 4) % 4, '=');
-            var bytes = Convert.FromBase64String(padded);
-            var payload = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bytes);
-            if (payload is null) return ("unknown", Guid.Empty);
-
-            var username = payload.TryGetValue("unique_name", out var un) ? un.GetString()
-                : payload.TryGetValue("name", out var n) ? n.GetString()
-                : null;
-
-            Guid.TryParse(
-                payload.TryGetValue("sub", out var sub) ? sub.GetString() : null,
-                out var accountId);
-
-            return (username ?? "unknown", accountId);
-        }
-        catch
-        {
-            return ("unknown", Guid.Empty);
-        }
     }
 }

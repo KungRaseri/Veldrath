@@ -16,11 +16,53 @@
                     Width="360"
                     Spacing="12">
 
-            <TextBlock Text="Login"
+            <TextBlock Text="Welcome Back"
                        Classes="title-large"
                        FontSize="36"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24" />
+
+            <!-- OAuth providers -->
+            <Button Classes="accent"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="discord"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="15">
+                Sign in with Discord
+            </Button>
+
+            <Button Classes="ghost"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="google"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="15">
+                Sign in with Google
+            </Button>
+
+            <Button Classes="ghost"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="microsoft"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="15">
+                Sign in with Microsoft
+            </Button>
+
+            <!-- Divider -->
+            <Grid ColumnDefinitions="*,Auto,*" Margin="0,8,0,8">
+                <Separator Grid.Column="0" VerticalAlignment="Center" Opacity="0.3" />
+                <TextBlock Grid.Column="1"
+                           Text="or sign in with email"
+                           Classes="muted"
+                           FontSize="12"
+                           Margin="8,0" />
+                <Separator Grid.Column="2" VerticalAlignment="Center" Opacity="0.3" />
+            </Grid>
 
             <!-- Email -->
             <TextBlock Text="Email" Classes="muted" />
@@ -29,7 +71,7 @@
                      Height="40" />
 
             <!-- Password -->
-            <TextBlock Text="Password" Classes="muted" Margin="0,8,0,0" />
+            <TextBlock Text="Password" Classes="muted" Margin="0,4,0,0" />
             <TextBox Text="{Binding Password}"
                      Watermark="Enter password"
                      PasswordChar="•"
@@ -66,7 +108,7 @@
                     HorizontalContentAlignment="Center"
                     Height="44"
                     FontSize="16"
-                    Margin="0,8,0,0" />
+                    Margin="0,4,0,0" />
 
             <!-- Back -->
             <Button Content="Back"
@@ -76,50 +118,6 @@
                     HorizontalContentAlignment="Center"
                     Height="40"
                     FontSize="14" />
-
-            <!-- OAuth sign-in divider -->
-            <Grid ColumnDefinitions="*,Auto,*" Margin="0,12,0,4">
-                <Separator Grid.Column="0" VerticalAlignment="Center" Opacity="0.3" />
-                <TextBlock Grid.Column="1"
-                           Text="or sign in with"
-                           Classes="muted"
-                           FontSize="12"
-                           Margin="8,0" />
-                <Separator Grid.Column="2" VerticalAlignment="Center" Opacity="0.3" />
-            </Grid>
-
-            <!-- Discord -->
-            <Button Classes="accent"
-                    Command="{Binding LoginExternalCommand}"
-                    CommandParameter="discord"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Height="40"
-                    FontSize="14">
-                Discord
-            </Button>
-
-            <!-- Google -->
-            <Button Classes="ghost"
-                    Command="{Binding LoginExternalCommand}"
-                    CommandParameter="google"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Height="40"
-                    FontSize="14">
-                Google
-            </Button>
-
-            <!-- Microsoft -->
-            <Button Classes="ghost"
-                    Command="{Binding LoginExternalCommand}"
-                    CommandParameter="microsoft"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Height="40"
-                    FontSize="14">
-                Microsoft
-            </Button>
 
             <!-- Busy indicator -->
             <ProgressBar IsIndeterminate="True"

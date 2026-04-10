@@ -22,6 +22,48 @@
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24" />
 
+            <!-- OAuth providers -->
+            <Button Classes="accent"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="discord"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="15">
+                Continue with Discord
+            </Button>
+
+            <Button Classes="ghost"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="google"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="15">
+                Continue with Google
+            </Button>
+
+            <Button Classes="ghost"
+                    Command="{Binding LoginExternalCommand}"
+                    CommandParameter="microsoft"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="44"
+                    FontSize="15">
+                Continue with Microsoft
+            </Button>
+
+            <!-- Divider -->
+            <Grid ColumnDefinitions="*,Auto,*" Margin="0,8,0,8">
+                <Separator Grid.Column="0" VerticalAlignment="Center" Opacity="0.3" />
+                <TextBlock Grid.Column="1"
+                           Text="or register with email"
+                           Classes="muted"
+                           FontSize="12"
+                           Margin="8,0" />
+                <Separator Grid.Column="2" VerticalAlignment="Center" Opacity="0.3" />
+            </Grid>
+
             <!-- Email -->
             <TextBlock Text="Email" Classes="muted" />
             <TextBox Text="{Binding Email}"
@@ -29,20 +71,20 @@
                      Height="40" />
 
             <!-- Username -->
-            <TextBlock Text="Username" Classes="muted" Margin="0,8,0,0" />
+            <TextBlock Text="Username" Classes="muted" Margin="0,4,0,0" />
             <TextBox Text="{Binding Username}"
                      Watermark="Choose a username"
                      Height="40" />
 
             <!-- Password -->
-            <TextBlock Text="Password" Classes="muted" Margin="0,8,0,0" />
+            <TextBlock Text="Password" Classes="muted" Margin="0,4,0,0" />
             <TextBox Text="{Binding Password}"
                      Watermark="Choose a password"
                      PasswordChar="•"
                      Height="40" />
 
             <!-- Confirm Password -->
-            <TextBlock Text="Confirm Password" Classes="muted" Margin="0,8,0,0" />
+            <TextBlock Text="Confirm Password" Classes="muted" Margin="0,4,0,0" />
             <TextBox Text="{Binding ConfirmPassword}"
                      Watermark="Confirm your password"
                      PasswordChar="•"
@@ -74,7 +116,7 @@
                     HorizontalContentAlignment="Center"
                     Height="44"
                     FontSize="16"
-                    Margin="0,8,0,0" />
+                    Margin="0,4,0,0" />
 
             <!-- Back -->
             <Button Content="Back"
