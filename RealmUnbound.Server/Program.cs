@@ -26,6 +26,7 @@ using RealmUnbound.Server.Features.Announcements;
 using RealmUnbound.Server.Features.Characters;
 using RealmUnbound.Server.Features.Content;
 using RealmUnbound.Server.Features.Foundry;
+using RealmUnbound.Server.Features.Reports;
 using RealmUnbound.Server.Features.Zones;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
@@ -142,13 +143,23 @@ try
     builder.Services.Configure<RealmUnbound.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
 
-    var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
+    // IMemoryCache is required by AuthExchangeCodeService for single-use OAuth exchange codes.
+    builder.Services.AddMemoryCache();
+    builder.Services.AddScoped<AuthExchangeCodeService>();
+
+    var foundryWriteLimit  = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
+    var adminActionsLimit  = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute",  20);
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
         {
             o.Window = TimeSpan.FromMinutes(1);
             o.PermitLimit = foundryWriteLimit;
+        });
+        opts.AddFixedWindowLimiter("admin-actions", o =>
+        {
+            o.Window = TimeSpan.FromMinutes(1);
+            o.PermitLimit = adminActionsLimit;
         });
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
@@ -312,6 +323,17 @@ try
             .ExecuteAsync(context);
     }));
     app.UseSerilogRequestLogging();
+
+    // Security headers on every response.
+    app.Use(async (ctx, next) =>
+    {
+        ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        ctx.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
+        ctx.Response.Headers["X-Frame-Options"]        = "DENY";
+        ctx.Response.Headers["Permissions-Policy"]     = "camera=(), microphone=(), geolocation=()";
+        await next(ctx);
+    });
+
     app.UseCors("AllowLocalClient");
     app.UseCookiePolicy();
     app.UseAuthentication();
@@ -360,8 +382,12 @@ try
 
         }
 
-        // Seed all identity roles and their default permission claims (runs for all DB providers).
-        await SeedRolesAsync(scope.ServiceProvider);
+        // Seed all identity roles and their default permission claims.
+        // Skipped for non-Postgres providers (SQLite in tests): the test host calls EnsureCreated()
+        // only after base.CreateHost() returns, so the schema does not exist yet at this point.
+        // WebAppFactory.CreateHost() seeds roles explicitly after EnsureCreated().
+        if (appDb.Database.ProviderName?.Contains("Npgsql") == true)
+            await DatabaseSeeder.SeedRolesAsync(scope.ServiceProvider);
     }
 
     // Auth, character, zone, content & admin endpoints
@@ -369,6 +395,7 @@ try
     app.MapExternalAuthEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();
+    app.MapReportEndpoints();
     app.MapCharacterEndpoints();
     app.MapCharacterCreationSessionEndpoints();
     app.MapZoneEndpoints();
@@ -456,32 +483,6 @@ static async Task RepairStaleMigrationsAsync(DbContext db, bool isDevelopment, I
 
     await db.Database.EnsureDeletedAsync();
     Log.Information("Development database dropped; migrations will be re-applied from scratch.");
-}
-
-// Seeds all RBAC roles and their default permission claims idempotently.
-// Runs for every DB provider (including SQLite in tests) so the test host always has the full role set.
-static async Task SeedRolesAsync(IServiceProvider services)
-{
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-
-    foreach (var roleName in Roles.All)
-    {
-        if (!await roleManager.RoleExistsAsync(roleName))
-            await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
-
-        var role = (await roleManager.FindByNameAsync(roleName))!;
-        var existingClaims = await roleManager.GetClaimsAsync(role);
-        var existingPermissions = existingClaims
-            .Where(c => c.Type == "permission")
-            .Select(c => c.Value)
-            .ToHashSet(StringComparer.Ordinal);
-
-        foreach (var perm in Roles.DefaultPermissionsFor(roleName))
-        {
-            if (!existingPermissions.Contains(perm))
-                await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("permission", perm));
-        }
-    }
 }
 
 // Required for WebApplicationFactory<Program> in integration tests.

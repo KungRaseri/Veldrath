@@ -613,7 +613,7 @@ namespace RealmUnbound.Server.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<Guid>("ReporterCharacterId")
+                    b.Property<Guid?>("ReporterCharacterId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ReporterName")
@@ -630,7 +630,7 @@ namespace RealmUnbound.Server.Migrations
                     b.Property<DateTimeOffset>("SubmittedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("TargetCharacterId")
+                    b.Property<Guid?>("TargetCharacterId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TargetName")

@@ -1,0 +1,107 @@
+@page "/mod/users"
+@using RealmUnbound.Contracts.Admin
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Player Search — Moderation — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsModerator)
+{
+    <p>Access denied. You need the <strong>Moderator</strong> role to view this page.</p>
+}
+else
+{
+    <div class="toolbar">
+        <input class="search-input" placeholder="Search username…"
+               @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
+        <select class="filter-select" @bind="_filterStatus" @bind:after="OnFilterChangedAsync">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+            <option value="muted">Muted</option>
+        </select>
+        <button class="btn" @onclick="LoadUsersAsync">Search</button>
+        <a class="btn btn-secondary" href="/mod">← Back</a>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_result is null)
+    {
+        <p class="error">Failed to load users.</p>
+    }
+    else if (_result.Items.Count == 0)
+    {
+        <p class="muted">No players found.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Status</th>
+                    <th>Warnings</th>
+                    <th>Last Seen</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in _result.Items)
+                {
+                    <tr>
+                        <td>@u.Username</td>
+                        <td>
+                            @if (u.IsBanned)  { <span class="badge badge-red">Banned</span> }
+                            else if (u.IsMuted) { <span class="badge badge-orange">Muted</span> }
+                            else               { <span class="badge badge-green">Active</span> }
+                        </td>
+                        <td>@u.WarnCount</td>
+                        <td class="muted nowrap">@(u.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</td>
+                        <td><a class="btn btn-sm" href="/mod/users/@u.Id">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (_result.Total > _result.PageSize)
+        {
+            <div class="pagination">
+                <button class="btn btn-sm" @onclick="PrevPageAsync" disabled="@(_page <= 1)">← Prev</button>
+                <span class="muted">Page @_page of @((int)Math.Ceiling(_result.Total / (double)_result.PageSize))</span>
+                <button class="btn btn-sm" @onclick="NextPageAsync" disabled="@(_page * _result.PageSize >= _result.Total)">Next →</button>
+            </div>
+        }
+    }
+}
+
+@code {
+    private AdminUserListResponse? _result;
+    private bool    _loading      = true;
+    private string? _search;
+    private string? _filterStatus;
+    private int     _page         = 1;
+
+    protected override async Task OnInitializedAsync() => await LoadUsersAsync();
+
+    private async Task OnFilterChangedAsync() { _page = 1; await LoadUsersAsync(); }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") { _page = 1; await LoadUsersAsync(); }
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _loading = true;
+        _result  = await Api.GetModUsersAsync(search: _search, status: _filterStatus, page: _page);
+        _loading = false;
+    }
+
+    private async Task PrevPageAsync() { _page--; await LoadUsersAsync(); }
+    private async Task NextPageAsync() { _page++; await LoadUsersAsync(); }
+}

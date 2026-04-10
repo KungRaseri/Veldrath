@@ -23,6 +23,10 @@
         {
             <NavLink class="nav-item" href="admin">Admin</NavLink>
         }
+        @if (AuthState.IsModerator && !AuthState.IsAdmin)
+        {
+            <NavLink class="nav-item" href="mod">Moderation</NavLink>
+        }
         @if (_unreadCount > 0)
         {
             <NavLink class="nav-item nav-bell" href="notifications">

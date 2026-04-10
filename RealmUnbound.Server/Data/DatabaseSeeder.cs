@@ -1,6 +1,8 @@
-﻿using RealmEngine.Data.Persistence;
+﻿using Microsoft.AspNetCore.Identity;
+using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Seeders;
 using RealmUnbound.Server.Data.Seeders;
+using RealmUnbound.Server.Features.Auth;
 
 namespace RealmUnbound.Server.Data;
 
@@ -41,6 +43,35 @@ public static class DatabaseSeeder
         await DialogueSeeder.SeedAsync(db);
         await TraitDefinitionsSeeder.SeedAsync(db);
         await ContentRegistrySeeder.SeedAsync(db);
+    }
+
+    /// <summary>
+    /// Seeds all RBAC roles and their default permission claims idempotently.
+    /// Called by the test host after <c>EnsureCreated()</c> and by the production host
+    /// after Postgres migrations are applied.
+    /// </summary>
+    public static async Task SeedRolesAsync(IServiceProvider services)
+    {
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+        foreach (var roleName in Roles.All)
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+                await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
+
+            var role = (await roleManager.FindByNameAsync(roleName))!;
+            var existingClaims = await roleManager.GetClaimsAsync(role);
+            var existingPermissions = existingClaims
+                .Where(c => c.Type == "permission")
+                .Select(c => c.Value)
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (var perm in Roles.DefaultPermissionsFor(roleName))
+            {
+                if (!existingPermissions.Contains(perm))
+                    await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("permission", perm));
+            }
+        }
     }
 
 }

@@ -114,6 +114,21 @@ public record WarnPlayerRequest(Guid AccountId, string Reason);
 /// <param name="DurationMinutes">Duration of the mute in minutes. <c>null</c> means permanent.</param>
 public record MutePlayerRequest(Guid AccountId, string? Reason = null, int? DurationMinutes = null);
 
+/// <summary>Lifts an active ban from a player account.</summary>
+/// <param name="AccountId">Target account to unban.</param>
+public record UnbanPlayerRequest(Guid AccountId);
+
+/// <summary>Lifts an active chat mute from a player account.</summary>
+/// <param name="AccountId">Target account to unmute.</param>
+public record UnmutePlayerRequest(Guid AccountId);
+
+// ── Web Reports ──────────────────────────────────────────────────────────────
+
+/// <summary>Submits a player report from the Foundry web portal against another account.</summary>
+/// <param name="TargetUsername">Username of the account being reported.</param>
+/// <param name="Reason">Reason for the report shown to staff.</param>
+public record SubmitReportRequest(string TargetUsername, string Reason);
+
 // ── Audit Log DTOs ───────────────────────────────────────────────────────────
 
 /// <summary>Single entry from the admin audit trail.</summary>

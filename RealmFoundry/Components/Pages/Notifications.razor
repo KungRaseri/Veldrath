@@ -1,0 +1,90 @@
+@page "/notifications"
+@using RealmUnbound.Contracts.Foundry
+@inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
+@rendermode InteractiveServer
+
+<PageTitle>Notifications — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsLoggedIn)
+{
+    <p>You must <a href="/login">sign in</a> to view your notifications.</p>
+}
+else
+{
+    <div class="toolbar">
+        <h1>Notifications</h1>
+        @if (_notifications.Any(n => !n.IsRead))
+        {
+            <button class="btn btn-sm" @onclick="MarkAllReadAsync">Mark all as read</button>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_notifications.Count == 0)
+    {
+        <p class="muted">No notifications yet.</p>
+    }
+    else
+    {
+        <ul class="notification-list">
+            @foreach (var n in _notifications)
+            {
+                <li class="notification-item @(n.IsRead ? "read" : "unread")" @key="n.Id">
+                    <div class="notification-body">
+                        <a href="/submissions/@n.SubmissionId">@n.SubmissionTitle</a>
+                        <span class="notification-message">@n.Message</span>
+                        <span class="muted notification-date">@n.CreatedAt.ToLocalTime().ToString("g")</span>
+                    </div>
+                    @if (!n.IsRead)
+                    {
+                        <button class="btn btn-sm" @onclick="() => MarkReadAsync(n.Id)">Dismiss</button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+}
+
+<style>
+    .toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .toolbar h1 { margin: 0; }
+    .notification-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+    .notification-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+        padding: .75rem 1rem; border: 1px solid var(--border, #333); border-radius: 6px; }
+    .notification-item.unread { border-left: 3px solid var(--accent, #6c7eff); }
+    .notification-body { display: flex; flex-direction: column; gap: .2rem; }
+    .notification-message { font-size: .9rem; }
+    .notification-date { font-size: .8rem; }
+</style>
+
+@code {
+    private List<FoundryNotificationDto> _notifications = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthState.IsLoggedIn) { _loading = false; return; }
+
+        _notifications = (await Api.GetNotificationsAsync()).ToList();
+        _loading = false;
+    }
+
+    private async Task MarkReadAsync(Guid id)
+    {
+        await Api.MarkNotificationReadAsync(id);
+        var idx = _notifications.FindIndex(n => n.Id == id);
+        if (idx >= 0)
+            _notifications[idx] = _notifications[idx] with { IsRead = true };
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        var unread = _notifications.Where(n => !n.IsRead).ToList();
+        foreach (var n in unread)
+            await MarkReadAsync(n.Id);
+    }
+}

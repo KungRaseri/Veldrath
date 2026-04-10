@@ -32,6 +32,13 @@ public class RealmFoundryApiClient(HttpClient http)
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
     }
 
+    /// <summary>Redeems a single-use exchange code issued by the OAuth callback for a full auth response.</summary>
+    public async Task<AuthResponse?> ExchangeCodeAsync(string code, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/auth/exchange", new ExchangeCodeRequest(code), ct);
+        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
+    }
+
     // Submissions
     public async Task<PagedResult<FoundrySubmissionSummaryDto>> GetSubmissionsAsync(
         string? status = null, string? contentType = null,
@@ -249,7 +256,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Lifts a ban from an account.</summary>
     public async Task<(bool Ok, string? Error)> UnbanPlayerAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsync($"/api/admin/players/unban?id={id}", null, ct);
+        var resp = await http.PostAsJsonAsync("/api/admin/players/unban", new UnbanPlayerRequest(id), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -281,7 +288,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Lifts an active chat mute from an account.</summary>
     public async Task<(bool Ok, string? Error)> UnmutePlayerAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsync($"/api/admin/players/unmute?id={id}", null, ct);
+        var resp = await http.PostAsJsonAsync("/api/admin/players/unmute", new UnmutePlayerRequest(id), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -346,6 +353,67 @@ public class RealmFoundryApiClient(HttpClient http)
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<ServerStatusDto>(ct)
             : null;
+    }
+
+    // ── Moderator (view_players) ─────────────────────────────────────────────
+
+    /// <summary>Returns a paged list of player accounts from the moderation endpoint.</summary>
+    public async Task<AdminUserListResponse?> GetModUsersAsync(
+        string? search = null, string? status = null, string? sort = null,
+        int page = 1, int pageSize = 25, CancellationToken ct = default)
+    {
+        var url = "/api/mod/users";
+        var qs  = BuildQuery(("search", search), ("status", status), ("sort", sort),
+                             ("page", page.ToString()), ("pageSize", pageSize.ToString()));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<AdminUserListResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Returns the full detail for a single player account from the moderation endpoint.</summary>
+    public async Task<PlayerDetailDto?> GetModUserAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/mod/users/{id}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PlayerDetailDto>(ct)
+            : null;
+    }
+
+    /// <summary>Returns a paged list of player reports from the moderation endpoint.</summary>
+    public async Task<PagedAdminResult<PlayerReportDto>?> GetModReportsAsync(
+        int page = 1, int pageSize = 50, bool? resolved = null, CancellationToken ct = default)
+    {
+        var url = "/api/mod/reports";
+        var qs  = BuildQuery(
+            ("resolved", resolved?.ToString().ToLowerInvariant()),
+            ("page",     page.ToString()),
+            ("pageSize", pageSize.ToString()));
+        if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
+        var resp = await http.GetAsync(url, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedAdminResult<PlayerReportDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Resolves a player report via the moderation endpoint.</summary>
+    public async Task<(bool Ok, string? Error)> ResolveModReportAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsync($"/api/mod/reports/{id}/resolve", null, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    // ── Web Report Submission ────────────────────────────────────────────────
+
+    /// <summary>Submits a report against another user from the Foundry web portal.</summary>
+    public async Task<(bool Ok, string? Error)> SubmitReportAsync(
+        SubmitReportRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/reports", request, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
     }
 }
 

@@ -1,10 +1,10 @@
 @page "/submissions/{Id:guid}"
 @using RealmUnbound.Contracts.Content
+@using RealmUnbound.Contracts.Admin
 @using System.Text.Json
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 @rendermode InteractiveServer
-@using Markdig
 
 <PageTitle>@(_submission?.Title ?? "Submission") — RealmFoundry</PageTitle>
 
@@ -37,7 +37,7 @@ else
     @if (!string.IsNullOrWhiteSpace(_submission.Description))
     {
         <h2>Description</h2>
-        <div class="prose">@((MarkupString)Markdown.ToHtml(_submission.Description))</div>
+        <div class="prose">@((MarkupString)MarkdownRenderer.RenderSafe(_submission.Description))</div>
     }
 
     <h2>Payload</h2>
@@ -88,6 +88,26 @@ else
             @if (_reviewMessage is not null) { <p class="feedback">@_reviewMessage</p> }
         </div>
     }
+
+    @if (AuthState.IsLoggedIn && AuthState.AccountId.HasValue && _submission.SubmitterId != AuthState.AccountId.Value)
+    {
+        <div class="report-panel">
+            @if (!_reportVisible)
+            {
+                <button class="btn btn-sm btn-red" @onclick="() => _reportVisible = true">Report User</button>
+            }
+            else
+            {
+                <h2>Report @_submission.SubmitterName</h2>
+                <textarea @bind="_reportReason" placeholder="Describe the violation…" rows="3"></textarea>
+                <div class="review-actions">
+                    <button class="btn btn-red"  @onclick="SubmitReportAsync">Submit Report</button>
+                    <button class="btn btn-sm"   @onclick="() => _reportVisible = false">Cancel</button>
+                </div>
+                @if (_reportMessage is not null) { <p class="feedback">@_reportMessage</p> }
+            }
+        </div>
+    }
 }
 
 @code {
@@ -98,11 +118,23 @@ else
     private string? _voteMessage;
     private string? _reviewMessage;
     private string? _reviewNotes;
+    private bool    _reportVisible;
+    private string? _reportReason;
+    private string? _reportMessage;
 
     // Schema-driven payload rendering
     private ContentTypeSchema?  _schema;
     private JsonElement?        _payloadElement;
     private ContentDetailDto?   _canonical;
+
+    private async Task SubmitReportAsync()
+    {
+        if (_submission is null || string.IsNullOrWhiteSpace(_reportReason)) return;
+
+        var (ok, _) = await Api.SubmitReportAsync(new SubmitReportRequest(_submission.SubmitterName, _reportReason));
+        _reportMessage = ok ? "Report submitted. Thank you." : "Could not submit report — please try again.";
+        if (ok) { _reportReason = null; _reportVisible = false; }
+    }
 
     protected override async Task OnInitializedAsync()
     {

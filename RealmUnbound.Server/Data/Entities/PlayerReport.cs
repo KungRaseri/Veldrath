@@ -10,14 +10,14 @@ public class PlayerReport
     /// <summary>Primary key.</summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Character ID of the player who submitted the report.</summary>
-    public Guid ReporterCharacterId { get; set; }
+    /// <summary>Character ID of the player who submitted the report, or <c>null</c> for web-portal reports.</summary>
+    public Guid? ReporterCharacterId { get; set; }
 
     /// <summary>Character name of the reporter at submission time (denormalised).</summary>
     public string ReporterName { get; set; } = string.Empty;
 
-    /// <summary>Character ID of the reported player.</summary>
-    public Guid TargetCharacterId { get; set; }
+    /// <summary>Character ID of the reported player, or <c>null</c> for web-portal reports.</summary>
+    public Guid? TargetCharacterId { get; set; }
 
     /// <summary>Character name of the reported player at submission time (denormalised).</summary>
     public string TargetName { get; set; } = string.Empty;

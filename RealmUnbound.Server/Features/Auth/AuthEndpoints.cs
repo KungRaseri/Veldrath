@@ -9,6 +9,7 @@ namespace RealmUnbound.Server.Features.Auth;
 /// POST /api/auth/login     — verify credentials, returns token pair
 /// POST /api/auth/refresh   — rotate refresh token, returns new token pair
 /// POST /api/auth/logout    — revoke refresh token [Authorize]
+/// POST /api/auth/exchange  — redeem a single-use OAuth exchange code for a token pair
 /// </summary>
 public static class AuthEndpoints
 {
@@ -20,6 +21,7 @@ public static class AuthEndpoints
         group.MapPost("/login",    LoginAsync);
         group.MapPost("/refresh",  RefreshAsync);
         group.MapPost("/logout",   LogoutAsync).RequireAuthorization();
+        group.MapPost("/exchange", ExchangeAsync);
 
         return app;
     }
@@ -72,5 +74,15 @@ public static class AuthEndpoints
         var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         await authService.RevokeAsync(request.RefreshToken, ip, ct);
         return Results.NoContent();
+    }
+
+    private static IResult ExchangeAsync(
+        [FromBody] ExchangeCodeRequest request,
+        AuthExchangeCodeService exchangeService)
+    {
+        if (!exchangeService.TryConsume(request.Code, out var response))
+            return Results.BadRequest(new { error = "Invalid or expired exchange code." });
+
+        return Results.Ok(response);
     }
 }

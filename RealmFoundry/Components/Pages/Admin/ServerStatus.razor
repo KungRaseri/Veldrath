@@ -1,0 +1,106 @@
+@page "/admin/status"
+@using RealmUnbound.Contracts.Admin
+@inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
+@rendermode InteractiveServer
+
+<PageTitle>Server Status — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsAdmin)
+{
+    <p>Access denied. You need the <strong>Admin</strong> role to view this page.</p>
+}
+else if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_status is null)
+{
+    <p class="error">Could not retrieve server status.</p>
+}
+else
+{
+    <h1>Server Status</h1>
+
+    <div class="status-summary">
+        <div class="status-stat">
+            <span class="stat-label">Connected Players</span>
+            <span class="stat-value">@_status.ConnectedPlayers</span>
+        </div>
+        <div class="status-stat">
+            <span class="stat-label">Uptime</span>
+            <span class="stat-value">@FormatUptime(_status.ServerStartedAt)</span>
+        </div>
+        <div class="status-stat">
+            <span class="stat-label">Started At</span>
+            <span class="stat-value muted">@_status.ServerStartedAt.ToLocalTime().ToString("g")</span>
+        </div>
+    </div>
+
+    @if (_status.ZonePopulations.Count > 0)
+    {
+        <h2>Zone Population</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Zone</th>
+                    <th>Zone ID</th>
+                    <th>Players</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var z in _status.ZonePopulations.OrderByDescending(z => z.PlayerCount))
+                {
+                    <tr>
+                        <td>@z.ZoneName</td>
+                        <td class="muted">@z.ZoneId</td>
+                        <td>@z.PlayerCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="muted">No active zones.</p>
+    }
+
+    <div style="margin-top:1rem">
+        <button class="btn btn-sm" @onclick="RefreshAsync">Refresh</button>
+    </div>
+}
+
+<style>
+    .status-summary { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .status-stat { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.5rem;
+        border: 1px solid var(--border, #333); border-radius: 8px; min-width: 160px; }
+    .stat-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted, #888); }
+    .stat-value { font-size: 1.5rem; font-weight: 600; }
+</style>
+
+@code {
+    private ServerStatusDto? _status;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task RefreshAsync()
+    {
+        _loading = true;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _status  = await Api.GetServerStatusAsync();
+        _loading = false;
+    }
+
+    private static string FormatUptime(DateTimeOffset since)
+    {
+        var span = DateTimeOffset.UtcNow - since;
+        if (span.TotalDays >= 1)  return $"{(int)span.TotalDays}d {span.Hours}h {span.Minutes}m";
+        if (span.TotalHours >= 1) return $"{(int)span.TotalHours}h {span.Minutes}m";
+        return $"{span.Minutes}m";
+    }
+}

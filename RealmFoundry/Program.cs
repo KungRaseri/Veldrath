@@ -65,6 +65,20 @@ try
     }
     app.UseAntiforgery();
 
+    // Security headers — applied to every response before any other middleware writes output.
+    app.Use(async (ctx, next) =>
+    {
+        ctx.Response.Headers["X-Frame-Options"]         = "DENY";
+        ctx.Response.Headers["X-Content-Type-Options"]  = "nosniff";
+        ctx.Response.Headers["Referrer-Policy"]         = "strict-origin-when-cross-origin";
+        ctx.Response.Headers["Permissions-Policy"]      = "camera=(), microphone=(), geolocation=()";
+        // Blazor requires 'unsafe-inline' for its auto-generated inline scripts.
+        ctx.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none';";
+        await next(ctx);
+    });
+
     // UseStaticFiles serves physical wwwroot files (e.g. _framework/, favicon.ico).
     // MapStaticAssets handles fingerprinted/compressed endpoints from the publish manifest.
     // Both are needed: in Development inside Docker, UseStaticWebAssets() auto-wires a

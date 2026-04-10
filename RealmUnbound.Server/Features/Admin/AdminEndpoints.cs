@@ -41,31 +41,71 @@ public static class AdminEndpoints
     // Captured once at first request; accurate enough for a status display.
     private static readonly DateTimeOffset _serverStartedAt = DateTimeOffset.UtcNow;
 
-    /// <summary>Registers all admin endpoints on the provided route builder.</summary>
+    /// <summary>Registers all admin and moderation endpoints on the provided route builder.</summary>
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/admin")
+        // ── Group 1: admin-only operations (manage_users required) ────────────────
+        // Keeps user/role/permission management and the audit log out of reach for Moderators.
+        var adminGroup = app.MapGroup("/api/admin")
             .WithTags("Admin")
             .RequireAuthorization(Auth.Permissions.ManageUsers);
 
-        group.MapGet("/users",                                       ListUsersAsync);
-        group.MapGet("/users/{id:guid}",                             GetUserAsync);
-        group.MapPost("/users/{id:guid}/roles",                      AssignRoleAsync);
-        group.MapDelete("/users/{id:guid}/roles/{role}",             RevokeRoleAsync);
-        group.MapPost("/users/{id:guid}/permissions",                GrantPermissionAsync);
-        group.MapDelete("/users/{id:guid}/permissions/{permission}", RevokePermissionAsync);
-        group.MapPost("/players/kick",    KickPlayerAsync).RequireAuthorization(Auth.Permissions.KickPlayers);
-        group.MapPost("/players/ban",     BanPlayerAsync).RequireAuthorization(Auth.Permissions.BanPlayers);
-        group.MapPost("/players/unban",   UnbanPlayerAsync).RequireAuthorization(Auth.Permissions.BanPlayers);
-        group.MapPost("/players/warn",    WarnPlayerAsync).RequireAuthorization(Auth.Permissions.WarnPlayers);
-        group.MapPost("/players/mute",    MutePlayerAsync).RequireAuthorization(Auth.Permissions.KickPlayers);
-        group.MapPost("/players/unmute",  UnmutePlayerAsync).RequireAuthorization(Auth.Permissions.KickPlayers);
-        group.MapPost("/broadcast",       BroadcastAsync).RequireAuthorization(Auth.Permissions.SendAnnouncements);
-        group.MapGet("/audit",            GetAuditLogAsync);
-        group.MapGet("/sessions",         GetSessionsAsync);
-        group.MapGet("/reports",          GetReportsAsync);
-        group.MapPut("/reports/{id:guid}/resolve", ResolveReportAsync);
-        group.MapGet("/status",           GetServerStatusAsync);
+        adminGroup.MapGet("/users",                                       ListUsersAsync);
+        adminGroup.MapGet("/users/{id:guid}",                             GetUserAsync);
+        adminGroup.MapPost("/users/{id:guid}/roles",                      AssignRoleAsync);
+        adminGroup.MapDelete("/users/{id:guid}/roles/{role}",             RevokeRoleAsync);
+        adminGroup.MapPost("/users/{id:guid}/permissions",                GrantPermissionAsync);
+        adminGroup.MapDelete("/users/{id:guid}/permissions/{permission}", RevokePermissionAsync);
+        adminGroup.MapGet("/audit",                                       GetAuditLogAsync);
+        adminGroup.MapGet("/sessions",                                    GetSessionsAsync);
+        adminGroup.MapGet("/status",                                      GetServerStatusAsync);
+
+        // ── Group 2: per-permission moderation actions ────────────────────────────
+        // No group-level permission requirement — each endpoint enforces its own claim.
+        // This makes these endpoints reachable to Moderators who hold the relevant claims
+        // without granting them full manage_users access.
+        var modGroup = app.MapGroup("/api/admin")
+            .WithTags("Admin")
+            .RequireAuthorization();
+
+        modGroup.MapPost("/players/kick",   KickPlayerAsync)
+            .RequireAuthorization(Auth.Permissions.KickPlayers)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapPost("/players/ban",    BanPlayerAsync)
+            .RequireAuthorization(Auth.Permissions.BanPlayers)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapPost("/players/unban",  UnbanPlayerAsync)
+            .RequireAuthorization(Auth.Permissions.BanPlayers)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapPost("/players/warn",   WarnPlayerAsync)
+            .RequireAuthorization(Auth.Permissions.WarnPlayers)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapPost("/players/mute",   MutePlayerAsync)
+            .RequireAuthorization(Auth.Permissions.KickPlayers)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapPost("/players/unmute", UnmutePlayerAsync)
+            .RequireAuthorization(Auth.Permissions.KickPlayers)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapPost("/broadcast",      BroadcastAsync)
+            .RequireAuthorization(Auth.Permissions.SendAnnouncements)
+            .RequireRateLimiting("admin-actions");
+        modGroup.MapGet("/reports",         GetReportsAsync)
+            .RequireAuthorization(Auth.Permissions.ViewPlayers);
+        modGroup.MapPut("/reports/{id:guid}/resolve", ResolveReportAsync)
+            .RequireAuthorization(Auth.Permissions.ViewPlayers)
+            .RequireRateLimiting("admin-actions");
+
+        // ── Group 3: moderator read-only views ────────────────────────────────────
+        // A separate /api/mod prefix accessible to any role that holds view_players.
+        // Reuses the same handler implementations as the admin group above.
+        var modReadGroup = app.MapGroup("/api/mod")
+            .WithTags("Moderation")
+            .RequireAuthorization(Auth.Permissions.ViewPlayers);
+
+        modReadGroup.MapGet("/users",              ListUsersAsync);
+        modReadGroup.MapGet("/users/{id:guid}",    GetUserAsync);
+        modReadGroup.MapGet("/reports",            GetReportsAsync);
+        modReadGroup.MapPut("/reports/{id:guid}/resolve", ResolveReportAsync);
 
         return app;
     }
@@ -302,12 +342,12 @@ public static class AdminEndpoints
     }
 
     private static async Task<IResult> UnbanPlayerAsync(
-        [FromQuery] Guid id,
+        [FromBody] UnbanPlayerRequest request,
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
         [FromServices] ApplicationDbContext db)
     {
-        var user = await userManager.FindByIdAsync(id.ToString());
+        var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
         user.IsBanned    = false;
@@ -316,7 +356,7 @@ public static class AdminEndpoints
         await userManager.UpdateAsync(user);
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "unban", null);
 
-        return Results.Ok(new AdminActionResponse(true, $"Account {id} unbanned."));
+        return Results.Ok(new AdminActionResponse(true, $"Account {request.AccountId} unbanned."));
     }
 
     private static async Task<IResult> WarnPlayerAsync(
@@ -386,12 +426,12 @@ public static class AdminEndpoints
     }
 
     private static async Task<IResult> UnmutePlayerAsync(
-        [FromQuery] Guid id,
+        [FromBody] UnmutePlayerRequest request,
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
         [FromServices] ApplicationDbContext db)
     {
-        var user = await userManager.FindByIdAsync(id.ToString());
+        var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
         user.IsMuted    = false;
@@ -400,7 +440,7 @@ public static class AdminEndpoints
         await userManager.UpdateAsync(user);
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "unmute", null);
 
-        return Results.Ok(new AdminActionResponse(true, $"Account {id} unmuted."));
+        return Results.Ok(new AdminActionResponse(true, $"Account {request.AccountId} unmuted."));
     }
 
     private static async Task<IResult> BroadcastAsync(

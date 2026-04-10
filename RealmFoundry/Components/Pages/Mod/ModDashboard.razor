@@ -1,0 +1,34 @@
+@page "/mod"
+@inject AuthStateService AuthState
+@rendermode InteractiveServer
+
+<PageTitle>Moderation — RealmFoundry</PageTitle>
+
+@if (!AuthState.IsModerator)
+{
+    <p>Access denied. You need the <strong>Moderator</strong> role to view this page.</p>
+}
+else
+{
+    <h1>Moderation Dashboard</h1>
+
+    <div class="admin-grid">
+        <a class="admin-card" href="/mod/users">
+            <h2>Player Search</h2>
+            <p>Look up player accounts, view history, and apply kick, warn, mute, or ban actions.</p>
+        </a>
+
+        <a class="admin-card" href="/mod/reports">
+            <h2>Player Reports</h2>
+            <p>Review open player-submitted reports and mark them resolved.</p>
+        </a>
+    </div>
+}
+
+<style>
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .admin-card { display: block; padding: 1.25rem 1.5rem; border: 1px solid var(--border, #333); border-radius: 8px; text-decoration: none; color: inherit; transition: border-color .15s; }
+    .admin-card:hover { border-color: var(--accent, #6c7eff); }
+    .admin-card h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
+    .admin-card p { margin: 0; color: var(--muted, #888); font-size: .9rem; }
+</style>

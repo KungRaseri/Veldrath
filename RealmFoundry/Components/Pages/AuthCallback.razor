@@ -1,6 +1,7 @@
 @page "/auth/callback"
 @using System.Text.Json
 @using System.Text.Encodings.Web
+@inject RealmFoundryApiClient Api
 
 <PageTitle>Signing in… — RealmFoundry</PageTitle>
 
@@ -33,95 +34,39 @@ else
 }
 
 @code {
-    // SupplyParameterFromQuery works in static SSR — the router binds these
-    // directly from the OAuth redirect query string during the SSR pass.
-    [SupplyParameterFromQuery] private string? Jwt     { get; set; }
-    [SupplyParameterFromQuery] private string? Refresh { get; set; }
-    [SupplyParameterFromQuery] private string? Expires { get; set; }
+    // Server redirects to /auth/callback?code=<exchange-code> — a single-use 64-char hex value
+    // that the server redeems for a full AuthResponse. The JWT never appears in the URL or logs.
+    [SupplyParameterFromQuery] private string? Code { get; set; }
 
     private string? _payload;
     private string  _error = "Login failed.";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(Jwt))
+        if (string.IsNullOrWhiteSpace(Code))
         {
-            _error = "No token received.";
+            _error = "No exchange code received.";
             return;
         }
 
-        var parts = Jwt.Split('.');
-        if (parts.Length != 3)
+        var response = await Api.ExchangeCodeAsync(Code);
+        if (response is null)
         {
-            _error = "Invalid token format.";
+            _error = "Exchange code was invalid or expired.";
             return;
         }
-
-        Dictionary<string, JsonElement>? claims;
-        try
-        {
-            var b64   = parts[1].Replace('-', '+').Replace('_', '/');
-            b64       = b64.PadRight(b64.Length + (4 - b64.Length % 4) % 4, '=');
-            claims    = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(Convert.FromBase64String(b64));
-        }
-        catch
-        {
-            _error = "Could not read token payload.";
-            return;
-        }
-
-        if (claims is null) { _error = "Empty token payload."; return; }
-
-        var username = (claims.TryGetValue("unique_name", out var un) ? un.GetString() : null)
-            ?? (claims.TryGetValue("name", out var n) ? n.GetString() : null)
-            ?? "unknown";
-
-        if (!claims.TryGetValue("sub", out var subEl) || !Guid.TryParse(subEl.GetString(), out var accountId))
-        {
-            _error = "Invalid account claim.";
-            return;
-        }
-
-        // Role claim may be a single string or a JSON array depending on token size.
-        // Extract all roles into a list so multi-role accounts are handled correctly.
-        var roles = ExtractStringClaim(claims, "role");
-        var permissions = ExtractStringClaim(claims, "permission");
-        var isCurator = roles.Contains("Curator", StringComparer.OrdinalIgnoreCase);
-
-        var expiry = long.TryParse(Expires, out var unix)
-            ? DateTimeOffset.FromUnixTimeSeconds(unix).ToString("O")
-            : DateTimeOffset.UtcNow.AddMinutes(15).ToString("O");
 
         // JavaScriptEncoder.Default escapes <, >, &, ' and " as \uXXXX — safe to embed in <script>.
         _payload = JsonSerializer.Serialize(new
         {
-            a     = Jwt,
-            r     = Refresh ?? "",
-            u     = username,
-            i     = accountId.ToString(),
-            c     = isCurator,
-            e     = expiry,
-            roles = roles,
-            perms = permissions,
+            a     = response.AccessToken,
+            r     = response.RefreshToken,
+            u     = response.Username,
+            i     = response.AccountId.ToString(),
+            c     = response.IsCurator,
+            e     = response.AccessTokenExpiry.ToString("O"),
+            roles = response.Roles,
+            perms = response.Permissions,
         }, new JsonSerializerOptions { Encoder = JavaScriptEncoder.Default });
-    }
-
-    /// <summary>
-    /// Extracts a claim that may appear as a single <c>string</c> or a <c>string[]</c> in the JWT payload.
-    /// ASP.NET Core serialises multiple claims of the same type as a JSON array.
-    /// </summary>
-    private static List<string> ExtractStringClaim(Dictionary<string, JsonElement> claims, string key)
-    {
-        if (!claims.TryGetValue(key, out var el)) return [];
-
-        return el.ValueKind switch
-        {
-            JsonValueKind.String => [el.GetString()!],
-            JsonValueKind.Array  => el.EnumerateArray()
-                                     .Where(e => e.ValueKind == JsonValueKind.String)
-                                     .Select(e => e.GetString()!)
-                                     .ToList(),
-            _                    => [],
-        };
     }
 }

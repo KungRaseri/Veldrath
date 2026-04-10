@@ -24,7 +24,7 @@ public static class FoundryEndpoints
         group.MapGet("/submissions",                      ListAsync);
         group.MapGet("/submissions/{id:guid}",            GetAsync);
         group.MapPost("/submissions/{id:guid}/vote",      VoteAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
-        group.MapPost("/submissions/{id:guid}/review",    ReviewAsync).RequireAuthorization("Curator");
+        group.MapPost("/submissions/{id:guid}/review",    ReviewAsync).RequireAuthorization("Curator").RequireRateLimiting("foundry-writes");
         group.MapGet("/notifications",                    GetNotificationsAsync).RequireAuthorization();
         group.MapPost("/notifications/{id:guid}/read",    MarkNotificationReadAsync).RequireAuthorization();
 
