@@ -3,9 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
 using RealmEngine.Data;
-using RealmEngine.Data.Repositories;
 using RealmEngine.Core;
-using RealmEngine.Shared.Abstractions;
 using Veldrath.Discord;
 using Veldrath.Discord.Services;
 using Veldrath.Discord.Settings;
@@ -39,8 +37,7 @@ try
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
     builder.Services.AddRealmEngineCore(p => p.UseNpgsql(connectionString));
-    builder.Services.AddRealmEngineMediatR();
-    builder.Services.AddSingleton<ICharacterCreationSessionStore, InMemoryCharacterCreationSessionStore>();
+    builder.Services.AddRealmEngineGenerationMediatR();
 
     // Typed HttpClient for server status; base URL is configurable in Discord settings
     builder.Services.AddHttpClient<ServerStatusService>((sp, client) =>
