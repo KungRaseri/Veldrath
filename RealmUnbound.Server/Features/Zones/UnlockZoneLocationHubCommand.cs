@@ -1,9 +1,9 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Zones;
+namespace Veldrath.Server.Features.Zones;
 
 /// <summary>
 /// Hub command that explicitly unlocks a hidden <see cref="RealmEngine.Data.Entities.ZoneLocation"/>

@@ -1,10 +1,10 @@
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
-using RealmUnbound.Discord.Services;
-using RealmUnbound.Discord.Settings;
+using Veldrath.Discord.Services;
+using Veldrath.Discord.Settings;
 
-namespace RealmUnbound.Discord;
+namespace Veldrath.Discord;
 
 /// <summary>
 /// Hosted service that owns the Discord client lifecycle:

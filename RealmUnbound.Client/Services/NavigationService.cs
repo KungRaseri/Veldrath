@@ -1,6 +1,6 @@
-using RealmUnbound.Client.ViewModels;
+﻿using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 public interface INavigationService
 {

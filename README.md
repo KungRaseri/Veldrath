@@ -1,4 +1,4 @@
-# RealmEngine
+﻿# RealmEngine
 
 [![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -10,8 +10,8 @@
 |-----------|-------|----------|
 | Engine Libraries | [![CI - Engine](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml) | [![codecov (engine)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=engine)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=engine) |
 | RealmForge Tooling | [![CI - Tooling](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-tooling.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-tooling.yml) | [![codecov (forge)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=forge)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=forge) |
-| RealmUnbound Client | [![CI - Client](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml) | [![codecov (client)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=client)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=client) |
-| RealmUnbound Server | [![CI - Server](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml) | [![codecov (server)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=server)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=server) |
+| Veldrath Client | [![CI - Client](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml) | [![codecov (client)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=client)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=client) |
+| Veldrath Server | [![CI - Server](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml) | [![codecov (server)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=server)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=server) |
 
 ## Latest Releases
 
@@ -19,10 +19,10 @@
 |-----------|--------|
 | Engine Libraries | [![Engine release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=engine%2Fv*&label=engine&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=engine&expanded=true) |
 | RealmForge Tooling | [![Forge release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=tooling%2Fv*&label=forge&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=tooling&expanded=true) |
-| RealmUnbound Client | [![Client release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=client%2Fv*&label=client&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=client&expanded=true) |
-| RealmUnbound Server | [![Server release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=server%2Fv*&label=server&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=server&expanded=true) |
+| Veldrath Client | [![Client release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=client%2Fv*&label=client&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=client&expanded=true) |
+| Veldrath Server | [![Server release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=server%2Fv*&label=server&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=server&expanded=true) |
 
-RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (RealmUnbound) and a JSON data editor (RealmForge).
+RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (Veldrath) and a JSON data editor (RealmForge).
 
 ## Architecture
 
@@ -34,8 +34,8 @@ RPG backend engine implementing CQRS with MediatR for clean command/query separa
 - **RealmEngine.Shared** — Models, utilities, abstractions
 
 ### Applications
-- **RealmUnbound.Server** — ASP.NET Core game server with SignalR hub
-- **RealmUnbound.Client** — Avalonia UI desktop client with ReactiveUI
+- **Veldrath.Server** — ASP.NET Core game server with SignalR hub
+- **Veldrath.Client** — Avalonia UI desktop client with ReactiveUI
 - **RealmForge** — Avalonia UI tool for editing JSON game data
 
 Code is organized by business feature (Features/Combat, Features/Inventory, etc.) with automatic validation and logging via MediatR pipeline behaviors.
@@ -117,8 +117,8 @@ Comprehensive test suite across six test projects:
 | `RealmEngine.Data.Tests` | JSON compliance, reference integrity, data validation |
 | `RealmEngine.Shared.Tests` | Models, utilities, services |
 | `RealmForge.Tests` | RealmForge UI and service logic |
-| `RealmUnbound.Client.Tests` | Client ViewModels, services, navigation |
-| `RealmUnbound.Server.Tests` | Server endpoints, game hub, services |
+| `Veldrath.Client.Tests` | Client ViewModels, services, navigation |
+| `Veldrath.Server.Tests` | Server endpoints, game hub, services |
 
 ```powershell
 # Run all non-UI tests with coverage
@@ -156,8 +156,8 @@ RealmEngine/
 │   └── Features/               # Vertical slices (Combat, Crafting, Inventory, etc.)
 ├── RealmEngine.Data/           # Data access and JSON loading
 ├── RealmEngine.Shared/         # Shared models and utilities
-├── RealmUnbound.Server/        # ASP.NET Core game server
-├── RealmUnbound.Client/        # Avalonia desktop client
+├── Veldrath.Server/        # ASP.NET Core game server
+├── Veldrath.Client/        # Avalonia desktop client
 ├── RealmForge/                 # JSON data editor tool
 └── [Project].Tests/            # Test projects (one per library/app)
 ```
@@ -167,7 +167,7 @@ RealmEngine/
 | Solution | Projects Included | Use For |
 |----------|-------------------|---------|
 | `RealmEngine.slnx` | Core libraries + tests | Engine development, CI |
-| `RealmUnbound.slnx` | Client + Server + tests | Multiplayer development |
+| `Veldrath.slnx` | Client + Server + tests | Multiplayer development |
 | `RealmForge.slnx` | RealmForge + tests | Tooling development |
 | `Realm.Full.slnx` | Everything | Local full-stack development |
 
@@ -179,8 +179,8 @@ Latest releases are published automatically on each merge to `main` and are avai
 |-----------|------------|-----------|
 | **Engine Libraries** | `engine/v*` | `RealmEngine-Libraries-{version}.zip` |
 | **RealmForge** | `tooling/v*` | `RealmForge-Windows-{version}.zip` |
-| **RealmUnbound Server** | `server/v*` | `RealmUnbound-Server-{version}.zip` |
-| **RealmUnbound Client** | `client/v*` | `RealmUnbound-Client-Windows-{version}.zip` · `RealmUnbound-Client-Linux-{version}.zip` · `RealmUnbound-Client-macOS-x64-{version}.zip` · `RealmUnbound-Client-macOS-arm64-{version}.zip` |
+| **Veldrath Server** | `server/v*` | `Veldrath-Server-{version}.zip` |
+| **Veldrath Client** | `client/v*` | `Veldrath-Client-Windows-{version}.zip` · `Veldrath-Client-Linux-{version}.zip` · `Veldrath-Client-macOS-x64-{version}.zip` · `Veldrath-Client-macOS-arm64-{version}.zip` |
 
 ## Documentation
 

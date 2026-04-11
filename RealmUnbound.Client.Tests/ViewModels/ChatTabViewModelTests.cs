@@ -1,9 +1,9 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using System.Reactive.Concurrency;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests.ViewModels;
+namespace Veldrath.Client.Tests.ViewModels;
 
 /// <summary>Unit tests for <see cref="ChatTabViewModel"/> and its concrete subtypes.</summary>
 public class ChatTabViewModelTests

@@ -1,7 +1,7 @@
-using RealmUnbound.Contracts.Announcements;
-using RealmUnbound.Server.Data.Repositories;
+﻿using Veldrath.Contracts.Announcements;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Announcements;
+namespace Veldrath.Server.Features.Announcements;
 
 /// <summary>Minimal API endpoints for the announcements news feed.</summary>
 public static class AnnouncementEndpoints

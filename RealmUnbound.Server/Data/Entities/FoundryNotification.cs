@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Data.Entities;
+﻿namespace Veldrath.Server.Data.Entities;
 
 /// <summary>
 /// An in-app notification sent to a submitter when their submission is reviewed.

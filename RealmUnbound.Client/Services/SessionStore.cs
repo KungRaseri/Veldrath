@@ -1,7 +1,7 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Persists lightweight session preferences to disk so the login screen can
@@ -14,7 +14,7 @@ public class SessionStore
 {
     private static readonly string DefaultFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "RealmUnbound", "session.json");
+        "Veldrath", "session.json");
 
     private readonly string _filePath;
     private readonly ILogger<SessionStore> _logger;

@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SQLite in-memory for DbContext testing -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!-- Integration testing host -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <!-- Mocking for unit-level health check tests -->
+    <PackageReference Include="Moq" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Veldrath.Server\Veldrath.Server.csproj" />
+    <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Moq" />
+    <Using Include="MediatR" />
+    <Using Include="Veldrath.Contracts.Account" />
+    <Using Include="Veldrath.Contracts.Admin" />
+    <Using Include="Veldrath.Contracts.Auth" />
+    <Using Include="Veldrath.Contracts.Characters" />
+    <Using Include="Veldrath.Contracts.Foundry" />
+    <Using Include="Veldrath.Contracts.Players" />
+    <Using Include="Veldrath.Contracts.Zones" />
+  </ItemGroup>
+
+</Project>

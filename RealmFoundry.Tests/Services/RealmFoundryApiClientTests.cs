@@ -1,9 +1,9 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Moq;
 using Moq.Protected;
-using RealmUnbound.Contracts.Auth;
-using RealmUnbound.Contracts.Foundry;
+using Veldrath.Contracts.Auth;
+using Veldrath.Contracts.Foundry;
 
 namespace RealmFoundry.Tests.Services;
 

@@ -1,4 +1,4 @@
-namespace RealmUnbound.Client.Services;
+﻿namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Carries a single pending alert message across a navigation boundary so that a

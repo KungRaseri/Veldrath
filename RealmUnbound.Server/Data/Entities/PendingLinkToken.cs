@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Data.Entities;
+﻿namespace Veldrath.Server.Data.Entities;
 
 /// <summary>
 /// Tracks a pending OAuth provider-link confirmation request.

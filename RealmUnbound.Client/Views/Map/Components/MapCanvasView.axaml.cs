@@ -1,9 +1,9 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using RealmUnbound.Client.ViewModels;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Views;
+namespace Veldrath.Client.Views;
 
 /// <summary>Code-behind for <see cref="MapCanvasView"/>. Routes pointer gestures to <see cref="MapViewModel"/> commands.</summary>
 public partial class MapCanvasView : UserControl

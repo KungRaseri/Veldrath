@@ -1,18 +1,18 @@
-# RealmUnbound Server + Client — Memory Notes
+﻿# Veldrath Server + Client — Memory Notes
 
 ## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10)
 
 **Security fix**: `AuthService.ExternalLoginOrRegisterAsync` previously auto-linked a new OAuth provider to an existing account if the emails matched (step 2). This allowed a hostile provider to hijack an account. It now triggers an email-confirmation flow instead.
 
 **New files**:
-- `RealmUnbound.Server/Infrastructure/Email/IEmailSender.cs` — `Task SendAsync(to, subject, htmlBody, ct)`
-- `RealmUnbound.Server/Infrastructure/Email/NullEmailSender.cs` — dev no-op; logs full email body + URL via `ILogger`
-- `RealmUnbound.Server/Infrastructure/Email/SmtpEmailSender.cs` — BCL `System.Net.Mail.SmtpClient`; config keys: `Email:SmtpHost`, `Email:SmtpPort` (587), `Email:User`, `Email:Password`, `Email:SenderAddress`, `Email:SenderName`
-- `RealmUnbound.Server/Data/Entities/PendingLinkToken.cs` — EF entity; fields: `Id` (PK), `AccountId` (FK → AspNetUsers cascade), `LoginProvider`, `ProviderKey`, `ProviderDisplayName?`, `TokenHash` (SHA-256 hex, unique index), `Email`, `ReturnUrl?` (max 512), `ExpiresAt`, `CreatedAt`, `IsConfirmed`, nav `Account`
-- `RealmUnbound.Server/Data/Repositories/IPendingLinkRepository.cs` + `EfCorePendingLinkRepository.cs` — `CreateAsync`, `GetByTokenHashAsync` (.Include Account), `ConfirmAsync(Guid id)`, `PurgeExpiredAsync` (uses `ExecuteDeleteAsync`)
-- `RealmUnbound.Server/Features/Auth/ExternalLoginResult.cs` — replaces `(AuthResponse?, string?)` tuple; `ExternalLoginStatus` enum: `Success | Error | PendingLinkConfirmation`
-- `RealmUnbound.Server/Features/Auth/AccountLinkService.cs` — `RequestLinkAsync(existing, info, serverBaseUrl, returnUrl?, ct)` + `ConfirmAndLinkAsync(rawToken, ct)` → `(PlayerAccount?, PendingLinkToken?, string? error)`. Errors: `"link_invalid"`, `"link_expired"`, `"link_already_confirmed"`. TTL from `Auth:PendingLinkExpiryMinutes` (default 60). Token: `RandomNumberGenerator.GetBytes(32)` hex → SHA-256 double-hash.
-- `RealmUnbound.Server/Features/Auth/PendingLinkEndpoints.cs` — `GET /api/auth/link/confirm?token={rawToken}`. On success: calls `authService.CreateSessionAsync`, `exchangeService.CreateCode`, redirects to `{returnUrl}?code=xxx&aid=yyy&linked=1` (or `/login?code=xxx&aid=yyy`).
+- `Veldrath.Server/Infrastructure/Email/IEmailSender.cs` — `Task SendAsync(to, subject, htmlBody, ct)`
+- `Veldrath.Server/Infrastructure/Email/NullEmailSender.cs` — dev no-op; logs full email body + URL via `ILogger`
+- `Veldrath.Server/Infrastructure/Email/SmtpEmailSender.cs` — BCL `System.Net.Mail.SmtpClient`; config keys: `Email:SmtpHost`, `Email:SmtpPort` (587), `Email:User`, `Email:Password`, `Email:SenderAddress`, `Email:SenderName`
+- `Veldrath.Server/Data/Entities/PendingLinkToken.cs` — EF entity; fields: `Id` (PK), `AccountId` (FK → AspNetUsers cascade), `LoginProvider`, `ProviderKey`, `ProviderDisplayName?`, `TokenHash` (SHA-256 hex, unique index), `Email`, `ReturnUrl?` (max 512), `ExpiresAt`, `CreatedAt`, `IsConfirmed`, nav `Account`
+- `Veldrath.Server/Data/Repositories/IPendingLinkRepository.cs` + `EfCorePendingLinkRepository.cs` — `CreateAsync`, `GetByTokenHashAsync` (.Include Account), `ConfirmAsync(Guid id)`, `PurgeExpiredAsync` (uses `ExecuteDeleteAsync`)
+- `Veldrath.Server/Features/Auth/ExternalLoginResult.cs` — replaces `(AuthResponse?, string?)` tuple; `ExternalLoginStatus` enum: `Success | Error | PendingLinkConfirmation`
+- `Veldrath.Server/Features/Auth/AccountLinkService.cs` — `RequestLinkAsync(existing, info, serverBaseUrl, returnUrl?, ct)` + `ConfirmAndLinkAsync(rawToken, ct)` → `(PlayerAccount?, PendingLinkToken?, string? error)`. Errors: `"link_invalid"`, `"link_expired"`, `"link_already_confirmed"`. TTL from `Auth:PendingLinkExpiryMinutes` (default 60). Token: `RandomNumberGenerator.GetBytes(32)` hex → SHA-256 double-hash.
+- `Veldrath.Server/Features/Auth/PendingLinkEndpoints.cs` — `GET /api/auth/link/confirm?token={rawToken}`. On success: calls `authService.CreateSessionAsync`, `exchangeService.CreateCode`, redirects to `{returnUrl}?code=xxx&aid=yyy&linked=1` (or `/login?code=xxx&aid=yyy`).
 - EF migration `20260410234947_AddPendingLinkTokens`
 
 **Modified files**:
@@ -36,7 +36,7 @@ All gameplay operations follow this pattern:
 3. Add hub method in `GameHub.cs`: `TryGetCharacterId` guard → `mediator.Send` → zone-group broadcast or caller fallback
 4. Add `ReactiveCommand` + callback on `GameViewModel`, wire hub subscription in `CharacterSelectViewModel`
 
-**CRITICAL**: `RealmUnbound.Server.Data.Entities.Character` ≠ `RealmEngine.Shared.Models.Character`. Hub handlers work ONLY with the server EF entity and its JSON blob — they never call Core handlers directly.
+**CRITICAL**: `Veldrath.Server.Data.Entities.Character` ≠ `RealmEngine.Shared.Models.Character`. Hub handlers work ONLY with the server EF entity and its JSON blob — they never call Core handlers directly.
 
 ## DI Registration — UseExternal Pattern
 
@@ -45,7 +45,7 @@ The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionall
 - If a new Core handler injects an interface not already in Program.cs, the server will crash at startup with `Unable to resolve service for type 'IFoo'`.
 - Pattern: `builder.Services.AddScoped<IFoo, EfCoreFoo>();` grouped with the existing content repo block (~line 200 in Program.cs).
 - Fixed 2026-03-19 session-5: `IArmorRepository → EfCoreArmorRepository`, `IEquipmentSetRepository → EfCoreEquipmentSetRepository`, `INamePatternRepository → EfCoreNamePatternRepository` also missing. Added `using RealmEngine.Core.Abstractions` and `using RealmEngine.Core.Repositories` to Program.cs for these.
-- Always run `dotnet build RealmUnbound.Server` after adding a new Core handler to catch missing registrations before Docker.
+- Always run `dotnet build Veldrath.Server` after adding a new Core handler to catch missing registrations before Docker.
 
 ## SignalR Parameter Binding — Critical Rule
 
@@ -100,12 +100,12 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 
 - `Character.EquipmentBlob` separate `text` column — `Dictionary<string, string>` JSON (slot → item-ref slug)
 - Added via migration `AddEquipmentBlob` in `Migrations/Application/`
-- Handler: `EquipItemHubCommandHandler` in `RealmUnbound.Server/Features/Characters/EquipItemHubCommand.cs`
+- Handler: `EquipItemHubCommandHandler` in `Veldrath.Server/Features/Characters/EquipItemHubCommand.cs`
 - Valid slots (case-insensitive): `MainHand`, `OffHand`, `Head`, `Chest`, `Legs`, `Feet`, `Ring`, `Amulet`
 - Slot names normalized to canonical casing (first entry in `ValidSlots` set) by handler
 - Pass `null` for `ItemRef` to unequip a slot
 - Broadcasts `ItemEquipped` payload: `{ CharacterId, Slot, ItemRef, AllEquippedItems }`
-- Hub method uses `EquipItemHubRequest(string Slot, string? ItemRef)` DTO in `RealmUnbound.Server.Hubs` namespace
+- Hub method uses `EquipItemHubRequest(string Slot, string? ItemRef)` DTO in `Veldrath.Server.Hubs` namespace
 - Client sends: `SendCommandAsync<object>("EquipItem", new { Slot = slot, ItemRef = itemRef })`
 - Client callback: `GameViewModel.OnItemEquipped(string slot, string? itemRef)` → AppendLog
 
@@ -134,7 +134,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 - `newRank = newXp / 100`; `rankedUp = newRank > previousRank`
 - Broadcasts `SkillXpGained` payload: `{ CharacterId, SkillId, TotalXp, CurrentRank, RankedUp }`
 - `SkillXpGainedPayload` internal record lives in `CharacterSelectViewModel.cs`
-- **Hub method signature uses a single DTO**: `AwardSkillXp(AwardSkillXpHubRequest request)` where `AwardSkillXpHubRequest(string SkillId, int Amount)` record is defined at bottom of `GameHub.cs` in `RealmUnbound.Server.Hubs` namespace
+- **Hub method signature uses a single DTO**: `AwardSkillXp(AwardSkillXpHubRequest request)` where `AwardSkillXpHubRequest(string SkillId, int Amount)` record is defined at bottom of `GameHub.cs` in `Veldrath.Server.Hubs` namespace
 - Client sends: `SendCommandAsync<object>("AwardSkillXp", new { SkillId = skillId, Amount = amount })`
 
 ## Test Counts
@@ -166,16 +166,16 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 
 ## Phase 0b — Server Schema Migrations (2026-03-30)
 
-Three migrations added to `RealmUnbound.Server/Data/Migrations/Application/`:
+Three migrations added to `Veldrath.Server/Data/Migrations/Application/`:
 
 - `20260330000001_AddCharacterDifficultyMode` — adds `DifficultyMode string` (default `"Normal"`) to `Characters` table
 - `20260330000002_AddZoneRescueFund` — adds `RescueFundTotal long` (default `0`) to `Zones` table
 - `20260330000003_AddGlobalStats` — new `GlobalStats` table; `GlobalStat` entity with `Key string PK, Value long`
 
 Entity changes:
-- `RealmUnbound.Server/Data/Entities/Character.cs`: `public string DifficultyMode { get; set; } = "Normal";`
-- `RealmUnbound.Server/Data/Entities/Zone.cs`: `public long RescueFundTotal { get; set; } = 0;`
-- `RealmUnbound.Server/Data/Entities/GlobalStat.cs`: new entity
+- `Veldrath.Server/Data/Entities/Character.cs`: `public string DifficultyMode { get; set; } = "Normal";`
+- `Veldrath.Server/Data/Entities/Zone.cs`: `public long RescueFundTotal { get; set; } = 0;`
+- `Veldrath.Server/Data/Entities/GlobalStat.cs`: new entity
 - `ApplicationDbContext.GlobalStats DbSet<GlobalStat>` registered
 
 Server.Tests: 468 passing (unchanged — schema picked up automatically via `EnsureCreated` in SQLite integration tests).
@@ -204,12 +204,12 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 **Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
 
 **New components**:
-- `RealmUnbound.Contracts/Announcements/AnnouncementContracts.cs` — `AnnouncementDto(int Id, string Title, string Body, string Category, bool IsPinned, DateTimeOffset PublishedAt)` shared between server and client
-- `RealmUnbound.Server/Data/Entities/Announcement.cs` — EF entity with `IsActive`, `ExpiresAt?`, `IsPinned`, `PublishedAt`
-- `RealmUnbound.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository` + impl; `GetActiveAsync()` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)`, orders `IsPinned DESC, PublishedAt DESC`. **Must use `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in LINQ expressions.
-- `RealmUnbound.Server/Features/Announcements/AnnouncementEndpoints.cs` — `GET /api/announcements`, `AllowAnonymous`, returns `AnnouncementDto[]`
-- `RealmUnbound.Client/Services/ServerStatusService.cs` — `IServerStatusService : INotifyPropertyChanged` singleton; pings `/health`; `IsOnline`, `StatusMessage`, `Status` (enum); `CheckAsync(serverUrl)`.  **Interface must extend `System.ComponentModel.INotifyPropertyChanged`** so `WhenAnyValue(s => s.Status)` works on the interface type.
-- `RealmUnbound.Client/Services/AnnouncementService.cs` — `IAnnouncementService` + `HttpAnnouncementService`; uses typed `HttpClient` registered via `AddHttpClient<IAnnouncementService, HttpAnnouncementService>` with base address set in DI
+- `Veldrath.Contracts/Announcements/AnnouncementContracts.cs` — `AnnouncementDto(int Id, string Title, string Body, string Category, bool IsPinned, DateTimeOffset PublishedAt)` shared between server and client
+- `Veldrath.Server/Data/Entities/Announcement.cs` — EF entity with `IsActive`, `ExpiresAt?`, `IsPinned`, `PublishedAt`
+- `Veldrath.Server/Data/Repositories/AnnouncementRepository.cs` — `IAnnouncementRepository` + impl; `GetActiveAsync()` filters `IsActive && (ExpiresAt == null || ExpiresAt > now)`, orders `IsPinned DESC, PublishedAt DESC`. **Must use `var now = DateTimeOffset.UtcNow` local variable** — SQLite cannot translate `DateTimeOffset.UtcNow` directly in LINQ expressions.
+- `Veldrath.Server/Features/Announcements/AnnouncementEndpoints.cs` — `GET /api/announcements`, `AllowAnonymous`, returns `AnnouncementDto[]`
+- `Veldrath.Client/Services/ServerStatusService.cs` — `IServerStatusService : INotifyPropertyChanged` singleton; pings `/health`; `IsOnline`, `StatusMessage`, `Status` (enum); `CheckAsync(serverUrl)`.  **Interface must extend `System.ComponentModel.INotifyPropertyChanged`** so `WhenAnyValue(s => s.Status)` works on the interface type.
+- `Veldrath.Client/Services/AnnouncementService.cs` — `IAnnouncementService` + `HttpAnnouncementService`; uses typed `HttpClient` registered via `AddHttpClient<IAnnouncementService, HttpAnnouncementService>` with base address set in DI
 
 **Key architectural note — `LoadAnnouncementsAsync` guard**: Only guard on `announcementService is not null`. Do NOT also guard on `settings is not null` — the HttpClient base address is already set in DI; no need to pass `serverUrl` to the method.
 
@@ -223,7 +223,7 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 
 **MainMenuView.axaml news panel**: 3-column grid (`280,*,280`). Column 0 = news panel with `ScrollViewer > StackPanel > [ItemsControl | placeholder TextBlock]`. **ScrollViewer is a ContentControl (single child only)** — wrap multiple children in a `StackPanel` inside the `ScrollViewer`.
 
-**EF migration**: `AddAnnouncements` — in `RealmUnbound.Server/Data/Migrations/Application/`
+**EF migration**: `AddAnnouncements` — in `Veldrath.Server/Data/Migrations/Application/`
 
 **Test structure — announcement integration tests**: Follow the `IAsyncLifetime` fixture pattern (same as other server integration tests). Use a `AnnouncementsFixture` that seeds all data in `InitializeAsync`. Tests needing a clean/empty DB must be in a **separate class with their own `WebAppFactory` instance** (`AnnouncementEmptyEndpointTests : IAsyncLifetime`). Using `IClassFixture<WebAppFactory>` directly with per-test seeding causes the "empty list" test to fail when it runs after seeding tests.
 
@@ -237,7 +237,7 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 
 ## ClientSettings (NEW session-5)
 
-- `RealmUnbound.Client/ClientSettings.cs` — `ReactiveObject` with `ServerBaseUrl` property
+- `Veldrath.Client/ClientSettings.cs` — `ReactiveObject` with `ServerBaseUrl` property
 - Registered as `AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')))` in `App.axaml.cs`
 - Config key: `ServerBaseUrl` in `appsettings.json` (falls back to `http://localhost:8080/`)
 - Both `CharacterSelectViewModel` (7th ctor param) and `SettingsViewModel` (2nd ctor param) inject it
@@ -318,7 +318,7 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 
 Full World → Region → Zone hierarchy implemented.
 
-**Entities** (all in `RealmUnbound.Server/Data/Entities/`):
+**Entities** (all in `Veldrath.Server/Data/Entities/`):
 - `World.cs`: `Id` (slug), `Name`, `Description`, `Era`, `ICollection<Region> Regions`
 - `Region.cs`: `Id` (slug), `Name`, `Description`, `RegionType Type`, `MinLevel`, `MaxLevel`, `IsStarter`, `IsDiscoverable`, `WorldId` FK, navigation `World`, `ICollection<Zone> Zones`, `ICollection<RegionConnection> Connections`
 - `RegionType` enum (in `Region.cs`): `Forest`, `Highland`, `Coastal`, `Volcanic`
@@ -329,8 +329,8 @@ Full World → Region → Zone hierarchy implemented.
 - Added: `string RegionId` (FK), `Region Region` nav, `bool HasInn`, `bool HasMerchant`, `bool IsPvpEnabled`, `bool IsDiscoverable`, `ICollection<ZoneConnection> Exits`
 - Removed: old Tutorial type seed data (5 zones removed)
 
-**Seed data (Draveth world)**:
-- 1 World: `draveth` / "Draveth" / "The Age of Embers"
+**Seed data (Veldrath world)**:
+- 1 World: `veldrath` / "Veldrath" / "The Age of Embers"
 - 4 Regions: `thornveil` (Forest, starter), `greymoor` (Highland), `saltcliff` (Coastal), `cinderplain` (Volcanic)
 - 6 RegionConnections: thornveil↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
 - 16 Zones: 4 per region (1 Town, 2 Wilderness, 1 Dungeon)
@@ -365,7 +365,7 @@ Three DbContexts share the same Postgres database but own distinct table sets:
 
 | Context | Namespace | Tables | Purpose |
 |---|---|---|---|
-| `ApplicationDbContext` | `RealmUnbound.Server.Data` | Identity (AspNet*), Characters, RefreshTokens, Zones, ZoneSessions, Foundry* | Server auth + operational |
+| `ApplicationDbContext` | `Veldrath.Server.Data` | Identity (AspNet*), Characters, RefreshTokens, Zones, ZoneSessions, Foundry* | Server auth + operational |
 | `GameDbContext` | `RealmEngine.Data.Persistence` | SaveGames, HallOfFameEntries, InventoryRecords | Game-state entities (portable across clients) |
 | `ContentDbContext` | `RealmEngine.Data.Persistence` | Weapons, Armors, Skills, Spells, Abilities, Recipes, etc. | Read-only content catalog |
 
@@ -374,13 +374,13 @@ Three DbContexts share the same Postgres database but own distinct table sets:
 `ServerSaveGameRepository` and `ServerHallOfFameRepository` inject `GameDbContext` (not `ApplicationDbContext`).
 
 Migrations for each context:
-- `ApplicationDbContext`: `RealmUnbound.Server/Migrations/` (original) + `Migrations/Application/` (newer)
+- `ApplicationDbContext`: `Veldrath.Server/Migrations/` (original) + `Migrations/Application/` (newer)
 - `GameDbContext`: `RealmEngine.Data/Migrations/GameDb/`
 - `ContentDbContext`: `RealmEngine.Data/Migrations/`
 
 All three are migrated at startup in `Program.cs` with shared `allKnown` set to avoid `RepairStaleMigrationsAsync` false-positives.
 
-Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
+Test factories in `Veldrath.Server.Tests/Infrastructure/`:
 - `TestDbContextFactory` → `ApplicationDbContext` (SQLite) — used by Zone, Auth, Character, GameHub tests
 - `TestGameDbContextFactory` → `GameDbContext` (SQLite) — used by `ServerSaveGameRepositoryTests` + `ServerHallOfFameRepositoryTests`
 
@@ -506,7 +506,7 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 ### Session-17 (2026-03-21) — VisitShop hub bridge
 - **Gap analysis**: found 1 remaining P3 stub — `DoVisitShopAsync` logged "Shop coming in M5." with no hub call; no server counterpart existed
 - **P4 false positive**: subagent reported missing CraftItem/EnterDungeon handler tests — already existed (5 CraftItem + 4 EnterDungeon handler tests in `GameHubTests.cs`)
-- Created `RealmUnbound.Server/Features/Characters/VisitShopHubCommand.cs` — validates zone + `HasMerchant == true`; broadcasts `ShopVisited` to Caller only
+- Created `Veldrath.Server/Features/Characters/VisitShopHubCommand.cs` — validates zone + `HasMerchant == true`; broadcasts `ShopVisited` to Caller only
 - Added `GameHub.VisitShop(VisitShopHubRequest)` + `VisitShopHubRequest(string ZoneId)` DTO to `GameHub.cs`
 - Replaced `DoVisitShopAsync` stub; added `GameViewModel.OnShopVisited`; added 18th subscription `_shopVisitedSub` + `ShopVisitedPayload` in `CharacterSelectViewModel`
 - Added 9 server tests (5 hub dispatch + 4 handler) + 2 GameViewModel tests + 1 CharacterSelectViewModel test
@@ -549,7 +549,7 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 
 **Tests added:**
 - `EfCoreZoneLocationRepositoryTests`: 8 new tests (hidden filtering, unlocked-slug overload, `GetHiddenByZoneIdAsync`, `GetConnectionsFromAsync`)
-- `CharacterUnlockedLocationRepositoryTests`: 8 new tests (new file in `RealmUnbound.Server.Tests/Data/`)
+- `CharacterUnlockedLocationRepositoryTests`: 8 new tests (new file in `Veldrath.Server.Tests/Data/`)
 - `GameHubTests`: 16 new tests (hub methods + all 3 new handlers + updated NavigateToLocation handler with passive discovery)
 - `HttpServiceTests`: 2 new tests for `GetZoneLocationsAsync` with/without `characterId`
 - **Fixed**: 4 existing `NavigateToLocation_Handler_*` tests that broke when handler constructor gained `ICharacterUnlockedLocationRepository` arg
@@ -603,7 +603,7 @@ Test factories in `RealmUnbound.Server.Tests/Infrastructure/`:
 
 **Phase A — Server combat handler unit tests (6 new files)**
 
-Created `RealmUnbound.Server.Tests/Features/`:
+Created `Veldrath.Server.Tests/Features/`:
 - `EngageEnemyHubCommandHandlerTests.cs` — 4 tests: already-in-combat guard, enemy-not-found guard, enemy-dead guard, success
 - `AttackEnemyHubCommandHandlerTests.cs` — 4 tests: no-session guard, enemy-not-in-store guard, reduces health, enemy killed
 - `DefendActionHubCommandHandlerTests.cs` — 3 tests: no-session guard, sets-IsDefending flag, damage reduction vs non-defending
@@ -618,7 +618,7 @@ Key gotchas discovered:
 
 **Phase B — Client GameViewModel combat tests (10 tests)**
 
-Created `RealmUnbound.Client.Tests/ViewModels/GameViewModelCombatTests.cs`:
+Created `Veldrath.Client.Tests/ViewModels/GameViewModelCombatTests.cs`:
 - `OnCombatStarted_SetsIsInCombatAndEnemyStats`, `OnCombatStarted_SetsAbilityNames`
 - `OnCombatTurn_UpdatesEnemyHealth`, `OnCombatTurn_EnemyDefeated_ClearsCombat`, `OnCombatTurn_PlayerDefeated_SetsIsPlayerDead`, `OnCombatTurn_HardcoreDeath_SetsIsHardcoreDeath`
 - `OnCombatEnded_ClearsIsInCombat`
@@ -627,12 +627,12 @@ Created `RealmUnbound.Client.Tests/ViewModels/GameViewModelCombatTests.cs`:
 
 **Phase C — GameView.axaml combat panel**
 
-Added to `RealmUnbound.Client/Views/GameView.axaml` after ZoneLocations ItemsControl:
+Added to `Veldrath.Client/Views/GameView.axaml` after ZoneLocations ItemsControl:
 - Enemy roster `ItemsControl` bound to `SpawnedEnemies` (`IsVisible="{Binding HasSpawnedEnemies}"`): each item shows Name, Level, HP and Engage button using `Command="{Binding $parent[UserControl].DataContext.EngageEnemyCommand}" CommandParameter="{Binding Id}"`
 - Combat HUD (`IsVisible="{Binding IsInCombat}"`): enemy name/level/HP bar + Attack/Defend/Flee buttons
 - Death overlay (`IsVisible="{Binding IsPlayerDead}"`): Respawn button (`IsVisible="{Binding IsHardcoreDeath, Converter={x:Static BoolConverters.Not}}"`) + LogoutCommand for HC death
 
-Added to `RealmUnbound.Client/ViewModels/GameViewModel.cs`:
+Added to `Veldrath.Client/ViewModels/GameViewModel.cs`:
 - `_hasSpawnedEnemies` backing field + `HasSpawnedEnemies` reactive property wired via `SpawnedEnemies.CollectionChanged`
 
 **Final count: 525 client + 491 server = 1016 total passing**
@@ -661,7 +661,7 @@ Added to `RealmUnbound.Client/ViewModels/GameViewModel.cs`:
 - New DTOs at bottom: `SendZoneChatMessageHubRequest(string Message)`, `SendGlobalChatMessageHubRequest(string Message)`, `SendWhisperHubRequest(string TargetCharacterName, string Message)`, `ChatMessageHubDto(string Channel, string Sender, string Message, DateTimeOffset Timestamp)`
 - `IZoneSessionRepository.GetByCharacterNameAsync(string characterName)` added (interface + EF implementation)
 
-**New ViewModels** (`RealmUnbound.Client/ViewModels/`):
+**New ViewModels** (`Veldrath.Client/ViewModels/`):
 - `ChatMessageViewModel.cs` — record; channel color map (Zone=#94a3b8, Global=#60a5fa, Whisper=#f472b6, System=#4ade80); `ChannelLabel`, `ChannelColor`, `FormattedMessage` properties
 - `OnlinePlayerViewModel.cs` — `ReactiveObject`; `Name` (string), `StartWhisperCommand` (calls `Action<string>` callback)
 
@@ -705,7 +705,7 @@ Added to `RealmUnbound.Client/ViewModels/GameViewModel.cs`:
 - `ZoneSession` entity replaced by `PlayerSession` — tracks position at both region-map and zone level
 - User authors TMX files manually; agent defines the spec
 
-### PlayerSession Entity (`RealmUnbound.Server/Data/Entities/PlayerSession.cs`)
+### PlayerSession Entity (`Veldrath.Server/Data/Entities/PlayerSession.cs`)
 Replaces `ZoneSession`. New properties vs old:
 - `RegionId` (`string`, required) — always set; FK → Regions with Restrict delete
 - `ZoneId` (`string?`, nullable) — null = player is on the region map, not inside a zone; FK → Zones with SetNull delete
@@ -741,7 +741,7 @@ Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
 - `Program.cs` — DI: `IZoneSessionRepository, ZoneSessionRepository` → `IPlayerSessionRepository, PlayerSessionRepository`
 - `ZoneRepositoryTests.cs` — all session tests updated; `RegionId` added to all `new PlayerSession { }` objects
 - `GameHubTests.cs` — `CreateHub` + inline constructions updated; `EnterZone_Should_Create_PlayerSession_In_Database`
-- **Migration**: `20260408225405_ReplaceZoneSessionWithPlayerSession.cs` in `RealmUnbound.Server/Migrations/`
+- **Migration**: `20260408225405_ReplaceZoneSessionWithPlayerSession.cs` in `Veldrath.Server/Migrations/`
 
 ### TestDbContext RegionId values (for session tests)
 - Zone `"crestfall"` → `RegionId = "varenmark"`

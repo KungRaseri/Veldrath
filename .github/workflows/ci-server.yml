@@ -1,4 +1,4 @@
-name: CI - Server (RealmUnbound.Server)
+﻿name: CI - Server (Veldrath.Server)
 
 concurrency:
   group: ci-server-${{ github.ref }}
@@ -8,8 +8,8 @@ on:
   push:
     branches: [ main, development ]
     paths:
-      - 'RealmUnbound.Server/**'
-      - 'RealmUnbound.Server.Tests/**'
+      - 'Veldrath.Server/**'
+      - 'Veldrath.Server.Tests/**'
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
@@ -21,8 +21,8 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'RealmUnbound.Server/**'
-      - 'RealmUnbound.Server.Tests/**'
+      - 'Veldrath.Server/**'
+      - 'Veldrath.Server.Tests/**'
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
@@ -36,7 +36,7 @@ env:
   DOTNET_VERSION: '10.0.x'
   CONFIGURATION: 'Release'
   PROPS_FILE: 'versions/server.props'
-  IMAGE_NAME: realmunbound-server
+  IMAGE_NAME: veldrath-server
 
 jobs:
   build-and-test:
@@ -60,14 +60,14 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj
+      run: dotnet restore Veldrath.Server.Tests/Veldrath.Server.Tests.csproj
 
     - name: Build
-      run: dotnet build RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+      run: dotnet build Veldrath.Server.Tests/Veldrath.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
 
-    - name: Test - RealmUnbound.Server.Tests
+    - name: Test - Veldrath.Server.Tests
       run: |
-        dotnet test RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj \
+        dotnet test Veldrath.Server.Tests/Veldrath.Server.Tests.csproj \
           --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal \
           --collect "XPlat Code Coverage" --settings coverage.runsettings \
           --logger "trx;LogFileName=server-tests.trx" \
@@ -148,13 +148,13 @@ jobs:
     - name: Restore and publish
       run: |
         VERSION="${{ steps.version.outputs.version-no-hash }}"
-        dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
-        dotnet publish RealmUnbound.Server/RealmUnbound.Server.csproj \
+        dotnet restore Veldrath.Server/Veldrath.Server.csproj
+        dotnet publish Veldrath.Server/Veldrath.Server.csproj \
           --configuration ${{ env.CONFIGURATION }} \
-          --output ./publish/RealmUnbound-Server \
+          --output ./publish/Veldrath-Server \
           /p:Version=$VERSION /p:AssemblyVersion=$VERSION /p:FileVersion=$VERSION.0
-        cd ./publish && zip -r "../RealmUnbound-Server-$VERSION.zip" RealmUnbound-Server/
-        echo "Created RealmUnbound-Server-$VERSION.zip"
+        cd ./publish && zip -r "../Veldrath-Server-$VERSION.zip" Veldrath-Server/
+        echo "Created Veldrath-Server-$VERSION.zip"
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -176,7 +176,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: RealmUnbound.Server/Dockerfile
+        file: Veldrath.Server/Dockerfile
         push: true
         tags: |
           ${{ steps.image.outputs.registry }}:latest
@@ -191,7 +191,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: server-release-artifacts
-        path: RealmUnbound-Server-*.zip
+        path: Veldrath-Server-*.zip
         retention-days: 7
 
     - name: Create release tag

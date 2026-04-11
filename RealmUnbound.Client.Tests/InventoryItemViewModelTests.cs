@@ -1,6 +1,6 @@
-using RealmUnbound.Client.ViewModels;
+﻿using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class InventoryItemViewModelTests : TestBase
 {

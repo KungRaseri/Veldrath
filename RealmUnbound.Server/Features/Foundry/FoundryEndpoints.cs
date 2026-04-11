@@ -1,8 +1,8 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using RealmUnbound.Contracts.Foundry;
+using Veldrath.Contracts.Foundry;
 
-namespace RealmUnbound.Server.Features.Foundry;
+namespace Veldrath.Server.Features.Foundry;
 
 /// <summary>
 /// Minimal API endpoints for the community content portal.

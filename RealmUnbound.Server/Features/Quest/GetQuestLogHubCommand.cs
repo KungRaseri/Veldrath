@@ -1,9 +1,9 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Quest;
+namespace Veldrath.Server.Features.Quest;
 
 /// <summary>A slim quest entry returned to the client in the journal panel.</summary>
 /// <param name="Slug">The quest's unique identifier slug.</param>

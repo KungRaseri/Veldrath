@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text;
 using System.Text.Json;
 
-namespace RealmUnbound.Server.Health;
+namespace Veldrath.Server.Health;
 
 /// <summary>
 /// Writes a structured JSON health response compatible with standard tooling.

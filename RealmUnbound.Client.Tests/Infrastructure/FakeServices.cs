@@ -1,15 +1,15 @@
-using Microsoft.Extensions.Logging.Abstractions;
+﻿using Microsoft.Extensions.Logging.Abstractions;
 using ReactiveUI;
-using RealmUnbound.Assets;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Announcements;
-using RealmUnbound.Contracts.Auth;
-using RealmUnbound.Contracts.Characters;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Zones;
+using Veldrath.Assets;
+using Veldrath.Client.Services;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Announcements;
+using Veldrath.Contracts.Auth;
+using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Zones;
 
-namespace RealmUnbound.Client.Tests.Infrastructure;
+namespace Veldrath.Client.Tests.Infrastructure;
 
 // Auth service stub
 /// <summary>

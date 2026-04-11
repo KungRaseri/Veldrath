@@ -1,2 +1,2 @@
-// Records moved to RealmUnbound.Contracts.Characters
+﻿// Records moved to Veldrath.Contracts.Characters
 

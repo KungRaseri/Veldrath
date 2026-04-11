@@ -1,6 +1,6 @@
-using Avalonia.Headless.XUnit;
+﻿using Avalonia.Headless.XUnit;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 /// <summary>
 /// Smoke-tests that every View can be constructed without throwing.

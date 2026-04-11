@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <!--
       Shared build configuration for all projects.
@@ -6,8 +6,8 @@
       Component versions are set in versions/*.props:
         - versions/engine.props   → RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data
         - versions/tooling.props  → RealmForge
-        - versions/server.props   → RealmUnbound.Server
-        - versions/client.props   → RealmUnbound.Client
+        - versions/server.props   → Veldrath.Server
+        - versions/client.props   → Veldrath.Client
 
       Each component folder has a Directory.Build.props that imports this file
       plus its matching versions/*.props file.

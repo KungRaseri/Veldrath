@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets;
+﻿namespace Veldrath.Assets;
 
 /// <summary>Configuration options for <see cref="AssetStore"/>.</summary>
 public sealed class AssetStoreOptions

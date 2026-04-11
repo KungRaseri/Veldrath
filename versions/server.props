@@ -1,5 +1,5 @@
-<Project>
-  <!-- RealmUnbound.Server: Game server API -->
+﻿<Project>
+  <!-- Veldrath.Server: Game server API -->
   <PropertyGroup>
     <VersionMajor>0</VersionMajor>
     <VersionMinor>1</VersionMinor>

@@ -1,9 +1,9 @@
-using Avalonia.Collections;
+﻿using Avalonia.Collections;
 using Avalonia.Media;
 using ReactiveUI;
 using System.Reactive.Linq;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a directed edge between two <see cref="MapNodeViewModel"/> instances on the traversal-graph map canvas.</summary>
 public class MapEdgeViewModel : ViewModelBase

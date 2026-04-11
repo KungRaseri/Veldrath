@@ -1,4 +1,4 @@
-{
+﻿{
 	"version": "2.0.0",
 	"tasks": [
 		{
@@ -382,14 +382,14 @@
 				"clear": true
 			}
 		},
-		// ── RealmUnbound ─────────────────────────────────────────────────────────
+		// ── Veldrath ─────────────────────────────────────────────────────────
 		{
-			"label": "build-realmunbound-server",
+			"label": "build-veldrath-server",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"build",
-				"${workspaceFolder}/RealmUnbound.Server/RealmUnbound.Server.csproj",
+				"${workspaceFolder}/Veldrath.Server/Veldrath.Server.csproj",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
@@ -397,12 +397,12 @@
 			"group": "build"
 		},
 		{
-			"label": "build-realmunbound-client",
+			"label": "build-veldrath-client",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"build",
-				"${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj",
+				"${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
@@ -410,17 +410,17 @@
 			"group": "build"
 		},
 		{
-			"label": "run-realmunbound-server",
+			"label": "run-veldrath-server",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"run",
 				"--project",
-				"${workspaceFolder}/RealmUnbound.Server/RealmUnbound.Server.csproj",
+				"${workspaceFolder}/Veldrath.Server/Veldrath.Server.csproj",
 				"--no-build"
 			],
 			"isBackground": true,
-			"dependsOn": "build-realmunbound-server",
+			"dependsOn": "build-veldrath-server",
 			"problemMatcher": {
 				"pattern": {
 					"regexp": "^.*$",
@@ -430,7 +430,7 @@
 				},
 				"background": {
 					"activeOnStart": true,
-					"beginsPattern": "RealmUnbound\\.Server starting",
+					"beginsPattern": "Veldrath\\.Server starting",
 					"endsPattern": "Now listening on:"
 				}
 			},
@@ -443,16 +443,16 @@
 			}
 		},
 		{
-			"label": "run-realmunbound-client",
+			"label": "run-veldrath-client",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"run",
 				"--project",
-				"${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj",
+				"${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj",
 				"--no-build"
 			],
-			"dependsOn": "build-realmunbound-client",
+			"dependsOn": "build-veldrath-client",
 			"problemMatcher": "$msCompile",
 			"presentation": {
 				"echo": true,
@@ -463,12 +463,12 @@
 			}
 		},
 		{
-			"label": "test-realmunbound-server",
+			"label": "test-veldrath-server",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj",
+				"${workspaceFolder}/Veldrath.Server.Tests/Veldrath.Server.Tests.csproj",
 				"--verbosity",
 				"normal",
 				"--collect",
@@ -489,12 +489,12 @@
 			}
 		},
 		{
-			"label": "test-realmunbound-client",
+			"label": "test-veldrath-client",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj",
+				"${workspaceFolder}/Veldrath.Client.Tests/Veldrath.Client.Tests.csproj",
 				"--filter",
 				"Category!=UI",
 				"--verbosity",
@@ -517,12 +517,12 @@
 			}
 		},
 		{
-			"label": "test-realmunbound-all",
+			"label": "test-veldrath-all",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/RealmUnbound.slnx",
+				"${workspaceFolder}/Veldrath.slnx",
 				"--filter",
 				"Category!=UI",
 				"--verbosity",
@@ -623,14 +623,14 @@
 		},
 		// ── Multi-client / Debug ─────────────────────────────────────────────────
 		{
-			"label": "run-two-realmunbound-clients",
+			"label": "run-two-veldrath-clients",
 			"type": "shell",
 			"command": "powershell",
 			"args": [
 				"-Command",
-				"Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj --no-build'; Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj --no-build'"
+				"Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj --no-build'; Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj --no-build'"
 			],
-			"dependsOn": "build-realmunbound-client",
+			"dependsOn": "build-veldrath-client",
 			"problemMatcher": [],
 			"presentation": {
 				"echo": true,
@@ -641,17 +641,17 @@
 			}
 		},
 		{
-			"label": "run-realmunbound-client-debug",
+			"label": "run-veldrath-client-debug",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"run",
 				"--project",
-				"${workspaceFolder}/RealmUnbound.Client/RealmUnbound.Client.csproj",
+				"${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj",
 				"--configuration",
 				"Debug"
 			],
-			"dependsOn": "build-realmunbound-client",
+			"dependsOn": "build-veldrath-client",
 			"problemMatcher": "$msCompile",
 			"options": {
 				"env": {

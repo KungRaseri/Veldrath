@@ -1,7 +1,7 @@
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 
-namespace RealmUnbound.Discord.Features;
+namespace Veldrath.Discord.Features;
 
 /// <summary>Basic connectivity and diagnostics slash commands.</summary>
 public sealed class PingModule : InteractionModuleBase<SocketInteractionContext>

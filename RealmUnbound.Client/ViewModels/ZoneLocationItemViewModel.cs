@@ -1,7 +1,7 @@
-using System.Reactive;
+﻿using System.Reactive;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Display model for a single zone location shown in the in-game locations panel.</summary>
 public sealed class ZoneLocationItemViewModel : ViewModelBase

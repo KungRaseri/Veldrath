@@ -1,10 +1,10 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using RealmUnbound.Contracts.Foundry;
-using RealmUnbound.Server.Data;
-using RealmUnbound.Server.Data.Entities;
+using Veldrath.Contracts.Foundry;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Features.Foundry;
+namespace Veldrath.Server.Features.Foundry;
 
 public class FoundryService(ApplicationDbContext db)
 {

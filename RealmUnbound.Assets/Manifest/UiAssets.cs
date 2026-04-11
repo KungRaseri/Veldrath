@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets.Manifest;
+﻿namespace Veldrath.Assets.Manifest;
 
 /// <summary>
 /// Path constants for UI chrome elements from the Wooden UI asset pack (<c>"ui/"</c> prefix).

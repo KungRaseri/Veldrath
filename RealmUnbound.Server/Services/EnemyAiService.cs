@@ -1,11 +1,11 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Tiled;
-using RealmUnbound.Contracts.Tilemap;
-using RealmUnbound.Server.Hubs;
+using Veldrath.Contracts.Tilemap;
+using Veldrath.Server.Hubs;
 
-namespace RealmUnbound.Server.Services;
+namespace Veldrath.Server.Services;
 
 /// <summary>
 /// Background service that drives enemy AI on a 1-second tick.

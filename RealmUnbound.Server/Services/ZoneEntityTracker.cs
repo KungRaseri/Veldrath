@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
-namespace RealmUnbound.Server.Services;
+namespace Veldrath.Server.Services;
 
 /// <summary>
 /// In-memory snapshot of all live entities (enemies, NPCs) currently spawned in active zones,

@@ -1,14 +1,14 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using RealmEngine.Shared.Abstractions;
-using RealmUnbound.Contracts.Characters;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Services;
+using Veldrath.Contracts.Characters;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Services;
 
-namespace RealmUnbound.Server.Features.Characters;
+namespace Veldrath.Server.Features.Characters;
 
 /// <summary>
 /// Minimal API endpoints for character management.

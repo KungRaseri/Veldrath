@@ -1,11 +1,11 @@
-using System.Reactive.Linq;
+﻿using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Announcements;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Announcements;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class MainMenuViewModelTests : TestBase
 {
@@ -23,10 +23,10 @@ public class MainMenuViewModelTests : TestBase
             announcementService: ann);
 
     [Fact]
-    public void Title_Should_Be_RealmUnbound()
+    public void Title_Should_Be_Veldrath()
     {
         var vm = MakeVm();
-        vm.Title.Should().Be("RealmUnbound");
+        vm.Title.Should().Be("Veldrath");
     }
 
     [Fact]
@@ -344,10 +344,10 @@ public class SplashViewModelTests : TestBase
             status);
 
     [Fact]
-    public void Title_Should_Be_RealmUnbound()
+    public void Title_Should_Be_Veldrath()
     {
         var vm = MakeVm();
-        vm.Title.Should().Be("RealmUnbound");
+        vm.Title.Should().Be("Veldrath");
     }
 
     [Fact]

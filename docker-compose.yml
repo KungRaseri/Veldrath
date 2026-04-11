@@ -1,4 +1,4 @@
-# Development docker-compose — HTTP only, no certs required.
+﻿# Development docker-compose — HTTP only, no certs required.
 # appsettings.Development.json supplies the JWT key and log levels.
 # Only the database connection is overridden here to point at the Postgres container.
 
@@ -6,15 +6,15 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: realmunbound
-      POSTGRES_USER: realmunbound
-      POSTGRES_PASSWORD: realmunbound_dev
+      POSTGRES_DB: veldrath
+      POSTGRES_USER: veldrath
+      POSTGRES_PASSWORD: veldrath_dev
     ports:
       - "5433:5432"   # host:container — use 5433 to avoid conflicts with other local Postgres instances
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U realmunbound"]
+      test: ["CMD-SHELL", "pg_isready -U veldrath"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,14 +22,14 @@ services:
   server:
     build:
       context: .
-      dockerfile: RealmUnbound.Server/Dockerfile
+      dockerfile: Veldrath.Server/Dockerfile
     ports:
       - "8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       # Override DB to the Postgres container; everything else comes from appsettings.Development.json
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
       - Database__Provider=postgres
       # JWT signing key — set in .env, never hardcode here
       - Jwt__Key=${JWT_KEY}
@@ -55,7 +55,7 @@ services:
   discord:
     build:
       context: .
-      dockerfile: RealmUnbound.Discord/Dockerfile
+      dockerfile: Veldrath.Discord/Dockerfile
     environment:
       - DOTNET_ENVIRONMENT=Development
       # Bot token — set via .env file or shell environment, never hardcoded here.
@@ -66,7 +66,7 @@ services:
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
       # Use the Docker service name — "localhost" inside the container refers to itself, not the server.
       - Discord__ServerBaseUrl=http://server:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,9 +84,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8081
       # Internal URL for server-side HttpClient calls (container-to-container)
-      - RealmUnbound__ServerUrl=http://server:8080
+      - Veldrath__ServerUrl=http://server:8080
       # Public URL the browser navigates to for OAuth redirects
-      - RealmUnbound__PublicServerUrl=http://localhost:8080
+      - Veldrath__PublicServerUrl=http://localhost:8080
     volumes:
       - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
     depends_on:

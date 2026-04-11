@@ -1,11 +1,11 @@
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
-using RealmUnbound.Discord.Settings;
+using Veldrath.Discord.Settings;
 using System.Reflection;
 
-namespace RealmUnbound.Discord.Services;
+namespace Veldrath.Discord.Services;
 
 /// <summary>
 /// Discovers and registers all <see cref="InteractionModuleBase{T}"/> modules in this assembly,

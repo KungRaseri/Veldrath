@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Content;
+﻿namespace Veldrath.Contracts.Content;
 
 /// <summary>Describes the type of UI control to render for a content field.</summary>
 public enum ContentFieldType

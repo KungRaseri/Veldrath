@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Zones;
+﻿namespace Veldrath.Contracts.Zones;
 
 /// <summary>Summary of a zone returned by zone list and detail endpoints.</summary>
 public record ZoneDto(

@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Microsoft.Reactive.Testing" />
+    <PackageReference Include="ReactiveUI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Veldrath.Client\Veldrath.Client.csproj" />
+    <ProjectReference Include="..\Veldrath.Assets\Veldrath.Assets.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Veldrath.Contracts.Auth" />
+    <Using Include="Veldrath.Contracts.Characters" />
+    <Using Include="Veldrath.Contracts.Zones" />
+  </ItemGroup>
+
+</Project>

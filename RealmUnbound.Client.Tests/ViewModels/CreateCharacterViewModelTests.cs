@@ -1,12 +1,12 @@
 ﻿using System.Reactive.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Characters;
-using RealmUnbound.Contracts.Content;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Content;
 
-namespace RealmUnbound.Client.Tests.ViewModels;
+namespace Veldrath.Client.Tests.ViewModels;
 
 public class CreateCharacterViewModelTests : TestBase
 {

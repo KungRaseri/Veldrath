@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Announcements;
+﻿namespace Veldrath.Contracts.Announcements;
 
 /// <summary>Represents a published announcement shown in the client news panel.</summary>
 /// <param name="Id">Unique identifier of the announcement.</param>

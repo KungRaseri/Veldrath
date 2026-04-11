@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Admin;
+﻿namespace Veldrath.Contracts.Admin;
 
 // ── User / Account DTOs ──────────────────────────────────────────────────────
 
@@ -188,7 +188,7 @@ public record ServerStatusDto(
     DateTimeOffset ServerStartedAt,
     int RegisteredAccounts = 0,
     int TotalCharacters = 0,
-    IReadOnlyList<RealmUnbound.Contracts.Account.HealthCheckEntryDto>? HealthChecks = null);
+    IReadOnlyList<Veldrath.Contracts.Account.HealthCheckEntryDto>? HealthChecks = null);
 
 // ── Active Sessions ──────────────────────────────────────────────────────────
 

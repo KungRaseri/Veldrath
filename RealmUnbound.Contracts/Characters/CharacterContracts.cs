@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Characters;
+﻿namespace Veldrath.Contracts.Characters;
 
 /// <summary>Request to create a new character in the current player account.</summary>
 /// <param name="Name">The display name for the new character.</param>

@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Seeders;
-using RealmUnbound.Server.Data.Seeders;
-using RealmUnbound.Server.Features.Auth;
+using Veldrath.Server.Data.Seeders;
+using Veldrath.Server.Features.Auth;
 
-namespace RealmUnbound.Server.Data;
+namespace Veldrath.Server.Data;
 
 /// <summary>
 /// Orchestrates baseline seed operations across all DbContexts on first startup.

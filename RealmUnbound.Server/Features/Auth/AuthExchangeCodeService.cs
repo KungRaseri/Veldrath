@@ -1,8 +1,8 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
-using RealmUnbound.Contracts.Auth;
+using Veldrath.Contracts.Auth;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Issues single-use opaque exchange codes that can be redeemed once for a full <see cref="AuthResponse"/>.

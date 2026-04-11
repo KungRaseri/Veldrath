@@ -1,11 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.ItemCatalog.Queries;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Features.Characters;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Characters;
 
-namespace RealmUnbound.Server.Features.Shop;
+namespace Veldrath.Server.Features.Shop;
 
 /// <summary>Hub command that purchases one unit of an item from a zone merchant.</summary>
 /// <param name="CharacterId">The character making the purchase.</param>

@@ -1,16 +1,16 @@
-using System.IO;
+﻿using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using Avalonia.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
-using RealmUnbound.Assets;
-using RealmUnbound.Assets.Manifest;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Contracts.Characters;
-using RealmUnbound.Contracts.Content;
+using Veldrath.Assets;
+using Veldrath.Assets.Manifest;
+using Veldrath.Client.Services;
+using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Content;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Wizard view model that drives the guided character creation flow.</summary>
 public class CreateCharacterViewModel : ViewModelBase

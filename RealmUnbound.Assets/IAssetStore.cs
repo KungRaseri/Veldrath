@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets;
+﻿namespace Veldrath.Assets;
 
 /// <summary>Provides access to game assets stored in the <c>GameAssets</c> directory.</summary>
 public interface IAssetStore

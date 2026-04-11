@@ -1,7 +1,7 @@
-using ReactiveUI;
-using RealmUnbound.Client.Services;
+﻿using ReactiveUI;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>
 /// Settings screen view model. Exposes player-configurable options (audio, display) that

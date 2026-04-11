@@ -1,6 +1,6 @@
-using RealmUnbound.Client.Services;
+﻿using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class TokenStoreTests
 {

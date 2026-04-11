@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Infrastructure.Email;
+﻿namespace Veldrath.Server.Infrastructure.Email;
 
 /// <summary>
 /// Contract for sending outgoing email messages from the server.

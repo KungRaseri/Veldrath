@@ -1,7 +1,7 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text.RegularExpressions;
 using ReactiveUI;
-using RealmUnbound.Contracts.Content;
+using Veldrath.Contracts.Content;
 
 namespace RealmForge.ViewModels;
 

@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets;
+﻿namespace Veldrath.Assets;
 
 /// <summary>Logical groupings of game assets, each mapping to a subdirectory under <c>GameAssets/</c>.</summary>
 public enum AssetCategory

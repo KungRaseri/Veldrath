@@ -1,11 +1,11 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Infrastructure.Email;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Infrastructure.Email;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Handles the provider-link confirmation flow.
@@ -70,7 +70,7 @@ public class AccountLinkService(
 
         await emailSender.SendAsync(
             account.Email!,
-            $"Link your {provider} account to RealmUnbound",
+            $"Link your {provider} account to Veldrath",
             body,
             ct);
     }
@@ -125,7 +125,7 @@ public class AccountLinkService(
               <h2>Link your {provider} account</h2>
               <p>Hi <strong>{username}</strong>,</p>
               <p>
-                A sign-in attempt with <strong>{provider}</strong> matched your RealmUnbound account.
+                A sign-in attempt with <strong>{provider}</strong> matched your Veldrath account.
                 To link this provider to your account, click the button below within
                 <strong>{expiryMinutes} minutes</strong>.
               </p>

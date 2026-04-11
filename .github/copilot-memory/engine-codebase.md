@@ -1,14 +1,14 @@
-# RealmEngine Codebase Notes
+﻿# RealmEngine Codebase Notes
 
 ## Test Counts (as of session-30, 2026-04-10)
 - RealmEngine.Core.Tests: **1,912 passing**
 - RealmEngine.Shared.Tests: **803 passing**
 - RealmEngine.Data.Tests: **237 passing**
-- RealmUnbound.Client.Tests: **525 passing**
-- RealmUnbound.Server.Tests: **571 passing** (+11 from OAuth link-confirmation flow; 8 pre-existing failures unrelated)
+- Veldrath.Client.Tests: **525 passing**
+- Veldrath.Server.Tests: **571 passing** (+11 from OAuth link-confirmation flow; 8 pre-existing failures unrelated)
 - RealmForge.Tests: **8 passing**
 - RealmFoundry.Tests: **48 passing**
-- RealmUnbound.Assets.Tests: **10 passing**
+- Veldrath.Assets.Tests: **10 passing**
 - **Total (approx): 4,114+ passing**
 
 ## Key Model Facts
@@ -76,14 +76,14 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `EfCoreQuestRepository.MapToModel` does **not** set `QuestType` or `Difficulty` on the shared `Quest` model. Those fields default to empty string. Only `Slug`, `Title` (= DisplayName), `DisplayName`, and `RarityWeight` are populated from the entity.
 
 ### WeaponDto / ArmorDto / MaterialDto (session-19)
-- `WeaponDto(Slug, DisplayName, TypeKey, WeaponType, RarityWeight)` added to `RealmUnbound.Contracts/Content/ContentContracts.cs`
+- `WeaponDto(Slug, DisplayName, TypeKey, WeaponType, RarityWeight)` added to `Veldrath.Contracts/Content/ContentContracts.cs`
 - `ArmorDto(Slug, DisplayName, TypeKey, ArmorType, RarityWeight)` added to same file — `ArmorType` is `Item.ArmorClass` from the shared model (mapped from `Armor.ArmorType` entity field)
 - `MaterialDto(Slug, DisplayName, MaterialFamily, RarityWeight)` added to same file — `RarityWeight` is cast from `MaterialEntry.RarityWeight` (float) to int
 - `GET /api/content/weapons`, `/api/content/weapons/{slug}` — backed by `IWeaponRepository`
 - `GET /api/content/armors`, `/api/content/armors/{slug}` — backed by `IArmorRepository`
 - `GET /api/content/materials`, `/api/content/materials/{slug}` — backed by `IMaterialRepository`
 - All 6 routes are anonymous (no auth required)
-- `ContentEquipmentEndpointTests.cs` — 12 integration tests in `RealmUnbound.Server.Tests/Features/`
+- `ContentEquipmentEndpointTests.cs` — 12 integration tests in `Veldrath.Server.Tests/Features/`
 
 ### Goal-3 New Content Types (session-20)
 
@@ -174,7 +174,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 
 ### P3 Stubs — see [unbound-memory.md](unbound-memory.md) for full status
 
-### RealmUnbound — Hub Architecture, Blob Schema, P3/P4 Status
+### Veldrath — Hub Architecture, Blob Schema, P3/P4 Status
 
 > Full details in [unbound-memory.md](unbound-memory.md). Summary:
 
@@ -190,7 +190,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - Tests that create `MapViewModel` but with no zone connections (so no `MapEdgeViewModel` is created) are safe to remain as `[Fact]`.
 
 ### ActorClassDto Changed (2026-03-19)
-- `ActorClassDto` in `RealmUnbound.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
+- `ActorClassDto` in `Veldrath.Contracts` was updated to add `HitDie` (int), `PrimaryStat` (string), and `RarityWeight` (int) parameters
 - This was a breaking change that broke `FakeServices.cs` and `CharacterSelectViewModelTests.cs` in Client.Tests
 - Fix: update all `new ActorClassDto(slug, name, typeKey)` calls to `new ActorClassDto(slug, name, typeKey, hitDie, primaryStat, rarityWeight)`
 
@@ -220,8 +220,8 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `ISpeciesRepository` interface in `RealmEngine.Shared/Abstractions/`
 - `EfCoreSpeciesRepository` in `RealmEngine.Data/Repositories/`
 - `RealmEngine.Shared/Models/Species.cs` shared model (Slug, DisplayName, TypeKey, RarityWeight)
-- Registered in `RealmUnbound.Server/Program.cs` as `AddScoped<ISpeciesRepository, EfCoreSpeciesRepository>()`
-- DTO: `SpeciesDto` in `RealmUnbound.Contracts` — browse-list projection only (no stats/traits)
+- Registered in `Veldrath.Server/Program.cs` as `AddScoped<ISpeciesRepository, EfCoreSpeciesRepository>()`
+- DTO: `SpeciesDto` in `Veldrath.Contracts` — browse-list projection only (no stats/traits)
 
 ### EfCoreBackgroundRepository Legacy Cleanup (session-13)
 - Removed dead-code `:` split in `GetBackgroundByIdAsync` — now queries directly by bare slug

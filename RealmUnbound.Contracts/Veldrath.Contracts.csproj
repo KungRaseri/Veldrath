@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Veldrath.Contracts</RootNamespace>
+    <AssemblyName>Veldrath.Contracts</AssemblyName>
+  </PropertyGroup>
+
+</Project>

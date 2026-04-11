@@ -1,7 +1,7 @@
-using RealmEngine.Shared.Models;
-using ServerCharacter = RealmUnbound.Server.Data.Entities.Character;
+﻿using RealmEngine.Shared.Models;
+using ServerCharacter = Veldrath.Server.Data.Entities.Character;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// Builds a lightweight <see cref="Character"/> shell from the server EF entity and its

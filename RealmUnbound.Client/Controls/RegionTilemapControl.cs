@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using Avalonia;
 using Avalonia.Controls;
@@ -6,11 +6,11 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Tilemap;
+using Veldrath.Client.Services;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Tilemap;
 
-namespace RealmUnbound.Client.Controls;
+namespace Veldrath.Client.Controls;
 
 /// <summary>
 /// Region-map canvas. Renders the region's tile layers, player entities, zone-entry highlights,

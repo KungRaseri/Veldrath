@@ -1,6 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>No-op <see cref="IAudioPlayer"/> used when the native audio library is unavailable.</summary>
 [ExcludeFromCodeCoverage]

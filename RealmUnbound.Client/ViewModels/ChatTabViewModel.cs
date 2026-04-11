@@ -1,8 +1,8 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Base class for all chat tab view models. Each tab owns its own message collection.</summary>
 public abstract class ChatTabViewModel : ViewModelBase

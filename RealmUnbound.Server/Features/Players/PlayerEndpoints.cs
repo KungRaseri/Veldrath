@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using RealmUnbound.Contracts.Players;
-using RealmUnbound.Server.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Veldrath.Contracts.Players;
+using Veldrath.Server.Data;
 
-namespace RealmUnbound.Server.Features.Players;
+namespace Veldrath.Server.Features.Players;
 
 /// <summary>
 /// Minimal API endpoints for public-facing player profiles.

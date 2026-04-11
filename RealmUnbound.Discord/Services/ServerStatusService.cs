@@ -1,10 +1,10 @@
-using RealmUnbound.Contracts.Zones;
+﻿using Veldrath.Contracts.Zones;
 using System.Net.Http.Json;
 
-namespace RealmUnbound.Discord.Services;
+namespace Veldrath.Discord.Services;
 
 /// <summary>
-/// Retrieves live zone data from the public RealmUnbound.Server API.
+/// Retrieves live zone data from the public Veldrath.Server API.
 /// </summary>
 public sealed class ServerStatusService(HttpClient http)
 {

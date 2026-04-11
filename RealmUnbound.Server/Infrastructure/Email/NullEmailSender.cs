@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
-namespace RealmUnbound.Server.Infrastructure.Email;
+namespace Veldrath.Server.Infrastructure.Email;
 
 /// <summary>
 /// No-operation email sender used in development and test environments.

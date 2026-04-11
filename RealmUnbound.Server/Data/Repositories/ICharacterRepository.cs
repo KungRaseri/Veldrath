@@ -1,6 +1,6 @@
-using RealmUnbound.Server.Data.Entities;
+﻿using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Data.Repositories;
+namespace Veldrath.Server.Data.Repositories;
 
 /// <summary>Persistence contract for <see cref="Character"/>.</summary>
 public interface ICharacterRepository

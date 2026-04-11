@@ -1,12 +1,12 @@
-using Avalonia.Headless.XUnit;
+﻿using Avalonia.Headless.XUnit;
 using System.Reactive.Linq;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Zones;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Zones;
 
-namespace RealmUnbound.Client.Tests.ViewModels;
+namespace Veldrath.Client.Tests.ViewModels;
 
 public class MapViewModelTests : TestBase
 {
@@ -22,7 +22,7 @@ public class MapViewModelTests : TestBase
     {
         var zones = new FakeZoneService
         {
-            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")],
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "veldrath")],
             Zones   =
             [
                 new("fenwick-crossing", "Fenwick Crossing", "desc", "Town",       1, 50, true,  0, "everwood"),
@@ -43,7 +43,7 @@ public class MapViewModelTests : TestBase
     {
         var zones = new FakeZoneService
         {
-            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")],
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "veldrath")],
         };
 
         var vm = MakeVm(zones);
@@ -57,7 +57,7 @@ public class MapViewModelTests : TestBase
     {
         var zones = new FakeZoneService
         {
-            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")],
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "veldrath")],
             Zones   = [new("fenwick-crossing", "Fenwick Crossing", "desc", "Town", 1, 50, true, 0, "everwood")],
         };
 
@@ -72,7 +72,7 @@ public class MapViewModelTests : TestBase
     {
         var zones = new FakeZoneService
         {
-            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")],
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "veldrath")],
             Zones   = [new("fenwick-crossing", "Fenwick Crossing", "desc", "Town", 1, 50, true, 0, "everwood")],
         };
 
@@ -91,8 +91,8 @@ public class MapViewModelTests : TestBase
         {
             Regions =
             [
-                new("everwood",   "Everwood",   "desc", "Forest",   1, 10, true,  "draveth"),
-                new("stormreach", "Stormreach", "desc", "Highland", 5, 15, false, "draveth"),
+                new("everwood",   "Everwood",   "desc", "Forest",   1, 10, true,  "veldrath"),
+                new("stormreach", "Stormreach", "desc", "Highland", 5, 15, false, "veldrath"),
             ]
         };
 
@@ -108,7 +108,7 @@ public class MapViewModelTests : TestBase
     {
         var zones = new FakeZoneService
         {
-            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")],
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "veldrath")],
             Zones   =
             [
                 new("fenwick-crossing", "Fenwick Crossing", "desc", "Town",       1, 50, true,  0, "everwood"),
@@ -139,7 +139,7 @@ public class MapViewModelTests : TestBase
     {
         var zones = new FakeZoneService
         {
-            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "draveth")]
+            Regions = [new("everwood", "Everwood", "desc", "Forest", 1, 10, true, "veldrath")]
         };
 
         var vm = MakeVm(zones);
@@ -160,8 +160,8 @@ public class MapViewModelTests : TestBase
         {
             Regions =
             [
-                new("a", "A", "d", "Forest", 1, 10, true,  "draveth"),
-                new("b", "B", "d", "Forest", 1, 10, false, "draveth"),
+                new("a", "A", "d", "Forest", 1, 10, true,  "veldrath"),
+                new("b", "B", "d", "Forest", 1, 10, false, "veldrath"),
             ],
             Zones =
             [

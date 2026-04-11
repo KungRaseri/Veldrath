@@ -1,4 +1,4 @@
-# ── Build stage ──────────────────────────────────────────────────────────────
+﻿# ── Build stage ──────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -8,13 +8,13 @@ COPY Directory.Packages.props                                  ./
 COPY versions/                                                 versions/
 COPY RealmFoundry/RealmFoundry.csproj                          RealmFoundry/
 COPY RealmFoundry/Directory.Build.props                        RealmFoundry/
-COPY RealmUnbound.Contracts/RealmUnbound.Contracts.csproj      RealmUnbound.Contracts/
+COPY Veldrath.Contracts/Veldrath.Contracts.csproj      Veldrath.Contracts/
 
 RUN dotnet restore RealmFoundry/RealmFoundry.csproj
 
 # Copy all source
 COPY RealmFoundry/           RealmFoundry/
-COPY RealmUnbound.Contracts/ RealmUnbound.Contracts/
+COPY Veldrath.Contracts/ Veldrath.Contracts/
 
 WORKDIR /src/RealmFoundry
 RUN dotnet publish RealmFoundry.csproj -c Release -o /app/publish

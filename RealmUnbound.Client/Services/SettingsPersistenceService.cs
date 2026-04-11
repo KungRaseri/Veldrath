@@ -1,6 +1,6 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Saves and loads <see cref="ClientSettings"/> to/from a plain JSON file on disk
@@ -10,7 +10,7 @@ public sealed class SettingsPersistenceService
 {
     private static readonly string DefaultPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "RealmUnbound", "settings.json");
+        "Veldrath", "settings.json");
 
     private readonly string _filePath;
 

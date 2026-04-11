@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -32,7 +32,7 @@
     <ItemGroup>
         <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
         <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
-        <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />        <ProjectReference Include="..\.\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />    </ItemGroup>
+        <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />        <ProjectReference Include="..\.\Veldrath.Contracts\Veldrath.Contracts.csproj" />    </ItemGroup>
 
     <ItemGroup>
         <AvaloniaResource Include="Resources\**" />

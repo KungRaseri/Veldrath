@@ -1,8 +1,8 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using System.Reactive;
-using RealmUnbound.Client.Services;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 public class RegisterViewModel : ViewModelBase
 {

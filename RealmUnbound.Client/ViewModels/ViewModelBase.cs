@@ -1,6 +1,6 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 public abstract class ViewModelBase : ReactiveObject
 {

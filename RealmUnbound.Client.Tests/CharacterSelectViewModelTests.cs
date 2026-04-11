@@ -1,11 +1,11 @@
-using System.Reactive.Linq;
-using RealmUnbound.Client;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Tilemap;
+﻿using System.Reactive.Linq;
+using Veldrath.Client;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Tilemap;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class CharacterSelectViewModelTests : TestBase
 {

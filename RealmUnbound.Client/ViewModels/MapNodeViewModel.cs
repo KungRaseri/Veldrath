@@ -1,6 +1,6 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a single node (Region, Zone, or ZoneLocation) on the traversal-graph map canvas.</summary>
 public class MapNodeViewModel : ViewModelBase

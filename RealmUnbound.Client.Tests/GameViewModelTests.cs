@@ -1,9 +1,9 @@
-using System.Reactive.Linq;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
+﻿using System.Reactive.Linq;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class GameViewModelTests : TestBase
 {
@@ -1151,7 +1151,7 @@ public class GameViewModelTests : TestBase
     [Fact]
     public async Task InitializeAsync_Should_Populate_RegionZones_And_Mark_Current()
     {
-        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "draveth");
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "veldrath");
         var zones = new FakeZoneService
         {
             ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
@@ -1178,9 +1178,9 @@ public class GameViewModelTests : TestBase
     [Fact]
     public async Task InitializeAsync_Should_Populate_WorldRegions_And_Mark_Current_Region()
     {
-        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "draveth");
-        var greymoor  = new RegionDto("greymoor",  "Greymoor",  "A bleak moor.", "Highland", 5, 14, false, "draveth");
-        var world     = new WorldDto("draveth", "Draveth", "A world of embers.", "The Age of Embers");
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "veldrath");
+        var greymoor  = new RegionDto("greymoor",  "Greymoor",  "A bleak moor.", "Highland", 5, 14, false, "veldrath");
+        var world     = new WorldDto("veldrath", "Veldrath", "A world of embers.", "The Age of Embers");
         var zones = new FakeZoneService
         {
             ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
@@ -1195,7 +1195,7 @@ public class GameViewModelTests : TestBase
         vm.WorldRegions.Should().HaveCount(2);
         vm.WorldRegions.Should().Contain(r => r.Id == "thornveil" && r.IsCurrentRegion);
         vm.WorldRegions.Should().Contain(r => r.Id == "greymoor"  && !r.IsCurrentRegion);
-        vm.WorldName.Should().Be("Draveth");
+        vm.WorldName.Should().Be("Veldrath");
         vm.WorldEra.Should().Be("The Age of Embers");
     }
 
@@ -1237,7 +1237,7 @@ public class GameViewModelTests : TestBase
     [Fact]
     public async Task RegionZones_TravelCommand_Should_Be_Null_For_Current_Zone_Only()
     {
-        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "draveth");
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.", "Forest", 0, 6, true, "veldrath");
         var zones = new FakeZoneService
         {
             ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",
@@ -1266,7 +1266,7 @@ public class GameViewModelTests : TestBase
     [Fact]
     public async Task ViewRegionCommand_Should_Load_Region_Data_And_Switch_To_Region_View()
     {
-        var greymoor = new RegionDto("greymoor", "Greymoor", "A bleak moor.", "Highland", 5, 14, false, "draveth");
+        var greymoor = new RegionDto("greymoor", "Greymoor", "A bleak moor.", "Highland", 5, 14, false, "veldrath");
         var zones = new FakeZoneService
         {
             Regions = [greymoor],
@@ -1288,8 +1288,8 @@ public class GameViewModelTests : TestBase
     [Fact]
     public async Task ShowRegionViewCommand_Should_Restore_Current_Region_After_Drill_Into_Other()
     {
-        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.",     "Forest",   0, 6,  true,  "draveth");
-        var greymoor  = new RegionDto("greymoor",  "Greymoor",  "A bleak moor.",      "Highland", 5, 14, false, "draveth");
+        var thornveil = new RegionDto("thornveil", "Thornveil", "A dark forest.",     "Forest",   0, 6,  true,  "veldrath");
+        var greymoor  = new RegionDto("greymoor",  "Greymoor",  "A bleak moor.",      "Highland", 5, 14, false, "veldrath");
         var zones = new FakeZoneService
         {
             ZoneToReturn = new ZoneDto("fenwick-crossing", "Fenwick Crossing", "The starting town.",

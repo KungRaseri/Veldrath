@@ -1,4 +1,4 @@
-namespace RealmUnbound.Client.ViewModels;
+﻿namespace Veldrath.Client.ViewModels;
 
 /// <summary>
 /// Bounding-box data for a region cluster's background panel on the map canvas.

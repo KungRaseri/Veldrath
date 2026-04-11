@@ -1,8 +1,8 @@
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
-using RealmUnbound.Discord.Services;
+using Veldrath.Discord.Services;
 
-namespace RealmUnbound.Discord.Features;
+namespace Veldrath.Discord.Features;
 
 /// <summary>Live server and realm status commands.</summary>
 public sealed class ServerModule(ServerStatusService server) : InteractionModuleBase<SocketInteractionContext>

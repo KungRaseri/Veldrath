@@ -1,4 +1,4 @@
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+﻿<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
         ================================================================
@@ -33,7 +33,7 @@
     <Styles.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://RealmUnbound.Client/Assets/Themes/GameColors.axaml" />
+                <ResourceInclude Source="avares://Veldrath.Client/Assets/Themes/GameColors.axaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!--

@@ -1,6 +1,6 @@
-using RealmUnbound.Client.Services;
+﻿using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.Tests.Infrastructure;
+namespace Veldrath.Client.Tests.Infrastructure;
 
 /// <summary>
 /// In-memory <see cref="IHubConnection"/> for unit-testing <see cref="ServerConnectionService"/>.

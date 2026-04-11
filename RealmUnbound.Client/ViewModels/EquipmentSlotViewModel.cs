@@ -1,7 +1,7 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a single equipment slot on the active character.</summary>
 public sealed class EquipmentSlotViewModel : ViewModelBase

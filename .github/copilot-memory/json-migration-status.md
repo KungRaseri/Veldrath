@@ -1,4 +1,4 @@
-# RealmEngine JSON → DB Migration Status
+﻿# RealmEngine JSON → DB Migration Status
 
 ## What Was Done
 - Deleted all `RealmEngine.Shared/Data/` JSON data model files (AbilityDataModels, ClassCatalogDataModels, EnemyNpcTraitDataModels, GameDataModels, ItemTraitDataModels, JsonHelpers, NpcCatalogDataModels, QuestCatalogDataModels, QuestDataModels, QuestObjectivesDataModels, QuestRewardsDataModels)
@@ -15,7 +15,7 @@ All Newtonsoft migration done as of 2026-03-16:
 - `EfCoreSaveGameRepository.cs` migrated to System.Text.Json with `PropertyNameCaseInsensitive = true`
 - `background.cs` `[JsonProperty]` attributes removed
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
-- Newtonsoft remains in: `RealmUnbound.Server` (ServerSaveGameRepository), `RealmForge`, `RealmUnbound.Server.Tests` (test data fixtures)
+- Newtonsoft remains in: `Veldrath.Server` (ServerSaveGameRepository), `RealmForge`, `Veldrath.Server.Tests` (test data fixtures)
 
 ## Test Status (session-20)
 - Shared.Tests: 778 passed
@@ -38,12 +38,12 @@ Created: shared models, interfaces, EfCore repos, Program.cs registrations, Cont
 - `SeedItemsAsync` implemented in `DatabaseSeeder.cs`: 17 items covering all 6 ItemType values (consumable, crystal, gem, rune, essence, orb), with factory helpers `I()`, `ISt()`, `ITr()`
 - `SeedEnchantmentsAsync` implemented in `DatabaseSeeder.cs`: 9 enchantments covering all 3 TargetSlot values (weapon ×4, armor ×3, any ×2), with factory helpers `EE()`, `ESt()`, `ETr()`
 - `SeedContentRegistryAsync` updated to also register Items (`items/general`) and Enchantments (`items/enchantments`)
-- `ContentExtendedEndpointTests.cs` added in `RealmUnbound.Server.Tests/Features/`: 19 integration tests for /enemies, /npcs, /quests, /recipes, /loot-tables, /spells
+- `ContentExtendedEndpointTests.cs` added in `Veldrath.Server.Tests/Features/`: 19 integration tests for /enemies, /npcs, /quests, /recipes, /loot-tables, /spells
 
 ## What Was Done (session-19)
-- `WeaponDto`, `ArmorDto`, `MaterialDto` added to `RealmUnbound.Contracts/Content/ContentContracts.cs`
+- `WeaponDto`, `ArmorDto`, `MaterialDto` added to `Veldrath.Contracts/Content/ContentContracts.cs`
 - `GET /api/content/weapons` (+slug), `GET /api/content/armors` (+slug), `GET /api/content/materials` (+slug) added to `ContentEndpoints.cs` — backed by `IWeaponRepository`, `IArmorRepository`, `IMaterialRepository` respectively
-- `ContentEquipmentEndpointTests.cs` added in `RealmUnbound.Server.Tests/Features/`: 12 integration tests for /weapons, /armors, /materials
+- `ContentEquipmentEndpointTests.cs` added in `Veldrath.Server.Tests/Features/`: 12 integration tests for /weapons, /armors, /materials
 
 ## What Was Done (session-21) — Weapon/Armor → Item consolidation
 
@@ -109,10 +109,10 @@ Weapons and armor are now ordinary **Items** with `ItemType = "weapon"` or `"arm
 - RealmEngine.Shared.Tests: **778 passing**
 - RealmEngine.Core.Tests: **1,859 passing**
 - RealmEngine.Data.Tests: **208 passing**
-- RealmUnbound.Client.Tests: **461 passing**
-- RealmUnbound.Server.Tests: **425 passing**
+- Veldrath.Client.Tests: **461 passing**
+- Veldrath.Server.Tests: **425 passing**
 - RealmFoundry.Tests: **48 passing**
-- RealmUnbound.Assets.Tests: **10 passing**
+- Veldrath.Assets.Tests: **10 passing**
 - **All 0 failures** ✅
 
 ## What Remains

@@ -1,4 +1,4 @@
-name: CI - Community Portal (RealmFoundry)
+﻿name: CI - Community Portal (RealmFoundry)
 
 concurrency:
   group: ci-foundry-${{ github.ref }}
@@ -10,7 +10,7 @@ on:
     paths:
       - 'RealmFoundry/**'
       - 'RealmFoundry.Tests/**'
-      - 'RealmUnbound.Contracts/**'
+      - 'Veldrath.Contracts/**'
       - 'versions/foundry.props'
       - 'Directory.Build.props'
       - '.github/workflows/ci-foundry.yml'
@@ -19,7 +19,7 @@ on:
     paths:
       - 'RealmFoundry/**'
       - 'RealmFoundry.Tests/**'
-      - 'RealmUnbound.Contracts/**'
+      - 'Veldrath.Contracts/**'
       - 'versions/foundry.props'
       - 'Directory.Build.props'
       - '.github/workflows/ci-foundry.yml'

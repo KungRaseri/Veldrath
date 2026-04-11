@@ -1,10 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Media.Imaging;
-using RealmUnbound.Assets.Manifest;
+using Veldrath.Assets.Manifest;
 using Serilog;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Loads and caches entity sprite sheet <see cref="Bitmap"/> objects keyed by sprite key.

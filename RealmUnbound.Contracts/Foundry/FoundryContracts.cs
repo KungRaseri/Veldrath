@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Foundry;
+﻿namespace Veldrath.Contracts.Foundry;
 
 // Requests
 public record CreateSubmissionRequest(

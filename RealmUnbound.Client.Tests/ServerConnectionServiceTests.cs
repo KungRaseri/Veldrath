@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class ServerConnectionServiceTests : TestBase
 {
@@ -336,7 +336,7 @@ public class ServerConnectionServiceTests : TestBase
 
         // MinCompatibleClientVersion = "0.0" — client assembly is at 0.1 (≥ 0.0), so compatible
         factory.Connection.SimulateReceive("ServerInfo",
-            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.1", "0.0"));
+            new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.1", "0.0"));
 
         fired.Should().BeFalse();
     }
@@ -353,7 +353,7 @@ public class ServerConnectionServiceTests : TestBase
 
         // Server requires minimum 9.99 — current client is well below that
         factory.Connection.SimulateReceive("ServerInfo",
-            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "9.99", "9.99"));
+            new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "9.99", "9.99"));
 
         capturedClient.Should().NotBeNullOrEmpty();
         capturedServer.Should().Be("9.99");
@@ -373,7 +373,7 @@ public class ServerConnectionServiceTests : TestBase
         // In the test assembly the attribute is absent; fall-back minServer is "0.1",
         // so a server at 0.0 is rejected.
         factory.Connection.SimulateReceive("ServerInfo",
-            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.0", "0.0"));
+            new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.0", "0.0"));
 
         capturedServer.Should().Be("0.0");
     }
@@ -389,7 +389,7 @@ public class ServerConnectionServiceTests : TestBase
 
         // Server min is 0.0, client is at 0.x (anything ≥ 0) → compatible
         factory.Connection.SimulateReceive("ServerInfo",
-            new RealmUnbound.Contracts.Connection.ServerInfoPayload("conn-1", "0.5", "0.0"));
+            new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.5", "0.0"));
 
         fired.Should().BeFalse();
     }

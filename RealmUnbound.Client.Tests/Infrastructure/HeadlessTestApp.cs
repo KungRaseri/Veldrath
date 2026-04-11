@@ -1,8 +1,8 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Headless;
 using Avalonia.ReactiveUI;
 
-namespace RealmUnbound.Client.Tests.Infrastructure;
+namespace Veldrath.Client.Tests.Infrastructure;
 
 /// <summary>
 /// Minimal Avalonia application used to initialise the Avalonia runtime during

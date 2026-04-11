@@ -1,8 +1,8 @@
-using ReactiveUI;
-using RealmUnbound.Assets;
-using RealmUnbound.Client.Services;
+﻿using ReactiveUI;
+using Veldrath.Assets;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Loading screen shown while the client initialises and warms the asset cache.</summary>
 public class SplashViewModel : ViewModelBase
@@ -47,7 +47,7 @@ public class SplashViewModel : ViewModelBase
     }
 
     /// <summary>Gets the game title displayed on the splash screen.</summary>
-    public string Title => "RealmUnbound";
+    public string Title => "Veldrath";
 
     /// <summary>Gets the subtitle tagline displayed on the splash screen.</summary>
     public string Subtitle => "An Epic Adventure Awaits";

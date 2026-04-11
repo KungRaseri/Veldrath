@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealmEngine.Data.Entities;
-using RealmUnbound.Server.Data.Entities;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Data;
+namespace Veldrath.Server.Data;
 
 /// <summary>
 /// Primary EF Core context for all server-side persistence.
@@ -25,7 +25,7 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<CharacterUnlockedLocation> CharacterUnlockedLocations => Set<CharacterUnlockedLocation>();
     /// <summary>JWT refresh tokens.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    /// <summary>Top-level world containers (currently only Draveth).</summary>
+    /// <summary>Top-level world containers (currently only Veldrath).</summary>
     public DbSet<World> Worlds => Set<World>();
     /// <summary>Geographic regions within a world.</summary>
     public DbSet<Region> Regions => Set<Region>();

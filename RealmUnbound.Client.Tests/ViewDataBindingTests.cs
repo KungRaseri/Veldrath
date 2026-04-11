@@ -1,11 +1,11 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Client.Views;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
+using Veldrath.Client.Views;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 /// <summary>
 /// Headless tests that exercise AXAML DataTemplate and state-dependent paths.
@@ -28,7 +28,7 @@ public class ViewDataBindingTests
             MakeGameVm(),
             new FakeAuthService(),
             new TokenStore(),
-            new RealmUnbound.Client.ClientSettings("http://localhost:8080"));
+            new Veldrath.Client.ClientSettings("http://localhost:8080"));
 
     private static Window Show(object content)
     {

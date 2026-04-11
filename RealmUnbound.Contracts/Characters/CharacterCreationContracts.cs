@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Characters;
+﻿namespace Veldrath.Contracts.Characters;
 
 /// <summary>Request body for setting the character class on a creation session.</summary>
 /// <param name="ClassName">The slug or display name of the class to select.</param>

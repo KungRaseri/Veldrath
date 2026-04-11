@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <RootNamespace>RealmFoundry</RootNamespace>
@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RealmUnbound.Contracts\RealmUnbound.Contracts.csproj" />
+    <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

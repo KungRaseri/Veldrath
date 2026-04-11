@@ -1,7 +1,7 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using System.Reactive;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>
 /// Display model for a region card shown on the world overview panel.

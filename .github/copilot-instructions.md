@@ -1,4 +1,4 @@
-# RealmEngine — Copilot Instructions (.NET 10.0)
+﻿# RealmEngine — Copilot Instructions (.NET 10.0)
 
 ## Session Start — Required Reading
 
@@ -7,7 +7,7 @@
 - [`.github/copilot-memory/engine-codebase.md`](.github/copilot-memory/engine-codebase.md) — key model facts, positional record constructors, known handler quirks, testing gotchas, known open P3/P4 items
 - [`.github/copilot-memory/json-migration-status.md`](.github/copilot-memory/json-migration-status.md) — migration history and completed work log
 - [`.github/copilot-memory/forge-foundry-sync.md`](.github/copilot-memory/forge-foundry-sync.md) — Forge ↔ Foundry content schema, Foundry endpoint notes, integration test gotchas
-- [`.github/copilot-memory/unbound-memory.md`](.github/copilot-memory/unbound-memory.md) — RealmUnbound Server + Client hub architecture, blob schema, P3/P4 status, session log
+- [`.github/copilot-memory/unbound-memory.md`](.github/copilot-memory/unbound-memory.md) — Veldrath Server + Client hub architecture, blob schema, P3/P4 status, session log
 - [`.github/copilot-memory/gap-analysis-process.md`](.github/copilot-memory/gap-analysis-process.md) — process template for gap analysis at session start
 
 These files are committed to the repo and shared across all machines. **Do not use `/memories/repo/` for codebase notes** — write new discoveries directly to the files above using the file editing tools so they travel with the repo via git.
@@ -18,7 +18,7 @@ These files are committed to the repo and shared across all machines. **Do not u
 
 **RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
 
-This repository also contains the **official game built on top of that engine**: RealmUnbound, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. RealmForge, an Avalonia DB content editor for managing game entities in Postgres, is here too. RealmFoundry is a Blazor Server web app for community content submission and curation.
+This repository also contains the **official game built on top of that engine**: Veldrath, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. RealmForge, an Avalonia DB content editor for managing game entities in Postgres, is here too. RealmFoundry is a Blazor Server web app for community content submission and curation.
 
 ## Project Structure
 
@@ -27,8 +27,8 @@ RealmEngine/
 ├── RealmEngine.Core/          # Game logic, MediatR handlers (zero UI dependencies)
 ├── RealmEngine.Shared/        # Models, interfaces, abstractions (zero UI dependencies)
 ├── RealmEngine.Data/          # EF Core persistence, repositories (zero UI dependencies)
-├── RealmUnbound.Server/       # ASP.NET Core game server with SignalR hub
-├── RealmUnbound.Client/       # Avalonia cross-platform desktop client (ReactiveUI)
+├── Veldrath.Server/       # ASP.NET Core game server with SignalR hub
+├── Veldrath.Client/       # Avalonia cross-platform desktop client (ReactiveUI)
 ├── RealmForge/                # Avalonia DB content editor for game entities (ReactiveUI)
 ├── RealmFoundry/              # Blazor Server web app — community content submission portal
 ├── [Project].Tests/           # One test project per library/application
@@ -42,7 +42,7 @@ RealmEngine/
 | Solution | Contains | Use For |
 |----------|----------|---------|
 | `RealmEngine.slnx` | Core + Data + Shared + tests | Engine-only development, CI |
-| `RealmUnbound.slnx` | Client + Server + tests | Multiplayer development |
+| `Veldrath.slnx` | Client + Server + tests | Multiplayer development |
 | `RealmForge.slnx` | RealmForge + tests | Tooling development |
 | `RealmFoundry.slnx` | RealmFoundry + Server + tests | Community portal development |
 | `Realm.Full.slnx` | Everything | Full-stack local development |
@@ -56,7 +56,7 @@ RealmEngine/
 - Pipeline behaviors automatically apply validation (FluentValidation) and structured logging (Serilog) to every operation
 - Engine libraries (`Core`, `Shared`, `Data`) have **zero dependency on any UI framework** — this is a hard rule
 
-**Engine Agnosticism**: The engine is UI-agnostic by design. Any .NET application can consume it via MediatR. The official clients in this repo are Avalonia-based (RealmUnbound.Client, RealmForge), but nothing in the engine assumes a particular UI layer.
+**Engine Agnosticism**: The engine is UI-agnostic by design. Any .NET application can consume it via MediatR. The official clients in this repo are Avalonia-based (Veldrath.Client, RealmForge), but nothing in the engine assumes a particular UI layer.
 
 ### Integration Pattern
 
@@ -77,9 +77,9 @@ var result = await mediator.Send(new SomeGameCommand { ... });
 | Bogus | 35.6.5 | Procedural content generation |
 | Polly | 8.6.5 | Resilience patterns |
 | Humanizer | 3.0.1 | Natural language formatting |
-| Avalonia | 11.2.3 | UI framework (RealmUnbound.Client, RealmForge) |
+| Avalonia | 11.2.3 | UI framework (Veldrath.Client, RealmForge) |
 | ReactiveUI | 20.1.1 | MVVM for Avalonia projects |
-| ASP.NET Core + SignalR | .NET 10 | RealmUnbound.Server |
+| ASP.NET Core + SignalR | .NET 10 | Veldrath.Server |
 | xUnit + FluentAssertions | 2.9.3 + 8.8.0 | Testing |
 | Avalonia.Headless.XUnit | 11.2.3 | Headless UI testing |
 ## XML Documentation (CS1591) — Hard Rule
@@ -130,9 +130,9 @@ Constructors require at minimum a `<summary>` line: `/// <summary>Initializes a 
 - Test files mirror source structure: `RealmEngine.Core/Features/Combat/` → `RealmEngine.Core.Tests/Features/Combat/`
 - Use `[Fact]` / `[Theory]` with FluentAssertions; standard `Arrange / Act / Assert` layout
 - Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking frameworks; `Moq` and `NSubstitute` are available when stubs aren't practical
-- EF Core `InMemory` provider is the default for most data tests; SQLite is used for `RealmUnbound.Server.Tests` integration tests where SQL semantics matter
+- EF Core `InMemory` provider is the default for most data tests; SQLite is used for `Veldrath.Server.Tests` integration tests where SQL semantics matter
 - Avalonia headless tests use `[AvaloniaFact]` from `Avalonia.Headless.XUnit`; add `[Trait("Category", "UI")]` only when a real display is required
-- Apply `[ExcludeFromCodeCoverage]` to: entry points (`Program`), app bootstrappers (`App`), compiled XAML resources, thin infrastructure wrappers (e.g. `HubConnectionFactory`, `HubConnectionWrapper` in RealmUnbound.Client)
+- Apply `[ExcludeFromCodeCoverage]` to: entry points (`Program`), app bootstrappers (`App`), compiled XAML resources, thin infrastructure wrappers (e.g. `HubConnectionFactory`, `HubConnectionWrapper` in Veldrath.Client)
 - Every test project's `Properties/AssemblyInfo.cs` has `[assembly: ExcludeFromCodeCoverage]`
 
 ## How to Build and Test
@@ -142,8 +142,8 @@ dotnet build Realm.Full.slnx              # Full build
 dotnet test Realm.Full.slnx               # All 8,500+ tests
 dotnet run --project RealmForge           # Launch the DB content editor
 dotnet run --project RealmFoundry         # Launch the community content portal
-dotnet run --project RealmUnbound.Server  # Start the game server
-dotnet run --project RealmUnbound.Client  # Start the game client
+dotnet run --project Veldrath.Server  # Start the game server
+dotnet run --project Veldrath.Client  # Start the game client
 ```
 
 Use `Ctrl+Shift+B` in VS Code to trigger the default build task, or `F5` to debug.
@@ -153,10 +153,10 @@ Use `Ctrl+Shift+B` in VS Code to trigger the default build task, or `F5` to debu
 | Workflow | Component | Coverage flag |
 |---|---|---|
 | `ci-engine.yml` | Core + Shared + Data | `engine` |
-| `ci-client.yml` | RealmUnbound.Client | `client` |
-| `ci-server.yml` | RealmUnbound.Server | `server` |
+| `ci-client.yml` | Veldrath.Client | `client` |
+| `ci-server.yml` | Veldrath.Server | `server` |
 | `ci-tooling.yml` | RealmForge | `forge` |
-| `ci-discord.yml` | RealmUnbound.Discord | `discord` |
+| `ci-discord.yml` | Veldrath.Discord | `discord` |
 
 Coverage is uploaded to Codecov with per-component flags. Exclusions are configured in `coverage.runsettings`.
 

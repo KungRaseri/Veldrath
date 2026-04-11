@@ -1,7 +1,7 @@
-using System.Web;
-using RealmUnbound.Server.Features.Auth;
+﻿using System.Web;
+using Veldrath.Server.Features.Auth;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Minimal API endpoints for the OAuth provider-link confirmation flow.

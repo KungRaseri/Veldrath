@@ -1,12 +1,12 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using RealmUnbound.Contracts.Account;
-using RealmUnbound.Server.Data;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Contracts.Account;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Account;
+namespace Veldrath.Server.Features.Account;
 
 /// <summary>
 /// Handles self-service account management: profile updates, password/username changes,

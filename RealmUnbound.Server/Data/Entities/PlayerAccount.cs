@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 
-namespace RealmUnbound.Server.Data.Entities;
+namespace Veldrath.Server.Data.Entities;
 
 /// <summary>
 /// Extends ASP.NET Core Identity's <see cref="IdentityUser{TKey}"/> with game-specific fields.

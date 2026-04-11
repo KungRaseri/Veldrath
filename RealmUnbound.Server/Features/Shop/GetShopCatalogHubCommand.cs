@@ -1,8 +1,8 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.ItemCatalog.Queries;
 
-namespace RealmUnbound.Server.Features.Shop;
+namespace Veldrath.Server.Features.Shop;
 
 /// <summary>Represents a single item available for purchase in a zone shop.</summary>
 /// <param name="ItemRef">The item slug used as an inventory reference.</param>

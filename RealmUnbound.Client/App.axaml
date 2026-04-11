@@ -1,8 +1,8 @@
-<Application xmlns="https://github.com/avaloniaui"
+﻿<Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="using:RealmUnbound.Client"
+             xmlns:local="using:Veldrath.Client"
              xmlns:fac="using:FluentAvalonia.Styling"
-             x:Class="RealmUnbound.Client.App"
+             x:Class="Veldrath.Client.App"
              RequestedThemeVariant="Dark">
 
     <Application.DataTemplates>
@@ -11,7 +11,7 @@
 
     <Application.Styles>
         <fac:FluentAvaloniaTheme />
-        <StyleInclude Source="avares://RealmUnbound.Client/Assets/Themes/GameTheme.axaml" />
+        <StyleInclude Source="avares://Veldrath.Client/Assets/Themes/GameTheme.axaml" />
     </Application.Styles>
 
 </Application>

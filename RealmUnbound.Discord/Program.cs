@@ -1,12 +1,12 @@
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
 using RealmEngine.Data;
 using RealmEngine.Core;
-using RealmUnbound.Discord;
-using RealmUnbound.Discord.Services;
-using RealmUnbound.Discord.Settings;
+using Veldrath.Discord;
+using Veldrath.Discord.Services;
+using Veldrath.Discord.Settings;
 using Serilog;
 using Serilog.Events;
 
@@ -14,17 +14,17 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
-    .Enrich.WithProperty("Application", "RealmUnbound.Discord")
+    .Enrich.WithProperty("Application", "Veldrath.Discord")
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
     .WriteTo.File(
-        "logs/realmunbound-discord-.txt",
+        "logs/veldrath-discord-.txt",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 7)
     .CreateLogger();
 
 try
 {
-    Log.Information("RealmUnbound.Discord starting...");
+    Log.Information("Veldrath.Discord starting...");
 
     var builder = Host.CreateApplicationBuilder(args);
 
@@ -67,7 +67,7 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "RealmUnbound.Discord terminated unexpectedly.");
+    Log.Fatal(ex, "Veldrath.Discord terminated unexpectedly.");
 }
 finally
 {

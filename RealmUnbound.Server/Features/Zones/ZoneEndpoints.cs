@@ -1,10 +1,10 @@
-using RealmEngine.Shared.Abstractions;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Zones;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
+﻿using RealmEngine.Shared.Abstractions;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Zones;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Zones;
+namespace Veldrath.Server.Features.Zones;
 
 // Endpoint map
 /// <summary>Minimal-API endpoint registrations for zone, region, and world catalog queries.</summary>
@@ -95,7 +95,7 @@ public static class ZoneEndpoints
     {
         var group = app.MapGroup("/api/worlds").WithTags("worlds");
 
-        // Returns all worlds (currently only Draveth).
+        // Returns all worlds (currently only Veldrath).
         group.MapGet("/", async (IWorldRepository worlds) =>
             Results.Ok((await worlds.GetAllAsync()).Select(w => new WorldDto(w.Id, w.Name, w.Description, w.Era))));
 

@@ -1,15 +1,15 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
-using RealmUnbound.Assets;
-using RealmUnbound.Assets.Manifest;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Contracts.Characters;
-using RealmUnbound.Contracts.Tilemap;
+using Veldrath.Assets;
+using Veldrath.Assets.Manifest;
+using Veldrath.Client.Services;
+using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Tilemap;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 public class CharacterSelectViewModel : ViewModelBase
 {

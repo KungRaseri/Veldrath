@@ -1,7 +1,7 @@
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Tilemap;
+﻿using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Tilemap;
 
-namespace RealmUnbound.Client.Tests.ViewModels;
+namespace Veldrath.Client.Tests.ViewModels;
 
 /// <summary>Unit tests for <see cref="TilemapViewModel"/>.</summary>
 public class TilemapViewModelTests : TestBase

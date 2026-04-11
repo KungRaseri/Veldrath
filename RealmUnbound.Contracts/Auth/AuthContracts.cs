@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Auth;
+﻿namespace Veldrath.Contracts.Auth;
 
 public record RegisterRequest(string Email, string Username, string Password);
 public record LoginRequest(string Email, string Password);

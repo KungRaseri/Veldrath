@@ -1,21 +1,21 @@
-<Solution>
-  <Project Path="RealmUnbound.Assets/RealmUnbound.Assets.csproj" />
-  <Project Path="RealmUnbound.Assets.Tests/RealmUnbound.Assets.Tests.csproj" />
-  <Project Path="RealmUnbound.Contracts/RealmUnbound.Contracts.csproj" />
+﻿<Solution>
+  <Project Path="Veldrath.Assets/Veldrath.Assets.csproj" />
+  <Project Path="Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj" />
+  <Project Path="Veldrath.Contracts/Veldrath.Contracts.csproj" />
   <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />
   <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
   <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
   <Project Path="RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj" />
   <Project Path="RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj" />
   <Project Path="RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj" />
-  <Project Path="RealmUnbound.Server/RealmUnbound.Server.csproj" />
-  <Project Path="RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj" />
-  <Project Path="RealmUnbound.Client/RealmUnbound.Client.csproj" />
-  <Project Path="RealmUnbound.Client.Tests/RealmUnbound.Client.Tests.csproj" />
+  <Project Path="Veldrath.Server/Veldrath.Server.csproj" />
+  <Project Path="Veldrath.Server.Tests/Veldrath.Server.Tests.csproj" />
+  <Project Path="Veldrath.Client/Veldrath.Client.csproj" />
+  <Project Path="Veldrath.Client.Tests/Veldrath.Client.Tests.csproj" />
   <Project Path="RealmForge/RealmForge.csproj" />
   <Project Path="RealmForge.Tests/RealmForge.Tests.csproj" />
-  <Project Path="RealmUnbound.Discord/RealmUnbound.Discord.csproj" />
-  <Project Path="RealmUnbound.Discord.Tests/RealmUnbound.Discord.Tests.csproj" />
+  <Project Path="Veldrath.Discord/Veldrath.Discord.csproj" />
+  <Project Path="Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj" />
   <Project Path="RealmFoundry/RealmFoundry.csproj" />
   <Project Path="RealmFoundry.Tests/RealmFoundry.Tests.csproj" />
 </Solution>

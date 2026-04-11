@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Account;
+﻿namespace Veldrath.Contracts.Account;
 
 // ── Self-Service Profile DTOs ─────────────────────────────────────────────────
 

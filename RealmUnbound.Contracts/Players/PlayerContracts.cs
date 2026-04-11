@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Players;
+﻿namespace Veldrath.Contracts.Players;
 
 /// <summary>Public profile of a player account, summarising their highest-level active character.</summary>
 /// <param name="AccountId">Unique identifier of the player account.</param>

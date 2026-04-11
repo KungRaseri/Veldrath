@@ -1,5 +1,5 @@
-using RealmFoundry.Tests.Infrastructure;
-using RealmUnbound.Contracts.Auth;
+﻿using RealmFoundry.Tests.Infrastructure;
+using Veldrath.Contracts.Auth;
 
 namespace RealmFoundry.Tests.Services;
 

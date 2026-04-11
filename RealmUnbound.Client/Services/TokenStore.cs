@@ -1,6 +1,6 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Singleton holding the current authenticated user's tokens.

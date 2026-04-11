@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-namespace RealmUnbound.Assets;
+namespace Veldrath.Assets;
 
 /// <summary>
 /// File-system backed implementation of <see cref="IAssetStore"/> that reads assets from the
