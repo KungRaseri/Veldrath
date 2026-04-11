@@ -1,0 +1,52 @@
+# Stalwart v0.15.5 — minimal dev configuration for RealmEngine docker-compose.
+#
+# Purpose: local email catcher for Veldrath.Server (OAuth link-confirmation emails).
+# - SMTP plain relay on port 25 (no TLS, no auth — internal Docker network only).
+# - Web admin UI on port 8082 (mapped to host port 8082 in docker-compose).
+# - RocksDB storage under /opt/stalwart/data (persisted in the stalwart_data volume).
+# - relay = true — accept mail for any recipient/domain without a configured directory.
+# - Outbound delivery is disabled by default in Stalwart v0.15 (safe defaults);
+#   emails are received and stored but not forwarded to the internet.
+#
+# Admin credentials: user=admin, password=value of ADMIN_SECRET env var.
+# Web admin: http://localhost:8082  (login: admin / <STALWART_ADMIN_SECRET from .env>)
+
+[server.listener."smtp"]
+bind      = ["[::]:25"]
+protocol  = "smtp"
+
+[server.listener."management"]
+bind      = ["[::]:8082"]
+protocol  = "http"
+
+[storage]
+data      = "rocksdb"
+fts       = "rocksdb"
+blob      = "rocksdb"
+lookup    = "rocksdb"
+directory = "internal"
+
+[store."rocksdb"]
+type        = "rocksdb"
+path        = "%{env:STALWART_PATH}%/data"
+compression = "lz4"
+
+[directory."internal"]
+type  = "internal"
+store = "rocksdb"
+
+[tracer."stdout"]
+type   = "stdout"
+level  = "info"
+ansi   = false
+enable = true
+
+[authentication.fallback-admin]
+user   = "admin"
+secret = "%{env:ADMIN_SECRET}%"
+
+# Accept mail for any recipient — required because there is no local directory
+# configured with validated accounts. Safe here: port 25 is only reachable from
+# within the Docker network (not exposed to the internet).
+[session.rcpt]
+relay = true

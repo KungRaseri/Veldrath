@@ -41,6 +41,39 @@ public class RealmFoundryApiClient(HttpClient http)
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
     }
 
+    /// <summary>Requests a password-reset email for the given address. Always returns successfully to prevent account enumeration.</summary>
+    public async Task ForgotPasswordAsync(string email, CancellationToken ct = default) =>
+        await http.PostAsJsonAsync("/api/auth/forgot-password", new ForgotPasswordRequest(email), ct);
+
+    /// <summary>Completes a password reset using a token received by email.</summary>
+    public async Task<(bool Ok, string? Error)> ResetPasswordAsync(
+        string email, string token, string newPassword, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync(
+            "/api/auth/reset-password",
+            new ResetPasswordRequest(email, token, newPassword), ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Confirms an email address using a userId + token from the confirmation link.</summary>
+    public async Task<(bool Ok, string? Error)> ConfirmEmailAsync(
+        string userId, string token, CancellationToken ct = default)
+    {
+        var url  = $"/api/auth/confirm-email?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}";
+        var resp = await http.GetAsync(url, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Requests the server to resend the email-confirmation message for the authenticated account.</summary>
+    public async Task<(bool Ok, string? Error)> ResendEmailConfirmationAsync(CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync("/api/auth/resend-confirmation", null, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
     // Submissions
     public async Task<PagedResult<FoundrySubmissionSummaryDto>> GetSubmissionsAsync(
         string? status = null, string? contentType = null,

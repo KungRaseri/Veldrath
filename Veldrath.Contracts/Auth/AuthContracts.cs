@@ -5,6 +5,21 @@ public record LoginRequest(string Email, string Password);
 public record RefreshRequest(string RefreshToken);
 public record LogoutRequest(string RefreshToken);
 
+/// <summary>Requests a password-reset email for the given address.</summary>
+/// <param name="Email">The email address associated with the account.</param>
+public record ForgotPasswordRequest(string Email);
+
+/// <summary>Completes a password reset using the token sent by email.</summary>
+/// <param name="Email">The email address identifying the account.</param>
+/// <param name="Token">The ASP.NET Identity password-reset token from the email link.</param>
+/// <param name="NewPassword">The new password to set on the account.</param>
+public record ResetPasswordRequest(string Email, string Token, string NewPassword);
+
+/// <summary>Returned by the server when a logged-in client requests an exchange code for SSO handoff.</summary>
+/// <param name="Code">Opaque 64-character hex code valid for 60 seconds.</param>
+/// <param name="AccountId">Account identifier of the authenticated user the code was issued for.</param>
+public record CreateExchangeCodeResponse(string Code, Guid AccountId);
+
 /// <summary>
 /// Sent by the Foundry callback page to redeem a single-use exchange code for a full
 /// <see cref="AuthResponse"/>. The code is valid for 60 seconds and can only be used once.

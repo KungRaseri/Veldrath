@@ -151,6 +151,15 @@
                     Height="48"
                     FontSize="16" />
 
+            <Button Content="Manage Account"
+                    Classes="ghost"
+                    Command="{Binding ManageAccountCommand}"
+                    IsVisible="{Binding IsLoggedIn}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Height="42"
+                    FontSize="14" />
+
             <!-- Always visible -->
             <Button Content="Settings"
                     Classes="ghost"

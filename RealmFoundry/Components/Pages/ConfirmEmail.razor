@@ -1,0 +1,55 @@
+@page "/confirm-email"
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Confirm Email — RealmFoundry</PageTitle>
+
+@if (_loading)
+{
+    <p>Confirming your email address…</p>
+}
+else if (_done)
+{
+    <div class="result">
+        <p class="success">Your email has been confirmed! <a href="/">Go to RealmFoundry</a></p>
+    </div>
+}
+else
+{
+    <div class="result">
+        <p class="error">@(_error ?? "Confirmation failed. The link may have expired.")</p>
+        <p><a href="/login">Back to sign in</a></p>
+    </div>
+}
+
+<style>
+    .result { max-width: 420px; margin: 4rem auto; padding: 2rem;
+              border: 1px solid var(--border, #333); border-radius: 8px; }
+    .success { color: #4caf50; }
+    .error { color: #f44336; }
+</style>
+
+@code {
+    [SupplyParameterFromQuery(Name = "userId")] private string? UserId { get; set; }
+    [SupplyParameterFromQuery(Name = "token")]  private string? Token  { get; set; }
+
+    private bool    _loading = true;
+    private bool    _done;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(Token))
+        {
+            _error   = "Invalid confirmation link — userId or token is missing.";
+            _loading = false;
+            return;
+        }
+
+        var (ok, error) = await Api.ConfirmEmailAsync(UserId, Token);
+        _done    = ok;
+        _error   = error;
+        _loading = false;
+    }
+}

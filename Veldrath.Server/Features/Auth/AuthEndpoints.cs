@@ -1,15 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Veldrath.Contracts.Auth;
 
 namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Minimal API endpoints for authentication.
-/// POST /api/auth/register  — create account, returns token pair
-/// POST /api/auth/login     — verify credentials, returns token pair
-/// POST /api/auth/refresh   — rotate refresh token, returns new token pair
-/// POST /api/auth/logout    — revoke refresh token [Authorize]
-/// POST /api/auth/exchange  — redeem a single-use OAuth exchange code for a token pair
+/// POST /api/auth/register              — create account, returns token pair
+/// POST /api/auth/login                 — verify credentials, returns token pair
+/// POST /api/auth/refresh               — rotate refresh token, returns new token pair
+/// POST /api/auth/logout                — revoke refresh token [Authorize]
+/// POST /api/auth/exchange              — redeem a single-use OAuth exchange code for a token pair
+/// GET  /api/auth/create-exchange-code  — issue a short-lived SSO handoff code [Authorize]
 /// </summary>
 public static class AuthEndpoints
 {
@@ -17,11 +19,12 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/api/auth").WithTags("Auth");
 
-        group.MapPost("/register", RegisterAsync).RequireRateLimiting("auth-attempts");
-        group.MapPost("/login",    LoginAsync)   .RequireRateLimiting("auth-attempts");
-        group.MapPost("/refresh",  RefreshAsync) .RequireRateLimiting("auth-attempts");
-        group.MapPost("/logout",   LogoutAsync)  .RequireAuthorization();
-        group.MapPost("/exchange", ExchangeAsync).RequireRateLimiting("auth-attempts");
+        group.MapPost("/register",              RegisterAsync).RequireRateLimiting("auth-attempts");
+        group.MapPost("/login",                 LoginAsync)   .RequireRateLimiting("auth-attempts");
+        group.MapPost("/refresh",               RefreshAsync) .RequireRateLimiting("auth-attempts");
+        group.MapPost("/logout",                LogoutAsync)  .RequireAuthorization();
+        group.MapPost("/exchange",              ExchangeAsync).RequireRateLimiting("auth-attempts");
+        group.MapGet ("/create-exchange-code",  CreateExchangeCodeAsync).RequireAuthorization();
 
         return app;
     }
@@ -84,5 +87,29 @@ public static class AuthEndpoints
             return Results.BadRequest(new { error = "Invalid or expired exchange code." });
 
         return Results.Ok(response);
+    }
+
+    private static async Task<IResult> CreateExchangeCodeAsync(
+        ClaimsPrincipal user,
+        AuthService authService,
+        AuthExchangeCodeService exchangeService,
+        HttpContext ctx,
+        CancellationToken ct)
+    {
+        var idStr = user.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                  ?? user.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+        if (!Guid.TryParse(idStr, out var accountId))
+            return Results.Unauthorized();
+
+        var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        // Re-issue a fresh auth session so the exchange code carries a valid, non-expired token pair.
+        var userEntity = await authService.FindUserByIdAsync(accountId);
+        if (userEntity is null) return Results.Unauthorized();
+
+        var authResponse = await authService.CreateSessionAsync(userEntity, ip, ct);
+        var code = exchangeService.CreateCode(authResponse, accountId);
+
+        return Results.Ok(new CreateExchangeCodeResponse(code, accountId));
     }
 }

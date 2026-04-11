@@ -17,6 +17,7 @@ public record LinkedProviderDto(string ProviderName, string ProviderKey, DateTim
 /// <param name="HasPassword">
 /// Whether a password is set. <c>false</c> for OAuth-only accounts that have never set a password.
 /// </param>
+/// <param name="EmailConfirmed">Whether the account's email address has been confirmed.</param>
 /// <param name="CreatedAt">Account creation timestamp.</param>
 /// <param name="LastSeenAt">Most recent activity timestamp, or <c>null</c> if the account was never seen.</param>
 /// <param name="Roles">All role names currently assigned to this account.</param>
@@ -30,6 +31,7 @@ public record AccountProfileDto(
     string? Bio,
     string? Email,
     bool HasPassword,
+    bool EmailConfirmed,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastSeenAt,
     IReadOnlyList<string> Roles,

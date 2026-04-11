@@ -9,17 +9,20 @@ namespace Veldrath.Client;
 public class ClientSettings : ReactiveObject
 {
     private string _serverBaseUrl;
+    private string _foundryBaseUrl;
     private int _masterVolume = 100;
     private int _musicVolume  = 80;
     private int _sfxVolume    = 100;
     private bool _muted;
     private bool _fullScreen;
 
-    /// <summary>Initializes a new instance of <see cref="ClientSettings"/> with the given server URL.</summary>
+    /// <summary>Initializes a new instance of <see cref="ClientSettings"/> with the given server and Foundry URLs.</summary>
     /// <param name="serverBaseUrl">Initial base URL of the game server, read from <c>appsettings.json</c>.</param>
-    public ClientSettings(string serverBaseUrl)
+    /// <param name="foundryBaseUrl">Initial base URL of the Foundry web portal, read from <c>appsettings.json</c>.</param>
+    public ClientSettings(string serverBaseUrl, string foundryBaseUrl = "")
     {
-        _serverBaseUrl = serverBaseUrl;
+        _serverBaseUrl  = serverBaseUrl;
+        _foundryBaseUrl = foundryBaseUrl;
     }
 
     /// <summary>Gets or sets the base URL of the game server (e.g. <c>http://localhost:8080</c>).</summary>
@@ -27,6 +30,13 @@ public class ClientSettings : ReactiveObject
     {
         get => _serverBaseUrl;
         set => this.RaiseAndSetIfChanged(ref _serverBaseUrl, value);
+    }
+
+    /// <summary>Gets or sets the base URL of the Foundry community portal (e.g. <c>http://localhost:8081</c>).</summary>
+    public string FoundryBaseUrl
+    {
+        get => _foundryBaseUrl;
+        set => this.RaiseAndSetIfChanged(ref _foundryBaseUrl, value);
     }
 
     // Audio

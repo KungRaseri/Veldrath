@@ -31,9 +31,12 @@ else
     // Both parameters are required; the code expires in 60 seconds and is single-use.
     // When the server sends a confirmation email instead of issuing tokens it redirects
     // to /auth/callback?pending_link=1 — no code redemption is attempted in that case.
+    // An optional returnUrl query parameter (must start with "/") controls post-login navigation
+    // within Foundry; defaults to "/" when absent or invalid.
     [SupplyParameterFromQuery] private string? Code { get; set; }
     [SupplyParameterFromQuery] private Guid?   Aid  { get; set; }
     [SupplyParameterFromQuery(Name = "pending_link")] private string? PendingLinkParam { get; set; }
+    [SupplyParameterFromQuery(Name = "returnUrl")]    private string? ReturnUrl        { get; set; }
 
     private string? _error;
     private bool    _pendingLink;
@@ -61,7 +64,12 @@ else
         }
 
         await AuthState.SetTokensAsync(response);
-        Nav.NavigateTo("/", forceLoad: false);
+
+        // Only allow relative paths to prevent open-redirect via the returnUrl parameter.
+        var destination = !string.IsNullOrWhiteSpace(ReturnUrl) && ReturnUrl.StartsWith('/')
+            ? ReturnUrl
+            : "/";
+        Nav.NavigateTo(destination, forceLoad: false);
     }
 }
 
