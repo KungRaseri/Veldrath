@@ -23,6 +23,24 @@ else
 {
     <h1>@_profile.Username</h1>
 
+    @* ── Email confirmation banner ─────────────────────────────────────────── *@
+    @if (!_profile.EmailConfirmed && _profile.Email is not null)
+    {
+        <div class="confirm-banner">
+            <span>Your email address has not been confirmed yet.</span>
+            @if (_resendSent)
+            {
+                <span class="resend-ok">Check your inbox.</span>
+            }
+            else
+            {
+                <button class="btn btn-sm" @onclick="ResendConfirmationAsync" disabled="@_resending">
+                    @(_resending ? "Sending…" : "Resend confirmation")
+                </button>
+            }
+        </div>
+    }
+
     @* ── Section: Account Info ─────────────────────────────────────────────── *@
     <section class="profile-section">
         <h2>Account Info</h2>
@@ -240,6 +258,10 @@ else
     .error { color: #f44336; font-size: .9rem; margin-top: .5rem; }
     .btn-danger { background: #7f1d1d; border-color: #991b1b; }
     .btn-danger:hover { background: #991b1b; }
+    .confirm-banner { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        padding: .75rem 1rem; background: #2d2000; border: 1px solid #f59e0b;
+        border-radius: 6px; margin-bottom: 1.25rem; color: #fbbf24; font-size: .9rem; }
+    .resend-ok { color: #4caf50; font-size: .9rem; }
 </style>
 
 @code {
@@ -269,6 +291,10 @@ else
 
     // Provider management
     private string? _providerError;
+
+    // Email confirmation
+    private bool    _resending;
+    private bool    _resendSent;
 
     // Session management
     private string? _sessionError;
@@ -345,6 +371,14 @@ else
             _profile = await Api.GetAccountProfileAsync();
         else
             _providerError = error ?? "Failed to unlink provider.";
+    }
+
+    private async Task ResendConfirmationAsync()
+    {
+        _resending = true;
+        await Api.ResendEmailConfirmationAsync();
+        _resending  = false;
+        _resendSent = true;
     }
 
     private async Task RevokeSessionAsync(Guid sessionId)

@@ -58,6 +58,7 @@ public class AccountService(
             user.Bio,
             user.Email,
             hasPassword,
+            user.EmailConfirmed,
             user.CreatedAt,
             user.LastSeenAt,
             roles,

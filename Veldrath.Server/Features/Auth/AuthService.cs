@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Veldrath.Contracts.Auth;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Infrastructure.Email;
 
 namespace Veldrath.Server.Features.Auth;
 
@@ -25,6 +26,7 @@ public class AuthService(
     RoleManager<IdentityRole<Guid>> roleManager,
     IRefreshTokenRepository refreshTokenRepo,
     AccountLinkService accountLinkService,
+    IEmailSender emailSender,
     IConfiguration config)
 {
     public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(
@@ -41,6 +43,8 @@ public class AuthService(
         var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             return (null, string.Join("; ", result.Errors.Select(e => e.Description)));
+
+        await SendEmailConfirmationAsync(user, ct);
 
         return (await IssueTokenPairAsync(user, clientIp, ct), null);
     }
@@ -196,6 +200,108 @@ public class AuthService(
     public Task<AuthResponse> CreateSessionAsync(
         PlayerAccount user, string clientIp, CancellationToken ct = default) =>
         IssueTokenPairAsync(user, clientIp, ct);
+
+    /// <summary>Finds a <see cref="PlayerAccount"/> by its primary key, or returns <see langword="null"/> if not found.</summary>
+    public Task<PlayerAccount?> FindUserByIdAsync(Guid accountId) =>
+        userManager.FindByIdAsync(accountId.ToString());
+
+    // ── Password Reset ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sends a password-reset email if an account with the given <paramref name="email"/> exists.
+    /// Always returns without disclosing whether the address is registered.
+    /// </summary>
+    public async Task SendPasswordResetEmailAsync(string email, CancellationToken ct = default)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user?.Email is null) return; // no info leak
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var encodedToken = Uri.EscapeDataString(token);
+        var foundryBase  = (config["Foundry:BaseUrl"] ?? string.Empty).TrimEnd('/');
+        var resetLink    = $"{foundryBase}/reset-password?email={Uri.EscapeDataString(user.Email)}&token={encodedToken}";
+
+        var body = $"""
+            <p>Hi {user.UserName},</p>
+            <p>You (or someone else) requested a password reset for your Veldrath account.</p>
+            <p><a href="{resetLink}">Click here to reset your password</a></p>
+            <p>This link is valid for a limited time. If you did not request this, you can safely ignore this email.</p>
+            """;
+
+        await emailSender.SendAsync(user.Email, "Reset your Veldrath password", body, ct);
+    }
+
+    /// <summary>Resets the password for the account identified by <paramref name="request"/>.</summary>
+    public async Task<(bool Ok, string? Error)> ResetPasswordAsync(
+        ResetPasswordRequest request, CancellationToken ct = default)
+    {
+        _ = ct;
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return (false, "Invalid or expired token.");
+
+        var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        return result.Succeeded
+            ? (true, null)
+            : (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+    }
+
+    // ── Email Confirmation ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sends an email-confirmation message to <paramref name="user"/>.
+    /// Safe to call on accounts that have no email address — silently returns without sending.
+    /// </summary>
+    public async Task SendEmailConfirmationAsync(PlayerAccount user, CancellationToken ct = default)
+    {
+        if (user.Email is null) return;
+
+        var token        = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        var encodedToken = Uri.EscapeDataString(token);
+        var foundryBase  = (config["Foundry:BaseUrl"] ?? string.Empty).TrimEnd('/');
+        var confirmLink  = $"{foundryBase}/confirm-email?userId={user.Id}&token={encodedToken}";
+
+        var body = $"""
+            <p>Hi {user.UserName},</p>
+            <p>Please confirm your email address to complete your Veldrath account setup.</p>
+            <p><a href="{confirmLink}">Confirm my email address</a></p>
+            <p>If you did not create a Veldrath account, you can safely ignore this email.</p>
+            """;
+
+        await emailSender.SendAsync(user.Email, "Confirm your Veldrath email address", body, ct);
+    }
+
+    /// <summary>Confirms the email address of the account identified by <paramref name="userId"/>.</summary>
+    public async Task<(bool Ok, string? Error)> ConfirmEmailAsync(
+        string userId, string token, CancellationToken ct = default)
+    {
+        _ = ct;
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null)
+            return (false, "Invalid confirmation link.");
+
+        var result = await userManager.ConfirmEmailAsync(user, token);
+        return result.Succeeded
+            ? (true, null)
+            : (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+    }
+
+    /// <summary>Re-sends the email-confirmation message to the account identified by <paramref name="principal"/>.</summary>
+    public async Task<(bool Ok, string? Error)> ResendEmailConfirmationAsync(
+        System.Security.Claims.ClaimsPrincipal principal, CancellationToken ct = default)
+    {
+        var id = principal.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                ?? principal.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+        if (id is null) return (false, "Account not found.");
+
+        var user = await userManager.FindByIdAsync(id);
+        if (user is null) return (false, "Account not found.");
+
+        if (user.EmailConfirmed) return (false, "Email already confirmed.");
+
+        await SendEmailConfirmationAsync(user, ct);
+        return (true, null);
+    }
 
     // Private helpers
 

@@ -40,9 +40,10 @@ public partial class App : Application
             .Build();
 
         var serverBaseUrl = configuration["ServerBaseUrl"] ?? "http://localhost:8080/";
+        var foundryBaseUrl = configuration["FoundryBaseUrl"] ?? "http://localhost:8081/";
 
         var services = new ServiceCollection();
-        ConfigureServices(services, configuration, serverBaseUrl);
+        ConfigureServices(services, configuration, serverBaseUrl, foundryBaseUrl);
         Services = services.BuildServiceProvider();
 
         // Restore persisted settings so player preferences survive restarts.
@@ -115,7 +116,7 @@ public partial class App : Application
         }
     }
 
-    private static void ConfigureServices(IServiceCollection services, IConfiguration configuration, string serverBaseUrl)
+    private static void ConfigureServices(IServiceCollection services, IConfiguration configuration, string serverBaseUrl, string foundryBaseUrl)
     {
         // Logging
         services.AddLogging(b => b.AddSerilog(dispose: true));
@@ -153,7 +154,7 @@ public partial class App : Application
         services.AddSingleton<IServerStatusService, ServerStatusService>();
         services.AddSingleton<ISessionAlertService, SessionAlertService>();
         services.AddSingleton<ContentCache>();
-        services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')));
+        services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/'), foundryBaseUrl.TrimEnd('/')));
 
         // Game asset store — warms the IMemoryCache during the splash screen
         services.AddVeldrathAssets();

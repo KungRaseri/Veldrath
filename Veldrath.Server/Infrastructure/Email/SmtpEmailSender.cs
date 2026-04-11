@@ -11,12 +11,12 @@ namespace Veldrath.Server.Infrastructure.Email;
 /// <list type="bullet">
 ///   <item><c>Email:SmtpHost</c> — SMTP server hostname (required; if empty the message is dropped).</item>
 ///   <item><c>Email:SmtpPort</c> — SMTP port, default 587.</item>
+///   <item><c>Email:EnableTls</c> — Whether to request STARTTLS/SSL, default <c>true</c>. Set to <c>false</c> for plain-text internal relay (e.g. a local Docker mail catcher).</item>
 ///   <item><c>Email:User</c> — SMTP username (optional for relay-only servers).</item>
 ///   <item><c>Email:Password</c> — SMTP password (optional).</item>
 ///   <item><c>Email:SenderAddress</c> — From address, default <c>noreply@veldrath.com</c>.</item>
 ///   <item><c>Email:SenderName</c> — From display name, default <c>Veldrath</c>.</item>
 /// </list>
-/// STARTTLS (<c>EnableSsl = true</c>) is always requested.
 /// </summary>
 public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
@@ -31,12 +31,13 @@ public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> log
         }
 
         var port           = int.TryParse(config["Email:SmtpPort"], out var p) ? p : 587;
+        var enableTls      = !string.Equals(config["Email:EnableTls"], "false", StringComparison.OrdinalIgnoreCase);
         var user           = config["Email:User"];
         var password       = config["Email:Password"];
         var senderAddress  = config["Email:SenderAddress"] ?? "noreply@veldrath.com";
         var senderName     = config["Email:SenderName"]    ?? "Veldrath";
 
-        using var client = new SmtpClient(host, port) { EnableSsl = true };
+        using var client = new SmtpClient(host, port) { EnableSsl = enableTls };
         if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(password))
             client.Credentials = new NetworkCredential(user, password);
 

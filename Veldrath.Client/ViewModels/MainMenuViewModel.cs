@@ -1,4 +1,5 @@
 ﻿using ReactiveUI;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using Veldrath.Assets;
@@ -65,7 +66,8 @@ public class MainMenuViewModel : ViewModelBase
 
     // Authenticated buttons (shown when logged in)
     public ICommand SelectCharacterCommand { get; }
-    public ICommand LogoutCommand { get; }
+    public ICommand LogoutCommand          { get; }
+    public ICommand ManageAccountCommand   { get; }
 
     // Always visible
     public ICommand SettingsCommand { get; }
@@ -158,6 +160,23 @@ public class MainMenuViewModel : ViewModelBase
             await auth.LogoutAsync();
             // IsLoggedIn updates automatically via the WhenAnyValue subscription above
         });
+        ManageAccountCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            var exchangeCode = await auth.CreateExchangeCodeAsync();
+            if (exchangeCode is null) return;
+
+            var foundryBase = (settings?.FoundryBaseUrl ?? "http://localhost:8081").TrimEnd('/');
+            var url = $"{foundryBase}/auth/callback"
+                    + $"?code={Uri.EscapeDataString(exchangeCode.Code)}"
+                    + $"&aid={exchangeCode.AccountId}"
+                    + $"&returnUrl={Uri.EscapeDataString("/profile")}";
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch { }
+        }, canEnterGame);
         SettingsCommand = ReactiveCommand.Create(() => navigation.NavigateTo<SettingsViewModel>());
         ExitCommand     = ReactiveCommand.Create(doExit);
 

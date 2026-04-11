@@ -440,6 +440,8 @@ try
 
     // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
+    app.MapPasswordResetEndpoints();
+    app.MapEmailConfirmationEndpoints();
     app.MapExternalAuthEndpoints();
     app.MapPendingLinkEndpoints();
     app.MapAccountEndpoints();

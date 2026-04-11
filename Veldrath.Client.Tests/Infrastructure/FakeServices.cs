@@ -58,6 +58,9 @@ public class FakeAuthService : IAuthService
         LogoutCallCount++;
         return Task.CompletedTask;
     }
+
+    public Task<CreateExchangeCodeResponse?> CreateExchangeCodeAsync(CancellationToken ct = default)
+        => Task.FromResult<CreateExchangeCodeResponse?>(null);
 }
 
 // Character service stub

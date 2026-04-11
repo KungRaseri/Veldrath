@@ -15,6 +15,7 @@ public interface IAuthService
     Task<(AuthResponse? Response, AppError? Error)> LoginExternalAsync(string provider, CancellationToken ct = default);
     Task<bool> RefreshAsync();
     Task LogoutAsync();
+    Task<CreateExchangeCodeResponse?> CreateExchangeCodeAsync(CancellationToken ct = default);
 }
 
 // Implementation
@@ -210,5 +211,25 @@ public class HttpAuthService(
         persistence.SaveCurrent(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
                                 response.AccessTokenExpiry, response.IsCurator);
         return (response, null);
+    }
+
+    public async Task<CreateExchangeCodeResponse?> CreateExchangeCodeAsync(CancellationToken ct = default)
+    {
+        if (tokens.AccessToken is null) return null;
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/create-exchange-code");
+            request.Headers.Authorization = tokens.BearerHeader();
+            var response = await http.SendAsync(request, ct);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<CreateExchangeCodeResponse>(ct)
+                : null;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Create-exchange-code request failed");
+            return null;
+        }
     }
 }

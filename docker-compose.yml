@@ -3,6 +3,24 @@
 # Only the database connection is overridden here to point at the Postgres container.
 
 services:
+  stalwart:
+    image: stalwartlabs/stalwart:v0.15.5
+    ports:
+      - "8082:8082"   # Web admin UI — http://localhost:8082 (login: admin / STALWART_ADMIN_SECRET)
+      - "5025:25"     # SMTP accessible from the Docker host for ad-hoc testing
+    environment:
+      - STALWART_PATH=/opt/stalwart
+      - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
+    volumes:
+      - stalwart_data:/opt/stalwart
+      - ./config/stalwart:/opt/stalwart/etc:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   postgres:
     image: postgres:17-alpine
     environment:
@@ -40,6 +58,13 @@ services:
       - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
       - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
       - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
+      # Email — relay through the local Stalwart container (plain SMTP, no TLS)
+      - Email__SmtpHost=stalwart
+      - Email__SmtpPort=25
+      - Email__EnableTls=false
+      - Email__SenderAddress=noreply@veldrath.local
+      - Email__SenderName=Veldrath Dev
+      - Foundry__BaseUrl=http://localhost:8081
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -48,6 +73,8 @@ services:
       start_period: 15s
     depends_on:
       postgres:
+        condition: service_healthy
+      stalwart:
         condition: service_healthy
     volumes:
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
@@ -97,3 +124,4 @@ volumes:
   postgres_data:
   dataprotection_keys:
   foundry_dataprotection_keys:
+  stalwart_data:

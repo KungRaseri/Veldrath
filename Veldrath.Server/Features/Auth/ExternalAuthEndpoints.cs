@@ -2,6 +2,7 @@
 using System.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Veldrath.Server.Data.Entities;
 
 namespace Veldrath.Server.Features.Auth;
@@ -44,6 +45,8 @@ public static class ExternalAuthEndpoints
         var authSvc     = ctx.HttpContext.RequestServices.GetRequiredService<AuthService>();
         var exchangeSvc = ctx.HttpContext.RequestServices.GetRequiredService<AuthExchangeCodeService>();
         var userMgr     = ctx.HttpContext.RequestServices.GetRequiredService<UserManager<PlayerAccount>>();
+        var config      = ctx.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var foundryBase = config["Foundry:BaseUrl"];
         var principal   = ctx.Principal!;
         var email       = principal.FindFirstValue(ClaimTypes.Email);
         var displayName = principal.FindFirstValue(ClaimTypes.Name);
@@ -73,7 +76,7 @@ public static class ExternalAuthEndpoints
             string? linkReturnUrl = null;
             ctx.Properties?.Items.TryGetValue("returnUrl", out linkReturnUrl);
             ctx.HandleResponse();
-            ctx.Response.Redirect(linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl)
+            ctx.Response.Redirect(linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase)
                 ? linkReturnUrl + "?linked=1"
                 : "/profile?linked=1");
             return;
@@ -86,14 +89,14 @@ public static class ExternalAuthEndpoints
 
         var result = await authSvc.ExternalLoginOrRegisterAsync(
             ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp,
-            returnUrl is not null && IsAllowedReturnUrl(returnUrl) ? returnUrl : null,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase) ? returnUrl : null,
             serverBaseUrl);
 
         if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
         {
             // A confirmation email has been dispatched; redirect without issuing tokens.
             ctx.HandleResponse();
-            ctx.Response.Redirect(returnUrl is not null && IsAllowedReturnUrl(returnUrl)
+            ctx.Response.Redirect(returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase)
                 ? returnUrl + "?pending_link=1"
                 : "/login?pending_link=1");
             return;
@@ -107,7 +110,7 @@ public static class ExternalAuthEndpoints
         }
 
         // Success — mint a single-use exchange code and redirect.
-        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase))
         {
             var code         = exchangeSvc.CreateCode(result.Response!, result.Response!.AccountId);
             var uriBuilder   = new UriBuilder(returnUrl);
@@ -134,9 +137,11 @@ public static class ExternalAuthEndpoints
         if (!ProviderSchemes.TryGetValue(provider, out var scheme))
             return Results.BadRequest("Unknown OAuth provider.");
 
+        var foundryBase = context.RequestServices.GetRequiredService<IConfiguration>()["Foundry:BaseUrl"];
+
         // returnUrl is the Avalonia client's local HTTP listener address;
         // guard against open-redirect by restricting to localhost only.
-        if (returnUrl is not null && !IsAllowedReturnUrl(returnUrl))
+        if (returnUrl is not null && !IsAllowedReturnUrl(returnUrl, foundryBase))
             return Results.BadRequest("Invalid return URL.");
 
         // After the provider redirects back, ASP.NET's OAuth handler completes the
@@ -161,7 +166,8 @@ public static class ExternalAuthEndpoints
         HttpContext       context,
         SignInManager<PlayerAccount> signInManager,
         AuthService       authService,
-        AuthExchangeCodeService exchangeService)
+        AuthExchangeCodeService exchangeService,
+        IConfiguration    config)
     {
         // SignInManager reads the transient external cookie (IdentityConstants.ExternalScheme)
         // that the OAuth middleware wrote during the callback exchange.
@@ -172,6 +178,7 @@ public static class ExternalAuthEndpoints
         var email       = info.Principal.FindFirstValue(ClaimTypes.Email);
         var displayName = info.Principal.FindFirstValue(ClaimTypes.Name);
         var clientIp    = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var foundryBase = config["Foundry:BaseUrl"];
 
         string? returnUrl = null;
         info.AuthenticationProperties?.Items.TryGetValue("returnUrl", out returnUrl);
@@ -179,7 +186,7 @@ public static class ExternalAuthEndpoints
 
         var result = await authService.ExternalLoginOrRegisterAsync(
             info.LoginProvider, info.ProviderKey, email, displayName, clientIp,
-            returnUrl is not null && IsAllowedReturnUrl(returnUrl) ? returnUrl : null,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase) ? returnUrl : null,
             serverBaseUrl);
 
         if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
@@ -190,7 +197,7 @@ public static class ExternalAuthEndpoints
 
         // If the caller provided a returnUrl (Avalonia desktop auth flow), redirect there
         // with an exchange code so the local HTTP listener can pick it up safely.
-        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase))
         {
             var code    = exchangeService.CreateCode(result.Response!, result.Response!.AccountId);
             var builder = new UriBuilder(returnUrl);
@@ -204,10 +211,30 @@ public static class ExternalAuthEndpoints
         return Results.Ok(result.Response);
     }
 
-    // Only localhost/127.0.0.1 is accepted as a returnUrl to prevent open-redirect attacks.
-    internal static bool IsAllowedReturnUrl(string url) =>
-        Uri.TryCreate(url, UriKind.Absolute, out var uri)
-        && (uri.Host.Equals("localhost",  StringComparison.OrdinalIgnoreCase)
+    // Only localhost/127.0.0.1 and the configured Foundry origin are accepted as a returnUrl to
+    // prevent open-redirect attacks. <paramref name="foundryBaseUrl"/> is optional; when supplied,
+    // the origin of that URL is also permitted (production Foundry deployment).
+    internal static bool IsAllowedReturnUrl(string url, string? foundryBaseUrl = null)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+
+        if (uri.Scheme is not ("http" or "https"))
+            return false;
+
+        // Dev: always allow localhost / 127.0.0.1
+        if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
             || uri.Host == "127.0.0.1")
-        && uri.Scheme is "http" or "https";
+            return true;
+
+        // Production: allow the configured Foundry origin (host + port + scheme must all match)
+        if (foundryBaseUrl is not null
+            && Uri.TryCreate(foundryBaseUrl, UriKind.Absolute, out var foundry)
+            && uri.Scheme.Equals(foundry.Scheme, StringComparison.OrdinalIgnoreCase)
+            && uri.Host.Equals(foundry.Host, StringComparison.OrdinalIgnoreCase)
+            && uri.Port == foundry.Port)
+            return true;
+
+        return false;
+    }
 }
