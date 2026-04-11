@@ -20,45 +20,13 @@ public class AuthRefreshHandlerTests
                         ItExpr.IsAny<CancellationToken>())
                     .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        var js      = new Mock<Microsoft.JSInterop.IJSRuntime>();
-        var storage = new Dictionary<string, string?>();
-
-        if (isLoggedIn)
-        {
-            var expiry = tokenExpiresSoon
-                ? DateTimeOffset.UtcNow.AddSeconds(30)
-                : DateTimeOffset.UtcNow.AddHours(1);
-
-            storage["rf_access"]       = "tok";
-            storage["rf_username"]     = "alice";
-            storage["rf_account_id"]   = Guid.NewGuid().ToString();
-            storage["rf_is_curator"]   = "false";
-            storage["rf_token_expiry"] = expiry.ToString("O");
-            storage["rf_refresh"]      = "refresh-tok";
-        }
-
-        js.Setup(j => j.InvokeAsync<string?>("sessionStorage.getItem", It.IsAny<object[]>()))
-          .Returns<string, object[]>((_, args) =>
-          {
-              storage.TryGetValue((string)args[0], out var v);
-              return ValueTask.FromResult(v);
-          });
-
-        js.Setup(j => j.InvokeAsync<Microsoft.JSInterop.Infrastructure.IJSVoidResult>(
-                "sessionStorage.setItem", It.IsAny<object[]>()))
-          .Returns<string, object[]>((_, args) =>
-          {
-              storage[(string)args[0]] = (string)args[1];
-              return ValueTask.FromResult(Mock.Of<Microsoft.JSInterop.Infrastructure.IJSVoidResult>());
-          });
-
         var api = new FakeApiClient();
         if (tokenExpiresSoon)
             api.SetRefreshResult(new AuthResponse(
                 "new-tok", "new-refresh", DateTimeOffset.UtcNow.AddHours(1),
                 Guid.NewGuid(), "alice", [], [], false));
 
-        var auth = new AuthStateService(js.Object, api);
+        var auth = new AuthStateService(api);
 
         if (isLoggedIn)
         {

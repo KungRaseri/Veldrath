@@ -30,7 +30,7 @@ for ($i = 0; $i -lt $pairs.Count; $i += 2) {
     $replacements.Add(@($pairs[$i], $pairs[$i+1]))
 }
 
-$validExts = @(".cs",".csproj",".slnx",".json",".yml",".yaml",".xml",".axaml",".xaml",".md",".runsettings",".props",".targets",".txt")
+$validExts = @(".cs",".csproj",".slnx",".json",".yml",".yaml",".xml",".axaml",".xaml",".razor",".md",".runsettings",".props",".targets",".txt")
 $excludePattern = '[\\/](logs|coverage-results|package|\.git|\.vs|TestResults|bin|obj|wiki)[\\/]'
 
 $files = Get-ChildItem -Path $Root -Recurse -File | Where-Object {
