@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Populates RealmUnbound.Assets/GameAssets/ from a local game-dev-assets source tree.
+    Populates Veldrath.Assets/GameAssets/ from a local game-dev-assets source tree.
 
 .DESCRIPTION
     Game asset binaries (PNG icons, OGG audio) are purchased packs that must not be
@@ -28,7 +28,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$dest = Join-Path $PSScriptRoot "..\RealmUnbound.Assets\GameAssets"
+$dest = Join-Path $PSScriptRoot "..\Veldrath.Assets\GameAssets"
 $dest = [System.IO.Path]::GetFullPath($dest)
 
 if (-not (Test-Path $SourcePath)) {
@@ -53,7 +53,7 @@ function Sync-Assets([string]$from, [string]$to, [string[]]$extensions = @("*.pn
 }
 
 Write-Host ""
-Write-Host "RealmUnbound.Assets — game asset sync" -ForegroundColor Cyan
+Write-Host "Veldrath.Assets — game asset sync" -ForegroundColor Cyan
 Write-Host "  Source : $SourcePath"
 Write-Host "  Dest   : $dest"
 Write-Host ""

@@ -54,16 +54,16 @@ coverage-results/
 # Game asset binaries -- purchased packs; must not be redistributed via a public repo.
 # Run scripts/sync-assets.ps1 to populate this folder from your local asset library.
 # Only binary files (images/audio) are excluded; folder structure and JSON data files are tracked.
-RealmUnbound.Assets/GameAssets/**/*.png
-RealmUnbound.Assets/GameAssets/**/*.jpg
-RealmUnbound.Assets/GameAssets/**/*.jpeg
-RealmUnbound.Assets/GameAssets/**/*.gif
-RealmUnbound.Assets/GameAssets/**/*.webp
-RealmUnbound.Assets/GameAssets/**/*.bmp
-RealmUnbound.Assets/GameAssets/**/*.ogg
-RealmUnbound.Assets/GameAssets/**/*.wav
-RealmUnbound.Assets/GameAssets/**/*.mp3
-RealmUnbound.Assets/GameAssets/**/*.flac
+Veldrath.Assets/GameAssets/**/*.png
+Veldrath.Assets/GameAssets/**/*.jpg
+Veldrath.Assets/GameAssets/**/*.jpeg
+Veldrath.Assets/GameAssets/**/*.gif
+Veldrath.Assets/GameAssets/**/*.webp
+Veldrath.Assets/GameAssets/**/*.bmp
+Veldrath.Assets/GameAssets/**/*.ogg
+Veldrath.Assets/GameAssets/**/*.wav
+Veldrath.Assets/GameAssets/**/*.mp3
+Veldrath.Assets/GameAssets/**/*.flac
 
 # Packaged asset zip produced by scripts/package-assets.ps1 -- upload to GitHub Release, don't commit.
 scripts/GameAssets-*.zip

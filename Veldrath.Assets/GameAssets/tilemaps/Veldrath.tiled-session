@@ -217,10 +217,10 @@
             "scaleInEditor": 1
         }
     },
-    "last.imagePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/sheets",
-    "last.worldFilePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world",
+    "last.imagePath": "C:/code/RealmEngine/Veldrath.Assets/GameAssets/tilemaps/sheets",
+    "last.worldFilePath": "C:/code/RealmEngine/Veldrath.Assets/GameAssets/tilemaps/world",
     "loadedWorlds": [
-        "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world/Draveth.world"
+        "C:/code/RealmEngine/Veldrath.Assets/GameAssets/tilemaps/world/Veldrath.world"
     ],
     "map.fixedSize": false,
     "map.height": 22,
@@ -237,7 +237,7 @@
         "maps/the-halrow.tmx",
         "maps/the-droveway.tmx"
     ],
-    "project": "RealmUnbound.tiled-project",
+    "project": "Veldrath.tiled-project",
     "recentFiles": [
         "maps/the-droveway.tmx",
         "maps/the-halrow.tmx",

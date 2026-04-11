@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Packages RealmUnbound.Assets/GameAssets/ into a versioned zip for upload as a
+    Packages Veldrath.Assets/GameAssets/ into a versioned zip for upload as a
     GitHub Release asset in the private KungRaseri/RealmEngine-Assets repository.
 
 .DESCRIPTION
@@ -16,7 +16,7 @@
       4. Ensure ASSETS_TOKEN secret is set in RealmEngine repo settings (see below).
 
     Required GitHub setup (one-time):
-    Create a private repo: KungRaseri/RealmUnbound-Assets
+    Create a private repo: KungRaseri/Veldrath-Assets
       - Create a fine-grained PAT with "Contents: Read and Write" on that repo
         for packaging/uploading, and "Contents: Read" for CI downloads.
       - Add the read-only PAT as secret ASSETS_TOKEN in KungRaseri/RealmEngine
@@ -43,7 +43,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$source = Join-Path $PSScriptRoot "..\RealmUnbound.Assets\GameAssets"
+$source = Join-Path $PSScriptRoot "..\Veldrath.Assets\GameAssets"
 $source = [System.IO.Path]::GetFullPath($source)
 
 if (-not (Test-Path $source)) {
@@ -61,7 +61,7 @@ $zipName = "GameAssets-v$Version.zip"
 $zipPath = Join-Path $OutputDir $zipName
 
 Write-Host ""
-Write-Host "RealmUnbound.Assets -- packaging game assets" -ForegroundColor Cyan
+Write-Host "Veldrath.Assets -- packaging game assets" -ForegroundColor Cyan
 Write-Host "  Source  : $source ($fileCount files)"
 Write-Host "  Output  : $zipPath"
 Write-Host "  Version : v$Version"
@@ -83,14 +83,14 @@ Write-Host "  1. Ensure you have 'Contents: write' access to KungRaseri/RealmEng
 Write-Host "  2. Run the command below to create (or update) the GitHub Release:"
 Write-Host ""
 Write-Host "     gh release create v$Version ``" -ForegroundColor White
- Write-Host "       --repo KungRaseri/RealmUnbound-Assets ``" -ForegroundColor White
+ Write-Host "       --repo KungRaseri/Veldrath-Assets ``" -ForegroundColor White
 Write-Host "       --title `"GameAssets v$Version`" ``" -ForegroundColor White
-Write-Host "       --notes `"Game asset pack v$Version - see RealmUnbound.Assets for manifest`" ``" -ForegroundColor White
+Write-Host "       --notes `"Game asset pack v$Version - see Veldrath.Assets for manifest`" ``" -ForegroundColor White
 Write-Host "       `"$zipPath`"" -ForegroundColor White
 Write-Host ""
 Write-Host "  3. If updating an existing release, use 'gh release upload' instead:"
 Write-Host ""
-Write-Host "     gh release upload v$Version --repo KungRaseri/RealmUnbound-Assets ``" -ForegroundColor White
+Write-Host "     gh release upload v$Version --repo KungRaseri/Veldrath-Assets ``" -ForegroundColor White
 Write-Host "       --clobber `"$zipPath`"" -ForegroundColor White
 Write-Host ""
 Write-Host "  4. Add secret ASSETS_TOKEN in KungRaseri/RealmEngine if not already set."
