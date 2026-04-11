@@ -385,6 +385,125 @@ public class ApplyStatusEffectTests
         result.ResistancePercentage.Should().Be(20); // Half of magic resistance applies
     }
 
+    // ── Specific immunity-trait tests ────────────────────────────────────────
+
+    [Theory]
+    [InlineData(StatusEffectType.Burning,  "immuneToFire")]
+    [InlineData(StatusEffectType.Frozen,   "immuneToIce")]
+    [InlineData(StatusEffectType.Bleeding, "immuneToBleeding")]
+    [InlineData(StatusEffectType.Stunned,  "immuneToStun")]
+    [InlineData(StatusEffectType.Feared,   "immuneToFear")]
+    [InlineData(StatusEffectType.Confused, "immuneToConfusion")]
+    public async Task Should_Be_Immune_Via_SpecificTrait(StatusEffectType effectType, string traitKey)
+    {
+        // Arrange
+        var enemy = new Enemy
+        {
+            Name = "Resistant Enemy",
+            Health = 40,
+            MaxHealth = 40,
+            Traits = new Dictionary<string, TraitValue>
+            {
+                { traitKey, new TraitValue(true, TraitType.Boolean) }
+            }
+        };
+
+        var command = new ApplyStatusEffectCommand
+        {
+            TargetEnemy = enemy,
+            Effect = new StatusEffect
+            {
+                Id = "effect1",
+                Type = effectType,
+                Category = StatusEffectCategory.DamageOverTime,
+                Name = effectType.ToString(),
+                RemainingDuration = 3
+            }
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("immune");
+        enemy.ActiveStatusEffects.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("poisoned")]
+    [InlineData("all")]
+    public async Task Should_Be_Immune_Via_ImmunityList(string listEntry)
+    {
+        // Arrange — immuneToStatusEffects stores a List<string> containing the effect type or "all"
+        var enemy = new Enemy
+        {
+            Name = "Undead Warrior",
+            Health = 40,
+            MaxHealth = 40,
+            Traits = new Dictionary<string, TraitValue>
+            {
+                { "immuneToStatusEffects", new TraitValue(new List<string> { listEntry }, TraitType.StringArray) }
+            }
+        };
+
+        var command = new ApplyStatusEffectCommand
+        {
+            TargetEnemy = enemy,
+            Effect = new StatusEffect
+            {
+                Id = "poison1",
+                Type = StatusEffectType.Poisoned,
+                Category = StatusEffectCategory.DamageOverTime,
+                Name = "Poison",
+                RemainingDuration = 3
+            }
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("immune");
+        enemy.ActiveStatusEffects.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Should_Apply_StatusSpecific_Resistance_From_Trait()
+    {
+        // Arrange — resistPoisoned trait grants 30% resistance to Poisoned effects
+        var enemy = new Enemy
+        {
+            Name = "Seasoned Fighter",
+            Health = 60,
+            MaxHealth = 60,
+            Traits = new Dictionary<string, TraitValue>
+            {
+                { "resistPoisoned", new TraitValue(30, TraitType.Number) }
+            }
+        };
+
+        var command = new ApplyStatusEffectCommand
+        {
+            TargetEnemy = enemy,
+            Effect = new StatusEffect
+            {
+                Id = "weak-poison",
+                Type = StatusEffectType.Poisoned,
+                Category = StatusEffectCategory.DamageOverTime,
+                Name = "Weak Poison",
+                RemainingDuration = 3
+            }
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert — resistance is applied even if the effect lands (chance vs resistance are separate)
+        result.ResistancePercentage.Should().Be(30);
+    }
+
     [Fact]
     public async Task Should_Not_Apply_Same_Effect_Twice_Without_Stacking()
     {
