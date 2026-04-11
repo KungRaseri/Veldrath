@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 
-namespace RealmUnbound.Client.Views;
+namespace Veldrath.Client.Views;
 
 /// <summary>Center panel shell: view-selector tabs and Zone/Region/World sub-views.</summary>
 [ExcludeFromCodeCoverage]

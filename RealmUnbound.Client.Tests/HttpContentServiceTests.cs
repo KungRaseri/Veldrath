@@ -1,10 +1,10 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Contracts.Content;
+using Veldrath.Client.Services;
+using Veldrath.Contracts.Content;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 // HttpContentService tests
 // HttpContentService delegates all work to two private helpers:

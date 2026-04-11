@@ -1,8 +1,8 @@
-using System.Reactive.Concurrency;
+﻿using System.Reactive.Concurrency;
 using ReactiveUI;
-using RealmUnbound.Client.Services;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 /// <summary>
 /// Configures ReactiveUI to use a synchronous scheduler so that reactive

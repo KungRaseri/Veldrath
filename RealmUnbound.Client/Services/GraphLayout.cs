@@ -1,4 +1,4 @@
-namespace RealmUnbound.Client.Services;
+﻿namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Computes 2-D positions for graph nodes using a deterministic top-to-bottom BFS layered layout.

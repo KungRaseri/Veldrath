@@ -1,6 +1,6 @@
-using RealmUnbound.Server.Data.Entities;
+﻿using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Data.Repositories;
+namespace Veldrath.Server.Data.Repositories;
 
 /// <summary>Read-only repository for <see cref="Zone"/> catalog entries.</summary>
 public interface IZoneRepository

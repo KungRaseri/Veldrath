@@ -1,11 +1,11 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using RealmUnbound.Contracts.Admin;
-using RealmUnbound.Server.Data;
-using RealmUnbound.Server.Data.Entities;
+using Veldrath.Contracts.Admin;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Features.Reports;
+namespace Veldrath.Server.Features.Reports;
 
 /// <summary>
 /// Minimal API endpoints for player-submitted reports.

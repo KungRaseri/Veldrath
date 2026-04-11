@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.ReactiveUI;
-using RealmUnbound.Client;
+using Veldrath.Client;
 
 [ExcludeFromCodeCoverage]
 class Program

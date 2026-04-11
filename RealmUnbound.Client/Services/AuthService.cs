@@ -1,11 +1,11 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Web;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Contracts.Auth;
+using Veldrath.Contracts.Auth;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 // Interface
 public interface IAuthService

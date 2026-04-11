@@ -1,8 +1,8 @@
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
+﻿using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests.ViewModels;
+namespace Veldrath.Client.Tests.ViewModels;
 
 /// <summary>Tilemap / entity-tracking unit tests for <see cref="GameViewModel"/>.</summary>
 public class GameViewModelTilemapTests : TestBase

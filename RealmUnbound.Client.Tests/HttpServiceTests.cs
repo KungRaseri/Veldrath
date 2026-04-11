@@ -1,11 +1,11 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Zones;
+using Veldrath.Client.Services;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Zones;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 // Mock HttpMessageHandler
 /// <summary>

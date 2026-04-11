@@ -1,4 +1,4 @@
-# Security Policy
+﻿# Security Policy
 
 ## Supported Versions
 
@@ -8,8 +8,8 @@ Security fixes are applied to the **latest release** of each component. Older re
 |-----------|-----------|
 | Engine Libraries (latest `engine/v*`) | ✅ |
 | RealmForge Tooling (latest `tooling/v*`) | ✅ |
-| RealmUnbound Server (latest `server/v*`) | ✅ |
-| RealmUnbound Client (latest `client/v*`) | ✅ |
+| Veldrath Server (latest `server/v*`) | ✅ |
+| Veldrath Client (latest `client/v*`) | ✅ |
 | Any previous release | ❌ |
 
 ## Reporting a Vulnerability
@@ -49,7 +49,7 @@ We follow a **coordinated disclosure** model. Once a fix is available we will pu
 
 The following are considered in-scope vulnerabilities:
 
-- Remote code execution (RCE) or privilege escalation in the **RealmUnbound Server** or any engine library consumed by it.
+- Remote code execution (RCE) or privilege escalation in the **Veldrath Server** or any engine library consumed by it.
 - Authentication or authorization bypasses in the server.
 - Injection vulnerabilities (SQL, command, path traversal, etc.) in any component.
 - Insecure deserialization of untrusted game-data JSON files.

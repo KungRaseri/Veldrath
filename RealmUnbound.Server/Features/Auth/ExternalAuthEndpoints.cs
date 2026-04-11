@@ -1,10 +1,10 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using RealmUnbound.Server.Data.Entities;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Minimal API endpoints for OAuth external authentication.

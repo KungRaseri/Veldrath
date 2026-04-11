@@ -1,5 +1,5 @@
-<Project>
-  <!-- RealmUnbound.Discord: Discord bot -->
+﻿<Project>
+  <!-- Veldrath.Discord: Discord bot -->
   <PropertyGroup>
     <VersionMajor>0</VersionMajor>
     <VersionMinor>1</VersionMinor>

@@ -1,11 +1,11 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Contracts.Characters;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Contracts.Characters;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class HttpCharacterCreationServiceTests : TestBase
 {

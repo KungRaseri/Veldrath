@@ -1,9 +1,9 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Characters;
+namespace Veldrath.Server.Features.Characters;
 
 /// <summary>
 /// Hub command that applies damage to a character's current health stored in the attributes blob.

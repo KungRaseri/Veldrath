@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 
-namespace RealmUnbound.Client.Views;
+namespace Veldrath.Client.Views;
 
 /// <summary>Header component for the in-game HUD: compact character strip, zone info, and system controls.</summary>
 [ExcludeFromCodeCoverage]

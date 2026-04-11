@@ -1,11 +1,11 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Features.Characters.Combat;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Characters.Combat;
 
-namespace RealmUnbound.Server.Features.Zones;
+namespace Veldrath.Server.Features.Zones;
 
 /// <summary>
 /// Hub command that moves a character to a specific <see cref="RealmEngine.Data.Entities.ZoneLocation"/>

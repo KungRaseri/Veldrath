@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
+﻿using RealmEngine.Shared.Models;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// A live enemy instance spawned in a zone location whose health and reward data are shared

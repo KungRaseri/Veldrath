@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets.Manifest;
+﻿namespace Veldrath.Assets.Manifest;
 
 /// <summary>
 /// Path constants for audio assets from the Kenney game assets collection.

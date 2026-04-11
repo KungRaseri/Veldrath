@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using RealmUnbound.Server.Data.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Data.Repositories;
+namespace Veldrath.Server.Data.Repositories;
 
 public class ZoneRepository(ApplicationDbContext db) : IZoneRepository
 {

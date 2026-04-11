@@ -1,4 +1,4 @@
-# ── Build stage ──────────────────────────────────────────────────────────────
+﻿# ── Build stage ──────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -6,30 +6,30 @@ WORKDIR /src
 COPY Directory.Build.props                                 ./
 COPY Directory.Packages.props                              ./
 COPY versions/                                             versions/
-COPY RealmUnbound.Server/RealmUnbound.Server.csproj        RealmUnbound.Server/
-COPY RealmUnbound.Server/Directory.Build.props             RealmUnbound.Server/
-COPY RealmUnbound.Contracts/RealmUnbound.Contracts.csproj  RealmUnbound.Contracts/
+COPY Veldrath.Server/Veldrath.Server.csproj        Veldrath.Server/
+COPY Veldrath.Server/Directory.Build.props             Veldrath.Server/
+COPY Veldrath.Contracts/Veldrath.Contracts.csproj  Veldrath.Contracts/
 COPY RealmEngine.Core/RealmEngine.Core.csproj              RealmEngine.Core/
 COPY RealmEngine.Core/Directory.Build.props                RealmEngine.Core/
 COPY RealmEngine.Data/RealmEngine.Data.csproj              RealmEngine.Data/
 COPY RealmEngine.Data/Directory.Build.props                RealmEngine.Data/
 COPY RealmEngine.Shared/RealmEngine.Shared.csproj          RealmEngine.Shared/
 COPY RealmEngine.Shared/Directory.Build.props              RealmEngine.Shared/
-COPY RealmUnbound.Assets/RealmUnbound.Assets.csproj        RealmUnbound.Assets/
-COPY RealmUnbound.Assets/Directory.Build.props             RealmUnbound.Assets/
+COPY Veldrath.Assets/Veldrath.Assets.csproj        Veldrath.Assets/
+COPY Veldrath.Assets/Directory.Build.props             Veldrath.Assets/
 
-RUN dotnet restore RealmUnbound.Server/RealmUnbound.Server.csproj
+RUN dotnet restore Veldrath.Server/Veldrath.Server.csproj
 
 # Copy all source
-COPY RealmUnbound.Server/     RealmUnbound.Server/
-COPY RealmUnbound.Contracts/  RealmUnbound.Contracts/
+COPY Veldrath.Server/     Veldrath.Server/
+COPY Veldrath.Contracts/  Veldrath.Contracts/
 COPY RealmEngine.Core/        RealmEngine.Core/
 COPY RealmEngine.Data/        RealmEngine.Data/
 COPY RealmEngine.Shared/      RealmEngine.Shared/
-COPY RealmUnbound.Assets/     RealmUnbound.Assets/
+COPY Veldrath.Assets/     Veldrath.Assets/
 
-WORKDIR /src/RealmUnbound.Server
-RUN dotnet publish RealmUnbound.Server.csproj -c Release -o /app/publish --no-restore
+WORKDIR /src/Veldrath.Server
+RUN dotnet publish Veldrath.Server.csproj -c Release -o /app/publish --no-restore
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
@@ -45,4 +45,4 @@ EXPOSE 8080
 EXPOSE 8081
 ENV ASPNETCORE_URLS=http://+:8080
 
-ENTRYPOINT ["dotnet", "RealmUnbound.Server.dll"]
+ENTRYPOINT ["dotnet", "Veldrath.Server.dll"]

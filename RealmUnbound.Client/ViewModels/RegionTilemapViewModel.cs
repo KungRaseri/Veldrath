@@ -1,10 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using ReactiveUI;
-using RealmUnbound.Contracts.Tilemap;
+using Veldrath.Contracts.Tilemap;
 using Serilog;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>
 /// View model for the region-map tilemap. Holds the current region map data, visible entity

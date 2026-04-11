@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets.Manifest;
+﻿namespace Veldrath.Assets.Manifest;
 
 /// <summary>
 /// Describes a single entity sprite sheet entry used by the client renderer.

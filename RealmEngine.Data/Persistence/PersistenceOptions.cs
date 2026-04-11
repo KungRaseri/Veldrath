@@ -1,4 +1,4 @@
-namespace RealmEngine.Data.Persistence;
+﻿namespace RealmEngine.Data.Persistence;
 
 /// <summary>
 /// Configures how RealmEngine persists save games and Hall of Fame entries.
@@ -49,7 +49,7 @@ public class PersistenceOptions
     }
 
     /// <summary>
-    /// The caller (e.g. RealmUnbound.Server) will register its own
+    /// The caller (e.g. Veldrath.Server) will register its own
     /// <see cref="RealmEngine.Shared.Abstractions.ISaveGameRepository"/> and
     /// <see cref="RealmEngine.Shared.Abstractions.IHallOfFameRepository"/> implementations.
     /// <c>AddRealmEngineCore</c> will not register any persistence services.

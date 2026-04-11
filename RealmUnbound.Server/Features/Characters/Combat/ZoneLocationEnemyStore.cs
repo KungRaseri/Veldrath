@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// In-process store of all live enemy instances, keyed by zone location.

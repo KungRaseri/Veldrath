@@ -1,12 +1,12 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:RealmUnbound.Client.ViewModels"
+             xmlns:vm="using:Veldrath.Client.ViewModels"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="RealmUnbound.Client.Views.RegisterView"
+             x:Class="Veldrath.Client.Views.RegisterView"
              x:DataType="vm:RegisterViewModel">
 
     <Grid RowDefinitions="*,Auto,*">

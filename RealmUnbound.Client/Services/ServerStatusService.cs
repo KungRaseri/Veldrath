@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>Server reachability states.</summary>
 public enum ServerStatus

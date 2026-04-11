@@ -1,7 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace RealmUnbound.Server.Health;
+namespace Veldrath.Server.Health;
 
 /// <summary>
 /// Verifies that the RealmEngine service layer is initialised and reachable.

@@ -1,8 +1,8 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.LevelUp;
+namespace Veldrath.Server.Features.LevelUp;
 
 /// <summary>
 /// Hub command that awards experience to a server-side character and persists

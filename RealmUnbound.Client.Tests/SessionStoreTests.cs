@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class SessionStoreTests : TestBase
 {

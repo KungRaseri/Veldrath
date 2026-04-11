@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using RealmEngine.Data.Persistence;
 
@@ -18,7 +18,7 @@ public class GameDbContextFactory : IDesignTimeDbContextFactory<GameDbContext>
     public GameDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<GameDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=realmunbound;Username=realmunbound;Password=realmunbound_dev")
+            .UseNpgsql("Host=localhost;Port=5433;Database=veldrath;Username=veldrath;Password=veldrath_dev")
             .Options;
         return new GameDbContext(options);
     }

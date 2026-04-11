@@ -1,4 +1,4 @@
-# Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
+﻿# Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
 
 ## ⚠️ IMPORTANT — ACTUAL IMPLEMENTATION NOTE
 
@@ -24,7 +24,7 @@ When resuming, read the ACTUAL IMPLEMENTATION section first — it supersedes al
 ## ACTUAL IMPLEMENTATION — Free-For-All Turn-Based Combat (2026-03-30)
 
 Built as a simplified system where any player can engage any live enemy; each hub call = one combat turn.
-All server code lives in `RealmUnbound.Server/Features/Characters/Combat/`.
+All server code lives in `Veldrath.Server/Features/Characters/Combat/`.
 
 ### Server Build Status: ✅ CLEAN (0 warnings, 0 errors)
 ### Client Build Status: ✅ CLEAN (0 warnings, 0 errors)
@@ -55,7 +55,7 @@ Static store: `ConcurrentDictionary<Guid, ActiveCombatSession>` keyed by `Charac
 #### `CombatCharacterHydrator.cs`
 `static Hydrate(ServerCharacter entity, Dictionary<string,int> attrs)` → engine `Character`
 - Populates HP, mana, 6 core stats, `AbilityCooldowns` (strips `"AbilityCooldown_"` prefix), `SpellCooldowns` (strips `"SpellCooldown_"` prefix)
-- **`ServerCharacter` alias**: `CombatHelpers.cs` needs `using ServerCharacter = RealmUnbound.Server.Data.Entities.Character;` to avoid ambiguity with engine's `Character` model
+- **`ServerCharacter` alias**: `CombatHelpers.cs` needs `using ServerCharacter = Veldrath.Server.Data.Entities.Character;` to avoid ambiguity with engine's `Character` model
 
 #### `ActorPoolResolver.cs`
 Injectable (Scoped). Depends on `EnemyGenerator`.
@@ -105,13 +105,13 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 
 #### `GameHub.cs`
 - `NavigateToLocation`: extracts `zoneGroupForNav` via `TryGetCurrentZoneGroup()`; passes as 4th arg to command; adds `SpawnedEnemies` to `LocationEntered` payload
-- Added `using RealmUnbound.Server.Features.Characters.Combat;`
+- Added `using Veldrath.Server.Features.Characters.Combat;`
 - Added 6 new hub methods: `EngageEnemy(EngageEnemyHubRequest)`, `AttackEnemy()`, `DefendAction()`, `FleeFromCombat()`, `UseAbilityInCombat(UseAbilityInCombatHubRequest)`, `Respawn()`
 - Hub broadcast events: `CombatStarted` (caller), `EnemyEngaged` (OthersInGroup), `CombatTurn` (caller), `EnemyDefeated` (OthersInGroup), `CombatEnded` (caller), `CharacterRespawned` (caller)
-- Hub request DTOs (at bottom of GameHub.cs in `RealmUnbound.Server.Hubs` namespace): `EngageEnemyHubRequest(string LocationSlug, Guid EnemyId)`, `UseAbilityInCombatHubRequest(string AbilityId)`
+- Hub request DTOs (at bottom of GameHub.cs in `Veldrath.Server.Hubs` namespace): `EngageEnemyHubRequest(string LocationSlug, Guid EnemyId)`, `UseAbilityInCombatHubRequest(string AbilityId)`
 
 #### `Program.cs`
-- Added `builder.Services.AddScoped<RealmUnbound.Server.Features.Characters.Combat.ActorPoolResolver>();`
+- Added `builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();`
 
 ### New/Modified Client Files
 
@@ -148,7 +148,7 @@ Guards: entity exists → if `DeletedAt.HasValue` → error (HC can't respawn) �
 | 8 | Tests — server combat handler unit tests | ✅ |
 | 8 | Tests — client GameViewModel combat command tests | ✅ |
 | 9 | `GameView.axaml` — combat panel UI (enemy roster, action buttons, death/respawn overlay) | ✅ |
-| Final | `dotnet test RealmUnbound.slnx --filter "Category!=UI"` | ✅ 525+491=1016 |
+| Final | `dotnet test Veldrath.slnx --filter "Category!=UI"` | ✅ 525+491=1016 |
 
 #### Phase 8 — Test Priorities
 - `EngageEnemyHubCommandHandlerTests`: guard (already in combat), enemy not found, enemy dead, success
@@ -214,7 +214,7 @@ Add below zone-location content:
 ## Phase 1 — Character Creation + Zone Session (parallel with Phase 2)
 
 - Extend `CreateCharacterRequest` with `DifficultyMode` ("normal"|"hardcore", validated); store on Character entity
-- Add `DifficultyMode` + `IsHardcore` to `CharacterDto` in RealmUnbound.Contracts; update endpoint + tests
+- Add `DifficultyMode` + `IsHardcore` to `CharacterDto` in Veldrath.Contracts; update endpoint + tests
 - Zone group naming in `GameHub.EnterZoneAsync`: load Zone.Type → Town/Tutorial = `{zoneId}`, Wilderness = `{zoneId}_{difficultyMode}`, Dungeon = per-instance (existing flow)
 - Client: [HC] badge on character select card when IsHardcore
 
@@ -335,7 +335,7 @@ Returns `TickResult` value object containing: `CombatEvent[]`, `CombatVictory?`,
 
 ## Phase 4 — Hub Bridges: Combat Loop (depends on Phase 3)
 
-New files in `RealmUnbound.Server/Features/Combat/`:
+New files in `Veldrath.Server/Features/Combat/`:
 
 ### StartCombatHubCommand / GameHub.StartCombat(locationSlug)
 - Resolve enemy via ActorPoolResolver
@@ -435,31 +435,31 @@ Engine:
 - `RealmEngine.Data/Migrations/Content/20260330000004_AddZoneLocationActorPool.cs` ✅
 
 Server:
-- `RealmUnbound.Server/Data/Entities/Character.cs` ✅ (DifficultyMode)
-- `RealmUnbound.Server/Data/Entities/Zone.cs` ✅ (RescueFundTotal)
-- `RealmUnbound.Server/Data/Entities/GlobalStat.cs` ✅
-- `RealmUnbound.Server/Data/ApplicationDbContext.cs` ✅
-- `RealmUnbound.Server/Data/Migrations/Application/` ✅ (3 migrations)
-- `RealmUnbound.Server/Hubs/GameHub.cs` — zone group naming + new hub methods (Phase 1+4)
-- `RealmUnbound.Server/Features/Combat/` — new folder (Phase 3): QueueActionHubCommand, PollCombatHubCommand, StartCombatHubCommand, JoinCombatHubCommand, CombatEncounter, CombatParticipant, CombatTickEvaluator, ActiveCombatStore, AttackSpeedResolver, ActorPoolResolver, ICombatSettingsResolver
-- `RealmUnbound.Server/Program.cs` — DI registrations (Phase 3)
+- `Veldrath.Server/Data/Entities/Character.cs` ✅ (DifficultyMode)
+- `Veldrath.Server/Data/Entities/Zone.cs` ✅ (RescueFundTotal)
+- `Veldrath.Server/Data/Entities/GlobalStat.cs` ✅
+- `Veldrath.Server/Data/ApplicationDbContext.cs` ✅
+- `Veldrath.Server/Data/Migrations/Application/` ✅ (3 migrations)
+- `Veldrath.Server/Hubs/GameHub.cs` — zone group naming + new hub methods (Phase 1+4)
+- `Veldrath.Server/Features/Combat/` — new folder (Phase 3): QueueActionHubCommand, PollCombatHubCommand, StartCombatHubCommand, JoinCombatHubCommand, CombatEncounter, CombatParticipant, CombatTickEvaluator, ActiveCombatStore, AttackSpeedResolver, ActorPoolResolver, ICombatSettingsResolver
+- `Veldrath.Server/Program.cs` — DI registrations (Phase 3)
 
 Client:
-- `RealmUnbound.Client/ViewModels/GameViewModel.cs` — new commands + callbacks + poll timer (Phase 6)
-- `RealmUnbound.Client/ViewModels/CharacterSelectViewModel.cs` — subscriptions + HC badge (Phase 6)
-- `RealmUnbound.Client/Views/CreateCharacterView.axaml` — difficulty mode selection (Phase 6)
-- `RealmUnbound.Client/ViewModels/CreateCharacterViewModel.cs` — DifficultyMode property (Phase 6)
+- `Veldrath.Client/ViewModels/GameViewModel.cs` — new commands + callbacks + poll timer (Phase 6)
+- `Veldrath.Client/ViewModels/CharacterSelectViewModel.cs` — subscriptions + HC badge (Phase 6)
+- `Veldrath.Client/Views/CreateCharacterView.axaml` — difficulty mode selection (Phase 6)
+- `Veldrath.Client/ViewModels/CreateCharacterViewModel.cs` — DifficultyMode property (Phase 6)
 
 Contracts:
-- `RealmUnbound.Contracts/` — CharacterDto (DifficultyMode, IsHardcore), new combat payload records, QueuedActionType enum (Phase 1+4)
+- `Veldrath.Contracts/` — CharacterDto (DifficultyMode, IsHardcore), new combat payload records, QueuedActionType enum (Phase 1+4)
 
 ---
 
 ## Verification
 
 1. `dotnet test RealmEngine.slnx` — zero regressions after Phase 0+2
-2. `dotnet build RealmUnbound.Server` — clean after each Phase 3-5 step
-3. `dotnet test RealmUnbound.slnx --filter Category!=UI` — zero regressions after Phase 4-6
+2. `dotnet build Veldrath.Server` — clean after each Phase 3-5 step
+3. `dotnet test Veldrath.slnx --filter Category!=UI` — zero regressions after Phase 4-6
 4. Manual: character queues attack → cooldown bar fills → attack fires automatically → enemy HP updates
 5. Manual: second player joins → both queue attacks → actions fire independently on their own cooldowns → enemy attacks highest-threat player
 6. Manual: player idles → PollCombat timer fires → pending enemy ticks consumed → HP updates arrive

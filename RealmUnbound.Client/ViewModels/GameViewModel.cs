@@ -1,13 +1,13 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
-using RealmUnbound.Assets;
-using RealmUnbound.Assets.Manifest;
-using RealmUnbound.Client.Services;
+using Veldrath.Assets;
+using Veldrath.Assets.Manifest;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Bundles all initial character stat values for <see cref="GameViewModel.SeedInitialStats"/>.</summary>
 /// <param name="Level">Character level.</param>
@@ -56,8 +56,8 @@ public class GameViewModel : ViewModelBase
     private RegionTilemapViewModel? _regionTilemapViewModel;
 
     // Region pending tile transitions
-    private RealmUnbound.Contracts.Tilemap.ZoneObjectDto? _pendingZoneEntry;
-    private RealmUnbound.Contracts.Tilemap.RegionExitDto? _pendingRegionExit;
+    private Veldrath.Contracts.Tilemap.ZoneObjectDto? _pendingZoneEntry;
+    private Veldrath.Contracts.Tilemap.RegionExitDto? _pendingRegionExit;
 
     // Zone state
     private string _zoneName = string.Empty;
@@ -546,14 +546,14 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Zone-entry tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
-    public RealmUnbound.Contracts.Tilemap.ZoneObjectDto? PendingZoneEntry
+    public Veldrath.Contracts.Tilemap.ZoneObjectDto? PendingZoneEntry
     {
         get => _pendingZoneEntry;
         private set => this.RaiseAndSetIfChanged(ref _pendingZoneEntry, value);
     }
 
     /// <summary>Region-exit tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
-    public RealmUnbound.Contracts.Tilemap.RegionExitDto? PendingRegionExit
+    public Veldrath.Contracts.Tilemap.RegionExitDto? PendingRegionExit
     {
         get => _pendingRegionExit;
         private set => this.RaiseAndSetIfChanged(ref _pendingRegionExit, value);
@@ -1064,7 +1064,7 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Called from hub when a <c>RegionMapData</c> message arrives with the region's tilemap.</summary>
     /// <param name="regionMap">The region map DTO received from the server.</param>
-    public void OnRegionMapReceived(RealmUnbound.Contracts.Tilemap.RegionMapDto regionMap)
+    public void OnRegionMapReceived(Veldrath.Contracts.Tilemap.RegionMapDto regionMap)
     {
         if (RegionTilemap is null) return;
         RegionTilemap.RegionMapData = regionMap;
@@ -1090,7 +1090,7 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Called from hub when the character steps onto a zone-entry tile on the region map.</summary>
     /// <param name="entry">The zone-entry object at the destination tile.</param>
-    public void OnZoneEntryTriggered(RealmUnbound.Contracts.Tilemap.ZoneObjectDto entry)
+    public void OnZoneEntryTriggered(Veldrath.Contracts.Tilemap.ZoneObjectDto entry)
     {
         PendingZoneEntry  = entry;
         PendingRegionExit = null;
@@ -1099,7 +1099,7 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Called from hub when the character steps onto a region-exit tile on the region map.</summary>
     /// <param name="exit">The region-exit object at the destination tile.</param>
-    public void OnRegionExitTriggered(RealmUnbound.Contracts.Tilemap.RegionExitDto exit)
+    public void OnRegionExitTriggered(Veldrath.Contracts.Tilemap.RegionExitDto exit)
     {
         PendingRegionExit = exit;
         PendingZoneEntry  = null;
@@ -1168,7 +1168,7 @@ public class GameViewModel : ViewModelBase
     // ── Tilemap hub handlers ─────────────────────────────────────────────────
 
     /// <summary>Called from hub when a <c>ZoneTileMap</c> message arrives with the zone's full tilemap.</summary>
-    public void OnZoneTileMap(RealmUnbound.Contracts.Tilemap.TileMapDto tileMap)
+    public void OnZoneTileMap(Veldrath.Contracts.Tilemap.TileMapDto tileMap)
     {
         if (Tilemap is null) return;
         Tilemap.TileMapData = tileMap;
@@ -1218,7 +1218,7 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Called from hub when the zone's initial entity snapshot is received (e.g. on zone entry).</summary>
-    public void OnZoneEntitiesSnapshot(IReadOnlyList<RealmUnbound.Contracts.Tilemap.TileEntityDto> entities)
+    public void OnZoneEntitiesSnapshot(IReadOnlyList<Veldrath.Contracts.Tilemap.TileEntityDto> entities)
     {
         if (Tilemap is null) return;
         foreach (var e in entities)

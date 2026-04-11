@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using Serilog.Events;
 using RealmFoundry;
@@ -27,9 +27,9 @@ try
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
-    // Typed HttpClient for calling RealmUnbound.Server APIs.
-    var serverUrl = builder.Configuration["RealmUnbound:ServerUrl"]
-        ?? throw new InvalidOperationException("RealmUnbound:ServerUrl is not configured.");
+    // Typed HttpClient for calling Veldrath.Server APIs.
+    var serverUrl = builder.Configuration["Veldrath:ServerUrl"]
+        ?? throw new InvalidOperationException("Veldrath:ServerUrl is not configured.");
 
     builder.Services.AddScoped<AuthRefreshHandler>();
     builder.Services.AddHttpClient<RealmFoundryApiClient>(client =>

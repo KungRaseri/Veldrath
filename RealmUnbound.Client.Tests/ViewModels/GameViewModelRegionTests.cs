@@ -1,9 +1,9 @@
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Tilemap;
+﻿using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Tilemap;
 
-namespace RealmUnbound.Client.Tests.ViewModels;
+namespace Veldrath.Client.Tests.ViewModels;
 
 /// <summary>Unit tests for region-map hub handler methods on <see cref="GameViewModel"/>.</summary>
 public class GameViewModelRegionTests : TestBase

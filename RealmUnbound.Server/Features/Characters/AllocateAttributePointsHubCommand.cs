@@ -1,9 +1,9 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Characters;
+namespace Veldrath.Server.Features.Characters;
 
 /// <summary>
 /// Hub command that spends a character's unallocated attribute points.

@@ -1,7 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// Hub command that initiates combat between a character and a live enemy at their current location.

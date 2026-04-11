@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Veldrath.Server</RootNamespace>
+    <AssemblyName>Veldrath.Server</AssemblyName>
+    <UserSecretsId>veldrath-server</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EF Core + PostgreSQL -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- ASP.NET Core Identity -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <!-- JWT authentication -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <!-- OAuth providers -->
+    <PackageReference Include="AspNet.Security.OAuth.Discord" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
+    <!-- MediatR (for GameHub command dispatch — aligned with engine version) -->
+    <PackageReference Include="MediatR" />
+    <!-- Health checks -->
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
+    <!-- Logging -->
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Game engine: catalog data (JSON), core logic, shared models -->
+    <ProjectReference Include="..\Veldrath.Assets\Veldrath.Assets.csproj" />
+    <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+    <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
+    <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
+    <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
+  </ItemGroup>
+
+  <!--
+    Stamp MinCompatibleClientVersion from versions/server.props into
+    appsettings.Production.json at Release publish time. The Dockerfile
+    picks this up via COPY from the publish output. ASP.NET Core defaults
+    to the Production environment in Docker, so this file overrides the
+    dev default in appsettings.json. Dev builds skip this target entirely.
+  -->
+  <Target Name="StampVersionCompatibility" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <_VersionCompatJson>{"VersionCompatibility":{"MinCompatibleClientVersion":"$(MinCompatibleClientVersion)"}}</_VersionCompatJson>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(PublishDir)appsettings.Production.json"
+      Lines="$(_VersionCompatJson)"
+      Overwrite="false"
+      WriteOnlyWhenDifferent="true" />
+    <Message Importance="high"
+             Text="[StampVersionCompatibility] appsettings.Production.json → MinCompatibleClientVersion=$(MinCompatibleClientVersion)" />
+  </Target>
+
+</Project>

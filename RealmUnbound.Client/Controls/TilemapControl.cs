@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using Avalonia;
 using Avalonia.Controls;
@@ -6,11 +6,11 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Contracts.Tilemap;
+using Veldrath.Client.Services;
+using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Tilemap;
 
-namespace RealmUnbound.Client.Controls;
+namespace Veldrath.Client.Controls;
 
 /// <summary>
 /// Real-time tile map canvas. Renders the zone's tile layers, entities, and fog of war
@@ -212,7 +212,7 @@ public class TilemapControl : Control
             {
                 // Draw sprite scaled into the tile.  Bottom-align: sprites taller than the
                 // tile (e.g. 48×64 monsters) extend above the tile top for a natural look.
-                var si    = RealmUnbound.Assets.Manifest.EntitySpriteAssets.All[entity.SpriteKey];
+                var si    = Veldrath.Assets.Manifest.EntitySpriteAssets.All[entity.SpriteKey];
                 var scale = (double)DisplayTileSize / si.FrameWidth;  // scale to fill tile width
                 var dw    = DisplayTileSize;
                 var dh    = (int)(si.FrameHeight * scale);

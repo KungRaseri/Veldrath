@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Migrations
+namespace Veldrath.Server.Migrations
 {
     /// <inheritdoc />
     public partial class MakePlayerReportCharacterIdsNullable : Migration

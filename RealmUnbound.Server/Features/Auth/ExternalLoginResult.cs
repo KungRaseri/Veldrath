@@ -1,7 +1,7 @@
-using RealmUnbound.Contracts.Auth;
-using RealmUnbound.Server.Data.Entities;
+﻿using Veldrath.Contracts.Auth;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>Outcome of an external OAuth login or register attempt.</summary>
 public enum ExternalLoginStatus

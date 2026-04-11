@@ -1,8 +1,8 @@
-using System.Reactive;
+﻿using System.Reactive;
 using System.Reactive.Linq;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a single outgoing connection link from the character's current zone location.</summary>
 public sealed class ZoneConnectionLinkViewModel : ViewModelBase

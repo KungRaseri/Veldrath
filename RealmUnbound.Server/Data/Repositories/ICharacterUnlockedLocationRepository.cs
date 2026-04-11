@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Data.Repositories;
+﻿namespace Veldrath.Server.Data.Repositories;
 
 /// <summary>Persistence contract for <see cref="Entities.CharacterUnlockedLocation"/>.</summary>
 public interface ICharacterUnlockedLocationRepository

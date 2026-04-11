@@ -1,19 +1,19 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
-using RealmUnbound.Contracts.Account;
-using RealmUnbound.Contracts.Admin;
-using RealmUnbound.Contracts.Connection;
-using RealmUnbound.Server.Data;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Hubs;
-using RealmUnbound.Server.Settings;
+using Veldrath.Contracts.Account;
+using Veldrath.Contracts.Admin;
+using Veldrath.Contracts.Connection;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 
-namespace RealmUnbound.Server.Features.Admin;
+namespace Veldrath.Server.Features.Admin;
 
 /// <summary>
 /// Minimal API endpoints for server administration.

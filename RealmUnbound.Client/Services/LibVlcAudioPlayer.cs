@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using LibVLCSharp.Shared;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// LibVLC-backed <see cref="IAudioPlayer"/> implementation.

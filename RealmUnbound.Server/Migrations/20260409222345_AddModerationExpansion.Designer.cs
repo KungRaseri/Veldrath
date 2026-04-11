@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using RealmUnbound.Server.Data;
+using Veldrath.Server.Data;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Migrations
+namespace Veldrath.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260409222345_AddModerationExpansion")]
@@ -155,7 +155,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.AdminAuditEntry", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.AdminAuditEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -199,7 +199,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("AdminAuditEntries");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Announcement", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Announcement", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -240,7 +240,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Announcements");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Character", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Character", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -338,7 +338,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Characters");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.CharacterUnlockedLocation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -370,7 +370,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("CharacterUnlockedLocations");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryNotification", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundryNotification", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -405,7 +405,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("FoundryNotifications");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundrySubmission", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -465,7 +465,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("FoundrySubmissions");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryVote", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundryVote", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -493,7 +493,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("FoundryVotes");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.GlobalStat", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.GlobalStat", b =>
                 {
                     b.Property<string>("Key")
                         .HasMaxLength(64)
@@ -507,7 +507,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("GlobalStats");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerAccount", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerAccount", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -602,7 +602,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerReport", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerReport", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -652,7 +652,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("PlayerReports");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerSession", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -705,7 +705,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("PlayerSessions");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RefreshToken", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -747,7 +747,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Region", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(64)
@@ -789,7 +789,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Regions");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RegionConnection", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.RegionConnection", b =>
                 {
                     b.Property<string>("FromRegionId")
                         .HasColumnType("character varying(64)");
@@ -804,7 +804,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("RegionConnections");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.World", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.World", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(64)
@@ -828,7 +828,7 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("Worlds");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Zone", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(64)
@@ -894,7 +894,7 @@ namespace RealmUnbound.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", null)
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -903,7 +903,7 @@ namespace RealmUnbound.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", null)
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -918,7 +918,7 @@ namespace RealmUnbound.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", null)
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -927,16 +927,16 @@ namespace RealmUnbound.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", null)
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Character", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Character", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Account")
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -945,9 +945,9 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.CharacterUnlockedLocation", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.CharacterUnlockedLocation", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
                         .WithMany()
                         .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -956,15 +956,15 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Character");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryNotification", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundryNotification", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Recipient")
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Recipient")
                         .WithMany()
                         .HasForeignKey("RecipientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.FoundrySubmission", "Submission")
+                    b.HasOne("Veldrath.Server.Data.Entities.FoundrySubmission", "Submission")
                         .WithMany()
                         .HasForeignKey("SubmissionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -975,14 +975,14 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Submission");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundrySubmission", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Reviewer")
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Reviewer")
                         .WithMany()
                         .HasForeignKey("ReviewerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Submitter")
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Submitter")
                         .WithMany()
                         .HasForeignKey("SubmitterId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -993,15 +993,15 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Submitter");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundryVote", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundryVote", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.FoundrySubmission", "Submission")
+                    b.HasOne("Veldrath.Server.Data.Entities.FoundrySubmission", "Submission")
                         .WithMany("Votes")
                         .HasForeignKey("SubmissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Voter")
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Voter")
                         .WithMany()
                         .HasForeignKey("VoterId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1012,21 +1012,21 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Voter");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerSession", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerSession", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Character", "Character")
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
                         .WithMany()
                         .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "Region")
+                    b.HasOne("Veldrath.Server.Data.Entities.Region", "Region")
                         .WithMany()
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Zone", "Zone")
+                    b.HasOne("Veldrath.Server.Data.Entities.Zone", "Zone")
                         .WithMany("Sessions")
                         .HasForeignKey("ZoneId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1038,9 +1038,9 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Zone");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RefreshToken", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Account")
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1049,9 +1049,9 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Region", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.World", "World")
+                    b.HasOne("Veldrath.Server.Data.Entities.World", "World")
                         .WithMany("Regions")
                         .HasForeignKey("WorldId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1060,15 +1060,15 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("World");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.RegionConnection", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.RegionConnection", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "FromRegion")
+                    b.HasOne("Veldrath.Server.Data.Entities.Region", "FromRegion")
                         .WithMany("Connections")
                         .HasForeignKey("FromRegionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "ToRegion")
+                    b.HasOne("Veldrath.Server.Data.Entities.Region", "ToRegion")
                         .WithMany()
                         .HasForeignKey("ToRegionId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1079,9 +1079,9 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("ToRegion");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Zone", b =>
                 {
-                    b.HasOne("RealmUnbound.Server.Data.Entities.Region", "Region")
+                    b.HasOne("Veldrath.Server.Data.Entities.Region", "Region")
                         .WithMany("Zones")
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1090,24 +1090,24 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Region");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.FoundrySubmission", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundrySubmission", b =>
                 {
                     b.Navigation("Votes");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Region", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Region", b =>
                 {
                     b.Navigation("Connections");
 
                     b.Navigation("Zones");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.World", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.World", b =>
                 {
                     b.Navigation("Regions");
                 });
 
-            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.Zone", b =>
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Zone", b =>
                 {
                     b.Navigation("Sessions");
                 });

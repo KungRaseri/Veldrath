@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -53,7 +53,7 @@ public static class ServiceCollectionExtensions
     /// <param name="configurePersistence">
     /// Optional persistence configuration. Defaults to in-memory when null.
     /// Use <c>p =&gt; p.UseNpgsql(connStr)</c> for PostgreSQL persistence or
-    /// <c>p =&gt; p.UseExternal()</c> when the host (e.g. RealmUnbound.Server) registers its own
+    /// <c>p =&gt; p.UseExternal()</c> when the host (e.g. Veldrath.Server) registers its own
     /// repository implementations.
     /// </param>
     /// <returns>The service collection for chaining.</returns>

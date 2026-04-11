@@ -1,11 +1,11 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reflection;
 using ReactiveUI;
 using RealmEngine.Data.Entities;
 using RealmForge.Services;
-using RealmUnbound.Contracts.Content;
+using Veldrath.Contracts.Content;
 using Serilog;
 
 namespace RealmForge.ViewModels;

@@ -1,12 +1,12 @@
-using Microsoft.EntityFrameworkCore;
-using RealmUnbound.Server.Data.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Data.Repositories;
+namespace Veldrath.Server.Data.Repositories;
 
 /// <summary>Read-only repository for <see cref="World"/> catalog entries.</summary>
 public interface IWorldRepository
 {
-    /// <summary>Returns all worlds (currently only Draveth).</summary>
+    /// <summary>Returns all worlds (currently only Veldrath).</summary>
     Task<List<World>> GetAllAsync();
 
     /// <summary>Returns the world with the given <paramref name="worldId"/>, or <see langword="null"/> if not found.</summary>

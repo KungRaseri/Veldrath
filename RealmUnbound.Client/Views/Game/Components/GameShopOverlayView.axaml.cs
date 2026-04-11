@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 
-namespace RealmUnbound.Client.Views;
+namespace Veldrath.Client.Views;
 
 /// <summary>Shop overlay modal: Buy and Sell tabs with item listings.</summary>
 [ExcludeFromCodeCoverage]

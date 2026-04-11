@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.DataProtection;
@@ -17,24 +17,24 @@ using RealmEngine.Core.Repositories;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
-using RealmUnbound.Server.Data;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Features.Admin;
-using RealmUnbound.Server.Features.Account;
-using RealmUnbound.Server.Features.Auth;
-using RealmUnbound.Server.Features.Announcements;
-using RealmUnbound.Server.Features.Characters;
-using RealmUnbound.Server.Features.Content;
-using RealmUnbound.Server.Features.Foundry;
-using RealmUnbound.Server.Features.Reports;
-using RealmUnbound.Server.Features.Players;
-using RealmUnbound.Server.Features.Zones;
-using RealmUnbound.Server.Infrastructure.Email;
-using RealmUnbound.Server.Services;
-using RealmUnbound.Server.Health;
-using RealmUnbound.Server.Hubs;
-using RealmUnbound.Server.Settings;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Admin;
+using Veldrath.Server.Features.Account;
+using Veldrath.Server.Features.Auth;
+using Veldrath.Server.Features.Announcements;
+using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Content;
+using Veldrath.Server.Features.Foundry;
+using Veldrath.Server.Features.Reports;
+using Veldrath.Server.Features.Players;
+using Veldrath.Server.Features.Zones;
+using Veldrath.Server.Infrastructure.Email;
+using Veldrath.Server.Services;
+using Veldrath.Server.Health;
+using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 using RealmEngine.Shared.Abstractions;
 using System.Text;
 
@@ -43,17 +43,17 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
     .Enrich.FromLogContext()
-    .Enrich.WithProperty("Application", "RealmUnbound.Server")
+    .Enrich.WithProperty("Application", "Veldrath.Server")
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
     .WriteTo.File(
-        "logs/realmunbound-server-.txt",
+        "logs/veldrath-server-.txt",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 7)
     .CreateLogger();
 
 try
 {
-    Log.Information("RealmUnbound.Server starting...");
+    Log.Information("Veldrath.Server starting...");
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
@@ -148,7 +148,7 @@ try
             options.AddPolicy(permission, p => p.RequireClaim("permission", permission));
     });
 
-    builder.Services.Configure<RealmUnbound.Server.Settings.ModerationOptions>(
+    builder.Services.Configure<Veldrath.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
 
     // AuthExchangeCodeService uses an internal ConcurrentDictionary — no IMemoryCache dependency.
@@ -278,7 +278,7 @@ try
     // RealmEngine services
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
-    builder.Services.AddScoped<RealmUnbound.Server.Features.Characters.Combat.ActorPoolResolver>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
@@ -315,7 +315,7 @@ try
     builder.Services.AddScoped<ITraitDefinitionRepository, EfCoreTraitDefinitionRepository>();
 
     // Version compatibility — MinCompatibleClientVersion is stamped into appsettings.Production.json
-    // at Release publish time by the MSBuild target in RealmUnbound.Server.csproj.
+    // at Release publish time by the MSBuild target in Veldrath.Server.csproj.
     // Post-deploy override (no redeploy): VersionCompatibility__MinCompatibleClientVersion env var.
     builder.Services.Configure<VersionCompatibilitySettings>(
         builder.Configuration.GetSection("VersionCompatibility"));
@@ -342,7 +342,7 @@ try
     // Persisting to a mounted volume prevents key loss on container restart.
     builder.Services.AddDataProtection()
         .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
-        .SetApplicationName("RealmUnbound.Server");
+        .SetApplicationName("Veldrath.Server");
 
     // Health checks
     builder.Services.AddHealthChecks()
@@ -358,7 +358,7 @@ try
         {
             var exLogger = context.RequestServices
                 .GetRequiredService<ILoggerFactory>()
-                .CreateLogger("RealmUnbound.Server.UnhandledExceptions");
+                .CreateLogger("Veldrath.Server.UnhandledExceptions");
             exLogger.LogError(exceptionFeature.Error, "Unhandled exception for {Method} {Path}",
                 context.Request.Method, context.Request.Path);
         }
@@ -480,12 +480,12 @@ try
         }
     });
 
-    Log.Information("RealmUnbound.Server running at {Urls}", string.Join(", ", app.Urls));
+    Log.Information("Veldrath.Server running at {Urls}", string.Join(", ", app.Urls));
     await app.RunAsync();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "RealmUnbound.Server terminated unexpectedly");
+    Log.Fatal(ex, "Veldrath.Server terminated unexpectedly");
 }
 finally
 {

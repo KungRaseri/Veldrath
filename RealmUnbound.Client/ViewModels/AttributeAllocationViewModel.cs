@@ -1,7 +1,7 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>View model for a single attribute draft row in the allocation overlay.</summary>
 public sealed class AttributeDraftViewModel : ViewModelBase

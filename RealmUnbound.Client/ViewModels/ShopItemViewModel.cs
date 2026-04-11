@@ -1,7 +1,7 @@
-using System.Reactive;
+﻿using System.Reactive;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a single purchasable item in the merchant shop overlay.</summary>
 public sealed class ShopItemViewModel : ViewModelBase

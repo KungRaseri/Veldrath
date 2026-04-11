@@ -1,7 +1,7 @@
-using System.Reactive;
+﻿using System.Reactive;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a player who is currently online in the same zone, shown in the Online in Zone list.</summary>
 public class OnlinePlayerViewModel : ReactiveObject

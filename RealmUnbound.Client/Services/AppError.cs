@@ -1,4 +1,4 @@
-namespace RealmUnbound.Client.Services;
+﻿namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Separates the user-facing message from an optional technical detail string

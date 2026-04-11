@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 
-namespace RealmUnbound.Client.Views;
+namespace Veldrath.Client.Views;
 
 /// <summary>Attribute allocation overlay modal: point-buy controls with confirm/cancel.</summary>
 [ExcludeFromCodeCoverage]

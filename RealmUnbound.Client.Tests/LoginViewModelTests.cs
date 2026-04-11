@@ -1,10 +1,10 @@
-using System.Reactive.Linq;
+﻿using System.Reactive.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
+using Veldrath.Client.Services;
+using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class LoginViewModelTests : TestBase
 {

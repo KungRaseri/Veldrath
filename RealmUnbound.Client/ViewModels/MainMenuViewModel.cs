@@ -1,12 +1,12 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using System.Reactive.Linq;
 using System.Windows.Input;
-using RealmUnbound.Assets;
-using RealmUnbound.Assets.Manifest;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Contracts.Announcements;
+using Veldrath.Assets;
+using Veldrath.Assets.Manifest;
+using Veldrath.Client.Services;
+using Veldrath.Contracts.Announcements;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 public class MainMenuViewModel : ViewModelBase
 {
@@ -15,7 +15,7 @@ public class MainMenuViewModel : ViewModelBase
     private bool _isChecking;
     private IReadOnlyList<AnnouncementDto> _announcements = [];
 
-    public string Title    => "RealmUnbound";
+    public string Title    => "Veldrath";
     public string Subtitle => "An Epic Adventure Awaits";
 
     /// <summary>True when a valid access token is present — drives which buttons are shown.</summary>

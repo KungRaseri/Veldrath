@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 using RealmEngine.Shared.Models;
 
@@ -6,7 +6,7 @@ namespace RealmEngine.Data.Persistence;
 
 /// <summary>
 /// EF Core context for game-state entities: saves, hall of fame, and inventory records.
-/// Used by both standalone clients (SQLite) and <c>RealmUnbound.Server</c> (Postgres).
+/// Used by both standalone clients (SQLite) and <c>Veldrath.Server</c> (Postgres).
 /// Auth/Identity/server-operational tables live in <c>ApplicationDbContext</c>.
 /// </summary>
 public class GameDbContext : DbContext

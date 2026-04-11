@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Data.Entities;
+﻿namespace Veldrath.Server.Data.Entities;
 
 /// <summary>
 /// Tracks a JWT refresh token for a <see cref="PlayerAccount"/>.

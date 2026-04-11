@@ -1,10 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Zones;
+namespace Veldrath.Server.Features.Zones;
 
 /// <summary>
 /// Hub command that performs an active area search, rolling against the

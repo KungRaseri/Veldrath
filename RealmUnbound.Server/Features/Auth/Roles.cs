@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Features.Auth;
+﻿namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Defines the canonical role names used throughout the RBAC system.

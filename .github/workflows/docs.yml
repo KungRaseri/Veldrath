@@ -1,4 +1,4 @@
-name: Deploy Documentation
+﻿name: Deploy Documentation
 
 concurrency:
   group: docs-${{ github.ref }}
@@ -14,8 +14,8 @@ on:
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
       - 'RealmForge/**'
-      - 'RealmUnbound.Client/**'
-      - 'RealmUnbound.Server/**'
+      - 'Veldrath.Client/**'
+      - 'Veldrath.Server/**'
   workflow_dispatch:
 
 permissions:
@@ -61,8 +61,8 @@ jobs:
           | **RealmEngine.Shared** | Shared models, domain entities, interfaces |
           | **RealmEngine.Data** | JSON data loading, LiteDB persistence, repositories |
           | **RealmForge** | Avalonia UI JSON game data editor |
-          | **RealmUnbound.Client** | Avalonia desktop client with ReactiveUI |
-          | **RealmUnbound.Server** | ASP.NET Core game server with SignalR |
+          | **Veldrath.Client** | Avalonia desktop client with ReactiveUI |
+          | **Veldrath.Server** | ASP.NET Core game server with SignalR |
           EOF
 
       - name: Build documentation

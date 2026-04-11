@@ -1,7 +1,7 @@
-using RealmUnbound.Client.Tests.Infrastructure;
-using RealmUnbound.Client.ViewModels;
+﻿using Veldrath.Client.Tests.Infrastructure;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests;
+namespace Veldrath.Client.Tests;
 
 public class EquipmentSlotViewModelTests : TestBase
 {

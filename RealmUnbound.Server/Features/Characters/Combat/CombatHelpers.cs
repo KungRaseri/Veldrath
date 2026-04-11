@@ -1,13 +1,13 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Hubs;
-using ServerCharacter = RealmUnbound.Server.Data.Entities.Character;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Hubs;
+using ServerCharacter = Veldrath.Server.Data.Entities.Character;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 // Internal helpers shared by all combat hub command handlers.
 // Marked internal so they require no XML doc comments (CS1591 only applies to public members).

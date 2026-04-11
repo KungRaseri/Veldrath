@@ -1,4 +1,4 @@
-namespace RealmUnbound.Contracts.Connection;
+﻿namespace Veldrath.Contracts.Connection;
 
 /// <summary>
 /// Sent by the server to every caller immediately on connection, identifying the server's

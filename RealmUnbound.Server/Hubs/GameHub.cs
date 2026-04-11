@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
@@ -10,22 +10,22 @@ using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Models.Tiled;
-using RealmUnbound.Contracts.Connection;
-using RealmUnbound.Contracts.Tilemap;
-using RealmUnbound.Server.Data;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Features.Auth;
-using RealmUnbound.Server.Features.Characters;
-using RealmUnbound.Server.Features.Characters.Combat;
-using RealmUnbound.Server.Features.LevelUp;
-using RealmUnbound.Server.Features.Quest;
-using RealmUnbound.Server.Features.Shop;
-using RealmUnbound.Server.Features.Zones;
-using RealmUnbound.Server.Services;
-using RealmUnbound.Server.Settings;
+using Veldrath.Contracts.Connection;
+using Veldrath.Contracts.Tilemap;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Features.Auth;
+using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.LevelUp;
+using Veldrath.Server.Features.Quest;
+using Veldrath.Server.Features.Shop;
+using Veldrath.Server.Features.Zones;
+using Veldrath.Server.Services;
+using Veldrath.Server.Settings;
 
-namespace RealmUnbound.Server.Hubs;
+namespace Veldrath.Server.Hubs;
 
 /// <summary>
 /// Real-time game hub. Clients must connect with a valid JWT (passed as query-string
@@ -454,7 +454,7 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Loads and returns the <see cref="RealmUnbound.Contracts.Tilemap.TileMapDto"/> for the caller's current zone.
+    /// Loads and returns the <see cref="Veldrath.Contracts.Tilemap.TileMapDto"/> for the caller's current zone.
     /// Sends <c>ZoneTileMap</c> to the caller on success.
     /// </summary>
     public async Task GetZoneTileMap()
@@ -495,7 +495,7 @@ public class GameHub : Hub
 
     // Region map
     /// <summary>
-    /// Loads and returns the <see cref="RealmUnbound.Contracts.Tilemap.RegionMapDto"/> for the
+    /// Loads and returns the <see cref="Veldrath.Contracts.Tilemap.RegionMapDto"/> for the
     /// caller's current region. Sends <c>RegionMapData</c> to the caller on success.
     /// </summary>
     public async Task GetRegionMap()

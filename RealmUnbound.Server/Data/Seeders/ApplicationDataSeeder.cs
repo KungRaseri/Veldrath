@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using RealmUnbound.Server.Data.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Veldrath.Server.Data.Entities;
 
-namespace RealmUnbound.Server.Data.Seeders;
+namespace Veldrath.Server.Data.Seeders;
 
 /// <summary>Seeds world-geography rows (World, Regions, Zones, and their connections) into <see cref="ApplicationDbContext"/>.</summary>
 public static class ApplicationDataSeeder
@@ -23,8 +23,8 @@ public static class ApplicationDataSeeder
 
         db.Worlds.Add(new World
         {
-            Id          = "draveth",
-            Name        = "Draveth",
+            Id          = "veldrath",
+            Name        = "Veldrath",
             Description = "A world of scattered kingdoms, ancient ruins, and contested wilds, shaped by centuries of war and forgotten magic.",
             Era         = "The Age of Embers",
         });
@@ -39,10 +39,10 @@ public static class ApplicationDataSeeder
             return;
 
         db.Regions.AddRange(
-            new Region { Id = "varenmark",   Name = "Varenmark",   Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", Type = RegionType.Countryside, MinLevel = 0, MaxLevel = 6, IsStarter = true, IsDiscoverable = true, WorldId = "draveth" },
-            new Region { Id = "greymoor",    Name = "Greymoor",    Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.",    Type = RegionType.Highland, MinLevel = 5,  MaxLevel = 14, IsStarter = false, IsDiscoverable = true, WorldId = "draveth" },
-            new Region { Id = "saltcliff",   Name = "Saltcliff",   Description = "Thysmara sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remnants of a sunken empire.",  Type = RegionType.Coastal,  MinLevel = 10, MaxLevel = 20, IsStarter = false, IsDiscoverable = true, WorldId = "draveth" },
-            new Region { Id = "cinderplain", Name = "Cinderplain", Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.", Type = RegionType.Volcanic, MinLevel = 18, MaxLevel = 30, IsStarter = false, IsDiscoverable = true, WorldId = "draveth" }
+            new Region { Id = "varenmark",   Name = "Varenmark",   Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", Type = RegionType.Countryside, MinLevel = 0, MaxLevel = 6, IsStarter = true, IsDiscoverable = true, WorldId = "veldrath" },
+            new Region { Id = "greymoor",    Name = "Greymoor",    Description = "Fog-wreathed Dravan highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.",    Type = RegionType.Highland, MinLevel = 5,  MaxLevel = 14, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" },
+            new Region { Id = "saltcliff",   Name = "Saltcliff",   Description = "Thysmara sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remnants of a sunken empire.",  Type = RegionType.Coastal,  MinLevel = 10, MaxLevel = 20, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" },
+            new Region { Id = "cinderplain", Name = "Cinderplain", Description = "Kaldrek's scorched expanse of ash and cooled lava, where forge-tempered warbands and fire-touched creatures stake their claim.", Type = RegionType.Volcanic, MinLevel = 18, MaxLevel = 30, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" }
         );
 
         await db.SaveChangesAsync();
@@ -91,7 +91,7 @@ public static class ApplicationDataSeeder
             new Zone { Id = "saltcliff-heights", Name = "The Saltcliff Heights", Description = "Wind-blasted clifftops above the Thysmara sea, dotted with lighthouse ruins and contested by rival gull-rider clans.",            Type = ZoneType.Wilderness, MinLevel = 14, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff"   },
             new Zone { Id = "sunken-name",       Name = "The Sunken Name",       Description = "The drowned heart of a once-great Thysmara empire, now a flooded ruin accessible only to the brave and the waterproofed.",         Type = ZoneType.Dungeon,    MinLevel = 16, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff"   },
             // Cinderplain
-            new Zone { Id = "skarhold",          Name = "Skarhold",              Description = "A Kaldrek forge-city built inside a dormant caldera, where the best smiths in Draveth ply their trade under sulphur skies.",      Type = ZoneType.Town,       MinLevel = 18, MaxPlayers = 0, IsStarter = false, HasInn = true,  HasMerchant = true,  IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
+            new Zone { Id = "skarhold",          Name = "Skarhold",              Description = "A Kaldrek forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.",      Type = ZoneType.Town,       MinLevel = 18, MaxPlayers = 0, IsStarter = false, HasInn = true,  HasMerchant = true,  IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
             new Zone { Id = "ashfields",         Name = "The Ashfields",         Description = "Grey ash plains stretching to the horizon, dotted with fused obsidian trees and the scorched skulls of fallen armies.",            Type = ZoneType.Wilderness, MinLevel = 20, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
             new Zone { Id = "smoldering-reach",  Name = "The Smoldering Reach",  Description = "A cracked lava field where vents of superheated gas erupt without warning and heat-adapted predators hunt at dusk.",               Type = ZoneType.Wilderness, MinLevel = 23, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
             new Zone { Id = "kaldrek-maw",       Name = "Kaldrek's Maw",         Description = "A vast volcanic vent complex known as the Maw, lair of Kaldrek's fire-bound ancient and final test of the worthy.",               Type = ZoneType.Dungeon,    MinLevel = 26, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" }

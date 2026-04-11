@@ -1,9 +1,9 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Contracts.Characters;
+using Veldrath.Contracts.Characters;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 // Interface
 public interface ICharacterService

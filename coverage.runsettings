@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Include>[RealmEngine.*]*,[RealmForge]*,[RealmUnbound.*]*</Include>
-          <Exclude>[*.Tests]*;[RealmUnbound.Client]RealmUnbound.Client.Services.HubConnectionFactory;[RealmUnbound.Client]RealmUnbound.Client.Services.HubConnectionWrapper</Exclude>
+          <Include>[RealmEngine.*]*,[RealmForge]*,[Veldrath.*]*</Include>
+          <Exclude>[*.Tests]*;[Veldrath.Client]Veldrath.Client.Services.HubConnectionFactory;[Veldrath.Client]Veldrath.Client.Services.HubConnectionWrapper</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
           <!-- Compiled XAML resources, XAML closures in views, app bootstrap, entry point, SignalR infrastructure -->
           <ExcludeByFile>**/Program.cs,**/App.axaml,**/App.axaml.cs,**/Assets/Themes/*.axaml,**/Views/CharacterSelectView.axaml,**/Views/GameView.axaml,**/Services/HubConnectionFactory.cs,**/Services/IHubConnection.cs</ExcludeByFile>

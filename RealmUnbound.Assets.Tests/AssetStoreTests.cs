@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using RealmUnbound.Assets;
-using RealmUnbound.Assets.Manifest;
+using Veldrath.Assets;
+using Veldrath.Assets.Manifest;
 
-namespace RealmUnbound.Assets.Tests;
+namespace Veldrath.Assets.Tests;
 
 public sealed class AssetStoreTests : IDisposable
 {

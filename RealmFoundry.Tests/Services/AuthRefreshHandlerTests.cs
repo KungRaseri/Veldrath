@@ -1,9 +1,9 @@
-using System.Net;
+﻿using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Protected;
 using RealmFoundry.Tests.Infrastructure;
-using RealmUnbound.Contracts.Auth;
+using Veldrath.Contracts.Auth;
 
 namespace RealmFoundry.Tests.Services;
 

@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using RealmUnbound.Contracts.Auth;
+﻿using Microsoft.AspNetCore.Mvc;
+using Veldrath.Contracts.Auth;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Minimal API endpoints for authentication.

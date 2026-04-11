@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Data.Migrations.Application
+namespace Veldrath.Server.Data.Migrations.Application
 {
     /// <inheritdoc />
     public partial class AddPendingLinkTokens : Migration

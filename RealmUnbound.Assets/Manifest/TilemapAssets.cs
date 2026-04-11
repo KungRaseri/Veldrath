@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets.Manifest;
+﻿namespace Veldrath.Assets.Manifest;
 
 /// <summary>Describes a single tileset spritesheet bundled with the game assets.</summary>
 /// <param name="Key">Unique identifier for this tileset (e.g. <c>"onebit_packed"</c>).</param>
@@ -16,7 +16,7 @@ public record TilesetInfo(
     int Rows);
 
 /// <summary>
-/// Compile-time catalog of all tileset spritesheets shipped with RealmUnbound.
+/// Compile-time catalog of all tileset spritesheets shipped with Veldrath.
 /// The <see cref="RelativePath"/> on each entry is relative to the
 /// <c>GameAssets/tilemaps/sheets/</c> output directory.
 /// </summary>

@@ -1,8 +1,8 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Contracts.Connection;
+using Veldrath.Contracts.Connection;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>Connection health state for the game server hub.</summary>
 public enum ConnectionState

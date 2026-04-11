@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Features.Auth;
+﻿namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Defines all fine-grained permission strings used in the RBAC system.

@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Data.Entities;
+﻿namespace Veldrath.Server.Data.Entities;
 
 /// <summary>Type of game content being submitted.</summary>
 public enum FoundryContentType

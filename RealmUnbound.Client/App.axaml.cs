@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -8,14 +8,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
-using RealmUnbound.Assets;
-using RealmUnbound.Assets.Manifest;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.ViewModels;
-using RealmUnbound.Client.Views;
+using Veldrath.Assets;
+using Veldrath.Assets.Manifest;
+using Veldrath.Client.Services;
+using Veldrath.Client.ViewModels;
+using Veldrath.Client.Views;
 using Serilog;
 
-namespace RealmUnbound.Client;
+namespace Veldrath.Client;
 
 [ExcludeFromCodeCoverage]
 public partial class App : Application
@@ -156,7 +156,7 @@ public partial class App : Application
         services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/')));
 
         // Game asset store — warms the IMemoryCache during the splash screen
-        services.AddRealmUnboundAssets();
+        services.AddVeldrathAssets();
 
         // Audio player — falls back to no-op if the native VLC library is unavailable
         services.AddSingleton<IAudioPlayer>(_ =>

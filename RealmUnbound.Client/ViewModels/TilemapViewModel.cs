@@ -1,10 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using ReactiveUI;
-using RealmUnbound.Contracts.Tilemap;
+using Veldrath.Contracts.Tilemap;
 using Serilog;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Lightweight snapshot of any entity (character or enemy) positioned on the tile grid.</summary>
 /// <param name="EntityId">Unique identifier for this entity instance.</param>

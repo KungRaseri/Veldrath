@@ -1,8 +1,8 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using ReactiveUI;
-using RealmUnbound.Client.Services;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Root view model for <see cref="Views.MainWindow"/>. Drives page navigation and window state.</summary>
 public class MainWindowViewModel : ViewModelBase

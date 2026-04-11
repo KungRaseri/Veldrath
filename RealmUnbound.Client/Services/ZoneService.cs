@@ -1,10 +1,10 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Zones;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Zones;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 // Interface
 public interface IZoneService

@@ -1,8 +1,8 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// Hub command that sets the character to a defending stance for the current combat turn.

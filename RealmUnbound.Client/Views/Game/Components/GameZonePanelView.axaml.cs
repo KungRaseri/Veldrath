@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 
-namespace RealmUnbound.Client.Views;
+namespace Veldrath.Client.Views;
 
 /// <summary>Zone panel component: locations, enemy roster, combat HUD, and death overlay.</summary>
 [ExcludeFromCodeCoverage]

@@ -1,17 +1,17 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Foundry;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Foundry;
 using SharedPower       = RealmEngine.Shared.Models.Power;
 using SharedQuest       = RealmEngine.Shared.Models.Quest;
 using SharedRecipe      = RealmEngine.Shared.Models.Recipe;
 using DataItem          = RealmEngine.Data.Entities.Item;
 
-namespace RealmUnbound.Server.Features.Content;
+namespace Veldrath.Server.Features.Content;
 
 /// <summary>
 /// Read-only catalog endpoints for game content data.

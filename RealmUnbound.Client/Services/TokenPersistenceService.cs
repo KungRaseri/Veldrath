@@ -1,9 +1,9 @@
-using System.Runtime.Versioning;
+﻿using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Saves and loads the current user's token pair to/from an encrypted file on disk
@@ -15,7 +15,7 @@ public sealed class TokenPersistenceService
 {
     private static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "RealmUnbound", "tokens.dat");
+        "Veldrath", "tokens.dat");
 
     [SupportedOSPlatform("windows")]
     public void Save(string accessToken, string refreshToken, string username,

@@ -1,9 +1,9 @@
-using System.Net;
+﻿using System.Net;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmUnbound.Client.Services;
+using Veldrath.Client.Services;
 
-namespace RealmUnbound.Client.Tests.Services;
+namespace Veldrath.Client.Tests.Services;
 
 /// <summary>
 /// A minimal <see cref="IHttpClientFactory"/> stub that creates <see cref="HttpClient"/>

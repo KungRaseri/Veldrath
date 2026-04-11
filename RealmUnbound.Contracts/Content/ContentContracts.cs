@@ -1,6 +1,6 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
-namespace RealmUnbound.Contracts.Content;
+namespace Veldrath.Contracts.Content;
 
 // Content Browse
 /// <summary>

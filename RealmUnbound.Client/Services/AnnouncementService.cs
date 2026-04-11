@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
-using RealmUnbound.Contracts.Announcements;
+﻿using Microsoft.Extensions.Logging;
+using Veldrath.Contracts.Announcements;
 using System.Net.Http.Json;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>Fetches announcements from the server news feed.</summary>
 public interface IAnnouncementService

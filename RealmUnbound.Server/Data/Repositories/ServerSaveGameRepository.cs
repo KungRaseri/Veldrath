@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
-namespace RealmUnbound.Server.Data.Repositories;
+namespace Veldrath.Server.Data.Repositories;
 
 /// <summary>
 /// Server-side implementation of <see cref="ISaveGameRepository"/> backed by

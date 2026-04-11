@@ -1,8 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace RealmUnbound.Assets;
+namespace Veldrath.Assets;
 
-/// <summary>Provides DI registration extensions for <c>RealmUnbound.Assets</c>.</summary>
+/// <summary>Provides DI registration extensions for <c>Veldrath.Assets</c>.</summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
     /// <see cref="AppContext.BaseDirectory"/>.
     /// </param>
     /// <returns>The same <paramref name="services"/> instance for chaining.</returns>
-    public static IServiceCollection AddRealmUnboundAssets(
+    public static IServiceCollection AddVeldrathAssets(
         this IServiceCollection services,
         Action<AssetStoreOptions>? configure = null)
     {

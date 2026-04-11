@@ -1,14 +1,14 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using RealmUnbound.Contracts.Auth;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Contracts.Auth;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Auth;
+namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Handles account registration, login, token refresh, and logout.

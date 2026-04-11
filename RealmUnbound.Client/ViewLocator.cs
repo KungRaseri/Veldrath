@@ -1,9 +1,9 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using RealmUnbound.Client.ViewModels;
+using Veldrath.Client.ViewModels;
 using System;
 
-namespace RealmUnbound.Client;
+namespace Veldrath.Client;
 
 public class ViewLocator : IDataTemplate
 {

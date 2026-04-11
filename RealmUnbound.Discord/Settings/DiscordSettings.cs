@@ -1,4 +1,4 @@
-namespace RealmUnbound.Discord.Settings;
+﻿namespace Veldrath.Discord.Settings;
 
 /// <summary>
 /// Configuration options bound from the <c>Discord</c> section of appsettings.
@@ -16,6 +16,6 @@ public sealed record DiscordSettings
     /// </summary>
     public ulong DevGuildId { get; init; }
 
-    /// <summary>Gets the base URL of the RealmUnbound.Server API (used for live status).</summary>
+    /// <summary>Gets the base URL of the Veldrath.Server API (used for live status).</summary>
     public string ServerBaseUrl { get; init; } = "http://localhost:8080";
 }

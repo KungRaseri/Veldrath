@@ -1,8 +1,8 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using ReactiveUI;
-using RealmUnbound.Contracts.Characters;
+using Veldrath.Contracts.Characters;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>
 /// Per-character entry on the character select screen.

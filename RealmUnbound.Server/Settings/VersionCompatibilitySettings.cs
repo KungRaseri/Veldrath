@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Settings;
+﻿namespace Veldrath.Server.Settings;
 
 /// <summary>
 /// Configuration for client compatibility enforcement sent to connecting clients via <c>ServerInfo</c>.

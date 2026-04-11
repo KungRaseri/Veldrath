@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
-using RealmUnbound.Contracts.Content;
+﻿using Microsoft.Extensions.Logging;
+using Veldrath.Contracts.Content;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Client-side in-memory cache for game content catalog data fetched from the server.

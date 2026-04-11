@@ -1,11 +1,11 @@
-using System.Net;
+﻿using System.Net;
 using System.Web;
 
-namespace RealmUnbound.Client.Services;
+namespace Veldrath.Client.Services;
 
 /// <summary>
 /// Spins up a temporary localhost HTTP listener that catches the JWT redirect
-/// from the RealmUnbound.Server after a successful OAuth provider exchange.
+/// from the Veldrath.Server after a successful OAuth provider exchange.
 /// One-shot: use, await WaitForCallbackAsync, then dispose.
 /// </summary>
 internal sealed class OAuthLocalListener : IDisposable
@@ -48,7 +48,7 @@ internal sealed class OAuthLocalListener : IDisposable
             // Acknowledge the browser — a minimal HTML page so the user can close the tab.
             var html =
                 """
-                <html><head><title>RealmUnbound — Authenticated</title></head>
+                <html><head><title>Veldrath — Authenticated</title></head>
                 <body style="font-family:system-ui;text-align:center;padding-top:3rem">
                 <h2>Authentication successful!</h2>
                 <p>You can close this tab and return to the game.</p>

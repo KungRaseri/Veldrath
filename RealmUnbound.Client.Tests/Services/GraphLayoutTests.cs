@@ -1,8 +1,8 @@
-using Avalonia.Headless.XUnit;
-using RealmUnbound.Client.Services;
-using RealmUnbound.Client.ViewModels;
+﻿using Avalonia.Headless.XUnit;
+using Veldrath.Client.Services;
+using Veldrath.Client.ViewModels;
 
-namespace RealmUnbound.Client.Tests.Services;
+namespace Veldrath.Client.Tests.Services;
 
 public class GraphLayoutTests : TestBase
 {

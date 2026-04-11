@@ -1,6 +1,6 @@
-{
+﻿{
   "profiles": {
-    "RealmUnbound.Discord": {
+    "Veldrath.Discord": {
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"

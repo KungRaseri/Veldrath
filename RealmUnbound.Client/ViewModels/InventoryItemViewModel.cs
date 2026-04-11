@@ -1,7 +1,7 @@
-using System.Reactive;
+﻿using System.Reactive;
 using ReactiveUI;
 
-namespace RealmUnbound.Client.ViewModels;
+namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a single item slot in the active character's inventory.</summary>
 public sealed class InventoryItemViewModel : ViewModelBase

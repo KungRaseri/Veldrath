@@ -1,6 +1,6 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 
-namespace RealmUnbound.Client;
+namespace Veldrath.Client;
 
 /// <summary>
 /// Mutable client-side configuration shared across ViewModels at runtime.

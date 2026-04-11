@@ -1,7 +1,7 @@
-using RealmEngine.Core.Generators.Modern;
+﻿using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Shared.Models;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// Generates a <see cref="SpawnedEnemy"/> roster for a zone location from its actor pool.

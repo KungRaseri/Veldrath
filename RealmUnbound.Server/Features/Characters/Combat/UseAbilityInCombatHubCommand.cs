@@ -1,13 +1,13 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using RealmUnbound.Server.Data.Repositories;
-using RealmUnbound.Server.Hubs;
+using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Hubs;
 
-namespace RealmUnbound.Server.Features.Characters.Combat;
+namespace Veldrath.Server.Features.Characters.Combat;
 
 /// <summary>
 /// Hub command that activates a named ability during combat, consuming mana and applying

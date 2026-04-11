@@ -1,9 +1,9 @@
-namespace RealmUnbound.Server.Data.Entities;
+﻿namespace Veldrath.Server.Data.Entities;
 
-/// <summary>The top-level world container that groups all geographic regions of Draveth.</summary>
+/// <summary>The top-level world container that groups all geographic regions of Veldrath.</summary>
 public class World
 {
-    /// <summary>Slug identifier (e.g. "draveth").</summary>
+    /// <summary>Slug identifier (e.g. "veldrath").</summary>
     public string Id { get; set; } = string.Empty;
 
     /// <summary>Display name of the world.</summary>

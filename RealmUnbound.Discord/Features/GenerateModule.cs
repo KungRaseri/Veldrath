@@ -1,9 +1,9 @@
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 using MediatR;
 using RealmEngine.Core.Features.ItemGeneration.Commands;
 
-namespace RealmUnbound.Discord.Features;
+namespace Veldrath.Discord.Features;
 
 /// <summary>
 /// Slash command group for procedurally generating content straight from the realm's engine.

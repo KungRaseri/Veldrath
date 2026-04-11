@@ -1,7 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace RealmUnbound.Client.Converters;
+namespace Veldrath.Client.Converters;
 
 /// <summary>Returns <see langword="true"/> when the bound value's string representation equals the converter parameter.</summary>
 public sealed class EqualityConverter : IValueConverter

@@ -1,8 +1,8 @@
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 using RealmEngine.Shared.Abstractions;
 
-namespace RealmUnbound.Discord.Features;
+namespace Veldrath.Discord.Features;
 
 /// <summary>Lore lookup commands for enemies, powers, and character classes.</summary>
 public sealed class LoreModule(

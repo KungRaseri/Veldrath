@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RealmUnbound.Server.Migrations
+namespace Veldrath.Server.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

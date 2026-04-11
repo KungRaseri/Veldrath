@@ -1,15 +1,15 @@
-using RealmUnbound.Contracts.Account;
-using RealmUnbound.Contracts.Auth;
-using RealmUnbound.Contracts.Admin;
-using RealmUnbound.Contracts.Content;
-using RealmUnbound.Contracts.Foundry;
-using RealmUnbound.Contracts.Players;
+﻿using Veldrath.Contracts.Account;
+using Veldrath.Contracts.Auth;
+using Veldrath.Contracts.Admin;
+using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Foundry;
+using Veldrath.Contracts.Players;
 
 namespace RealmFoundry.Services;
 
 /// <summary>
-/// Typed HttpClient facade for calling the RealmUnbound.Server REST API.
-/// Base address is configured via <c>RealmUnbound:ServerUrl</c> at startup.
+/// Typed HttpClient facade for calling the Veldrath.Server REST API.
+/// Base address is configured via <c>Veldrath:ServerUrl</c> at startup.
 /// Call <see cref="SetBearerToken"/> after login to authorise requests.
 /// </summary>
 public class RealmFoundryApiClient(HttpClient http)

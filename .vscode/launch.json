@@ -1,4 +1,4 @@
-{
+﻿{
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
@@ -112,15 +112,15 @@
             "request": "attach"
         },
 
-        // ── RealmUnbound ─────────────────────────────────────────────────────────
+        // ── Veldrath ─────────────────────────────────────────────────────────
         {
-            "name": "RealmUnbound Server (Debug)",
+            "name": "Veldrath Server (Debug)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-realmunbound-server",
-            "program": "${workspaceFolder}/RealmUnbound.Server/bin/Debug/net10.0/RealmUnbound.Server.dll",
+            "preLaunchTask": "build-veldrath-server",
+            "program": "${workspaceFolder}/Veldrath.Server/bin/Debug/net10.0/Veldrath.Server.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/RealmUnbound.Server",
+            "cwd": "${workspaceFolder}/Veldrath.Server",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
@@ -128,25 +128,25 @@
             "stopAtEntry": false
         },
         {
-            "name": "RealmUnbound Client (Debug)",
+            "name": "Veldrath Client (Debug)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-realmunbound-client",
-            "program": "${workspaceFolder}/RealmUnbound.Client/bin/Debug/net10.0/RealmUnbound.Client.exe",
+            "preLaunchTask": "build-veldrath-client",
+            "program": "${workspaceFolder}/Veldrath.Client/bin/Debug/net10.0/Veldrath.Client.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/RealmUnbound.Client",
+            "cwd": "${workspaceFolder}/Veldrath.Client",
             "console": "internalConsole",
             "stopAtEntry": false
         },
         {
-            "name": "Test: RealmUnbound.Server.Tests",
+            "name": "Test: Veldrath.Server.Tests",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "test-realmunbound-server",
+            "preLaunchTask": "test-veldrath-server",
             "program": "dotnet",
             "args": [
                 "test",
-                "${workspaceFolder}/RealmUnbound.Server.Tests/RealmUnbound.Server.Tests.csproj",
+                "${workspaceFolder}/Veldrath.Server.Tests/Veldrath.Server.Tests.csproj",
                 "--no-build"
             ],
             "cwd": "${workspaceFolder}",
@@ -157,8 +157,8 @@
 
     "compounds": [
         {
-            "name": "RealmUnbound (Full Stack)",
-            "configurations": ["RealmUnbound Server (Debug)", "RealmUnbound Client (Debug)"],
+            "name": "Veldrath (Full Stack)",
+            "configurations": ["Veldrath Server (Debug)", "Veldrath Client (Debug)"],
             "stopAll": true
         }
     ]

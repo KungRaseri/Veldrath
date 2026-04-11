@@ -1,12 +1,12 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:RealmUnbound.Client.ViewModels"
-             xmlns:views="using:RealmUnbound.Client.Views"
+             xmlns:vm="using:Veldrath.Client.ViewModels"
+             xmlns:views="using:Veldrath.Client.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="RealmUnbound.Client.Views.MapView"
+             x:Class="Veldrath.Client.Views.MapView"
              x:DataType="vm:MapViewModel"
              Background="{DynamicResource GameBackground0Brush}">
 

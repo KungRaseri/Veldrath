@@ -1,4 +1,4 @@
-namespace RealmUnbound.Client.ViewModels;
+﻿namespace Veldrath.Client.ViewModels;
 
 /// <summary>Represents a single chat message displayed in the chat log.</summary>
 /// <param name="Channel">The chat channel this message belongs to.</param>

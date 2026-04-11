@@ -1,9 +1,9 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Characters;
+namespace Veldrath.Server.Features.Characters;
 
 /// <summary>Inventory slot entry as stored in the character's <c>InventoryBlob</c> JSON.</summary>
 /// <param name="ItemRef">Item-reference slug (e.g. <c>"iron_sword"</c>).</param>

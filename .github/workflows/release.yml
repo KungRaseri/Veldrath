@@ -1,4 +1,4 @@
-# Triggered by component release tags (e.g. engine/v1.2.3) created automatically
+﻿# Triggered by component release tags (e.g. engine/v1.2.3) created automatically
 # by the package job in each CI workflow after a successful main-branch build.
 # Can also be triggered manually via workflow_dispatch with an existing tag.
 #
@@ -207,36 +207,36 @@ jobs:
             } > release-body.md
             ;;
           server)
-            NAME="RealmUnbound Server $VERSION"
+            NAME="Veldrath Server $VERSION"
             {
-              echo "## RealmUnbound Server $VERSION"
+              echo "## Veldrath Server $VERSION"
               echo ""
-              echo "Game server API for RealmUnbound."
+              echo "Game server API for Veldrath."
               echo ""
               echo "### Docker Image"
               echo '```'
-              echo "docker pull ghcr.io/$REPO_OWNER_LC/realmunbound-server:$VERSION"
+              echo "docker pull ghcr.io/$REPO_OWNER_LC/veldrath-server:$VERSION"
               echo '```'
               echo ""
               echo "### Packages"
-              echo "- \`RealmUnbound-Server-$VERSION.zip\` — ASP.NET Core server publish output (framework-dependent)"
+              echo "- \`Veldrath-Server-$VERSION.zip\` — ASP.NET Core server publish output (framework-dependent)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
             } > release-body.md
             ;;
           client)
-            NAME="RealmUnbound Client $VERSION"
+            NAME="Veldrath Client $VERSION"
             {
-              echo "## RealmUnbound Client $VERSION"
+              echo "## Veldrath Client $VERSION"
               echo ""
-              echo "Avalonia desktop client for RealmUnbound."
+              echo "Avalonia desktop client for Veldrath."
               echo ""
               echo "### Packages"
-              echo "- \`RealmUnbound-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)"
-              echo "- \`RealmUnbound-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
-              echo "- \`RealmUnbound-Client-macOS-x64-$VERSION.zip\` — macOS desktop app (osx-x64, Intel, self-contained)"
-              echo "- \`RealmUnbound-Client-macOS-arm64-$VERSION.zip\` — macOS desktop app (osx-arm64, Apple Silicon, self-contained)"
+              echo "- \`Veldrath-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)"
+              echo "- \`Veldrath-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
+              echo "- \`Veldrath-Client-macOS-x64-$VERSION.zip\` — macOS desktop app (osx-x64, Intel, self-contained)"
+              echo "- \`Veldrath-Client-macOS-arm64-$VERSION.zip\` — macOS desktop app (osx-arm64, Apple Silicon, self-contained)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"
@@ -247,7 +247,7 @@ jobs:
             {
               echo "## RealmFoundry $VERSION"
               echo ""
-              echo "Blazor Server community content portal for RealmUnbound."
+              echo "Blazor Server community content portal for Veldrath."
               echo ""
               echo "### Packages"
               echo "- \`RealmFoundry-$VERSION.zip\` -- ASP.NET Core publish output"
@@ -257,19 +257,19 @@ jobs:
             } > release-body.md
             ;;
           discord)
-            NAME="RealmUnbound Discord Bot $VERSION"
+            NAME="Veldrath Discord Bot $VERSION"
             {
-              echo "## RealmUnbound Discord Bot $VERSION"
+              echo "## Veldrath Discord Bot $VERSION"
               echo ""
-              echo "The Herald — Discord bot for RealmUnbound."
+              echo "The Herald — Discord bot for Veldrath."
               echo ""
               echo "### Docker Image"
               echo '```'
-              echo "docker pull ghcr.io/$REPO_OWNER_LC/realmunbound-discord:$VERSION"
+              echo "docker pull ghcr.io/$REPO_OWNER_LC/veldrath-discord:$VERSION"
               echo '```'
               echo ""
               echo "### Packages"
-              echo "- \`RealmUnbound-Discord-$VERSION.zip\` — ASP.NET Core publish output (framework-dependent)"
+              echo "- \`Veldrath-Discord-$VERSION.zip\` — ASP.NET Core publish output (framework-dependent)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"

@@ -1,4 +1,4 @@
-namespace RealmUnbound.Client.Services;
+﻿namespace Veldrath.Client.Services;
 
 /// <summary>Provides game audio playback for background music loops and one-shot sound effects.</summary>
 public interface IAudioPlayer : IDisposable

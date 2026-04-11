@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
 
-namespace RealmUnbound.Server.Services;
+namespace Veldrath.Server.Services;
 
 /// <summary>
 /// Periodically evicts idle character creation sessions from the in-memory store.

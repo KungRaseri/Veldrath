@@ -1,4 +1,4 @@
-namespace RealmUnbound.Assets.Manifest;
+﻿namespace Veldrath.Assets.Manifest;
 
 /// <summary>
 /// Path constants for item icons: weapons, armour, and potions.

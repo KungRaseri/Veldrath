@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
 
 namespace RealmEngine.Data.Persistence;
@@ -6,7 +6,7 @@ namespace RealmEngine.Data.Persistence;
 /// <summary>
 /// Shared EF Core model configuration for all game content entities.
 /// Called from both <see cref="ContentDbContext"/> (standalone tools) and
-/// <c>ApplicationDbContext</c> (RealmUnbound.Server) so the content schema
+/// <c>ApplicationDbContext</c> (Veldrath.Server) so the content schema
 /// is defined exactly once.
 /// </summary>
 public static class ContentModelConfiguration

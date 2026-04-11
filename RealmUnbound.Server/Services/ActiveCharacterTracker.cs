@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
-namespace RealmUnbound.Server.Services;
+namespace Veldrath.Server.Services;
 
 /// <summary>
 /// In-memory registry that maps each active character to the SignalR connection that claims it.

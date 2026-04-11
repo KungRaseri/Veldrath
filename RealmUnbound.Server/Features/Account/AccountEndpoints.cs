@@ -1,8 +1,8 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using RealmUnbound.Contracts.Account;
+using Veldrath.Contracts.Account;
 
-namespace RealmUnbound.Server.Features.Account;
+namespace Veldrath.Server.Features.Account;
 
 /// <summary>
 /// Self-service account management endpoints. All routes require an authenticated user.

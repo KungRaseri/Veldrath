@@ -1,9 +1,9 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Characters;
+namespace Veldrath.Server.Features.Characters;
 
 /// <summary>
 /// Hub command that looks up a dungeon zone by its slug and returns the dungeon ID so the client

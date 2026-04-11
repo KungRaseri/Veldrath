@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Settings;
+﻿namespace Veldrath.Server.Settings;
 
 /// <summary>
 /// Configuration options for the server-side moderation system.

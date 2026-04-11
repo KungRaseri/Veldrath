@@ -1,4 +1,4 @@
-namespace RealmUnbound.Server.Data.Entities;
+﻿namespace Veldrath.Server.Data.Entities;
 
 /// <summary>A named geographic region within the world, containing several adjacent zones.</summary>
 public class Region

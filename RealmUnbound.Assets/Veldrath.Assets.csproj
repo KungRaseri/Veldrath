@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Veldrath.Assets</RootNamespace>
+    <AssemblyName>Veldrath.Assets</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <!--
+    All files under GameAssets/ are content files that copy to the output directory
+    of any project that references this library (transitive via MSBuild CopyToOutputDirectory).
+    The folder is named "GameAssets" to avoid conflicting with Avalonia's "Assets" folder
+    in the client and RealmForge projects.
+  -->
+  <ItemGroup>
+    <Content Include="GameAssets\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

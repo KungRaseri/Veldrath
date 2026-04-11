@@ -1,4 +1,4 @@
-# Auth Flow & Character Creation Gap Fix Plan
+﻿# Auth Flow & Character Creation Gap Fix Plan
 
 **Started:** 2026-04-02  
 **Status:** In Progress — paused mid-test-verification
@@ -27,22 +27,22 @@ File: `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`
 ## Phase 1: Structural Gap Fixes — ✅ DONE
 
 ### Step 1 — Static Starting Location
-`RealmUnbound.Server/Features/Characters/CharacterCreationSessionEndpoints.cs`
+`Veldrath.Server/Features/Characters/CharacterCreationSessionEndpoints.cs`
 - Added `private const string DefaultStartingLocationSlug = "fenwick-market";`
 - `FinalizeAsync`: `CurrentZoneLocationSlug = DefaultStartingLocationSlug`
 
 ### Step 2 — Auto-disconnect on token refresh failure
 
-**a) `RealmUnbound.Client/Services/ServerConnectionService.cs`**
+**a) `Veldrath.Client/Services/ServerConnectionService.cs`**
 - Added `event Action? ConnectionLost` to `IServerConnectionService` interface
 - `ServerConnectionService`: fires `ConnectionLost?.Invoke()` from the `Closed` handler
 - `AccessTokenProvider`: checks `RefreshAsync()` return — if false, logs warning and returns `null`
 
-**b) `RealmUnbound.Client/ViewModels/GameViewModel.cs`**
+**b) `Veldrath.Client/ViewModels/GameViewModel.cs`**
 - Constructor subscribes `_connection.ConnectionLost += OnConnectionLost`
 - `OnConnectionLost()`: `_audioPlayer?.StopMusic(); _navigation.NavigateTo<MainMenuViewModel>();`
 
-**c) `RealmUnbound.Client/ViewModels/CharacterSelectViewModel.cs`**
+**c) `Veldrath.Client/ViewModels/CharacterSelectViewModel.cs`**
 - Constructor subscribes `_connection.ConnectionLost += OnConnectionLost`
 - `OnConnectionLost()`: `_navigation.NavigateTo<MainMenuViewModel>()`
 - `DoProactiveTokenRefreshAsync`: calls `await _connection.DisconnectAsync()` before NavigateTo on failed refresh
@@ -110,7 +110,7 @@ File: `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`
 ## Continuation Instructions
 
 1. Fix the 4 failing tests in `CharacterCreationSessionEndpointTests.cs` (details above)
-2. Run `dotnet test RealmUnbound.slnx --filter "Category!=UI" --no-build` — expect all pass
+2. Run `dotnet test Veldrath.slnx --filter "Category!=UI" --no-build` — expect all pass
 3. Run `dotnet test Realm.Full.slnx --filter "Category!=UI" --no-build` — verify full suite
 
 ### Required usings to add to `CharacterCreationSessionEndpoints.cs` for Fix 1
@@ -134,7 +134,7 @@ var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 var persisted = await db.Characters.FirstAsync(c => c.Id == character!.Id);
 persisted.CurrentZoneLocationSlug.Should().Be("fenwick-market");
 ```
-Requires adding `using Microsoft.EntityFrameworkCore;` and `using RealmUnbound.Server.Data;` to the test file (already present from AuthEndpointTests pattern — verify they are in this file's usings).
+Requires adding `using Microsoft.EntityFrameworkCore;` and `using Veldrath.Server.Data;` to the test file (already present from AuthEndpointTests pattern — verify they are in this file's usings).
 
 ### Fix 3 code (new body shape for PatchAttributes test)
 ```csharp

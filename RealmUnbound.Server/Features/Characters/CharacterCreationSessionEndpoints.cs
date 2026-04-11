@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 using MediatR;
@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.CharacterCreation.Queries;
 using RealmEngine.Shared.Abstractions;
-using RealmUnbound.Contracts.Characters;
-using RealmUnbound.Server.Data.Entities;
-using RealmUnbound.Server.Data.Repositories;
+using Veldrath.Contracts.Characters;
+using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 
-namespace RealmUnbound.Server.Features.Characters;
+namespace Veldrath.Server.Features.Characters;
 
 /// <summary>
 /// Minimal API endpoints for the guided character creation wizard.
