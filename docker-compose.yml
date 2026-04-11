@@ -67,6 +67,8 @@ services:
       - Email__SenderAddress=noreply@veldrath.local
       - Email__SenderName=Veldrath Dev
       - Foundry__BaseUrl=http://localhost:8081
+      # Structured log shipping — relay to the local Seq container inside Docker
+      - Seq__ServerUrl=http://seq
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -122,8 +124,48 @@ services:
       server:
         condition: service_healthy
 
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "8083:80"     # Web UI — http://localhost:8083
+    environment:
+      - ACCEPT_EULA=Y
+      # SEQ_FIRSTRUN_ADMINPASSWORD is read once (first run) to set the admin password.
+      # Set via .env — see .env.example for details.
+      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD}
+    volumes:
+      - seq_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "8085:9090"   # Web UI — http://localhost:8085
+    volumes:
+      - prometheus_data:/prometheus
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      server:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11-alpine
+    ports:
+      - "8084:3000"   # Dashboard — http://localhost:8084
+    environment:
+      # GF_SECURITY_ADMIN_PASSWORD sets the Grafana admin password.
+      # Set via .env — see .env.example for details.
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
 volumes:
   postgres_data:
   dataprotection_keys:
   foundry_dataprotection_keys:
   stalwart_data:
+  seq_data:
+  prometheus_data:
+  grafana_data:

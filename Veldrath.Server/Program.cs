@@ -37,8 +37,20 @@ using Veldrath.Server.Hubs;
 using Veldrath.Server.Settings;
 using RealmEngine.Shared.Abstractions;
 using System.Text;
+using Prometheus;
 
-Log.Logger = new LoggerConfiguration()
+// Read Seq URL early so it can be wired into the bootstrap logger before the host is built.
+var bootstrapConfig = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: true)
+    .AddJsonFile(
+        $"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
+        optional: true)
+    .AddEnvironmentVariables()
+    .Build();
+
+var seqServerUrl = bootstrapConfig["Seq:ServerUrl"];
+
+var loggerConfig = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
@@ -48,8 +60,12 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File(
         "logs/veldrath-server-.txt",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7)
-    .CreateLogger();
+        retainedFileCountLimit: 7);
+
+if (!string.IsNullOrEmpty(seqServerUrl))
+    loggerConfig = loggerConfig.WriteTo.Seq(seqServerUrl);
+
+Log.Logger = loggerConfig.CreateLogger();
 
 try
 {
@@ -369,6 +385,7 @@ try
             .ExecuteAsync(context);
     }));
     app.UseSerilogRequestLogging();
+    app.UseHttpMetrics();
 
     // Security headers on every response.
     app.Use(async (ctx, next) =>
@@ -481,6 +498,10 @@ try
             [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
         }
     });
+
+    // Prometheus metrics — expose /metrics for scraping.
+    // In production, restrict access to this endpoint at the network/proxy level.
+    app.MapMetrics();
 
     Log.Information("Veldrath.Server running at {Urls}", string.Join(", ", app.Urls));
     await app.RunAsync();
