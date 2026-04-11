@@ -148,7 +148,7 @@ services:
         condition: service_healthy
 
   grafana:
-    image: grafana/grafana:11-alpine
+    image: grafana/grafana:latest
     ports:
       - "8084:3000"   # Dashboard — http://localhost:8084
     environment:
