@@ -1,4 +1,4 @@
-﻿{
+{
 	"version": "2.0.0",
 	"tasks": [
 		{
@@ -525,6 +525,117 @@
 				"${workspaceFolder}/Veldrath.slnx",
 				"--filter",
 				"Category!=UI",
+				"--verbosity",
+				"normal",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "build-veldrath-discord",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/Veldrath.Discord/Veldrath.Discord.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "build"
+		},
+		{
+			"label": "run-veldrath-discord",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"${workspaceFolder}/Veldrath.Discord/Veldrath.Discord.csproj",
+				"--no-build"
+			],
+			"isBackground": true,
+			"dependsOn": "build-veldrath-discord",
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^.*$",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "Veldrath\\.Discord starting",
+					"endsPattern": "Gateway: Ready"
+				}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "test-veldrath-discord",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj",
+				"--verbosity",
+				"normal",
+				"--collect",
+				"XPlat Code Coverage",
+				"--settings",
+				"coverage.runsettings",
+				"--results-directory",
+				"${workspaceFolder}/coverage-results"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "build-veldrath-assets",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/Veldrath.Assets/Veldrath.Assets.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"group": "build"
+		},
+		{
+			"label": "test-veldrath-assets",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj",
 				"--verbosity",
 				"normal",
 				"--collect",

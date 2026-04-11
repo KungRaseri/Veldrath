@@ -320,4 +320,165 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
+
+    /// <summary>
+    /// Registers only the MediatR pipeline behaviors (Validation → Logging → Performance) and
+    /// all FluentValidation validators, without scanning for any request handlers.
+    /// Use this as the foundation when composing a custom handler set via the granular
+    /// <c>Add*Handlers()</c> methods rather than registering the full assembly.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddRealmEngineMediatRPipeline(this IServiceCollection services)
+    {
+        services.AddMediatR(cfg =>
+        {
+            // MediatR 12 requires at least one assembly scan call to register its infrastructure
+            // (IMediator, ISender, IPublisher). TypeEvaluator is set to false so the scan
+            // registers zero handlers — callers compose their own handler sets separately via
+            // the Add*Handlers() methods.
+            cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
+            cfg.TypeEvaluator = _ => false;
+
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
+        });
+
+        services.AddValidatorsFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers all item and content generation request handlers
+    /// (<c>RealmEngine.Core.Features.ItemGeneration</c>).
+    /// These cover generating items, enemies, NPCs, powers, and ability queries.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddGenerationHandlers(this IServiceCollection services)
+        => services.RegisterHandlersInFeatures("ItemGeneration");
+
+    /// <summary>
+    /// Registers all character creation and background query request handlers
+    /// (<c>RealmEngine.Core.Features.CharacterCreation</c> and <c>Characters</c>).
+    /// Requires <see cref="RealmEngine.Shared.Abstractions.ICharacterCreationSessionStore"/> to be
+    /// registered in the host container.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddCharacterCreationHandlers(this IServiceCollection services)
+        => services.RegisterHandlersInFeatures("CharacterCreation", "Characters");
+
+    /// <summary>
+    /// Registers all read-only catalog query handlers — actor instances, dialogues,
+    /// enchantments, enemies, items, loot tables, materials, material properties, NPCs,
+    /// organizations, powers, quests, recipes, skills, species, tilemaps, traits, and zones.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddCatalogHandlers(this IServiceCollection services)
+        => services.RegisterHandlersInFeatures(
+            "ActorInstanceCatalog",
+            "DialogueCatalog",
+            "EnchantmentCatalog",
+            "EnemyCatalog",
+            "ItemCatalog",
+            "LootTableCatalog",
+            "MaterialCatalog",
+            "MaterialPropertyCatalog",
+            "NpcCatalog",
+            "OrganizationCatalog",
+            "PowerCatalog",
+            "QuestCatalog",
+            "RecipeCatalog",
+            "SkillCatalog",
+            "Species",
+            "Tilemap",
+            "TraitCatalog",
+            "ZoneLocationCatalog");
+
+    /// <summary>
+    /// Registers all live gameplay request handlers — combat, crafting, death, difficulty,
+    /// enchanting, equipment, exploration, harvesting, inventory, level-up, party, progression,
+    /// quests, reputation, salvaging, shop, socketing, upgrading, victory, and achievements.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddGameplayHandlers(this IServiceCollection services)
+        => services.RegisterHandlersInFeatures(
+            "Combat",
+            "Crafting",
+            "Death",
+            "Difficulty",
+            "Enchanting",
+            "Equipment",
+            "Exploration",
+            "Harvesting",
+            "Inventory",
+            "LevelUp",
+            "Party",
+            "Progression",
+            "Quests",
+            "Reputation",
+            "Salvaging",
+            "Shop",
+            "Socketing",
+            "Upgrading",
+            "Victory",
+            "Achievements");
+
+    /// <summary>
+    /// Registers all save and load game request handlers
+    /// (<c>RealmEngine.Core.Features.SaveLoad</c>).
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddSaveLoadHandlers(this IServiceCollection services)
+        => services.RegisterHandlersInFeatures("SaveLoad");
+
+    /// <summary>
+    /// Registers the MediatR pipeline and the generation feature handlers only.
+    /// Intended for lightweight hosts such as the Discord bot that only dispatch
+    /// <c>Generate*</c> commands and do not require any other gameplay handlers.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddRealmEngineGenerationMediatR(this IServiceCollection services)
+    {
+        services.AddRealmEngineMediatRPipeline();
+        services.AddGenerationHandlers();
+        return services;
+    }
+
+    // Scans the Core assembly and registers every concrete IRequestHandler<,> implementation
+    // whose namespace falls under RealmEngine.Core.Features.<featureName> (exact segment match,
+    // so "Quest" does not accidentally include "QuestCatalog").
+    private static IServiceCollection RegisterHandlersInFeatures(
+        this IServiceCollection services, params string[] featureNames)
+    {
+        const string prefix = "RealmEngine.Core.Features";
+        var requestHandlerOpenType = typeof(IRequestHandler<,>);
+
+        foreach (var type in typeof(ServiceCollectionExtensions).Assembly.GetTypes())
+        {
+            if (type.IsAbstract || type.IsInterface || type.Namespace is null) continue;
+
+            var ns = type.Namespace;
+            var matchesFeature = featureNames.Any(f =>
+                ns == $"{prefix}.{f}" || ns.StartsWith($"{prefix}.{f}."));
+
+            if (!matchesFeature) continue;
+
+            foreach (var iface in type.GetInterfaces())
+            {
+                if (!iface.IsGenericType) continue;
+                if (iface.GetGenericTypeDefinition() != requestHandlerOpenType) continue;
+                services.AddTransient(iface, type);
+            }
+        }
+
+        return services;
+    }
 }
