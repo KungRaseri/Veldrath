@@ -38,6 +38,7 @@ using Veldrath.Server.Settings;
 using RealmEngine.Shared.Abstractions;
 using System.Text;
 using Prometheus;
+using Prometheus.DotNetRuntime;
 
 // Read Seq URL early so it can be wired into the bootstrap logger before the host is built.
 var bootstrapConfig = new ConfigurationBuilder()
@@ -366,6 +367,10 @@ try
         .AddCheck<GameEngineHealthCheck>("game-engine", tags: ["engine"]);
 
     var app = builder.Build();
+
+    // Collect .NET runtime metrics (GC, thread pool, exceptions, contention) for Grafana.
+    var runtimeCollector = DotNetRuntimeStatsBuilder.Default().StartCollecting();
+    app.Lifetime.ApplicationStopping.Register(runtimeCollector.Dispose);
 
     app.UseExceptionHandler(handler => handler.Run(async context =>
     {

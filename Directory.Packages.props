@@ -49,6 +49,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
     <PackageVersion Include="prometheus-net.AspNetCore" Version="8.2.1" />
+    <PackageVersion Include="prometheus-net.DotNetRuntime" Version="4.4.1" />
   </ItemGroup>
   <!-- ── Security ────────────────────────────────────────────────────────── -->
   <ItemGroup>
