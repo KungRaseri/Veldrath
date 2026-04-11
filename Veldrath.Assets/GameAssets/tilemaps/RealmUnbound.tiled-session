@@ -1,0 +1,262 @@
+{
+    "activeFile": "maps/crestfall.tmx",
+    "expandedProjectPaths": [
+        "world",
+        "sheets",
+        ".",
+        "maps"
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "maps/Crestfall.tmx": {
+            "expandedObjectLayers": [
+                8,
+                7,
+                9
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 232,
+                "y": 40
+            }
+        },
+        "maps/Varenmark.tmx": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 2,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 266,
+                "y": 150.5
+            }
+        },
+        "maps/aldenmere.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 239.12340578408478
+            }
+        },
+        "maps/ashfields.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/ashlen-wood.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 244.09723861222565,
+                "y": 187.30233655888603
+            }
+        },
+        "maps/barrow-deeps.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/crestfall.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 224,
+                "y": 320
+            }
+        },
+        "maps/drowning-pits.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
+            }
+        },
+        "maps/greenveil-paths.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/grevenmire.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
+            }
+        },
+        "maps/kaldrek-maw.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/pale-moor.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/saltcliff-heights.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/skarhold.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/smoldering-reach.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/soddenfen.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/sunken-name.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/the-droveway.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
+            }
+        },
+        "maps/the-halrow.tmx": {
+            "scale": 1.655078125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
+            }
+        },
+        "maps/thornveil-hollow.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/tidewrack-flats.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/tolvaren.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "maps/varenmark.tmx": {
+            "scale": 2.1414583333333335,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 240.02334857476407,
+                "y": 176.0482537211791
+            }
+        },
+        "maps/verdant-barrow.tmx": {
+            "scale": 0.86984375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 319.59762888449785,
+                "y": 240.2730375426621
+            }
+        },
+        "sheets/onebit.tsx": {
+            "scaleInDock": 8.1667,
+            "scaleInEditor": 2
+        },
+        "sheets/roguelike_base.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/sheets",
+    "last.worldFilePath": "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world",
+    "loadedWorlds": [
+        "C:/code/RealmEngine/RealmUnbound.Assets/GameAssets/tilemaps/world/Draveth.world"
+    ],
+    "map.fixedSize": false,
+    "map.height": 22,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "mapScene.enableWorlds": true,
+    "openFiles": [
+        "maps/crestfall.tmx",
+        "maps/drowning-pits.tmx",
+        "maps/grevenmire.tmx",
+        "maps/ashlen-wood.tmx",
+        "maps/varenmark.tmx",
+        "maps/the-halrow.tmx",
+        "maps/the-droveway.tmx"
+    ],
+    "project": "RealmUnbound.tiled-project",
+    "recentFiles": [
+        "maps/the-droveway.tmx",
+        "maps/the-halrow.tmx",
+        "maps/varenmark.tmx",
+        "maps/ashlen-wood.tmx",
+        "maps/grevenmire.tmx",
+        "maps/drowning-pits.tmx",
+        "maps/crestfall.tmx",
+        "maps/Varenmark.tmx",
+        "maps/Crestfall.tmx",
+        "maps/verdant-barrow.tmx",
+        "maps/tolvaren.tmx",
+        "maps/tidewrack-flats.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.margin": 1,
+    "tileset.spacing": 1,
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}
