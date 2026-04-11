@@ -49,6 +49,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<AdminAuditEntry> AdminAuditEntries => Set<AdminAuditEntry>();
     /// <summary>Player-submitted reports about other players' behaviour.</summary>
     public DbSet<PlayerReport> PlayerReports => Set<PlayerReport>();
+    /// <summary>Pending OAuth provider-link confirmation tokens. Consumed once via <c>GET /api/auth/link/confirm</c>.</summary>
+    public DbSet<PendingLinkToken> PendingLinkTokens => Set<PendingLinkToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -91,6 +93,22 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasOne(rt => rt.Account)
              .WithMany()
              .HasForeignKey(rt => rt.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PendingLinkToken>(e =>
+        {
+            e.HasKey(t => t.Id);
+            // Token hash must be unique — only one active confirmation per hash is permitted.
+            e.HasIndex(t => t.TokenHash).IsUnique();
+            e.Property(t => t.LoginProvider).HasMaxLength(64).IsRequired();
+            e.Property(t => t.ProviderKey).HasMaxLength(256).IsRequired();
+            e.Property(t => t.ProviderDisplayName).HasMaxLength(256);
+            e.Property(t => t.Email).HasMaxLength(256).IsRequired();
+            e.Property(t => t.ReturnUrl).HasMaxLength(512);
+            e.HasOne(t => t.Account)
+             .WithMany()
+             .HasForeignKey(t => t.AccountId)
              .OnDelete(DeleteBehavior.Cascade);
         });
 

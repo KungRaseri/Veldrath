@@ -504,6 +504,61 @@ namespace RealmUnbound.Server.Migrations
                     b.ToTable("GlobalStats");
                 });
 
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PendingLinkToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LoginProvider")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ReturnUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("PendingLinkTokens");
+                });
+
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1013,6 +1068,17 @@ namespace RealmUnbound.Server.Migrations
                     b.Navigation("Submission");
 
                     b.Navigation("Voter");
+                });
+
+            modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PendingLinkToken", b =>
+                {
+                    b.HasOne("RealmUnbound.Server.Data.Entities.PlayerAccount", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("RealmUnbound.Server.Data.Entities.PlayerSession", b =>

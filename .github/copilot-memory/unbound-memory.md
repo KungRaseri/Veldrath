@@ -1,5 +1,31 @@
 # RealmUnbound Server + Client — Memory Notes
 
+## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10)
+
+**Security fix**: `AuthService.ExternalLoginOrRegisterAsync` previously auto-linked a new OAuth provider to an existing account if the emails matched (step 2). This allowed a hostile provider to hijack an account. It now triggers an email-confirmation flow instead.
+
+**New files**:
+- `RealmUnbound.Server/Infrastructure/Email/IEmailSender.cs` — `Task SendAsync(to, subject, htmlBody, ct)`
+- `RealmUnbound.Server/Infrastructure/Email/NullEmailSender.cs` — dev no-op; logs full email body + URL via `ILogger`
+- `RealmUnbound.Server/Infrastructure/Email/SmtpEmailSender.cs` — BCL `System.Net.Mail.SmtpClient`; config keys: `Email:SmtpHost`, `Email:SmtpPort` (587), `Email:User`, `Email:Password`, `Email:SenderAddress`, `Email:SenderName`
+- `RealmUnbound.Server/Data/Entities/PendingLinkToken.cs` — EF entity; fields: `Id` (PK), `AccountId` (FK → AspNetUsers cascade), `LoginProvider`, `ProviderKey`, `ProviderDisplayName?`, `TokenHash` (SHA-256 hex, unique index), `Email`, `ReturnUrl?` (max 512), `ExpiresAt`, `CreatedAt`, `IsConfirmed`, nav `Account`
+- `RealmUnbound.Server/Data/Repositories/IPendingLinkRepository.cs` + `EfCorePendingLinkRepository.cs` — `CreateAsync`, `GetByTokenHashAsync` (.Include Account), `ConfirmAsync(Guid id)`, `PurgeExpiredAsync` (uses `ExecuteDeleteAsync`)
+- `RealmUnbound.Server/Features/Auth/ExternalLoginResult.cs` — replaces `(AuthResponse?, string?)` tuple; `ExternalLoginStatus` enum: `Success | Error | PendingLinkConfirmation`
+- `RealmUnbound.Server/Features/Auth/AccountLinkService.cs` — `RequestLinkAsync(existing, info, serverBaseUrl, returnUrl?, ct)` + `ConfirmAndLinkAsync(rawToken, ct)` → `(PlayerAccount?, PendingLinkToken?, string? error)`. Errors: `"link_invalid"`, `"link_expired"`, `"link_already_confirmed"`. TTL from `Auth:PendingLinkExpiryMinutes` (default 60). Token: `RandomNumberGenerator.GetBytes(32)` hex → SHA-256 double-hash.
+- `RealmUnbound.Server/Features/Auth/PendingLinkEndpoints.cs` — `GET /api/auth/link/confirm?token={rawToken}`. On success: calls `authService.CreateSessionAsync`, `exchangeService.CreateCode`, redirects to `{returnUrl}?code=xxx&aid=yyy&linked=1` (or `/login?code=xxx&aid=yyy`).
+- EF migration `20260410234947_AddPendingLinkTokens`
+
+**Modified files**:
+- `AuthService.cs` — added `AccountLinkService` ctor param; `ExternalLoginOrRegisterAsync` now returns `ExternalLoginResult` (step 2 sends email instead of silent-link); `HashToken` changed to `public static`; added `public CreateSessionAsync` wrapper
+- `ExternalAuthEndpoints.cs` — switch on `result.Status` in both `HandleOAuthTicket` and `Callback`; `IsAllowedReturnUrl` changed to `internal static`
+- `Program.cs` — `AccountLinkService` (scoped), conditional `IEmailSender` (Null when `Email:SmtpHost` empty), `IPendingLinkRepository → EfCorePendingLinkRepository` (scoped), `app.MapPendingLinkEndpoints()`
+- `RealmFoundry/Components/Pages/Profile.razor` — Link button `returnUrl` now uses `Nav.ToAbsoluteUri("profile")` (was hardcoded localhost); `?linked=1` and `?pending_link=1` query param handling
+- `RealmFoundry/Components/Pages/AuthCallback.razor` — `?pending_link=1` shows "check your inbox" instead of attempting exchange code
+
+**Key note**: `PurgeExpiredAsync` exists but is not called by any hosted service — expired tokens accumulate harmlessly (rejected at confirm time). Add `IHostedService` cleanup later if needed.
+
+**Tests**: 6 unit (`AccountLinkServiceTests`) + 5 integration (`PendingLinkEndpointTests`) = 11 new tests all passing.
+
 ## Architecture: Hub → MediatR Bridge Pattern
 
 `SelectCharacter` and `EnterZone` are **session management** — they do NOT call `mediator.Send`. The character tracker and zone session repository ARE the implementation. This is intentional.
@@ -136,6 +162,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-27 (2026-03-30: combat system phases 1-7) | **512** | **468** | **980** |
 | Session-28 (2026-03-30: combat tests + GameView combat UI) | **525** | **491** | **1016** |
 | Session-29 (2026-04-08: region map arch + PlayerSession migration) | **525** | **560** | **1085** |
+| Session-30 (2026-04-10: OAuth provider-link confirmation flow) | **525** | **571** | **1096** |
 
 ## Phase 0b — Server Schema Migrations (2026-03-30)
 

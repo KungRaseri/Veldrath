@@ -35,6 +35,9 @@ public static class ExternalAuthEndpoints
     /// raw token pair, preventing tokens from appearing in browser history or server logs.
     /// When <c>mode=link</c> is present in the state properties the provider is linked to an
     /// existing authenticated account rather than creating a new session.
+    /// When the incoming provider's email matches an existing unlinked account, a confirmation
+    /// email is sent and the browser is redirected with <c>?pending_link=1</c> instead of
+    /// issuing tokens immediately.
     /// </summary>
     public static async Task HandleOAuthTicket(TicketReceivedContext ctx)
     {
@@ -76,27 +79,41 @@ public static class ExternalAuthEndpoints
             return;
         }
 
-        var (response, _) = await authSvc.ExternalLoginOrRegisterAsync(
-            ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp);
+        string? returnUrl = null;
+        ctx.Properties?.Items.TryGetValue("returnUrl", out returnUrl);
 
-        if (response is null)
+        var serverBaseUrl = $"{ctx.HttpContext.Request.Scheme}://{ctx.HttpContext.Request.Host}";
+
+        var result = await authSvc.ExternalLoginOrRegisterAsync(
+            ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl) ? returnUrl : null,
+            serverBaseUrl);
+
+        if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
+        {
+            // A confirmation email has been dispatched; redirect without issuing tokens.
+            ctx.HandleResponse();
+            ctx.Response.Redirect(returnUrl is not null && IsAllowedReturnUrl(returnUrl)
+                ? returnUrl + "?pending_link=1"
+                : "/login?pending_link=1");
+            return;
+        }
+
+        if (result.Status == ExternalLoginStatus.Error)
         {
             ctx.HandleResponse();
             ctx.Response.Redirect("/login?error=auth_failed");
             return;
         }
 
-        string? returnUrl = null;
-        ctx.Properties?.Items.TryGetValue("returnUrl", out returnUrl);
-
+        // Success — mint a single-use exchange code and redirect.
         if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
         {
-            // Mint a single-use exchange code bound to this account — never expose the raw tokens in a URL.
-            var code         = exchangeSvc.CreateCode(response, response.AccountId);
+            var code         = exchangeSvc.CreateCode(result.Response!, result.Response!.AccountId);
             var uriBuilder   = new UriBuilder(returnUrl);
             var query        = HttpUtility.ParseQueryString(uriBuilder.Query);
             query["code"]    = code;
-            query["aid"]     = response.AccountId.ToString();
+            query["aid"]     = result.Response!.AccountId.ToString();
             uriBuilder.Query = query.ToString();
 
             ctx.HandleResponse();
@@ -156,32 +173,39 @@ public static class ExternalAuthEndpoints
         var displayName = info.Principal.FindFirstValue(ClaimTypes.Name);
         var clientIp    = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        var (response, error) = await authService.ExternalLoginOrRegisterAsync(
-            info.LoginProvider, info.ProviderKey, email, displayName, clientIp);
+        string? returnUrl = null;
+        info.AuthenticationProperties?.Items.TryGetValue("returnUrl", out returnUrl);
+        var serverBaseUrl = $"{context.Request.Scheme}://{context.Request.Host}";
 
-        if (response is null)
-            return Results.Problem(error ?? "Authentication failed.", statusCode: 400);
+        var result = await authService.ExternalLoginOrRegisterAsync(
+            info.LoginProvider, info.ProviderKey, email, displayName, clientIp,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl) ? returnUrl : null,
+            serverBaseUrl);
+
+        if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
+            return Results.Accepted(value: new { status = "pending_link_confirmation", message = "Check your inbox to complete sign-in." });
+
+        if (result.Status == ExternalLoginStatus.Error)
+            return Results.Problem(result.Error ?? "Authentication failed.", statusCode: 400);
 
         // If the caller provided a returnUrl (Avalonia desktop auth flow), redirect there
         // with an exchange code so the local HTTP listener can pick it up safely.
-        if (info.AuthenticationProperties?.Items.TryGetValue("returnUrl", out var returnUrl) == true
-            && returnUrl is not null
-            && IsAllowedReturnUrl(returnUrl))
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl))
         {
-            var code    = exchangeService.CreateCode(response, response.AccountId);
+            var code    = exchangeService.CreateCode(result.Response!, result.Response!.AccountId);
             var builder = new UriBuilder(returnUrl);
             var query   = HttpUtility.ParseQueryString(builder.Query);
             query["code"]  = code;
-            query["aid"]   = response.AccountId.ToString();
+            query["aid"]   = result.Response!.AccountId.ToString();
             builder.Query  = query.ToString();
             return Results.Redirect(builder.ToString(), permanent: false);
         }
 
-        return Results.Ok(response);
+        return Results.Ok(result.Response);
     }
 
     // Only localhost/127.0.0.1 is accepted as a returnUrl to prevent open-redirect attacks.
-    private static bool IsAllowedReturnUrl(string url) =>
+    internal static bool IsAllowedReturnUrl(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri)
         && (uri.Host.Equals("localhost",  StringComparison.OrdinalIgnoreCase)
             || uri.Host == "127.0.0.1")
