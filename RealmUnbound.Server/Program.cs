@@ -30,6 +30,7 @@ using RealmUnbound.Server.Features.Foundry;
 using RealmUnbound.Server.Features.Reports;
 using RealmUnbound.Server.Features.Players;
 using RealmUnbound.Server.Features.Zones;
+using RealmUnbound.Server.Infrastructure.Email;
 using RealmUnbound.Server.Services;
 using RealmUnbound.Server.Health;
 using RealmUnbound.Server.Hubs;
@@ -229,6 +230,11 @@ try
                 o.SignInScheme = IdentityConstants.ExternalScheme;
                 o.ClientId = msId;
                 o.ClientSecret = msSecret;
+                // /consumers/ targets personal Microsoft accounts (Xbox/Live/Outlook) only,
+                // which avoids the userAudience mismatch that /common/ produces with a
+                // single-tenant app registration.
+                o.AuthorizationEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
+                o.TokenEndpoint         = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
                 o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
                 // Correlation cookie must not require Secure on plain HTTP (Docker dev).
                 o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
@@ -239,12 +245,22 @@ try
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<AccountService>();
     builder.Services.AddScoped<FoundryService>();
+    builder.Services.AddScoped<AccountLinkService>();
+
+    // IEmailSender: use NullEmailSender when SmtpHost is not configured (dev / CI).
+    // Switch to SmtpEmailSender by setting Email:SmtpHost in the environment or user-secrets.
+    var smtpHost = builder.Configuration["Email:SmtpHost"];
+    if (string.IsNullOrWhiteSpace(smtpHost))
+        builder.Services.AddScoped<IEmailSender, NullEmailSender>();
+    else
+        builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
     // Repositories
     builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
     builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
     builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
     builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
+    builder.Services.AddScoped<IPendingLinkRepository, EfCorePendingLinkRepository>();
     // Engine interfaces backed by the server's own ApplicationDbContext:
     builder.Services.AddScoped<ISaveGameRepository, ServerSaveGameRepository>();
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
@@ -425,6 +441,7 @@ try
     // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
     app.MapExternalAuthEndpoints();
+    app.MapPendingLinkEndpoints();
     app.MapAccountEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();

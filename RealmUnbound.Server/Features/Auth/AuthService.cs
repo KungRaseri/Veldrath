@@ -16,12 +16,15 @@ namespace RealmUnbound.Server.Features.Auth;
 /// Refresh tokens are stored as SHA-256 hashes — raw values are never persisted.
 /// Presenting a previously revoked refresh token triggers immediate revocation of all
 /// tokens for that account (theft detection).
+/// External OAuth logins that share an email with an existing account trigger an
+/// email-confirmation flow via <see cref="AccountLinkService"/> rather than silently linking.
 /// </summary>
 public class AuthService(
     UserManager<PlayerAccount> userManager,
     SignInManager<PlayerAccount> signInManager,
     RoleManager<IdentityRole<Guid>> roleManager,
     IRefreshTokenRepository refreshTokenRepo,
+    AccountLinkService accountLinkService,
     IConfiguration config)
 {
     public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(
@@ -106,18 +109,47 @@ public class AuthService(
             await refreshTokenRepo.RevokeAsync(stored.Id, clientIp, null, ct);
     }
 
-    // Internals
-    public async Task<(AuthResponse? Response, string? Error)> ExternalLoginOrRegisterAsync(
+    /// <summary>
+    /// Resolves or creates a <see cref="PlayerAccount"/> for the supplied external-login identity,
+    /// then either issues a session or (when the provider's email already belongs to an unlinked
+    /// account) initiates an email-confirmation flow.
+    /// </summary>
+    /// <param name="provider">OAuth scheme name, e.g. <c>Discord</c>.</param>
+    /// <param name="providerKey">Provider-issued subject identifier.</param>
+    /// <param name="email">Email supplied by the provider, or <see langword="null"/> if not provided.</param>
+    /// <param name="displayName">Display name from the provider, used as a username seed.</param>
+    /// <param name="clientIp">Caller IP for refresh-token audit.</param>
+    /// <param name="returnUrl">Return URL carried forward for the confirmation flow.</param>
+    /// <param name="serverBaseUrl">Base URL of the server used to build the confirmation link.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<ExternalLoginResult> ExternalLoginOrRegisterAsync(
         string provider, string providerKey, string? email, string? displayName,
-        string clientIp, CancellationToken ct = default)
+        string clientIp, string? returnUrl = null, string? serverBaseUrl = null,
+        CancellationToken ct = default)
     {
         // 1. Find an existing account by linked external login.
         var user = await userManager.FindByLoginAsync(provider, providerKey);
 
-        // 2. Fallback: match by verified email so existing accounts aren't duplicated.
+        // 2. Fallback: if the provider supplies an email that matches an existing account
+        //    that does not yet have this provider linked, require the account owner to confirm
+        //    via email before linking — prevents a hostile provider from hijacking an account.
         if (user is null && email is not null)
-            user = await userManager.FindByEmailAsync(email);
+        {
+            var existing = await userManager.FindByEmailAsync(email);
+            if (existing is not null)
+            {
+                await accountLinkService.RequestLinkAsync(
+                    existing, provider, providerKey, displayName,
+                    returnUrl, serverBaseUrl ?? string.Empty, ct);
 
+                return new ExternalLoginResult(
+                    null, null,
+                    ExternalLoginStatus.PendingLinkConfirmation,
+                    existing);
+            }
+        }
+
+        // 3. No existing account matches — create a new one.
         if (user is null)
         {
             var baseName = SanitizeUsername(displayName ?? email ?? providerKey);
@@ -132,21 +164,38 @@ public class AuthService(
 
             var create = await userManager.CreateAsync(user);
             if (!create.Succeeded)
-                return (null, string.Join("; ", create.Errors.Select(e => e.Description)));
+                return new ExternalLoginResult(
+                    null,
+                    string.Join("; ", create.Errors.Select(e => e.Description)),
+                    ExternalLoginStatus.Error);
         }
 
-        // 3. Ensure the external login is linked (idempotent).
+        // 4. Ensure the external login is linked (idempotent — step 1 already matched).
         var logins = await userManager.GetLoginsAsync(user);
         if (!logins.Any(l => l.LoginProvider == provider && l.ProviderKey == providerKey))
         {
             var link = await userManager.AddLoginAsync(
                 user, new UserLoginInfo(provider, providerKey, provider));
             if (!link.Succeeded)
-                return (null, string.Join("; ", link.Errors.Select(e => e.Description)));
+                return new ExternalLoginResult(
+                    null,
+                    string.Join("; ", link.Errors.Select(e => e.Description)),
+                    ExternalLoginStatus.Error);
         }
 
-        return (await IssueTokenPairAsync(user, clientIp, ct), null);
+        return new ExternalLoginResult(
+            await IssueTokenPairAsync(user, clientIp, ct),
+            null,
+            ExternalLoginStatus.Success);
     }
+
+    /// <summary>
+    /// Issues a new JWT + refresh-token pair for <paramref name="user"/>.
+    /// Used by the pending-link confirm endpoint after the provider has been attached.
+    /// </summary>
+    public Task<AuthResponse> CreateSessionAsync(
+        PlayerAccount user, string clientIp, CancellationToken ct = default) =>
+        IssueTokenPairAsync(user, clientIp, ct);
 
     // Private helpers
 
@@ -263,7 +312,8 @@ public class AuthService(
         return clean.Length > 0 ? clean : "player";
     }
 
-    internal static string HashToken(string rawToken)
+    /// <summary>Returns the SHA-256 hex digest of <paramref name="rawToken"/>.</summary>
+    public static string HashToken(string rawToken)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
         return Convert.ToHexString(bytes).ToLowerInvariant();

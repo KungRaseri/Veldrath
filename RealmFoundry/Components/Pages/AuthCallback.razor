@@ -6,7 +6,15 @@
 
 <PageTitle>Signing in\u2026 \u2014 RealmFoundry</PageTitle>
 
-@if (_error is not null)
+@if (_pendingLink)
+{
+    <p class="pending-link-notice">
+        Check your inbox — we've sent a confirmation link to your email address.
+        Click it to complete signing in.
+    </p>
+    <a href="/login">Back to sign in</a>
+}
+else if (_error is not null)
 {
     <p class="error">@_error <a href="/login">Try again</a>.</p>
 }
@@ -14,17 +22,31 @@ else
 {
     <p>Signing you in\u2026</p>
 }
-
+<style>
+    .pending-link-notice { color: #fb8c00; margin-bottom: 1rem; }
+    .error { color: #f44336; }
+</style>
 @code {
     // Server redirects to /auth/callback?code=<exchange-code>&aid=<account-id>.
     // Both parameters are required; the code expires in 60 seconds and is single-use.
+    // When the server sends a confirmation email instead of issuing tokens it redirects
+    // to /auth/callback?pending_link=1 — no code redemption is attempted in that case.
     [SupplyParameterFromQuery] private string? Code { get; set; }
     [SupplyParameterFromQuery] private Guid?   Aid  { get; set; }
+    [SupplyParameterFromQuery(Name = "pending_link")] private string? PendingLinkParam { get; set; }
 
     private string? _error;
+    private bool    _pendingLink;
 
     protected override async Task OnInitializedAsync()
     {
+        // Pending-link flow: a confirmation email was dispatched; nothing to redeem.
+        if (PendingLinkParam is not null)
+        {
+            _pendingLink = true;
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Code) || !Aid.HasValue)
         {
             _error = "No exchange code received.";

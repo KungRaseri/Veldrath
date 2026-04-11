@@ -235,6 +235,7 @@ else
         border-bottom: 1px solid var(--border, #333); color: var(--muted, #888); font-weight: 500; }
     .profile-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--border-subtle, #222); }
     .provider-row { justify-content: flex-start; gap: 1rem; }
+    .provider-pending { color: #fb8c00; font-size: .9rem; margin-bottom: .75rem; }
     .success { color: #4caf50; font-size: .9rem; margin-top: .5rem; }
     .error { color: #f44336; font-size: .9rem; margin-top: .5rem; }
     .btn-danger { background: #7f1d1d; border-color: #991b1b; }
@@ -242,9 +243,14 @@ else
 </style>
 
 @code {
+    [SupplyParameterFromQuery(Name = "linked")] private int? LinkedParam { get; set; }
+    [SupplyParameterFromQuery(Name = "pending_link")] private string? PendingLinkParam { get; set; }
+
     private AccountProfileDto? _profile;
     private IReadOnlyList<AccountSessionDto>? _sessions;
     private bool _loading = true;
+    private bool _linkSuccess;
+    private bool _pendingLink;
 
     // Profile editing
     private string? _editDisplayName;
@@ -271,6 +277,9 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (!AuthState.IsLoggedIn) return;
+
+        _linkSuccess  = LinkedParam == 1;
+        _pendingLink  = PendingLinkParam is not null;
 
         _profile = await Api.GetAccountProfileAsync();
         _editDisplayName = _profile?.DisplayName;
