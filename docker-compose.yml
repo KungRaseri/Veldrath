@@ -15,11 +15,13 @@ services:
       - stalwart_data:/opt/stalwart
       - ./config/stalwart:/opt/stalwart/etc:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/healthz || exit 1"]
+      # wget/curl are not in the stalwartlabs/stalwart image (debian:trixie-slim, binaries only).
+      # Probe the kernel TCP socket table: 0x1F92 = decimal 8082 (management port).
+      test: ["CMD-SHELL", "grep -q ':1F92 ' /proc/net/tcp6 || grep -q ':1F92 ' /proc/net/tcp"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   postgres:
     image: postgres:17-alpine
