@@ -33,6 +33,7 @@
     <PackageReference Include="Serilog.Sinks.Seq" />
     <!-- Metrics -->
     <PackageReference Include="prometheus-net.AspNetCore" />
+    <PackageReference Include="prometheus-net.DotNetRuntime" />
   </ItemGroup>
 
   <ItemGroup>
