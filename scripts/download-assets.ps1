@@ -1,19 +1,19 @@
 <#
 .SYNOPSIS
-    Downloads the latest GameAssets release from KungRaseri/RealmUnbound-Assets and
-    extracts it into RealmUnbound.Assets/GameAssets/.
+    Downloads the latest GameAssets release from KungRaseri/Veldrath-Assets and
+    extracts it into Veldrath.Assets/GameAssets/.
 
 .DESCRIPTION
-    Fetches the latest GitHub release from the private KungRaseri/RealmUnbound-Assets
+    Fetches the latest GitHub release from the private KungRaseri/Veldrath-Assets
     repository, downloads the GameAssets zip asset, and extracts it so that local
     builds and the game client can use the assets without running sync-assets.ps1.
 
-    A GitHub fine-grained PAT with "Contents: Read" on KungRaseri/RealmUnbound-Assets
+    A GitHub fine-grained PAT with "Contents: Read" on KungRaseri/Veldrath-Assets
     is required. Pass it via -Token or set the ASSETS_TOKEN environment variable.
     The CI secret ASSETS_TOKEN is already registered on the RealmEngine repo.
 
 .PARAMETER Token
-    GitHub PAT with Contents:Read on KungRaseri/RealmUnbound-Assets.
+    GitHub PAT with Contents:Read on KungRaseri/Veldrath-Assets.
     Defaults to $env:ASSETS_TOKEN.
 
 .PARAMETER Force
@@ -38,11 +38,11 @@ $ErrorActionPreference = "Stop"
 if ([string]::IsNullOrWhiteSpace($Token)) {
     Write-Error ("No GitHub token supplied.`n" +
                  "Set the ASSETS_TOKEN environment variable or pass -Token <pat>.`n" +
-                 "The PAT needs Contents:Read on KungRaseri/RealmUnbound-Assets.")
+                 "The PAT needs Contents:Read on KungRaseri/Veldrath-Assets.")
     exit 1
 }
 
-$dest = Join-Path $PSScriptRoot "..\RealmUnbound.Assets\GameAssets"
+$dest = Join-Path $PSScriptRoot "..\Veldrath.Assets\GameAssets"
 $dest = [System.IO.Path]::GetFullPath($dest)
 
 $headers = @{
@@ -53,8 +53,8 @@ $headers = @{
 }
 
 Write-Host ""
-Write-Host "RealmUnbound.Assets -- downloading latest release" -ForegroundColor Cyan
-Write-Host "  Repo : KungRaseri/RealmUnbound-Assets"
+Write-Host "Veldrath.Assets -- downloading latest release" -ForegroundColor Cyan
+Write-Host "  Repo : KungRaseri/Veldrath-Assets"
 Write-Host "  Dest : $dest"
 Write-Host ""
 
@@ -62,11 +62,11 @@ Write-Host ""
 Write-Host "Fetching latest release..." -NoNewline
 try {
     $release = Invoke-RestMethod `
-        -Uri "https://api.github.com/repos/KungRaseri/RealmUnbound-Assets/releases/latest" `
+        -Uri "https://api.github.com/repos/KungRaseri/Veldrath-Assets/releases/latest" `
         -Headers $headers
 } catch {
     Write-Host ""
-    Write-Error "Failed to fetch release metadata: $_`nCheck that your token has Contents:Read on KungRaseri/RealmUnbound-Assets."
+    Write-Error "Failed to fetch release metadata: $_`nCheck that your token has Contents:Read on KungRaseri/Veldrath-Assets."
     exit 1
 }
 Write-Host " $($release.tag_name)"
@@ -102,7 +102,7 @@ try {
     $redirectResponse = $null
     try {
         $redirectResponse = Invoke-WebRequest `
-            -Uri "https://api.github.com/repos/KungRaseri/RealmUnbound-Assets/releases/assets/$($asset.id)" `
+            -Uri "https://api.github.com/repos/KungRaseri/Veldrath-Assets/releases/assets/$($asset.id)" `
             -Headers ($headers + @{ "Accept" = "application/octet-stream" }) `
             -MaximumRedirection 0 `
             -SkipHttpErrorCheck
@@ -123,7 +123,7 @@ try {
         # Fallback: the asset was small enough that GitHub served it directly (no redirect).
         # Re-download properly.
         Invoke-WebRequest `
-            -Uri "https://api.github.com/repos/KungRaseri/RealmUnbound-Assets/releases/assets/$($asset.id)" `
+            -Uri "https://api.github.com/repos/KungRaseri/Veldrath-Assets/releases/assets/$($asset.id)" `
             -Headers ($headers + @{ "Accept" = "application/octet-stream" }) `
             -OutFile $tmp
     } else {

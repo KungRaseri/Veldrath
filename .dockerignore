@@ -28,6 +28,6 @@ coverage/
 ## Other engine projects (not needed in the server image)
 RealmForge/
 RealmForge.Tests/
-RealmUnbound.Client/
-RealmUnbound.Server.Tests/
+Veldrath.Client/
+Veldrath.Server.Tests/
 RealmEngine.*.Tests/

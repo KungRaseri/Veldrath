@@ -1,7 +1,7 @@
 # generate-onebit-labeled.ps1  — creates onebit_labeled.png with tile index labels
 Add-Type -AssemblyName System.Drawing
 
-$src  = [System.Drawing.Image]::FromFile('c:\code\RealmEngine\RealmUnbound.Assets\GameAssets\tilemaps\sheets\onebit_packed.png')
+$src  = [System.Drawing.Image]::FromFile('c:\code\RealmEngine\Veldrath.Assets\GameAssets\tilemaps\sheets\onebit_packed.png')
 $bmp  = [System.Drawing.Bitmap]$src
 
 $cols     = 49

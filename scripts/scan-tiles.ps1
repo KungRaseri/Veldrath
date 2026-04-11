@@ -10,7 +10,7 @@
 param([int]$RowMin=0,[int]$RowMax=21,[int]$ColMin=0,[int]$ColMax=48)
 
 Add-Type -AssemblyName System.Drawing
-$sheet = [System.Drawing.Bitmap]::FromFile("$PSScriptRoot\..\RealmUnbound.Assets\GameAssets\tilemaps\sheets\onebit_packed.png")
+$sheet = [System.Drawing.Bitmap]::FromFile("$PSScriptRoot\..\Veldrath.Assets\GameAssets\tilemaps\sheets\onebit_packed.png")
 
 function px($bmp,[int]$x,[int]$y){
     $c = $bmp.GetPixel($x,$y)
