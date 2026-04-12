@@ -30,6 +30,9 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
     /// <summary>True when an access token is present in circuit memory.</summary>
     public bool IsLoggedIn => _accessToken is not null;
 
+    /// <summary>The current access token, or <c>null</c> when not authenticated. Read by <see cref="AuthRefreshHandler"/> to stamp outgoing requests so component-injected client instances are also authenticated.</summary>
+    public string? AccessToken => _accessToken;
+
     /// <summary>All role names currently held by the authenticated user.</summary>
     public IReadOnlyList<string> Roles { get; private set; } = [];
 
