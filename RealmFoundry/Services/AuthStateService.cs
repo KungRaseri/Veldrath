@@ -90,9 +90,12 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
         return true;
     }
 
-    /// <summary>Clears all auth state from circuit memory.</summary>
-    public Task LogOutAsync()
+    /// <summary>Revokes the current session on the server and clears all auth state from circuit memory.</summary>
+    public async Task LogOutAsync()
     {
+        if (_refreshToken is not null)
+            await apiClient.LogoutAsync(_refreshToken);
+
         _accessToken  = null;
         _refreshToken = null;
         SessionId   = null;
@@ -104,7 +107,6 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
         Permissions = [];
         apiClient.ClearBearerToken();
         OnChange?.Invoke();
-        return Task.CompletedTask;
     }
 
     private void Apply(
