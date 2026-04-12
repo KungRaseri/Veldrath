@@ -12,8 +12,9 @@ namespace Veldrath.Server.Tests.Features;
 /// <summary>Integration tests for
 /// <c>GET /api/auth/confirm-email</c> and
 /// <c>POST /api/auth/resend-confirmation</c>.</summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class EmailConfirmationEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class EmailConfirmationEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 

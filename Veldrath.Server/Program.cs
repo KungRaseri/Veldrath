@@ -369,8 +369,14 @@ try
     var app = builder.Build();
 
     // Collect .NET runtime metrics (GC, thread pool, exceptions, contention) for Grafana.
-    var runtimeCollector = DotNetRuntimeStatsBuilder.Default().StartCollecting();
-    app.Lifetime.ApplicationStopping.Register(runtimeCollector.Dispose);
+    // Skip in test environment: StartCollecting() registers global event-source listeners and
+    // throws if called a second time while a previous collector is still alive.  Parallel
+    // WebApplicationFactory instances in integration tests would otherwise collide here.
+    if (!app.Environment.IsEnvironment("Test"))
+    {
+        var runtimeCollector = DotNetRuntimeStatsBuilder.Default().StartCollecting();
+        app.Lifetime.ApplicationStopping.Register(runtimeCollector.Dispose);
+    }
 
     app.UseExceptionHandler(handler => handler.Run(async context =>
     {

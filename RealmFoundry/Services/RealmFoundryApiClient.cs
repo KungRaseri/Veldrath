@@ -34,6 +34,16 @@ public class RealmFoundryApiClient(HttpClient http)
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
     }
 
+    /// <summary>
+    /// Issues a fresh JWT without rotating the refresh token.
+    /// Intended for Blazor circuit proactive token renewal — the HttpOnly cookie refresh token stays in sync permanently.
+    /// </summary>
+    public virtual async Task<RenewJwtResponse?> RenewJwtAsync(string refreshToken, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/auth/renew-jwt", new { RefreshToken = refreshToken }, ct);
+        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<RenewJwtResponse>(ct) : null;
+    }
+
     /// <summary>Revokes the given refresh token on the server, ending the session. Best-effort — failures are silently swallowed so the local sign-out always completes.</summary>
     public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)
     {

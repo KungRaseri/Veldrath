@@ -16,8 +16,10 @@ namespace Veldrath.Server.Tests.Features;
 /// </summary>
 public sealed class ContentBrowseFixture : IAsyncLifetime
 {
-    public WebAppFactory Factory { get; } = new();
+    public WebAppFactory Factory { get; }
     public HttpClient Client { get; private set; } = null!;
+
+    public ContentBrowseFixture(WebAppFactory factory) => Factory = factory;
 
     public async Task InitializeAsync()
     {
@@ -44,13 +46,14 @@ public sealed class ContentBrowseFixture : IAsyncLifetime
         await db.SaveChangesAsync();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         Client.Dispose();
-        await Factory.DisposeAsync();
+        return Task.CompletedTask;
     }
 }
 
+[Collection("Integration")]
 [Trait("Category", "Integration")]
 public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFixture<ContentBrowseFixture>
 {

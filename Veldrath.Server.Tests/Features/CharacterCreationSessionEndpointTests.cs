@@ -15,8 +15,10 @@ namespace Veldrath.Server.Tests.Features;
 /// </summary>
 public sealed class CharacterCreationFixture : IAsyncLifetime
 {
-    public WebAppFactory Factory { get; } = new();
+    public WebAppFactory Factory { get; }
     public HttpClient Client { get; private set; } = null!;
+
+    public CharacterCreationFixture(WebAppFactory factory) => Factory = factory;
 
     public async Task InitializeAsync()
     {
@@ -55,14 +57,14 @@ public sealed class CharacterCreationFixture : IAsyncLifetime
         await db.SaveChangesAsync();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         Client.Dispose();
-        Factory.Dispose();
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 }
 
+[Collection("Integration")]
 [Trait("Category", "Integration")]
 public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixture)
     : IClassFixture<CharacterCreationFixture>

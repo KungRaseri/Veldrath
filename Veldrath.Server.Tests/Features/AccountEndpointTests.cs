@@ -14,8 +14,9 @@ namespace Veldrath.Server.Tests.Features;
 /// <c>POST /api/account/password</c>, <c>PUT /api/account/username</c>,
 /// <c>GET|DELETE /api/account/sessions[/{id}]</c>, and
 /// <c>GET|DELETE /api/account/providers[/{provider}]</c>.</summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class AccountEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class AccountEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 

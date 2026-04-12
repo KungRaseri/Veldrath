@@ -53,3 +53,29 @@ public record AuthResponse(
     IReadOnlyList<string> Permissions,
     bool IsCurator = false,
     Guid? SessionId = null);
+
+/// <summary>
+/// Returned by <c>POST /api/auth/renew-jwt</c>.
+/// Issues a fresh JWT using the supplied refresh token without rotating it.
+/// The refresh token itself is unchanged; only the access token is renewed.
+/// </summary>
+/// <param name="AccessToken">Short-lived JWT bearer token.</param>
+/// <param name="AccessTokenExpiry">UTC timestamp when the access token expires.</param>
+/// <param name="AccountId">Unique account identifier.</param>
+/// <param name="Username">Display username.</param>
+/// <param name="Roles">All role names currently assigned to this account.</param>
+/// <param name="Permissions">Effective permission set (union of role and per-user grants).</param>
+/// <param name="IsCurator">
+/// Legacy convenience flag — <c>true</c> when <see cref="Roles"/> contains <c>"Curator"</c>.
+/// Retained for backward compatibility with existing clients.
+/// </param>
+/// <param name="SessionId">Optional session identifier.</param>
+public record RenewJwtResponse(
+    string AccessToken,
+    DateTimeOffset AccessTokenExpiry,
+    Guid AccountId,
+    string Username,
+    IReadOnlyList<string> Roles,
+    IReadOnlyList<string> Permissions,
+    bool IsCurator = false,
+    Guid? SessionId = null);

@@ -17,10 +17,13 @@ namespace Veldrath.Server.Tests.Features;
 public sealed class AnnouncementsFixture : IAsyncLifetime
 {
     /// <summary>Gets the web application factory used across all tests in this fixture.</summary>
-    public WebAppFactory Factory { get; } = new();
+    public WebAppFactory Factory { get; }
 
     /// <summary>Gets the shared HTTP client for sending test requests.</summary>
     public HttpClient Client { get; private set; } = null!;
+
+    /// <summary>Initializes a new instance of <see cref="AnnouncementsFixture"/> with the shared collection factory.</summary>
+    public AnnouncementsFixture(WebAppFactory factory) => Factory = factory;
 
     /// <inheritdoc/>
     public async Task InitializeAsync()
@@ -49,16 +52,17 @@ public sealed class AnnouncementsFixture : IAsyncLifetime
     }
 
     /// <inheritdoc/>
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         Client.Dispose();
-        await Factory.DisposeAsync();
+        return Task.CompletedTask;
     }
 }
 
 /// <summary>
 /// Integration tests for <c>GET /api/announcements</c> using a pre-seeded database.
 /// </summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
 public class AnnouncementEndpointTests(AnnouncementsFixture fixture) : IClassFixture<AnnouncementsFixture>
 {

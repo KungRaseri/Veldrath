@@ -10,8 +10,9 @@ using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
 
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class AuthEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 
@@ -286,5 +287,35 @@ public class AuthEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFact
         locked.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         var body = await locked.Content.ReadAsStringAsync();
         body.Should().ContainEquivalentOf("locked out");
+    }
+
+    [Fact]
+    public async Task RenewJwt_Should_Return_New_Access_Token_Without_Rotating_Refresh_Token()
+    {
+        var reg = await _client.PostAsJsonAsync("/api/auth/register",
+            new { Email = "auth_renew_jwt@test.com", Username = "Auth_RenewJwt_User", Password = "TestP@ssword123" });
+        var original = await reg.Content.ReadFromJsonAsync<AuthResponse>();
+
+        var renewResp = await _client.PostAsJsonAsync("/api/auth/renew-jwt",
+            new { RefreshToken = original!.RefreshToken });
+
+        renewResp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var renewed = await renewResp.Content.ReadFromJsonAsync<RenewJwtResponse>();
+        renewed!.AccessToken.Should().NotBeEmpty();
+        renewed.AccountId.Should().Be(original.AccountId);
+
+        // Refresh token should still work after a renew-jwt call (it was not rotated).
+        var secondRenew = await _client.PostAsJsonAsync("/api/auth/renew-jwt",
+            new { RefreshToken = original.RefreshToken });
+        secondRenew.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task RenewJwt_Should_Return_Unauthorized_For_Invalid_Token()
+    {
+        var response = await _client.PostAsJsonAsync("/api/auth/renew-jwt",
+            new { RefreshToken = "totally-invalid-token" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

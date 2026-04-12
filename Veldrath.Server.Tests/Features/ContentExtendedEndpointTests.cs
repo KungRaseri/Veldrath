@@ -32,10 +32,13 @@ namespace Veldrath.Server.Tests.Features;
 public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
 {
     /// <summary>Gets the web application factory used across all tests in this fixture.</summary>
-    public WebAppFactory Factory { get; } = new();
+    public WebAppFactory Factory { get; }
 
     /// <summary>Gets the shared HTTP client for sending test requests.</summary>
     public HttpClient Client { get; private set; } = null!;
+
+    /// <summary>Initializes a new instance of <see cref="ContentExtendedEndpointsFixture"/> with the shared collection factory.</summary>
+    public ContentExtendedEndpointsFixture(WebAppFactory factory) => Factory = factory;
 
     /// <inheritdoc />
     public async Task InitializeAsync()
@@ -134,10 +137,10 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         Client.Dispose();
-        await Factory.DisposeAsync();
+        return Task.CompletedTask;
     }
 }
 
@@ -147,6 +150,7 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
 /// All routes are anonymous. Each section includes a list test, a by-slug test,
 /// and a 404 test.
 /// </summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
 public class ContentExtendedEndpointTests(ContentExtendedEndpointsFixture fixture)
     : IClassFixture<ContentExtendedEndpointsFixture>

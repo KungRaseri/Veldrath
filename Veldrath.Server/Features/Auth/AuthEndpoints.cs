@@ -9,6 +9,7 @@ namespace Veldrath.Server.Features.Auth;
 /// POST /api/auth/register              — create account, returns token pair
 /// POST /api/auth/login                 — verify credentials, returns token pair
 /// POST /api/auth/refresh               — rotate refresh token, returns new token pair
+/// POST /api/auth/renew-jwt             — issue new JWT without rotating the refresh token
 /// POST /api/auth/logout                — revoke refresh token [Authorize]
 /// POST /api/auth/exchange              — redeem a single-use OAuth exchange code for a token pair
 /// GET  /api/auth/create-exchange-code  — issue a short-lived SSO handoff code [Authorize]
@@ -21,8 +22,9 @@ public static class AuthEndpoints
 
         group.MapPost("/register",              RegisterAsync).RequireRateLimiting("auth-attempts");
         group.MapPost("/login",                 LoginAsync)   .RequireRateLimiting("auth-attempts");
-        group.MapPost("/refresh",               RefreshAsync) .RequireRateLimiting("auth-attempts");
-        group.MapPost("/logout",                LogoutAsync)  .RequireAuthorization();
+        group.MapPost("/refresh",               RefreshAsync)   .RequireRateLimiting("auth-attempts");
+        group.MapPost("/renew-jwt",             RenewJwtAsync)  .RequireRateLimiting("auth-attempts");
+        group.MapPost("/logout",                LogoutAsync)    .RequireAuthorization();
         group.MapPost("/exchange",              ExchangeAsync).RequireRateLimiting("auth-attempts");
         group.MapGet ("/create-exchange-code",  CreateExchangeCodeAsync).RequireAuthorization();
 
@@ -63,6 +65,19 @@ public static class AuthEndpoints
     {
         var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var (response, error) = await authService.RefreshAsync(request.RefreshToken, ip, ct);
+        return response is not null
+            ? Results.Ok(response)
+            : Results.Json(new { error }, statusCode: 401);
+    }
+
+    private static async Task<IResult> RenewJwtAsync(
+        [FromBody] RefreshRequest request,
+        AuthService authService,
+        HttpContext ctx,
+        CancellationToken ct)
+    {
+        var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var (response, error) = await authService.RenewJwtAsync(request.RefreshToken, ip, ct);
         return response is not null
             ? Results.Ok(response)
             : Results.Json(new { error }, statusCode: 401);

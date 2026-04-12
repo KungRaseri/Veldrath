@@ -74,18 +74,9 @@ public class AuthService(
 
         if (!stored.IsActive)
         {
-            // The cookie may be 1 rotation behind the live token if the Blazor circuit
-            // refreshed the JWT in-memory without being able to update the browser cookie.
-            // Walk the ReplacedByTokenId chain to find the current active token before
-            // treating this as theft.
-            var chainActive = await refreshTokenRepo.GetCurrentActiveInChainAsync(stored.Id, ct);
-            if (chainActive is null)
-            {
-                // Chain is dead — either genuine theft or all tokens expired; revoke everything.
-                await refreshTokenRepo.RevokeAllForAccountAsync(stored.AccountId, clientIp, ct);
-                return (null, "Refresh token has been revoked");
-            }
-            stored = chainActive;
+            // Replaying a revoked token is a theft signal — revoke the entire account's token set.
+            await refreshTokenRepo.RevokeAllForAccountAsync(stored.AccountId, clientIp, ct);
+            return (null, "Refresh token has been revoked");
         }
 
         var user = await userManager.FindByIdAsync(stored.AccountId.ToString());
@@ -123,7 +114,42 @@ public class AuthService(
     }
 
     /// <summary>
-    /// Resolves or creates a <see cref="PlayerAccount"/> for the supplied external-login identity,
+    /// Issues a fresh JWT for the account that owns <paramref name="rawRefreshToken"/>
+    /// without rotating the refresh token. The refresh token is validated (must be active and
+    /// unexpired) but is left unchanged. Intended for Blazor circuit proactive JWT renewal so
+    /// the HttpOnly cookie refresh token never needs to rotate on the client side.
+    /// </summary>
+    /// <param name="rawRefreshToken">The raw refresh token from the client.</param>
+    /// <param name="clientIp">Caller IP for audit purposes.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="RenewJwtResponse"/> with a fresh JWT, or an error message.</returns>
+    public async Task<(RenewJwtResponse? Response, string? Error)> RenewJwtAsync(
+        string rawRefreshToken, string clientIp, CancellationToken ct = default)
+    {
+        var hash   = HashToken(rawRefreshToken);
+        var stored = await refreshTokenRepo.GetByTokenHashAsync(hash, ct);
+
+        if (stored is null)
+            return (null, "Invalid refresh token");
+
+        if (!stored.IsActive)
+            return (null, "Refresh token has been revoked");
+
+        if (stored.ExpiresAt <= DateTimeOffset.UtcNow)
+            return (null, "Refresh token has expired");
+
+        var user = await userManager.FindByIdAsync(stored.AccountId.ToString());
+        if (user is null)
+            return (null, "Account not found");
+
+        var (roles, permissions) = await ResolveRolesAndPermissionsAsync(user);
+        var (jwt, expiry)        = GenerateJwt(user, roles, permissions);
+
+        return (new RenewJwtResponse(jwt, expiry, user.Id, user.UserName!, roles, permissions,
+            roles.Contains(Roles.Curator), stored.Id), null);
+    }
+
+    /// <summary>
     /// then either issues a session or (when the provider's email already belongs to an unlinked
     /// account) initiates an email-confirmation flow.
     /// </summary>
