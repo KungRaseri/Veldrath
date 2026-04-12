@@ -1,6 +1,7 @@
 @implements IDisposable
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
 @rendermode InteractiveServer
 
 <nav class="nav-links">
@@ -89,6 +90,6 @@
     {
         await AuthState.LogOutAsync();
         _unreadCount = 0;
-        Refresh();
+        Nav.NavigateTo("/", forceLoad: false);
     }
 }
