@@ -27,14 +27,20 @@ try
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
-    // Typed HttpClient for calling Veldrath.Server APIs.
+    // HttpClient for calling Veldrath.Server APIs.
     var serverUrl = builder.Configuration["Veldrath:ServerUrl"]
         ?? throw new InvalidOperationException("Veldrath:ServerUrl is not configured.");
 
-    builder.Services.AddScoped<AuthRefreshHandler>();
-    builder.Services.AddHttpClient<RealmFoundryApiClient>(client =>
-        client.BaseAddress = new Uri(serverUrl))
-        .AddHttpMessageHandler<AuthRefreshHandler>();
+    // Register as a named client so RealmFoundryApiClient can be scoped.
+    // AddHttpClient<T> (typed client) makes T transient — every component injection
+    // gets a fresh HttpClient with no Authorization header, even after login.
+    // Registering as scoped means all components in a Blazor circuit share the one
+    // instance that AuthStateService.SetTokensAsync already called SetBearerToken on.
+    builder.Services.AddHttpClient("foundry", client =>
+        client.BaseAddress = new Uri(serverUrl));
+    builder.Services.AddScoped<RealmFoundryApiClient>(sp =>
+        new RealmFoundryApiClient(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient("foundry")));
 
     builder.Services.AddScoped<AuthStateService>();
 
