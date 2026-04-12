@@ -3,6 +3,7 @@
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
+@inject IConfiguration Config
 @rendermode InteractiveServer
 
 <PageTitle>Profile — RealmFoundry</PageTitle>
@@ -157,10 +158,9 @@ else
                     else
                     {
                         <span class="muted">Not linked</span>
-                        <a class="btn btn-sm"
-                           href="/api/auth/external/@providerName.ToLowerInvariant()?mode=link&accountId=@_profile.AccountId&returnUrl=http://localhost">
+                        <button class="btn btn-sm" @onclick="() => LinkProviderAsync(providerName)">
                             Link
-                        </a>
+                        </button>
                     }
                 </div>
             }
@@ -327,6 +327,16 @@ else
         {
             _loading = false;
         }
+    }
+
+    private void LinkProviderAsync(string providerName)
+    {
+        if (_profile is null) return;
+        var serverUrl  = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
+        var returnUrl  = Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/profile");
+        Nav.NavigateTo(
+            $"{serverUrl}/api/auth/external/{providerName.ToLowerInvariant()}?mode=link&accountId={_profile.AccountId}&returnUrl={returnUrl}",
+            forceLoad: true);
     }
 
     private async Task SaveProfileAsync()

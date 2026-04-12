@@ -75,10 +75,28 @@ public static class ExternalAuthEndpoints
 
             string? linkReturnUrl = null;
             ctx.Properties?.Items.TryGetValue("returnUrl", out linkReturnUrl);
-            ctx.HandleResponse();
-            ctx.Response.Redirect(linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase)
-                ? linkReturnUrl + "?linked=1"
-                : "/profile?linked=1");
+
+            // Issue a fresh session so the Blazor circuit on the callback page has live tokens.
+            // Redirect via /auth/callback (the exchange-code path) rather than directly to the
+            // profile page; this lets AuthCallback.razor reseed AuthStateService before doing
+            // an in-process Nav.NavigateTo that keeps the circuit alive.
+            var session = await authSvc.CreateSessionAsync(linkTarget, clientIp);
+            var code    = exchangeSvc.CreateCode(session, session.AccountId);
+
+            if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase))
+            {
+                // Derive the Foundry callback URL from the returnUrl origin.
+                var returnUri    = new Uri(linkReturnUrl);
+                var callbackBase = $"{returnUri.Scheme}://{returnUri.Authority}";
+                var innerReturn  = Uri.EscapeDataString("/profile?linked=1");
+                ctx.HandleResponse();
+                ctx.Response.Redirect($"{callbackBase}/auth/callback?code={code}&aid={session.AccountId}&returnUrl={innerReturn}");
+            }
+            else
+            {
+                ctx.HandleResponse();
+                ctx.Response.Redirect($"/auth/callback?code={code}&aid={session.AccountId}&returnUrl=%2Fprofile%3Flinked%3D1");
+            }
             return;
         }
 
