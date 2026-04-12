@@ -313,8 +313,18 @@ else
 
             if (_profile is null)
             {
-                // JWT expired / refresh failed — auth state is stale; force re-login.
-                await AuthState.LogOutAsync();
+                // JWT may have expired — attempt a silent token refresh before giving up.
+                var refreshed = await AuthState.TryRefreshAsync();
+                if (refreshed)
+                    _profile = await Api.GetAccountProfileAsync();
+            }
+
+            if (_profile is null)
+            {
+                // Still null after refresh attempt — redirect to login.
+                // Do NOT call LogOutAsync here: the refresh token is still valid server-side
+                // and revoking it would destroy a live session (e.g. just because the JWT
+                // expired while the circuit was idle).
                 Nav.NavigateTo("/login");
                 return;
             }
