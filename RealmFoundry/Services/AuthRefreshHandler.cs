@@ -24,6 +24,13 @@ public sealed class AuthRefreshHandler(IServiceProvider services) : DelegatingHa
         if (auth.IsLoggedIn && auth.TokenExpiresSoon)
             await auth.TryRefreshAsync();
 
+        // Stamp the bearer token on every outgoing request. This ensures component-injected
+        // RealmFoundryApiClient instances (which are transient and start with no headers)
+        // are authenticated without requiring each component to call SetBearerToken.
+        if (auth.IsLoggedIn && auth.AccessToken is not null)
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", auth.AccessToken);
+
         return await base.SendAsync(request, cancellationToken);
     }
 }

@@ -304,14 +304,29 @@ else
     {
         if (!AuthState.IsLoggedIn) return;
 
-        _linkSuccess  = LinkedParam == 1;
-        _pendingLink  = PendingLinkParam is not null;
+        _linkSuccess = LinkedParam == 1;
+        _pendingLink = PendingLinkParam is not null;
 
-        _profile = await Api.GetAccountProfileAsync();
-        _editDisplayName = _profile?.DisplayName;
-        _editBio = _profile?.Bio;
-        _sessions = await Api.GetAccountSessionsAsync();
-        _loading = false;
+        try
+        {
+            _profile = await Api.GetAccountProfileAsync();
+
+            if (_profile is null)
+            {
+                // JWT expired / refresh failed — auth state is stale; force re-login.
+                await AuthState.LogOutAsync();
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            _editDisplayName = _profile.DisplayName;
+            _editBio         = _profile.Bio;
+            _sessions        = await Api.GetAccountSessionsAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private async Task SaveProfileAsync()
