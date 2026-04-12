@@ -48,4 +48,18 @@ public class RefreshTokenRepository : IRefreshTokenRepository
 
         await _db.SaveChangesAsync(ct);
     }
+
+    /// <inheritdoc />
+    public async Task<RefreshToken?> GetCurrentActiveInChainAsync(Guid startId, CancellationToken ct = default)
+    {
+        const int maxHops = 10;
+        var current = await _db.RefreshTokens.FindAsync([startId], ct);
+        for (var hop = 0; hop < maxHops && current is not null; hop++)
+        {
+            if (current.IsActive) return current;
+            if (current.ReplacedByTokenId is null) return null;
+            current = await _db.RefreshTokens.FindAsync([current.ReplacedByTokenId.Value], ct);
+        }
+        return null;
+    }
 }

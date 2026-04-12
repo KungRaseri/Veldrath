@@ -74,9 +74,18 @@ public class AuthService(
 
         if (!stored.IsActive)
         {
-            // Previously valid token now revoked → possible theft; revoke everything.
-            await refreshTokenRepo.RevokeAllForAccountAsync(stored.AccountId, clientIp, ct);
-            return (null, "Refresh token has been revoked");
+            // The cookie may be 1 rotation behind the live token if the Blazor circuit
+            // refreshed the JWT in-memory without being able to update the browser cookie.
+            // Walk the ReplacedByTokenId chain to find the current active token before
+            // treating this as theft.
+            var chainActive = await refreshTokenRepo.GetCurrentActiveInChainAsync(stored.Id, ct);
+            if (chainActive is null)
+            {
+                // Chain is dead — either genuine theft or all tokens expired; revoke everything.
+                await refreshTokenRepo.RevokeAllForAccountAsync(stored.AccountId, clientIp, ct);
+                return (null, "Refresh token has been revoked");
+            }
+            stored = chainActive;
         }
 
         var user = await userManager.FindByIdAsync(stored.AccountId.ToString());

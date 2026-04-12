@@ -1,0 +1,71 @@
+@* No @page directive — used as a child component in App.razor. *@
+@* @rendermode InteractiveServer: runs in both SSR prerender and the circuit pass so it *@
+@* can (a) read the rt cookie + persist during prerender, and (b) restore auth state in *@
+@* the circuit before any page component initialises. *@
+@rendermode InteractiveServer
+@implements IDisposable
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject PersistentComponentState ApplicationState
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject IWebHostEnvironment Env
+
+@* Renders nothing — purely performs auth bootstrapping. *@
+
+@code {
+    private PersistingComponentStateSubscription _subscription;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        // ── Circuit interactive pass ─────────────────────────────────────────
+        // Restore auth state from the data persisted during the SSR prerender.
+        // SetTokensAsync is synchronous (returns Task.CompletedTask) so auth is
+        // fully applied before Blazor yields and moves on to other components.
+        if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
+        {
+            await AuthState.SetTokensAsync(saved);
+            return;
+        }
+
+        // ── SSR prerender pass ───────────────────────────────────────────────
+        // HttpContext is available only during prerender (not in the circuit).
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is null) return;
+
+        var rt = ctx.Request.Cookies["rt"];
+        if (string.IsNullOrEmpty(rt)) return;
+
+        var refreshed = await Api.RefreshTokenAsync(rt);
+        if (refreshed is null)
+        {
+            // Token is expired or revoked — clear the stale cookie so the
+            // browser doesn't keep sending a dead token on subsequent requests.
+            ctx.Response.Cookies.Delete("rt", new CookieOptions { Path = "/" });
+            return;
+        }
+
+        // Write the rotated refresh token back into the cookie.
+        ctx.Response.Cookies.Append("rt", refreshed.RefreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure   = !Env.IsDevelopment(),
+            SameSite = SameSiteMode.Strict,
+            MaxAge   = TimeSpan.FromDays(30),
+            Path     = "/"
+        });
+
+        // Serialize the AuthResponse into the pre-rendered HTML so the circuit
+        // pass above can read it via TryTakeFromJson without making another
+        // network call.
+        _subscription = ApplicationState.RegisterOnPersisting(() =>
+        {
+            ApplicationState.PersistAsJson("auth-state", refreshed);
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _subscription.Dispose();
+}

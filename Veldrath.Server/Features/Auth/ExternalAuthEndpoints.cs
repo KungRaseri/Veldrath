@@ -85,17 +85,17 @@ public static class ExternalAuthEndpoints
 
             if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase))
             {
-                // Derive the Foundry callback URL from the returnUrl origin.
+                // Derive the Foundry origin from the returnUrl so the redirect works across environments.
                 var returnUri    = new Uri(linkReturnUrl);
                 var callbackBase = $"{returnUri.Scheme}://{returnUri.Authority}";
                 var innerReturn  = Uri.EscapeDataString("/profile?linked=1");
                 ctx.HandleResponse();
-                ctx.Response.Redirect($"{callbackBase}/auth/callback?code={code}&aid={session.AccountId}&returnUrl={innerReturn}");
+                ctx.Response.Redirect($"{callbackBase}/auth/start-session?code={code}&aid={session.AccountId}&returnUrl={innerReturn}");
             }
             else
             {
                 ctx.HandleResponse();
-                ctx.Response.Redirect($"/auth/callback?code={code}&aid={session.AccountId}&returnUrl=%2Fprofile%3Flinked%3D1");
+                ctx.Response.Redirect($"{foundryBase}/auth/start-session?code={code}&aid={session.AccountId}&returnUrl=%2Fprofile%3Flinked%3D1");
             }
             return;
         }
@@ -114,9 +114,7 @@ public static class ExternalAuthEndpoints
         {
             // A confirmation email has been dispatched; redirect without issuing tokens.
             ctx.HandleResponse();
-            ctx.Response.Redirect(returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase)
-                ? returnUrl + "?pending_link=1"
-                : "/login?pending_link=1");
+            ctx.Response.Redirect($"{foundryBase}/login?pending_link=1");
             return;
         }
 
