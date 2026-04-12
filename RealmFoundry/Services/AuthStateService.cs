@@ -15,6 +15,9 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
     private string? _accessToken;
     private string? _refreshToken;
 
+    /// <summary>The refresh-token session ID for the current active session.</summary>
+    public Guid? SessionId { get; private set; }
+
     /// <summary>The authenticated user's display name.</summary>
     public string? Username { get; private set; }
 
@@ -68,6 +71,7 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
     {
         _accessToken  = response.AccessToken;
         _refreshToken = response.RefreshToken;
+        SessionId     = response.SessionId;
         Apply(response.Username, response.AccountId, response.IsCurator,
               response.AccessTokenExpiry, response.Roles, response.Permissions);
         return Task.CompletedTask;
@@ -91,6 +95,7 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
     {
         _accessToken  = null;
         _refreshToken = null;
+        SessionId   = null;
         Username    = null;
         AccountId   = null;
         IsCurator   = false;

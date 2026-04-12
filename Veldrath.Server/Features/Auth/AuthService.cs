@@ -101,7 +101,7 @@ public class AuthService(
 
         var (roles, permissions) = await ResolveRolesAndPermissionsAsync(user);
         var (jwt, expiry) = GenerateJwt(user, roles, permissions);
-        return (new AuthResponse(jwt, rawNew, expiry, user.Id, user.UserName!, roles, permissions, roles.Contains(Roles.Curator)), null);
+        return (new AuthResponse(jwt, rawNew, expiry, user.Id, user.UserName!, roles, permissions, roles.Contains(Roles.Curator), newRefreshId), null);
     }
 
     public async Task RevokeAsync(
@@ -313,16 +313,17 @@ public class AuthService(
         var (rawRefresh, hashRefresh) = GenerateRefreshToken();
         var refreshDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "30");
 
-        await refreshTokenRepo.CreateAsync(new RefreshToken
+        var refreshToken = new RefreshToken
         {
             AccountId = user.Id,
             TokenHash = hashRefresh,
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(refreshDays),
             CreatedByIp = clientIp,
-        }, ct);
+        };
+        await refreshTokenRepo.CreateAsync(refreshToken, ct);
 
         return new AuthResponse(jwt, rawRefresh, expiry, user.Id, user.UserName!,
-            roles, permissions, roles.Contains(Roles.Curator));
+            roles, permissions, roles.Contains(Roles.Curator), refreshToken.Id);
     }
 
     /// <summary>

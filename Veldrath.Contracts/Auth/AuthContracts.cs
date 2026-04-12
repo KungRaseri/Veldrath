@@ -51,4 +51,5 @@ public record AuthResponse(
     string Username,
     IReadOnlyList<string> Roles,
     IReadOnlyList<string> Permissions,
-    bool IsCurator = false);
+    bool IsCurator = false,
+    Guid? SessionId = null);

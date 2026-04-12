@@ -321,7 +321,7 @@ else
 
             _editDisplayName = _profile.DisplayName;
             _editBio         = _profile.Bio;
-            _sessions        = await Api.GetAccountSessionsAsync();
+            _sessions        = await Api.GetAccountSessionsAsync(AuthState.SessionId);
         }
         finally
         {
@@ -411,7 +411,7 @@ else
         _sessionError = null;
         var (ok, error) = await Api.RevokeSessionAsync(sessionId);
         if (ok)
-            _sessions = await Api.GetAccountSessionsAsync();
+            _sessions = await Api.GetAccountSessionsAsync(AuthState.SessionId);
         else
             _sessionError = error ?? "Failed to revoke session.";
     }
@@ -419,12 +419,12 @@ else
     private async Task RevokeAllOtherSessionsAsync()
     {
         _sessionError = null;
-        var current = _sessions?.FirstOrDefault(s => s.IsCurrent);
-        if (current is null) return;
+        var sessionId = AuthState.SessionId;
+        if (sessionId is null) return;
 
-        var (ok, error) = await Api.RevokeAllOtherSessionsAsync(current.Id);
+        var (ok, error) = await Api.RevokeAllOtherSessionsAsync(sessionId.Value);
         if (ok)
-            _sessions = await Api.GetAccountSessionsAsync();
+            _sessions = await Api.GetAccountSessionsAsync(AuthState.SessionId);
         else
             _sessionError = error ?? "Failed to revoke sessions.";
     }
