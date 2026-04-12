@@ -200,4 +200,105 @@ public class RefreshTokenRepositoryTests : IDisposable
         Func<Task> act = () => repo.RevokeAllForAccountAsync(Guid.NewGuid(), "127.0.0.1");
         await act.Should().NotThrowAsync();
     }
+
+    // GetCurrentActiveInChainAsync
+    [Fact]
+    public async Task GetCurrentActiveInChainAsync_Returns_Token_When_It_Is_Already_Active()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new RefreshTokenRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var token = await repo.CreateAsync(MakeToken(accountId, "chain_start_active"));
+
+        var result = await repo.GetCurrentActiveInChainAsync(token.Id);
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(token.Id);
+    }
+
+    [Fact]
+    public async Task GetCurrentActiveInChainAsync_Follows_One_Hop_To_Active_Token()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new RefreshTokenRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var original    = await repo.CreateAsync(MakeToken(accountId, "chain_hop1_orig"));
+        var replacement = await repo.CreateAsync(MakeToken(accountId, "chain_hop1_repl"));
+        await repo.RevokeAsync(original.Id, "127.0.0.1", replacedByTokenId: replacement.Id);
+
+        var result = await repo.GetCurrentActiveInChainAsync(original.Id);
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(replacement.Id);
+    }
+
+    [Fact]
+    public async Task GetCurrentActiveInChainAsync_Follows_Multiple_Hops_To_Active_Token()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new RefreshTokenRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var t1 = await repo.CreateAsync(MakeToken(accountId, "chain_multi_t1"));
+        var t2 = await repo.CreateAsync(MakeToken(accountId, "chain_multi_t2"));
+        var t3 = await repo.CreateAsync(MakeToken(accountId, "chain_multi_t3"));
+        await repo.RevokeAsync(t1.Id, "127.0.0.1", replacedByTokenId: t2.Id);
+        await repo.RevokeAsync(t2.Id, "127.0.0.1", replacedByTokenId: t3.Id);
+
+        var result = await repo.GetCurrentActiveInChainAsync(t1.Id);
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(t3.Id);
+    }
+
+    [Fact]
+    public async Task GetCurrentActiveInChainAsync_Returns_Null_When_All_Tokens_Revoked()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new RefreshTokenRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        var t1 = await repo.CreateAsync(MakeToken(accountId, "chain_allrevoked_t1"));
+        var t2 = await repo.CreateAsync(MakeToken(accountId, "chain_allrevoked_t2"));
+        await repo.RevokeAsync(t1.Id, "127.0.0.1", replacedByTokenId: t2.Id);
+        await repo.RevokeAsync(t2.Id, "127.0.0.1");   // end of chain — no replacement
+
+        var result = await repo.GetCurrentActiveInChainAsync(t1.Id);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetCurrentActiveInChainAsync_Returns_Null_For_Unknown_Start_Id()
+    {
+        await using var db = _factory.CreateContext();
+        var repo = new RefreshTokenRepository(db);
+
+        var result = await repo.GetCurrentActiveInChainAsync(Guid.NewGuid());
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetCurrentActiveInChainAsync_Returns_Null_When_Chain_Exceeds_Max_Hops()
+    {
+        await using var db = _factory.CreateContext();
+        var repo      = new RefreshTokenRepository(db);
+        var accountId = await SeedAccountAsync(db);
+
+        // Build a 12-hop chain (max is 10); the active token at hop 11 should not be found.
+        var tokens = new List<RefreshToken>();
+        for (var i = 0; i < 12; i++)
+            tokens.Add(await repo.CreateAsync(MakeToken(accountId, $"chain_maxhop_{i}")));
+
+        for (var i = 0; i < 11; i++)
+            await repo.RevokeAsync(tokens[i].Id, "127.0.0.1", replacedByTokenId: tokens[i + 1].Id);
+
+        // tokens[11] is active but beyond the 10-hop limit so it should not be returned.
+        var result = await repo.GetCurrentActiveInChainAsync(tokens[0].Id);
+
+        result.Should().BeNull();
+    }
 }
