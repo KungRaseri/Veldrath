@@ -74,19 +74,18 @@ public class AuthStateServiceTests
     }
 
     [Fact]
-    public async Task SetTokensAsync_RefreshTokenNotExposedViaPublicProperties()
+    public async Task SetTokensAsync_TokensNotExposedViaPublicProperties()
     {
-        // The refresh token must never be reachable through any public property.
-        // AccessToken is intentionally exposed so AuthRefreshHandler can stamp it
-        // on every outgoing request (transient HttpClient instances injected into
-        // components do not inherit DefaultRequestHeaders set by AuthStateService).
+        // Neither the access token nor the refresh token must be reachable through
+        // any public property. Tokens are circuit-scoped memory only and must not
+        // be accessible to Razor component templates or other callers.
         var (svc, _) = Build();
         await svc.SetTokensAsync(MakeResponse());
         var publicProps = typeof(AuthStateService)
             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
             .Select(p => p.GetValue(svc)?.ToString() ?? "");
+        publicProps.Should().NotContain("jwt-token");
         publicProps.Should().NotContain("refresh-token");
-        svc.AccessToken.Should().Be("jwt-token");
     }
 
     [Fact]
