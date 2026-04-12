@@ -43,6 +43,7 @@ try
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("foundry")));
 
     builder.Services.AddScoped<AuthStateService>();
+    builder.Services.AddHttpContextAccessor();
 
     // DataProtection key persistence
     // Persisting to a mounted volume prevents antiforgery token failures on
@@ -92,6 +93,56 @@ try
     // container, so MapStaticAssets() alone can't resolve _framework/ assets.
     app.UseStaticFiles();
     app.MapStaticAssets();
+
+    // Minimal API endpoints for cookie-based auth persistence (Option B).
+    // These run server-side outside the Blazor circuit, so HttpContext is available.
+
+    // Redeems a server-issued exchange code, writes the refresh token as an HttpOnly
+    // cookie, then redirects to returnUrl.  The Blazor circuit's PersistingAuthState
+    // component will read and apply the cookie on the next SSR pass.
+    app.MapGet("/auth/start-session", async (
+        string? code,
+        Guid? aid,
+        string? returnUrl,
+        RealmFoundryApiClient api,
+        HttpContext ctx,
+        IWebHostEnvironment env) =>
+    {
+        if (string.IsNullOrWhiteSpace(code) || !aid.HasValue)
+            return Results.Redirect("/login?error=auth_failed");
+
+        var response = await api.ExchangeCodeAsync(code, aid.Value);
+        if (response is null)
+            return Results.Redirect("/login?error=auth_failed");
+
+        ctx.Response.Cookies.Append("rt", response.RefreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure   = !env.IsDevelopment(),
+            SameSite = SameSiteMode.Strict,
+            MaxAge   = TimeSpan.FromDays(30),
+            Path     = "/"
+        });
+
+        var destination = !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
+            ? returnUrl : "/";
+        return Results.Redirect(destination);
+    });
+
+    // Revokes the refresh token stored in the cookie (server-side), deletes the cookie,
+    // then redirects to /.  Called via forceLoad navigation so the circuit is torn down
+    // and no stale auth state lingers in memory.
+    app.MapGet("/auth/sign-out", async (HttpContext ctx, RealmFoundryApiClient api) =>
+    {
+        var rt = ctx.Request.Cookies["rt"];
+        if (rt is not null)
+        {
+            await api.LogoutAsync(rt);
+            ctx.Response.Cookies.Delete("rt", new CookieOptions { Path = "/" });
+        }
+        return Results.Redirect("/");
+    });
+
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode()
         .DisableAntiforgery();  // Blazor Server's _blazor hub uses WebSockets — antiforgery doesn't apply

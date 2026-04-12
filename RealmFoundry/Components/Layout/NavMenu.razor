@@ -86,10 +86,12 @@
         StateHasChanged();
     }
 
-    private async Task LogOutAsync()
+    private void LogOutAsync()
     {
-        await AuthState.LogOutAsync();
+        // Navigate to the server-side /auth/sign-out endpoint with forceLoad=true.
+        // The endpoint revokes the refresh token, deletes the rt cookie, then redirects
+        // to /.  forceLoad tears down the Blazor circuit so no stale auth state lingers.
         _unreadCount = 0;
-        Nav.NavigateTo("/", forceLoad: false);
+        Nav.NavigateTo("/auth/sign-out", forceLoad: true);
     }
 }

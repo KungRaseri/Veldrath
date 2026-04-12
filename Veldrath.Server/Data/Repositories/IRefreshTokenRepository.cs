@@ -19,4 +19,12 @@ public interface IRefreshTokenRepository
     /// Called on suspicious activity (presented-revoked-token detection) or admin action.
     /// </summary>
     Task RevokeAllForAccountAsync(Guid accountId, string revokedByIp, CancellationToken ct = default);
+
+    /// <summary>
+    /// Follows the <c>ReplacedByTokenId</c> rotation chain starting at <paramref name="startId"/> and
+    /// returns the first <see cref="RefreshToken"/> in the chain whose <see cref="RefreshToken.IsActive"/> is
+    /// <see langword="true"/>, or <see langword="null"/> if the chain dead-ends without an active token.
+    /// Walks at most 10 hops to guard against cycles.
+    /// </summary>
+    Task<RefreshToken?> GetCurrentActiveInChainAsync(Guid startId, CancellationToken ct = default);
 }
