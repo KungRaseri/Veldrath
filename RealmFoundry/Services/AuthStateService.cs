@@ -77,16 +77,22 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
         return Task.CompletedTask;
     }
 
-    /// <summary>Proactively refreshes the access token using the in-memory refresh token.</summary>
-    /// <returns><c>true</c> if the refresh succeeded and state was updated.</returns>
+    /// <summary>Proactively renews the access token using the in-memory refresh token without rotating it.</summary>
+    /// <remarks>
+    /// Calls <c>POST /api/auth/renew-jwt</c> so the HttpOnly cookie refresh token never needs to
+    /// change — the browser cookie and the circuit's in-memory token stay permanently in sync.
+    /// </remarks>
+    /// <returns><c>true</c> if the renewal succeeded and state was updated.</returns>
     public async Task<bool> TryRefreshAsync()
     {
         if (string.IsNullOrEmpty(_refreshToken)) return false;
 
-        var refreshed = await apiClient.RefreshTokenAsync(_refreshToken);
-        if (refreshed is null) return false;
+        var renewed = await apiClient.RenewJwtAsync(_refreshToken);
+        if (renewed is null) return false;
 
-        await SetTokensAsync(refreshed);
+        _accessToken = renewed.AccessToken;
+        Apply(renewed.Username, renewed.AccountId, renewed.IsCurator,
+              renewed.AccessTokenExpiry, renewed.Roles, renewed.Permissions);
         return true;
     }
 

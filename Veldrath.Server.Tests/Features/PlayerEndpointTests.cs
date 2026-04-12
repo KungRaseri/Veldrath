@@ -5,8 +5,9 @@ using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
 
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class PlayerEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class PlayerEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 

@@ -9,8 +9,9 @@ using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
 
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class AdminWarnEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class AdminWarnEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 

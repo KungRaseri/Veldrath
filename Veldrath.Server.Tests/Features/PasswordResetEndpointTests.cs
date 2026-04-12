@@ -12,8 +12,9 @@ namespace Veldrath.Server.Tests.Features;
 /// <summary>Integration tests for
 /// <c>POST /api/auth/forgot-password</c> and
 /// <c>POST /api/auth/reset-password</c>.</summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class PasswordResetEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class PasswordResetEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 

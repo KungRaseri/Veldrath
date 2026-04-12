@@ -18,10 +18,17 @@ namespace Veldrath.Server.Tests.Infrastructure;
 /// Spins up the full ASP.NET Core server against a named in-memory SQLite database.
 /// A single <see cref="SqliteConnection"/> is held open for the factory's lifetime to
 /// keep the named in-memory database alive across all request scopes.
-/// All tests in a single <see cref="IClassFixture{T}"/> share the same database instance,
-/// so use distinct usernames / character names per test to avoid collisions.
+/// All tests in a single fixture or collection share the same database instance;
+/// use distinct usernames / character names per test to avoid collisions.
 /// </summary>
-public sealed class WebAppFactory : WebApplicationFactory<Program>
+/// <remarks>
+/// Implements <see cref="IAsyncLifetime"/> so xUnit awaits <see cref="InitializeAsync"/>
+/// (which seeds and catalogs the database) before any test class starts.  Blocking
+/// async seeding inside <c>CreateHost</c> was removed to avoid thread-pool starvation
+/// when multiple concurrent class-fixture initializations call <c>EnsureServer</c>
+/// on the same shared factory.
+/// </remarks>
+public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     // Each factory instance gets a unique database so parallel test classes don't collide.
     private readonly string _dbName = $"realm_test_{Guid.NewGuid():N}";
@@ -84,22 +91,39 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>
     {
         var host = base.CreateHost(builder);
 
-        // Ensure the Identity + game schema exists before any test sends a request.
+        // Only synchronous schema creation here — no blocking-async calls.
+        // Async seeding is deferred to InitializeAsync so xUnit can await it
+        // before any test class initializes, avoiding thread-pool starvation.
         using var scope = host.Services.CreateScope();
         var sp = scope.ServiceProvider;
         sp.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
         // EnsureCreated is a no-op once any tables exist in the shared SQLite in-memory
         // database, so call CreateTables directly to create ContentDbContext's schema.
         sp.GetRequiredService<ContentDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
-        DatabaseSeeder.SeedApplicationDataAsync(sp).GetAwaiter().GetResult();
-        DatabaseSeeder.SeedRolesAsync(sp).GetAwaiter().GetResult();
-
-        // Initialize catalog singletons after the SQLite schema exists.
-        host.Services.InitializeCatalogsAsync().GetAwaiter().GetResult();
 
         return host;
     }
 
+    /// <inheritdoc/>
+    public async Task InitializeAsync()
+    {
+        // Accessing Services triggers EnsureServer() → CreateHost() (schema only, synchronous).
+        // Then seed data and catalog asynchronously — no blocking, no deadlock.
+        using var scope = Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        await DatabaseSeeder.SeedApplicationDataAsync(sp);
+        await DatabaseSeeder.SeedRolesAsync(sp);
+        await Services.InitializeCatalogsAsync();
+    }
+
+    /// <inheritdoc/>
+    public new async Task DisposeAsync()
+    {
+        // base.DisposeAsync() calls Dispose(true) which disposes _keepAlive.
+        await base.DisposeAsync();
+    }
+
+    /// <inheritdoc/>
     protected override void Dispose(bool disposing)
     {
         if (disposing)

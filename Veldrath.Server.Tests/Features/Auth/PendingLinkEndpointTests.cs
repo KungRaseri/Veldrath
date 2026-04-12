@@ -14,8 +14,9 @@ namespace Veldrath.Server.Tests.Features.Auth;
 /// Integration tests for <c>GET /api/auth/link/confirm</c>.
 /// Uses <see cref="WebAppFactory"/> with an in-memory SQLite database.
 /// </summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
-public class PendingLinkEndpointTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
+public class PendingLinkEndpointTests(WebAppFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient(
         new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions

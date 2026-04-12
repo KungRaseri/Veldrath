@@ -14,8 +14,10 @@ namespace Veldrath.Server.Tests.Features;
 /// </summary>
 public sealed class ContentTypedEndpointsFixture : IAsyncLifetime
 {
-    public WebAppFactory Factory { get; } = new();
+    public WebAppFactory Factory { get; }
     public HttpClient Client { get; private set; } = null!;
+
+    public ContentTypedEndpointsFixture(WebAppFactory factory) => Factory = factory;
 
     public async Task InitializeAsync()
     {
@@ -98,10 +100,10 @@ public sealed class ContentTypedEndpointsFixture : IAsyncLifetime
         await db.SaveChangesAsync();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         Client.Dispose();
-        await Factory.DisposeAsync();
+        return Task.CompletedTask;
     }
 }
 
@@ -110,6 +112,7 @@ public sealed class ContentTypedEndpointsFixture : IAsyncLifetime
 /// Covers classes, species, backgrounds, skills, enchantments (with slot filter),
 /// abilities, and items (with type filter). All routes are anonymous.
 /// </summary>
+[Collection("Integration")]
 [Trait("Category", "Integration")]
 public class ContentTypedEndpointTests(ContentTypedEndpointsFixture fixture)
     : IClassFixture<ContentTypedEndpointsFixture>
