@@ -34,6 +34,13 @@ public class RealmFoundryApiClient(HttpClient http)
         return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
     }
 
+    /// <summary>Revokes the given refresh token on the server, ending the session. Best-effort — failures are silently swallowed so the local sign-out always completes.</summary>
+    public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)
+    {
+        try { await http.PostAsJsonAsync("/api/auth/logout", new LogoutRequest(refreshToken), ct); }
+        catch { /* best-effort — local sign-out always succeeds */ }
+    }
+
     /// <summary>Redeems a single-use exchange code issued by the OAuth callback for a full auth response.</summary>
     public async Task<AuthResponse?> ExchangeCodeAsync(string code, Guid accountId, CancellationToken ct = default)
     {
