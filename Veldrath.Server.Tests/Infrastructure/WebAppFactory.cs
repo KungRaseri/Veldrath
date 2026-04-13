@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +85,11 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
                 d => d.ImplementationType == typeof(CatalogInitializationService));
             if (catalogInit is not null)
                 services.Remove(catalogInit);
+
+            // Production config persists data-protection keys to /root/.aspnet/DataProtection-Keys,
+            // which is inaccessible on Linux CI (runner ≠ root).  In tests, use in-memory ephemeral
+            // keys so token generation/validation work without touching the file system.
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
         });
     }
 
