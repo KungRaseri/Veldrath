@@ -94,48 +94,7 @@ try
     app.UseStaticFiles();
     app.MapStaticAssets();
 
-    // Rotate the HttpOnly RT cookie for every Blazor page load.
-    // This MUST run as a middleware (not inside OnInitializedAsync) because Blazor
-    // begins streaming the response before async continuations resume inside a
-    // component, making any Response.Cookies.Append call after an await throw
-    // "Headers are read-only, response has already started."
-    // The refreshed AuthResponse is stored in HttpContext.Items so that
-    // PersistingAuthState can read it synchronously with no further awaits.
-    app.Use(async (ctx, next) =>
-    {
-        if (ctx.Request.Method == HttpMethods.Get
-            && !ctx.Request.Path.StartsWithSegments("/_blazor")
-            && !ctx.Request.Path.StartsWithSegments("/_framework")
-            && !ctx.Request.Path.StartsWithSegments("/auth")
-            && ctx.Request.Cookies.TryGetValue("rt", out var rt)
-            && !string.IsNullOrEmpty(rt)
-            && ctx.Request.Headers.Accept.Any(h => h != null && h.Contains("text/html")))
-        {
-            var api = ctx.RequestServices.GetRequiredService<RealmFoundryApiClient>();
-            var env = ctx.RequestServices.GetRequiredService<IWebHostEnvironment>();
-            var refreshed = await api.RefreshTokenAsync(rt);
-            if (refreshed is null)
-            {
-                ctx.Response.Cookies.Delete("rt", new CookieOptions { Path = "/" });
-            }
-            else
-            {
-                ctx.Response.Cookies.Append("rt", refreshed.RefreshToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure   = !env.IsDevelopment(),
-                    SameSite = SameSiteMode.Strict,
-                    MaxAge   = TimeSpan.FromDays(30),
-                    Path     = "/"
-                });
-                ctx.Items["auth-state"] = refreshed;
-            }
-        }
-
-        await next(ctx);
-    });
-
-    // Minimal API endpoints for cookie-based auth persistence (Option B).
+    // Minimal API endpoints for cookie-based auth persistence.
     // These run server-side outside the Blazor circuit, so HttpContext is available.
 
     // Redeems a server-issued exchange code, writes the refresh token as an HttpOnly

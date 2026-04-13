@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 @inject IHttpContextAccessor HttpContextAccessor
 @inject PersistentComponentState ApplicationState
+@inject RealmFoundryApiClient Api
 
 <div class="layout">
     <nav class="sidebar">
@@ -31,35 +32,49 @@
 @code {
     private PersistingComponentStateSubscription _subscription;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Distinguish SSR-prerender pass (HttpContext is present) from circuit pass (null).
-        //
-        // SSR prerender: the cookie-refresh middleware has already stored the refreshed
-        // AuthResponse in HttpContext.Items["auth-state"]. Apply it to the SSR-scoped
-        // AuthStateService so the prerendered HTML renders logged-in, and register it
-        // for persistence so the circuit can restore it via TryTakeFromJson.
-        // RegisterOnPersisting is only effective inside an interactive component subtree
-        // (this layout is inside <Routes @rendermode="InteractiveServer">), which is why
-        // PersistingAuthState's previous call — from an SSR-only sibling — was a no-op.
-        //
-        // Circuit pass: HttpContext is null (WebSocket scope). Read the persisted JSON
-        // that was embedded during SSR prerender and apply it before any page component
-        // has a chance to check AuthState.IsLoggedIn.
         var ctx = HttpContextAccessor.HttpContext;
-        if (ctx?.Items["auth-state"] is AuthResponse ssrAuth)
+
+        if (ctx is not null)
         {
-            _ = AuthState.SetTokensAsync(ssrAuth);
-            _subscription = ApplicationState.RegisterOnPersisting(() =>
+            // SSR prerender pass — HttpContext is available.
+            // Read the rt cookie directly from the request (same technique used by the
+            // original PersistingAuthState, which the logs proved DID read the cookie
+            // and successfully call the server). Use RenewJwtAsync so we get a fresh JWT
+            // without rotating or writing back the refresh token — no cookie writes means
+            // no "headers are read-only" exception after the await.
+            // RegisterOnPersisting works here because MainLayout is inside
+            // <Routes @rendermode="InteractiveServer">, making it part of the interactive
+            // subtree rather than a sibling SSR-only component.
+            var rt = ctx.Request.Cookies["rt"];
+            if (!string.IsNullOrEmpty(rt))
             {
-                ApplicationState.PersistAsJson("auth-state", ssrAuth);
-                return Task.CompletedTask;
-            });
+                var renewed = await Api.RenewJwtAsync(rt);
+                if (renewed is not null)
+                {
+                    // Re-use the same rt value — the refresh token is unchanged.
+                    var authResponse = new AuthResponse(
+                        renewed.AccessToken, rt, renewed.AccessTokenExpiry,
+                        renewed.AccountId, renewed.Username, renewed.Roles,
+                        renewed.Permissions, renewed.IsCurator, renewed.SessionId);
+
+                    await AuthState.SetTokensAsync(authResponse);
+
+                    _subscription = ApplicationState.RegisterOnPersisting(() =>
+                    {
+                        ApplicationState.PersistAsJson("auth-state", authResponse);
+                        return Task.CompletedTask;
+                    });
+                }
+            }
             return;
         }
 
+        // Circuit pass — HttpContext is null (WebSocket scope).
+        // Restore from the JSON that was embedded in the prerendered HTML above.
         if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
-            _ = AuthState.SetTokensAsync(saved);
+            await AuthState.SetTokensAsync(saved);
     }
 
     protected override void OnAfterRender(bool firstRender)
