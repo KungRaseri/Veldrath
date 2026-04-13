@@ -127,7 +127,7 @@ try
         // Redirect to the requested page (provider-link flow) or to /profile so
         // the user lands somewhere they can clearly see they are now logged in.
         var destination = !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
-            ? returnUrl : "/profile";
+            ? returnUrl : "/";
         return Results.Redirect(destination);
     });
 

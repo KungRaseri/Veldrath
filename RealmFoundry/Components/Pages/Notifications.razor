@@ -5,7 +5,11 @@
 
 <PageTitle>Notifications — RealmFoundry</PageTitle>
 
-@if (!AuthState.IsLoggedIn)
+@if (!AuthState.IsAuthReady)
+{
+    @* Auth check still running — render nothing to avoid flashing "must sign in". *@
+}
+else if (!AuthState.IsLoggedIn)
 {
     <p>You must <a href="/login">sign in</a> to view your notifications.</p>
 }
@@ -63,11 +67,37 @@ else
 @code {
     private List<FoundryNotificationDto> _notifications = [];
     private bool _loading = true;
+    private bool _dataLoaded;
+
+    protected override void OnInitialized()
+    {
+        // If auth is not yet ready the OnAfterRenderAsync path will pick up the load
+        // once MainLayout signals IsAuthReady. Set _loading=false now so the spinner
+        // doesn't show while the auth check is still running.
+        if (!AuthState.IsAuthReady)
+            _loading = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        if (!AuthState.IsLoggedIn) { _loading = false; return; }
+        if (!AuthState.IsAuthReady || !AuthState.IsLoggedIn) { _loading = false; return; }
+        await LoadDataAsync();
+    }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (AuthState.IsLoggedIn && !_dataLoaded)
+        {
+            _loading = true;
+            await LoadDataAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _dataLoaded = true;
         _notifications = (await Api.GetNotificationsAsync()).ToList();
         _loading = false;
     }
