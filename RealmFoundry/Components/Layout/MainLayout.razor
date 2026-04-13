@@ -31,10 +31,10 @@
     protected override void OnInitialized()
     {
         // Restore auth state from the JSON embedded in the prerendered HTML by
-        // PersistingAuthState's RegisterOnPersisting callback. This runs synchronously
-        // before @Body (the page component) is rendered, eliminating the sibling-race
-        // that occurred when PersistingAuthState and Routes were initialized concurrently.
-        // SetTokensAsync returns Task.CompletedTask so the fire-and-forget is safe.
+        // PersistingAuthState.RegisterOnPersisting. MainLayout is the parent of every
+        // page component in the single InteractiveServer tree rooted at <Routes>, so
+        // this is guaranteed to run before any page's OnInitializedAsync.
+        // SetTokensAsync returns Task.CompletedTask so the discard is safe.
         if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
             _ = AuthState.SetTokensAsync(saved);
     }
