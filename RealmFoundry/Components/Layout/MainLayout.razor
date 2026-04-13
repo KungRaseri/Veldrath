@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
+@inject IHttpContextAccessor HttpContextAccessor
 @inject PersistentComponentState ApplicationState
 
 <div class="layout">
@@ -28,13 +29,35 @@
 </div>
 
 @code {
+    private PersistingComponentStateSubscription _subscription;
+
     protected override void OnInitialized()
     {
-        // Restore auth state from the JSON embedded in the prerendered HTML by
-        // PersistingAuthState.RegisterOnPersisting. MainLayout is the parent of every
-        // page component in the single InteractiveServer tree rooted at <Routes>, so
-        // this is guaranteed to run before any page's OnInitializedAsync.
-        // SetTokensAsync returns Task.CompletedTask so the discard is safe.
+        // Distinguish SSR-prerender pass (HttpContext is present) from circuit pass (null).
+        //
+        // SSR prerender: the cookie-refresh middleware has already stored the refreshed
+        // AuthResponse in HttpContext.Items["auth-state"]. Apply it to the SSR-scoped
+        // AuthStateService so the prerendered HTML renders logged-in, and register it
+        // for persistence so the circuit can restore it via TryTakeFromJson.
+        // RegisterOnPersisting is only effective inside an interactive component subtree
+        // (this layout is inside <Routes @rendermode="InteractiveServer">), which is why
+        // PersistingAuthState's previous call — from an SSR-only sibling — was a no-op.
+        //
+        // Circuit pass: HttpContext is null (WebSocket scope). Read the persisted JSON
+        // that was embedded during SSR prerender and apply it before any page component
+        // has a chance to check AuthState.IsLoggedIn.
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx?.Items["auth-state"] is AuthResponse ssrAuth)
+        {
+            _ = AuthState.SetTokensAsync(ssrAuth);
+            _subscription = ApplicationState.RegisterOnPersisting(() =>
+            {
+                ApplicationState.PersistAsJson("auth-state", ssrAuth);
+                return Task.CompletedTask;
+            });
+            return;
+        }
+
         if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
             _ = AuthState.SetTokensAsync(saved);
     }
@@ -56,5 +79,8 @@
 
     /// <inheritdoc />
     public void Dispose()
-        => Nav.LocationChanged -= OnLocationChanged;
+    {
+        _subscription.Dispose();
+        Nav.LocationChanged -= OnLocationChanged;
+    }
 }
