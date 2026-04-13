@@ -53,7 +53,11 @@
   </ItemGroup>
   <!-- ── Security ────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="HtmlSanitizer" Version="9.0.892" />
+    <!-- AngleSharp 1.4.0 is required by bunit 2.6.2; pin explicitly to suppress NU1608 -->
+    <PackageVersion Include="AngleSharp" Version="1.4.0" />
+    <PackageVersion Include="AngleSharp.Css" Version="1.0.0-beta.159" />
+    <!-- HtmlSanitizer 9.1.x targets AngleSharp >= 1.4.0; 9.0.x required 0.17.x which conflicts with bunit -->
+    <PackageVersion Include="HtmlSanitizer" Version="9.1.893-beta" />
   </ItemGroup>
   <!-- ── Serilog ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
