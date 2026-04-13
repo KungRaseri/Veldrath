@@ -8,7 +8,11 @@
 
 <PageTitle>New Submission — RealmFoundry</PageTitle>
 
-@if (!AuthState.IsLoggedIn)
+@if (!AuthState.IsAuthReady)
+{
+    @* Auth check still running — render nothing to avoid flashing "must sign in". *@
+}
+else if (!AuthState.IsLoggedIn)
 {
     <p>You must <a href="/login">sign in</a> to submit content.</p>
 }

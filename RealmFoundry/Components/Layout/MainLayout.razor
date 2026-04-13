@@ -32,6 +32,12 @@
 @code {
     private PersistingComponentStateSubscription _subscription;
 
+    protected override void OnInitialized()
+        => AuthState.OnChange += OnAuthStateChanged;
+
+    private void OnAuthStateChanged()
+        => InvokeAsync(StateHasChanged);
+
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext;
@@ -39,11 +45,8 @@
         if (ctx is not null)
         {
             // SSR prerender pass — HttpContext is available.
-            // Read the rt cookie directly from the request (same technique used by the
-            // original PersistingAuthState, which the logs proved DID read the cookie
-            // and successfully call the server). Use RenewJwtAsync so we get a fresh JWT
-            // without rotating or writing back the refresh token — no cookie writes means
-            // no "headers are read-only" exception after the await.
+            // Read the rt cookie directly and call RenewJwtAsync (no cookie writes, so
+            // no "headers are read-only" exception after the await).
             // RegisterOnPersisting works here because MainLayout is inside
             // <Routes @rendermode="InteractiveServer">, making it part of the interactive
             // subtree rather than a sibling SSR-only component.
@@ -68,6 +71,12 @@
                     });
                 }
             }
+
+            // Mark auth check complete whether or not we found a session, so that
+            // guarded pages can stop showing a blank placeholder.
+            if (!AuthState.IsAuthReady)
+                AuthState.MarkReady();
+
             return;
         }
 
@@ -75,6 +84,10 @@
         // Restore from the JSON that was embedded in the prerendered HTML above.
         if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
             await AuthState.SetTokensAsync(saved);
+
+        // Mark ready on the circuit side too (handles no-session and TryTakeFromJson failure).
+        if (!AuthState.IsAuthReady)
+            AuthState.MarkReady();
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -95,6 +108,7 @@
     /// <inheritdoc />
     public void Dispose()
     {
+        AuthState.OnChange -= OnAuthStateChanged;
         _subscription.Dispose();
         Nav.LocationChanged -= OnLocationChanged;
     }

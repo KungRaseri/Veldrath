@@ -7,7 +7,11 @@
 
 <PageTitle>Profile — RealmFoundry</PageTitle>
 
-@if (!AuthState.IsLoggedIn)
+@if (!AuthState.IsAuthReady)
+{
+    @* Auth check still running — render nothing to avoid flashing "must sign in". *@
+}
+else if (!AuthState.IsLoggedIn)
 {
     <p>You must <a href="/login">sign in</a> to view your profile.</p>
 }
@@ -301,8 +305,30 @@ else
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        if (!AuthState.IsLoggedIn) return;
+        // If auth is already ready and logged in (e.g. navigating to this page after
+        // the circuit is already established), load immediately.
+        if (AuthState.IsAuthReady && AuthState.IsLoggedIn)
+            await LoadDataAsync();
+        else
+            // Auth check still in progress — OnAfterRenderAsync will trigger loading
+            // once MainLayout signals IsAuthReady via the OnChange event.
+            _loading = false;
+    }
 
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (AuthState.IsLoggedIn && _profile is null && !_loading)
+        {
+            _loading = true;
+            await LoadDataAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
         _linkSuccess = LinkedParam == 1;
         _pendingLink = PendingLinkParam is not null;
 

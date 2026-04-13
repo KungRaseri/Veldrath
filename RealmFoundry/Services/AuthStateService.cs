@@ -56,8 +56,27 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
     public bool TokenExpiresSoon =>
         TokenExpiry.HasValue && (TokenExpiry.Value - DateTimeOffset.UtcNow) < TimeSpan.FromMinutes(2);
 
+    /// <summary>
+    /// True once the startup auth check has completed — either auth was successfully
+    /// restored or the check confirmed there is no active session.
+    /// Components should render a blank placeholder until this is <c>true</c> to
+    /// avoid flashing a "must sign in" message while the async check is still running.
+    /// </summary>
+    public bool IsAuthReady { get; private set; }
+
     /// <summary>Raised whenever auth state changes.</summary>
     public event Action? OnChange;
+
+    /// <summary>
+    /// Marks the startup auth check as complete without setting a logged-in session.
+    /// Call this when the check finishes and no valid session was found.
+    /// Fires <see cref="OnChange"/> so subscriber components can re-render.
+    /// </summary>
+    public void MarkReady()
+    {
+        IsAuthReady = true;
+        OnChange?.Invoke();
+    }
 
     /// <summary>
     /// No-op kept for backward compatibility. Tokens are circuit-scoped memory only
@@ -125,6 +144,7 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
         TokenExpiry = expiry;
         Roles       = roles;
         Permissions = permissions;
+        IsAuthReady = true;
         apiClient.SetBearerToken(_accessToken!);
         OnChange?.Invoke();
     }
