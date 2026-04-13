@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
+@inject PersistentComponentState ApplicationState
 
 <div class="layout">
     <nav class="sidebar">
@@ -27,6 +28,17 @@
 </div>
 
 @code {
+    protected override void OnInitialized()
+    {
+        // Restore auth state from the JSON embedded in the prerendered HTML by
+        // PersistingAuthState's RegisterOnPersisting callback. This runs synchronously
+        // before @Body (the page component) is rendered, eliminating the sibling-race
+        // that occurred when PersistingAuthState and Routes were initialized concurrently.
+        // SetTokensAsync returns Task.CompletedTask so the fire-and-forget is safe.
+        if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
+            _ = AuthState.SetTokensAsync(saved);
+    }
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (!firstRender) return;
