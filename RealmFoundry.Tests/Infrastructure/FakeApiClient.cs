@@ -9,6 +9,7 @@ namespace RealmFoundry.Tests.Infrastructure;
 internal sealed class FakeApiClient : RealmFoundryApiClient
 {
     private AuthResponse? _refreshResult;
+    private RenewJwtResponse? _renewJwtResult;
 
     public FakeApiClient() : base(new System.Net.Http.HttpClient
     {
@@ -17,7 +18,13 @@ internal sealed class FakeApiClient : RealmFoundryApiClient
 
     public void SetRefreshResult(AuthResponse? response) => _refreshResult = response;
 
+    public void SetRenewJwtResult(RenewJwtResponse? response) => _renewJwtResult = response;
+
     public override Task<AuthResponse?> RefreshTokenAsync(
         string refreshToken, CancellationToken ct = default)
         => Task.FromResult(_refreshResult);
+
+    public override Task<RenewJwtResponse?> RenewJwtAsync(
+        string refreshToken, CancellationToken ct = default)
+        => Task.FromResult(_renewJwtResult);
 }

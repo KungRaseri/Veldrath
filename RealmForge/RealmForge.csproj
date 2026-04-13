@@ -27,6 +27,8 @@
         <PackageReference Include="Serilog.Sinks.Console" />
         <PackageReference Include="Serilog.Sinks.Debug" />
         <PackageReference Include="Serilog.Sinks.File" />
+        <!-- Security: pin patched version of Tmds.DBus.Protocol (GHSA-xrw6-gwf8-vvr9) -->
+        <PackageReference Include="Tmds.DBus.Protocol" />
     </ItemGroup>
 
     <ItemGroup>

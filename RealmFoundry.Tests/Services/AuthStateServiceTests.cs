@@ -19,6 +19,9 @@ public class AuthStateServiceTests
             DateTimeOffset.UtcNow.AddHours(1),
             Guid.NewGuid(), username, [], [], isCurator);
 
+    private static RenewJwtResponse MakeRenewResponse(string username = "alice", bool isCurator = false) =>
+        new("jwt-token", DateTimeOffset.UtcNow.AddHours(1), Guid.NewGuid(), username, [], [], isCurator);
+
     // ── InitialiseAsync ───────────────────────────────────────────────────────
 
     [Fact]
@@ -133,7 +136,7 @@ public class AuthStateServiceTests
     {
         var (svc, api) = Build();
         await svc.SetTokensAsync(MakeResponse());
-        api.SetRefreshResult(null);
+        api.SetRenewJwtResult(null);
 
         var result = await svc.TryRefreshAsync();
 
@@ -145,7 +148,7 @@ public class AuthStateServiceTests
     {
         var (svc, api) = Build();
         await svc.SetTokensAsync(MakeResponse());
-        api.SetRefreshResult(MakeResponse("refreshed-user"));
+        api.SetRenewJwtResult(MakeRenewResponse("refreshed-user"));
 
         var result = await svc.TryRefreshAsync();
 
