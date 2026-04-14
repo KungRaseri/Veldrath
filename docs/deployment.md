@@ -34,10 +34,12 @@ Deploys are per-service. GitHub Actions builds and pushes a Docker image to GHCR
 ### 1. Provision the server
 
 - Provider: Hetzner Cloud  
-- Recommended size: **CX32** (4 vCPU, 8 GB RAM) or **CX22** (2 vCPU, 4 GB) for lower load  
+- Recommended size: **CCX13** — Dedicated, 2 vCPU, 8 GB RAM, 80 GB disk, $19.99/mo  
+  > The **CPX11** (Shared, 2 vCPU, 2 GB RAM, $6.99/mo) is too constrained for the full stack —  
+  > Postgres, two ASP.NET Core apps, Seq, and Grafana together comfortably exceed 2 GB under load.  
+  > Use CPX11 only for a minimal staging environment without the monitoring services (Seq, Prometheus, Grafana).
 - OS: **Ubuntu 24.04 LTS**  
 - Enable Hetzner Cloud Firewall (see step 4)
-
 ### 2. Install Docker
 
 ```bash
