@@ -2,9 +2,9 @@
     "activeFile": "maps/crestfall.tmx",
     "expandedProjectPaths": [
         "world",
-        "sheets",
         ".",
-        "maps"
+        "maps",
+        "sheets"
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
@@ -52,8 +52,8 @@
             "scale": 1.655078125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 244.09723861222565,
-                "y": 187.30233655888603
+                "x": 256.18126032570217,
+                "y": 256.18126032570217
             }
         },
         "maps/barrow-deeps.tmx": {
@@ -65,11 +65,11 @@
             }
         },
         "maps/crestfall.tmx": {
-            "scale": 0.75,
-            "selectedLayer": 3,
+            "scale": 1.8872,
+            "selectedLayer": 7,
             "viewCenter": {
-                "x": 224,
-                "y": 320
+                "x": 232.08986858838492,
+                "y": 213.01398897838064
             }
         },
         "maps/drowning-pits.tmx": {
@@ -213,7 +213,7 @@
             "scaleInEditor": 2
         },
         "sheets/roguelike_base.tsx": {
-            "scaleInDock": 1,
+            "scaleInDock": 2,
             "scaleInEditor": 1
         }
     },
