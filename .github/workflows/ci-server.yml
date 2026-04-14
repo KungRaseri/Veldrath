@@ -215,6 +215,7 @@ jobs:
   deploy:
     name: Deploy to production
     needs: package
+    if: false # temporarily disabled — remove this line when the VPS is ready
     uses: ./.github/workflows/deploy.yml
     with:
       service: server
