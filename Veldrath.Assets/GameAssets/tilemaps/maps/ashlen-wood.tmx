@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="31" height="25" tilewidth="16" tileheight="16" infinite="1" nextlayerid="10" nextobjectid="8">
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="80" height="60" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="8">
  <properties>
   <property name="tilesetKey" value="roguelike_base"/>
  </properties>
@@ -9,22 +9,22 @@
   <object id="7" type="exit" x="0" y="0" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="7" name="spawns">
-  <object id="1" name="default-spawn" type="spawn" x="240" y="16" width="16" height="16"/>
+  <object id="1" name="default-spawn" type="spawn" x="624" y="48" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="8" name="labels">
-  <object id="2" name="The Wood Road" x="240" y="192">
+  <object id="2" name="The Wood Road" x="624" y="464">
    <properties>
     <property name="zoneSlug" value="wood-road"/>
    </properties>
    <point/>
   </object>
-  <object id="3" name="The Old Clearing" x="128" y="288">
+  <object id="3" name="The Old Clearing" x="336" y="688">
    <properties>
     <property name="zoneSlug" value="old-clearing"/>
    </properties>
    <point/>
   </object>
-  <object id="4" name="The Strangled Oak" x="352" y="160">
+  <object id="4" name="The Strangled Oak" x="912" y="384">
    <properties>
     <property name="zoneSlug" value="strangled-oak"/>
     <property name="isHidden" type="bool" value="true"/>
@@ -33,96 +33,23 @@
   </object>
  </objectgroup>
  <objectgroup id="9" name="paths">
-  <object id="5" name="wood-road" x="240" y="0">
-   <polyline points="0,0 0,384"/>
+  <object id="5" name="wood-road" x="624" y="0">
+   <polyline points="0,0 0,928"/>
   </object>
-  <object id="6" name="clearing-spur" x="240" y="256">
-   <polyline points="0,0 -128,32"/>
+  <object id="6" name="clearing-spur" x="624" y="624">
+   <polyline points="0,0 -336,80"/>
   </object>
  </objectgroup>
- <layer id="4" name="ground" width="31" height="25">
-  <data encoding="csv">
-   <chunk x="0" y="0" width="16" height="16">
-7,7,579,7,7,7,7,7,579,7,7,7,7,7,7,7,
-7,7,7,7,579,7,7,7,7,7,579,7,7,7,7,7,
-7,7,7,7,7,7,579,7,7,7,7,7,7,579,7,7,
-7,7,579,7,7,7,7,7,7,7,7,579,7,7,7,7,
-7,7,7,7,7,579,7,7,7,7,7,7,7,579,7,7,
-579,7,7,7,7,7,7,7,7,579,7,7,7,7,7,7,
-7,7,7,7,7,7,7,579,7,7,7,7,7,7,7,7,
-7,579,7,7,7,7,7,7,7,7,7,579,7,7,7,7,
-7,7,7,7,7,7,579,7,7,7,7,7,7,7,7,7,
-7,7,7,579,7,7,7,7,7,7,7,7,579,7,7,7,
-7,7,7,7,7,7,7,7,7,7,579,7,7,7,7,7,
-579,7,7,7,7,7,7,7,579,7,7,7,7,7,7,579,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
-7,7,579,7,7,7,7,7,7,7,7,7,7,7,579,7,
-7,7,7,7,7,7,7,579,7,7,7,7,7,7,7,7,
-7,7,7,7,579,7,7,7,7,7,7,579,7,7,7,7
-</chunk>
-   <chunk x="16" y="0" width="16" height="16">
-7,7,7,7,7,579,7,7,7,7,7,7,7,7,7,0,
-7,7,7,579,7,7,7,7,7,7,7,579,7,7,7,0,
-7,579,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,579,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,579,0,
-7,7,7,7,7,7,579,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,579,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,579,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,579,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,579,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,579,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,579,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,579,0
-</chunk>
-   <chunk x="0" y="16" width="16" height="16">
-7,7,7,579,7,7,7,7,7,7,7,7,7,7,7,7,
-7,7,7,7,7,579,7,7,7,7,7,7,7,7,7,7,
-579,7,7,7,7,7,7,7,7,7,579,7,7,7,7,7,
-7,7,7,7,7,7,7,579,7,7,7,7,7,7,7,7,
-7,7,579,7,7,7,7,7,7,7,7,7,579,7,7,7,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
-7,7,7,7,7,7,7,7,579,7,7,7,7,7,7,7,
-7,579,7,7,7,7,7,7,7,7,579,7,7,7,7,7,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-</chunk>
-   <chunk x="16" y="16" width="16" height="16">
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,579,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,579,7,7,7,7,7,7,7,7,0,
-7,7,7,579,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,579,7,7,7,0,
-7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0,
-7,7,579,7,7,7,7,7,7,7,7,7,7,7,7,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-</chunk>
-  </data>
- </layer>
- <layer id="2" name="detail" width="31" height="25">
+ <layer id="4" name="ground" width="80" height="60">
   <data encoding="csv"/>
  </layer>
- <layer id="5" name="decoration" width="31" height="25">
+ <layer id="2" name="detail" width="80" height="60">
   <data encoding="csv"/>
  </layer>
- <layer id="1" name="overhead" width="31" height="25">
+ <layer id="5" name="decoration" width="80" height="60">
+  <data encoding="csv"/>
+ </layer>
+ <layer id="1" name="overhead" width="80" height="60">
   <data encoding="csv"/>
  </layer>
 </map>
