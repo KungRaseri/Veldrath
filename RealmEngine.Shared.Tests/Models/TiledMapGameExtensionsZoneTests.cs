@@ -14,7 +14,7 @@ public class TiledMapGameExtensionsZoneTests
     private static TiledMap MakeMap(int tileW = 16, int tileH = 16) =>
         new()
         {
-            Width = 31, Height = 25, TileWidth = tileW, TileHeight = tileH,
+            Width = 64, Height = 48, TileWidth = tileW, TileHeight = tileH,
             Properties = [],
             Tilesets   = [new TiledTileset { FirstGid = 1, Columns = 49, TileWidth = 16, TileHeight = 16 }],
             Layers     = [],
