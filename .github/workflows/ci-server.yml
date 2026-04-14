@@ -211,3 +211,14 @@ jobs:
         TAG="server/v${{ steps.version.outputs.version-no-hash }}"
         gh workflow run release.yml --ref main --field tag=$TAG
         echo "Triggered release workflow for $TAG"
+
+  deploy:
+    name: Deploy to production
+    needs: package
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service: server
+    secrets:
+      HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+      HETZNER_SSH_USER: ${{ secrets.HETZNER_SSH_USER }}
+      HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}

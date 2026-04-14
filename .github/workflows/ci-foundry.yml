@@ -244,3 +244,14 @@ jobs:
           org.opencontainers.image.revision=${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to production
+    needs: publish-docker
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service: foundry
+    secrets:
+      HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+      HETZNER_SSH_USER: ${{ secrets.HETZNER_SSH_USER }}
+      HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}

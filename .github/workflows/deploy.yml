@@ -1,0 +1,77 @@
+name: Deploy to Production
+
+# Reusable deployment workflow — called by ci-server.yml, ci-discord.yml, and ci-foundry.yml
+# after their image has been published to GHCR.
+#
+# The `environment: production` gate requires manual approval in the GitHub Actions UI
+# before any SSH step executes. Secrets are scoped to the environment and are only
+# injected after approval.
+#
+# Required GitHub environment (Settings → Environments → production):
+#   Secrets: HETZNER_HOST, HETZNER_SSH_USER, HETZNER_SSH_KEY
+#   Required reviewers: configured in the environment settings
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: 'Service to deploy: server | foundry | discord'
+        required: true
+        type: string
+    secrets:
+      HETZNER_HOST:
+        required: true
+      HETZNER_SSH_USER:
+        required: true
+      HETZNER_SSH_KEY:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.service }} to production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Sync the compose files, Caddyfile, and infrastructure configs to the VPS.
+    # This ensures the VPS always has the same definitions as the commit that
+    # triggered this deployment — even when compose files changed alongside service code.
+    - name: Sync compose and proxy files to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HETZNER_HOST }}
+        username: ${{ secrets.HETZNER_SSH_USER }}
+        key: ${{ secrets.HETZNER_SSH_KEY }}
+        source: "docker-compose.yml,docker-compose.prod.yml,Caddyfile,config/"
+        target: /opt/veldrath/
+
+    # Pull the :latest image (already published to GHCR by the upstream CI job)
+    # and restart only the target service. --no-deps prevents cascading restarts.
+    # --wait blocks until the container healthcheck passes (or the container is running
+    # if no healthcheck is defined) before the step succeeds.
+    - name: Pull updated image and restart service
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HETZNER_HOST }}
+        username: ${{ secrets.HETZNER_SSH_USER }}
+        key: ${{ secrets.HETZNER_SSH_KEY }}
+        script: |
+          set -e
+          cd /opt/veldrath
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml pull ${{ inputs.service }}
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps --wait --timeout 120 ${{ inputs.service }}
+
+    # Reload Caddy so any Caddyfile changes take effect without a full Caddy restart.
+    # Skipped for discord — it has no HTTP routing through Caddy.
+    - name: Reload Caddy configuration
+      if: inputs.service != 'discord'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HETZNER_HOST }}
+        username: ${{ secrets.HETZNER_SSH_USER }}
+        key: ${{ secrets.HETZNER_SSH_KEY }}
+        script: |
+          docker compose -f /opt/veldrath/docker-compose.yml -f /opt/veldrath/docker-compose.prod.yml exec caddy caddy reload --config /etc/caddy/Caddyfile

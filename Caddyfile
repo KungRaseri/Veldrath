@@ -4,15 +4,20 @@
 
 # Game server API + SignalR hub
 api.veldrath.com {
-    reverse_proxy server:8080
+    reverse_proxy server:8080 {
+        # Retry upstream for 30s — masks the ~5-15s container restart window during deploys.
+        lb_try_duration 30s
+    }
 }
 
 # Community content portal (Blazor Server)
-# Blazor Server requires sticky sessions — Caddy uses a consistent hash by default.
+# Blazor Server requires sticky sessions — enforce with a cookie-based LB policy.
 foundry.veldrath.com {
     reverse_proxy foundry:8081 {
         lb_policy cookie {
             name foundry_lb
         }
+        # Retry upstream for 30s — masks the ~5-15s container restart window during deploys.
+        lb_try_duration 30s
     }
 }
