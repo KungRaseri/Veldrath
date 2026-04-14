@@ -248,6 +248,7 @@ jobs:
   deploy:
     name: Deploy to production
     needs: publish-docker
+    if: false # temporarily disabled — remove this line when the VPS is ready
     uses: ./.github/workflows/deploy.yml
     with:
       service: foundry
