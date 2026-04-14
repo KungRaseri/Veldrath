@@ -29,6 +29,7 @@ env:
   DOTNET_VERSION: '10.0.x'
   CONFIGURATION: 'Release'
   PROPS_FILE: 'versions/foundry.props'
+  IMAGE_NAME: realmfoundry
 
 jobs:
   build-and-test:
@@ -181,3 +182,65 @@ jobs:
         gh workflow run release.yml --ref main --field tag=$tag
         Write-Output "Triggered release workflow for $tag"
       shell: pwsh
+
+  publish-docker:
+    name: Publish Docker Image (GHCR)
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Generate version
+      id: version
+      run: |
+        $version = ./scripts/generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
+        $versionNoHash = $version -replace '-[^-]+$', ''
+        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "version-no-hash=$versionNoHash" >> $env:GITHUB_OUTPUT
+        Write-Output "Foundry version: $version"
+      shell: pwsh
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set lowercase image registry path
+      id: image
+      run: |
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        echo "registry=ghcr.io/$OWNER/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: RealmFoundry/Dockerfile
+        push: true
+        tags: |
+          ${{ steps.image.outputs.registry }}:latest
+          ${{ steps.image.outputs.registry }}:${{ steps.version.outputs.version-no-hash }}
+        labels: |
+          org.opencontainers.image.version=${{ steps.version.outputs.version-no-hash }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

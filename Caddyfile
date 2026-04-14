@@ -1,0 +1,18 @@
+# Caddyfile — Production reverse proxy for veldrath.com
+# Caddy auto-provisions Let's Encrypt TLS certificates for all configured hostnames.
+# WebSocket (SignalR) connections are proxied transparently.
+
+# Game server API + SignalR hub
+api.veldrath.com {
+    reverse_proxy server:8080
+}
+
+# Community content portal (Blazor Server)
+# Blazor Server requires sticky sessions — Caddy uses a consistent hash by default.
+foundry.veldrath.com {
+    reverse_proxy foundry:8081 {
+        lb_policy cookie {
+            name foundry_lb
+        }
+    }
+}

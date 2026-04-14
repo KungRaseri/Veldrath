@@ -1,0 +1,89 @@
+# docker-compose.prod.yml — Production overrides for veldrath.com on Hetzner
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# This file:
+#   - Adds the Caddy reverse proxy (TLS termination, auto-certs via Let's Encrypt)
+#   - Switches server/foundry/discord to pre-built GHCR images (no local source build)
+#   - Removes direct port exposure from server, foundry, and postgres (only Caddy is public)
+#   - Wires production environment variables for email and public URLs
+#   - Sets restart policies for all services
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      server:
+        condition: service_healthy
+      foundry:
+        condition: service_started
+
+  server:
+    # Use the pre-built image from GHCR; CI pushes this on every merge to main.
+    image: ghcr.io/kungraseri/veldrath-server:latest
+    # Remove dev port exposure — only Caddy reaches server:8080 internally.
+    ports: []
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # Email: use the production SMTP relay defined in .env
+      - Email__SmtpHost=${EMAIL_SMTP_HOST}
+      - Email__SmtpPort=${EMAIL_SMTP_PORT:-587}
+      - Email__EnableTls=${EMAIL_ENABLE_TLS:-true}
+      - Email__User=${EMAIL_USER}
+      - Email__Password=${EMAIL_PASSWORD}
+      - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
+      - Email__SenderName=Veldrath
+      # Foundry base URL — container-to-container (unchanged from base)
+      - Foundry__BaseUrl=http://foundry:8081
+      # Seq log shipping — internal container reference (unchanged from base)
+      - Seq__ServerUrl=http://seq
+    restart: unless-stopped
+
+  foundry:
+    # Use the pre-built image from GHCR.
+    image: ghcr.io/kungraseri/realmfoundry:latest
+    # Remove dev port exposure — only Caddy reaches foundry:8081 internally.
+    ports: []
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # Internal URL for server-side HttpClient calls
+      - Veldrath__ServerUrl=http://server:8080
+      # Public URL the browser uses for OAuth redirects — must be the real HTTPS URL
+      - Veldrath__PublicServerUrl=${FOUNDRY_PUBLIC_SERVER_URL:-https://api.veldrath.com}
+    restart: unless-stopped
+
+  discord:
+    # Use the pre-built image from GHCR.
+    image: ghcr.io/kungraseri/veldrath-discord:latest
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+    restart: unless-stopped
+
+  postgres:
+    # Remove direct port exposure in production — only internal services connect.
+    ports: []
+    restart: unless-stopped
+
+  stalwart:
+    restart: unless-stopped
+
+  seq:
+    restart: unless-stopped
+
+  prometheus:
+    restart: unless-stopped
+
+  grafana:
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
