@@ -1,6 +1,19 @@
 # World Lore Plan — Veldrath
 
-> **Status:** In progress. Locked facts are final unless explicitly revisited. Open questions must be resolved in order before Phase 1 writing begins.
+> **Status:** Phases 1–4 complete. Next work: Phase 5+ (Greymoor region design). Blocker: Q2 — Greymoor identity must be designed through Q&A before any writing begins.
+
+---
+
+## Resume Point (2026-04-14)
+
+All Varenmark lore writing is finished:
+- `wiki/World-Veldrath.md` — full world lore (Collapse, Caleth, Aethori, Unbound, magic, 5-region spine)
+- `wiki/Region-Varenmark.md` — region page, two-tier structure
+- All 6 zone pages — two-tier structure, connected-system Calethic framework, 5 new sub-locations added
+
+**Next session:** Design Greymoor (Region 2) through Q&A, then repeat the Phase 1–4 cycle for that region. Greymoor is the highland hub — all travel beyond Varenmark passes through it. Its identity (cultures, history, what the Caleth left there or didn't) is fully open for design.
+
+See Q2 and Phase 5+ below.
 
 ---
 
@@ -124,7 +137,6 @@ Rewrite each zone with lore grounding. **✅ COMPLETE (2026-04-14)**
 - `wiki/Varenmark-Zone-The-Droveway.md`
 - `wiki/Varenmark-Zone-The-Halrow.md`
 - **Blocker:** Phase 2 complete
-- **Blocker:** Phase 2 complete
 
 ### Phase 4 — Sub-location tables
 Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)**
@@ -150,8 +162,8 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 - Zone TMX files were resized last session: all `infinite="0"`, per-zone dimensions, empty `<data encoding="csv"/>`
 - Exit objects with no `toZoneId` property return to the region map — all zone exits currently use this pattern
 - `wiki/_Sidebar.md` has Regions & Zones section and `World Lore` link
-- `wiki/Veldrath-World.md` = technical reference (region/zone IDs, level ranges from seeder) — left stale, update after region names locked
-- `wiki/World-Veldrath.md` = lore document — pending Phase 1 rewrite
+- `wiki/Veldrath-World.md` = technical reference (region/zone IDs, level ranges from seeder) — left stale intentionally; update after region names are locked
+- `wiki/World-Veldrath.md` = lore document — ✅ Phase 1 rewrite complete
 - Seeder authority: `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs`
 
 ---
