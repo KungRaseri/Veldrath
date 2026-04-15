@@ -1,19 +1,29 @@
 # World Lore Plan — Veldrath
 
-> **Status:** Phases 1–4 complete. Next work: Phase 5+ (Greymoor region design). Blocker: Q2 — Greymoor identity must be designed through Q&A before any writing begins.
+> **Status:** Phases 1–4 complete. Varenmark detail review in progress (2026-04-15). Calethic language pass (Q3) started — blocked on tonal character decision (see Q3 below). Do NOT skip ahead to Greymoor until: (a) language pass is complete, (b) Varenmark's 7 open details are resolved.
 
 ---
 
-## Resume Point (2026-04-14)
+## Resume Point (2026-04-15)
 
-All Varenmark lore writing is finished:
+**Current work: Calethic language pass (Q3).** Decision made to do this before locking region names, Varenmark details, or moving to Greymoor.
+
+Varenmark full review was done on 2026-04-15. Everything written is confirmed good. The following **open items** were identified — work through them in order after the language pass:
+
+1. **Varenmark name** — still a working placeholder. Revisit after Q3 language pass, since naming convention (Calethic vs. reclaimed) affects this decision.
+2. **The Vraen** — reserved for later reveal. Identity unknown (Calethic military order / conquered people / heartland region name). Do not design until Regions 2–4 are sketched.
+3. **Aethori presence in Varenmark** — not decided. Do any Aethori (inner circle, Bound, or purposeless scattered) appear in Varenmark? Significant design implication for a starter region.
+4. **What came back up from the Pits** — sealed in the Collapsed Vault (Halrow). Vague by design, but needs a decision: does it have a form? Purely atmospheric or does it have a presence the player encounters?
+5. **The subjects in Grevenmire** — the Bone Hollow says "what was tested, what subjects were used." Human? Creature? Something else? Deliberately left blank but needs a decision before full lore lock.
+6. **The player's discovery mechanism** — how does Calethic recognition thread through the arc? Recurring symbol, language fragment, material records in the Vault? What actually triggers the payoff realisation?
+7. **Crestfall's Calethic history** — labelled "waypoint node" but underground aspect is less developed than the other zones. Is anything under Crestfall? Intentionally shallow or a gap?
+
+**All Varenmark lore writing is otherwise finished:**
 - `wiki/World-Veldrath.md` — full world lore (Collapse, Caleth, Aethori, Unbound, magic, 5-region spine)
 - `wiki/Region-Varenmark.md` — region page, two-tier structure
 - All 6 zone pages — two-tier structure, connected-system Calethic framework, 5 new sub-locations added
 
-**Next session:** Design Greymoor (Region 2) through Q&A, then repeat the Phase 1–4 cycle for that region. Greymoor is the highland hub — all travel beyond Varenmark passes through it. Its identity (cultures, history, what the Caleth left there or didn't) is fully open for design.
-
-See Q2 and Phase 5+ below.
+See Q2 and Phase 5+ below for Greymoor.
 
 ---
 
@@ -33,12 +43,21 @@ Working seeder biomes available as scaffolding:
 
 Option: keep those as working names for the Phase 2 deep-dive rather than designing all names now. **Decision (2026-04-14): Use working names as placeholders throughout Phase 1. Lock names during Phase 5+ regional design.**
 
-### Q3 — Calethic language pass (deferred, not a blocker for Phase 1)
+### Q3 — Calethic language pass — IN PROGRESS (2026-04-15)
 Design phonetics/conventions for the Calethic language, then assign:
 - Full Calethic name for "the Unbound Ruin"
 - Full Calethic name for "the Collapse"
-- Possibly Calethic place names, Aethori titles
-This is a nice-to-have for Phase 1 atmosphere but can be done as a dedicated pass.
+- Calethic place names and Aethori full title
+- Region names (Varenmark and others) — Calethic-derived or reclaimed by locals?
+
+**What the language needs to do:** A naming register, not a full conlang. Consistent phonetic conventions so Calethic-derived words feel recognisably related and players can feel a term's origin without being told. Must fit the character of the Caleth: conqueror-priests, formal hierarchy, built on the discipline of controlling something that was actually controlling them.
+
+**Existing names to match:** `Aethori`, `Vraen`, `Ashen Age` — current lean is **hard consonants + longer vowels**. Three tonal poles offered for discussion:
+- **Hard and architectural** — K, R, TH, V; short vowels; words feel built not spoken. (Matches existing names most closely.)
+- **Formal and drawn-out** — longer words, double vowels, compound constructions; implies a literate bureaucratic class; words feel like titles or decrees.
+- **Angular and sibilant** — S, SH, Z, CH; hissing quality implying something slightly wrong, shaped by non-human presence.
+
+**BLOCKED ON:** Which tonal character (or combination) is right? Does the existing name texture (hard consonants + long vowels) feel correct, or is there a different quality being reached for? Answer this first, then build the phoneme rules.
 
 ---
 
@@ -178,3 +197,4 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-14 | Phase 2 complete: full rewrite of `wiki/Region-Varenmark.md` — two-tier structure (general layer: locals' perspective, strangeness observed but unexplained; spoiler `<details>` block: Calethic experimental fringe truth + arc payoff). Zone remnant identities and Vraen left for Phase 3. |
 | 2026-04-14 | Phase 3 complete: all 6 Varenmark zone pages rewritten. Connected-system framework locked (waypoint node → binding site → transit corridor → managed wetland → management facility → deep access point). Two-tier structure on every page. Halrow and Pits cross-reference each other. Design Notes folded in throughout. |
 | 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
+| 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
