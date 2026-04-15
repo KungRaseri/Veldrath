@@ -127,7 +127,14 @@ Rewrite each zone with lore grounding. **✅ COMPLETE (2026-04-14)**
 - **Blocker:** Phase 2 complete
 
 ### Phase 4 — Sub-location tables
-Update sub-location descriptions within zone pages.
+Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)**
+- Phase 3 handled all description rewrites; Phase 4 added 5 missing sub-locations:
+  - `crestfall-garrison` (Crestfall) — town watch post, north road
+  - `foresters-camp` (Ashlen Wood) — working camp on the west edge
+  - `old-waystation` (Droveway) — roofless mid-road shelter
+  - `mire-marker` (Grevenmire) — carved stone at western bog entry
+  - `halrow-grounds` (Halrow) — exterior grounds between Threshold and cellar descent
+- Drowning Pits: no additions needed
 - **Blocker:** Phase 3 complete
 
 ### Phases 5+ — Regions 2–4 and The Wound
@@ -158,3 +165,4 @@ Update sub-location descriptions within zone pages.
 | 2026-04-14 | Q1 resolved (Varenmark = working placeholder). Q2 resolved (Greymoor/Saltcliff/Cinderplain/The Wound = working names). Phase 1 complete: full rewrite of `wiki/World-Veldrath.md` — old Sundering/Age of Embers/Dravan/Thysmara/Kaldrek lore replaced with Collapse/Ashen Age/Calethic Empire/Aethori/Unbound Ruin. |
 | 2026-04-14 | Phase 2 complete: full rewrite of `wiki/Region-Varenmark.md` — two-tier structure (general layer: locals' perspective, strangeness observed but unexplained; spoiler `<details>` block: Calethic experimental fringe truth + arc payoff). Zone remnant identities and Vraen left for Phase 3. |
 | 2026-04-14 | Phase 3 complete: all 6 Varenmark zone pages rewritten. Connected-system framework locked (waypoint node → binding site → transit corridor → managed wetland → management facility → deep access point). Two-tier structure on every page. Halrow and Pits cross-reference each other. Design Notes folded in throughout. |
+| 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
