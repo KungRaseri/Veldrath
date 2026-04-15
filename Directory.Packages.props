@@ -26,6 +26,8 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="9.0.5" />
+    <!-- Pin to patched version; 9.0.0–9.0.14 have known DoS vulnerabilities (GHSA-37gx-xxp4-5rgx, GHSA-w3x6-4m5h-cxqf) -->
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.1" />
