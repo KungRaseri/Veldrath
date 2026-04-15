@@ -7,7 +7,7 @@
 ## Open Questions (resolve in order before writing `World-Veldrath.md`)
 
 ### Q1 — Varenmark's name
-Keep "Varenmark" or rename? It fits the pastoral-turned-strange character, and the -mark suffix (contested frontier/borderland territory) maps perfectly onto its Calethic experimental fringe role. **Awaiting decision.**
+Keep "Varenmark" or rename? It fits the pastoral-turned-strange character, and the -mark suffix (contested frontier/borderland territory) maps perfectly onto its Calethic experimental fringe role. **Decision (2026-04-14): Keep as working placeholder — not yet locked. Revisit when region identities are fully designed.**
 
 ### Q2 — Regions 2–4 and The Wound (rough sketch only)
 Need for each: a name, one-line character, rough position relative to Varenmark and the Wound.
@@ -18,7 +18,7 @@ Working seeder biomes available as scaffolding:
 - Volcanic / Cinderplain
 - The Wound (5th, endgame)
 
-Option: keep those as working names for the Phase 2 deep-dive rather than designing all names now. **Awaiting decision.**
+Option: keep those as working names for the Phase 2 deep-dive rather than designing all names now. **Decision (2026-04-14): Use working names as placeholders throughout Phase 1. Lock names during Phase 5+ regional design.**
 
 ### Q3 — Calethic language pass (deferred, not a blocker for Phase 1)
 Design phonetics/conventions for the Calethic language, then assign:
@@ -98,16 +98,17 @@ This is a nice-to-have for Phase 1 atmosphere but can be done as a dedicated pas
 ## Rewrite Phases
 
 ### Phase 1 — `wiki/World-Veldrath.md`
-Full rewrite of the world lore document.
+Full rewrite of the world lore document. **✅ COMPLETE (2026-04-14)**
 - **Blocker:** Q1 (Varenmark name) and Q2 (other region names, even as placeholders)
 - **Content:** The world, the Collapse, the Ashen Age, the Caleth, the Aethori, the Unbound, magic, the five-region spine, player entry point
-- Language pass facts (Q3) can be `[TBD]` placeholders in Phase 1
+- Language pass facts (Q3) are `[TBD]` placeholders throughout
 
 ### Phase 2 — `wiki/Region-Varenmark.md`
-Rewrite the Varenmark region page with full lore context.
+Rewrite the Varenmark region page with full lore context. **✅ COMPLETE (2026-04-14)**
 - Experimental fringe history
 - Locals' cultural distance from the Wound
 - How the zones fit the arc
+- Two-tier wiki structure: general layer (no Calethic reveals) + `<details>` spoiler block (Calethic truth)
 - **Blocker:** Phase 1 complete
 
 ### Phase 3 — All 6 Varenmark zone pages
@@ -149,3 +150,5 @@ Update sub-location descriptions within zone pages.
 |------|-----------|
 | 2026-04-13 | Zone TMX resize (all 6 zones), wiki pages created, connection bug fixed, 7 audit errors corrected, `Veldrath-World.md` restored, `World-Veldrath.md` created (draft) |
 | 2026-04-13 | Full world backstory designed through Q&A: Caleth, Aethori, Vraen placeholder, the Unbound/the Ruin, the Collapse, the Ashen Age, the Age of Reclaiming, 5-region spine, Varenmark's role. Planning document created. |
+| 2026-04-14 | Q1 resolved (Varenmark = working placeholder). Q2 resolved (Greymoor/Saltcliff/Cinderplain/The Wound = working names). Phase 1 complete: full rewrite of `wiki/World-Veldrath.md` — old Sundering/Age of Embers/Dravan/Thysmara/Kaldrek lore replaced with Collapse/Ashen Age/Calethic Empire/Aethori/Unbound Ruin. |
+| 2026-04-14 | Phase 2 complete: full rewrite of `wiki/Region-Varenmark.md` — two-tier structure (general layer: locals' perspective, strangeness observed but unexplained; spoiler `<details>` block: Calethic experimental fringe truth + arc payoff). Zone remnant identities and Vraen left for Phase 3. |
