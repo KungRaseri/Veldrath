@@ -112,13 +112,18 @@ Rewrite the Varenmark region page with full lore context. **✅ COMPLETE (2026-0
 - **Blocker:** Phase 1 complete
 
 ### Phase 3 — All 6 Varenmark zone pages
-Rewrite each zone with lore grounding:
+Rewrite each zone with lore grounding. **✅ COMPLETE (2026-04-14)**
+- Two-tier structure (general layer + `<details>` spoiler block) on every zone page
+- Connected-system framework: Crestfall (waypoint node) → Wood (binding site) → Droveway (transit corridor/subsidence) → Grevenmire (artificial mire/facility/subjects) → Halrow (management facility, most legible) → Pits (deep access point, never sealed)
+- Halrow and Pits spoilers cross-reference each other
+- Design Notes folded into intros on all 6 pages
 - `wiki/Varenmark-Zone-Ashlen-Wood.md`
 - `wiki/Varenmark-Zone-Crestfall.md`
 - `wiki/Varenmark-Zone-Drowning-Pits.md`
 - `wiki/Varenmark-Zone-Grevenmire.md`
 - `wiki/Varenmark-Zone-The-Droveway.md`
 - `wiki/Varenmark-Zone-The-Halrow.md`
+- **Blocker:** Phase 2 complete
 - **Blocker:** Phase 2 complete
 
 ### Phase 4 — Sub-location tables
@@ -152,3 +157,4 @@ Update sub-location descriptions within zone pages.
 | 2026-04-13 | Full world backstory designed through Q&A: Caleth, Aethori, Vraen placeholder, the Unbound/the Ruin, the Collapse, the Ashen Age, the Age of Reclaiming, 5-region spine, Varenmark's role. Planning document created. |
 | 2026-04-14 | Q1 resolved (Varenmark = working placeholder). Q2 resolved (Greymoor/Saltcliff/Cinderplain/The Wound = working names). Phase 1 complete: full rewrite of `wiki/World-Veldrath.md` — old Sundering/Age of Embers/Dravan/Thysmara/Kaldrek lore replaced with Collapse/Ashen Age/Calethic Empire/Aethori/Unbound Ruin. |
 | 2026-04-14 | Phase 2 complete: full rewrite of `wiki/Region-Varenmark.md` — two-tier structure (general layer: locals' perspective, strangeness observed but unexplained; spoiler `<details>` block: Calethic experimental fringe truth + arc payoff). Zone remnant identities and Vraen left for Phase 3. |
+| 2026-04-14 | Phase 3 complete: all 6 Varenmark zone pages rewritten. Connected-system framework locked (waypoint node → binding site → transit corridor → managed wetland → management facility → deep access point). Two-tier structure on every page. Halrow and Pits cross-reference each other. Design Notes folded in throughout. |
