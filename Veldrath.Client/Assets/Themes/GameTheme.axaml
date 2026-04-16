@@ -304,6 +304,41 @@
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderStrongBrush}" />
     </Style>
 
+    <!--  .error — validation failure state  -->
+    <Style Selector="TextBox.error">
+        <Setter Property="BorderBrush" Value="{DynamicResource GameDangerBrush}" />
+        <Setter Property="Background" Value="{DynamicResource GameDangerMutedBrush}" />
+    </Style>
+
+    <Style Selector="TextBox.error:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource GameDangerBrush}" />
+    </Style>
+
+
+    <!--
+        ============================================================
+        4b. NUMERIC UP DOWN
+        ============================================================
+    -->
+
+    <Style Selector="NumericUpDown">
+        <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="FontFamily" Value="{DynamicResource GameFontBody}" />
+        <Setter Property="FontSize" Value="{DynamicResource GameFontSizeBody}" />
+    </Style>
+
+    <Style Selector="NumericUpDown:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
+    </Style>
+
+    <Style Selector="NumericUpDown:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource GameBorderStrongBrush}" />
+    </Style>
+
 
     <!--
         ============================================================
@@ -395,7 +430,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="16" />
+        <Setter Property="Padding" Value="24" />
     </Style>
 
     <!--  Elevated card — higher-level surfaces, modals  -->
@@ -404,16 +439,16 @@
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="16" />
+        <Setter Property="Padding" Value="24" />
     </Style>
 
-    <!--  Accent-bordered card — selected/highlighted items  -->
+    <!--  Accent-bordered card — selected/highlighted items (Seal left border only per VDS §7.3)  -->
     <Style Selector="Border.card-accent">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderThickness" Value="2,0,0,0" />
         <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="16" />
+        <Setter Property="Padding" Value="24" />
     </Style>
 
     <!--  Horizontal divider line  -->
@@ -608,6 +643,10 @@
 
     <Style Selector="Panel.surface-3">
         <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
+    </Style>
+
+    <Style Selector="Panel.surface-4">
+        <Setter Property="Background" Value="{DynamicResource GameBackground4Brush}" />
     </Style>
 
 </Styles>
