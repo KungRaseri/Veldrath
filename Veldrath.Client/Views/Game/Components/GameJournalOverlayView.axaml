@@ -10,7 +10,7 @@
     x:DataType="vm:GameViewModel"
     mc:Ignorable="d">
 
-    <Border Background="#B2000000" IsVisible="{Binding IsJournalOpen}">
+    <Border Background="{DynamicResource GameScrimBrush}" IsVisible="{Binding IsJournalOpen}">
         <Border
             MaxWidth="560"
             MaxHeight="480"

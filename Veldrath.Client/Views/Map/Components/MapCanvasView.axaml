@@ -57,7 +57,7 @@
         <Panel>
             <!-- Loading overlay -->
             <Border IsVisible="{Binding IsLoading}"
-                    Background="#88000000"
+                    Background="{DynamicResource GameLoadingScrimBrush}"
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                     ZIndex="10">
                 <TextBlock Text="Loading…"

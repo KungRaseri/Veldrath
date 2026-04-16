@@ -11,7 +11,7 @@
     mc:Ignorable="d">
 
     <!--  Spans center + right columns so the left stats panel stays visible  -->
-    <Border Background="#B2000000" IsVisible="{Binding IsInventoryOpen}">
+    <Border Background="{DynamicResource GameScrimBrush}" IsVisible="{Binding IsInventoryOpen}">
         <Border
             MaxWidth="640"
             MaxHeight="520"
