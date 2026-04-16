@@ -1,4 +1,4 @@
-ï»¿using System.Net;
+using System.Net;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Veldrath.Client.Services;
@@ -19,7 +19,7 @@ internal sealed class CountingHttpClientFactory(FakeHttpHandler handler) : IHttp
     public HttpClient CreateClient(string name)
     {
         CreateCallCount++;
-        // disposeHandler: false â€” the factory owns the handler lifetime, not the HttpClient.
+        // disposeHandler: false — the factory owns the handler lifetime, not the HttpClient.
         return new HttpClient(handler, disposeHandler: false) { BaseAddress = new Uri("http://localhost/") };
     }
 }
@@ -45,7 +45,7 @@ public class ServerStatusServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Text("Healthy", HttpStatusCode.OK));
 
-        await sut.CheckAsync("http://localhost:8080/");
+        await sut.CheckAsync("http://localhost:9000/");
 
         sut.Status.Should().Be(ServerStatus.Online);
         sut.IsOnline.Should().BeTrue();
@@ -56,7 +56,7 @@ public class ServerStatusServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.ServiceUnavailable));
 
-        await sut.CheckAsync("http://localhost:8080/");
+        await sut.CheckAsync("http://localhost:9000/");
 
         sut.Status.Should().Be(ServerStatus.Offline);
         sut.IsOnline.Should().BeFalse();
@@ -67,7 +67,7 @@ public class ServerStatusServiceTests : TestBase
     {
         var sut = MakeSut(FakeHttpHandler.Throws(new HttpRequestException("connection refused")));
 
-        await sut.CheckAsync("http://localhost:8080/");
+        await sut.CheckAsync("http://localhost:9000/");
 
         sut.Status.Should().Be(ServerStatus.Offline);
         sut.IsOnline.Should().BeFalse();
@@ -78,15 +78,15 @@ public class ServerStatusServiceTests : TestBase
     {
         // Start offline
         var sut = MakeSut(FakeHttpHandler.Text("", HttpStatusCode.ServiceUnavailable));
-        await sut.CheckAsync("http://localhost:8080/");
+        await sut.CheckAsync("http://localhost:9000/");
         sut.Status.Should().Be(ServerStatus.Offline);
 
-        // Server comes back â€” recreate sut pointing at a 200-handler simulates the next poll
+        // Server comes back — recreate sut pointing at a 200-handler simulates the next poll
         var sut2 = new ServerStatusService(
             new CountingHttpClientFactory(FakeHttpHandler.Text("Healthy", HttpStatusCode.OK)),
             NullLogger<ServerStatusService>.Instance);
 
-        await sut2.CheckAsync("http://localhost:8080/");
+        await sut2.CheckAsync("http://localhost:9000/");
 
         sut2.Status.Should().Be(ServerStatus.Online);
     }
@@ -100,7 +100,7 @@ public class ServerStatusServiceTests : TestBase
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        var act = async () => await sut.StartPollingAsync(() => "http://localhost:8080/", cts.Token);
+        var act = async () => await sut.StartPollingAsync(() => "http://localhost:9000/", cts.Token);
 
         await act.Should().NotThrowAsync();
     }
@@ -124,7 +124,7 @@ public class ServerStatusServiceTests : TestBase
         };
 
         using var cts = new CancellationTokenSource();
-        var pollingTask = sut.StartPollingAsync(() => "http://localhost:8080/", cts.Token);
+        var pollingTask = sut.StartPollingAsync(() => "http://localhost:9000/", cts.Token);
 
         // Wait until at least 2 checks have fired (generous 5 s budget for slow CI).
         var reachedInTime = await Task.WhenAny(secondCheckReached.Task, Task.Delay(TimeSpan.FromSeconds(5)));
@@ -159,7 +159,7 @@ public class ServerStatusServiceTests : TestBase
         };
 
         using var cts = new CancellationTokenSource();
-        var pollingTask = sut.StartPollingAsync(() => "http://localhost:8080/", cts.Token);
+        var pollingTask = sut.StartPollingAsync(() => "http://localhost:9000/", cts.Token);
 
         // Wait until the second check (which returns 200) has fired.
         await Task.WhenAny(onlineReached.Task, Task.Delay(TimeSpan.FromSeconds(5)));

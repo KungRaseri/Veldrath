@@ -75,31 +75,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - Veldrath__ServerUrl=http://server:8080
       - Veldrath__PublicServerUrl=${WEB_PUBLIC_SERVER_URL:-https://api.veldrath.com}
-      - Strapi__BaseUrl=http://strapi:1337
       - Auth__CookieDomain=.veldrath.com
     restart: unless-stopped
     depends_on:
       server:
-        condition: service_healthy
-
-  strapi:
-    image: ghcr.io/kungraseri/veldrath-strapi:latest
-    ports: []
-    environment:
-      - NODE_ENV=production
-      - DATABASE_CLIENT=postgres
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=veldrath_cms
-      - DATABASE_USERNAME=veldrath
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-veldrath_dev}
-      - APP_KEYS=${STRAPI_APP_KEYS}
-      - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT}
-      - ADMIN_JWT_SECRET=${STRAPI_ADMIN_JWT_SECRET}
-      - JWT_SECRET=${STRAPI_JWT_SECRET}
-    restart: unless-stopped
-    depends_on:
-      postgres:
         condition: service_healthy
 
   discord:

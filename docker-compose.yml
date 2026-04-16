@@ -6,7 +6,7 @@ services:
   stalwart:
     image: stalwartlabs/stalwart:v0.15.5
     ports:
-      - "8082:8082"   # Web admin UI — http://localhost:8082 (login: admin / STALWART_ADMIN_SECRET)
+      - "9004:8082"   # Web admin UI — http://localhost:9004 (login: admin / STALWART_ADMIN_SECRET)
       - "5025:25"     # SMTP accessible from the Docker host for ad-hoc testing
     environment:
       - STALWART_PATH=/opt/stalwart
@@ -44,7 +44,7 @@ services:
       context: .
       dockerfile: Veldrath.Server/Dockerfile
     ports:
-      - "8080:8080"
+      - "9000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
@@ -117,7 +117,7 @@ services:
       # Internal URL for server-side HttpClient calls (container-to-container)
       - Veldrath__ServerUrl=http://server:8080
       # Public URL the browser navigates to for OAuth redirects
-      - Veldrath__PublicServerUrl=http://localhost:8080
+      - Veldrath__PublicServerUrl=http://localhost:9000
     volumes:
       - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
     depends_on:
@@ -127,7 +127,7 @@ services:
   seq:
     image: datalust/seq:latest
     ports:
-      - "8083:80"     # Web UI — http://localhost:8083
+      - "9001:80"     # Web UI — http://localhost:9001
     environment:
       - ACCEPT_EULA=Y
       # SEQ_FIRSTRUN_ADMINPASSWORD is read once (first run) to set the admin password.
@@ -139,7 +139,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "8085:9090"   # Web UI — http://localhost:8085
+      - "9003:9090"   # Web UI — http://localhost:9003
     volumes:
       - prometheus_data:/prometheus
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -150,7 +150,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "8084:3000"   # Dashboard — http://localhost:8084
+      - "9002:3000"   # Dashboard — http://localhost:9002
     environment:
       # GF_SECURITY_ADMIN_PASSWORD sets the Grafana admin password.
       # Set via .env — see .env.example for details.
@@ -167,40 +167,16 @@ services:
       context: .
       dockerfile: Veldrath.Web/Dockerfile
     ports:
-      - "8082:8082"
+      - "8080:8082"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8082
       - Veldrath__ServerUrl=http://server:8080
-      - Veldrath__PublicServerUrl=http://localhost:8080
-      - Strapi__BaseUrl=http://strapi:1337
+      - Veldrath__PublicServerUrl=http://localhost:9000
     volumes:
       - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       server:
-        condition: service_healthy
-
-  strapi:
-    build:
-      context: ./strapi
-    ports:
-      - "1337:1337"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_CLIENT=postgres
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=veldrath_cms
-      - DATABASE_USERNAME=veldrath
-      - DATABASE_PASSWORD=veldrath_dev
-      - APP_KEYS=${STRAPI_APP_KEYS:-dev-key-1,dev-key-2}
-      - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT:-dev-api-token-salt}
-      - ADMIN_JWT_SECRET=${STRAPI_ADMIN_JWT_SECRET:-dev-admin-jwt-secret}
-      - JWT_SECRET=${STRAPI_JWT_SECRET:-dev-jwt-secret}
-    volumes:
-      - strapi_data:/opt/app/.tmp
-    depends_on:
-      postgres:
         condition: service_healthy
 
 volumes:
@@ -212,4 +188,3 @@ volumes:
   seq_data:
   prometheus_data:
   grafana_data:
-  strapi_data:

@@ -1,4 +1,4 @@
-ï»¿using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 
@@ -43,9 +43,9 @@ public class ServerConnectionServiceTests : TestBase
     {
         var (svc, factory) = MakeSut();
 
-        await svc.ConnectAsync("http://localhost:8080");
+        await svc.ConnectAsync("http://localhost:9000");
 
-        factory.LastCreatedUrl.Should().Be("http://localhost:8080/hubs/game");
+        factory.LastCreatedUrl.Should().Be("http://localhost:9000/hubs/game");
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class ServerConnectionServiceTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // AccessTokenProvider â€” silent refresh
+    // AccessTokenProvider — silent refresh
     [Fact]
     public async Task AccessTokenProvider_Should_Call_RefreshAsync_When_Token_Is_Expiring()
     {
@@ -256,7 +256,7 @@ public class ServerConnectionServiceTests : TestBase
         var auth   = new FakeAuthService();
         var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
 
-        // Token is valid for 10 more minutes â€” not expiring soon
+        // Token is valid for 10 more minutes — not expiring soon
         tokens.Set("valid-token", "my-refresh", "user", Guid.NewGuid(),
                    DateTimeOffset.UtcNow.AddMinutes(10));
 
@@ -273,7 +273,7 @@ public class ServerConnectionServiceTests : TestBase
         var auth   = new FakeAuthService();
         var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
 
-        // Expiring but no refresh token â€” can't silently re-auth
+        // Expiring but no refresh token — can't silently re-auth
         tokens.Set("old-token", string.Empty, "user", Guid.NewGuid(),
                    DateTimeOffset.UtcNow.AddSeconds(30));
         // Overwrite RefreshToken with null to simulate missing token
@@ -334,7 +334,7 @@ public class ServerConnectionServiceTests : TestBase
         var fired = false;
         svc.VersionMismatch += (_, _) => fired = true;
 
-        // MinCompatibleClientVersion = "0.0" â€” client assembly is at 0.1 (â‰¥ 0.0), so compatible
+        // MinCompatibleClientVersion = "0.0" — client assembly is at 0.1 (= 0.0), so compatible
         factory.Connection.SimulateReceive("ServerInfo",
             new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.1", "0.0"));
 
@@ -351,7 +351,7 @@ public class ServerConnectionServiceTests : TestBase
         string? capturedServer = null;
         svc.VersionMismatch += (c, s) => { capturedClient = c; capturedServer = s; };
 
-        // Server requires minimum 9.99 â€” current client is well below that
+        // Server requires minimum 9.99 — current client is well below that
         factory.Connection.SimulateReceive("ServerInfo",
             new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "9.99", "9.99"));
 
@@ -368,7 +368,7 @@ public class ServerConnectionServiceTests : TestBase
         string? capturedServer = null;
         svc.VersionMismatch += (_, s) => capturedServer = s;
 
-        // Server version is 0.0 â€” client requires MinCompatibleServerVersion = "0.1"
+        // Server version is 0.0 — client requires MinCompatibleServerVersion = "0.1"
         // so this fires VersionMismatch only if the assembly attribute is present.
         // In the test assembly the attribute is absent; fall-back minServer is "0.1",
         // so a server at 0.0 is rejected.
@@ -387,7 +387,7 @@ public class ServerConnectionServiceTests : TestBase
         var fired = false;
         svc.VersionMismatch += (_, _) => fired = true;
 
-        // Server min is 0.0, client is at 0.x (anything â‰¥ 0) â†’ compatible
+        // Server min is 0.0, client is at 0.x (anything = 0) ? compatible
         factory.Connection.SimulateReceive("ServerInfo",
             new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.5", "0.0"));
 

@@ -33,9 +33,3 @@ veldrath.com {
     }
 }
 
-# Strapi CMS admin — content authors only; not public-facing.
-cms.veldrath.com {
-    reverse_proxy strapi:1337 {
-        lb_try_duration 30s
-    }
-}

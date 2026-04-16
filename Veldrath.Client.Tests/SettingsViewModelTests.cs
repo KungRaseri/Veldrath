@@ -1,4 +1,4 @@
-﻿using System.Reactive.Linq;
+using System.Reactive.Linq;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
@@ -13,7 +13,7 @@ public class SettingsViewModelTests : TestBase
         FakeAudioPlayer? audio                 = null,
         SettingsPersistenceService? persistence = null)
     {
-        var s = settings ?? new ClientSettings("http://localhost:8080");
+        var s = settings ?? new ClientSettings("http://localhost:9000");
         var a = audio    ?? new FakeAudioPlayer();
         var p = persistence ?? new SettingsPersistenceService(Path.GetTempFileName());
         var vm = new SettingsViewModel(nav ?? new FakeNavigationService(), s, a, p);
@@ -49,7 +49,7 @@ public class SettingsViewModelTests : TestBase
         loaded.ServerBaseUrl.Should().Be("http://testserver:9090");
     }
 
-    // Audio — volume properties
+    // Audio � volume properties
     [Fact]
     public void MasterVolume_Should_Reflect_ClientSettings_Default()
     {
@@ -78,7 +78,7 @@ public class SettingsViewModelTests : TestBase
 
         vm.MusicVolume = 50;
 
-        // master=100, music=50 → scaled = 100/100 * 50 = 50
+        // master=100, music=50 ? scaled = 100/100 * 50 = 50
         audio.MusicVolume.Should().Be(50);
     }
 
@@ -95,7 +95,7 @@ public class SettingsViewModelTests : TestBase
     [Fact]
     public void Setting_MasterVolume_Scales_Both_AudioChannels()
     {
-        var settings = new ClientSettings("http://localhost:8080")
+        var settings = new ClientSettings("http://localhost:9000")
         {
             MusicVolume = 80,
             SfxVolume   = 100
@@ -109,7 +109,7 @@ public class SettingsViewModelTests : TestBase
         audio.SfxVolume.Should().Be(50);
     }
 
-    // Audio — mute
+    // Audio � mute
     [Fact]
     public void Muted_DefaultsTo_False()
     {
@@ -149,7 +149,7 @@ public class SettingsViewModelTests : TestBase
     [Fact]
     public void Setting_FullScreen_Updates_ClientSettings()
     {
-        var settings = new ClientSettings("http://localhost:8080");
+        var settings = new ClientSettings("http://localhost:9000");
         var (vm, _, _) = MakeVm(settings: settings);
 
         vm.FullScreen = true;
