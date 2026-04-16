@@ -105,12 +105,12 @@ else
 <style>
     .status-summary { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
     .status-stat { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.5rem;
-        border: 1px solid var(--border, #333); border-radius: 8px; min-width: 160px; }
-    .stat-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted, #888); }
+        border: 1px solid var(--vds-border); border-radius: 8px; min-width: 160px; }
+    .stat-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--vds-text-muted); }
     .stat-value { font-size: 1.5rem; font-weight: 600; }
-    .badge-healthy { background: #166534; color: #bbf7d0; }
-    .badge-degraded { background: #78350f; color: #fde68a; }
-    .badge-unhealthy { background: #7f1d1d; color: #fecaca; }
+    .badge-healthy   { background: var(--vds-success-muted); color: var(--vds-success); }
+    .badge-degraded  { background: var(--vds-warning-muted); color: var(--vds-warning); }
+    .badge-unhealthy { background: var(--vds-danger-muted);  color: var(--vds-danger);  }
 </style>
 
 @code {

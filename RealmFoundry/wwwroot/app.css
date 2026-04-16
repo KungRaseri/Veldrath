@@ -302,7 +302,7 @@ p.lead { font-size: 1.05rem; color: var(--color-muted); margin-bottom: 2rem; }
     width: 100%;
 }
 
-.nav-logout:hover { background: rgba(255,80,80,0.12); color: #ff6b6b; }
+.nav-logout:hover { background: var(--vds-danger-muted); color: var(--vds-danger); }
 
 /* ── Page header / filters ───────────────────────────────────────────────── */
 
@@ -358,7 +358,7 @@ p.lead { font-size: 1.05rem; color: var(--color-muted); margin-bottom: 2rem; }
     vertical-align: middle;
 }
 
-.data-table tr:hover td { background: rgba(255,255,255,0.03); }
+.data-table tr:hover td { background: var(--vds-hover); }
 
 .data-table a { color: var(--color-text); }
 .data-table a:hover { color: var(--color-link); }
@@ -381,6 +381,28 @@ p.lead { font-size: 1.05rem; color: var(--color-muted); margin-bottom: 2rem; }
 .badge-info,    .badge-blue   { background: var(--vds-info-muted);    color: var(--vds-info); }
 .badge-accent                 { background: var(--vds-seal-muted);    color: var(--vds-seal-light); }
 .badge-grey                   { background: var(--vds-bg-3);          color: var(--vds-text-muted); }
+.badge-orange                 { background: var(--vds-warning-muted); color: var(--vds-warning); }
+.badge-off                    { background: var(--vds-bg-2);          color: var(--vds-text-disabled); border: 1px solid var(--vds-border-subtle); }
+
+/* ── Shared action buttons ────────────────────────────────────────────────── */
+
+.btn-red    { background: var(--vds-danger-muted);  border: 1px solid var(--vds-danger);   color: var(--vds-danger); }
+.btn-orange,
+.btn-warn   { background: var(--vds-warning-muted); border: 1px solid var(--vds-warning);  color: var(--vds-warning); }
+.btn-warn:hover,
+.btn-orange:hover { background: var(--vds-warning); color: var(--vds-bg-0); }
+
+/* ── Toast notifications ─────────────────────────────────────────────────── */
+
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: .6rem 1rem; border-radius: var(--vds-radius-lg); font-weight: 600; z-index: 1000; }
+.toast-ok  { background: var(--vds-success-muted); color: var(--vds-success); border: 1px solid var(--vds-success); }
+.toast-err { background: var(--vds-danger-muted);  color: var(--vds-danger);  border: 1px solid var(--vds-danger); }
+
+/* ── Alert banners ───────────────────────────────────────────────────────── */
+
+.alert         { padding: .6rem 1rem; border-radius: var(--vds-radius-md); margin-bottom: 1rem; }
+.alert-success { background: var(--vds-success-muted); color: var(--vds-success); border: 1px solid var(--vds-success); }
+.alert-error   { background: var(--vds-danger-muted);  color: var(--vds-danger);  border: 1px solid var(--vds-danger); }
 
 /* ── Submission detail ───────────────────────────────────────────────────── */
 

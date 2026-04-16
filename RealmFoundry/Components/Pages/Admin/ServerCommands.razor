@@ -79,17 +79,14 @@ else
 
 <style>
     .back-bar { margin-bottom: 1rem; }
-    .back-bar a { color: var(--accent, #7fb3f8); text-decoration: none; }
-    .card { background: var(--card-bg, #111); border: 1px solid var(--border, #333); border-radius: 8px; padding: 1.25rem; max-width: 540px; margin-top: 1.25rem; }
+    .back-bar a { color: var(--vds-seal-light); text-decoration: none; }
+    .card { background: var(--vds-bg-2); border: 1px solid var(--vds-border); border-radius: 8px; padding: 1.25rem; max-width: 540px; margin-top: 1.25rem; }
     .card h2 { margin: 0 0 .5rem; font-size: 1rem; }
-    .muted { color: var(--muted, #888); font-size: .9rem; }
-    .req { color: #f87171; }
+    .muted { color: var(--vds-text-muted); font-size: .9rem; }
+    .req { color: var(--vds-danger); }
     .form-group { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .75rem; }
     .form-group textarea, .form-group select {
-        padding: .45rem .65rem; border: 1px solid var(--border, #333); border-radius: 6px;
-        background: var(--input-bg, #1a1a1a); color: inherit; resize: vertical;
+        padding: .45rem .65rem; border: 1px solid var(--vds-border); border-radius: 6px;
+        background: var(--vds-bg-3); color: inherit; resize: vertical;
     }
-    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: .6rem 1rem; border-radius: 8px; font-weight: 600; }
-    .toast-ok  { background: #1a4030; color: #6ee7b7; border: 1px solid #065f46; }
-    .toast-err { background: #5c1c1c; color: #f87171; border: 1px solid #991b1b; }
 </style>

@@ -7,7 +7,7 @@
              d:DesignWidth="1280" d:DesignHeight="720"
              x:Class="Veldrath.Client.Views.SplashView"
              x:DataType="vm:SplashViewModel"
-             Background="#0a0a0f">
+             Background="{DynamicResource GameBackground0Brush}">
 
     <Grid RowDefinitions="*,Auto">
 
