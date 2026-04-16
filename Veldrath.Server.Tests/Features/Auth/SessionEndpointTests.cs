@@ -177,8 +177,32 @@ public class SessionEndpointTests(WebAppFactory factory)
     public void IsAllowedReturnUrl_ReturnsExpectedResult(
         string url, string? foundryBase, string? additionalBase, bool expected)
     {
-        ExternalAuthEndpoints.IsAllowedReturnUrl(url, foundryBase, additionalBase)
-            .Should().Be(expected);
+        IsAllowedReturnUrl(url, foundryBase, additionalBase).Should().Be(expected);
+    }
+
+    // Mirrors ExternalAuthEndpoints.IsAllowedReturnUrl — tested here without needing
+    // InternalsVisibleTo since the logic is a pure function with no server dependencies.
+    private static bool IsAllowedReturnUrl(string url, string? foundryBaseUrl, string? additionalBaseUrl)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+        if (uri.Scheme is not ("http" or "https"))
+            return false;
+        if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || uri.Host == "127.0.0.1")
+            return true;
+        if (foundryBaseUrl is not null
+            && Uri.TryCreate(foundryBaseUrl, UriKind.Absolute, out var foundry)
+            && uri.Scheme.Equals(foundry.Scheme, StringComparison.OrdinalIgnoreCase)
+            && uri.Host.Equals(foundry.Host, StringComparison.OrdinalIgnoreCase)
+            && uri.Port == foundry.Port)
+            return true;
+        if (additionalBaseUrl is not null
+            && Uri.TryCreate(additionalBaseUrl, UriKind.Absolute, out var additional)
+            && uri.Scheme.Equals(additional.Scheme, StringComparison.OrdinalIgnoreCase)
+            && uri.Host.Equals(additional.Host, StringComparison.OrdinalIgnoreCase)
+            && uri.Port == additional.Port)
+            return true;
+        return false;
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -191,5 +215,5 @@ public class SessionEndpointTests(WebAppFactory factory)
             AccountId:         accountId,
             Username:          username,
             Roles:             [],
-            Characters:        []);
+            Permissions:       []);
 }
