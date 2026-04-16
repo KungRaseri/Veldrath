@@ -55,6 +55,7 @@ public static class ContentModelConfiguration
             ConfigureContent(e);
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
+            e.Property(x => x.NativeLanguageSlug).HasMaxLength(128);
         });
 
         builder.Entity<SpeciesPowerPool>(e =>
@@ -266,6 +267,7 @@ public static class ContentModelConfiguration
         {
             ConfigureContent(e);
             e.Property(x => x.ZoneId).HasMaxLength(128).IsRequired();
+            e.Property(x => x.DominantLanguageSlug).HasMaxLength(128);
             e.OwnsOne(x => x.Stats, o => o.ToJson());
             e.OwnsOne(x => x.Traits, o => o.ToJson());
             e.OwnsMany(x => x.ActorPool, o => o.ToJson("ActorPool"));
@@ -317,6 +319,36 @@ public static class ContentModelConfiguration
             e.HasKey(x => x.ConfigKey);
             e.Property(x => x.ConfigKey).HasMaxLength(64);
             e.Property(x => x.Data).HasColumnType("jsonb").IsRequired();
+        });
+
+        // Languages
+        builder.Entity<Language>(e =>
+        {
+            ConfigureContent(e);
+            e.Property(x => x.TonalCharacter).HasMaxLength(512);
+            e.OwnsOne(x => x.Phonology, o =>
+            {
+                o.ToJson();
+                o.OwnsMany(p => p.Consonants);
+                o.OwnsMany(p => p.Vowels);
+                o.PrimitiveCollection(p => p.AllowedSyllablePatterns);
+                o.PrimitiveCollection(p => p.AllowedInitialClusters);
+                o.PrimitiveCollection(p => p.ForbiddenClusters);
+                o.PrimitiveCollection(p => p.AllowedFinalClusters);
+                o.OwnsMany(p => p.JunctionRules);
+            });
+            e.OwnsOne(x => x.Morphology, o =>
+            {
+                o.ToJson();
+                o.OwnsMany(m => m.Roots);
+                o.OwnsMany(m => m.Prefixes);
+                o.OwnsMany(m => m.Suffixes);
+            });
+            e.OwnsOne(x => x.RegisterSystem, o =>
+            {
+                o.ToJson();
+                o.OwnsMany(r => r.Registers);
+            });
         });
     }
 

@@ -5,12 +5,29 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject PersistentComponentState ApplicationState
 @inject VeldrathApiClient Api
+@using Veldrath.Contracts.Editorial
+@using Veldrath.Contracts.Foundry
 
 <div class="layout">
     <header class="site-header">
         <a class="brand" href="/">Veldrath</a>
         <NavMenu />
     </header>
+    @if (_announcements.Count > 0)
+    {
+        <div class="announcement-bar">
+            @foreach (var a in _announcements)
+            {
+                @if (!_dismissed.Contains(a.Id))
+                {
+                    <div class="announcement-banner">
+                        <strong>@a.Title</strong> — @a.Body
+                        <button class="dismiss-btn" aria-label="Dismiss" @onclick="() => Dismiss(a.Id)">&#x2715;</button>
+                    </div>
+                }
+            }
+        </div>
+    }
     <main class="site-content">
         @Body
     </main>
@@ -27,6 +44,14 @@
 
 @code {
     private PersistingComponentStateSubscription _subscription;
+    private List<EditorialAnnouncementDto> _announcements = [];
+    private readonly HashSet<Guid> _dismissed = [];
+
+    private void Dismiss(Guid id)
+    {
+        _dismissed.Add(id);
+        StateHasChanged();
+    }
 
     protected override void OnInitialized()
         => AuthState.OnChange += OnAuthStateChanged;
@@ -84,6 +109,15 @@
         }
 
         AuthState.MarkReady();
+
+        // Fetch published announcements on circuit init (after SSR auth is restored).
+        try
+        {
+            var result = await Api.GetAnnouncementsAsync();
+            if (result is not null)
+                _announcements = [.. result.Items];
+        }
+        catch { /* best-effort — missing announcements should never break the layout */ }
     }
 
     protected override void OnAfterRender(bool firstRender)

@@ -1,0 +1,76 @@
+@page "/lore"
+@inject VeldrathApiClient Api
+@using Veldrath.Contracts.Editorial
+@using Veldrath.Contracts.Foundry
+
+<PageTitle>World Lore — Veldrath</PageTitle>
+
+<h1>World Lore</h1>
+
+<div class="filter-bar">
+    <select @bind="_category" @bind:after="OnCategoryChanged">
+        <option value="">All Categories</option>
+        <option value="History">History</option>
+        <option value="Factions">Factions</option>
+        <option value="Geography">Geography</option>
+        <option value="Mythology">Mythology</option>
+        <option value="Characters">Characters</option>
+    </select>
+</div>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_result is null || _result.Items.Count == 0)
+{
+    <p>No lore articles published yet. The world awaits its history.</p>
+}
+else
+{
+    <ul class="lore-list">
+        @foreach (var item in _result.Items)
+        {
+            <li class="lore-summary">
+                <a class="lore-title" href="/lore/@item.Slug">@item.Title</a>
+                <span class="lore-category">@item.Category</span>
+                <p class="lore-excerpt">@item.Summary</p>
+            </li>
+        }
+    </ul>
+
+    @if (_result.TotalCount > _result.PageSize)
+    {
+        <div class="pagination">
+            <button class="btn btn-sm" @onclick="PrevPage" disabled="@(_page <= 1)">← Prev</button>
+            <span>Page @_page</span>
+            <button class="btn btn-sm" @onclick="NextPage" disabled="@(_result.Items.Count < _result.PageSize)">Next →</button>
+        </div>
+    }
+}
+
+@code {
+    private PagedResult<LoreArticleSummaryDto>? _result;
+    private bool _loading = true;
+    private string? _category;
+    private int _page = 1;
+
+    protected override async Task OnInitializedAsync()
+        => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _result  = await Api.GetLoreArticlesAsync(_page, category: _category);
+        _loading = false;
+    }
+
+    private async Task OnCategoryChanged()
+    {
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPage() { _page--; await LoadAsync(); }
+    private async Task NextPage() { _page++; await LoadAsync(); }
+}

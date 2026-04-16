@@ -1,0 +1,646 @@
+@page "/languages/new"
+@using System.Text
+@using System.Text.Json
+@using RealmFoundry.Services
+@using Veldrath.Contracts.Foundry
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@inject AuthStateService AuthState
+
+<PageTitle>Language Builder — RealmFoundry</PageTitle>
+
+<div class="submission-form">
+
+    @* ── Stepper header ───────────────────────────────────────────────────── *@
+    <div class="wizard-stepper">
+        @for (int i = 1; i <= 6; i++)
+        {
+            var stepNum = i;
+            <div class="wizard-step @(_step == stepNum ? "active" : stepNum < _step ? "done" : "")">
+                <span class="step-num">@stepNum</span>
+                <span class="step-label">@StepLabel(stepNum)</span>
+            </div>
+            @if (i < 6)
+            {
+                <div class="step-connector @(i < _step ? "done" : "")"></div>
+            }
+        }
+    </div>
+
+    @* ── Step 1: Identity ─────────────────────────────────────────────────── *@
+    @if (_step == 1)
+    {
+        <section class="wizard-section">
+            <h2>Step 1 — Identity</h2>
+            <p class="section-hint">Give your language a name, family, and one-line tonal description.</p>
+
+            <div class="field-group">
+                <label>Display Name <span class="required">*</span></label>
+                <input value="@_s.DisplayName"
+                       @oninput="OnDisplayNameInput"
+                       placeholder="e.g. Calethic" />
+            </div>
+            <div class="field-group">
+                <label>Slug <span class="required">*</span></label>
+                <input @bind="_s.Slug" placeholder="e.g. calethic" />
+                <span class="field-hint">Lowercase letters, numbers, and hyphens only.</span>
+            </div>
+            <div class="field-group">
+                <label>Language Family</label>
+                <input @bind="_s.TypeKey" placeholder="e.g. imperial, elven, orcish, priestly" />
+            </div>
+            <div class="field-group">
+                <label>Tonal Character</label>
+                <input @bind="_s.TonalCharacter"
+                       placeholder="e.g. Hard + Formal — short architectural roots; drawn-out compound titles" />
+                <span class="field-hint">One-line characterisation of the language's sound and feel.</span>
+            </div>
+            <div class="field-group">
+                <label>Description</label>
+                <textarea @bind="_s.Description" rows="4"
+                          placeholder="Origins, in-world usage, cultural significance…"></textarea>
+            </div>
+        </section>
+    }
+
+    @* ── Step 2: Phonology ───────────────────────────────────────────────── *@
+    @if (_step == 2)
+    {
+        <section class="wizard-section">
+            <h2>Step 2 — Phonology</h2>
+            <p class="section-hint">Define the sounds that make up the language.</p>
+
+            <!-- Consonants -->
+            <h3>Consonant Inventory</h3>
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Symbol</th><th>Description</th><th>Notes</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in _s.Consonants)
+                    {
+                        <tr>
+                            <td><input @bind="c.Symbol"      placeholder="K" /></td>
+                            <td><input @bind="c.Description" placeholder="Voiceless velar stop" /></td>
+                            <td><input @bind="c.Notes"       placeholder="Optional notes" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Consonants.Remove(c)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="AddConsonant">+ Add Consonant</button>
+
+            <!-- Vowels -->
+            <h3 style="margin-top:1.5rem;">Vowel Inventory</h3>
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Symbol</th><th>Sound</th><th>Register</th><th>Notes</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in _s.Vowels)
+                    {
+                        <tr>
+                            <td><input @bind="v.Symbol"   placeholder="ae" /></td>
+                            <td><input @bind="v.Sound"    placeholder="/eɪ/ as in 'day'" /></td>
+                            <td><input @bind="v.Register" placeholder="formal (or leave blank)" /></td>
+                            <td><input @bind="v.Notes"    placeholder="Optional notes" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Vowels.Remove(v)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="AddVowel">+ Add Vowel</button>
+
+            <!-- Syllable Patterns -->
+            <h3 style="margin-top:1.5rem;">Syllable Patterns</h3>
+            <div class="chip-row">
+                @foreach (var p in _s.SyllablePatterns)
+                {
+                    <span class="chip">@p <button @onclick="() => _s.SyllablePatterns.Remove(p)">✕</button></span>
+                }
+            </div>
+            <div class="chip-input">
+                <input @bind="_s.NewSyllablePattern" placeholder="e.g. CVC" />
+                <button class="btn btn-sm btn-secondary" @onclick="AddSyllablePattern">+ Add</button>
+            </div>
+
+            <!-- Allowed Initial Clusters -->
+            <h3 style="margin-top:1.5rem;">Allowed Initial Clusters</h3>
+            <div class="chip-row">
+                @foreach (var c in _s.InitialClusters)
+                {
+                    <span class="chip">@c <button @onclick="() => _s.InitialClusters.Remove(c)">✕</button></span>
+                }
+            </div>
+            <div class="chip-input">
+                <input @bind="_s.NewInitialCluster" placeholder="e.g. KR–" />
+                <button class="btn btn-sm btn-secondary" @onclick="AddInitialCluster">+ Add</button>
+            </div>
+
+            <!-- Forbidden Clusters -->
+            <h3 style="margin-top:1.5rem;">Forbidden Clusters</h3>
+            <div class="chip-row">
+                @foreach (var c in _s.ForbiddenClusters)
+                {
+                    <span class="chip">@c <button @onclick="() => _s.ForbiddenClusters.Remove(c)">✕</button></span>
+                }
+            </div>
+            <div class="chip-input">
+                <input @bind="_s.NewForbiddenCluster" placeholder="e.g. three consecutive consonants" />
+                <button class="btn btn-sm btn-secondary" @onclick="AddForbiddenCluster">+ Add</button>
+            </div>
+
+            <!-- Allowed Final Clusters -->
+            <h3 style="margin-top:1.5rem;">Allowed Final Clusters</h3>
+            <div class="chip-row">
+                @foreach (var c in _s.FinalClusters)
+                {
+                    <span class="chip">@c <button @onclick="() => _s.FinalClusters.Remove(c)">✕</button></span>
+                }
+            </div>
+            <div class="chip-input">
+                <input @bind="_s.NewFinalCluster" placeholder="e.g. –LD" />
+                <button class="btn btn-sm btn-secondary" @onclick="AddFinalCluster">+ Add</button>
+            </div>
+
+            <!-- Junction Rules -->
+            <h3 style="margin-top:1.5rem;">Junction Reduction Rules</h3>
+            <p class="section-hint">Rules that govern consonant changes when roots are compounded.</p>
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Cluster</th><th>Rule</th><th>Formal Example</th><th>Administrative Example</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var j in _s.JunctionRules)
+                    {
+                        <tr>
+                            <td><input @bind="j.Cluster"              placeholder="–l + vr–" /></td>
+                            <td><input @bind="j.Rule"                 placeholder="V-drop; euphonic –d– bridge" /></td>
+                            <td><input @bind="j.FormalExample"        placeholder="vel + vrath → veldrath" /></td>
+                            <td><input @bind="j.AdministrativeExample" placeholder="vael + vren → vaelren" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.JunctionRules.Remove(j)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="AddJunctionRule">+ Add Rule</button>
+        </section>
+    }
+
+    @* ── Step 3: Affixes ──────────────────────────────────────────────────── *@
+    @if (_step == 3)
+    {
+        <section class="wizard-section">
+            <h2>Step 3 — Affixes</h2>
+            <p class="section-hint">Define bound prefixes and suffixes. These attach to roots and change meaning or grammatical category.</p>
+
+            <!-- Prefixes -->
+            <h3>Prefixes</h3>
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Form</th><th>Category</th><th>Core Meaning</th><th>Notes</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in _s.Prefixes)
+                    {
+                        <tr>
+                            <td><input @bind="a.Form"        placeholder="kael–" /></td>
+                            <td><input @bind="a.Category"    placeholder="great / first / paramount" /></td>
+                            <td><input @bind="a.CoreMeaning" placeholder="What it contributes" /></td>
+                            <td><input @bind="a.Notes"       placeholder="Usage notes" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Prefixes.Remove(a)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Prefixes.Add(new())">+ Add Prefix</button>
+
+            <!-- Suffixes -->
+            <h3 style="margin-top:1.5rem;">Suffixes</h3>
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Form</th><th>Category</th><th>Core Meaning</th><th>Notes</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in _s.Suffixes)
+                    {
+                        <tr>
+                            <td><input @bind="a.Form"        placeholder="–eth" /></td>
+                            <td><input @bind="a.Category"    placeholder="polity / territory / collective" /></td>
+                            <td><input @bind="a.CoreMeaning" placeholder="What it contributes" /></td>
+                            <td><input @bind="a.Notes"       placeholder="Usage notes" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Suffixes.Remove(a)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Suffixes.Add(new())">+ Add Suffix</button>
+        </section>
+    }
+
+    @* ── Step 4: Root Dictionary ──────────────────────────────────────────── *@
+    @if (_step == 4)
+    {
+        <section class="wizard-section">
+            <h2>Step 4 — Root Dictionary</h2>
+            <p class="section-hint">
+                Roots are atomic meaning units from which all words are built.
+                Use the Category column to group thematically (e.g. "metaphysical", "geographic", "actions").
+            </p>
+
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Token</th><th>Core Meaning</th><th>Extended Meanings</th><th>Example Word</th><th>Category</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _s.Roots)
+                    {
+                        <tr>
+                            <td><input @bind="r.Token"            placeholder="kael" /></td>
+                            <td><input @bind="r.CoreMeaning"      placeholder="bind, hold by compact" /></td>
+                            <td><input @bind="r.ExtendedMeanings" placeholder="great, first (as prefix)" /></td>
+                            <td><input @bind="r.ExampleWord"      placeholder="Kaeldor, Aethori…" /></td>
+                            <td><input @bind="r.Category"         placeholder="metaphysical" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Roots.Remove(r)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Roots.Add(new())">+ Add Root</button>
+        </section>
+    }
+
+    @* ── Step 5: Register System ──────────────────────────────────────────── *@
+    @if (_step == 5)
+    {
+        <section class="wizard-section">
+            <h2>Step 5 — Register System</h2>
+            <p class="section-hint">
+                Registers define distinct speech modes with their own syntax rules and phonological constraints.
+                Skip this step if your language has no register distinction.
+            </p>
+
+            <table class="builder-table">
+                <thead>
+                    <tr><th>Name</th><th>Usage</th><th>Word Order</th><th>Vowel Quality</th><th>Notes</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _s.Registers)
+                    {
+                        <tr>
+                            <td><input @bind="r.Name"        placeholder="Administrative" /></td>
+                            <td><input @bind="r.Usage"       placeholder="Bureaucratic reports, commands" /></td>
+                            <td><input @bind="r.WordOrder"   placeholder="SVO" /></td>
+                            <td><input @bind="r.VowelQuality" placeholder="Short vowels throughout" /></td>
+                            <td><input @bind="r.Notes"       placeholder="Optional notes" /></td>
+                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Registers.Remove(r)">✕</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Registers.Add(new())">+ Add Register</button>
+        </section>
+    }
+
+    @* ── Step 6: Preview & Submit ─────────────────────────────────────────── *@
+    @if (_step == 6)
+    {
+        <section class="wizard-section">
+            <h2>Step 6 — Preview & Submit</h2>
+
+            <div class="preview-summary">
+
+                <details open>
+                    <summary><strong>Identity</strong></summary>
+                    <dl class="field-list">
+                        <dt>Name</dt><dd>@_s.DisplayName</dd>
+                        <dt>Slug</dt><dd>@_s.Slug</dd>
+                        <dt>Family</dt><dd>@_s.TypeKey</dd>
+                        <dt>Tonal Character</dt><dd>@_s.TonalCharacter</dd>
+                        <dt>Description</dt><dd style="white-space:pre-wrap">@_s.Description</dd>
+                    </dl>
+                </details>
+
+                <details>
+                    <summary><strong>Phonology</strong> — @_s.Consonants.Count consonant(s), @_s.Vowels.Count vowel(s), @_s.JunctionRules.Count junction rule(s)</summary>
+                    @if (_s.Consonants.Count > 0)
+                    {
+                        <p><em>Consonants:</em> @string.Join(", ", _s.Consonants.Select(c => c.Symbol))</p>
+                    }
+                    @if (_s.Vowels.Count > 0)
+                    {
+                        <p><em>Vowels:</em> @string.Join(", ", _s.Vowels.Select(v => v.Symbol))</p>
+                    }
+                    @if (_s.SyllablePatterns.Count > 0)
+                    {
+                        <p><em>Syllable patterns:</em> @string.Join(", ", _s.SyllablePatterns)</p>
+                    }
+                </details>
+
+                <details>
+                    <summary><strong>Affixes</strong> — @_s.Prefixes.Count prefix(es), @_s.Suffixes.Count suffix(es)</summary>
+                    @if (_s.Prefixes.Count > 0)
+                    {
+                        <p><em>Prefixes:</em> @string.Join(", ", _s.Prefixes.Select(p => p.Form))</p>
+                    }
+                    @if (_s.Suffixes.Count > 0)
+                    {
+                        <p><em>Suffixes:</em> @string.Join(", ", _s.Suffixes.Select(s => s.Form))</p>
+                    }
+                </details>
+
+                <details>
+                    <summary><strong>Root Dictionary</strong> — @_s.Roots.Count root(s)</summary>
+                    @if (_s.Roots.Count > 0)
+                    {
+                        <p>@string.Join(", ", _s.Roots.Take(20).Select(r => r.Token))
+                            @if (_s.Roots.Count > 20) { <span> … and @(_s.Roots.Count - 20) more</span> }</p>
+                    }
+                </details>
+
+                <details>
+                    <summary><strong>Registers</strong> — @_s.Registers.Count register(s)</summary>
+                    @foreach (var r in _s.Registers)
+                    {
+                        <p><strong>@r.Name</strong>: @r.Usage (word order: @r.WordOrder)</p>
+                    }
+                </details>
+
+            </div>
+
+            <div class="field-group" style="margin-top:1.5rem;">
+                <label>Example Sentences / Sample Words</label>
+                <textarea @bind="_s.SampleText" rows="6"
+                          placeholder="Demonstrate the language in use — provide translations where possible…"></textarea>
+                <span class="field-hint">This will be visible to other contributors as a reference.</span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_submitError))
+            {
+                <div class="error" style="margin-top:1rem;">@_submitError</div>
+            }
+        </section>
+    }
+
+    @* ── Navigation buttons ───────────────────────────────────────────────── *@
+    <div class="wizard-nav">
+        <a class="btn btn-secondary" href="/languages">Cancel</a>
+        <div class="wizard-nav-right">
+            @if (_step > 1)
+            {
+                <button class="btn btn-secondary" @onclick="() => _step--">← Previous</button>
+            }
+            @if (_step < 6)
+            {
+                <button class="btn btn-primary" @onclick="NextStep" disabled="@(!CanAdvance())">Next →</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@(_submitting || !CanAdvance())">
+                    @if (_submitting) { <span>Submitting…</span> } else { <span>Submit Language</span> }
+                </button>
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private readonly LanguageBuilderState _s = new();
+    private int  _step      = 1;
+    private bool _submitting = false;
+    private string _submitError = string.Empty;
+
+    private static string StepLabel(int step) => step switch
+    {
+        1 => "Identity",
+        2 => "Phonology",
+        3 => "Affixes",
+        4 => "Roots",
+        5 => "Registers",
+        6 => "Submit",
+        _ => string.Empty,
+    };
+
+    private void OnDisplayNameInput(ChangeEventArgs e)
+    {
+        _s.DisplayName = e.Value?.ToString() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(_s.Slug) || _s.Slug == LanguageBuilderState.DeriveSlug(string.Empty))
+            _s.Slug = LanguageBuilderState.DeriveSlug(_s.DisplayName);
+    }
+
+    private bool CanAdvance() => _step switch
+    {
+        1 => !string.IsNullOrWhiteSpace(_s.DisplayName) && !string.IsNullOrWhiteSpace(_s.Slug),
+        _ => true,
+    };
+
+    private void NextStep()
+    {
+        if (CanAdvance())
+            _step++;
+    }
+
+    // Phonology helpers
+    private void AddConsonant()       => _s.Consonants.Add(new());
+    private void AddVowel()           => _s.Vowels.Add(new());
+    private void AddJunctionRule()    => _s.JunctionRules.Add(new());
+
+    private void AddSyllablePattern()
+    {
+        var v = _s.NewSyllablePattern.Trim();
+        if (!string.IsNullOrEmpty(v) && !_s.SyllablePatterns.Contains(v))
+            _s.SyllablePatterns.Add(v);
+        _s.NewSyllablePattern = string.Empty;
+    }
+
+    private void AddInitialCluster()
+    {
+        var v = _s.NewInitialCluster.Trim();
+        if (!string.IsNullOrEmpty(v) && !_s.InitialClusters.Contains(v))
+            _s.InitialClusters.Add(v);
+        _s.NewInitialCluster = string.Empty;
+    }
+
+    private void AddForbiddenCluster()
+    {
+        var v = _s.NewForbiddenCluster.Trim();
+        if (!string.IsNullOrEmpty(v) && !_s.ForbiddenClusters.Contains(v))
+            _s.ForbiddenClusters.Add(v);
+        _s.NewForbiddenCluster = string.Empty;
+    }
+
+    private void AddFinalCluster()
+    {
+        var v = _s.NewFinalCluster.Trim();
+        if (!string.IsNullOrEmpty(v) && !_s.FinalClusters.Contains(v))
+            _s.FinalClusters.Add(v);
+        _s.NewFinalCluster = string.Empty;
+    }
+
+    // JSON payload builder
+    private string BuildPayloadJson()
+    {
+        using var stream  = new System.IO.MemoryStream();
+        using var writer  = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
+
+        writer.WriteStartObject();
+        writer.WriteString("slug",          _s.Slug);
+        writer.WriteString("displayName",   _s.DisplayName);
+        writer.WriteString("typeKey",       _s.TypeKey);
+        writer.WriteString("tonalCharacter",_s.TonalCharacter);
+        writer.WriteString("description",   _s.Description);
+        writer.WriteNumber("rarityWeight",  50);
+        writer.WriteBoolean("isActive",     true);
+
+        // phonology
+        writer.WritePropertyName("phonology");
+        writer.WriteStartObject();
+
+        writer.WritePropertyName("consonants");
+        writer.WriteStartArray();
+        foreach (var c in _s.Consonants)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("symbol",      c.Symbol);
+            writer.WriteString("description", c.Description);
+            writer.WriteString("notes",       c.Notes);
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+
+        writer.WritePropertyName("vowels");
+        writer.WriteStartArray();
+        foreach (var v in _s.Vowels)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("symbol",   v.Symbol);
+            writer.WriteString("sound",    v.Sound);
+            writer.WriteString("register", v.Register);
+            writer.WriteString("notes",    v.Notes);
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+
+        WriteStringArray(writer, "allowedSyllablePatterns", _s.SyllablePatterns);
+        WriteStringArray(writer, "allowedInitialClusters",  _s.InitialClusters);
+        WriteStringArray(writer, "forbiddenClusters",       _s.ForbiddenClusters);
+        WriteStringArray(writer, "allowedFinalClusters",    _s.FinalClusters);
+
+        writer.WritePropertyName("junctionRules");
+        writer.WriteStartArray();
+        foreach (var j in _s.JunctionRules)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("cluster",               j.Cluster);
+            writer.WriteString("rule",                  j.Rule);
+            writer.WriteString("formalExample",         j.FormalExample);
+            writer.WriteString("administrativeExample", j.AdministrativeExample);
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+
+        writer.WriteEndObject(); // phonology
+
+        // morphology
+        writer.WritePropertyName("morphology");
+        writer.WriteStartObject();
+
+        writer.WritePropertyName("prefixes");
+        writer.WriteStartArray();
+        foreach (var a in _s.Prefixes)
+            WriteAffixEntry(writer, a);
+        writer.WriteEndArray();
+
+        writer.WritePropertyName("suffixes");
+        writer.WriteStartArray();
+        foreach (var a in _s.Suffixes)
+            WriteAffixEntry(writer, a);
+        writer.WriteEndArray();
+
+        writer.WritePropertyName("roots");
+        writer.WriteStartArray();
+        foreach (var r in _s.Roots)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("token",            r.Token);
+            writer.WriteString("coreMeaning",      r.CoreMeaning);
+            writer.WriteString("extendedMeanings", r.ExtendedMeanings);
+            writer.WriteString("exampleWord",      r.ExampleWord);
+            writer.WriteString("category",         r.Category);
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+
+        writer.WriteEndObject(); // morphology
+
+        // registerSystem
+        writer.WritePropertyName("registerSystem");
+        writer.WriteStartObject();
+        writer.WritePropertyName("registers");
+        writer.WriteStartArray();
+        foreach (var reg in _s.Registers)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("name",        reg.Name);
+            writer.WriteString("usage",       reg.Usage);
+            writer.WriteString("wordOrder",   reg.WordOrder);
+            writer.WriteString("vowelQuality",reg.VowelQuality);
+            writer.WriteString("notes",       reg.Notes);
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+        writer.WriteEndObject(); // registerSystem
+
+        writer.WriteString("sampleText", _s.SampleText);
+
+        writer.WriteEndObject();
+        writer.Flush();
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static void WriteStringArray(Utf8JsonWriter writer, string name, IEnumerable<string> values)
+    {
+        writer.WritePropertyName(name);
+        writer.WriteStartArray();
+        foreach (var v in values) writer.WriteStringValue(v);
+        writer.WriteEndArray();
+    }
+
+    private static void WriteAffixEntry(Utf8JsonWriter writer, AffixRow a)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("form",        a.Form);
+        writer.WriteString("category",    a.Category);
+        writer.WriteString("coreMeaning", a.CoreMeaning);
+        writer.WriteString("notes",       a.Notes);
+        writer.WriteEndObject();
+    }
+
+    private async Task SubmitAsync()
+    {
+        _submitError = string.Empty;
+        _submitting  = true;
+
+        var request = new CreateSubmissionRequest(
+            ContentType: "language",
+            Title:       _s.DisplayName,
+            Payload:     BuildPayloadJson(),
+            Description: _s.Description);
+
+        var (dto, error) = await Api.CreateSubmissionAsync(request);
+
+        _submitting = false;
+
+        if (dto is not null)
+        {
+            _s.Reset();
+            Nav.NavigateTo($"/submissions/{dto.Id}");
+        }
+        else
+        {
+            _submitError = $"Submission failed: {error ?? "unknown error"}";
+        }
+    }
+}

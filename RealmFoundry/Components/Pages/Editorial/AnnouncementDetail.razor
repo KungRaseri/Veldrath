@@ -1,0 +1,138 @@
+@page "/editorial/announcements/new"
+@page "/editorial/announcements/{Id:guid}"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@using Veldrath.Contracts.Editorial
+
+<PageTitle>@(_isNew ? "New Announcement" : "Edit Announcement") — Editorial — RealmFoundry</PageTitle>
+
+@if (!AuthState.HasPermission("manage_content"))
+{
+    <p>Access denied.</p>
+}
+else if (_loading)
+{
+    <p>Loading…</p>
+}
+else
+{
+    <div class="page-header">
+        <h1>@(_isNew ? "New Announcement" : "Edit Announcement")</h1>
+        <a class="btn btn-secondary" href="/editorial/announcements">← Back</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="@(_error ? "alert alert-error" : "alert alert-success")">@_message</div>
+    }
+
+    @if (!_isNew)
+    {
+        <div class="toolbar" style="margin-bottom:1rem">
+            <button class="btn @(_status == "Published" ? "btn-warn" : "btn-primary")" @onclick="TogglePublishAsync">
+                @(_status == "Published" ? "Unpublish" : "Publish")
+            </button>
+            <span class="badge @(_status == "Published" ? "badge-green" : "")">@_status</span>
+        </div>
+    }
+
+    <div class="form-grid">
+        <label class="form-label" style="grid-column: 1 / -1">Title
+            <input class="form-input" @bind="_title" placeholder="Scheduled maintenance on Friday…" />
+        </label>
+
+        <label class="form-label" style="grid-column: 1 / -1">Body (plain text, max 1000 chars)
+            <textarea class="form-textarea" rows="6" maxlength="1000" @bind="_body"></textarea>
+            <span class="muted" style="font-size:.8rem">@_body.Length / 1000</span>
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn btn-primary" @onclick="SaveAsync">@(_isNew ? "Create" : "Save Changes")</button>
+        <a class="btn btn-secondary" href="/editorial/announcements">Cancel</a>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool _isNew;
+    private bool _loading = true;
+    private string? _message;
+    private bool _error;
+
+    private string _title  = "";
+    private string _body   = "";
+    private string _status = "Draft";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isNew = Id is null;
+        if (!_isNew)
+        {
+            var dto = await Api.GetAnnouncementAsync(Id!.Value);
+            if (dto is not null)
+            {
+                _title  = dto.Title;
+                _body   = dto.Body;
+                _status = dto.Status;
+            }
+            else
+            {
+                _message = "Announcement not found.";
+                _error   = true;
+            }
+        }
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_isNew)
+        {
+            var (dto, error) = await Api.CreateAnnouncementAsync(
+                new CreateAnnouncementRequest(_title, _body));
+            if (dto is not null)
+                Nav.NavigateTo($"/editorial/announcements/{dto.Id}");
+            else
+            {
+                _message = $"Create failed: {error}";
+                _error   = true;
+            }
+        }
+        else
+        {
+            var (dto, error) = await Api.UpdateAnnouncementAsync(
+                Id!.Value,
+                new UpdateAnnouncementRequest(_title, _body, _status));
+            if (dto is not null)
+            {
+                _status  = dto.Status;
+                _message = "Saved.";
+                _error   = false;
+            }
+            else
+            {
+                _message = $"Save failed: {error}";
+                _error   = true;
+            }
+        }
+    }
+
+    private async Task TogglePublishAsync()
+    {
+        var (dto, error) = await Api.PublishAnnouncementAsync(Id!.Value);
+        if (dto is not null)
+        {
+            _status  = dto.Status;
+            _message = _status == "Published" ? "Published." : "Unpublished.";
+            _error   = false;
+        }
+        else
+        {
+            _message = $"Toggle failed: {error}";
+            _error   = true;
+        }
+    }
+}

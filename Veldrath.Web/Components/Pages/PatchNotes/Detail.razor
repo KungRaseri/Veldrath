@@ -1,0 +1,55 @@
+@page "/patch-notes/{Slug}"
+@inject VeldrathApiClient Api
+@using Markdig
+@using Microsoft.AspNetCore.Components
+@using Veldrath.Contracts.Editorial
+
+<PageTitle>@(_note?.Title ?? "Patch Note") — Veldrath</PageTitle>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_note is null)
+{
+    <h1>Not Found</h1>
+    <p>That patch note doesn't exist or hasn't been published yet.</p>
+    <a href="/patch-notes">← Back to Patch Notes</a>
+}
+else
+{
+    <article class="editorial-article">
+        <header class="article-header">
+            <a class="back-link" href="/patch-notes">← Patch Notes</a>
+            <h1>@_note.Title</h1>
+            <div class="article-meta">
+                <span class="patch-version">v@_note.Version</span>
+                @if (_note.PublishedAt.HasValue)
+                {
+                    <time>@_note.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")</time>
+                }
+            </div>
+        </header>
+        <div class="article-body markdown-content">
+            @((MarkupString)_html)
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private PatchNoteDto? _note;
+    private string _html = "";
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _note    = await Api.GetPatchNoteAsync(Slug);
+        _html    = _note is not null
+            ? Markdown.ToHtml(_note.Content, new MarkdownPipelineBuilder().UseAdvancedExtensions().Build())
+            : "";
+        _loading = false;
+    }
+}

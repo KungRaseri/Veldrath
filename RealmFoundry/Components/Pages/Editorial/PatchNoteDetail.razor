@@ -1,0 +1,155 @@
+@page "/editorial/patch-notes/new"
+@page "/editorial/patch-notes/{Id:guid}"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@using Veldrath.Contracts.Editorial
+
+<PageTitle>@(_isNew ? "New Patch Note" : "Edit Patch Note") — Editorial — RealmFoundry</PageTitle>
+
+@if (!AuthState.HasPermission("manage_content"))
+{
+    <p>Access denied.</p>
+}
+else if (_loading)
+{
+    <p>Loading…</p>
+}
+else
+{
+    <div class="page-header">
+        <h1>@(_isNew ? "New Patch Note" : "Edit Patch Note")</h1>
+        <a class="btn btn-secondary" href="/editorial/patch-notes">← Back</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="@(_error ? "alert alert-error" : "alert alert-success")">@_message</div>
+    }
+
+    @if (!_isNew)
+    {
+        <div class="toolbar" style="margin-bottom:1rem">
+            <button class="btn @(_status == "Published" ? "btn-warn" : "btn-primary")" @onclick="TogglePublishAsync">
+                @(_status == "Published" ? "Unpublish" : "Publish")
+            </button>
+            <span class="badge @(_status == "Published" ? "badge-green" : "")">@_status</span>
+        </div>
+    }
+
+    <div class="form-grid">
+        <label class="form-label">Slug
+            <input class="form-input" @bind="_slug" disabled="@(!_isNew)" placeholder="patch-1-2-0" />
+        </label>
+
+        <label class="form-label">Version
+            <input class="form-input" @bind="_version" placeholder="1.2.0" />
+        </label>
+
+        <label class="form-label" style="grid-column: 1 / -1">Title
+            <input class="form-input" @bind="_title" placeholder="Patch 1.2.0 — Balance Pass" />
+        </label>
+
+        <label class="form-label" style="grid-column: 1 / -1">Summary
+            <input class="form-input" @bind="_summary" placeholder="Brief description for list views…" />
+        </label>
+
+        <label class="form-label" style="grid-column: 1 / -1">Content (Markdown)
+            <textarea class="form-textarea" rows="20" @bind="_content"></textarea>
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn btn-primary" @onclick="SaveAsync">@(_isNew ? "Create" : "Save Changes")</button>
+        <a class="btn btn-secondary" href="/editorial/patch-notes">Cancel</a>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool _isNew;
+    private bool _loading = true;
+    private string? _message;
+    private bool _error;
+
+    private string _slug    = "";
+    private string _title   = "";
+    private string _content = "";
+    private string _summary = "";
+    private string _version = "";
+    private string _status  = "Draft";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isNew = Id is null;
+        if (!_isNew)
+        {
+            var dto = await Api.GetPatchNoteAsync(Id!.Value);
+            if (dto is not null)
+            {
+                _slug    = dto.Slug;
+                _title   = dto.Title;
+                _content = dto.Content;
+                _summary = dto.Summary;
+                _version = dto.Version;
+                _status  = dto.Status;
+            }
+            else
+            {
+                _message = "Patch note not found.";
+                _error   = true;
+            }
+        }
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_isNew)
+        {
+            var (dto, error) = await Api.CreatePatchNoteAsync(
+                new CreatePatchNoteRequest(_slug, _title, _content, _summary, _version));
+            if (dto is not null)
+                Nav.NavigateTo($"/editorial/patch-notes/{dto.Id}");
+            else
+            {
+                _message = $"Create failed: {error}";
+                _error   = true;
+            }
+        }
+        else
+        {
+            var (dto, error) = await Api.UpdatePatchNoteAsync(
+                Id!.Value,
+                new UpdatePatchNoteRequest(_title, _content, _summary, _version, _status));
+            if (dto is not null)
+            {
+                _status  = dto.Status;
+                _message = "Saved.";
+                _error   = false;
+            }
+            else
+            {
+                _message = $"Save failed: {error}";
+                _error   = true;
+            }
+        }
+    }
+
+    private async Task TogglePublishAsync()
+    {
+        var (dto, error) = await Api.PublishPatchNoteAsync(Id!.Value);
+        if (dto is not null)
+        {
+            _status  = dto.Status;
+            _message = _status == "Published" ? "Published." : "Unpublished.";
+            _error   = false;
+        }
+        else
+        {
+            _message = $"Toggle failed: {error}";
+            _error   = true;
+        }
+    }
+}

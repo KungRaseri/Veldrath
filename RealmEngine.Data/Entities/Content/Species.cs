@@ -15,6 +15,12 @@ public class Species : ContentBase
     /// <summary>Boolean biological and physical trait flags.</summary>
     public SpeciesTraits Traits { get; set; } = new();
 
+    /// <summary>
+    /// Slug of the language natively spoken by this species, if any.
+    /// Soft reference — no FK constraint; <c>null</c> means no language is linked.
+    /// </summary>
+    public string? NativeLanguageSlug { get; set; }
+
     /// <summary>Natural / innate powers shared by all actors of this species.</summary>
     public ICollection<SpeciesPowerPool> PowerPool { get; set; } = [];
     /// <summary>Archetypes that belong to this species.</summary>
