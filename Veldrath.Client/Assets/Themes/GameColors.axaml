@@ -131,6 +131,14 @@
     <Color x:Key="GameInteractivePressedColor">#252639</Color>
     <Color x:Key="GameInteractiveSelectedColor">#252639</Color>
 
+    <!-- Overlay scrims — semi-transparent backdrops for modals, loading states,
+         and in-world prompt panels. Alpha is baked in to the color value. -->
+    <Color x:Key="GameScrimColor">#B2000000</Color>          <!-- 70% black — modal overlay backdrop -->
+    <Color x:Key="GameScrimStrongColor">#CC000000</Color>    <!-- 80% black — heavy overlay backdrop -->
+    <Color x:Key="GameLoadingScrimColor">#88000000</Color>   <!-- 53% black — loading state overlay -->
+    <!-- In-world prompt panel — Layer2 surface at 80% opacity so the map shows through -->
+    <Color x:Key="GamePromptBackdropColor">#CC1C1D2B</Color>
+
 
     <!-- ============================================================
          7. FLUENTAVALONIA / WINUI3 TOKEN OVERRIDES
@@ -217,6 +225,11 @@
     <SolidColorBrush x:Key="GameInteractiveHoverBrush"    Color="{StaticResource GameInteractiveHoverColor}" />
     <SolidColorBrush x:Key="GameInteractivePressedBrush"  Color="{StaticResource GameInteractivePressedColor}" />
     <SolidColorBrush x:Key="GameInteractiveSelectedBrush" Color="{StaticResource GameInteractiveSelectedColor}" />
+
+    <SolidColorBrush x:Key="GameScrimBrush"          Color="{StaticResource GameScrimColor}" />
+    <SolidColorBrush x:Key="GameScrimStrongBrush"    Color="{StaticResource GameScrimStrongColor}" />
+    <SolidColorBrush x:Key="GameLoadingScrimBrush"   Color="{StaticResource GameLoadingScrimColor}" />
+    <SolidColorBrush x:Key="GamePromptBackdropBrush" Color="{StaticResource GamePromptBackdropColor}" />
 
     <!-- FA application page background brush -->
     <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{StaticResource GameBackground0Color}" />

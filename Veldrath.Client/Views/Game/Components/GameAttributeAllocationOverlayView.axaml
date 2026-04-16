@@ -11,7 +11,7 @@
     mc:Ignorable="d">
 
     <Border
-        Background="#CC000000"
+        Background="{DynamicResource GameScrimStrongBrush}"
         IsVisible="{Binding IsAttributeAllocationOpen}">
         <Border
             Width="420"
