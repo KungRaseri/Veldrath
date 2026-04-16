@@ -6,7 +6,7 @@
 
 ## Resume Point (2026-04-15 — updated after Q3)
 
-**Q3 is complete.** The Calethic language is fully designed. See `.github/copilot-memory/calethic-language.md` for the full reference.
+**Q3 is complete.** The Calethic language is fully designed. See `docs/lore/calethic-language.md` for the full reference.
 
 **Current status:** All Varenmark lore and language work is finished. 6 open design items remain before Greymoor can begin. Work through them in order:
 
@@ -45,7 +45,7 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 **Scope completed:** Full sketched conlang — phonology, morphology, basic syntax, root dictionary (~75 entries), full named-entity pass.
 
 **Deliverables:**
-- `.github/copilot-memory/calethic-language.md` — full design reference (canonical)
+- `docs/lore/calethic-language.md` — full design reference (canonical)
 - `wiki/Calethic-Language.md` — player-facing dictionary and language guide
 - `wiki/World-Veldrath.md` — all three `[TBD — language pass Q3]` placeholders filled
 - All 6 Varenmark zone pages — Calethic names added to spoiler sections
@@ -200,4 +200,4 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-14 | Phase 3 complete: all 6 Varenmark zone pages rewritten. Connected-system framework locked (waypoint node → binding site → transit corridor → managed wetland → management facility → deep access point). Two-tier structure on every page. Halrow and Pits cross-reference each other. Design Notes folded in throughout. |
 | 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
 | 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
-| 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `.github/copilot-memory/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
+| 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `docs/lore/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
