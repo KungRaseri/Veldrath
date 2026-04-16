@@ -59,8 +59,8 @@
 | ae | /eɪ/ as in *day* | *kael, aeth, vael, rael* — the dominant Calethic diphthong |
 | ei | /iː/ as in *see* | Rare; appears in high-prestige titles and old formal compounds |
 | or | /ɔːr/ as in *ore* | Common in abstract-noun suffix *-or*, the keeper suffix *-ori* |
-| ael | /eɪl/ | Compound diphthong in military/sworn-body suffix *-ael* |
-| ald | /ɔːld/ | Place suffix *-ald*, material term *daeld* |
+| ael | /eɪl/ | Vowel-and-lateral unit: *ae* /eɪ/ + integral *l*. Appears as the nucleus of the sworn-body suffix *–ael*, and as the second element of roots built on the *ae* diphthong (e.g. *kael* = k + ael). Counts as a single syllabic nucleus for root-shape purposes: *kael* = C + (ael) = CVC-equivalent. |
+| ald | /ɔːld/ | Vowel-and-cluster unit: *a* /ɔː/ + integral *ld*. Appears in the place suffix *–ald* and in roots like *daeld* (d + ald = C + nucleus + final cluster). *daeld* is therefore C(ald) shape = CVCC-equivalent, consistent with the allowed CVCC root pattern. |
 
 ---
 
@@ -104,7 +104,7 @@ How Calethic words erode into everyday Common speech over generations of oral tr
 
 | Rule | Direction | Example |
 |------|-----------|---------|
-| **H-mutation** | Initial K– / KA– → H– in frontier speech | *Kaeldor* → *Haldor* → *Halrow* |
+| **H-mutation** | Any K-initial onset → H-initial in frontier speech. Covers K– (vowel-initial: *Kaeldor*), KA– (short-vowel: *Kaldor*), and KAL– / other K+consonant clusters — H-mutation applies to the entire K-initial onset, not only to K followed immediately by a vowel. | *Kaeldor* → *Kaldor* → *Haldor* → *Halrow* |
 | **TH-shift** | TH → SH in frontier speech (dental fricative softens to palatal) | *Aetheld* → *Aesheld* → *Asheld* |
 | **Vowel shortening** | Long *ae, ei* → short *a, e* under stress reduction | *Kaelorneth* → loses form entirely in Common |
 | **Final consonant loss** | Word-final *–th, –d, –ld* drop in casual speech | *Aetheld* → *Asheld* → *Asheln* → *Ashlen* |
@@ -164,7 +164,7 @@ Prefixes attach before a root and modify its quality or intensity:
 | Prefix | Core meaning | Notes |
 |--------|--------------|-------|
 | **kael–** | Great, first, paramount | Derives from root *kael* (bind/the first compact). Greatness derives from having been first-bound. The spoken-corruption form *kal–* (found in frontier oral speech, e.g. *Kaldor* as a vowel-reduced form of *Kaeldor*) is not a formal Calethic prefix — it is the first stage of H-mutation (*kael–* → *kal–* → *hal–*). Do not use *kal–* in new formal coinages. |
-| **vel– / vael–** | Old, enduring, former | *vel–* = still enduring; *vael–* = formerly, of past-times |
+| **vel– / vael–** | Old, enduring, former | *vel–* = still enduring; *vael–* = formerly, of past-times. Cross-reference: *vael* is also the word for four (§4.8); when interpreted as a standalone numeral or a §4.8 position-3 ceremonial terminal, the prefix reading does not apply. Context (prefix position) distinguishes the prefix from the numeral. |
 | **dorn– / dor–** | Deep, hidden, below | Also used directionally |
 | **hald–** | High, elevated, prominent | Also used directionally |
 | **thar–** | True, genuine, oath-bound | Affirms; only used in formal/title contexts |
@@ -281,8 +281,8 @@ Short forms drop all but the final (category) element: *Aethori*.
 | **veld** | the unconstrained, the void-beyond, existence without limit | the essential quality of the being; that which cannot be bounded | *Orveld* (the Unconstrained = the being's Calethic name), *Veldrath* (the world name = vel+vrath, via formal junction) |
 | **rael** | presence, assertion of existence | a presence that insists on being here; the being's local manifestation | *Raelaethori* (presence-keepers, archaic) |
 | **thar** | true, genuine, oath-bound, absolute | affirms; marks things that cannot be unsaid or undone | *Thar-Aethori*, *Tharkael* (the true binding) |
-| **naeld** | seal, permanent closure, lock-with-no-key | a closing that is not meant to be opened | *Naeldithorn* (the sealed witnessing), *Naeldkeld* (sealed ground) |
-| **gorv** | contaminate, alter, corrupt | the process of contact with *veld*; what happens to land and minds near the compact | *Gorveld* (corrupt-ground — gorv + *–eld*), *Gorv-Aethori* (broken keepers). **Homograph note:** gorv + the root *veld* (the-unconstrained) would also produce the merged spelling *Gorveld*, meaning "corrupted-unconstrained" — a semantically distinct compound. When this root-root reading is intended, write analytically as *Gorv-Veld* to distinguish it from the suffix form. |
+| **naeld** | seal, permanent closure, lock-with-no-key | a closing that is not meant to be opened | *Naeldithorn* (the sealed witnessing — see junction table §1.3, –ld+TH– row), *Naeldkeld* (sealed ground — junction naeld+keld is –ld + k–; syllabification applies: *naeld.keld*, K– is a legal syllable onset, so no three-consonant cluster falls within a single syllable; same logic as *Gaeldrak*) |
+| **gorv** | contaminate, alter, corrupt | the process of contact with *veld*; what happens to land and minds near the compact | *Gorveld* (corrupt-ground — gorv + *–eld*), *Gorv-Aethori* (broken keepers). **Homograph note:** gorv + the root *veld* (the-unconstrained) would also produce the merged spelling *Gorveld*, meaning "corrupted-unconstrained" — a semantically distinct compound. When this root-root reading is intended, write analytically as *Gorv-Veld* to distinguish it from the suffix form. *Gorveld* is a root-dictionary example, not an attested named location; the hyphenation distinction (§2.6) applies when coining new compounds, not to retroactively interpret this entry. |
 | **draek** | channel, medium, the interface | the priestly function between compact parties; what the Aethori did | *Draekori* (channeler-keepers, rare variant) |
 | **vaeld** | proximity, the approach, border-of-the-sacred | the zone between the ordinary and the compact; also a register name | *Vaelraeth* (approach-threshold; vaeld+raeth with D-drop at junction) |
 | **thael** | illuminate, force-knowing, revelation | what the compact did to the Aethori — made them know things they couldn't unlearn | *Thaelornvael* (ceremonial name for the being: thael+orn+vael = "the illuminate-unmaking-enduring") |
@@ -378,7 +378,7 @@ These are the prefix forms of the above roots when used in a modifying (adjectiv
 |------|------------------------------|
 | **kael–** | great, first, paramount |
 | **vel– / vael–** | old, enduring / former, of-past-times |
-| **dorn–** | deep, below, hidden |
+| **dorn–** | deep, below, hidden | *(dor– is an attested spoken-reduction variant of dorn– in fast frontier speech — the final nasal drops before a following consonant; not used in formal coinages)* |
 | **hald–** | high, elevated |
 | **thar–** | true, genuine, sworn |
 | **or–** | without, not, the reversal of (negation) |
@@ -560,6 +560,7 @@ The being has a layered naming system reflecting who is speaking and in what reg
 | **Calethic name** | **Kaeldor** |
 | **Derivation** | *kaeld* (the performed binding act) + *–or* (abstract-noun suffix: state, condition) = "the state/condition of the performed compact" — the abstract quality of being the place where the compact's execution is fixed and persists |
 | **Corruption path** | *Kaeldor* → vowel reduction → *Kaldor* → H-mutation → *Haldor* → final vowel loss → *Haldr* → liquid shift (dr → rw in frontier speech) → *Halrow* |
+| **Homonym note** | *Haldor* is also a valid Calethic compound in its own right: *hald* (high, elevated) + *–or* (state/condition suffix) = "the elevated state" (§4.2). The corruption of *Kaeldor* converges on this same phonological form. In post-Collapse Common speech, both uses are present simultaneously: Calethic speakers (rare) would recognise it as "elevated state"; Common speakers encountering the name would only know it as a place-name on the path to *Halrow*. The homonymy is not an error — it is a feature of the language's compression under oral decay. |
 | **Status** | **Common corruption of Calethic *Kaeldor*** |
 
 ---
@@ -674,3 +675,4 @@ New words never use S or SH unless they are Aethori ceremonial phrases. If you f
 | 2026-04-15 | Pass 3 corrections (E1–E3, F1): Calori→Calari (–ori/–ari rule applied); Thaelornvael gloss stripped of unsourced "presence" (§4.1 + §5.1 aligned with §4.8 vael definition); naek added to §4.6 actions; –eld/–ald split into distinct suffix rows with variant note explaining site vs. open-ground distinction. |
 | 2026-04-15 | Pass 4 corrections (G1–G6, H1–H2): –ori/–ari rule fully propagated across all root examples — tharg, dorn, drak corrected to –ari (administrative); raeth–ori annotated as Aethori-tier (intentional exception). Gaeldrak junction note rewritten to invoke syllabification rather than incorrect consonant count. daeld example corrected Daeld-eld→Daeld-Ald (open-plain suffix, matches §5.2). kaeld note clarified: lexicalized derived form functions as independent root. ori entry extended: free root and bound suffix –ori are the same root in two grammatical positions. |
 | 2026-04-15 | Pass 5 corrections (I1–I7): THL– cluster rule clarified in §1.3 — TH is a single phoneme position; THL– is within the two-consonant maximum. –LD+TH– epenthesis row added to junction reduction table; Naeldithorn now has an explicit governing rule (epenthetic –i– liaison vowel). –eth/–ath variant note added to §2.2 — –ath is an unattested archaic outer-territory variant; new coinages use –eth. kal– in §2.3 reclassified as a spoken-corruption reduction of kael– (first stage of H-mutation), not a formal prefix variant. §4.1 gorv Gorveld homograph resolved — canonical form is gorv+–eld (corrupt-ground); Gorv-Veld is the analytical write-form for the root-root compound. §4.4 ald extended to explicitly document the free-root / bound-suffix two-position relationship (parallels ori/–ori). Aurelian Market resolved and renamed to The Korreld Exchange (hybrid: Calethic-echo + Common descriptor). |
+| 2026-04-15 | Pass 6 corrections (J1–J7): §1.2 ael/ald vowel inventory rows rewritten — clarified as vowel-and-lateral units (ae+l, a+ld) that count as single syllabic nuclei; daeld/laeld root phonology now derivable from the table. §1.5 H-mutation rule expanded to cover all K-initial onsets (including KAL–, KR–), not only K– and KA–. §2.3 vel–/vael– prefix entry cross-referenced to §4.8 (vael = four; prefix reading determined by position). §4.1 naeld Naeldkeld junction documented: syllabification naeld.keld, K– is legal onset, same logic as Gaeldrak. §4.1 gorv homograph note extended: Gorveld is a root-dictionary example, not an attested named location; §2.6 hyphenation distinction applies to new coinages, not to dictionary entries. §4.7 dorn– descriptor row: dor– spoken-reduction variant acknowledged. §5.2 The Halrow: homonym note added — Haldor is simultaneously a valid Calethic compound (hald+–or) and a corruption-stage form of Kaeldor; convergence is a feature of oral decay, not an error. |
