@@ -1,4 +1,4 @@
-﻿using Veldrath.Client.Services;
+using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
 
@@ -10,7 +10,7 @@ public class MainWindowViewModelTests : TestBase
     {
         nav ??= new FakeNavigationService();
         var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
-        return new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"), status ?? new FakeServerStatusService());
+        return new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:9000"), status ?? new FakeServerStatusService());
     }
 
     [Fact]
@@ -18,7 +18,7 @@ public class MainWindowViewModelTests : TestBase
     {
         var nav    = new FakeNavigationService();
         var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
-        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"), new FakeServerStatusService());
+        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:9000"), new FakeServerStatusService());
 
         vm.CurrentPage.Should().BeSameAs(splash);
     }
@@ -28,9 +28,9 @@ public class MainWindowViewModelTests : TestBase
     {
         var nav    = new FakeNavigationService();
         var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
-        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"), new FakeServerStatusService());
+        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:9000"), new FakeServerStatusService());
 
-        // Navigate using the typed overload — FakeNavigationService raises CurrentPageChanged
+        // Navigate using the typed overload � FakeNavigationService raises CurrentPageChanged
         // only when given a concrete ViewModelBase instance.
         var mainMenu = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
         nav.NavigateTo(mainMenu);
@@ -43,7 +43,7 @@ public class MainWindowViewModelTests : TestBase
     {
         var nav    = new FakeNavigationService();
         var splash = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
-        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"), new FakeServerStatusService());
+        var vm     = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:9000"), new FakeServerStatusService());
 
         var first  = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
         var second = new MainMenuViewModel(nav, new TokenStore(), new FakeAuthService());
@@ -59,7 +59,7 @@ public class MainWindowViewModelTests : TestBase
     {
         var nav      = new FakeNavigationService();
         var splash   = new SplashViewModel(nav, new FakeAssetStore(), new TokenStore(), new FakeAuthService());
-        var vm       = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:8080"), new FakeServerStatusService());
+        var vm       = new MainWindowViewModel(nav, splash, new ClientSettings("http://localhost:9000"), new FakeServerStatusService());
         var changes  = new List<string>();
         vm.PropertyChanged += (_, e) => changes.Add(e.PropertyName!);
 

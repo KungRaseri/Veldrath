@@ -39,23 +39,6 @@ try
         new VeldrathApiClient(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("veldrath-web")));
 
-    // HttpClient for calling Strapi CMS APIs.
-    var strapiUrl = builder.Configuration["Strapi:BaseUrl"] ?? "";
-    if (!string.IsNullOrWhiteSpace(strapiUrl))
-    {
-        builder.Services.AddHttpClient("strapi", client =>
-        {
-            client.BaseAddress = new Uri(strapiUrl);
-            var token = builder.Configuration["Strapi:ApiToken"];
-            if (!string.IsNullOrWhiteSpace(token))
-                client.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        });
-        builder.Services.AddScoped<StrapiClient>(sp =>
-            new StrapiClient(
-                sp.GetRequiredService<IHttpClientFactory>().CreateClient("strapi")));
-    }
-
     builder.Services.AddScoped<AuthStateService>();
     builder.Services.AddHttpContextAccessor();
 

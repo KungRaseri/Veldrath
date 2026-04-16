@@ -1,4 +1,4 @@
-﻿using System.Reactive.Linq;
+using System.Reactive.Linq;
 using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
@@ -39,7 +39,7 @@ public class CharacterSelectViewModelTests : TestBase
             gameVm,
             auth ?? new FakeAuthService(),
             tokens ?? new TokenStore(),
-            new ClientSettings("http://localhost:8080"));
+            new ClientSettings("http://localhost:9000"));
     }
 
     // Initial load
@@ -318,7 +318,7 @@ public class CharacterSelectViewModelTests : TestBase
         var gameVm = MakeGameVm(conn: conn, nav: nav);
         var vm     = new CharacterSelectViewModel(
             new FakeCharacterService(), conn, nav, gameVm, auth, new TokenStore(),
-            new ClientSettings("http://localhost:8080"));
+            new ClientSettings("http://localhost:9000"));
 
         await vm.LogoutCommand.Execute();
 
@@ -337,7 +337,7 @@ public class CharacterSelectViewModelTests : TestBase
             MakeGameVm(nav: nav),
             auth,
             new TokenStore(),
-            new ClientSettings("http://localhost:8080"));
+            new ClientSettings("http://localhost:9000"));
 
         await vm.LogoutCommand.Execute();
 
@@ -379,7 +379,7 @@ public class CharacterSelectViewModelTests : TestBase
         nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
     }
 
-    // Hub callbacks — GoldChanged
+    // Hub callbacks � GoldChanged
     [Fact]
     public async Task SelectCommand_Should_Update_Gold_When_GoldChanged_Fires()
     {
@@ -414,7 +414,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // Hub callbacks — DamageTaken
+    // Hub callbacks � DamageTaken
     [Fact]
     public async Task SelectCommand_Should_Update_Health_When_DamageTaken_Fires()
     {
@@ -449,7 +449,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // Hub callbacks — ExperienceGained
+    // Hub callbacks � ExperienceGained
     [Fact]
     public async Task SelectCommand_Should_Update_Level_When_ExperienceGained_Fires()
     {
@@ -501,7 +501,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // Hub callbacks — CharacterSelected (initial stat seeding)
+    // Hub callbacks � CharacterSelected (initial stat seeding)
     [Fact]
     public async Task SelectCommand_Should_Seed_All_Stats_When_CharacterSelected_Fires()
     {
@@ -566,7 +566,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.Experience.Should().Be(300L);
     }
 
-    // Hub callbacks — ItemCrafted
+    // Hub callbacks � ItemCrafted
     [Fact]
     public async Task SelectCommand_Should_Update_Gold_When_ItemCrafted_Fires()
     {
@@ -601,7 +601,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("magic-staff"));
     }
 
-    // Hub callbacks — DungeonEntered
+    // Hub callbacks � DungeonEntered
     [Fact]
     public async Task SelectCommand_Should_Append_Log_When_DungeonEntered_Fires()
     {
@@ -649,7 +649,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.Characters.Should().ContainSingle(e => e.Character.Id == charId && e.IsOnline);
     }
 
-    // Hub callbacks – ShopVisited
+    // Hub callbacks � ShopVisited
     [Fact]
     public async Task SelectCommand_Should_Append_Log_When_ShopVisited_Fires()
     {
@@ -679,7 +679,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().Be("Version mismatch \u2014 client v0.1 / server v9.0");
     }
 
-    // ── Region-map hub subscriptions ──────────────────────────────────────────
+    // -- Region-map hub subscriptions ------------------------------------------
 
     [Fact]
     public async Task SelectCommand_Should_Set_RegionTilemap_MapData_When_RegionMapData_Fires()
