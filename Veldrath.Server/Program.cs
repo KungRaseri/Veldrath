@@ -25,6 +25,7 @@ using Veldrath.Server.Features.Account;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Announcements;
 using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Editorial;
 using Veldrath.Server.Features.Content;
 using Veldrath.Server.Features.Foundry;
 using Veldrath.Server.Features.Reports;
@@ -103,6 +104,10 @@ try
     // so they can also be used by standalone clients (Avalonia, Godot) without
     // pulling in ASP.NET Core Identity scaffolding.
     builder.Services.AddDbContext<GameDbContext>(options =>
+        options.UseNpgsql(connectionString));
+
+    // Editorial content: patch notes, lore articles, and site announcements.
+    builder.Services.AddDbContext<EditorialDbContext>(options =>
         options.UseNpgsql(connectionString));
 
     // ASP.NET Core Identity
@@ -424,6 +429,7 @@ try
         var services = scope.ServiceProvider;
         var appDb = services.GetRequiredService<ApplicationDbContext>();
         var gameDb = services.GetRequiredService<GameDbContext>();
+        var editorialDb = services.GetRequiredService<EditorialDbContext>();
 
         if (appDb.Database.ProviderName?.Contains("Npgsql") == true)
         {
@@ -438,6 +444,7 @@ try
                     ? contentDb.Database.GetMigrations()
                     : [])
                 .Concat(gameDb.Database.GetMigrations())
+                .Concat(editorialDb.Database.GetMigrations())
                 .ToHashSet(StringComparer.Ordinal);
 
             await RepairStaleMigrationsAsync(appDb, app.Environment.IsDevelopment(), allKnown);
@@ -452,6 +459,9 @@ try
                 await RepairStaleMigrationsAsync(contentDb, app.Environment.IsDevelopment(), allKnown);
                 await contentDb.Database.MigrateAsync();
             }
+
+            await RepairStaleMigrationsAsync(editorialDb, app.Environment.IsDevelopment(), allKnown);
+            await editorialDb.Database.MigrateAsync();
 
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
@@ -483,6 +493,7 @@ try
     app.MapContentEndpoints();
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();
+    app.MapEditorialEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game").RequireRateLimiting("hub-commands");

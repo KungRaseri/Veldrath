@@ -1,0 +1,120 @@
+@page "/editorial/patch-notes"
+@inject AuthStateService AuthState
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+@using Veldrath.Contracts.Editorial
+@using Veldrath.Contracts.Foundry
+
+<PageTitle>Patch Notes — Editorial — RealmFoundry</PageTitle>
+
+@if (!AuthState.HasPermission("manage_content"))
+{
+    <p>Access denied. The <strong>manage_content</strong> permission is required.</p>
+}
+else
+{
+    <div class="page-header">
+        <h1>Patch Notes</h1>
+        <a class="btn" href="/editorial/patch-notes/new">+ New Patch Note</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="@(_error ? "alert alert-error" : "alert alert-success")">@_message</div>
+    }
+
+    @if (_loading)
+    {
+        <p>Loading…</p>
+    }
+    else if (_result is null)
+    {
+        <p>Failed to load patch notes.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Version</th>
+                    <th>Slug</th>
+                    <th>Status</th>
+                    <th>Published</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _result.Items)
+                {
+                    <tr>
+                        <td>@item.Title</td>
+                        <td class="muted">@item.Version</td>
+                        <td class="muted">@item.Slug</td>
+                        <td>
+                            @if (item.Status == "Published")
+                            {
+                                <span class="badge badge-green">Published</span>
+                            }
+                            else
+                            {
+                                <span class="badge">Draft</span>
+                            }
+                        </td>
+                        <td class="muted">@(item.PublishedAt?.ToLocalTime().ToString("d") ?? "—")</td>
+                        <td class="actions-cell">
+                            <a class="btn btn-sm" href="/editorial/patch-notes/@item.Id">Edit</a>
+                            <button class="btn btn-sm btn-warn" @onclick="() => DeleteAsync(item.Id, item.Title)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (_result.TotalCount > _result.PageSize)
+        {
+            <div class="pagination">
+                <button class="btn btn-sm" @onclick="PrevPage" disabled="@(_page <= 1)">← Prev</button>
+                <span>Page @_page of @((_result.TotalCount + _result.PageSize - 1) / _result.PageSize)</span>
+                <button class="btn btn-sm" @onclick="NextPage" disabled="@(_result.Items.Count < _result.PageSize)">Next →</button>
+            </div>
+        }
+    }
+}
+
+@code {
+    private PagedResult<PatchNoteSummaryDto>? _result;
+    private bool _loading = true;
+    private string? _message;
+    private bool _error;
+    private int _page = 1;
+
+    protected override async Task OnInitializedAsync()
+        => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _result  = await Api.GetAllPatchNotesAsync(_page);
+        _loading = false;
+    }
+
+    private async Task DeleteAsync(Guid id, string title)
+    {
+        var (ok, error) = await Api.DeletePatchNoteAsync(id);
+        if (ok)
+        {
+            _message = $"'{title}' deleted.";
+            _error   = false;
+            await LoadAsync();
+        }
+        else
+        {
+            _message = $"Delete failed: {error}";
+            _error   = true;
+        }
+    }
+
+    private async Task PrevPage() { _page--; await LoadAsync(); }
+    private async Task NextPage() { _page++; await LoadAsync(); }
+}

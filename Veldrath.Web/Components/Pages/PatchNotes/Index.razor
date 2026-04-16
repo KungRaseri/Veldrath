@@ -1,0 +1,62 @@
+@page "/patch-notes"
+@inject VeldrathApiClient Api
+@using Veldrath.Contracts.Editorial
+@using Veldrath.Contracts.Foundry
+
+<PageTitle>Patch Notes — Veldrath</PageTitle>
+
+<h1>Patch Notes</h1>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_result is null || _result.Items.Count == 0)
+{
+    <p>No patch notes published yet. Check back soon!</p>
+}
+else
+{
+    <ul class="patch-list">
+        @foreach (var item in _result.Items)
+        {
+            <li class="patch-summary">
+                <a class="patch-title" href="/patch-notes/@item.Slug">@item.Title</a>
+                <span class="patch-version">v@item.Version</span>
+                @if (item.PublishedAt.HasValue)
+                {
+                    <time class="patch-date">@item.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")</time>
+                }
+                <p class="patch-excerpt">@item.Summary</p>
+            </li>
+        }
+    </ul>
+
+    @if (_result.TotalCount > _result.PageSize)
+    {
+        <div class="pagination">
+            <button class="btn btn-sm" @onclick="PrevPage" disabled="@(_page <= 1)">← Newer</button>
+            <span>Page @_page</span>
+            <button class="btn btn-sm" @onclick="NextPage" disabled="@(_result.Items.Count < _result.PageSize)">Older →</button>
+        </div>
+    }
+}
+
+@code {
+    private PagedResult<PatchNoteSummaryDto>? _result;
+    private bool _loading = true;
+    private int _page = 1;
+
+    protected override async Task OnInitializedAsync()
+        => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _result  = await Api.GetPatchNotesAsync(_page);
+        _loading = false;
+    }
+
+    private async Task PrevPage() { _page--; await LoadAsync(); }
+    private async Task NextPage() { _page++; await LoadAsync(); }
+}

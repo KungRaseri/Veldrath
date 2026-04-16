@@ -82,6 +82,7 @@ public static class ContentSchemaRegistry
             ["organization"]     = OrganizationSchema(),
             ["zonelocation"]    = ZoneLocationSchema(),
             ["dialogue"]         = DialogueSchema(),
+            ["language"]         = LanguageSchema(),
         };
 
     /// <summary>All registered schemas, keyed by content type (case-insensitive).</summary>
@@ -711,6 +712,40 @@ public static class ContentSchemaRegistry
                 new("traits.questRelated","Quest Related",ContentFieldType.Boolean),
                 new("traits.greeting",   "Greeting",    ContentFieldType.Boolean),
                 new("traits.farewell",   "Farewell",    ContentFieldType.Boolean),
+            ]),
+        ]);
+
+    // Language
+    private static ContentTypeSchema LanguageSchema() => new(
+        "language", "Languages",
+        "A constructed or natural language — phonology, morphology, root dictionary, and register system.",
+        [
+            Identity(),
+            new("Overview", [
+                new("description",    "Description",    ContentFieldType.LongText,
+                    Hint: "Origins, in-world usage, and cultural role of this language."),
+                new("tonalCharacter", "Tonal Character", ContentFieldType.Text,
+                    Hint: "One-line characterisation of the language's sound and feel " +
+                          "(e.g. \"Hard + Formal — short architectural roots\")."),
+            ]),
+            new("Phonology", [
+                new("phonology.allowedSyllablePatterns", "Syllable Patterns (JSON)",
+                    ContentFieldType.LongText,
+                    Hint: "JSON array of allowed syllable shapes: [\"CVC\",\"CV\",\"CVCC\"]"),
+                new("phonology.allowedInitialClusters", "Allowed Initial Clusters (JSON)",
+                    ContentFieldType.LongText,
+                    Hint: "JSON array of allowed word-initial clusters: [\"KR-\",\"VR-\",\"DR-\"]"),
+                new("phonology.forbiddenClusters", "Forbidden Clusters (JSON)",
+                    ContentFieldType.LongText,
+                    Hint: "JSON array of forbidden consonant combinations."),
+                new("phonology.allowedFinalClusters", "Allowed Final Clusters (JSON)",
+                    ContentFieldType.LongText,
+                    Hint: "JSON array of allowed word-final clusters: [\"-LD\",\"-RN\",\"-TH\"]"),
+            ]),
+            new("Sample", [
+                new("sampleText", "Example Sentences / Sample Words", ContentFieldType.LongText,
+                    Hint: "Freeform examples demonstrating the language in use. " +
+                          "Include translations where possible."),
             ]),
         ]);
 }

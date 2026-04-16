@@ -42,6 +42,7 @@ public static class DatabaseSeeder
         await OrganizationsSeeder.SeedAsync(db);
         await DialogueSeeder.SeedAsync(db);
         await TraitDefinitionsSeeder.SeedAsync(db);
+        await LanguagesSeeder.SeedAsync(db);
         await ContentRegistrySeeder.SeedAsync(db);
     }
 

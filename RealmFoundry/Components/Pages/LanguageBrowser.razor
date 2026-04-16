@@ -1,0 +1,89 @@
+@page "/languages"
+@using Veldrath.Contracts.Content
+@inject RealmFoundryApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Languages — RealmFoundry</PageTitle>
+
+<div class="content-browser">
+    <header class="browser-header">
+        <h1>Languages</h1>
+        <p class="browser-desc">
+            Explore constructed and natural languages of Veldrath.
+            Each language defines phonology, morphology, a root dictionary, and register rules
+            — the building blocks for procedural name generation across species and locations.
+        </p>
+        <a class="btn btn-primary" href="/languages/new">Build a Language</a>
+    </header>
+
+    <div class="search-bar" style="margin-bottom: 1rem;">
+        <input placeholder="Search languages…"
+               value="@_search"
+               @oninput="OnSearchInput" />
+    </div>
+
+    @if (_loading)
+    {
+        <p class="loading">Loading…</p>
+    }
+    else if (_items.Count == 0)
+    {
+        <div class="detail-empty">
+            <p>No languages have been submitted yet.</p>
+            <p><a href="/languages/new">Be the first — build a language.</a></p>
+        </div>
+    }
+    else
+    {
+        <div class="content-type-grid">
+            @foreach (var lang in _items)
+            {
+                <a class="content-type-card" href="/content/language/@lang.Slug">
+                    <span class="card-label">@(lang.DisplayName ?? lang.Slug)</span>
+                    <span class="card-desc">@lang.TypeKey</span>
+                </a>
+            }
+        </div>
+
+        @if (_totalCount > _pageSize)
+        {
+            <div class="pagination" style="margin-top:1rem;">
+                <button disabled="@(_page <= 1)" @onclick="PrevPage">‹ Prev</button>
+                <span>@_page / @TotalPages</span>
+                <button disabled="@(_page >= TotalPages)" @onclick="Next">Next ›</button>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<ContentSummaryDto> _items = [];
+    private int _totalCount;
+    private int _page     = 1;
+    private int _pageSize = 24;
+    private string _search = string.Empty;
+    private bool _loading  = true;
+
+    private int TotalPages => (int)Math.Ceiling(_totalCount / (double)_pageSize);
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? string.Empty;
+        _page   = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPage() { _page--; await LoadAsync(); }
+    private async Task Next()     { _page++; await LoadAsync(); }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var result = await Api.BrowseContentAsync("language", _search, _page, _pageSize);
+        _items      = [.. result.Items];
+        _totalCount = result.TotalCount;
+        _loading    = false;
+    }
+}

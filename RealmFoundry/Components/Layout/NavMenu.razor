@@ -10,6 +10,9 @@
     <NavLink class="nav-item" href="content">
         Content
     </NavLink>
+    <NavLink class="nav-item" href="languages">
+        Languages
+    </NavLink>
     <NavLink class="nav-item" href="submissions">
         Submissions
     </NavLink>
@@ -18,6 +21,12 @@
 
     @if (AuthState.IsLoggedIn)
     {
+        @if (AuthState.HasPermission("manage_content"))
+        {
+            <NavLink class="nav-item" href="editorial/patch-notes">Patch Notes</NavLink>
+            <NavLink class="nav-item" href="editorial/lore">Lore</NavLink>
+            <NavLink class="nav-item" href="editorial/announcements">Announcements</NavLink>
+        }
         @if (AuthState.IsAdmin)
         {
             <NavLink class="nav-item" href="admin">Admin</NavLink>

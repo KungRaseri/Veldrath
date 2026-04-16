@@ -218,6 +218,22 @@ public record ZoneLocationDto(string Slug, string DisplayName, string TypeKey,
     string ZoneId, int RarityWeight, int? MinLevel, int? MaxLevel,
     bool IsHidden = false);
 
+// Language
+/// <summary>A constructed or natural language catalog entry — phonology, morphology, and lexicon.</summary>
+/// <param name="Slug">URL-safe identifier.</param>
+/// <param name="DisplayName">Human-readable language name (e.g. "Calethic", "Elvish").</param>
+/// <param name="TypeKey">Language family key (e.g. "imperial", "elven", "orcish").</param>
+/// <param name="TonalCharacter">One-line characterisation of the language's sound and feel.</param>
+/// <param name="Description">Short description of the language's origins and in-world usage.</param>
+/// <param name="RarityWeight">Selection weight for random draws.</param>
+public record LanguageDto(
+    string Slug,
+    string DisplayName,
+    string TypeKey,
+    string? TonalCharacter,
+    string? Description,
+    int RarityWeight);
+
 // Dialogue
 /// <summary>A dialogue catalog entry belonging to a speaker type.</summary>
 /// <param name="Slug">URL-safe identifier.</param>

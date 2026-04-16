@@ -70,12 +70,17 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
         {
             RemoveDbContextRegistrations<ApplicationDbContext>(services);
             RemoveDbContextRegistrations<ContentDbContext>(services);
+            RemoveDbContextRegistrations<EditorialDbContext>(services);
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite(ConnStr)
                        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
             services.AddDbContext<ContentDbContext>(options =>
+                options.UseSqlite(ConnStr)
+                       .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+
+            services.AddDbContext<EditorialDbContext>(options =>
                 options.UseSqlite(ConnStr)
                        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
@@ -106,6 +111,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
         // EnsureCreated is a no-op once any tables exist in the shared SQLite in-memory
         // database, so call CreateTables directly to create ContentDbContext's schema.
         sp.GetRequiredService<ContentDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
+        sp.GetRequiredService<EditorialDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
 
         return host;
     }

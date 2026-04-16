@@ -39,6 +39,12 @@ public class Species
     public int BonusCharisma { get; set; } = 0;
 
     /// <summary>
+    /// Slug of the language natively spoken by this species, if any.
+    /// Soft reference — no FK constraint; <c>null</c> means no language is linked.
+    /// </summary>
+    public string? NativeLanguageSlug { get; set; }
+
+    /// <summary>
     /// Applies this species' stat bonuses to <paramref name="character"/> additively.
     /// Only non-zero bonuses modify the character.
     /// </summary>

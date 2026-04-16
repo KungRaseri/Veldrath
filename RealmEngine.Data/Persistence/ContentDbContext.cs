@@ -55,6 +55,8 @@ public class ContentDbContext : DbContext
     public DbSet<ZoneLocation> ZoneLocations => Set<ZoneLocation>();
     /// <summary>NPC dialogue trees.</summary>
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
+    /// <summary>Constructed and natural language definitions — phonology, morphology, and lexicon.</summary>
+    public DbSet<Language> Languages => Set<Language>();
 
     // Junction tables
     /// <summary>Many-to-many: species ↔ innate powers.</summary>

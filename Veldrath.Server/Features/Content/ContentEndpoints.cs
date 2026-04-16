@@ -183,6 +183,7 @@ public static class ContentEndpoints
             "organization"     => await BrowseSet(db.Organizations,      type, search, resolvedPage, resolvedPageSize, ct),
             "zonelocation"    => await BrowseSet(db.ZoneLocations,     type, search, resolvedPage, resolvedPageSize, ct),
             "dialogue"         => await BrowseSet(db.Dialogues,          type, search, resolvedPage, resolvedPageSize, ct),
+            "language"         => await BrowseSet(db.Languages,          type, search, resolvedPage, resolvedPageSize, ct),
             _                  => null,
         };
 
@@ -247,6 +248,7 @@ public static class ContentEndpoints
             "organization"     => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "zonelocation"    => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "dialogue"         => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "language"         => await db.Languages.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             _                  => null,
         };
 

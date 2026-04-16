@@ -2,6 +2,7 @@
 using Veldrath.Contracts.Auth;
 using Veldrath.Contracts.Admin;
 using Veldrath.Contracts.Content;
+using Veldrath.Contracts.Editorial;
 using Veldrath.Contracts.Foundry;
 using Veldrath.Contracts.Players;
 
@@ -555,6 +556,164 @@ public class RealmFoundryApiClient(HttpClient http)
         var resp = await http.PostAsJsonAsync("/api/reports", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    // ── Editorial (manage_content permission) ────────────────────────────────
+
+    /// <summary>Returns a paged list of all patch notes (including drafts) for admin management.</summary>
+    public async Task<PagedResult<PatchNoteSummaryDto>?> GetAllPatchNotesAsync(int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/editorial/admin/patch-notes?page={page}&pageSize={pageSize}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedResult<PatchNoteSummaryDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Returns the full detail for a single patch note by ID.</summary>
+    public async Task<PatchNoteDto?> GetPatchNoteAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/editorial/admin/patch-notes/{id}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct)
+            : null;
+    }
+
+    /// <summary>Creates a new patch note.</summary>
+    public async Task<(PatchNoteDto? Dto, string? Error)> CreatePatchNoteAsync(CreatePatchNoteRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/editorial/admin/patch-notes", request, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Updates an existing patch note.</summary>
+    public async Task<(PatchNoteDto? Dto, string? Error)> UpdatePatchNoteAsync(Guid id, UpdatePatchNoteRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync($"/api/editorial/admin/patch-notes/{id}", request, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Toggles the publish status of a patch note (Draft ↔ Published).</summary>
+    public async Task<(PatchNoteDto? Dto, string? Error)> PublishPatchNoteAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"/api/editorial/admin/patch-notes/{id}/publish", null, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Deletes a patch note.</summary>
+    public async Task<(bool Ok, string? Error)> DeletePatchNoteAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/editorial/admin/patch-notes/{id}", ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Returns a paged list of all lore articles (including drafts) for admin management.</summary>
+    public async Task<PagedResult<LoreArticleSummaryDto>?> GetAllLoreArticlesAsync(int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/editorial/admin/lore?page={page}&pageSize={pageSize}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedResult<LoreArticleSummaryDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Returns the full detail for a single lore article by ID.</summary>
+    public async Task<LoreArticleDto?> GetLoreArticleAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/editorial/admin/lore/{id}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct)
+            : null;
+    }
+
+    /// <summary>Creates a new lore article.</summary>
+    public async Task<(LoreArticleDto? Dto, string? Error)> CreateLoreArticleAsync(CreateLoreArticleRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/editorial/admin/lore", request, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Updates an existing lore article.</summary>
+    public async Task<(LoreArticleDto? Dto, string? Error)> UpdateLoreArticleAsync(Guid id, UpdateLoreArticleRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync($"/api/editorial/admin/lore/{id}", request, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Toggles the publish status of a lore article (Draft ↔ Published).</summary>
+    public async Task<(LoreArticleDto? Dto, string? Error)> PublishLoreArticleAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"/api/editorial/admin/lore/{id}/publish", null, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Deletes a lore article.</summary>
+    public async Task<(bool Ok, string? Error)> DeleteLoreArticleAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/editorial/admin/lore/{id}", ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Returns a paged list of all announcements (including drafts) for admin management.</summary>
+    public async Task<PagedResult<EditorialAnnouncementDto>?> GetAllAnnouncementsAsync(int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/editorial/admin/announcements?page={page}&pageSize={pageSize}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<PagedResult<EditorialAnnouncementDto>>(ct)
+            : null;
+    }
+
+    /// <summary>Returns the full detail for a single editorial announcement by ID.</summary>
+    public async Task<EditorialAnnouncementDto?> GetAnnouncementAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync($"/api/editorial/admin/announcements/{id}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct)
+            : null;
+    }
+
+    /// <summary>Creates a new editorial announcement.</summary>
+    public async Task<(EditorialAnnouncementDto? Dto, string? Error)> CreateAnnouncementAsync(CreateAnnouncementRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/editorial/admin/announcements", request, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Updates an existing editorial announcement.</summary>
+    public async Task<(EditorialAnnouncementDto? Dto, string? Error)> UpdateAnnouncementAsync(Guid id, UpdateAnnouncementRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync($"/api/editorial/admin/announcements/{id}", request, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Toggles the publish status of an editorial announcement (Draft ↔ Published).</summary>
+    public async Task<(EditorialAnnouncementDto? Dto, string? Error)> PublishAnnouncementAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"/api/editorial/admin/announcements/{id}/publish", null, ct);
+        if (resp.IsSuccessStatusCode)
+            return (await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct), null);
+        return (null, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Deletes an editorial announcement.</summary>
+    public async Task<(bool Ok, string? Error)> DeleteAnnouncementAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/editorial/admin/announcements/{id}", ct);
+        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 }
 

@@ -61,13 +61,13 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
 
     // GET /api/content/schema
     [Fact]
-    public async Task GetSchema_Returns_All_20_Types()
+    public async Task GetSchema_Returns_All_21_Types()
     {
         var response = await _client.GetAsync("/api/content/schema");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var types = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
-        types.Should().HaveCount(20);
+        types.Should().HaveCount(21);
     }
 
     [Fact]
@@ -256,6 +256,36 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
 
         // Spot-check that the known root field is camelCase
         detail!.Payload.TryGetProperty("slug", out _).Should().BeTrue();
+    }
+
+    // GET /api/content/schema — language type
+    [Fact]
+    public async Task GetSchema_Contains_Language_Type()
+    {
+        var response = await _client.GetAsync("/api/content/schema");
+        var types    = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
+        var keys     = types!.Select(t => t.ContentType).ToHashSet();
+
+        keys.Should().Contain("language");
+    }
+
+    // GET /api/content/browse — language type
+    [Fact]
+    public async Task Browse_Returns_OK_For_Language_Type()
+    {
+        var response = await _client.GetAsync("/api/content/browse?type=language");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Browse_Language_Returns_Empty_Paged_Result_When_No_Languages_Seeded()
+    {
+        var response = await _client.GetAsync("/api/content/browse?type=language");
+        var result   = await response.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>();
+
+        result.Should().NotBeNull();
+        result!.Page.Should().Be(1);
     }
 
     // Helpers

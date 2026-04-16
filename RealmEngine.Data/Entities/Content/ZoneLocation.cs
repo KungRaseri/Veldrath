@@ -9,6 +9,12 @@ public class ZoneLocation : ContentBase
     /// <summary>The Zone this location belongs to (loose cross-context reference).</summary>
     public string ZoneId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Slug of the language predominantly spoken at this location, if any.
+    /// Soft reference — no FK constraint; <c>null</c> means no language is linked.
+    /// </summary>
+    public string? DominantLanguageSlug { get; set; }
+
     /// <summary>Size, danger, and level-range statistics.</summary>
     public ZoneLocationStats Stats { get; set; } = new();
     /// <summary>Boolean trait flags classifying this location.</summary>

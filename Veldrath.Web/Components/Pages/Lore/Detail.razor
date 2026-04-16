@@ -1,0 +1,49 @@
+@page "/lore/{Slug}"
+@inject VeldrathApiClient Api
+@using Markdig
+@using Microsoft.AspNetCore.Components
+@using Veldrath.Contracts.Editorial
+
+<PageTitle>@(_article?.Title ?? "Lore") — Veldrath</PageTitle>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (_article is null)
+{
+    <h1>Not Found</h1>
+    <p>That article doesn't exist or hasn't been published yet.</p>
+    <a href="/lore">← Back to Lore</a>
+}
+else
+{
+    <article class="editorial-article">
+        <header class="article-header">
+            <a class="back-link" href="/lore">← World Lore</a>
+            <div class="lore-category">@_article.Category</div>
+            <h1>@_article.Title</h1>
+        </header>
+        <div class="article-body markdown-content">
+            @((MarkupString)_html)
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private LoreArticleDto? _article;
+    private string _html = "";
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading  = true;
+        _article  = await Api.GetLoreArticleAsync(Slug);
+        _html     = _article is not null
+            ? Markdown.ToHtml(_article.Content, new MarkdownPipelineBuilder().UseAdvancedExtensions().Build())
+            : "";
+        _loading  = false;
+    }
+}
