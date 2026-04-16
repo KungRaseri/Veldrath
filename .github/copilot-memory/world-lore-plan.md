@@ -56,7 +56,7 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 - The Unbound (Aethori ceremonial) → *Thaelornvael* (the enduring illuminating presence that unmakes)
 - Aethori full title → *Thornkaelaethori* (the great-compact-witnessing keepers)
 - Aetheld (Ashlen Wood) | Greveld (Grevenmire) | Korrveld (Droveway) | Kaeldor (Halrow) | Dornkeld (Drowning Pits) | Korreldh (Crestfall waypoint)
-- Vaelreld (Varenmark Calethic form) | Kaeltheld (The Wound) | Veldrath confirmed as vel+vrath
+- Vaelren (Varenmark Calethic form: vael+vren, V-drop junction) | Kaeltheld (The Wound) | Veldrath confirmed as vel+vrath
 - Vraen confirmed as intact Calethic: vren+–ael (frontier-sworn military order)
 
 ---
