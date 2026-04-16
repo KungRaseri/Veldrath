@@ -275,4 +275,26 @@ public class InMemoryStubRepositoryTests
              .And.Contain("Shadow Assassin")
              .And.Contain("Arcane Scholar");
     }
+
+    // InMemoryLanguageRepository
+    [Fact]
+    public async Task LanguageRepository_GetAllAsync_ReturnsEmptyList()
+    {
+        var repo = new InMemoryLanguageRepository();
+        (await repo.GetAllAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task LanguageRepository_GetBySlugAsync_ReturnsNull()
+    {
+        var repo = new InMemoryLanguageRepository();
+        (await repo.GetBySlugAsync("calethic")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LanguageRepository_GetByTypeKeyAsync_ReturnsEmptyList()
+    {
+        var repo = new InMemoryLanguageRepository();
+        (await repo.GetByTypeKeyAsync("imperial")).Should().BeEmpty();
+    }
 }

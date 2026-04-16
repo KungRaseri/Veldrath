@@ -335,6 +335,7 @@ try
     builder.Services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();
     builder.Services.AddScoped<IMaterialPropertyRepository, EfCoreMaterialPropertyRepository>();
     builder.Services.AddScoped<ITraitDefinitionRepository, EfCoreTraitDefinitionRepository>();
+    builder.Services.AddScoped<ILanguageRepository, EfCoreLanguageRepository>();
 
     // Version compatibility — MinCompatibleClientVersion is stamped into appsettings.Production.json
     // at Release publish time by the MSBuild target in Veldrath.Server.csproj.
