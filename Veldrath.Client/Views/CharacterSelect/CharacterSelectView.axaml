@@ -101,7 +101,7 @@
                                                                FontWeight="SemiBold" />
                                                 </Border>
                                                 <!-- HC badge — only visible for hardcore characters -->
-                                                <Border Background="#8B0000"
+                                                <Border Background="{DynamicResource GameDangerMutedBrush}"
                                                         CornerRadius="4"
                                                         Padding="4,2"
                                                         VerticalAlignment="Center"

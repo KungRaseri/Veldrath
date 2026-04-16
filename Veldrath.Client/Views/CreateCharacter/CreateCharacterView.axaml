@@ -12,7 +12,7 @@
     <Grid RowDefinitions="Auto,*">
         <!-- Top bar -->
         <Border Grid.Row="0"
-                Background="#2c1010"
+                Background="{DynamicResource GameAccentMutedBrush}"
                 Padding="24,12">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="New Character"

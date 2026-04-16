@@ -39,7 +39,7 @@
                              FontSize="15" />
                     <TextBlock Text="{Binding NameValidationError}"
                                FontSize="12"
-                               Foreground="#ff6b6b"
+                               Foreground="{DynamicResource GameDangerBrush}"
                                IsVisible="{Binding NameValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                Margin="0,2,0,0" />
                 </StackPanel>
@@ -74,11 +74,11 @@
                               HorizontalAlignment="Stretch"
                               Height="44"
                               FontSize="15" />
-                    <Border Background="#1a1a2e" CornerRadius="6" Padding="12,10" Margin="0,4,0,0"
+                    <Border Background="{DynamicResource GameBackground3Brush}" CornerRadius="6" Padding="12,10" Margin="0,4,0,0"
                             IsVisible="{Binding SelectedSpeciesDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <TextBlock Text="{Binding SelectedSpeciesDescription}"
                                    FontSize="13"
-                                   Foreground="#c0c0d0"
+                                   Foreground="{DynamicResource GameTextSecondaryBrush}"
                                    TextWrapping="Wrap" />
                     </Border>
                 </StackPanel>
@@ -94,11 +94,11 @@
                               HorizontalAlignment="Stretch"
                               Height="44"
                               FontSize="15" />
-                    <Border Background="#1a1a2e" CornerRadius="6" Padding="12,10" Margin="0,4,0,0"
+                    <Border Background="{DynamicResource GameBackground3Brush}" CornerRadius="6" Padding="12,10" Margin="0,4,0,0"
                             IsVisible="{Binding SelectedBackgroundDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <TextBlock Text="{Binding SelectedBackgroundDescription}"
                                    FontSize="13"
-                                   Foreground="#c0c0d0"
+                                   Foreground="{DynamicResource GameTextSecondaryBrush}"
                                    TextWrapping="Wrap" />
                     </Border>
                 </StackPanel>

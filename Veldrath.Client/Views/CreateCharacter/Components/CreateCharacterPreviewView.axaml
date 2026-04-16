@@ -7,7 +7,7 @@
              x:Class="Veldrath.Client.Views.CreateCharacterPreviewView"
              x:DataType="vm:CreateCharacterViewModel">
 
-    <Border Background="#1c1c1e"
+    <Border Background="{DynamicResource GameBackground2Brush}"
             Padding="32">
         <StackPanel Spacing="12" VerticalAlignment="Center">
             <TextBlock Text="Character Preview"

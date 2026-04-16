@@ -12,7 +12,7 @@
         Width="1280" Height="720"
         MinWidth="1024" MinHeight="600"
         WindowStartupLocation="CenterScreen"
-        Background="#0a0a0f"
+        Background="{DynamicResource GameBackground0Brush}"
         WindowState="{Binding WindowState}">
 
     <Design.DataContext>
@@ -24,12 +24,12 @@
 
         <!-- Server offline banner — collapses to zero height when server is online -->
         <Border Grid.Row="0"
-                Background="#8B1A1A"
+                Background="{DynamicResource GameDangerMutedBrush}"
                 IsVisible="{Binding !IsServerOnline}"
                 Padding="12,6">
             <TextBlock Text="{Binding ServerStatusMessage}"
                        HorizontalAlignment="Center"
-                       Foreground="#FFCCCC"
+                       Foreground="{DynamicResource GameDangerBrush}"
                        FontSize="12"
                        FontWeight="SemiBold" />
         </Border>
