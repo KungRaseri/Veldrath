@@ -55,7 +55,7 @@ namespace Veldrath.Server.Data.Migrations.Editorial
 
                     b.HasKey("Id");
 
-                    b.ToTable("Announcements");
+                    b.ToTable("EditorialAnnouncements");
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.Editorial.LoreArticle", b =>

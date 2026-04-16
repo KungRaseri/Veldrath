@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Veldrath.Server.Data.Entities.Editorial;
 
 namespace Veldrath.Server.Data;
@@ -49,9 +50,26 @@ public class EditorialDbContext : DbContext
 
         modelBuilder.Entity<EditorialAnnouncement>(e =>
         {
+            e.ToTable("EditorialAnnouncements");
             e.HasKey(x => x.Id);
             e.Property(x => x.Title).HasMaxLength(300).IsRequired();
             e.Property(x => x.Body).HasMaxLength(1000).IsRequired();
         });
+
+        // SQLite does not support DateTimeOffset in ORDER BY clauses.
+        // When running under SQLite (test environments), apply a string converter
+        // so that ISO-8601 string comparison gives the same ordering as date comparison.
+        if (Database.ProviderName?.EndsWith("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var converter = new DateTimeOffsetToStringConverter();
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties()
+                    .Where(p => p.ClrType == typeof(DateTimeOffset) || p.ClrType == typeof(DateTimeOffset?)))
+                {
+                    property.SetValueConverter(converter);
+                }
+            }
+        }
     }
 }
