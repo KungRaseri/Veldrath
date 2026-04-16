@@ -6,6 +6,7 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Content;
 using Veldrath.Contracts.Foundry;
+using SharedLanguage    = RealmEngine.Shared.Models.Language;
 using SharedPower       = RealmEngine.Shared.Models.Power;
 using SharedQuest       = RealmEngine.Shared.Models.Quest;
 using SharedRecipe      = RealmEngine.Shared.Models.Recipe;
@@ -141,6 +142,10 @@ public static class ContentEndpoints
         // Trait Definitions
         group.MapGet("/traits",         GetTraitsAsync);
         group.MapGet("/traits/{key}",   GetTraitByKeyAsync);
+
+        // Languages
+        group.MapGet("/languages",          GetLanguagesAsync);
+        group.MapGet("/languages/{slug}",   GetLanguageBySlugAsync);
 
         return app;
     }
@@ -682,4 +687,22 @@ public static class ContentEndpoints
 
     private static TraitDefinitionDto ToTraitDefinitionDto(TraitDefinitionEntry t) =>
         new(t.Key, t.ValueType, t.Description, t.AppliesTo);
+
+    // Languages
+    private static async Task<IResult> GetLanguagesAsync(ILanguageRepository repo, string? typeKey = null)
+    {
+        var items = typeKey is not null
+            ? await repo.GetByTypeKeyAsync(typeKey)
+            : await repo.GetAllAsync();
+        return Results.Ok(items.Select(ToLanguageDto));
+    }
+
+    private static async Task<IResult> GetLanguageBySlugAsync(string slug, ILanguageRepository repo)
+    {
+        var item = await repo.GetBySlugAsync(slug);
+        return item is null ? Results.NotFound() : Results.Ok(ToLanguageDto(item));
+    }
+
+    private static LanguageDto ToLanguageDto(SharedLanguage l) =>
+        new(l.Slug, l.DisplayName, l.TypeKey, l.TonalCharacter, l.Description, l.RarityWeight);
 }
