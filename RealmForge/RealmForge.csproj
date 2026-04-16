@@ -32,12 +32,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\RealmUI.Fonts\RealmUI.Fonts.csproj" />
         <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
         <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
         <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />        <ProjectReference Include="..\.\Veldrath.Contracts\Veldrath.Contracts.csproj" />    </ItemGroup>
 
     <ItemGroup>
         <AvaloniaResource Include="Resources\**" />
+        <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
 
     <ItemGroup>

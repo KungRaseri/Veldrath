@@ -14,14 +14,14 @@
         
         Control sections in this file:
         1.  Global / Window
-        2.  Typography (TextBlock classes)
-        3.  Button  — default, .accent, .danger, .ghost, .icon
+        2.  Typography (TextBlock classes) — .title, .lore, .mono, .accent, .success, .danger, .warning, .info
+        3.  Button  — default, .accent, .secondary, .danger, .ghost, .icon
         4.  TextBox (input fields)
         5.  ListBox / ListBoxItem
         6.  ComboBox
         7.  Border helpers — .card, .card-elevated, .separator, .panel-*
         8.  ScrollBar
-        9.  ProgressBar — default, .health, .mana, .xp
+        9.  ProgressBar — default, .health, .mana, .xp, .stamina, .danger
         10. CheckBox
         11. Slider
         12. TabControl / TabItem
@@ -40,9 +40,16 @@
                 TYPOGRAPHY TOKENS
             -->
 
-            <!--  Body font — Inter loaded via Avalonia.Fonts.Inter  -->
+            <!--  UI body font — Inter loaded via Avalonia.Fonts.Inter  -->
             <FontFamily x:Key="GameFontBody">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
-            <FontFamily x:Key="GameFontTitle">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
+            <!--  Display / heading font — Cinzel (embedded TTF)  -->
+            <FontFamily x:Key="GameFontTitle">avares://RealmUI.Fonts/Assets/Fonts#Cinzel</FontFamily>
+            <!--  Marquee font — Cinzel Decorative (splash / logo use only)  -->
+            <FontFamily x:Key="GameFontDisplay">avares://RealmUI.Fonts/Assets/Fonts#Cinzel Decorative</FontFamily>
+            <!--  Reading font — Lora (lore text, long-form descriptions)  -->
+            <FontFamily x:Key="GameFontReading">avares://RealmUI.Fonts/Assets/Fonts#Lora</FontFamily>
+            <!--  Monospace font — JetBrains Mono (stat tables, keys, identifiers)  -->
+            <FontFamily x:Key="GameFontMono">avares://RealmUI.Fonts/Assets/Fonts#JetBrains Mono</FontFamily>
 
             <x:Double x:Key="GameFontSizeXSmall">11</x:Double>
             <x:Double x:Key="GameFontSizeSmall">12</x:Double>
@@ -50,6 +57,7 @@
             <x:Double x:Key="GameFontSizeSubtitle">16</x:Double>
             <x:Double x:Key="GameFontSizeTitle">20</x:Double>
             <x:Double x:Key="GameFontSizeTitleLarge">28</x:Double>
+            <x:Double x:Key="GameFontSizeHero">40</x:Double>
         </ResourceDictionary>
     </Styles.Resources>
 
@@ -87,6 +95,7 @@
 
     <!--  .title — large section headings  -->
     <Style Selector="TextBlock.title">
+        <Setter Property="FontFamily" Value="{DynamicResource GameFontTitle}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeTitle}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
@@ -94,9 +103,10 @@
 
     <!--  .title-large — splash screens, main menu  -->
     <Style Selector="TextBlock.title-large">
+        <Setter Property="FontFamily" Value="{DynamicResource GameFontTitle}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeTitleLarge}" />
         <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameAccentLightBrush}" />
     </Style>
 
     <!--  .subtitle — sub-headings, panel labels  -->
@@ -118,9 +128,9 @@
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeXSmall}" />
     </Style>
 
-    <!--  .accent — gold highlighted text (currency, important values)  -->
+    <!--  .accent — Seal Light highlighted text (currency, key values)  -->
     <Style Selector="TextBlock.accent">
-        <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameAccentLightBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
@@ -139,9 +149,23 @@
         <Setter Property="Foreground" Value="{DynamicResource GameWarningBrush}" />
     </Style>
 
-    <!--  .info — tooltips, lore text  -->
+    <!--  .info — tooltips, neutral notifications  -->
     <Style Selector="TextBlock.info">
         <Setter Property="Foreground" Value="{DynamicResource GameInfoBrush}" />
+    </Style>
+
+    <!--  .lore — in-game book text, flavour copy, long-form lore  -->
+    <Style Selector="TextBlock.lore">
+        <Setter Property="FontFamily" Value="{DynamicResource GameFontReading}" />
+        <Setter Property="FontSize" Value="{DynamicResource GameFontSizeBody}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
+    </Style>
+
+    <!--  .mono — stat keys, identifiers, schema values  -->
+    <Style Selector="TextBlock.mono">
+        <Setter Property="FontFamily" Value="{DynamicResource GameFontMono}" />
+        <Setter Property="FontSize" Value="{DynamicResource GameFontSizeSmall}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameTextSecondaryBrush}" />
     </Style>
 
 
@@ -233,6 +257,22 @@
 
     <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
+    </Style>
+
+    <!--  .secondary — Emberfall filled, for energy/combat actions  -->
+    <Style Selector="Button.secondary">
+        <Setter Property="Background" Value="{DynamicResource GameSecondaryAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameBackground0Brush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource GameSecondaryAccentDarkBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource GameSecondaryAccentLightBrush}" />
+    </Style>
+
+    <Style Selector="Button.secondary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource GameSecondaryAccentDarkBrush}" />
     </Style>
 
 
@@ -464,7 +504,13 @@
     </Style>
 
     <Style Selector="ProgressBar.xp">
-        <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource GameAccentLightBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="MinHeight" Value="12" />
+    </Style>
+
+    <Style Selector="ProgressBar.stamina">
+        <Setter Property="Foreground" Value="{DynamicResource GameSecondaryAccentBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="MinHeight" Value="12" />
     </Style>

@@ -5,5 +5,6 @@
              RequestedThemeVariant="Dark">
     <Application.Styles>
         <fac:FluentAvaloniaTheme />
+        <StyleInclude Source="avares://RealmForge/Assets/Themes/ForgeTheme.axaml" />
     </Application.Styles>
 </Application>

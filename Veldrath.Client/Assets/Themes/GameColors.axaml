@@ -24,23 +24,36 @@
 
 
     <!-- ============================================================
-         1. ACCENT / BRAND COLOR
-         Primary gold used for highlights, selections, active states,
+         1. ACCENT / BRAND COLOR — CRIMSON SEAL
+         Primary red used for highlights, selections, active states,
          XP bars, and interactive accents throughout the UI.
     ============================================================ -->
 
-    <Color x:Key="GameAccentColor">#C9A84C</Color>
-    <Color x:Key="GameAccentLightColor">#E8C76A</Color>
-    <Color x:Key="GameAccentDarkColor">#9B7E32</Color>
+    <Color x:Key="GameAccentColor">#C0392B</Color>
+    <Color x:Key="GameAccentLightColor">#E05545</Color>
+    <Color x:Key="GameAccentDarkColor">#8C2018</Color>
+    <Color x:Key="GameAccentMutedColor">#3D1A16</Color>
 
     <!-- FluentAvalonia reads these to tint its built-in controls -->
-    <Color x:Key="SystemAccentColor">#C9A84C</Color>
-    <Color x:Key="SystemAccentColorLight1">#D4B95C</Color>
-    <Color x:Key="SystemAccentColorLight2">#E8C76A</Color>
-    <Color x:Key="SystemAccentColorLight3">#F5D880</Color>
-    <Color x:Key="SystemAccentColorDark1">#9B7E32</Color>
-    <Color x:Key="SystemAccentColorDark2">#7A621E</Color>
-    <Color x:Key="SystemAccentColorDark3">#5C490F</Color>
+    <Color x:Key="SystemAccentColor">#C0392B</Color>
+    <Color x:Key="SystemAccentColorLight1">#CC4030</Color>
+    <Color x:Key="SystemAccentColorLight2">#E05545</Color>
+    <Color x:Key="SystemAccentColorLight3">#EF7060</Color>
+    <Color x:Key="SystemAccentColorDark1">#8C2018</Color>
+    <Color x:Key="SystemAccentColorDark2">#6A1610</Color>
+    <Color x:Key="SystemAccentColorDark3">#4A0F0A</Color>
+
+
+    <!-- ============================================================
+         1a. SECONDARY ACCENT / EMBERFALL
+         Warm orange-red for heat/energy/combat states, secondary CTAs,
+         stamina bars, and fire-aspected visual effects.
+    ============================================================ -->
+
+    <Color x:Key="GameSecondaryAccentColor">#CC4125</Color>
+    <Color x:Key="GameSecondaryAccentLightColor">#E05E35</Color>
+    <Color x:Key="GameSecondaryAccentDarkColor">#943018</Color>
+    <Color x:Key="GameSecondaryAccentMutedColor">#361A10</Color>
 
 
     <!-- ============================================================
@@ -150,7 +163,7 @@
     <!-- Stroke / border -->
     <Color x:Key="ControlStrokeColorDefault">#2A2B3D</Color>
     <Color x:Key="ControlStrokeColorSecondary">#3D3F58</Color>
-    <Color x:Key="ControlStrokeColorOnAccentDefault">#9B7E32</Color>
+    <Color x:Key="ControlStrokeColorOnAccentDefault">#8C2018</Color>
 
     <!-- Text fills -->
     <Color x:Key="TextFillColorPrimary">#F0EDE8</Color>
@@ -167,9 +180,15 @@
          a brush from its corresponding color token.
     ============================================================ -->
 
-    <SolidColorBrush x:Key="GameAccentBrush"          Color="{StaticResource GameAccentColor}" />
-    <SolidColorBrush x:Key="GameAccentLightBrush"      Color="{StaticResource GameAccentLightColor}" />
-    <SolidColorBrush x:Key="GameAccentDarkBrush"       Color="{StaticResource GameAccentDarkColor}" />
+    <SolidColorBrush x:Key="GameAccentBrush"               Color="{StaticResource GameAccentColor}" />
+    <SolidColorBrush x:Key="GameAccentLightBrush"           Color="{StaticResource GameAccentLightColor}" />
+    <SolidColorBrush x:Key="GameAccentDarkBrush"            Color="{StaticResource GameAccentDarkColor}" />
+    <SolidColorBrush x:Key="GameAccentMutedBrush"           Color="{StaticResource GameAccentMutedColor}" />
+
+    <SolidColorBrush x:Key="GameSecondaryAccentBrush"      Color="{StaticResource GameSecondaryAccentColor}" />
+    <SolidColorBrush x:Key="GameSecondaryAccentLightBrush" Color="{StaticResource GameSecondaryAccentLightColor}" />
+    <SolidColorBrush x:Key="GameSecondaryAccentDarkBrush"  Color="{StaticResource GameSecondaryAccentDarkColor}" />
+    <SolidColorBrush x:Key="GameSecondaryAccentMutedBrush" Color="{StaticResource GameSecondaryAccentMutedColor}" />
 
     <SolidColorBrush x:Key="GameBackground0Brush"      Color="{StaticResource GameBackground0Color}" />
     <SolidColorBrush x:Key="GameBackground1Brush"      Color="{StaticResource GameBackground1Color}" />

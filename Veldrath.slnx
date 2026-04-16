@@ -1,4 +1,5 @@
 ﻿<Solution>
+  <Project Path="RealmUI.Fonts/RealmUI.Fonts.csproj" />
   <Project Path="Veldrath.Assets/Veldrath.Assets.csproj" />
   <Project Path="Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj" />
   <Project Path="Veldrath.Contracts/Veldrath.Contracts.csproj" />
