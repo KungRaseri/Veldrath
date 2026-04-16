@@ -3,8 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Veldrath.Contracts.Editorial;
-using Veldrath.Contracts.Foundry;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Tests.Infrastructure;
 
