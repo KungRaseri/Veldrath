@@ -1,0 +1,109 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject AuthStateService AuthState
+@inject NavigationManager Nav
+@inject IHttpContextAccessor HttpContextAccessor
+@inject PersistentComponentState ApplicationState
+@inject VeldrathApiClient Api
+
+<div class="layout">
+    <header class="site-header">
+        <a class="brand" href="/">Veldrath</a>
+        <NavMenu />
+    </header>
+    <main class="site-content">
+        @Body
+    </main>
+    <footer class="site-footer">
+        <p>&copy; Veldrath. All rights reserved.</p>
+    </footer>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <span class="dismiss">&#x2715;</span>
+</div>
+
+@code {
+    private PersistingComponentStateSubscription _subscription;
+
+    protected override void OnInitialized()
+        => AuthState.OnChange += OnAuthStateChanged;
+
+    private void OnAuthStateChanged()
+        => InvokeAsync(StateHasChanged);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext;
+
+        if (ctx is not null)
+        {
+            // SSR prerender pass — HttpContext is available.
+            // The rt cookie is now scoped to .veldrath.com, so it is visible to both
+            // veldrath.com and foundry.veldrath.com without a second login.
+            var rt = ctx.Request.Cookies["rt"];
+            if (!string.IsNullOrEmpty(rt))
+            {
+                var renewed = await Api.RenewJwtAsync(rt);
+                if (renewed is not null)
+                {
+                    var authResponse = new Veldrath.Contracts.Auth.AuthResponse(
+                        renewed.AccessToken,
+                        rt,
+                        renewed.AccessTokenExpiry,
+                        renewed.AccountId,
+                        renewed.Username,
+                        renewed.Roles,
+                        renewed.Permissions,
+                        renewed.IsCurator,
+                        renewed.SessionId);
+
+                    _subscription = ApplicationState.RegisterOnPersisting(() =>
+                    {
+                        ApplicationState.PersistAsJson("auth", authResponse);
+                        return Task.CompletedTask;
+                    });
+
+                    await AuthState.SetTokensAsync(authResponse);
+                    Api.SetBearerToken(renewed.AccessToken);
+                }
+            }
+
+            AuthState.MarkReady();
+            return;
+        }
+
+        // Interactive circuit pass — restore auth from the persisted SSR JSON.
+        if (ApplicationState.TryTakeFromJson<Veldrath.Contracts.Auth.AuthResponse>("auth", out var persisted)
+            && persisted is not null)
+        {
+            await AuthState.SetTokensAsync(persisted);
+            Api.SetBearerToken(persisted.AccessToken);
+        }
+
+        AuthState.MarkReady();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        // Proactively refresh the JWT when the user navigates and the token is nearing expiry.
+        if (AuthState.IsLoggedIn)
+            await AuthState.TryRefreshAsync(Api);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        AuthState.OnChange    -= OnAuthStateChanged;
+        Nav.LocationChanged   -= OnLocationChanged;
+        _subscription.Dispose();
+    }
+}

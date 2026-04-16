@@ -52,10 +52,9 @@
     {
         // PublicServerUrl is the browser-reachable address; ServerUrl may be an internal Docker hostname.
         var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
-        // The server will append ?code=&aid= to this URL after a successful OAuth exchange.
-        // The /auth/start-session endpoint reads those params, sets the rt HttpOnly cookie,
-        // and redirects to / so the next SSR pass can restore auth via PersistingAuthState.
-        var callbackBase = Nav.BaseUri.TrimEnd('/') + "/auth/start-session";
+        // The server's /api/auth/session endpoint exchanges the code, sets the cross-subdomain
+        // rt cookie, and redirects back to this app via the redirectTo param.
+        var callbackBase = $"{serverUrl}/api/auth/session?redirectTo={Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/")}";
 
         _discordUrl   = $"{serverUrl}/api/auth/external/discord?returnUrl={Uri.EscapeDataString(callbackBase)}";
         _googleUrl    = $"{serverUrl}/api/auth/external/google?returnUrl={Uri.EscapeDataString(callbackBase)}";

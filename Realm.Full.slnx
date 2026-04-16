@@ -18,4 +18,6 @@
   <Project Path="Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj" />
   <Project Path="RealmFoundry/RealmFoundry.csproj" />
   <Project Path="RealmFoundry.Tests/RealmFoundry.Tests.csproj" />
+  <Project Path="Veldrath.Web/Veldrath.Web.csproj" />
+  <Project Path="Veldrath.Web.Tests/Veldrath.Web.Tests.csproj" />
 </Solution>

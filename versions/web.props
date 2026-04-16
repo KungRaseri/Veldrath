@@ -1,0 +1,7 @@
+<Project>
+  <!-- Veldrath.Web: Main public website -->
+  <PropertyGroup>
+    <VersionMajor>0</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+  </PropertyGroup>
+</Project>

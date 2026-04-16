@@ -97,50 +97,20 @@ try
     // Minimal API endpoints for cookie-based auth persistence.
     // These run server-side outside the Blazor circuit, so HttpContext is available.
 
-    // Redeems a server-issued exchange code, writes the refresh token as an HttpOnly
-    // cookie, then redirects to returnUrl.  The Blazor circuit's PersistingAuthState
-    // component will read and apply the cookie on the next SSR pass.
-    app.MapGet("/auth/start-session", async (
-        string? code,
-        Guid? aid,
-        string? returnUrl,
-        RealmFoundryApiClient api,
-        HttpContext ctx,
-        IWebHostEnvironment env) =>
-    {
-        if (string.IsNullOrWhiteSpace(code) || !aid.HasValue)
-            return Results.Redirect("/login?error=auth_failed");
-
-        var response = await api.ExchangeCodeAsync(code, aid.Value);
-        if (response is null)
-            return Results.Redirect("/login?error=auth_failed");
-
-        ctx.Response.Cookies.Append("rt", response.RefreshToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure   = !env.IsDevelopment(),
-            SameSite = SameSiteMode.Strict,
-            MaxAge   = TimeSpan.FromDays(30),
-            Path     = "/"
-        });
-
-        // Redirect to the requested page (provider-link flow) or to /profile so
-        // the user lands somewhere they can clearly see they are now logged in.
-        var destination = !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
-            ? returnUrl : "/";
-        return Results.Redirect(destination);
-    });
-
     // Revokes the refresh token stored in the cookie (server-side), deletes the cookie,
     // then redirects to /.  Called via forceLoad navigation so the circuit is torn down
     // and no stale auth state lingers in memory.
-    app.MapGet("/auth/sign-out", async (HttpContext ctx, RealmFoundryApiClient api) =>
+    app.MapGet("/auth/sign-out", async (HttpContext ctx, RealmFoundryApiClient api, IConfiguration config) =>
     {
         var rt = ctx.Request.Cookies["rt"];
         if (rt is not null)
         {
             await api.LogoutAsync(rt);
-            ctx.Response.Cookies.Delete("rt", new CookieOptions { Path = "/" });
+            var cookieDomain  = config["Auth:CookieDomain"];
+            var deleteOptions = new CookieOptions { Path = "/" };
+            if (!string.IsNullOrWhiteSpace(cookieDomain))
+                deleteOptions.Domain = cookieDomain;
+            ctx.Response.Cookies.Delete("rt", deleteOptions);
         }
         return Results.Redirect("/");
     });

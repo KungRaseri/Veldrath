@@ -54,6 +54,8 @@ public static class ExternalAuthEndpoints
                        ?? principal.FindFirstValue("sub");
         var clientIp    = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
+        var serverBaseUrl = $"{ctx.HttpContext.Request.Scheme}://{ctx.HttpContext.Request.Host}";
+
         // ── Link mode: attach provider to an existing authenticated account ────
         string? mode = null;
         string? accountIdStr = null;
@@ -77,33 +79,31 @@ public static class ExternalAuthEndpoints
             ctx.Properties?.Items.TryGetValue("returnUrl", out linkReturnUrl);
 
             // Issue a fresh session so the Blazor circuit on the callback page has live tokens.
-            // Redirect via /auth/callback (the exchange-code path) rather than directly to the
-            // profile page; this lets AuthCallback.razor reseed AuthStateService before doing
-            // an in-process Nav.NavigateTo that keeps the circuit alive.
+            // Route through the shared session endpoint so the rt cookie is set with the
+            // cross-subdomain domain before redirecting back to the originating application.
             var session = await authSvc.CreateSessionAsync(linkTarget, clientIp);
             var code    = exchangeSvc.CreateCode(session, session.AccountId);
 
             if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase))
             {
-                // Derive the Foundry origin from the returnUrl so the redirect works across environments.
-                var returnUri    = new Uri(linkReturnUrl);
-                var callbackBase = $"{returnUri.Scheme}://{returnUri.Authority}";
-                var innerReturn  = Uri.EscapeDataString("/profile?linked=1");
+                var returnUri  = new Uri(linkReturnUrl);
+                var appBase    = $"{returnUri.Scheme}://{returnUri.Authority}";
+                var redirectTo = Uri.EscapeDataString($"{appBase}/profile?linked=1");
                 ctx.HandleResponse();
-                ctx.Response.Redirect($"{callbackBase}/auth/start-session?code={code}&aid={session.AccountId}&returnUrl={innerReturn}");
+                ctx.Response.Redirect($"{serverBaseUrl}/api/auth/session?code={code}&aid={session.AccountId}&redirectTo={redirectTo}");
             }
             else
             {
+                var fallback   = foundryBase?.TrimEnd('/') ?? "";
+                var redirectTo = Uri.EscapeDataString($"{fallback}/profile?linked=1");
                 ctx.HandleResponse();
-                ctx.Response.Redirect($"{foundryBase}/auth/start-session?code={code}&aid={session.AccountId}&returnUrl=%2Fprofile%3Flinked%3D1");
+                ctx.Response.Redirect($"{serverBaseUrl}/api/auth/session?code={code}&aid={session.AccountId}&redirectTo={redirectTo}");
             }
             return;
         }
 
         string? returnUrl = null;
         ctx.Properties?.Items.TryGetValue("returnUrl", out returnUrl);
-
-        var serverBaseUrl = $"{ctx.HttpContext.Request.Scheme}://{ctx.HttpContext.Request.Host}";
 
         var result = await authSvc.ExternalLoginOrRegisterAsync(
             ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp,
@@ -126,7 +126,9 @@ public static class ExternalAuthEndpoints
         }
 
         // Success — mint a single-use exchange code and redirect.
-        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase))
+        // The returnUrl now points to /api/auth/session on this server, which sets the
+        // cross-subdomain rt cookie before forwarding the browser to the originating app.
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl))
         {
             var code         = exchangeSvc.CreateCode(result.Response!, result.Response!.AccountId);
             var uriBuilder   = new UriBuilder(returnUrl);
@@ -154,10 +156,11 @@ public static class ExternalAuthEndpoints
             return Results.BadRequest("Unknown OAuth provider.");
 
         var foundryBase = context.RequestServices.GetRequiredService<IConfiguration>()["Foundry:BaseUrl"];
+        var serverBase  = $"{context.Request.Scheme}://{context.Request.Host}";
 
-        // returnUrl is the Avalonia client's local HTTP listener address;
-        // guard against open-redirect by restricting to localhost only.
-        if (returnUrl is not null && !IsAllowedReturnUrl(returnUrl, foundryBase))
+        // Guard against open redirect: only localhost, the Foundry origin, and this server's
+        // own origin (for the /api/auth/session callback) are accepted as a returnUrl.
+        if (returnUrl is not null && !IsAllowedReturnUrl(returnUrl, foundryBase, serverBase))
             return Results.BadRequest("Invalid return URL.");
 
         // After the provider redirects back, ASP.NET's OAuth handler completes the
@@ -213,7 +216,8 @@ public static class ExternalAuthEndpoints
 
         // If the caller provided a returnUrl (Avalonia desktop auth flow), redirect there
         // with an exchange code so the local HTTP listener can pick it up safely.
-        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase))
+        var serverBase = $"{context.Request.Scheme}://{context.Request.Host}";
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBase))
         {
             var code    = exchangeService.CreateCode(result.Response!, result.Response!.AccountId);
             var builder = new UriBuilder(returnUrl);
@@ -227,10 +231,10 @@ public static class ExternalAuthEndpoints
         return Results.Ok(result.Response);
     }
 
-    // Only localhost/127.0.0.1 and the configured Foundry origin are accepted as a returnUrl to
-    // prevent open-redirect attacks. <paramref name="foundryBaseUrl"/> is optional; when supplied,
-    // the origin of that URL is also permitted (production Foundry deployment).
-    internal static bool IsAllowedReturnUrl(string url, string? foundryBaseUrl = null)
+    // Only localhost/127.0.0.1, the configured Foundry origin, and an optional additional
+    // origin (e.g. the server's own base URL or Veldrath.Web) are accepted as a returnUrl to
+    // prevent open-redirect attacks.
+    internal static bool IsAllowedReturnUrl(string url, string? foundryBaseUrl = null, string? additionalBaseUrl = null)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             return false;
@@ -249,6 +253,14 @@ public static class ExternalAuthEndpoints
             && uri.Scheme.Equals(foundry.Scheme, StringComparison.OrdinalIgnoreCase)
             && uri.Host.Equals(foundry.Host, StringComparison.OrdinalIgnoreCase)
             && uri.Port == foundry.Port)
+            return true;
+
+        // Allow an additional configured origin (e.g. the server's own base URL or Veldrath.Web)
+        if (additionalBaseUrl is not null
+            && Uri.TryCreate(additionalBaseUrl, UriKind.Absolute, out var additional)
+            && uri.Scheme.Equals(additional.Scheme, StringComparison.OrdinalIgnoreCase)
+            && uri.Host.Equals(additional.Host, StringComparison.OrdinalIgnoreCase)
+            && uri.Port == additional.Port)
             return true;
 
         return false;

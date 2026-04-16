@@ -1,0 +1,216 @@
+name: CI - Web (Veldrath.Web)
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - 'Veldrath.Web/**'
+      - 'Veldrath.Web.Tests/**'
+      - 'Veldrath.Contracts/**'
+      - 'versions/web.props'
+      - 'Directory.Build.props'
+      - 'docker-compose.yml'
+      - '.github/workflows/ci-web.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Veldrath.Web/**'
+      - 'Veldrath.Web.Tests/**'
+      - 'Veldrath.Contracts/**'
+      - 'versions/web.props'
+      - 'Directory.Build.props'
+      - '.github/workflows/ci-web.yml'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  CONFIGURATION: 'Release'
+  PROPS_FILE: 'versions/web.props'
+  IMAGE_NAME: veldrath-web
+
+jobs:
+  build-and-test:
+    name: Build and Test Veldrath.Web
+    runs-on: ubuntu-latest
+
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore Veldrath.Web.Tests/Veldrath.Web.Tests.csproj
+
+    - name: Build
+      run: dotnet build Veldrath.Web.Tests/Veldrath.Web.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Test - Veldrath.Web.Tests
+      run: |
+        dotnet test Veldrath.Web.Tests/Veldrath.Web.Tests.csproj \
+          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal \
+          --collect "XPlat Code Coverage" --settings coverage.runsettings \
+          --logger "trx;LogFileName=web-tests.trx" \
+          --results-directory ./TestResults
+
+    - name: Install ReportGenerator
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+    - name: Generate coverage report
+      run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./CoverageReport/Cobertura.xml
+        flags: web
+        name: web-coverage
+        fail_ci_if_error: false
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-web
+        path: CoverageReport/
+        retention-days: 14
+
+    - name: Add coverage summary to PR
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: CoverageReport/SummaryGithub.md
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: TestResults/*.trx
+        check_name: Veldrath.Web Test Results
+
+  package:
+    name: Package Web Artifacts
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+      actions: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Generate version
+      id: version
+      run: |
+        $version = ./scripts/generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
+        $versionNoHash = $version -replace '-[^-]+$', ''
+        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "version-no-hash=$versionNoHash" >> $env:GITHUB_OUTPUT
+        Write-Output "Web version: $version"
+      shell: pwsh
+
+    - name: Restore and publish
+      run: |
+        VERSION="${{ steps.version.outputs.version-no-hash }}"
+        dotnet restore Veldrath.Web/Veldrath.Web.csproj
+        dotnet publish Veldrath.Web/Veldrath.Web.csproj \
+          --configuration ${{ env.CONFIGURATION }} \
+          --output ./publish/Veldrath-Web \
+          /p:Version=$VERSION /p:AssemblyVersion=$VERSION /p:FileVersion=$VERSION.0
+        cd ./publish && zip -r "../Veldrath-Web-$VERSION.zip" Veldrath-Web/
+        echo "Created Veldrath-Web-$VERSION.zip"
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set lowercase image registry path
+      id: image
+      run: |
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        echo "registry=ghcr.io/$OWNER/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Veldrath.Web/Dockerfile
+        push: true
+        tags: |
+          ${{ steps.image.outputs.registry }}:latest
+          ${{ steps.image.outputs.registry }}:${{ steps.version.outputs.version-no-hash }}
+        labels: |
+          org.opencontainers.image.version=${{ steps.version.outputs.version-no-hash }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-release-artifacts
+        path: Veldrath-Web-*.zip
+        retention-days: 7
+
+    - name: Create release tag
+      run: |
+        VERSION="${{ steps.version.outputs.version-no-hash }}"
+        TAG="web/v$VERSION"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag $TAG ${{ github.sha }}
+        git push origin $TAG
+        echo "Created tag: $TAG"
+
+    - name: Trigger release workflow
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG="web/v${{ steps.version.outputs.version-no-hash }}"
+        gh workflow run release.yml --ref main --field tag=$TAG
+        echo "Triggered release workflow for $TAG"
+
+  deploy:
+    name: Deploy to production
+    needs: package
+    if: false # temporarily disabled — remove this line when the VPS is ready
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service: web
+    secrets:
+      HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+      HETZNER_SSH_USER: ${{ secrets.HETZNER_SSH_USER }}
+      HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}

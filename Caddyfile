@@ -21,3 +21,21 @@ foundry.veldrath.com {
         lb_try_duration 30s
     }
 }
+
+# Main public website (Blazor Server)
+# Blazor Server requires sticky sessions — enforce with a cookie-based LB policy.
+veldrath.com {
+    reverse_proxy web:8082 {
+        lb_policy cookie {
+            name web_lb
+        }
+        lb_try_duration 30s
+    }
+}
+
+# Strapi CMS admin — content authors only; not public-facing.
+cms.veldrath.com {
+    reverse_proxy strapi:1337 {
+        lb_try_duration 30s
+    }
+}
