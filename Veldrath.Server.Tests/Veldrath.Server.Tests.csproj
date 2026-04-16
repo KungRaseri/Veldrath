@@ -25,6 +25,7 @@
     <Using Include="Veldrath.Contracts.Admin" />
     <Using Include="Veldrath.Contracts.Auth" />
     <Using Include="Veldrath.Contracts.Characters" />
+    <Using Include="Veldrath.Contracts.Editorial" />
     <Using Include="Veldrath.Contracts.Foundry" />
     <Using Include="Veldrath.Contracts.Players" />
     <Using Include="Veldrath.Contracts.Zones" />
