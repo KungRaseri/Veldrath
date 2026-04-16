@@ -12,7 +12,7 @@ namespace Veldrath.Server.Data.Migrations.Editorial
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Announcements",
+                name: "EditorialAnnouncements",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -26,7 +26,7 @@ namespace Veldrath.Server.Data.Migrations.Editorial
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Announcements", x => x.Id);
+                    table.PrimaryKey("PK_EditorialAnnouncements", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -88,7 +88,7 @@ namespace Veldrath.Server.Data.Migrations.Editorial
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Announcements");
+                name: "EditorialAnnouncements");
 
             migrationBuilder.DropTable(
                 name: "LoreArticles");

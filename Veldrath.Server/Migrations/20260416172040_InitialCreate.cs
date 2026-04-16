@@ -13,6 +13,24 @@ namespace Veldrath.Server.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AdminAuditEntries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ActorAccountId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ActorUsername = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    TargetAccountId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TargetUsername = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    Action = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    Details = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    OccurredAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminAuditEntries", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Announcements",
                 columns: table => new
                 {
@@ -53,6 +71,15 @@ namespace Veldrath.Server.Migrations
                     MaxCharacterSlots = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastSeenAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsBanned = table.Column<bool>(type: "boolean", nullable: false),
+                    BannedUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    BanReason = table.Column<string>(type: "text", nullable: true),
+                    WarnCount = table.Column<int>(type: "integer", nullable: false),
+                    IsMuted = table.Column<bool>(type: "boolean", nullable: false),
+                    MutedUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    MuteReason = table.Column<string>(type: "text", nullable: true),
+                    DisplayName = table.Column<string>(type: "text", nullable: true),
+                    Bio = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -83,6 +110,26 @@ namespace Veldrath.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GlobalStats", x => x.Key);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlayerReports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReporterCharacterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ReporterName = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    TargetCharacterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TargetName = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    SubmittedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    IsResolved = table.Column<bool>(type: "boolean", nullable: false),
+                    ResolvedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ResolvedByAccountId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlayerReports", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -279,6 +326,33 @@ namespace Veldrath.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PendingLinkTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
+                    LoginProvider = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ProviderKey = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    TokenHash = table.Column<string>(type: "text", nullable: false),
+                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    ReturnUrl = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    IsConfirmed = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PendingLinkTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PendingLinkTokens_AspNetUsers_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -460,33 +534,57 @@ namespace Veldrath.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ZoneSessions",
+                name: "PlayerSessions",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CharacterId = table.Column<Guid>(type: "uuid", nullable: false),
                     CharacterName = table.Column<string>(type: "text", nullable: false),
                     ConnectionId = table.Column<string>(type: "text", nullable: false),
-                    ZoneId = table.Column<string>(type: "character varying(64)", nullable: false),
+                    RegionId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ZoneId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    TileX = table.Column<int>(type: "integer", nullable: false),
+                    TileY = table.Column<int>(type: "integer", nullable: false),
                     EnteredAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastMovedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ZoneSessions", x => x.Id);
+                    table.PrimaryKey("PK_PlayerSessions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ZoneSessions_Characters_CharacterId",
+                        name: "FK_PlayerSessions_Characters_CharacterId",
                         column: x => x.CharacterId,
                         principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ZoneSessions_Zones_ZoneId",
+                        name: "FK_PlayerSessions_Regions_RegionId",
+                        column: x => x.RegionId,
+                        principalTable: "Regions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PlayerSessions_Zones_ZoneId",
                         column: x => x.ZoneId,
                         principalTable: "Zones",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminAuditEntries_ActorAccountId",
+                table: "AdminAuditEntries",
+                column: "ActorAccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminAuditEntries_OccurredAt",
+                table: "AdminAuditEntries",
+                column: "OccurredAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminAuditEntries_TargetAccountId",
+                table: "AdminAuditEntries",
+                column: "TargetAccountId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Announcements_IsActive_PublishedAt",
@@ -595,6 +693,54 @@ namespace Veldrath.Server.Migrations
                 column: "VoterId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PendingLinkTokens_AccountId",
+                table: "PendingLinkTokens",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PendingLinkTokens_TokenHash",
+                table: "PendingLinkTokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerReports_IsResolved",
+                table: "PlayerReports",
+                column: "IsResolved");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerReports_SubmittedAt",
+                table: "PlayerReports",
+                column: "SubmittedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerReports_TargetCharacterId",
+                table: "PlayerReports",
+                column: "TargetCharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerSessions_CharacterId",
+                table: "PlayerSessions",
+                column: "CharacterId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerSessions_ConnectionId",
+                table: "PlayerSessions",
+                column: "ConnectionId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerSessions_RegionId",
+                table: "PlayerSessions",
+                column: "RegionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayerSessions_ZoneId",
+                table: "PlayerSessions",
+                column: "ZoneId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_AccountId",
                 table: "RefreshTokens",
                 column: "AccountId");
@@ -619,28 +765,14 @@ namespace Veldrath.Server.Migrations
                 name: "IX_Zones_RegionId",
                 table: "Zones",
                 column: "RegionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ZoneSessions_CharacterId",
-                table: "ZoneSessions",
-                column: "CharacterId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ZoneSessions_ConnectionId",
-                table: "ZoneSessions",
-                column: "ConnectionId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ZoneSessions_ZoneId",
-                table: "ZoneSessions",
-                column: "ZoneId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AdminAuditEntries");
+
             migrationBuilder.DropTable(
                 name: "Announcements");
 
@@ -672,13 +804,19 @@ namespace Veldrath.Server.Migrations
                 name: "GlobalStats");
 
             migrationBuilder.DropTable(
+                name: "PendingLinkTokens");
+
+            migrationBuilder.DropTable(
+                name: "PlayerReports");
+
+            migrationBuilder.DropTable(
+                name: "PlayerSessions");
+
+            migrationBuilder.DropTable(
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "RegionConnections");
-
-            migrationBuilder.DropTable(
-                name: "ZoneSessions");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

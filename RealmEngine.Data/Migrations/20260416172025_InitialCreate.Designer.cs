@@ -12,7 +12,7 @@ using RealmEngine.Data.Persistence;
 namespace RealmEngine.Data.Migrations
 {
     [DbContext(typeof(ContentDbContext))]
-    [Migration("20260408212711_InitialCreate")]
+    [Migration("20260416172025_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -554,6 +554,58 @@ namespace RealmEngine.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.Language", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("RarityWeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SampleText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TonalCharacter")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TypeKey");
+
+                    b.HasIndex("TypeKey", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("Languages");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.LootTable", b =>
@@ -1129,6 +1181,10 @@ namespace RealmEngine.Data.Migrations
                     b.Property<bool>("IsPlayerSelectable")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("NativeLanguageSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<int>("RarityWeight")
                         .HasColumnType("integer");
 
@@ -1206,6 +1262,10 @@ namespace RealmEngine.Data.Migrations
                     b.Property<string>("DisplayName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<string>("DominantLanguageSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -1889,6 +1949,267 @@ namespace RealmEngine.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Traits")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.Language", b =>
+                {
+                    b.OwnsOne("RealmEngine.Data.Entities.LanguageMorphology", "Morphology", b1 =>
+                        {
+                            b1.Property<Guid>("LanguageId");
+
+                            b1.HasKey("LanguageId");
+
+                            b1.ToTable("Languages");
+
+                            b1.ToJson("Morphology");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LanguageId");
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageAffixEntry", "Prefixes", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguageMorphologyLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Category")
+                                        .IsRequired();
+
+                                    b2.Property<string>("CoreMeaning")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Form")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Notes");
+
+                                    b2.HasKey("LanguageMorphologyLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguageMorphologyLanguageId");
+                                });
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageAffixEntry", "Suffixes", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguageMorphologyLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Category")
+                                        .IsRequired();
+
+                                    b2.Property<string>("CoreMeaning")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Form")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Notes");
+
+                                    b2.HasKey("LanguageMorphologyLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguageMorphologyLanguageId");
+                                });
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageRootEntry", "Roots", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguageMorphologyLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Category");
+
+                                    b2.Property<string>("CoreMeaning")
+                                        .IsRequired();
+
+                                    b2.Property<string>("ExampleWord");
+
+                                    b2.Property<string>("ExtendedMeanings");
+
+                                    b2.Property<string>("Token")
+                                        .IsRequired();
+
+                                    b2.HasKey("LanguageMorphologyLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguageMorphologyLanguageId");
+                                });
+
+                            b1.Navigation("Prefixes");
+
+                            b1.Navigation("Roots");
+
+                            b1.Navigation("Suffixes");
+                        });
+
+                    b.OwnsOne("RealmEngine.Data.Entities.LanguagePhonology", "Phonology", b1 =>
+                        {
+                            b1.Property<Guid>("LanguageId");
+
+                            b1.PrimitiveCollection<string>("AllowedFinalClusters")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("AllowedInitialClusters")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("AllowedSyllablePatterns")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("ForbiddenClusters")
+                                .IsRequired();
+
+                            b1.HasKey("LanguageId");
+
+                            b1.ToTable("Languages");
+
+                            b1.ToJson("Phonology");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LanguageId");
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageConsonant", "Consonants", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguagePhonologyLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Description")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Notes");
+
+                                    b2.Property<string>("Symbol")
+                                        .IsRequired();
+
+                                    b2.HasKey("LanguagePhonologyLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguagePhonologyLanguageId");
+                                });
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageJunctionRule", "JunctionRules", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguagePhonologyLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("AdministrativeExample");
+
+                                    b2.Property<string>("Cluster")
+                                        .IsRequired();
+
+                                    b2.Property<string>("FormalExample");
+
+                                    b2.Property<string>("Rule")
+                                        .IsRequired();
+
+                                    b2.HasKey("LanguagePhonologyLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguagePhonologyLanguageId");
+                                });
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageVowel", "Vowels", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguagePhonologyLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Notes");
+
+                                    b2.Property<string>("Register");
+
+                                    b2.Property<string>("Sound")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Symbol")
+                                        .IsRequired();
+
+                                    b2.HasKey("LanguagePhonologyLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguagePhonologyLanguageId");
+                                });
+
+                            b1.Navigation("Consonants");
+
+                            b1.Navigation("JunctionRules");
+
+                            b1.Navigation("Vowels");
+                        });
+
+                    b.OwnsOne("RealmEngine.Data.Entities.LanguageRegisters", "RegisterSystem", b1 =>
+                        {
+                            b1.Property<Guid>("LanguageId");
+
+                            b1.HasKey("LanguageId");
+
+                            b1.ToTable("Languages");
+
+                            b1.ToJson("RegisterSystem");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LanguageId");
+
+                            b1.OwnsMany("RealmEngine.Data.Entities.LanguageRegisterEntry", "Registers", b2 =>
+                                {
+                                    b2.Property<Guid>("LanguageRegistersLanguageId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd();
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Notes");
+
+                                    b2.Property<string>("Usage")
+                                        .IsRequired();
+
+                                    b2.Property<string>("VowelQuality")
+                                        .IsRequired();
+
+                                    b2.Property<string>("WordOrder")
+                                        .IsRequired();
+
+                                    b2.HasKey("LanguageRegistersLanguageId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Languages");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LanguageRegistersLanguageId");
+                                });
+
+                            b1.Navigation("Registers");
+                        });
+
+                    b.Navigation("Morphology")
+                        .IsRequired();
+
+                    b.Navigation("Phonology")
+                        .IsRequired();
+
+                    b.Navigation("RegisterSystem")
                         .IsRequired();
                 });
 

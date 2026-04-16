@@ -172,6 +172,30 @@ namespace RealmEngine.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Languages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    TonalCharacter = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    SampleText = table.Column<string>(type: "text", nullable: true),
+                    Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    RarityWeight = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Morphology = table.Column<string>(type: "jsonb", nullable: false),
+                    Phonology = table.Column<string>(type: "jsonb", nullable: false),
+                    RegisterSystem = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Languages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LootTables",
                 columns: table => new
                 {
@@ -371,6 +395,7 @@ namespace RealmEngine.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     IsPlayerSelectable = table.Column<bool>(type: "boolean", nullable: false),
+                    NativeLanguageSlug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
                     Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -406,6 +431,7 @@ namespace RealmEngine.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ZoneId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    DominantLanguageSlug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
                     Slug = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     TypeKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -833,6 +859,17 @@ namespace RealmEngine.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Languages_TypeKey",
+                table: "Languages",
+                column: "TypeKey");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Languages_TypeKey_Slug",
+                table: "Languages",
+                columns: new[] { "TypeKey", "Slug" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LootTableEntries_LootTableId",
                 table: "LootTableEntries",
                 column: "LootTableId");
@@ -999,6 +1036,9 @@ namespace RealmEngine.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Items");
+
+            migrationBuilder.DropTable(
+                name: "Languages");
 
             migrationBuilder.DropTable(
                 name: "LootTableEntries");
