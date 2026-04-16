@@ -1,29 +1,24 @@
 # World Lore Plan — Veldrath
 
-> **Status:** Phases 1–4 complete. Varenmark detail review in progress (2026-04-15). Calethic language pass (Q3) started — blocked on tonal character decision (see Q3 below). Do NOT skip ahead to Greymoor until: (a) language pass is complete, (b) Varenmark's 7 open details are resolved.
+> **Status:** Phases 1–4 complete. Calethic language pass (Q3) **COMPLETE (2026-04-15)**. Open item #1 (Varenmark name) resolved — keep Varenmark, etymology established. 6 open items remain. Work through them in order before moving to Greymoor.
 
 ---
 
-## Resume Point (2026-04-15)
+## Resume Point (2026-04-15 — updated after Q3)
 
-**Current work: Calethic language pass (Q3).** Decision made to do this before locking region names, Varenmark details, or moving to Greymoor.
+**Q3 is complete.** The Calethic language is fully designed. See `.github/copilot-memory/calethic-language.md` for the full reference.
 
-Varenmark full review was done on 2026-04-15. Everything written is confirmed good. The following **open items** were identified — work through them in order after the language pass:
+**Current status:** All Varenmark lore and language work is finished. 6 open design items remain before Greymoor can begin. Work through them in order:
 
-1. **Varenmark name** — still a working placeholder. Revisit after Q3 language pass, since naming convention (Calethic vs. reclaimed) affects this decision.
-2. **The Vraen** — reserved for later reveal. Identity unknown (Calethic military order / conquered people / heartland region name). Do not design until Regions 2–4 are sketched.
-3. **Aethori presence in Varenmark** — not decided. Do any Aethori (inner circle, Bound, or purposeless scattered) appear in Varenmark? Significant design implication for a starter region.
-4. **What came back up from the Pits** — sealed in the Collapsed Vault (Halrow). Vague by design, but needs a decision: does it have a form? Purely atmospheric or does it have a presence the player encounters?
-5. **The subjects in Grevenmire** — the Bone Hollow says "what was tested, what subjects were used." Human? Creature? Something else? Deliberately left blank but needs a decision before full lore lock.
-6. **The player's discovery mechanism** — how does Calethic recognition thread through the arc? Recurring symbol, language fragment, material records in the Vault? What actually triggers the payoff realisation?
-7. **Crestfall's Calethic history** — labelled "waypoint node" but underground aspect is less developed than the other zones. Is anything under Crestfall? Intentionally shallow or a gap?
+1. ~~**Varenmark name**~~ — **RESOLVED.** Keep Varenmark. See Q3 results.
+2. **The Vraen** — reserved for later reveal. Do not design until Regions 2–4 are sketched.
+3. **Aethori presence in Varenmark** — not decided. Do any Aethori appear in the starter region?
+4. **What came back up from the Pits** — sealed in the Collapsed Vault (Halrow). Does it have a form? Purely atmospheric or a presence the player encounters?
+5. **The subjects in Grevenmire** — what was tested in the Bone Hollow? Human? Creature? Something else?
+6. **The player's discovery mechanism** — how does Calethic recognition thread through the arc? The language pass has provided the vocabulary layer (players can now recognise *aeth* in Ashlen, *korn* in Bone Hollow, etc.). Does this constitute the mechanism, or is there a trigger object (records in the Vault)?
+7. **Crestfall's Calethic history** — is the marker stone under Crestfall Square the extent of it, or is something else there?
 
-**All Varenmark lore writing is otherwise finished:**
-- `wiki/World-Veldrath.md` — full world lore (Collapse, Caleth, Aethori, Unbound, magic, 5-region spine)
-- `wiki/Region-Varenmark.md` — region page, two-tier structure
-- All 6 zone pages — two-tier structure, connected-system Calethic framework, 5 new sub-locations added
-
-See Q2 and Phase 5+ below for Greymoor.
+**Next session:** Resolve open items 3–7 in order. Then move to Greymoor (Phase 5+ regional design).
 
 ---
 
@@ -43,21 +38,26 @@ Working seeder biomes available as scaffolding:
 
 Option: keep those as working names for the Phase 2 deep-dive rather than designing all names now. **Decision (2026-04-14): Use working names as placeholders throughout Phase 1. Lock names during Phase 5+ regional design.**
 
-### Q3 — Calethic language pass — IN PROGRESS (2026-04-15)
-Design phonetics/conventions for the Calethic language, then assign:
-- Full Calethic name for "the Unbound Ruin"
-- Full Calethic name for "the Collapse"
-- Calethic place names and Aethori full title
-- Region names (Varenmark and others) — Calethic-derived or reclaimed by locals?
+### Q3 — Calethic language pass — **✅ COMPLETE (2026-04-15)**
 
-**What the language needs to do:** A naming register, not a full conlang. Consistent phonetic conventions so Calethic-derived words feel recognisably related and players can feel a term's origin without being told. Must fit the character of the Caleth: conqueror-priests, formal hierarchy, built on the discipline of controlling something that was actually controlling them.
+**Tonal character:** Hard + Formal — architectural consonants (K, R, TH, V, D) in functional vocabulary; drawn-out compound forms in titles and ceremonial speech. Sibilants (S, SH) restricted to Aethori ceremonial register only — marking the being's contamination of their highest language register.
 
-**Existing names to match:** `Aethori`, `Vraen`, `Ashen Age` — current lean is **hard consonants + longer vowels**. Three tonal poles offered for discussion:
-- **Hard and architectural** — K, R, TH, V; short vowels; words feel built not spoken. (Matches existing names most closely.)
-- **Formal and drawn-out** — longer words, double vowels, compound constructions; implies a literate bureaucratic class; words feel like titles or decrees.
-- **Angular and sibilant** — S, SH, Z, CH; hissing quality implying something slightly wrong, shaped by non-human presence.
+**Scope completed:** Full sketched conlang — phonology, morphology, basic syntax, root dictionary (~75 entries), full named-entity pass.
 
-**BLOCKED ON:** Which tonal character (or combination) is right? Does the existing name texture (hard consonants + long vowels) feel correct, or is there a different quality being reached for? Answer this first, then build the phoneme rules.
+**Deliverables:**
+- `.github/copilot-memory/calethic-language.md` — full design reference (canonical)
+- `wiki/Calethic-Language.md` — player-facing dictionary and language guide
+- `wiki/World-Veldrath.md` — all three `[TBD — language pass Q3]` placeholders filled
+- All 6 Varenmark zone pages — Calethic names added to spoiler sections
+
+**Assigned Calethic names:**
+- The Collapse → *Kaelorneth* (great unmaking) | Aethori short form: *Orneth*
+- The Unbound (working) → *Orveld* (the unconstrained) → derives Common "the Unbound"
+- The Unbound (Aethori ceremonial) → *Thaelornvael* (the enduring illuminating presence that unmakes)
+- Aethori full title → *Thornkaelaethori* (the great-compact-witnessing keepers)
+- Aetheld (Ashlen Wood) | Greveld (Grevenmire) | Korrveld (Droveway) | Kaeldor (Halrow) | Dornkeld (Drowning Pits) | Korreldh (Crestfall waypoint)
+- Vaelreld (Varenmark Calethic form) | Kaeltheld (The Wound) | Veldrath confirmed as vel+vrath
+- Vraen confirmed as intact Calethic: vren+–ael (frontier-sworn military order)
 
 ---
 
@@ -69,7 +69,7 @@ Design phonetics/conventions for the Calethic language, then assign:
 - **Common era name:** the Age of Reclaiming
   - Both era names are in simultaneous use
 - **What happened:** The Calethic Empire made a compact with a planar being to achieve supremacy/knowledge/transcendence. Autonomy was always an illusion — the being's influence was woven into everything they built. The empire attempted to reseal the being (fractured by self-preservation instinct). The being retaliated by permanently changing the rules of magic. The cascade unmade the empire entirely.
-- **Calethic name for the Collapse:** TBD (language pass, Q3)
+- **Calethic name for the Collapse:** *Kaelorneth* (great unmaking); Aethori short form: *Orneth*
 
 ### The Calethic Empire (the Caleth)
 - Single tyrannical civilisation — conquerors and priest-kings
@@ -89,7 +89,8 @@ Design phonetics/conventions for the Calethic language, then assign:
   1. **Inner circle** — willing true believers, fully aware
   2. **Bound** — compulsion baked into bloodlines, may not know why they do what they do
   3. **Scattered / purposeless** — carrying old directives with no surviving context
-- Their full Calethic title: TBD (language pass, Q3)
+- Their full Calethic title: *Thornkaelaethori* (the great-compact-witnessing keepers); shortened to *Aethori* in all practical use
+  - Tier qualifiers: inner circle = *Kel-Thornkaelaethori*; Bound = *Vaeln-Aethori*; scattered = *Gorv-Aethori* (scholar's classification)
 
 ### The Vraen
 - Reserved for later reveal
@@ -100,7 +101,8 @@ Design phonetics/conventions for the Calethic language, then assign:
 - **Concept name:** the Unbound Ruin
 - **Scholars call it:** the Unbound
 - **Common people call it:** the Ruin
-- **Calethic / Aethori name:** TBD (language pass, Q3)
+- **Calethic working name:** *Orveld* (the unconstrained; *or–* negation + *veld* void-beyond) — source of Common "the Unbound"
+- **Aethori ceremonial name:** *Thaelornvael* (thael illuminate + orn unmake + vael enduring presence) — "the enduring illuminating presence that unmakes"
 - **Nature:** exists outside all constraint; its presence is what it means for anything it touches
 - **Current state:** still here, diminished, partially contained — not gone
 - The Collapse did not destroy it; it changed the world as retaliation and retreated into reduced presence
@@ -198,3 +200,4 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-14 | Phase 3 complete: all 6 Varenmark zone pages rewritten. Connected-system framework locked (waypoint node → binding site → transit corridor → managed wetland → management facility → deep access point). Two-tier structure on every page. Halrow and Pits cross-reference each other. Design Notes folded in throughout. |
 | 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
 | 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
+| 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `.github/copilot-memory/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
