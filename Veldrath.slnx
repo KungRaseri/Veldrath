@@ -11,4 +11,6 @@
   <Project Path="Veldrath.Server.Tests/Veldrath.Server.Tests.csproj" />
   <Project Path="Veldrath.Discord/Veldrath.Discord.csproj" />
   <Project Path="Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj" />
+  <Project Path="Veldrath.Web/Veldrath.Web.csproj" />
+  <Project Path="Veldrath.Web.Tests/Veldrath.Web.Tests.csproj" />
 </Solution>

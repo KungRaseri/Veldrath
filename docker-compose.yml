@@ -162,11 +162,54 @@ services:
     depends_on:
       - prometheus
 
+  web:
+    build:
+      context: .
+      dockerfile: Veldrath.Web/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8082
+      - Veldrath__ServerUrl=http://server:8080
+      - Veldrath__PublicServerUrl=http://localhost:8080
+      - Strapi__BaseUrl=http://strapi:1337
+    volumes:
+      - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      server:
+        condition: service_healthy
+
+  strapi:
+    build:
+      context: ./strapi
+    ports:
+      - "1337:1337"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_CLIENT=postgres
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=veldrath_cms
+      - DATABASE_USERNAME=veldrath
+      - DATABASE_PASSWORD=veldrath_dev
+      - APP_KEYS=${STRAPI_APP_KEYS:-dev-key-1,dev-key-2}
+      - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT:-dev-api-token-salt}
+      - ADMIN_JWT_SECRET=${STRAPI_ADMIN_JWT_SECRET:-dev-admin-jwt-secret}
+      - JWT_SECRET=${STRAPI_JWT_SECRET:-dev-jwt-secret}
+    volumes:
+      - strapi_data:/opt/app/.tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   dataprotection_keys:
   foundry_dataprotection_keys:
+  web_dataprotection_keys:
   stalwart_data:
   seq_data:
   prometheus_data:
   grafana_data:
+  strapi_data:

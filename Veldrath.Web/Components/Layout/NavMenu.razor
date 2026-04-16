@@ -1,0 +1,17 @@
+@inject AuthStateService AuthState
+
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a href="/lore">World</a>
+    <a href="/patch-notes">Patch Notes</a>
+    <a href="/community">Community</a>
+    @if (AuthState.IsLoggedIn)
+    {
+        <a href="/account/profile">@AuthState.Username</a>
+        <a href="/auth/sign-out" data-enhance-nav="false">Sign Out</a>
+    }
+    else
+    {
+        <a href="/login">Sign In</a>
+    }
+</nav>

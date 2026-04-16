@@ -472,6 +472,7 @@ try
     app.MapEmailConfirmationEndpoints();
     app.MapExternalAuthEndpoints();
     app.MapPendingLinkEndpoints();
+    app.MapSessionEndpoints();
     app.MapAccountEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();

@@ -1,0 +1,44 @@
+@page "/login"
+@inject NavigationManager Nav
+@inject IConfiguration Config
+
+<PageTitle>Sign In — Veldrath</PageTitle>
+
+<div class="auth-card">
+    <h1>Sign In</h1>
+
+    @if (ErrorParam is not null)
+    {
+        <div class="alert alert-error">
+            <strong>Sign-in failed.</strong> Something went wrong during authentication. Please try again.
+        </div>
+    }
+
+    <p class="lead">Sign in with your preferred provider to access your Veldrath account.</p>
+
+    <div class="oauth-buttons">
+        <a class="btn btn-discord" href="@_discordUrl">Sign in with Discord</a>
+        <a class="btn btn-google" href="@_googleUrl">Sign in with Google</a>
+        <a class="btn btn-microsoft" href="@_msUrl">Sign in with Microsoft</a>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")] private string? ErrorParam { get; set; }
+
+    private string _discordUrl   = "#";
+    private string _googleUrl    = "#";
+    private string _msUrl        = "#";
+
+    protected override void OnInitialized()
+    {
+        var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
+        // The server's /api/auth/session endpoint exchanges the code, sets the cross-subdomain
+        // rt cookie, and redirects back to this app via the redirectTo param.
+        var callbackBase = $"{serverUrl}/api/auth/session?redirectTo={Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/")}";
+
+        _discordUrl = $"{serverUrl}/api/auth/external/discord?returnUrl={Uri.EscapeDataString(callbackBase)}";
+        _googleUrl  = $"{serverUrl}/api/auth/external/google?returnUrl={Uri.EscapeDataString(callbackBase)}";
+        _msUrl      = $"{serverUrl}/api/auth/external/microsoft?returnUrl={Uri.EscapeDataString(callbackBase)}";
+    }
+}

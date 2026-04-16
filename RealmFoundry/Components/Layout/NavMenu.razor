@@ -18,7 +18,6 @@
 
     @if (AuthState.IsLoggedIn)
     {
-        <NavLink class="nav-item" href="profile">@AuthState.Username</NavLink>
         @if (AuthState.IsAdmin)
         {
             <NavLink class="nav-item" href="admin">Admin</NavLink>
