@@ -49,27 +49,27 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,*">
 
             <!-- Column header strip -->
-            <Border Grid.Row="0" Background="#1a1a1a" Padding="16,5"
-                    BorderThickness="0,0,0,1" BorderBrush="#2a2a2a">
+            <Border Grid.Row="0" Background="{DynamicResource GameBackground0Brush}" Padding="16,5"
+                    BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderSubtleBrush}">
                 <Grid ColumnDefinitions="*,160,56,90,124,44">
                     <TextBlock Grid.Column="0" Text="NAME"
-                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="1" Text="SLUG"
-                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="2" Text="WEIGHT"
-                               Foreground="#555" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
                                HorizontalAlignment="Center" />
                     <TextBlock Grid.Column="3" Text="STATUS"
-                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="4" Text="UPDATED"
-                               Foreground="#555" FontSize="10" FontWeight="SemiBold" />
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold" />
                 </Grid>
             </Border>
 
             <!-- Loading indicator -->
             <TextBlock Grid.Row="1" Text="Loading…"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Foreground="#555" FontSize="13"
+                       Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="13"
                        IsVisible="{Binding IsLoading}" />
 
             <!-- Rows -->
@@ -77,7 +77,7 @@
                 <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="vm:EntityListRowViewModel">
-                            <Border BorderThickness="0,0,0,1" BorderBrush="#1e1e1e">
+                            <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderSubtleBrush}">
                                 <Grid ColumnDefinitions="*,44">
 
                                 <!-- Clickable row area (opens editor) -->
@@ -92,45 +92,45 @@
                                         <!-- Name / DisplayName -->
                                         <TextBlock Grid.Column="0"
                                                    Text="{Binding Label}"
-                                                   Foreground="#ddd" FontSize="13"
+                                                   Foreground="{DynamicResource GameTextPrimaryBrush}" FontSize="13"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
 
                                         <!-- Slug -->
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Slug}"
-                                                   FontFamily="Cascadia Code,Consolas,monospace"
-                                                   Foreground="#666" FontSize="11"
+                                                   FontFamily="{DynamicResource GameFontMono}"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
 
                                         <!-- RarityWeight -->
                                         <TextBlock Grid.Column="2"
                                                    Text="{Binding RarityWeight}"
-                                                   Foreground="#7bb0df" FontSize="12"
+                                                   Foreground="{DynamicResource GameInfoBrush}" FontSize="12"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center" />
 
                                         <!-- IsActive badge -->
                                         <Panel Grid.Column="3" VerticalAlignment="Center">
-                                            <Border Background="#1a3a1e" CornerRadius="3" Padding="6,2"
+                                            <Border Background="{DynamicResource GameSuccessMutedBrush}" CornerRadius="3" Padding="6,2"
                                                     HorizontalAlignment="Left"
                                                     IsVisible="{Binding IsActive}">
                                                 <TextBlock Text="Active"
-                                                           Foreground="#4ec9b0" FontSize="11" />
+                                                           Foreground="{DynamicResource GameSuccessBrush}" FontSize="11" />
                                             </Border>
-                                            <Border Background="#3a1a1a" CornerRadius="3" Padding="6,2"
+                                            <Border Background="{DynamicResource GameDangerMutedBrush}" CornerRadius="3" Padding="6,2"
                                                     HorizontalAlignment="Left"
                                                     IsVisible="{Binding !IsActive}">
                                                 <TextBlock Text="Inactive"
-                                                           Foreground="#a05050" FontSize="11" />
+                                                           Foreground="{DynamicResource GameDangerBrush}" FontSize="11" />
                                             </Border>
                                         </Panel>
 
                                         <!-- UpdatedAt -->
                                         <TextBlock Grid.Column="4"
                                                    Text="{Binding UpdatedText}"
-                                                   Foreground="#555" FontSize="11"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11"
                                                    VerticalAlignment="Center" />
                                     </Grid>
                                 </Button>
@@ -139,7 +139,7 @@
                                 <Button Grid.Column="1"
                                         Command="{Binding RequestDeleteCommand}"
                                         Content="✕"
-                                        Background="Transparent" Foreground="#6a3a3a"
+                                        Background="Transparent" Foreground="{DynamicResource GameDangerMutedBrush}"
                                         FontSize="13" Width="44"
                                         VerticalAlignment="Stretch"
                                         ToolTip.Tip="Delete entity" />
@@ -152,28 +152,28 @@
         </Grid>
 
         <!-- ── Delete confirmation banner ─────────────────────────────────── -->
-        <Border Grid.Row="2" Background="#2a1212" Padding="16,10"
-                BorderThickness="0,1,0,0" BorderBrush="#5a2020"
+        <Border Grid.Row="2" Background="{DynamicResource GameDangerMutedBrush}" Padding="16,10"
+                BorderThickness="0,1,0,0" BorderBrush="{DynamicResource GameDangerBrush}"
                 IsVisible="{Binding PendingDelete, Converter={x:Static ObjectConverters.IsNotNull}}">
             <Grid ColumnDefinitions="*,Auto,Auto">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="Permanently delete"
-                               Foreground="#c08080" FontSize="13" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource GameDangerBrush}" FontSize="13" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding PendingDelete.Label}"
-                               Foreground="#ffaaaa" FontWeight="SemiBold" FontSize="13"
+                               Foreground="{DynamicResource GameTextPrimaryBrush}" FontWeight="SemiBold" FontSize="13"
                                VerticalAlignment="Center" />
                     <TextBlock Text="? This cannot be undone."
-                               Foreground="#c08080" FontSize="13" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource GameDangerBrush}" FontSize="13" VerticalAlignment="Center" />
                 </StackPanel>
                 <Button Grid.Column="1"
                         Content="Delete"
                         Command="{Binding ConfirmDeleteCommand}"
-                        Background="#8b1a1a" Foreground="White"
+                        Classes="danger"
                         Padding="14,6" CornerRadius="4" Margin="0,0,8,0" />
                 <Button Grid.Column="2"
                         Content="Cancel"
                         Command="{Binding CancelDeleteCommand}"
-                        Background="#363636" Foreground="#ccc"
+                        Classes="ghost"
                         Padding="14,6" CornerRadius="4" />
             </Grid>
         </Border>

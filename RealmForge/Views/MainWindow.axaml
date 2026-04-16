@@ -8,26 +8,25 @@
         Title="RealmForge — Content Editor"
         Width="1280" Height="840"
         MinWidth="900" MinHeight="600"
-        WindowStartupLocation="CenterScreen"
-        Background="#1e1e1e">
+        WindowStartupLocation="CenterScreen">
 
     <Grid RowDefinitions="Auto,*">
 
         <!-- ── Title Bar ─────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="#252526" Padding="8,6"
-                BorderThickness="0,0,0,1" BorderBrush="#333">
+        <Border Grid.Row="0" Background="{DynamicResource GameBackground1Brush}" Padding="8,6"
+                BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderBrush}">
             <Grid ColumnDefinitions="Auto,*,Auto">
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
                     <Button Content="☰"
                             Command="{Binding TogglePaneCommand}"
-                            Background="Transparent" Foreground="#ccc"
+                            Background="Transparent" Foreground="{DynamicResource GameTextPrimaryBrush}"
                             Padding="8,4" CornerRadius="4" />
                     <TextBlock Text="RealmForge"
                                FontSize="16" FontWeight="SemiBold"
-                               Foreground="#e0e0e0" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource GameTextPrimaryBrush}" VerticalAlignment="Center" />
                     <TextBlock Text="v4.0"
-                               FontSize="11" Foreground="#555"
+                               FontSize="11" Foreground="{DynamicResource GameTextTertiaryBrush}"
                                VerticalAlignment="Center" Margin="4,0,0,0" />
                 </StackPanel>
 
@@ -36,7 +35,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
                     <Button Content="↺"
                             Command="{Binding RefreshTreeCommand}"
-                            Background="Transparent" Foreground="#888"
+                            Background="Transparent" Foreground="{DynamicResource GameTextSecondaryBrush}"
                             Padding="8,4" CornerRadius="4"
                             ToolTip.Tip="Refresh content tree" />
                     <ToggleButton Content="🌙"
@@ -45,7 +44,7 @@
                                   Padding="8,4" />
                     <Button Content="…"
                             Command="{Binding ShowAboutCommand}"
-                            Background="Transparent" Foreground="#555"
+                            Background="Transparent" Foreground="{DynamicResource GameTextTertiaryBrush}"
                             Padding="8,4" CornerRadius="4"
                             ToolTip.Tip="About RealmForge" />
                 </StackPanel>
@@ -57,14 +56,14 @@
         <Grid Grid.Row="1" ColumnDefinitions="48,*">
 
             <!-- ── Activity bar ─────────────────────────────────────────── -->
-            <Border Grid.Column="0" Background="#1b1b1b"
-                    BorderThickness="0,0,1,0" BorderBrush="#2d2d2d">
+            <Border Grid.Column="0" Background="{DynamicResource GameBackground0Brush}"
+                    BorderThickness="0,0,1,0" BorderBrush="{DynamicResource GameBorderSubtleBrush}">
                 <ItemsControl ItemsSource="{Binding ActivitySections}"
                               Margin="0,6,0,0" VerticalAlignment="Top">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="vm:ActivitySectionViewModel">
                             <Panel Height="48" Width="48">
-                                <Rectangle Width="2" HorizontalAlignment="Left" Fill="#6caed8"
+                                <Rectangle Width="2" HorizontalAlignment="Left" Fill="{DynamicResource GameAccentBrush}"
                                            IsVisible="{Binding IsActive}" />
                                 <Button Command="{Binding #mainWindow.DataContext.SelectActivityCommand}"
                                         CommandParameter="{Binding Key}"
@@ -95,7 +94,7 @@
                        IsPaneOpen="{Binding IsPaneOpen}"
                        DisplayMode="Inline"
                        OpenPaneLength="280"
-                       PaneBackground="#1b1b1b">
+                       PaneBackground="{DynamicResource GameBackground0Brush}">
 
             <!-- ── Left pane: content tree ─────────────────────────────── -->
             <SplitView.Pane>
@@ -104,7 +103,7 @@
                     <!-- Loading indicator -->
                     <TextBlock Grid.Row="0" Text="Loading…"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Foreground="#555" FontSize="13"
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="13"
                                IsVisible="{Binding IsLoadingTree}" />
 
                     <!-- Error state (DB unreachable) -->
@@ -113,15 +112,15 @@
                                 Spacing="10" Margin="16,0"
                                 IsVisible="{Binding HasTreePaneMessage}">
                         <TextBlock Text="⚠"
-                                   Foreground="#6a4a20" FontSize="20"
+                                   Foreground="{DynamicResource GameWarningBrush}" FontSize="20"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding TreePaneMessage}"
-                                   Foreground="#6a5a40" FontSize="12"
+                                   Foreground="{DynamicResource GameWarningBrush}" FontSize="12"
                                    TextWrapping="Wrap" TextAlignment="Center"
                                    HorizontalAlignment="Center" />
                         <Button Content="Retry"
                                 Command="{Binding RefreshTreeCommand}"
-                                Background="#2a2010" Foreground="#a08040"
+                                Background="{DynamicResource GameWarningMutedBrush}" Foreground="{DynamicResource GameWarningBrush}"
                                 Padding="14,5" CornerRadius="4"
                                 HorizontalAlignment="Center" />
                     </StackPanel>
@@ -142,10 +141,10 @@
                                 <Setter Property="CornerRadius" Value="6" />
                             </Style>
                             <Style Selector="ListBoxItem:selected">
-                                <Setter Property="Background" Value="#1d3145" />
+                                <Setter Property="Background" Value="{DynamicResource GameInteractiveSelectedBrush}" />
                             </Style>
                             <Style Selector="ListBoxItem:not(:selected):pointerover">
-                                <Setter Property="Background" Value="#1c2530" />
+                                <Setter Property="Background" Value="{DynamicResource GameInteractiveHoverBrush}" />
                             </Style>
                         </ListBox.Styles>
                         <ListBox.ItemTemplate>
@@ -160,7 +159,7 @@
                                                Source="{Binding IconPath, Converter={x:Static converters:AvaresBitmapConverter.Instance}}" />
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Name}"
-                                                   FontSize="13" Foreground="#c8c8c8"
+                                                   FontSize="13" Foreground="{DynamicResource GameTextPrimaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Margin="10,0,0,0" />
                                     </Grid>
@@ -179,12 +178,12 @@
                                                     <Button Content="{Binding Name}"
                                                             Command="{Binding #mainWindow.DataContext.OpenTypeKeyCommand}"
                                                             CommandParameter="{Binding}"
-                                                            Background="#2d2d2d" Foreground="#aaa"
+                                                            Background="{DynamicResource GameBackground2Brush}" Foreground="{DynamicResource GameTextSecondaryBrush}"
                                                             FontSize="11" Padding="8,4"
                                                             CornerRadius="10,0,0,10" />
                                                     <Button Content="+"
                                                             Command="{Binding NewEntityCommand}"
-                                                            Background="#2d2d2d" Foreground="#555"
+                                                            Background="{DynamicResource GameBackground2Brush}" Foreground="{DynamicResource GameTextTertiaryBrush}"
                                                             FontSize="11" Padding="5,4"
                                                             CornerRadius="0,10,10,0" />
                                                 </StackPanel>
@@ -197,16 +196,16 @@
                     </ListBox>
 
                     <!-- Pane footer: DB status -->
-                    <Border Grid.Row="1" Background="#161616" Padding="10,6"
-                            BorderThickness="0,1,0,0" BorderBrush="#222">
+                    <Border Grid.Row="1" Background="{DynamicResource GameBackground0Brush}" Padding="10,6"
+                            BorderThickness="0,1,0,0" BorderBrush="{DynamicResource GameBorderSubtleBrush}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <!-- Green dot when connected -->
-                            <Ellipse Width="6" Height="6" Fill="#00aa55"
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource GameSuccessBrush}"
                                      VerticalAlignment="Center"
                                      IsVisible="{Binding DbStatus,
                                          Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                             <TextBlock Text="{Binding DbStatus}"
-                                       Foreground="#4a4a4a" FontSize="11"
+                                       Foreground="{DynamicResource GameTextDisabledBrush}" FontSize="11"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>

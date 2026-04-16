@@ -13,11 +13,11 @@
 
             <TextBlock Text="🛠️ RealmForge"
                        FontSize="48" FontWeight="Bold"
-                       Foreground="#e0e0e0"
+                       Foreground="{DynamicResource GameTextPrimaryBrush}"
                        HorizontalAlignment="Center" />
 
             <TextBlock Text="Content Editor for RealmEngine"
-                       FontSize="20" Foreground="#888"
+                       FontSize="20" Foreground="{DynamicResource GameTextSecondaryBrush}"
                        HorizontalAlignment="Center" />
 
             <!-- Feature cards -->
@@ -29,30 +29,30 @@
                 </ItemsControl.ItemsPanel>
 
                 <!-- Browse Catalog -->
-                <Border Background="#2d2d2d" CornerRadius="8" Padding="24"
+                <Border Background="{DynamicResource GameBackground2Brush}" CornerRadius="8" Padding="24"
                         Width="220" Margin="8">
                     <StackPanel Spacing="8">
                         <TextBlock Text="🔍  Browse Catalog" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="#e0e0e0" />
+                                   Foreground="{DynamicResource GameTextPrimaryBrush}" />
                         <TextBlock Text="Navigate items, enemies, spells, and more."
-                                   Foreground="#aaa" TextWrapping="Wrap" />
+                                   Foreground="{DynamicResource GameTextSecondaryBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
 
                 <!-- Edit Entities -->
-                <Border Background="#2d2d2d" CornerRadius="8" Padding="24"
+                <Border Background="{DynamicResource GameBackground2Brush}" CornerRadius="8" Padding="24"
                         Width="220" Margin="8">
                     <StackPanel Spacing="8">
                         <TextBlock Text="✏️  Edit Entities" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="#e0e0e0" />
+                                   Foreground="{DynamicResource GameTextPrimaryBrush}" />
                         <TextBlock Text="Create and modify game content stored in the database."
-                                   Foreground="#aaa" TextWrapping="Wrap" />
+                                   Foreground="{DynamicResource GameTextSecondaryBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </ItemsControl>
 
             <TextBlock Text="Select an entity from the tree to start editing, or right-click a category to create a new one."
-                       FontSize="14" Foreground="#555"
+                       FontSize="14" Foreground="{DynamicResource GameTextTertiaryBrush}"
                        HorizontalAlignment="Center" TextAlignment="Center"
                        TextWrapping="Wrap"
                        Margin="0,16,0,0" />

@@ -1,27 +1,24 @@
-﻿<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
         ================================================================
-        REALM UNBOUND — GAME THEME
-        Entry point for all client-side visual customization.
-        
-        This file wires together the color palette and all control
-        style overrides that give the game its visual identity.
-        
+        VELDRATH DESIGN SYSTEM — FORGE THEME
+        Entry point for all RealmForge editor visual customization.
+
         Files:
-        Assets/Themes/GameColors.axaml  ← Colors & brushes (edit first)
-        Assets/Themes/GameTheme.axaml   ← This file (control styles)
-        
+        Assets/Themes/ForgeColors.axaml  ← Colors & brushes (edit first)
+        Assets/Themes/ForgeTheme.axaml   ← This file (control styles)
+
         Control sections in this file:
         1.  Global / Window
-        2.  Typography (TextBlock classes) — .title, .lore, .mono, .accent, .success, .danger, .warning, .info
-        3.  Button  — default, .accent, .secondary, .danger, .ghost, .icon
+        2.  Typography (TextBlock classes) — .title, .mono, .accent, .success, .danger, .warning, .info
+        3.  Button  — default, .accent, .danger, .ghost, .icon
         4.  TextBox (input fields)
         5.  ListBox / ListBoxItem
         6.  ComboBox
         7.  Border helpers — .card, .card-elevated, .separator, .panel-*
         8.  ScrollBar
-        9.  ProgressBar — default, .health, .mana, .xp, .stamina, .danger
+        9.  ProgressBar — default, .danger
         10. CheckBox
         11. Slider
         12. TabControl / TabItem
@@ -33,7 +30,7 @@
     <Styles.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://Veldrath.Client/Assets/Themes/GameColors.axaml" />
+                <ResourceInclude Source="avares://RealmForge/Assets/Themes/ForgeColors.axaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!--
@@ -44,11 +41,7 @@
             <FontFamily x:Key="GameFontBody">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
             <!--  Display / heading font — Cinzel (embedded TTF)  -->
             <FontFamily x:Key="GameFontTitle">avares://RealmUI.Fonts/Assets/Fonts#Cinzel</FontFamily>
-            <!--  Marquee font — Cinzel Decorative (splash / logo use only)  -->
-            <FontFamily x:Key="GameFontDisplay">avares://RealmUI.Fonts/Assets/Fonts#Cinzel Decorative</FontFamily>
-            <!--  Reading font — Lora (lore text, long-form descriptions)  -->
-            <FontFamily x:Key="GameFontReading">avares://RealmUI.Fonts/Assets/Fonts#Lora</FontFamily>
-            <!--  Monospace font — JetBrains Mono (stat tables, keys, identifiers)  -->
+            <!--  Monospace font — JetBrains Mono (ID fields, stat tables)  -->
             <FontFamily x:Key="GameFontMono">avares://RealmUI.Fonts/Assets/Fonts#JetBrains Mono</FontFamily>
 
             <x:Double x:Key="GameFontSizeXSmall">11</x:Double>
@@ -57,7 +50,6 @@
             <x:Double x:Key="GameFontSizeSubtitle">16</x:Double>
             <x:Double x:Key="GameFontSizeTitle">20</x:Double>
             <x:Double x:Key="GameFontSizeTitleLarge">28</x:Double>
-            <x:Double x:Key="GameFontSizeHero">40</x:Double>
         </ResourceDictionary>
     </Styles.Resources>
 
@@ -81,10 +73,9 @@
     <!-- ============================================================
          2. TYPOGRAPHY — TextBlock classes
          Usage examples:
-           <TextBlock Classes="title" Text="Character Select" />
-           <TextBlock Classes="subtitle muted" Text="Choose your hero" />
-           <TextBlock Classes="accent" Text="2,400 Gold" />
-           <TextBlock Classes="danger" Text="You are dead." />
+           <TextBlock Classes="title" Text="Species Editor" />
+           <TextBlock Classes="mono" Text="species_dwarf_001" />
+           <TextBlock Classes="accent" Text="Modified" />
     ============================================================-->
 
     <Style Selector="TextBlock">
@@ -93,7 +84,7 @@
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeBody}" />
     </Style>
 
-    <!--  .title — large section headings  -->
+    <!--  .title — panel and section headings  -->
     <Style Selector="TextBlock.title">
         <Setter Property="FontFamily" Value="{DynamicResource GameFontTitle}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeTitle}" />
@@ -101,7 +92,7 @@
         <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
     </Style>
 
-    <!--  .title-large — splash screens, main menu  -->
+    <!--  .title-large — top-level editor headings  -->
     <Style Selector="TextBlock.title-large">
         <Setter Property="FontFamily" Value="{DynamicResource GameFontTitle}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeTitleLarge}" />
@@ -122,46 +113,39 @@
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeSmall}" />
     </Style>
 
-    <!--  .caption — tiny labels (stat names, timestamps)  -->
+    <!--  .caption — tiny labels (field names, timestamps)  -->
     <Style Selector="TextBlock.caption">
         <Setter Property="Foreground" Value="{DynamicResource GameTextTertiaryBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeXSmall}" />
     </Style>
 
-    <!--  .accent — Seal Light highlighted text (currency, key values)  -->
+    <!--  .accent — Seal Light highlighted text (modified, active)  -->
     <Style Selector="TextBlock.accent">
         <Setter Property="Foreground" Value="{DynamicResource GameAccentLightBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
-    <!--  .success — positive values, buffs  -->
+    <!--  .success — valid data, save confirmed  -->
     <Style Selector="TextBlock.success">
         <Setter Property="Foreground" Value="{DynamicResource GameSuccessBrush}" />
     </Style>
 
-    <!--  .danger — errors, low health, hostile  -->
+    <!--  .danger — validation errors, destructive actions  -->
     <Style Selector="TextBlock.danger">
         <Setter Property="Foreground" Value="{DynamicResource GameDangerBrush}" />
     </Style>
 
-    <!--  .warning — caution states  -->
+    <!--  .warning — unsaved changes, caution states  -->
     <Style Selector="TextBlock.warning">
         <Setter Property="Foreground" Value="{DynamicResource GameWarningBrush}" />
     </Style>
 
-    <!--  .info — tooltips, neutral notifications  -->
+    <!--  .info — field descriptions, neutral notifications  -->
     <Style Selector="TextBlock.info">
         <Setter Property="Foreground" Value="{DynamicResource GameInfoBrush}" />
     </Style>
 
-    <!--  .lore — in-game book text, flavour copy, long-form lore  -->
-    <Style Selector="TextBlock.lore">
-        <Setter Property="FontFamily" Value="{DynamicResource GameFontReading}" />
-        <Setter Property="FontSize" Value="{DynamicResource GameFontSizeBody}" />
-        <Setter Property="Foreground" Value="{DynamicResource GameTextPrimaryBrush}" />
-    </Style>
-
-    <!--  .mono — stat keys, identifiers, schema values  -->
+    <!--  .mono — IDs, keys, slug values  -->
     <Style Selector="TextBlock.mono">
         <Setter Property="FontFamily" Value="{DynamicResource GameFontMono}" />
         <Setter Property="FontSize" Value="{DynamicResource GameFontSizeSmall}" />
@@ -174,8 +158,8 @@
         3. BUTTON
         Variants (add as Classes):
         default    — standard dark surface button
-        .accent    — gold filled, for primary actions (Join Game, Confirm)
-        .danger    — red tinted, for destructive actions (Leave Party, Delete)
+        .accent    — Seal filled, for primary actions (Save, Apply)
+        .danger    — red tinted, for destructive actions (Delete, Discard)
         .ghost     — transparent background, subtle border
         .icon      — square, no padding, for icon-only buttons
         ============================================================
@@ -208,7 +192,7 @@
         <Setter Property="Foreground" Value="{DynamicResource GameTextDisabledBrush}" />
     </Style>
 
-    <!--  .accent — primary call-to-action (gold fill, dark text)  -->
+    <!--  .accent — primary call-to-action (Seal fill, dark text)  -->
     <Style Selector="Button.accent">
         <Setter Property="Background" Value="{DynamicResource GameAccentBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource GameBackground0Brush}" />
@@ -257,22 +241,6 @@
 
     <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
-    </Style>
-
-    <!--  .secondary — Emberfall filled, for energy/combat actions  -->
-    <Style Selector="Button.secondary">
-        <Setter Property="Background" Value="{DynamicResource GameSecondaryAccentBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource GameBackground0Brush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource GameSecondaryAccentDarkBrush}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-    </Style>
-
-    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource GameSecondaryAccentLightBrush}" />
-    </Style>
-
-    <Style Selector="Button.secondary:pressed /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource GameSecondaryAccentDarkBrush}" />
     </Style>
 
 
@@ -379,17 +347,9 @@
 
     <!-- ============================================================
          7. BORDER HELPERS
-         Apply these classes on a Border element to quickly get
-         standard card/panel/divider appearances.
-
-         Usage:
-           <Border Classes="card">...</Border>
-           <Border Classes="card-elevated">...</Border>
-           <Border Classes="separator" />
-           <Border Classes="panel-sidebar">...</Border>
     ============================================================-->
 
-    <!--  Standard card — dialogs, inventory slots, stat panels  -->
+    <!--  Standard card — property panels, entity forms  -->
     <Style Selector="Border.card">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderBrush}" />
@@ -398,7 +358,7 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
-    <!--  Elevated card — higher-level surfaces, modals  -->
+    <!--  Elevated card — dialogs, modals  -->
     <Style Selector="Border.card-elevated">
         <Setter Property="Background" Value="{DynamicResource GameBackground3Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameBorderStrongBrush}" />
@@ -407,7 +367,7 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
-    <!--  Accent-bordered card — selected/highlighted items  -->
+    <!--  Accent-bordered card — selected/highlighted entity  -->
     <Style Selector="Border.card-accent">
         <Setter Property="Background" Value="{DynamicResource GameBackground2Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource GameAccentBrush}" />
@@ -476,11 +436,6 @@
     <!--
         ============================================================
         9. PROGRESS BAR
-        Variants (add as Classes):
-        .health  — green health bar
-        .mana    — blue mana bar
-        .xp      — gold XP bar
-        .danger  — red for timer / urgency bar
         ============================================================
     -->
 
@@ -489,30 +444,6 @@
         <Setter Property="Foreground" Value="{DynamicResource GameAccentBrush}" />
         <Setter Property="CornerRadius" Value="3" />
         <Setter Property="MinHeight" Value="4" />
-    </Style>
-
-    <Style Selector="ProgressBar.health">
-        <Setter Property="Foreground" Value="{DynamicResource GameSuccessBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="MinHeight" Value="12" />
-    </Style>
-
-    <Style Selector="ProgressBar.mana">
-        <Setter Property="Foreground" Value="{DynamicResource GameInfoBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="MinHeight" Value="12" />
-    </Style>
-
-    <Style Selector="ProgressBar.xp">
-        <Setter Property="Foreground" Value="{DynamicResource GameAccentLightBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="MinHeight" Value="12" />
-    </Style>
-
-    <Style Selector="ProgressBar.stamina">
-        <Setter Property="Foreground" Value="{DynamicResource GameSecondaryAccentBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="MinHeight" Value="12" />
     </Style>
 
     <Style Selector="ProgressBar.danger">
@@ -586,12 +517,6 @@
 
     <!-- ============================================================
          14. PANEL SURFACE HELPERS
-         Apply to any Panel (Grid, StackPanel, DockPanel, etc.) to
-         set its background to a named surface layer.
-
-         Usage:
-           <Grid Classes="surface-0">...</Grid>
-           <StackPanel Classes="surface-2">...</StackPanel>
     ============================================================-->
 
     <Style Selector="Panel.surface-0">

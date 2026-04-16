@@ -8,20 +8,20 @@
         <vm:AboutViewModel />
     </Design.DataContext>
 
-    <Border Background="#1e1e1e" CornerRadius="8">
+    <Border Background="{DynamicResource GameBackground0Brush}" CornerRadius="8">
         <StackPanel Spacing="0">
 
             <!-- Header -->
-            <Border Background="#252526" Padding="24,20"
+            <Border Background="{DynamicResource GameBackground1Brush}" Padding="24,20"
                     CornerRadius="8,8,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="{Binding AppName}"
                                FontSize="22" FontWeight="Bold"
-                               Foreground="#e0e0e0" />
+                               Foreground="{DynamicResource GameTextPrimaryBrush}" />
                     <TextBlock Text="{Binding AppVersion}"
-                               FontSize="12" Foreground="#555" />
+                               FontSize="12" Foreground="{DynamicResource GameTextTertiaryBrush}" />
                     <TextBlock Text="{Binding AppDescription}"
-                               FontSize="13" Foreground="#888"
+                               FontSize="13" Foreground="{DynamicResource GameTextSecondaryBrush}"
                                TextWrapping="Wrap"
                                Margin="0,8,0,0" />
                 </StackPanel>
@@ -33,38 +33,38 @@
                 <StackPanel Spacing="10">
                     <TextBlock Text="Icon Attribution"
                                FontSize="14" FontWeight="SemiBold"
-                               Foreground="#c0c0c0" />
-                    <Border Background="#161616" CornerRadius="6" Padding="1">
-                        <Border Background="#252526" CornerRadius="5" Padding="14,10">
+                               Foreground="{DynamicResource GameTextPrimaryBrush}" />
+                    <Border Background="{DynamicResource GameBackground0Brush}" CornerRadius="6" Padding="1">
+                        <Border Background="{DynamicResource GameBackground1Brush}" CornerRadius="5" Padding="14,10">
                             <StackPanel Spacing="4">
                                 <Grid ColumnDefinitions="*,*,*">
                                     <TextBlock Grid.Column="0" Text="Artist"
                                                FontSize="11" FontWeight="SemiBold"
-                                               Foreground="#555" />
+                                               Foreground="{DynamicResource GameTextTertiaryBrush}" />
                                     <TextBlock Grid.Column="1" Text="URL"
                                                FontSize="11" FontWeight="SemiBold"
-                                               Foreground="#555" />
+                                               Foreground="{DynamicResource GameTextTertiaryBrush}" />
                                     <TextBlock Grid.Column="2" Text="Icons used"
                                                FontSize="11" FontWeight="SemiBold"
-                                               Foreground="#555" />
+                                               Foreground="{DynamicResource GameTextTertiaryBrush}" />
                                 </Grid>
-                                <Separator Background="#333" Height="1" Margin="0,2" />
+                                <Separator Background="{DynamicResource GameBorderBrush}" Height="1" Margin="0,2" />
                                 <ItemsControl ItemsSource="{Binding IconCredits}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="vm:AboutViewModel+IconCredit">
                                             <Grid ColumnDefinitions="*,*,*" Margin="0,3,0,0">
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding Artist}"
-                                                           FontSize="12" Foreground="#ccc"
+                                                           FontSize="12" Foreground="{DynamicResource GameTextPrimaryBrush}"
                                                            VerticalAlignment="Top" />
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding Url}"
-                                                           FontSize="11" Foreground="#5a8fbf"
+                                                           FontSize="11" Foreground="{DynamicResource GameInfoBrush}"
                                                            TextWrapping="Wrap"
                                                            VerticalAlignment="Top" />
                                                 <TextBlock Grid.Column="2"
                                                            Text="{Binding Icons}"
-                                                           FontSize="11" Foreground="#666"
+                                                           FontSize="11" Foreground="{DynamicResource GameTextTertiaryBrush}"
                                                            TextWrapping="Wrap"
                                                            VerticalAlignment="Top" />
                                             </Grid>
@@ -75,11 +75,11 @@
                         </Border>
                     </Border>
 
-                    <TextBlock FontSize="11" Foreground="#444" TextWrapping="Wrap">
+                    <TextBlock FontSize="11" Foreground="{DynamicResource GameTextTertiaryBrush}" TextWrapping="Wrap">
                         <Run Text="Icons sourced from " />
-                        <Run Text="game-icons.net" FontWeight="SemiBold" Foreground="#5a5a5a" />
+                        <Run Text="game-icons.net" FontWeight="SemiBold" Foreground="{DynamicResource GameTextSecondaryBrush}" />
                         <Run Text=" and licensed under " />
-                        <Run Text="Creative Commons Attribution 3.0 (CC BY 3.0)." FontWeight="SemiBold" Foreground="#5a5a5a" />
+                        <Run Text="Creative Commons Attribution 3.0 (CC BY 3.0)." FontWeight="SemiBold" Foreground="{DynamicResource GameTextSecondaryBrush}" />
                     </TextBlock>
                 </StackPanel>
 
@@ -87,15 +87,15 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="License"
                                FontSize="14" FontWeight="SemiBold"
-                               Foreground="#c0c0c0" />
-                    <Border Background="#252526" CornerRadius="5" Padding="14,10">
+                               Foreground="{DynamicResource GameTextPrimaryBrush}" />
+                    <Border Background="{DynamicResource GameBackground1Brush}" CornerRadius="5" Padding="14,10">
                         <StackPanel Spacing="4">
                             <TextBlock Text="RealmForge — Content Editor for RealmEngine"
-                                       FontSize="12" Foreground="#888" />
+                                       FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />
                             <TextBlock Text="RealmEngine is licensed under the MIT License."
-                                       FontSize="12" Foreground="#666" />
+                                       FontSize="12" Foreground="{DynamicResource GameTextTertiaryBrush}" />
                             <TextBlock Text="See THIRD-PARTY-NOTICES.md in the repository for full third-party attribution."
-                                       FontSize="11" Foreground="#444"
+                                       FontSize="11" Foreground="{DynamicResource GameTextTertiaryBrush}"
                                        TextWrapping="Wrap" Margin="0,4,0,0" />
                         </StackPanel>
                     </Border>
