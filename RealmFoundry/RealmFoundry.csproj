@@ -14,6 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Veldrath.Auth\Veldrath.Auth.csproj" />
+    <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
   </ItemGroup>
 

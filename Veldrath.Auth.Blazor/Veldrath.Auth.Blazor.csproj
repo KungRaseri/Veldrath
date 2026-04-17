@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Veldrath.Auth.Blazor</RootNamespace>
+    <AssemblyName>Veldrath.Auth.Blazor</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Veldrath.Auth\Veldrath.Auth.csproj" />
+  </ItemGroup>
+
+</Project>

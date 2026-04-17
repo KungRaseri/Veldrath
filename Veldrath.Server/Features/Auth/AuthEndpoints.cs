@@ -24,7 +24,7 @@ public static class AuthEndpoints
         group.MapPost("/login",                 LoginAsync)   .RequireRateLimiting("auth-attempts");
         group.MapPost("/refresh",               RefreshAsync)   .RequireRateLimiting("auth-attempts");
         group.MapPost("/renew-jwt",             RenewJwtAsync)  .RequireRateLimiting("auth-attempts");
-        group.MapPost("/logout",                LogoutAsync)    .RequireAuthorization();
+        group.MapPost("/logout",                LogoutAsync)    .RequireAuthorization().RequireRateLimiting("auth-attempts");
         group.MapPost("/exchange",              ExchangeAsync).RequireRateLimiting("auth-attempts");
         group.MapGet ("/create-exchange-code",  CreateExchangeCodeAsync).RequireAuthorization();
 

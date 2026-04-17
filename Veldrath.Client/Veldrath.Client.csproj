@@ -54,6 +54,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RealmUI.Fonts\RealmUI.Fonts.csproj" />
     <ProjectReference Include="..\Veldrath.Assets\Veldrath.Assets.csproj" />
+    <ProjectReference Include="..\Veldrath.Auth\Veldrath.Auth.csproj" />
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />

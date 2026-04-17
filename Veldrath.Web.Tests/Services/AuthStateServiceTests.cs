@@ -197,5 +197,8 @@ public class AuthStateServiceTests
         var result = await svc.TryRefreshAsync();
 
         result.Should().BeFalse();
+        // A rejected renewal means the refresh token is revoked/expired — the circuit
+        // must be logged out so the user is redirected to sign in again.
+        svc.IsLoggedIn.Should().BeFalse();
     }
 }

@@ -1,5 +1,5 @@
-﻿using Veldrath.Contracts.Account;
-using Veldrath.Contracts.Auth;
+using Veldrath.Auth;
+using Veldrath.Contracts.Account;
 using Veldrath.Contracts.Admin;
 using Veldrath.Contracts.Content;
 using Veldrath.Contracts.Editorial;
@@ -9,90 +9,16 @@ using Veldrath.Contracts.Players;
 namespace RealmFoundry.Services;
 
 /// <summary>
-/// Typed HttpClient facade for calling the Veldrath.Server REST API.
-/// Base address is configured via <c>Veldrath:ServerUrl</c> at startup.
-/// Call <see cref="SetBearerToken"/> after login to authorise requests.
+/// Typed HttpClient facade for calling the Veldrath.Server REST API from RealmFoundry.
+/// Authentication endpoints are provided by <see cref="VeldrathAuthApiClient"/>.
+/// Configure the base address via <c>Veldrath:ServerUrl</c> at startup.
+/// Call <see cref="VeldrathAuthApiClient.SetBearerToken"/> after login to authorise requests.
 /// </summary>
-public class RealmFoundryApiClient(HttpClient http)
+public class RealmFoundryApiClient(HttpClient http) : VeldrathAuthApiClient(http)
 {
-    public void SetBearerToken(string token) =>
-        http.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-    public void ClearBearerToken() =>
-        http.DefaultRequestHeaders.Authorization = null;
-
-    // Health
-    public Task<bool> IsServerReachableAsync(CancellationToken ct = default) =>
-        http.GetAsync("/health", ct)
-            .ContinueWith(t => t.IsCompletedSuccessfully && t.Result.IsSuccessStatusCode, ct,
-                TaskContinuationOptions.None, TaskScheduler.Default);
-
-    // Auth
-    public virtual async Task<AuthResponse?> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
-    {
-        var resp = await http.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = refreshToken }, ct);
-        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
-    }
-
-    /// <summary>
-    /// Issues a fresh JWT without rotating the refresh token.
-    /// Intended for Blazor circuit proactive token renewal — the HttpOnly cookie refresh token stays in sync permanently.
-    /// </summary>
-    public virtual async Task<RenewJwtResponse?> RenewJwtAsync(string refreshToken, CancellationToken ct = default)
-    {
-        var resp = await http.PostAsJsonAsync("/api/auth/renew-jwt", new { RefreshToken = refreshToken }, ct);
-        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<RenewJwtResponse>(ct) : null;
-    }
-
-    /// <summary>Revokes the given refresh token on the server, ending the session. Best-effort — failures are silently swallowed so the local sign-out always completes.</summary>
-    public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)
-    {
-        try { await http.PostAsJsonAsync("/api/auth/logout", new LogoutRequest(refreshToken), ct); }
-        catch { /* best-effort — local sign-out always succeeds */ }
-    }
-
-    /// <summary>Redeems a single-use exchange code issued by the OAuth callback for a full auth response.</summary>
-    public async Task<AuthResponse?> ExchangeCodeAsync(string code, Guid accountId, CancellationToken ct = default)
-    {
-        var resp = await http.PostAsJsonAsync("/api/auth/exchange", new ExchangeCodeRequest(code, accountId), ct);
-        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<AuthResponse>(ct) : null;
-    }
-
-    /// <summary>Requests a password-reset email for the given address. Always returns successfully to prevent account enumeration.</summary>
-    public async Task ForgotPasswordAsync(string email, CancellationToken ct = default) =>
-        await http.PostAsJsonAsync("/api/auth/forgot-password", new ForgotPasswordRequest(email), ct);
-
-    /// <summary>Completes a password reset using a token received by email.</summary>
-    public async Task<(bool Ok, string? Error)> ResetPasswordAsync(
-        string email, string token, string newPassword, CancellationToken ct = default)
-    {
-        var resp = await http.PostAsJsonAsync(
-            "/api/auth/reset-password",
-            new ResetPasswordRequest(email, token, newPassword), ct);
-        if (resp.IsSuccessStatusCode) return (true, null);
-        return (false, await resp.Content.ReadAsStringAsync(ct));
-    }
-
-    /// <summary>Confirms an email address using a userId + token from the confirmation link.</summary>
-    public async Task<(bool Ok, string? Error)> ConfirmEmailAsync(
-        string userId, string token, CancellationToken ct = default)
-    {
-        var url  = $"/api/auth/confirm-email?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}";
-        var resp = await http.GetAsync(url, ct);
-        if (resp.IsSuccessStatusCode) return (true, null);
-        return (false, await resp.Content.ReadAsStringAsync(ct));
-    }
-
-    /// <summary>Requests the server to resend the email-confirmation message for the authenticated account.</summary>
-    public async Task<(bool Ok, string? Error)> ResendEmailConfirmationAsync(CancellationToken ct = default)
-    {
-        var resp = await http.PostAsync("/api/auth/resend-confirmation", null, ct);
-        if (resp.IsSuccessStatusCode) return (true, null);
-        return (false, await resp.Content.ReadAsStringAsync(ct));
-    }
-
     // Submissions
+
+    /// <summary>Returns a paged list of community submissions with optional status, type, and search filtering.</summary>
     public async Task<PagedResult<FoundrySubmissionSummaryDto>> GetSubmissionsAsync(
         string? status = null, string? contentType = null,
         string? search = null, int page = 1, int pageSize = 20,
@@ -107,25 +33,27 @@ public class RealmFoundryApiClient(HttpClient http)
             ("pageSize",    pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
 
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(ct)
               ?? new([],  0, page, pageSize)
             : new([], 0, page, pageSize);
     }
 
+    /// <summary>Returns the full detail for a single submission by its unique identifier, or <see langword="null"/> if not found.</summary>
     public async Task<FoundrySubmissionDto?> GetSubmissionAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/foundry/submissions/{id}", ct);
+        var resp = await Http.GetAsync($"/api/foundry/submissions/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<FoundrySubmissionDto>(ct)
             : null;
     }
 
+    /// <summary>Creates a new community submission and returns the created DTO, or an error string on failure.</summary>
     public async Task<(FoundrySubmissionDto? Dto, string? Error)> CreateSubmissionAsync(
         CreateSubmissionRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/foundry/submissions", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/foundry/submissions", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<FoundrySubmissionDto>(ct), null);
 
@@ -133,10 +61,11 @@ public class RealmFoundryApiClient(HttpClient http)
         return (null, body);
     }
 
+    /// <summary>Casts a vote on a submission (<c>value</c> is typically +1 or -1) and returns the updated summary, or an error string on failure.</summary>
     public async Task<(FoundrySubmissionSummaryDto? Dto, string? Error)> VoteAsync(
         Guid submissionId, int value, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync(
+        var resp = await Http.PostAsJsonAsync(
             $"/api/foundry/submissions/{submissionId}/vote",
             new { Value = value }, ct);
 
@@ -147,10 +76,11 @@ public class RealmFoundryApiClient(HttpClient http)
         return (null, body);
     }
 
+    /// <summary>Submits a moderator or editorial review decision for a submission and returns the updated DTO, or an error string on failure.</summary>
     public async Task<(FoundrySubmissionDto? Dto, string? Error)> ReviewAsync(
         Guid submissionId, ReviewRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync(
+        var resp = await Http.PostAsJsonAsync(
             $"/api/foundry/submissions/{submissionId}/review", request, ct);
 
         if (resp.IsSuccessStatusCode)
@@ -161,14 +91,17 @@ public class RealmFoundryApiClient(HttpClient http)
     }
 
     // Content Browse (public, no auth required)
+
+    /// <summary>Returns the list of all published content type schemas available for browsing.</summary>
     public async Task<IReadOnlyList<ContentTypeInfoDto>> GetContentTypesAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/content/schema", ct);
+        var resp = await Http.GetAsync("/api/content/schema", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>(ct) ?? []
             : [];
     }
 
+    /// <summary>Returns a paged list of published content entries for the given content type, with optional full-text search.</summary>
     public async Task<PagedResult<ContentSummaryDto>> BrowseContentAsync(
         string contentType, string? search = null, int page = 1, int pageSize = 20,
         CancellationToken ct = default)
@@ -181,17 +114,18 @@ public class RealmFoundryApiClient(HttpClient http)
             ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
 
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>(ct)
               ?? new([], 0, page, pageSize)
             : new([], 0, page, pageSize);
     }
 
+    /// <summary>Returns the full detail record for a single published content entry identified by type and slug, or <see langword="null"/> if not found.</summary>
     public async Task<ContentDetailDto?> GetContentDetailAsync(
         string contentType, string slug, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync(
+        var resp = await Http.GetAsync(
             $"/api/content/browse/{Uri.EscapeDataString(contentType)}/{Uri.EscapeDataString(slug)}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<ContentDetailDto>(ct)
@@ -199,16 +133,19 @@ public class RealmFoundryApiClient(HttpClient http)
     }
 
     // Notifications
+
+    /// <summary>Returns the current user's unread Foundry notifications.</summary>
     public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(CancellationToken ct = default)    {
-        var resp = await http.GetAsync("/api/foundry/notifications", ct);
+        var resp = await Http.GetAsync("/api/foundry/notifications", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<FoundryNotificationDto>>(ct) ?? []
             : [];
     }
 
+    /// <summary>Marks a specific notification as read and returns <see langword="true"/> on success.</summary>
     public async Task<bool> MarkNotificationReadAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsync($"/api/foundry/notifications/{id}/read", null, ct);
+        var resp = await Http.PostAsync($"/api/foundry/notifications/{id}/read", null, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -221,7 +158,7 @@ public class RealmFoundryApiClient(HttpClient http)
         return string.Join("&", parts);
     }
 
-    // ── Admin ────────────────────────────────────────────────────────────────
+    // -- Admin ----------------------------------------------------------------
 
     /// <summary>Returns a paged list of player accounts with optional filtering.</summary>
     public async Task<AdminUserListResponse?> GetUsersAsync(
@@ -243,7 +180,7 @@ public class RealmFoundryApiClient(HttpClient http)
             ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
 
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<AdminUserListResponse>(ct)
             : null;
@@ -252,7 +189,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the full detail for a single player account.</summary>
     public async Task<PlayerDetailDto?> GetUserAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/admin/users/{id}", ct);
+        var resp = await Http.GetAsync($"/api/admin/users/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PlayerDetailDto>(ct)
             : null;
@@ -261,7 +198,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the public profile for a player account including their top character info.</summary>
     public async Task<PlayerProfileDto?> GetPlayerProfileAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/players/{id}", ct);
+        var resp = await Http.GetAsync($"/api/players/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PlayerProfileDto>(ct)
             : null;
@@ -270,7 +207,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Assigns a role to an account. Returns (true, null) on success or (false, errorMessage) on failure.</summary>
     public async Task<(bool Ok, string? Error)> AssignRoleAsync(Guid id, string role, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync($"/api/admin/users/{id}/roles", new AssignRoleRequest(role), ct);
+        var resp = await Http.PostAsJsonAsync($"/api/admin/users/{id}/roles", new AssignRoleRequest(role), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -278,7 +215,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Revokes a role from an account.</summary>
     public async Task<(bool Ok, string? Error)> RevokeRoleAsync(Guid id, string role, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/admin/users/{id}/roles/{Uri.EscapeDataString(role)}", ct);
+        var resp = await Http.DeleteAsync($"/api/admin/users/{id}/roles/{Uri.EscapeDataString(role)}", ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -286,7 +223,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Grants a per-user permission claim to an account.</summary>
     public async Task<(bool Ok, string? Error)> GrantPermissionAsync(Guid id, string permission, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync($"/api/admin/users/{id}/permissions", new GrantPermissionRequest(permission), ct);
+        var resp = await Http.PostAsJsonAsync($"/api/admin/users/{id}/permissions", new GrantPermissionRequest(permission), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -294,7 +231,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Revokes a per-user permission claim from an account.</summary>
     public async Task<(bool Ok, string? Error)> RevokePermissionAsync(Guid id, string permission, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/admin/users/{id}/permissions/{Uri.EscapeDataString(permission)}", ct);
+        var resp = await Http.DeleteAsync($"/api/admin/users/{id}/permissions/{Uri.EscapeDataString(permission)}", ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -302,7 +239,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Sends a kick signal to all active sessions for the specified account.</summary>
     public async Task<(bool Ok, string? Error)> KickPlayerAsync(KickPlayerRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/players/kick", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/players/kick", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -310,7 +247,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Bans an account and kicks its active sessions.</summary>
     public async Task<(bool Ok, string? Error)> BanPlayerAsync(BanPlayerRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/players/ban", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/players/ban", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -318,7 +255,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Lifts a ban from an account.</summary>
     public async Task<(bool Ok, string? Error)> UnbanPlayerAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/players/unban", new UnbanPlayerRequest(id), ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/players/unban", new UnbanPlayerRequest(id), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -326,7 +263,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Broadcasts an announcement to all connected game clients.</summary>
     public async Task<(bool Ok, string? Error)> BroadcastAnnouncementAsync(BroadcastAnnouncementRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/broadcast", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/broadcast", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -334,7 +271,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Issues a formal warning to a player account.</summary>
     public async Task<(bool Ok, string? Error)> WarnPlayerAsync(WarnPlayerRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/players/warn", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/players/warn", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -342,7 +279,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Mutes a player's chat for an optional duration.</summary>
     public async Task<(bool Ok, string? Error)> MutePlayerAsync(MutePlayerRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/players/mute", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/players/mute", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -350,7 +287,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Lifts an active chat mute from an account.</summary>
     public async Task<(bool Ok, string? Error)> UnmutePlayerAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/admin/players/unmute", new UnmutePlayerRequest(id), ct);
+        var resp = await Http.PostAsJsonAsync("/api/admin/players/unmute", new UnmutePlayerRequest(id), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -365,7 +302,7 @@ public class RealmFoundryApiClient(HttpClient http)
             ("page",     page.ToString()),
             ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedAdminResult<AuditEntryDto>>(ct)
             : null;
@@ -378,7 +315,7 @@ public class RealmFoundryApiClient(HttpClient http)
         var url = "/api/admin/sessions";
         var qs  = BuildQuery(("regionId", regionId), ("zoneId", zoneId));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<ActiveSessionDto>>(ct) ?? []
             : [];
@@ -394,7 +331,7 @@ public class RealmFoundryApiClient(HttpClient http)
             ("page",     page.ToString()),
             ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedAdminResult<PlayerReportDto>>(ct)
             : null;
@@ -403,17 +340,17 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Marks a player report as resolved.</summary>
     public async Task<(bool Ok, string? Error)> ResolveReportAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PutAsync($"/api/admin/reports/{id}/resolve", null, ct);
+        var resp = await Http.PutAsync($"/api/admin/reports/{id}/resolve", null, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    // ── Self-Service Account Management ──────────────────────────────────────
+    // -- Self-Service Account Management --------------------------------------
 
     /// <summary>Returns the authenticated user's own account profile.</summary>
     public async Task<AccountProfileDto?> GetAccountProfileAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/account/profile", ct);
+        var resp = await Http.GetAsync("/api/account/profile", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<AccountProfileDto>(ct)
             : null;
@@ -422,21 +359,21 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Updates the authenticated user's optional display name and bio.</summary>
     public async Task<(bool Ok, string? Error)> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PutAsJsonAsync("/api/account/profile", request, ct);
+        var resp = await Http.PutAsJsonAsync("/api/account/profile", request, ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
     /// <summary>Changes the authenticated user's password.</summary>
     public async Task<(bool Ok, string? Error)> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/account/password", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/account/password", request, ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
     /// <summary>Changes the authenticated user's username.</summary>
     public async Task<(bool Ok, string? Error)> ChangeUsernameAsync(ChangeUsernameRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PutAsJsonAsync("/api/account/username", request, ct);
+        var resp = await Http.PutAsJsonAsync("/api/account/username", request, ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
@@ -446,7 +383,7 @@ public class RealmFoundryApiClient(HttpClient http)
         using var req = new HttpRequestMessage(HttpMethod.Get, "/api/account/sessions");
         if (currentSessionId.HasValue)
             req.Headers.TryAddWithoutValidation("X-Current-Session-Id", currentSessionId.Value.ToString());
-        var resp = await http.SendAsync(req, ct);
+        var resp = await Http.SendAsync(req, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<AccountSessionDto>>(ct)
             : null;
@@ -455,14 +392,14 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Revokes the specified active session.</summary>
     public async Task<(bool Ok, string? Error)> RevokeSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/account/sessions/{sessionId}", ct);
+        var resp = await Http.DeleteAsync($"/api/account/sessions/{sessionId}", ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
     /// <summary>Revokes all active sessions except the one identified by <paramref name="currentSessionId"/>.</summary>
     public async Task<(bool Ok, string? Error)> RevokeAllOtherSessionsAsync(Guid currentSessionId, CancellationToken ct = default)
     {
-        var resp = await http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/account/sessions")
+        var resp = await Http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/account/sessions")
         {
             Content = JsonContent.Create(new RevokeOtherSessionsRequest(currentSessionId))
         }, ct);
@@ -472,7 +409,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns all OAuth providers linked to the authenticated user's account.</summary>
     public async Task<IReadOnlyList<LinkedProviderDto>?> GetLinkedProvidersAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/account/providers", ct);
+        var resp = await Http.GetAsync("/api/account/providers", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<LinkedProviderDto>>(ct)
             : null;
@@ -481,7 +418,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Removes the specified OAuth provider from the authenticated user's account.</summary>
     public async Task<(bool Ok, string? Error)> UnlinkProviderAsync(string provider, string providerKey, CancellationToken ct = default)
     {
-        var resp = await http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/account/providers/{provider}")
+        var resp = await Http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/account/providers/{provider}")
         {
             Content = JsonContent.Create(new UnlinkProviderRequest(providerKey))
         }, ct);
@@ -491,13 +428,13 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the live server status snapshot including zone populations.</summary>
     public async Task<ServerStatusDto?> GetServerStatusAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/admin/status", ct);
+        var resp = await Http.GetAsync("/api/admin/status", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<ServerStatusDto>(ct)
             : null;
     }
 
-    // ── Moderator (view_players) ─────────────────────────────────────────────
+    // -- Moderator (view_players) ---------------------------------------------
 
     /// <summary>Returns a paged list of player accounts from the moderation endpoint.</summary>
     public async Task<AdminUserListResponse?> GetModUsersAsync(
@@ -508,7 +445,7 @@ public class RealmFoundryApiClient(HttpClient http)
         var qs  = BuildQuery(("search", search), ("status", status), ("sort", sort),
                              ("page", page.ToString()), ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<AdminUserListResponse>(ct)
             : null;
@@ -517,7 +454,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the full detail for a single player account from the moderation endpoint.</summary>
     public async Task<PlayerDetailDto?> GetModUserAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/mod/users/{id}", ct);
+        var resp = await Http.GetAsync($"/api/mod/users/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PlayerDetailDto>(ct)
             : null;
@@ -533,7 +470,7 @@ public class RealmFoundryApiClient(HttpClient http)
             ("page",     page.ToString()),
             ("pageSize", pageSize.ToString()));
         if (!string.IsNullOrEmpty(qs)) url += "?" + qs;
-        var resp = await http.GetAsync(url, ct);
+        var resp = await Http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedAdminResult<PlayerReportDto>>(ct)
             : null;
@@ -542,28 +479,28 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Resolves a player report via the moderation endpoint.</summary>
     public async Task<(bool Ok, string? Error)> ResolveModReportAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PutAsync($"/api/mod/reports/{id}/resolve", null, ct);
+        var resp = await Http.PutAsync($"/api/mod/reports/{id}/resolve", null, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    // ── Web Report Submission ────────────────────────────────────────────────
+    // -- Web Report Submission ------------------------------------------------
 
     /// <summary>Submits a report against another user from the Foundry web portal.</summary>
     public async Task<(bool Ok, string? Error)> SubmitReportAsync(
         SubmitReportRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/reports", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/reports", request, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    // ── Editorial (manage_content permission) ────────────────────────────────
+    // -- Editorial (manage_content permission) --------------------------------
 
     /// <summary>Returns a paged list of all patch notes (including drafts) for admin management.</summary>
     public async Task<PagedResult<PatchNoteSummaryDto>?> GetAllPatchNotesAsync(int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/editorial/admin/patch-notes?page={page}&pageSize={pageSize}", ct);
+        var resp = await Http.GetAsync($"/api/editorial/admin/patch-notes?page={page}&pageSize={pageSize}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedResult<PatchNoteSummaryDto>>(ct)
             : null;
@@ -572,7 +509,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the full detail for a single patch note by ID.</summary>
     public async Task<PatchNoteDto?> GetPatchNoteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/editorial/admin/patch-notes/{id}", ct);
+        var resp = await Http.GetAsync($"/api/editorial/admin/patch-notes/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct)
             : null;
@@ -581,7 +518,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Creates a new patch note.</summary>
     public async Task<(PatchNoteDto? Dto, string? Error)> CreatePatchNoteAsync(CreatePatchNoteRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/editorial/admin/patch-notes", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/editorial/admin/patch-notes", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
@@ -590,16 +527,16 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Updates an existing patch note.</summary>
     public async Task<(PatchNoteDto? Dto, string? Error)> UpdatePatchNoteAsync(Guid id, UpdatePatchNoteRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PutAsJsonAsync($"/api/editorial/admin/patch-notes/{id}", request, ct);
+        var resp = await Http.PutAsJsonAsync($"/api/editorial/admin/patch-notes/{id}", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    /// <summary>Toggles the publish status of a patch note (Draft ↔ Published).</summary>
+    /// <summary>Toggles the publish status of a patch note (Draft ? Published).</summary>
     public async Task<(PatchNoteDto? Dto, string? Error)> PublishPatchNoteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsync($"/api/editorial/admin/patch-notes/{id}/publish", null, ct);
+        var resp = await Http.PostAsync($"/api/editorial/admin/patch-notes/{id}/publish", null, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<PatchNoteDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
@@ -608,14 +545,14 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Deletes a patch note.</summary>
     public async Task<(bool Ok, string? Error)> DeletePatchNoteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/editorial/admin/patch-notes/{id}", ct);
+        var resp = await Http.DeleteAsync($"/api/editorial/admin/patch-notes/{id}", ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
     /// <summary>Returns a paged list of all lore articles (including drafts) for admin management.</summary>
     public async Task<PagedResult<LoreArticleSummaryDto>?> GetAllLoreArticlesAsync(int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/editorial/admin/lore?page={page}&pageSize={pageSize}", ct);
+        var resp = await Http.GetAsync($"/api/editorial/admin/lore?page={page}&pageSize={pageSize}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedResult<LoreArticleSummaryDto>>(ct)
             : null;
@@ -624,7 +561,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the full detail for a single lore article by ID.</summary>
     public async Task<LoreArticleDto?> GetLoreArticleAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/editorial/admin/lore/{id}", ct);
+        var resp = await Http.GetAsync($"/api/editorial/admin/lore/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct)
             : null;
@@ -633,7 +570,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Creates a new lore article.</summary>
     public async Task<(LoreArticleDto? Dto, string? Error)> CreateLoreArticleAsync(CreateLoreArticleRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/editorial/admin/lore", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/editorial/admin/lore", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
@@ -642,16 +579,16 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Updates an existing lore article.</summary>
     public async Task<(LoreArticleDto? Dto, string? Error)> UpdateLoreArticleAsync(Guid id, UpdateLoreArticleRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PutAsJsonAsync($"/api/editorial/admin/lore/{id}", request, ct);
+        var resp = await Http.PutAsJsonAsync($"/api/editorial/admin/lore/{id}", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    /// <summary>Toggles the publish status of a lore article (Draft ↔ Published).</summary>
+    /// <summary>Toggles the publish status of a lore article (Draft ? Published).</summary>
     public async Task<(LoreArticleDto? Dto, string? Error)> PublishLoreArticleAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsync($"/api/editorial/admin/lore/{id}/publish", null, ct);
+        var resp = await Http.PostAsync($"/api/editorial/admin/lore/{id}/publish", null, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<LoreArticleDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
@@ -660,14 +597,14 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Deletes a lore article.</summary>
     public async Task<(bool Ok, string? Error)> DeleteLoreArticleAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/editorial/admin/lore/{id}", ct);
+        var resp = await Http.DeleteAsync($"/api/editorial/admin/lore/{id}", ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 
     /// <summary>Returns a paged list of all announcements (including drafts) for admin management.</summary>
     public async Task<PagedResult<EditorialAnnouncementDto>?> GetAllAnnouncementsAsync(int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/editorial/admin/announcements?page={page}&pageSize={pageSize}", ct);
+        var resp = await Http.GetAsync($"/api/editorial/admin/announcements?page={page}&pageSize={pageSize}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<PagedResult<EditorialAnnouncementDto>>(ct)
             : null;
@@ -676,7 +613,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Returns the full detail for a single editorial announcement by ID.</summary>
     public async Task<EditorialAnnouncementDto?> GetAnnouncementAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.GetAsync($"/api/editorial/admin/announcements/{id}", ct);
+        var resp = await Http.GetAsync($"/api/editorial/admin/announcements/{id}", ct);
         return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct)
             : null;
@@ -685,7 +622,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Creates a new editorial announcement.</summary>
     public async Task<(EditorialAnnouncementDto? Dto, string? Error)> CreateAnnouncementAsync(CreateAnnouncementRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/editorial/admin/announcements", request, ct);
+        var resp = await Http.PostAsJsonAsync("/api/editorial/admin/announcements", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
@@ -694,16 +631,16 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Updates an existing editorial announcement.</summary>
     public async Task<(EditorialAnnouncementDto? Dto, string? Error)> UpdateAnnouncementAsync(Guid id, UpdateAnnouncementRequest request, CancellationToken ct = default)
     {
-        var resp = await http.PutAsJsonAsync($"/api/editorial/admin/announcements/{id}", request, ct);
+        var resp = await Http.PutAsJsonAsync($"/api/editorial/admin/announcements/{id}", request, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    /// <summary>Toggles the publish status of an editorial announcement (Draft ↔ Published).</summary>
+    /// <summary>Toggles the publish status of an editorial announcement (Draft ? Published).</summary>
     public async Task<(EditorialAnnouncementDto? Dto, string? Error)> PublishAnnouncementAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.PostAsync($"/api/editorial/admin/announcements/{id}/publish", null, ct);
+        var resp = await Http.PostAsync($"/api/editorial/admin/announcements/{id}/publish", null, ct);
         if (resp.IsSuccessStatusCode)
             return (await resp.Content.ReadFromJsonAsync<EditorialAnnouncementDto>(ct), null);
         return (null, await resp.Content.ReadAsStringAsync(ct));
@@ -712,7 +649,7 @@ public class RealmFoundryApiClient(HttpClient http)
     /// <summary>Deletes an editorial announcement.</summary>
     public async Task<(bool Ok, string? Error)> DeleteAnnouncementAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/editorial/admin/announcements/{id}", ct);
+        var resp = await Http.DeleteAsync($"/api/editorial/admin/announcements/{id}", ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
 }

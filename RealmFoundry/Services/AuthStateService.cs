@@ -1,4 +1,5 @@
-﻿using Veldrath.Contracts.Auth;
+﻿using Veldrath.Auth.Blazor;
+using Veldrath.Contracts.Auth;
 
 namespace RealmFoundry.Services;
 
@@ -9,35 +10,33 @@ namespace RealmFoundry.Services;
 /// This eliminates the XSS-based token-theft vector entirely. The tradeoff is that
 /// the user must re-authenticate after a full page reload (circuit teardown).
 /// </summary>
-public sealed class AuthStateService(RealmFoundryApiClient apiClient)
+public sealed class AuthStateService(RealmFoundryApiClient apiClient) : AuthStateServiceBase(apiClient)
 {
-    // Tokens stored only in circuit memory — no JS interop, no DOM exposure.
-    private string? _accessToken;
-    private string? _refreshToken;
+    // ── Foundry-specific state ────────────────────────────────────────────────
 
     /// <summary>The refresh-token session ID for the current active session.</summary>
     public Guid? SessionId { get; private set; }
 
-    /// <summary>The authenticated user's display name.</summary>
-    public string? Username { get; private set; }
-
-    /// <summary>The authenticated user's account identifier.</summary>
-    public Guid? AccountId { get; private set; }
-
     /// <summary>True when the user holds the <c>Curator</c> role.</summary>
     public bool IsCurator { get; private set; }
 
-    /// <summary>Expiry timestamp of the current access token.</summary>
-    public DateTimeOffset? TokenExpiry { get; private set; }
-
-    /// <summary>True when an access token is present in circuit memory.</summary>
-    public bool IsLoggedIn => _accessToken is not null;
-
-    /// <summary>All role names currently held by the authenticated user.</summary>
-    public IReadOnlyList<string> Roles { get; private set; } = [];
-
     /// <summary>Effective permission set (union of role and per-user grants) for the authenticated user.</summary>
     public IReadOnlyList<string> Permissions { get; private set; } = [];
+
+    // ── Backward compat ───────────────────────────────────────────────────────
+
+    /// <summary>Expiry timestamp of the current access token. Alias for <see cref="AuthStateServiceBase.AccessTokenExpiry"/>.</summary>
+    public DateTimeOffset? TokenExpiry => AccessTokenExpiry;
+
+    /// <summary>
+    /// No-op kept for backward compatibility. Tokens are circuit-scoped memory only
+    /// and are not persisted in browser storage, so there is nothing to restore on circuit start.
+    /// </summary>
+#pragma warning disable CA1822 // Instance method preserved so Razor components can call it via the injected service.
+    public Task InitialiseAsync() => Task.CompletedTask;
+#pragma warning restore CA1822
+
+    // ── Derived role / permission checks ─────────────────────────────────────
 
     /// <summary>True when the user holds the <c>Admin</c> role.</summary>
     public bool IsAdmin => Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
@@ -54,99 +53,41 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient)
 
     /// <summary>True when the access token expires within two minutes.</summary>
     public bool TokenExpiresSoon =>
-        TokenExpiry.HasValue && (TokenExpiry.Value - DateTimeOffset.UtcNow) < TimeSpan.FromMinutes(2);
+        AccessTokenExpiry.HasValue && (AccessTokenExpiry.Value - DateTimeOffset.UtcNow) < TimeSpan.FromMinutes(2);
+
+    // ── Overrides ─────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// True once the startup auth check has completed — either auth was successfully
-    /// restored or the check confirmed there is no active session.
-    /// Components should render a blank placeholder until this is <c>true</c> to
-    /// avoid flashing a "must sign in" message while the async check is still running.
+    /// Stores tokens from an <see cref="AuthResponse"/> in circuit memory, setting
+    /// Foundry-specific fields in addition to the base state.
     /// </summary>
-    public bool IsAuthReady { get; private set; }
-
-    /// <summary>Raised whenever auth state changes.</summary>
-    public event Action? OnChange;
-
-    /// <summary>
-    /// Marks the startup auth check as complete without setting a logged-in session.
-    /// Call this when the check finishes and no valid session was found.
-    /// Fires <see cref="OnChange"/> so subscriber components can re-render.
-    /// </summary>
-    public void MarkReady()
+    public override Task SetTokensAsync(AuthResponse response)
     {
-        IsAuthReady = true;
-        OnChange?.Invoke();
+        SessionId   = response.SessionId;
+        IsCurator   = response.IsCurator;
+        Permissions = response.Permissions;
+        return base.SetTokensAsync(response);
     }
 
     /// <summary>
-    /// No-op kept for backward compatibility. Tokens are circuit-scoped memory only
-    /// and are not persisted in browser storage, so there is nothing to restore on circuit start.
+    /// Updates the access token from a <see cref="RenewJwtResponse"/>, setting
+    /// Foundry-specific fields in addition to the base state.
     /// </summary>
-    public Task InitialiseAsync() => Task.CompletedTask;
-
-    /// <summary>Stores a token pair in circuit memory and applies it as the active auth state.</summary>
-    /// <param name="response">The <see cref="AuthResponse"/> returned from the server.</param>
-    public Task SetTokensAsync(AuthResponse response)
+    public override Task SetTokensAsync(RenewJwtResponse response, string rawRefreshToken)
     {
-        _accessToken  = response.AccessToken;
-        _refreshToken = response.RefreshToken;
-        SessionId     = response.SessionId;
-        Apply(response.Username, response.AccountId, response.IsCurator,
-              response.AccessTokenExpiry, response.Roles, response.Permissions);
-        return Task.CompletedTask;
+        SessionId   = response.SessionId;
+        IsCurator   = response.IsCurator;
+        Permissions = response.Permissions;
+        return base.SetTokensAsync(response, rawRefreshToken);
     }
 
-    /// <summary>Proactively renews the access token using the in-memory refresh token without rotating it.</summary>
-    /// <remarks>
-    /// Calls <c>POST /api/auth/renew-jwt</c> so the HttpOnly cookie refresh token never needs to
-    /// change — the browser cookie and the circuit's in-memory token stay permanently in sync.
-    /// </remarks>
-    /// <returns><c>true</c> if the renewal succeeded and state was updated.</returns>
-    public async Task<bool> TryRefreshAsync()
+    /// <summary>Clears Foundry-specific auth fields before base fields are cleared.</summary>
+    protected override void ClearState()
     {
-        if (string.IsNullOrEmpty(_refreshToken)) return false;
-
-        var renewed = await apiClient.RenewJwtAsync(_refreshToken);
-        if (renewed is null) return false;
-
-        _accessToken = renewed.AccessToken;
-        Apply(renewed.Username, renewed.AccountId, renewed.IsCurator,
-              renewed.AccessTokenExpiry, renewed.Roles, renewed.Permissions);
-        return true;
-    }
-
-    /// <summary>Revokes the current session on the server and clears all auth state from circuit memory.</summary>
-    public async Task LogOutAsync()
-    {
-        if (_refreshToken is not null)
-            await apiClient.LogoutAsync(_refreshToken);
-
-        _accessToken  = null;
-        _refreshToken = null;
         SessionId   = null;
-        Username    = null;
-        AccountId   = null;
         IsCurator   = false;
-        TokenExpiry = null;
-        Roles       = [];
         Permissions = [];
-        apiClient.ClearBearerToken();
-        OnChange?.Invoke();
-    }
-
-    private void Apply(
-        string? username, Guid? accountId, bool isCurator,
-        DateTimeOffset? expiry, IReadOnlyList<string> roles, IReadOnlyList<string> permissions)
-    {
-        Username    = username;
-        AccountId   = accountId;
-        IsCurator   = isCurator;
-        TokenExpiry = expiry;
-        Roles       = roles;
-        Permissions = permissions;
-        IsAuthReady = true;
-        apiClient.SetBearerToken(_accessToken!);
-        OnChange?.Invoke();
+        base.ClearState();
     }
 }
 

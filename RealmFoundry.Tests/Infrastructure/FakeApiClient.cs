@@ -11,6 +11,9 @@ internal sealed class FakeApiClient : RealmFoundryApiClient
     private AuthResponse? _refreshResult;
     private RenewJwtResponse? _renewJwtResult;
 
+    /// <summary>Number of times <see cref="RenewJwtAsync"/> has been called.</summary>
+    public int RenewJwtCallCount { get; private set; }
+
     public FakeApiClient() : base(new System.Net.Http.HttpClient
     {
         BaseAddress = new Uri("https://localhost")
@@ -26,5 +29,8 @@ internal sealed class FakeApiClient : RealmFoundryApiClient
 
     public override Task<RenewJwtResponse?> RenewJwtAsync(
         string refreshToken, CancellationToken ct = default)
-        => Task.FromResult(_renewJwtResult);
+    {
+        RenewJwtCallCount++;
+        return Task.FromResult(_renewJwtResult);
+    }
 }
