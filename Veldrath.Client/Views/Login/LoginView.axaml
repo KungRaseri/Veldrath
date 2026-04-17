@@ -76,6 +76,16 @@
                      PasswordChar="•"
                      Height="40" />
 
+            <!-- Forgot password link -->
+            <Button Classes="hyperlink"
+                    Command="{Binding ForgotPasswordCommand}"
+                    HorizontalAlignment="Right"
+                    Padding="0"
+                    Margin="0,2,0,0"
+                    FontSize="12">
+                Forgot your password?
+            </Button>
+
             <!-- Remember my email -->
             <CheckBox Content="Remember my email"
                       IsChecked="{Binding RememberEmail}"

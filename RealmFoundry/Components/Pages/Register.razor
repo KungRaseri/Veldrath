@@ -1,0 +1,141 @@
+@page "/register"
+@inject NavigationManager Nav
+@inject IConfiguration Config
+@inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
+
+<PageTitle>Create Account — RealmFoundry</PageTitle>
+
+<div class="auth-card">
+    <h1>Create an Account</h1>
+
+    @if (_registered)
+    {
+        <div class="alert alert-success">
+            <strong>Welcome!</strong> Your account has been created. Please check your email to confirm your address before signing in.
+        </div>
+        <p style="margin-top:1rem"><a href="/login">Back to sign in</a></p>
+    }
+    else
+    {
+        <p class="lead">Register with your email to access RealmFoundry, or use a connected provider below.</p>
+
+        @if (_error is not null)
+        {
+            <div class="alert alert-error">@_error</div>
+        }
+
+        <form @onsubmit="DoRegisterAsync" @onsubmit:preventDefault>
+            <label class="field-label">Email</label>
+            <input type="email" class="field-input" @bind="_email" placeholder="you@example.com" />
+
+            <label class="field-label" style="margin-top:.75rem">Username</label>
+            <input type="text" class="field-input" @bind="_username" placeholder="Choose a username" />
+
+            <label class="field-label" style="margin-top:.75rem">Password</label>
+            <input type="password" class="field-input" @bind="_password" placeholder="Create a password" />
+
+            <label class="field-label" style="margin-top:.75rem">Confirm Password</label>
+            <input type="password" class="field-input" @bind="_confirmPassword" placeholder="Repeat your password" />
+
+            <button type="submit" class="btn btn-primary" disabled="@_submitting" style="margin-top:1rem;width:100%">
+                @(_submitting ? "Creating account…" : "Create account")
+            </button>
+        </form>
+
+        <p style="margin-top:.75rem;text-align:center;font-size:.9rem">
+            Already have an account? <a href="/login">Sign in</a>
+        </p>
+
+        <div class="divider"><span>or register with</span></div>
+
+        <div class="oauth-buttons">
+            <a class="btn btn-discord" href="@_discordUrl">
+                Register with Discord
+            </a>
+            <a class="btn btn-google" href="@_googleUrl">
+                Register with Google
+            </a>
+            <a class="btn btn-microsoft" href="@_msUrl">
+                Register with Microsoft
+            </a>
+        </div>
+    }
+</div>
+
+<style>
+    .auth-card { max-width: 420px; margin: 4rem auto; padding: 2rem; border: 1px solid var(--vds-border); border-radius: 8px; }
+    .lead { color: var(--vds-text-muted); margin-bottom: 1.25rem; }
+    .field-label { display: block; font-size: .85rem; color: var(--vds-text-muted); margin-bottom: .35rem; }
+    .field-input { width: 100%; padding: .4rem .6rem; border-radius: 4px;
+        border: 1px solid var(--vds-border); background: var(--vds-bg-3);
+        color: inherit; font-size: .95rem; box-sizing: border-box; }
+    .btn-primary { background: var(--vds-accent); color: #fff; border: none; padding: .5rem 1rem;
+        border-radius: 4px; cursor: pointer; font-size: .95rem; }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .divider { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; color: var(--vds-text-muted); font-size: .85rem; }
+    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--vds-border); }
+    .alert { padding: .6rem .9rem; border-radius: 4px; margin-bottom: 1rem; font-size: .9rem; }
+    .alert-success { background: var(--vds-success-bg, #e6f9ec); color: var(--vds-success, #1a7a3a); }
+    .alert-error   { background: var(--vds-danger-bg, #fde8e8); color: var(--vds-danger,  #c53030); }
+</style>
+
+@code {
+    private string  _email           = string.Empty;
+    private string  _username        = string.Empty;
+    private string  _password        = string.Empty;
+    private string  _confirmPassword = string.Empty;
+    private bool    _submitting;
+    private bool    _registered;
+    private string? _error;
+
+    private string _discordUrl = "#";
+    private string _googleUrl  = "#";
+    private string _msUrl      = "#";
+
+    protected override void OnInitialized()
+    {
+        var serverUrl    = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
+        var callbackBase = $"{serverUrl}/api/auth/session?redirectTo={Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/")}";
+
+        _discordUrl = $"{serverUrl}/api/auth/external/discord?returnUrl={Uri.EscapeDataString(callbackBase)}";
+        _googleUrl  = $"{serverUrl}/api/auth/external/google?returnUrl={Uri.EscapeDataString(callbackBase)}";
+        _msUrl      = $"{serverUrl}/api/auth/external/microsoft?returnUrl={Uri.EscapeDataString(callbackBase)}";
+    }
+
+    private async Task DoRegisterAsync()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_username) ||
+            string.IsNullOrWhiteSpace(_password))
+        {
+            _error = "Please fill in all fields.";
+            return;
+        }
+
+        if (_password != _confirmPassword)
+        {
+            _error = "Passwords do not match.";
+            return;
+        }
+
+        _submitting = true;
+        try
+        {
+            var response = await Api.RegisterAsync(_email, _username, _password);
+            if (response is null)
+            {
+                _error = "Registration failed. The email or username may already be in use.";
+                return;
+            }
+
+            await AuthState.SetTokensAsync(response);
+            _registered = true;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}

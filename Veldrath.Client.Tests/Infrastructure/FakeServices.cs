@@ -61,6 +61,13 @@ public class FakeAuthService : IAuthService
 
     public Task<CreateExchangeCodeResponse?> CreateExchangeCodeAsync(CancellationToken ct = default)
         => Task.FromResult<CreateExchangeCodeResponse?>(null);
+
+    public Task ForgotPasswordAsync(string email, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task<(bool Ok, string? Error)> ResetPasswordAsync(
+        string email, string token, string newPassword, CancellationToken ct = default)
+        => Task.FromResult((true, (string?)null));
 }
 
 // Character service stub

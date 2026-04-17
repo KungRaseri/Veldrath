@@ -19,9 +19,12 @@ public sealed class TokenPersistenceService
 
     [SupportedOSPlatform("windows")]
     public void Save(string accessToken, string refreshToken, string username,
-        Guid accountId, DateTimeOffset expiry, bool isCurator)
+        Guid accountId, DateTimeOffset expiry, bool isCurator,
+        IReadOnlyList<string>? roles = null, IReadOnlyList<string>? permissions = null,
+        Guid? sessionId = null)
     {
-        var data = new TokenData(accessToken, refreshToken, username, accountId, expiry, isCurator);
+        var data = new TokenData(accessToken, refreshToken, username, accountId, expiry, isCurator,
+                                 roles ?? [], permissions ?? [], sessionId);
         var json  = JsonSerializer.Serialize(data);
         var bytes = Encoding.UTF8.GetBytes(json);
         var encrypted = ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
@@ -58,17 +61,22 @@ public sealed class TokenPersistenceService
     /// A no-op on non-Windows platforms so call sites do not need platform guards.
     /// </summary>
     public void SaveCurrent(string accessToken, string refreshToken, string username,
-        Guid accountId, DateTimeOffset expiry, bool isCurator)
+        Guid accountId, DateTimeOffset expiry, bool isCurator,
+        IReadOnlyList<string>? roles = null, IReadOnlyList<string>? permissions = null,
+        Guid? sessionId = null)
     {
         if (!OperatingSystem.IsWindows()) return;
-        Save(accessToken, refreshToken, username, accountId, expiry, isCurator);
+        Save(accessToken, refreshToken, username, accountId, expiry, isCurator, roles, permissions, sessionId);
     }
 }
 
 public sealed record TokenData(
-    string          AccessToken,
-    string          RefreshToken,
-    string          Username,
-    Guid            AccountId,
-    DateTimeOffset  AccessTokenExpiry,
-    bool            IsCurator);
+    string                AccessToken,
+    string                RefreshToken,
+    string                Username,
+    Guid                  AccountId,
+    DateTimeOffset        AccessTokenExpiry,
+    bool                  IsCurator,
+    IReadOnlyList<string> Roles       = default!,
+    IReadOnlyList<string> Permissions = default!,
+    Guid?                 SessionId   = null);

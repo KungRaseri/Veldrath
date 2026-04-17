@@ -23,6 +23,10 @@ public interface IAuthService
     Task LogoutAsync();
     /// <summary>Creates a single-use exchange code that can be redeemed by another client. Returns <see langword="null"/> on failure.</summary>
     Task<CreateExchangeCodeResponse?> CreateExchangeCodeAsync(CancellationToken ct = default);
+    /// <summary>Sends a password-reset email for the specified address. Always returns successfully to prevent account enumeration.</summary>
+    Task ForgotPasswordAsync(string email, CancellationToken ct = default);
+    /// <summary>Completes a password reset using the one-time token from the reset email.</summary>
+    Task<(bool Ok, string? Error)> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken ct = default);
 }
 
 // Implementation
@@ -68,9 +72,9 @@ public class HttpAuthService(
                 if (auth is not null)
                 {
                     tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                               auth.AccessTokenExpiry, auth.IsCurator);
+                               auth.AccessTokenExpiry, auth.IsCurator, auth.Roles, auth.Permissions, auth.SessionId);
                     persistence.SaveCurrent(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                                            auth.AccessTokenExpiry, auth.IsCurator);
+                                            auth.AccessTokenExpiry, auth.IsCurator, auth.Roles, auth.Permissions, auth.SessionId);
                 }
                 return (auth, null);
             }
@@ -95,9 +99,9 @@ public class HttpAuthService(
                 if (auth is not null)
                 {
                     tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                               auth.AccessTokenExpiry, auth.IsCurator);
+                               auth.AccessTokenExpiry, auth.IsCurator, auth.Roles, auth.Permissions, auth.SessionId);
                     persistence.SaveCurrent(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                                            auth.AccessTokenExpiry, auth.IsCurator);
+                                            auth.AccessTokenExpiry, auth.IsCurator, auth.Roles, auth.Permissions, auth.SessionId);
                 }
                 return (auth, null);
             }
@@ -133,9 +137,9 @@ public class HttpAuthService(
             if (auth is null) { tokens.Clear(); persistence.Clear(); return false; }
 
             tokens.Set(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                        auth.AccessTokenExpiry, auth.IsCurator);
+                        auth.AccessTokenExpiry, auth.IsCurator, auth.Roles, auth.Permissions, auth.SessionId);
             persistence.SaveCurrent(auth.AccessToken, auth.RefreshToken, auth.Username, auth.AccountId,
-                                    auth.AccessTokenExpiry, auth.IsCurator);
+                                    auth.AccessTokenExpiry, auth.IsCurator, auth.Roles, auth.Permissions, auth.SessionId);
             return true;
         }
         catch (Exception ex)
@@ -219,9 +223,9 @@ public class HttpAuthService(
             return (null, new AppError("Invalid response from server."));
 
         tokens.Set(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
-                   response.AccessTokenExpiry, response.IsCurator);
+                   response.AccessTokenExpiry, response.IsCurator, response.Roles, response.Permissions, response.SessionId);
         persistence.SaveCurrent(response.AccessToken, response.RefreshToken, response.Username, response.AccountId,
-                                response.AccessTokenExpiry, response.IsCurator);
+                                response.AccessTokenExpiry, response.IsCurator, response.Roles, response.Permissions, response.SessionId);
         return (response, null);
     }
 
@@ -242,6 +246,40 @@ public class HttpAuthService(
         {
             logger.LogError(ex, "Create-exchange-code request failed");
             return null;
+        }
+    }
+
+    public async Task ForgotPasswordAsync(string email, CancellationToken ct = default)
+    {
+        try
+        {
+            await http.PostAsJsonAsync("api/auth/forgot-password", new ForgotPasswordRequest(email), ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Forgot-password request failed (server may be unreachable)");
+        }
+    }
+
+    public async Task<(bool Ok, string? Error)> ResetPasswordAsync(
+        string email, string token, string newPassword, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await http.PostAsJsonAsync(
+                "api/auth/reset-password",
+                new ResetPasswordRequest(email, token, newPassword),
+                ct);
+
+            if (response.IsSuccessStatusCode) return (true, null);
+
+            var serverMessage = await HttpResponseHelper.ExtractServerMessageAsync(response);
+            return (false, serverMessage ?? "Password reset failed. The link may have expired.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Reset-password request failed");
+            return (false, "Network error. Please check your connection.");
         }
     }
 }

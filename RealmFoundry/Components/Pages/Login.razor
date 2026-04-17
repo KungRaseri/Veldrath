@@ -1,6 +1,8 @@
 ﻿@page "/login"
 @inject NavigationManager Nav
 @inject IConfiguration Config
+@inject RealmFoundryApiClient Api
+@inject AuthStateService AuthState
 
 <PageTitle>Sign In — RealmFoundry</PageTitle>
 
@@ -20,8 +22,31 @@
             <strong>Sign-in failed.</strong> Something went wrong during authentication. Please try again.
         </div>
     }
+    @if (_loginError is not null)
+    {
+        <div class="alert alert-error">@_loginError</div>
+    }
 
-    <p class="lead">Choose a provider to log into RealmFoundry.</p>
+    <p class="lead">Sign in with your Veldrath account or a connected provider.</p>
+
+    <!-- Email / password login -->
+    <form @onsubmit="DoLoginAsync" @onsubmit:preventDefault>
+        <label class="field-label">Email</label>
+        <input type="email" class="field-input" @bind="_email" placeholder="you@example.com" />
+
+        <label class="field-label" style="margin-top:.75rem">Password</label>
+        <input type="password" class="field-input" @bind="_password" placeholder="Your password" />
+
+        <button type="submit" class="btn btn-primary" disabled="@_submitting" style="margin-top:1rem;width:100%">
+            @(_submitting ? "Signing in…" : "Sign in with email")
+        </button>
+    </form>
+
+    <p style="margin-top:.6rem;text-align:center;font-size:.9rem">
+        No account? <a href="/register">Create one</a> &nbsp;·&nbsp; <a href="/forgot-password">Forgot password?</a>
+    </p>
+
+    <div class="divider"><span>or continue with</span></div>
 
     <div class="oauth-buttons">
         <a class="btn btn-discord" href="@_discordUrl">
@@ -34,15 +59,33 @@
             Sign in with Microsoft
         </a>
     </div>
-
-    <p style="margin-top:1.5rem;text-align:center;font-size:.9rem">
-        <a href="/forgot-password">Forgot your password?</a>
-    </p>
 </div>
+
+<style>
+    .auth-card { max-width: 420px; margin: 4rem auto; padding: 2rem; border: 1px solid var(--vds-border); border-radius: 8px; }
+    .lead { color: var(--vds-text-muted); margin-bottom: 1.25rem; }
+    .field-label { display: block; font-size: .85rem; color: var(--vds-text-muted); margin-bottom: .35rem; }
+    .field-input { width: 100%; padding: .4rem .6rem; border-radius: 4px;
+        border: 1px solid var(--vds-border); background: var(--vds-bg-3);
+        color: inherit; font-size: .95rem; box-sizing: border-box; }
+    .btn-primary { background: var(--vds-accent); color: #fff; border: none; padding: .5rem 1rem;
+        border-radius: 4px; cursor: pointer; font-size: .95rem; }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .divider { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; color: var(--vds-text-muted); font-size: .85rem; }
+    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--vds-border); }
+    .alert { padding: .6rem .9rem; border-radius: 4px; margin-bottom: 1rem; font-size: .9rem; }
+    .alert-info  { background: var(--vds-info-bg,  #e8f4fd); color: var(--vds-info,  #1a6fa3); }
+    .alert-error { background: var(--vds-danger-bg, #fde8e8); color: var(--vds-danger, #c53030); }
+</style>
 
 @code {
     [SupplyParameterFromQuery(Name = "pending_link")] private string? PendingLinkParam { get; set; }
     [SupplyParameterFromQuery(Name = "error")]        private string? ErrorParam        { get; set; }
+
+    private string  _email     = string.Empty;
+    private string  _password  = string.Empty;
+    private bool    _submitting;
+    private string? _loginError;
 
     private string _discordUrl   = "#";
     private string _googleUrl    = "#";
@@ -59,5 +102,29 @@
         _discordUrl   = $"{serverUrl}/api/auth/external/discord?returnUrl={Uri.EscapeDataString(callbackBase)}";
         _googleUrl    = $"{serverUrl}/api/auth/external/google?returnUrl={Uri.EscapeDataString(callbackBase)}";
         _msUrl        = $"{serverUrl}/api/auth/external/microsoft?returnUrl={Uri.EscapeDataString(callbackBase)}";
+    }
+
+    private async Task DoLoginAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_password)) return;
+
+        _submitting = true;
+        _loginError = null;
+        try
+        {
+            var response = await Api.LoginAsync(_email, _password);
+            if (response is null)
+            {
+                _loginError = "Incorrect email or password. Please try again.";
+                return;
+            }
+
+            await AuthState.SetTokensAsync(response);
+            Nav.NavigateTo("/");
+        }
+        finally
+        {
+            _submitting = false;
+        }
     }
 }

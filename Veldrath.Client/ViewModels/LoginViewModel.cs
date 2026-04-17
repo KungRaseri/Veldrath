@@ -36,6 +36,8 @@ public class LoginViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> LoginCommand { get; }
     public ReactiveCommand<Unit, Unit> BackCommand  { get; }
     public ReactiveCommand<string, Unit> LoginExternalCommand { get; }
+    /// <summary>Navigates to the Forgot Password screen.</summary>
+    public ReactiveCommand<Unit, Unit> ForgotPasswordCommand { get; }
 
     public LoginViewModel(IAuthService auth, INavigationService navigation, SessionStore sessionStore)
     {
@@ -58,6 +60,7 @@ public class LoginViewModel : ViewModelBase
         LoginExternalCommand = ReactiveCommand.CreateFromTask<string>(DoLoginExternalAsync,
             this.WhenAnyValue(x => x.IsBusy, busy => !busy));
         BackCommand          = ReactiveCommand.Create(() => navigation.NavigateTo<MainMenuViewModel>());
+        ForgotPasswordCommand = ReactiveCommand.Create(() => navigation.NavigateTo<ForgotPasswordViewModel>());
     }
 
     private async Task DoLoginAsync()
