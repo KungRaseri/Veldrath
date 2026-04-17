@@ -135,25 +135,65 @@ public class AuthStateServiceTests
     public async Task TryRefreshAsync_ReturnsFalse_WhenApiReturnsNull()
     {
         var (svc, api) = Build();
-        await svc.SetTokensAsync(MakeResponse());
+        // Use an expiring-soon token so the threshold guard does not short-circuit.
+        var expiringSoon = MakeResponse() with { AccessTokenExpiry = DateTimeOffset.UtcNow.AddSeconds(30) };
+        await svc.SetTokensAsync(expiringSoon);
         api.SetRenewJwtResult(null);
 
         var result = await svc.TryRefreshAsync();
 
         result.Should().BeFalse();
+        // A rejected renewal means the refresh token is revoked/expired — the circuit
+        // must be logged out so the user is redirected to sign in again.
+        svc.IsLoggedIn.Should().BeFalse();
     }
 
     [Fact]
     public async Task TryRefreshAsync_ReturnsTrue_AndUpdatesState_WhenSuccessful()
     {
         var (svc, api) = Build();
-        await svc.SetTokensAsync(MakeResponse());
+        // Use an expiring-soon token so the threshold guard does not short-circuit.
+        var expiringSoon = MakeResponse() with { AccessTokenExpiry = DateTimeOffset.UtcNow.AddSeconds(30) };
+        await svc.SetTokensAsync(expiringSoon);
         api.SetRenewJwtResult(MakeRenewResponse("refreshed-user"));
 
         var result = await svc.TryRefreshAsync();
 
         result.Should().BeTrue();
         svc.Username.Should().Be("refreshed-user");
+    }
+
+    [Fact]
+    public async Task TryRefreshAsync_ReturnsTrue_WhenTokenIsStillFresh_AndDoesNotCallApi()
+    {
+        // Token expires in 1 hour — comfortably within the 2-minute default threshold.
+        // The API must NOT be called; skipping the call is the point of the guard.
+        var (svc, api) = Build();
+        var freshResponse = MakeResponse() with { AccessTokenExpiry = DateTimeOffset.UtcNow.AddHours(1) };
+        await svc.SetTokensAsync(freshResponse);
+        api.SetRenewJwtResult(MakeRenewResponse()); // would succeed if called
+
+        var result = await svc.TryRefreshAsync();
+
+        result.Should().BeTrue();
+        api.RenewJwtCallCount.Should().Be(0,
+            "the API must not be called when the token still has plenty of time left");
+    }
+
+    [Fact]
+    public async Task TryRefreshAsync_CallsApi_WhenTokenIsExpiringSoon()
+    {
+        // Token expires in 30 seconds — below the 2-minute default threshold.
+        var (svc, api) = Build();
+        var soonResponse = MakeResponse() with { AccessTokenExpiry = DateTimeOffset.UtcNow.AddSeconds(30) };
+        await svc.SetTokensAsync(soonResponse);
+        api.SetRenewJwtResult(MakeRenewResponse("renewed-user"));
+
+        var result = await svc.TryRefreshAsync();
+
+        result.Should().BeTrue();
+        api.RenewJwtCallCount.Should().Be(1, "the API must be called when the token is expiring soon");
+        svc.Username.Should().Be("renewed-user");
     }
 
     // ── LogOutAsync ───────────────────────────────────────────────────────────

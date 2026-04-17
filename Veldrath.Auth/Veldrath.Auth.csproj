@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Veldrath.Auth</RootNamespace>
+    <AssemblyName>Veldrath.Auth</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

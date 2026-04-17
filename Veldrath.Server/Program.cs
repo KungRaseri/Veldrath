@@ -541,6 +541,18 @@ try
     app.MapMetrics();
 
     Log.Information("Veldrath.Server running at {Urls}", string.Join(", ", app.Urls));
+
+    // Guard: Auth:CookieDomain must be configured in non-Development environments.
+    // Without it, the rt cookie is not cross-subdomain and RealmFoundry / Veldrath.Web
+    // cannot share the session established by /api/auth/session.
+    if (app.Environment.IsProduction()
+        && string.IsNullOrWhiteSpace(app.Configuration["Auth:CookieDomain"]))
+    {
+        throw new InvalidOperationException(
+            "Auth:CookieDomain must be configured in production for cross-subdomain session sharing. " +
+            "Set Auth__CookieDomain in your environment (e.g. .veldrath.com).");
+    }
+
     await app.RunAsync();
 }
 catch (Exception ex)

@@ -124,12 +124,13 @@
             Nav.LocationChanged += OnLocationChanged;
     }
 
-    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        // Proactively refresh the JWT when the user navigates and the token is nearing expiry.
-        if (AuthState.IsLoggedIn)
-            await AuthState.TryRefreshAsync();
-    }
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => _ = InvokeAsync(async () =>
+        {
+            // Proactively refresh the JWT when the user navigates and the token is nearing expiry.
+            if (AuthState.IsLoggedIn)
+                await AuthState.TryRefreshAsync();
+        });
 
     /// <inheritdoc />
     public void Dispose()

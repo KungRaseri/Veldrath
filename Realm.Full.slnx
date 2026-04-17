@@ -3,6 +3,9 @@
   <Project Path="Veldrath.Assets/Veldrath.Assets.csproj" />
   <Project Path="Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj" />
   <Project Path="Veldrath.Contracts/Veldrath.Contracts.csproj" />
+  <Project Path="Veldrath.Auth/Veldrath.Auth.csproj" />
+  <Project Path="Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj" />
+  <Project Path="Veldrath.Auth.Tests/Veldrath.Auth.Tests.csproj" />
   <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />
   <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
   <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />

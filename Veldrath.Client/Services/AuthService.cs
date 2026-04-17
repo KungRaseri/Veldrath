@@ -107,6 +107,10 @@ public class HttpAuthService(
     {
         if (tokens.RefreshToken is null) return false;
 
+        // Skip the network round-trip when the token is not yet close to expiry.
+        // Mirrors the 2-minute threshold used by AuthStateServiceBase.TryRefreshAsync.
+        if (tokens.AccessTokenExpiry.HasValue && !tokens.IsExpiringSoon) return true;
+
         try
         {
             var response = await http.PostAsJsonAsync("api/auth/refresh", new RefreshRequest(tokens.RefreshToken));

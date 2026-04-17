@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Veldrath.Contracts.Auth;
 using Veldrath.Server.Data.Entities;
@@ -27,7 +28,8 @@ public class AuthService(
     IRefreshTokenRepository refreshTokenRepo,
     AccountLinkService accountLinkService,
     IEmailSender emailSender,
-    IConfiguration config)
+    IConfiguration config,
+    ILogger<AuthService> logger)
 {
     public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(
         RegisterRequest request, string clientIp, CancellationToken ct = default)
@@ -54,11 +56,22 @@ public class AuthService(
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
+        {
+            logger.LogWarning("Failed login attempt from {ClientIp}: account not found", clientIp);
             return (null, "Invalid credentials");
+        }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!result.Succeeded)
+        {
+            if (result.IsLockedOut)
+                logger.LogWarning("Failed login attempt from {ClientIp}: account {AccountId} is locked out",
+                    clientIp, user.Id);
+            else
+                logger.LogWarning("Failed login attempt from {ClientIp}: invalid password for account {AccountId}",
+                    clientIp, user.Id);
             return (null, result.IsLockedOut ? "Account is locked out" : "Invalid credentials");
+        }
 
         return (await IssueTokenPairAsync(user, clientIp, ct), null);
     }
@@ -75,6 +88,9 @@ public class AuthService(
         if (!stored.IsActive)
         {
             // Replaying a revoked token is a theft signal — revoke the entire account's token set.
+            logger.LogWarning(
+                "Refresh token theft detected: revoked token replayed from {ClientIp} for account {AccountId}. Revoking all tokens.",
+                clientIp, stored.AccountId);
             await refreshTokenRepo.RevokeAllForAccountAsync(stored.AccountId, clientIp, ct);
             return (null, "Refresh token has been revoked");
         }
@@ -133,7 +149,12 @@ public class AuthService(
             return (null, "Invalid refresh token");
 
         if (!stored.IsActive)
+        {
+            logger.LogWarning(
+                "RenewJwt rejected from {ClientIp}: revoked refresh token for account {AccountId}",
+                clientIp, stored.AccountId);
             return (null, "Refresh token has been revoked");
+        }
 
         if (stored.ExpiresAt <= DateTimeOffset.UtcNow)
             return (null, "Refresh token has expired");
@@ -177,6 +198,10 @@ public class AuthService(
             var existing = await userManager.FindByEmailAsync(email);
             if (existing is not null)
             {
+                logger.LogInformation(
+                    "OAuth {Provider} login from {ClientIp}: email matches existing account {AccountId}. Dispatching link-confirmation email.",
+                    provider, clientIp, existing.Id);
+
                 await accountLinkService.RequestLinkAsync(
                     existing, provider, providerKey, displayName,
                     returnUrl, serverBaseUrl ?? string.Empty, ct);
@@ -203,10 +228,15 @@ public class AuthService(
 
             var create = await userManager.CreateAsync(user);
             if (!create.Succeeded)
+            {
+                logger.LogWarning(
+                    "OAuth {Provider} login from {ClientIp}: failed to create new account. Errors: {Errors}",
+                    provider, clientIp, string.Join("; ", create.Errors.Select(e => e.Description)));
                 return new ExternalLoginResult(
                     null,
                     string.Join("; ", create.Errors.Select(e => e.Description)),
                     ExternalLoginStatus.Error);
+            }
         }
 
         // 4. Ensure the external login is linked (idempotent — step 1 already matched).
