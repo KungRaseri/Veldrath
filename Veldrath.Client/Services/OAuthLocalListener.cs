@@ -17,13 +17,27 @@ internal sealed class OAuthLocalListener : IDisposable
 
     public OAuthLocalListener()
     {
-        // Pick an available port by binding to port 0 and reading back the assigned port.
-        var port = GetFreePort();
-        CallbackUrl = $"http://localhost:{port}/callback";
-        _listener = new HttpListener();
-        _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        _listener.Prefixes.Add($"http://localhost:{port}/");
-        _listener.Start();
+        // Pick an available port. The probe→release→re-bind sequence has a small TOCTOU window,
+        // so we retry up to 3 times in the rare case another process grabs the port first.
+        const int MaxAttempts = 3;
+        for (var attempt = 0; attempt < MaxAttempts; attempt++)
+        {
+            var port = GetFreePort();
+            CallbackUrl = $"http://localhost:{port}/callback";
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            _listener.Prefixes.Add($"http://localhost:{port}/");
+            try
+            {
+                _listener.Start();
+                return;
+            }
+            catch (HttpListenerException) when (attempt < MaxAttempts - 1)
+            {
+                // Port was grabbed between probe and bind — try again with a new port.
+            }
+        }
+        _listener.Start(); // Final attempt: let it throw if still failing.
     }
 
     /// <summary>
@@ -70,6 +84,10 @@ internal sealed class OAuthLocalListener : IDisposable
             return new OAuthCallbackResult(code, accountId);
         }
         catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (HttpListenerException)
         {
             return null;
         }
