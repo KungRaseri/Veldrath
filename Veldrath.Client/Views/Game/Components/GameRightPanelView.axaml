@@ -47,7 +47,7 @@
                         <ItemsControl ItemsSource="{Binding OnlinePlayers}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:OnlinePlayerViewModel">
-                                    <Grid Margin="0,2" ColumnDefinitions="Auto,*,Auto">
+                                    <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
                                         <Ellipse
                                             Grid.Column="0"
                                             Width="7"
@@ -66,7 +66,7 @@
                                             Classes="ghost"
                                             Command="{Binding StartWhisperCommand}"
                                             Content="[W]"
-                                            FontSize="10"
+                                            FontSize="11"
                                             ToolTip.Tip="Whisper" />
                                     </Grid>
                                 </DataTemplate>
@@ -117,8 +117,8 @@
                         SelectedItem="{Binding ActiveChatTab, Mode=TwoWay}">
                         <TabControl.Styles>
                             <Style Selector="TabItem">
-                                <Setter Property="Padding" Value="4,1" />
-                                <Setter Property="FontSize" Value="10" />
+                                <Setter Property="Padding" Value="4,4" />
+                                <Setter Property="FontSize" Value="11" />
                                 <Setter Property="MinHeight" Value="0" />
                             </Style>
                         </TabControl.Styles>

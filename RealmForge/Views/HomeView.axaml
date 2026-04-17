@@ -12,7 +12,7 @@
                     MaxWidth="800" Spacing="24" Margin="40">
 
             <TextBlock Text="🛠️ RealmForge"
-                       FontSize="48" FontWeight="Bold"
+                       FontSize="40" FontWeight="Bold"
                        Foreground="{DynamicResource GameTextPrimaryBrush}"
                        HorizontalAlignment="Center" />
 

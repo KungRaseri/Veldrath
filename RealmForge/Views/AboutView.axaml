@@ -16,12 +16,12 @@
                     CornerRadius="8,8,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="{Binding AppName}"
-                               FontSize="22" FontWeight="Bold"
+                               FontSize="20" FontWeight="Bold"
                                Foreground="{DynamicResource GameTextPrimaryBrush}" />
                     <TextBlock Text="{Binding AppVersion}"
                                FontSize="12" Foreground="{DynamicResource GameTextTertiaryBrush}" />
                     <TextBlock Text="{Binding AppDescription}"
-                               FontSize="13" Foreground="{DynamicResource GameTextSecondaryBrush}"
+                               FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}"
                                TextWrapping="Wrap"
                                Margin="0,8,0,0" />
                 </StackPanel>
@@ -35,7 +35,7 @@
                                FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource GameTextPrimaryBrush}" />
                     <Border Background="{DynamicResource GameBackground0Brush}" CornerRadius="6" Padding="1">
-                        <Border Background="{DynamicResource GameBackground1Brush}" CornerRadius="5" Padding="14,10">
+                        <Border Background="{DynamicResource GameBackground1Brush}" CornerRadius="4" Padding="12,8">
                             <StackPanel Spacing="4">
                                 <Grid ColumnDefinitions="*,*,*">
                                     <TextBlock Grid.Column="0" Text="Artist"
@@ -88,7 +88,7 @@
                     <TextBlock Text="License"
                                FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource GameTextPrimaryBrush}" />
-                    <Border Background="{DynamicResource GameBackground1Brush}" CornerRadius="5" Padding="14,10">
+                    <Border Background="{DynamicResource GameBackground1Brush}" CornerRadius="4" Padding="12,8">
                         <StackPanel Spacing="4">
                             <TextBlock Text="RealmForge — Content Editor for RealmEngine"
                                        FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />

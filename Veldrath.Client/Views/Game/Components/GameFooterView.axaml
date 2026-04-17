@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="Veldrath.Client.Views.GameFooterView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -25,7 +25,7 @@
                     Classes.accent="{Binding IsInventoryOpen}"
                     Command="{Binding ToggleInventoryCommand}"
                     Content="Inventory"
-                    FontSize="13" />
+                    FontSize="12" />
                 <StackPanel
                     IsVisible="{Binding IsInCombat}"
                     Orientation="Horizontal"
@@ -34,24 +34,24 @@
                         Height="34"
                         Classes="accent"
                         Command="{Binding AttackEnemyCommand}"
-                        Content="⚔ Attack"
-                        FontSize="13" />
+                        Content="? Attack"
+                        FontSize="12" />
                     <Button
                         Height="34"
                         Classes="ghost"
                         Command="{Binding DefendActionCommand}"
-                        Content="🛡 Defend"
-                        FontSize="13" />
+                        Content="?? Defend"
+                        FontSize="12" />
                     <Button
                         Height="34"
                         Classes="danger ghost"
                         Command="{Binding FleeFromCombatCommand}"
-                        Content="🏃 Flee"
-                        FontSize="13" />
+                        Content="?? Flee"
+                        FontSize="12" />
                 </StackPanel>
             </StackPanel>
 
-            <!--  Center: ability hotbar — 6 always-visible slots  -->
+            <!--  Center: ability hotbar � 6 always-visible slots  -->
             <ItemsControl
                 Grid.Column="1"
                 HorizontalAlignment="Center"
@@ -88,13 +88,13 @@
                     Classes.accent="{Binding Tilemap.IsMiniMapOpen}"
                     Command="{Binding Tilemap.ToggleMiniMapCommand}"
                     Content="Mini-map"
-                    FontSize="13" />
+                    FontSize="12" />
                 <Button
                     Height="34"
                     Classes="ghost"
                     Command="{Binding OpenJournalCommand}"
                     Content="Journal"
-                    FontSize="13" />
+                    FontSize="12" />
             </StackPanel>
 
         </Grid>

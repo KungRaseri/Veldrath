@@ -22,7 +22,7 @@
             <TextBlock
                 Grid.Column="0"
                 VerticalAlignment="Center"
-                FontSize="13"
+                FontSize="12"
                 Text="{Binding StatusMessage}"
                 TextWrapping="Wrap" />
             <Button
