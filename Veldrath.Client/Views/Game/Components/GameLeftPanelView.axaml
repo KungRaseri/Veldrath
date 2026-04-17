@@ -18,7 +18,7 @@
         <!--  Toggle button — always visible, pinned to right edge  -->
         <Button
             Width="28"
-            Margin="0,10,2,0"
+            Margin="0,8,4,0"
             VerticalAlignment="Top"
             Classes="icon ghost"
             Command="{Binding ToggleLeftPanelCommand}"
@@ -46,7 +46,7 @@
                         <TextBlock
                             Grid.Column="1"
                             Classes="accent"
-                            FontSize="13">
+                            FontSize="12">
                             <Run Text="{Binding Gold}" /><Run Text=" gp" />
                         </TextBlock>
                     </Grid>
@@ -54,14 +54,14 @@
                     <!--  Unspent AP badge  -->
                     <Button
                         Margin="0,8,0,8"
-                        Padding="6,3"
+                        Padding="8,4"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Left"
                         Background="{DynamicResource GameWarningMutedBrush}"
                         BorderBrush="{DynamicResource GameWarningBrush}"
                         BorderThickness="1"
                         Command="{Binding OpenAttributeAllocationCommand}"
-                        CornerRadius="3"
+                        CornerRadius="4"
                         IsVisible="{Binding HasUnspentPoints}">
                         <TextBlock Classes="warning" FontSize="11">
                             <Run Text="{Binding UnspentAttributePoints}" /><Run Text=" unspent attribute points" />
@@ -168,12 +168,12 @@
                                 <Border
                                     Width="44"
                                     Height="52"
-                                    Margin="2"
+                                    Margin="4"
                                     Background="{DynamicResource GameBackground2Brush}"
                                     BorderBrush="{DynamicResource GameBorderBrush}"
                                     BorderThickness="1"
                                     Classes.equipped="{Binding IsOccupied}"
-                                    CornerRadius="3"
+                                    CornerRadius="4"
                                     ToolTip.Tip="{Binding Label}">
                                     <StackPanel>
                                         <Panel
@@ -191,17 +191,17 @@
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Classes="caption"
-                                                FontSize="7"
+                                                FontSize="11"
                                                 IsVisible="{Binding IsEmpty}"
                                                 Text="{Binding Label}"
                                                 TextAlignment="Center"
                                                 TextWrapping="Wrap" />
                                         </Panel>
                                         <TextBlock
-                                            Margin="2,1"
+                                            Margin="4,0"
                                             HorizontalAlignment="Center"
                                             Classes="caption"
-                                            FontSize="6"
+                                            FontSize="11"
                                             IsVisible="{Binding IsOccupied}"
                                             Text="{Binding Label}"
                                             TextTrimming="CharacterEllipsis" />

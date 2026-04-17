@@ -51,10 +51,10 @@
                     <Border Background="{DynamicResource GameSuccessMutedBrush}"
                             BorderBrush="{DynamicResource GameSuccessBrush}"
                             BorderThickness="1"
-                            CornerRadius="4" Padding="6,3"
+                            CornerRadius="4" Padding="8,4"
                             IsVisible="{Binding SelectedNode.IsCurrent}">
                         <TextBlock Text="You are here"
-                                   FontSize="10"
+                                   FontSize="11"
                                    Foreground="{DynamicResource GameSuccessBrush}" />
                     </Border>
                 </StackPanel>

@@ -17,7 +17,6 @@
 
             <TextBlock Text="Settings"
                        Classes="title-large"
-                       FontSize="36"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24" />
 

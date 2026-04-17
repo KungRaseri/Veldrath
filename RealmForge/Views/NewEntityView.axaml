@@ -6,7 +6,7 @@
     <Grid RowDefinitions="Auto,*">
 
         <!-- ── Header ─────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="{DynamicResource GameBackground1Brush}" Padding="14,10"
+        <Border Grid.Row="0" Background="{DynamicResource GameBackground1Brush}" Padding="12,8"
                 BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderBrush}">
             <StackPanel Spacing="2">
                 <TextBlock Text="New Entity"
@@ -33,14 +33,14 @@
 
                 <!-- Display Name -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Display Name" Foreground="{DynamicResource GameTextPrimaryBrush}" FontSize="13" />
+                    <TextBlock Text="Display Name" Foreground="{DynamicResource GameTextPrimaryBrush}" FontSize="12" />
                     <TextBox Text="{Binding DisplayName}"
                              Watermark="e.g. Iron Longsword" />
                 </StackPanel>
 
                 <!-- Slug -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Slug" Foreground="{DynamicResource GameTextPrimaryBrush}" FontSize="13" />
+                    <TextBlock Text="Slug" Foreground="{DynamicResource GameTextPrimaryBrush}" FontSize="12" />
                     <TextBox Text="{Binding Slug}"
                              Watermark="e.g. iron-longsword"
                              FontFamily="{DynamicResource GameFontMono}" />

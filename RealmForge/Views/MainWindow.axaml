@@ -103,13 +103,13 @@
                     <!-- Loading indicator -->
                     <TextBlock Grid.Row="0" Text="Loading…"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="13"
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="12"
                                IsVisible="{Binding IsLoadingTree}" />
 
                     <!-- Error state (DB unreachable) -->
                     <StackPanel Grid.Row="0"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Spacing="10" Margin="16,0"
+                                Spacing="8" Margin="16,0"
                                 IsVisible="{Binding HasTreePaneMessage}">
                         <TextBlock Text="⚠"
                                    Foreground="{DynamicResource GameWarningBrush}" FontSize="20"
@@ -121,7 +121,7 @@
                         <Button Content="Retry"
                                 Command="{Binding RefreshTreeCommand}"
                                 Background="{DynamicResource GameWarningMutedBrush}" Foreground="{DynamicResource GameWarningBrush}"
-                                Padding="14,5" CornerRadius="4"
+                                Padding="12,4" CornerRadius="4"
                                 HorizontalAlignment="Center" />
                     </StackPanel>
 
@@ -137,7 +137,7 @@
                         <ListBox.Styles>
                             <Style Selector="ListBoxItem">
                                 <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0,1" />
+                                <Setter Property="Margin" Value="0,0" />
                                 <Setter Property="CornerRadius" Value="6" />
                             </Style>
                             <Style Selector="ListBoxItem:selected">
@@ -151,7 +151,7 @@
                             <DataTemplate DataType="vm:FileTreeNodeViewModel">
                                 <StackPanel>
                                     <!-- Domain group header row -->
-                                    <Grid ColumnDefinitions="Auto,*" Margin="8,7,8,7">
+                                    <Grid ColumnDefinitions="Auto,*" Margin="8,8,8,8">
                                         <Image Grid.Column="0"
                                                Width="18" Height="18"
                                                VerticalAlignment="Center"
@@ -159,9 +159,9 @@
                                                Source="{Binding IconPath, Converter={x:Static converters:AvaresBitmapConverter.Instance}}" />
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Name}"
-                                                   FontSize="13" Foreground="{DynamicResource GameTextPrimaryBrush}"
+                                                   FontSize="12" Foreground="{DynamicResource GameTextPrimaryBrush}"
                                                    VerticalAlignment="Center"
-                                                   Margin="10,0,0,0" />
+                                                   Margin="8,0,0,0" />
                                     </Grid>
                                     <!-- Type key chips — visible only when this row is selected -->
                                     <ItemsControl ItemsSource="{Binding Children}"
@@ -174,18 +174,18 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="vm:FileTreeNodeViewModel">
-                                                <StackPanel Orientation="Horizontal" Spacing="1" Margin="0,2,3,0">
+                                                    <StackPanel Orientation="Horizontal" Spacing="1" Margin="0,4,4,0">
                                                     <Button Content="{Binding Name}"
                                                             Command="{Binding #mainWindow.DataContext.OpenTypeKeyCommand}"
                                                             CommandParameter="{Binding}"
                                                             Background="{DynamicResource GameBackground2Brush}" Foreground="{DynamicResource GameTextSecondaryBrush}"
                                                             FontSize="11" Padding="8,4"
-                                                            CornerRadius="10,0,0,10" />
+                                                            CornerRadius="8,0,0,8" />
                                                     <Button Content="+"
                                                             Command="{Binding NewEntityCommand}"
                                                             Background="{DynamicResource GameBackground2Brush}" Foreground="{DynamicResource GameTextTertiaryBrush}"
                                                             FontSize="11" Padding="5,4"
-                                                            CornerRadius="0,10,10,0" />
+                                                            CornerRadius="0,8,8,0" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -196,7 +196,7 @@
                     </ListBox>
 
                     <!-- Pane footer: DB status -->
-                    <Border Grid.Row="1" Background="{DynamicResource GameBackground0Brush}" Padding="10,6"
+                    <Border Grid.Row="1" Background="{DynamicResource GameBackground0Brush}" Padding="8,8"
                             BorderThickness="0,1,0,0" BorderBrush="{DynamicResource GameBorderSubtleBrush}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <!-- Green dot when connected -->

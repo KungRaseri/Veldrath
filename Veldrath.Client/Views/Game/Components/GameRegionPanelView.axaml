@@ -26,12 +26,12 @@
                         Background="{DynamicResource GameBackground3Brush}"
                         BorderBrush="{DynamicResource GameBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="3"
+                        CornerRadius="4"
                         IsVisible="{Binding RegionType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <TextBlock Classes="caption" Text="{Binding RegionType}" />
                     </Border>
                 </StackPanel>
-                <TextBlock Classes="muted" FontSize="13">
+                <TextBlock Classes="muted" FontSize="12">
                     <Run Text="Levels " /><Run Text="{Binding RegionMinLevel}" /><Run Text="–" /><Run Text="{Binding RegionMaxLevel}" />
                 </TextBlock>
                 <TextBlock
@@ -61,7 +61,7 @@
                         <Border
                             MinWidth="160"
                             Margin="0,0,12,12"
-                            Padding="14,10"
+                            Padding="12,8"
                             Background="{DynamicResource GameBackground2Brush}"
                             BorderBrush="{DynamicResource GameBorderBrush}"
                             BorderThickness="1"
@@ -70,7 +70,7 @@
                             <StackPanel Spacing="6">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <TextBlock
-                                        FontSize="13"
+                                        FontSize="12"
                                         FontWeight="SemiBold"
                                         Text="{Binding Name}" />
                                     <TextBlock
@@ -81,13 +81,13 @@
                                         Text="★" />
                                 </StackPanel>
                                 <Border
-                                    Padding="5,2"
+                                    Padding="4,4"
                                     HorizontalAlignment="Left"
                                     Background="{DynamicResource GameBackground4Brush}"
-                                    CornerRadius="3">
+                                    CornerRadius="4">
                                     <TextBlock
                                         Classes="caption"
-                                        FontSize="10"
+                                        FontSize="11"
                                         Text="{Binding Type}" />
                                 </Border>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -96,12 +96,12 @@
                                     </TextBlock>
                                     <TextBlock
                                         Classes="muted"
-                                        FontSize="10"
+                                        FontSize="11"
                                         IsVisible="{Binding HasInn}"
                                         Text="Inn" />
                                     <TextBlock
                                         Classes="muted"
-                                        FontSize="10"
+                                        FontSize="11"
                                         IsVisible="{Binding HasMerchant}"
                                         Text="Shop" />
                                 </StackPanel>

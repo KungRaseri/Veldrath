@@ -6,14 +6,14 @@
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ── Header ─────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="{DynamicResource GameBackground1Brush}" Padding="14,10"
+        <Border Grid.Row="0" Background="{DynamicResource GameBackground1Brush}" Padding="12,8"
                 BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderBrush}">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock Text="{Binding EntityHeading}"
                                    FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource GameTextPrimaryBrush}" />
-                        <Border Background="{DynamicResource GameWarningMutedBrush}" CornerRadius="3" Padding="6,2"
+                        <Border Background="{DynamicResource GameWarningMutedBrush}" CornerRadius="4" Padding="8,4"
                                 IsVisible="{Binding IsDirty}">
                             <TextBlock Text="Unsaved changes" Foreground="{DynamicResource GameWarningBrush}" FontSize="11" />
                         </Border>
@@ -49,12 +49,12 @@
                     <StackPanel Spacing="16">
                         <TextBlock Text="Common Fields"
                                    FontSize="12" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />econdaryBrush}" LetterSpacing="1" />
+                                   Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />
 
                         <!-- Display Name -->
                         <Grid ColumnDefinitions="160,*">
                             <TextBlock Grid.Column="0" Text="Display Name"
-                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
                                        VerticalAlignment="Center" />
                             <TextBox Grid.Column="1" Text="{Binding DisplayName}"
                                      Watermark="Human-readable label" />
@@ -63,7 +63,7 @@
                         <!-- Slug -->
                         <Grid ColumnDefinitions="160,*">
                             <TextBlock Grid.Column="0" Text="Slug"
-                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
                                        VerticalAlignment="Center" />
                             <TextBox Grid.Column="1" Text="{Binding Slug}"
                                      Watermark="url-safe-identifier"
@@ -73,23 +73,23 @@
                         <!-- Rarity Weight -->
                         <Grid ColumnDefinitions="160,*">
                             <TextBlock Grid.Column="0" Text="Rarity Weight"
-                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
                                        VerticalAlignment="Center" />
                             <NumericUpDown Grid.Column="1"
                                            Value="{Binding RarityWeight}"
                                            Minimum="1" Maximum="100" Increment="1"
-                                           Padding="6,4" CornerRadius="4" />
+                                           Padding="8,4" CornerRadius="4" />
                         </Grid>
 
                         <!-- Is Active -->
                         <Grid ColumnDefinitions="160,*">
                             <TextBlock Grid.Column="0" Text="Active"
-                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
                                        VerticalAlignment="Center" />
                             <CheckBox Grid.Column="1"
                                       IsChecked="{Binding IsActive}"
                                       Content="Enabled for generation and references"
-                                      Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13" />
+                                      Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12" />
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -111,13 +111,13 @@
                                                     <Grid ColumnDefinitions="160,*">
                                                         <TextBlock Grid.Column="0"
                                                                    Text="{Binding Label}"
-                                                                   Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13"
+                                                                   Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
                                                                    VerticalAlignment="Center" />
 
                                                         <!-- Text field -->
                                                         <TextBox Grid.Column="1"
                                                                  Text="{Binding StringValue}"
-                                                                 Padding="8,5" CornerRadius="4"
+                                                                 Padding="8,4" CornerRadius="4"
                                                                  IsVisible="{Binding IsText}" />
 
                                                         <!-- Numeric field -->
@@ -125,19 +125,19 @@
                                                                        Value="{Binding NumberValue}"
                                                                        Minimum="{Binding Min}"
                                                                        Maximum="{Binding Max}"
-                                                                       Padding="6,3" CornerRadius="4"
+Padding="4,4" CornerRadius="4"
                                                                        IsVisible="{Binding IsNumber}" />
 
                                                         <!-- Bool field -->
                                                         <CheckBox Grid.Column="1"
                                                                   IsChecked="{Binding BoolValue}"
-                                                                  Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="13"
+                                                                  Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
                                                                   IsVisible="{Binding IsBool}" />
                                                     </Grid>
                                                     <!-- Hint text from schema descriptor -->
                                                     <TextBlock Text="{Binding Hint}"
                                                                Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11"
-                                                               Margin="164,2,0,0"
+                                                               Margin="164,4,0,0"
                                                                IsVisible="{Binding Hint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -166,56 +166,56 @@
                                                 Command="{Binding AddRowCommand}"
                                                 Background="{DynamicResource GameSuccessMutedBrush}" Foreground="{DynamicResource GameSuccessBrush}"
                                                 BorderBrush="{DynamicResource GameSuccessBrush}" BorderThickness="1"
-                                                Padding="8,3" CornerRadius="3" FontSize="11" />
+                                                Padding="8,4" CornerRadius="4" FontSize="11" />
                                     </Grid>
 
                                     <!-- Column header row -->
                                     <Grid ColumnDefinitions="*,90,70,55,55,55,36" Margin="0,2,0,0">
                                         <TextBlock Grid.Column="0" Text="Ability Slug"
                                                    IsVisible="{Binding ShowAbilitySlug}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold" />
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold" />
                                         <TextBlock Grid.Column="0" Text="Item Domain"
                                                    IsVisible="{Binding ShowItemReference}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold" />
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold" />
                                         <TextBlock Grid.Column="1" Text="Item Slug"
                                                    IsVisible="{Binding ShowItemReference}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="2" Text="Use%"
                                                    IsVisible="{Binding ShowUseChance}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="2" Text="Level"
                                                    IsVisible="{Binding ShowLevelRequired}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="2" Text="Weight"
                                                    IsVisible="{Binding ShowDropWeight}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="3" Text="Rank"
                                                    IsVisible="{Binding ShowRank}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="3" Text="Min"
                                                    IsVisible="{Binding ShowQuantityRange}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="3" Text="Qty"
                                                    IsVisible="{Binding ShowQuantity}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="4" Text="Max"
                                                    IsVisible="{Binding ShowQuantityRange}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="5" Text="Guar."
                                                    IsVisible="{Binding ShowIsGuaranteed}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                         <TextBlock Grid.Column="5" Text="Opt."
                                                    IsVisible="{Binding ShowIsOptional}"
-                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" FontWeight="SemiBold"
                                                    Margin="4,0,0,0" />
                                     </Grid>
 
@@ -229,63 +229,63 @@
                                                              Text="{Binding AbilitySlug}"
                                                              IsVisible="{Binding ShowAbilitySlug}"
                                                              Watermark="ability-slug"
-                                                             Padding="6,4" CornerRadius="3" FontSize="12" />
+                                                             Padding="8,4" CornerRadius="4" FontSize="12" />
                                                     <TextBox Grid.Column="0"
                                                              Text="{Binding ItemDomain}"
                                                              IsVisible="{Binding ShowItemReference}"
                                                              Watermark="items / weapons"
-                                                             Padding="6,4" CornerRadius="3" FontSize="12" />
+                                                             Padding="8,4" CornerRadius="4" FontSize="12" />
                                                     <!-- Col 1: item slug -->
                                                     <TextBox Grid.Column="1"
                                                              Text="{Binding ItemSlug}"
                                                              IsVisible="{Binding ShowItemReference}"
                                                              Watermark="slug"
-                                                             Padding="6,4" CornerRadius="3" FontSize="12"
+                                                             Padding="8,4" CornerRadius="4" FontSize="12"
                                                              Margin="4,0,0,0" />
                                                     <!-- Col 2: UseChance / LevelRequired / DropWeight (one visible at a time) -->
                                                     <NumericUpDown Grid.Column="2"
                                                                    Value="{Binding UseChance}"
                                                                    IsVisible="{Binding ShowUseChance}"
                                                                    Minimum="0" Maximum="1" Increment="0.05" FormatString="F2"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <NumericUpDown Grid.Column="2"
                                                                    Value="{Binding LevelRequired}"
                                                                    IsVisible="{Binding ShowLevelRequired}"
                                                                    Minimum="1" Maximum="100" Increment="1"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <NumericUpDown Grid.Column="2"
                                                                    Value="{Binding DropWeight}"
                                                                    IsVisible="{Binding ShowDropWeight}"
                                                                    Minimum="1" Maximum="10000" Increment="1"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <!-- Col 3: Rank / QuantityMin / Quantity (one visible at a time) -->
                                                     <NumericUpDown Grid.Column="3"
                                                                    Value="{Binding Rank}"
                                                                    IsVisible="{Binding ShowRank}"
                                                                    Minimum="1" Maximum="20" Increment="1"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <NumericUpDown Grid.Column="3"
                                                                    Value="{Binding QuantityMin}"
                                                                    IsVisible="{Binding ShowQuantityRange}"
                                                                    Minimum="0" Maximum="9999" Increment="1"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <NumericUpDown Grid.Column="3"
                                                                    Value="{Binding Quantity}"
                                                                    IsVisible="{Binding ShowQuantity}"
                                                                    Minimum="1" Maximum="9999" Increment="1"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <!-- Col 4: QuantityMax -->
                                                     <NumericUpDown Grid.Column="4"
                                                                    Value="{Binding QuantityMax}"
                                                                    IsVisible="{Binding ShowQuantityRange}"
                                                                    Minimum="0" Maximum="9999" Increment="1"
-                                                                   Padding="2,2" CornerRadius="3" FontSize="12"
+                                                                   Padding="4,4" CornerRadius="4" FontSize="12"
                                                                    Margin="4,0,0,0" />
                                                     <!-- Col 5: IsGuaranteed / IsOptional (one visible at a time) -->
                                                     <CheckBox Grid.Column="5"
@@ -303,7 +303,7 @@
                                                             Content="✕"
                                                             Command="{Binding RemoveCommand}"
                                                             Background="Transparent" Foreground="{DynamicResource GameDangerBrush}"
-                                                            Padding="4,4" CornerRadius="3" FontSize="11"
+                                                            Padding="4,4" CornerRadius="4" FontSize="11"
                                                             Margin="4,0,0,0" />
                                                 </Grid>
                                             </DataTemplate>
@@ -320,7 +320,7 @@
         </ScrollViewer>
 
         <!-- ── Status bar ─────────────────────────────────────────────────── -->
-        <Border Grid.Row="2" Background="{DynamicResource GameBackground1Brush}" Padding="14,5"
+        <Border Grid.Row="2" Background="{DynamicResource GameBackground1Brush}" Padding="12,4"
                 BorderThickness="0,1,0,0" BorderBrush="{DynamicResource GameBorderSubtleBrush}"
                 IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
             <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12" />

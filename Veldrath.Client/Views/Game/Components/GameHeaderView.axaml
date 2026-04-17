@@ -39,8 +39,8 @@
                         Background="{DynamicResource GameBackground3Brush}"
                         BorderBrush="{DynamicResource GameBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="2">
-                        <TextBlock FontSize="10">
+                        CornerRadius="4">
+                        <TextBlock FontSize="11">
                             <Run Text="Lv. " /><Run FontWeight="Bold" Text="{Binding Level}" />
                         </TextBlock>
                     </Border>
@@ -51,8 +51,8 @@
                 <StackPanel Spacing="0">
 
                     <!--  HP bar  -->
-                    <Panel Height="12" Margin="0,2,0,0">
-                        <Border Height="12" CornerRadius="3" Background="{DynamicResource GameSuccessMutedBrush}" />
+                    <Panel Height="12" Margin="0,4,0,0">
+                        <Border Height="12" CornerRadius="4" Background="{DynamicResource GameSuccessMutedBrush}" />
                         <ProgressBar
                             Height="12"
                             MinHeight="12"
@@ -63,7 +63,7 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            FontSize="9"
+                            FontSize="11"
                             FontWeight="Bold"
                             Foreground="Black">
                             <Run Text="HP " /><Run Text="{Binding CurrentHealth}" /><Run Text="/" /><Run Text="{Binding MaxHealth}" />
@@ -71,8 +71,8 @@
                     </Panel>
 
                     <!--  MP bar  -->
-                    <Panel Height="12" Margin="0,2,0,0">
-                        <Border Height="12" CornerRadius="3" Background="{DynamicResource GameInfoMutedBrush}" />
+                    <Panel Height="12" Margin="0,4,0,0">
+                        <Border Height="12" CornerRadius="4" Background="{DynamicResource GameInfoMutedBrush}" />
                         <ProgressBar
                             Height="12"
                             Classes="mana"
@@ -82,7 +82,7 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            FontSize="9"
+                            FontSize="11"
                             FontWeight="Bold"
                             Foreground="Black">
                             <Run Text="MP " /><Run Text="{Binding CurrentMana}" /><Run Text="/" /><Run Text="{Binding MaxMana}" />
@@ -90,8 +90,8 @@
                     </Panel>
 
                     <!--  XP bar  -->
-                    <Panel Height="12" Margin="0,2,0,0">
-                        <Border Height="12" CornerRadius="3" Background="{DynamicResource GameWarningMutedBrush}" />
+                    <Panel Height="12" Margin="0,4,0,0">
+                        <Border Height="12" CornerRadius="4" Background="{DynamicResource GameWarningMutedBrush}" />
                         <ProgressBar
                             Height="12"
                             Classes="xp"
@@ -101,7 +101,7 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            FontSize="9"
+                            FontSize="11"
                             FontWeight="Bold"
                             Foreground="Black">
                             <Run Text="XP " /><Run Text="{Binding Experience}" /><Run Text="/" /><Run Text="{Binding ExperienceToNextLevel}" />
@@ -131,7 +131,7 @@
                         Background="{DynamicResource GameBackground3Brush}"
                         BorderBrush="{DynamicResource GameBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="3"
+                        CornerRadius="4"
                         IsVisible="{Binding ZoneType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <TextBlock Classes="caption" Text="{Binding ZoneType}" />
                     </Border>
