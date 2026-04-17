@@ -171,4 +171,126 @@ public class VeldrathAuthApiClientTests
         var (client, _) = CreateClient(HttpStatusCode.OK);
         client.ServerBaseUrl.Should().Be("https://api.test");
     }
+
+    // ── ExchangeCodeAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ExchangeCodeAsync_ReturnsAuthResponseOnSuccess()
+    {
+        var expected = new AuthResponse(
+            "access", "refresh", DateTimeOffset.UtcNow.AddHours(1),
+            Guid.NewGuid(), "user", [], [], false, null);
+        var (client, _) = CreateClient(HttpStatusCode.OK, expected);
+
+        var result = await client.ExchangeCodeAsync("code-123", Guid.NewGuid());
+
+        result.Should().NotBeNull();
+        result!.AccessToken.Should().Be("access");
+    }
+
+    [Fact]
+    public async Task ExchangeCodeAsync_ReturnsNullOnFailure()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.BadRequest);
+        var result = await client.ExchangeCodeAsync("bad-code", Guid.NewGuid());
+        result.Should().BeNull();
+    }
+
+    // ── CreateExchangeCodeAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateExchangeCodeAsync_ReturnsResponseOnSuccess()
+    {
+        var expected = new CreateExchangeCodeResponse("xc-abc", Guid.NewGuid());
+        var (client, _) = CreateClient(HttpStatusCode.OK, expected);
+
+        var result = await client.CreateExchangeCodeAsync();
+
+        result.Should().NotBeNull();
+        result!.Code.Should().Be("xc-abc");
+    }
+
+    [Fact]
+    public async Task CreateExchangeCodeAsync_ReturnsNullOnFailure()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.Unauthorized);
+        var result = await client.CreateExchangeCodeAsync();
+        result.Should().BeNull();
+    }
+
+    // ── ForgotPasswordAsync ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ForgotPasswordAsync_DoesNotThrowOnSuccess()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.NoContent);
+        await client.Invoking(c => c.ForgotPasswordAsync("user@example.com")).Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_DoesNotThrowOnServerError()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.InternalServerError);
+        await client.Invoking(c => c.ForgotPasswordAsync("user@example.com")).Should().NotThrowAsync();
+    }
+
+    // ── ResetPasswordAsync ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ResetPasswordAsync_ReturnsTrueOnSuccess()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.OK);
+        var (ok, error) = await client.ResetPasswordAsync("user@example.com", "tok", "NewP@ss1");
+        ok.Should().BeTrue();
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ReturnsFalseOnFailure()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.BadRequest);
+        var (ok, error) = await client.ResetPasswordAsync("user@example.com", "bad-tok", "NewP@ss1");
+        ok.Should().BeFalse();
+        error.Should().NotBeNull();
+    }
+
+    // ── ConfirmEmailAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ConfirmEmailAsync_ReturnsTrueOnSuccess()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.OK);
+        var (ok, error) = await client.ConfirmEmailAsync("user-id", "confirm-tok");
+        ok.Should().BeTrue();
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ConfirmEmailAsync_ReturnsFalseOnFailure()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.BadRequest);
+        var (ok, error) = await client.ConfirmEmailAsync("user-id", "bad-tok");
+        ok.Should().BeFalse();
+        error.Should().NotBeNull();
+    }
+
+    // ── ResendEmailConfirmationAsync ──────────────────────────────────────────
+
+    [Fact]
+    public async Task ResendEmailConfirmationAsync_ReturnsTrueOnSuccess()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.NoContent);
+        var (ok, error) = await client.ResendEmailConfirmationAsync();
+        ok.Should().BeTrue();
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ResendEmailConfirmationAsync_ReturnsFalseOnFailure()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.Unauthorized);
+        var (ok, error) = await client.ResendEmailConfirmationAsync();
+        ok.Should().BeFalse();
+        error.Should().NotBeNull();
+    }
 }

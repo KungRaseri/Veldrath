@@ -8,17 +8,25 @@ using Veldrath.Contracts.Auth;
 namespace Veldrath.Client.Services;
 
 // Interface
+/// <summary>Provides authentication operations for the Veldrath desktop client.</summary>
 public interface IAuthService
 {
+    /// <summary>Registers a new account with the given credentials. Returns the auth tokens on success or an error on failure.</summary>
     Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password);
+    /// <summary>Authenticates with email and password. Returns the auth tokens on success or an error on failure.</summary>
     Task<(AuthResponse? Response, AppError? Error)> LoginAsync(string email, string password);
+    /// <summary>Initiates an OAuth2 login flow for the specified external provider. Returns the auth tokens on success or an error on failure.</summary>
     Task<(AuthResponse? Response, AppError? Error)> LoginExternalAsync(string provider, CancellationToken ct = default);
+    /// <summary>Attempts to silently refresh the access token using the stored refresh token. Returns <see langword="true"/> if the token is valid after the call.</summary>
     Task<bool> RefreshAsync();
+    /// <summary>Revokes the current session on the server and clears all locally stored tokens.</summary>
     Task LogoutAsync();
+    /// <summary>Creates a single-use exchange code that can be redeemed by another client. Returns <see langword="null"/> on failure.</summary>
     Task<CreateExchangeCodeResponse?> CreateExchangeCodeAsync(CancellationToken ct = default);
 }
 
 // Implementation
+/// <summary>HTTP implementation of <see cref="IAuthService"/> that communicates with the Veldrath server auth endpoints.</summary>
 public class HttpAuthService(
     HttpClient http,
     TokenStore tokens,
