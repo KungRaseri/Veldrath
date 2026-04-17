@@ -70,8 +70,26 @@ public partial class App : Application
             var tokenStore  = Services.GetRequiredService<TokenStore>();
             var saved = persistence.Load();
             if (saved is not null)
-                tokenStore.Set(saved.AccessToken, saved.RefreshToken, saved.Username, saved.AccountId,
-                               saved.AccessTokenExpiry, saved.IsCurator);
+            {
+                if (saved.AccessTokenExpiry > DateTimeOffset.UtcNow)
+                {
+                    // Valid token — restore everything so unauthenticated splash API calls can proceed.
+                    tokenStore.Set(saved.AccessToken, saved.RefreshToken, saved.Username, saved.AccountId,
+                                   saved.AccessTokenExpiry, saved.IsCurator);
+                }
+                else
+                {
+                    // Access token has expired. Restore auth metadata and refresh token but withhold
+                    // the stale JWT so no request ever sends an expired bearer header.
+                    // Setting the past expiry keeps IsExpiringSoon = true, which causes the
+                    // hub's token factory to call RefreshAsync() before the first connection attempt.
+                    tokenStore.RefreshToken      = saved.RefreshToken;
+                    tokenStore.Username          = saved.Username;
+                    tokenStore.AccountId         = saved.AccountId;
+                    tokenStore.IsCurator         = saved.IsCurator;
+                    tokenStore.AccessTokenExpiry = saved.AccessTokenExpiry;
+                }
+            }
 #pragma warning restore CA1416
         }
 
