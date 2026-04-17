@@ -1,5 +1,4 @@
 ﻿using Veldrath.Auth.Blazor;
-using Veldrath.Contracts.Auth;
 
 namespace RealmFoundry.Services;
 
@@ -12,17 +11,6 @@ namespace RealmFoundry.Services;
 /// </summary>
 public sealed class AuthStateService(RealmFoundryApiClient apiClient) : AuthStateServiceBase(apiClient)
 {
-    // ── Foundry-specific state ────────────────────────────────────────────────
-
-    /// <summary>The refresh-token session ID for the current active session.</summary>
-    public Guid? SessionId { get; private set; }
-
-    /// <summary>True when the user holds the <c>Curator</c> role.</summary>
-    public bool IsCurator { get; private set; }
-
-    /// <summary>Effective permission set (union of role and per-user grants) for the authenticated user.</summary>
-    public IReadOnlyList<string> Permissions { get; private set; } = [];
-
     // ── Backward compat ───────────────────────────────────────────────────────
 
     /// <summary>Expiry timestamp of the current access token. Alias for <see cref="AuthStateServiceBase.AccessTokenExpiry"/>.</summary>
@@ -54,40 +42,5 @@ public sealed class AuthStateService(RealmFoundryApiClient apiClient) : AuthStat
     /// <summary>True when the access token expires within two minutes.</summary>
     public bool TokenExpiresSoon =>
         AccessTokenExpiry.HasValue && (AccessTokenExpiry.Value - DateTimeOffset.UtcNow) < TimeSpan.FromMinutes(2);
-
-    // ── Overrides ─────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Stores tokens from an <see cref="AuthResponse"/> in circuit memory, setting
-    /// Foundry-specific fields in addition to the base state.
-    /// </summary>
-    public override Task SetTokensAsync(AuthResponse response)
-    {
-        SessionId   = response.SessionId;
-        IsCurator   = response.IsCurator;
-        Permissions = response.Permissions;
-        return base.SetTokensAsync(response);
-    }
-
-    /// <summary>
-    /// Updates the access token from a <see cref="RenewJwtResponse"/>, setting
-    /// Foundry-specific fields in addition to the base state.
-    /// </summary>
-    public override Task SetTokensAsync(RenewJwtResponse response, string rawRefreshToken)
-    {
-        SessionId   = response.SessionId;
-        IsCurator   = response.IsCurator;
-        Permissions = response.Permissions;
-        return base.SetTokensAsync(response, rawRefreshToken);
-    }
-
-    /// <summary>Clears Foundry-specific auth fields before base fields are cleared.</summary>
-    protected override void ClearState()
-    {
-        SessionId   = null;
-        IsCurator   = false;
-        Permissions = [];
-        base.ClearState();
-    }
 }
 

@@ -50,7 +50,9 @@ public class AuthStateServiceBaseTests
     public async Task SetTokensAsync_AuthResponse_SetsAllFields()
     {
         var (svc, api) = CreateService();
-        var response   = MakeAuthResponse();
+        var response   = new AuthResponse(
+            "access-token", "refresh-token", DateTimeOffset.UtcNow.AddHours(1),
+            Guid.NewGuid(), "user", ["Player"], ["perm:edit"], true, Guid.NewGuid());
 
         await svc.SetTokensAsync(response);
 
@@ -58,6 +60,9 @@ public class AuthStateServiceBaseTests
         svc.Username.Should().Be(response.Username);
         svc.AccountId.Should().Be(response.AccountId);
         svc.Roles.Should().BeEquivalentTo(response.Roles);
+        svc.Permissions.Should().BeEquivalentTo(response.Permissions);
+        svc.IsCurator.Should().Be(response.IsCurator);
+        svc.SessionId.Should().Be(response.SessionId);
         svc.AccessTokenExpiry.Should().Be(response.AccessTokenExpiry);
         svc.ExposedAccessToken.Should().Be(response.AccessToken);
         svc.ExposedRefreshToken.Should().Be(response.RefreshToken);
@@ -79,16 +84,24 @@ public class AuthStateServiceBaseTests
     // ── SetTokensAsync(RenewJwtResponse, string) ─────────────────────────────
 
     [Fact]
-    public async Task SetTokensAsync_RenewResponse_UpdatesAccessTokenOnly()
+    public async Task SetTokensAsync_RenewResponse_UpdatesAllMappedFields()
     {
         var (svc, api) = CreateService();
         await svc.SetTokensAsync(MakeAuthResponse("old-access", "my-refresh"));
 
-        var renewed = MakeRenewResponse("new-access");
+        var sessionId = Guid.NewGuid();
+        var renewed = new RenewJwtResponse(
+            "new-access", DateTimeOffset.UtcNow.AddHours(1),
+            Guid.NewGuid(), "renewed-user", ["Admin"], ["perm:admin"], true, sessionId);
         await svc.SetTokensAsync(renewed, "my-refresh");
 
         svc.ExposedAccessToken.Should().Be("new-access");
         svc.ExposedRefreshToken.Should().Be("my-refresh");
+        svc.Username.Should().Be("renewed-user");
+        svc.Roles.Should().BeEquivalentTo(["Admin"]);
+        svc.Permissions.Should().BeEquivalentTo(["perm:admin"]);
+        svc.IsCurator.Should().BeTrue();
+        svc.SessionId.Should().Be(sessionId);
         api.Verify(a => a.SetBearerToken("new-access"), Times.Once);
     }
 
@@ -143,6 +156,9 @@ public class AuthStateServiceBaseTests
         svc.IsLoggedIn.Should().BeFalse();
         svc.Username.Should().BeNull();
         svc.AccountId.Should().BeNull();
+        svc.Permissions.Should().BeEmpty();
+        svc.IsCurator.Should().BeFalse();
+        svc.SessionId.Should().BeNull();
         svc.ExposedAccessToken.Should().BeNull();
         svc.ExposedRefreshToken.Should().BeNull();
     }

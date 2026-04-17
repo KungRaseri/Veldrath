@@ -46,6 +46,15 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
     /// <summary>Gets the role names held by the authenticated user.</summary>
     public IReadOnlyList<string> Roles { get; protected set; } = [];
 
+    /// <summary>Gets the effective permission set (union of role and per-user grants) for the authenticated user.</summary>
+    public IReadOnlyList<string> Permissions { get; protected set; } = [];
+
+    /// <summary>Gets a value indicating whether the authenticated user holds the <c>Curator</c> role.</summary>
+    public bool IsCurator { get; protected set; }
+
+    /// <summary>Gets the session identifier for the current active refresh-token session, or <see langword="null"/> if not available.</summary>
+    public Guid? SessionId { get; protected set; }
+
     /// <summary>Gets the UTC expiry of the current access token, or <see langword="null"/> if not authenticated.</summary>
     public DateTimeOffset? AccessTokenExpiry { get; protected set; }
 
@@ -60,6 +69,9 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
         Username          = response.Username;
         AccountId         = response.AccountId;
         Roles             = response.Roles;
+        Permissions       = response.Permissions;
+        IsCurator         = response.IsCurator;
+        SessionId         = response.SessionId;
         AccessTokenExpiry = response.AccessTokenExpiry;
         api.SetBearerToken(response.AccessToken);
         NotifyStateChanged();
@@ -77,6 +89,9 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
         Username          = response.Username;
         AccountId         = response.AccountId;
         Roles             = response.Roles;
+        Permissions       = response.Permissions;
+        IsCurator         = response.IsCurator;
+        SessionId         = response.SessionId;
         AccessTokenExpiry = response.AccessTokenExpiry;
         api.SetBearerToken(response.AccessToken);
         NotifyStateChanged();
@@ -153,6 +168,9 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
         Username          = null;
         AccountId         = null;
         Roles             = [];
+        Permissions       = [];
+        IsCurator         = false;
+        SessionId         = null;
         AccessTokenExpiry = null;
     }
 
