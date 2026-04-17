@@ -36,7 +36,7 @@ public static class SessionEndpoints
         if (string.IsNullOrWhiteSpace(code) || !aid.HasValue
             || !exchangeService.TryConsume(code, aid.Value, out var authResponse))
         {
-            return Results.Redirect(ErrorRedirect(redirectTo, foundryBase));
+            return Results.Redirect(ErrorRedirect(redirectTo, foundryBase, webBase));
         }
 
         var cookieDomain = config["Auth:CookieDomain"];
@@ -66,7 +66,7 @@ public static class SessionEndpoints
 
     // Builds a /login?error=auth_failed redirect on the originating app, or falls back to the
     // Foundry or the server root when no valid redirectTo is provided.
-    private static string ErrorRedirect(string? redirectTo, string? foundryBase)
+    private static string ErrorRedirect(string? redirectTo, string? foundryBase, string? webBase = null)
     {
         if (!string.IsNullOrWhiteSpace(redirectTo)
             && Uri.TryCreate(redirectTo, UriKind.Absolute, out var uri)
@@ -74,7 +74,10 @@ public static class SessionEndpoints
                 || uri.Host == "127.0.0.1"
                 || (foundryBase is not null
                     && Uri.TryCreate(foundryBase, UriKind.Absolute, out var fb)
-                    && uri.Host.Equals(fb.Host, StringComparison.OrdinalIgnoreCase))))
+                    && uri.Host.Equals(fb.Host, StringComparison.OrdinalIgnoreCase))
+                || (webBase is not null
+                    && Uri.TryCreate(webBase, UriKind.Absolute, out var wb)
+                    && uri.Host.Equals(wb.Host, StringComparison.OrdinalIgnoreCase))))
         {
             return $"{uri.Scheme}://{uri.Authority}/login?error=auth_failed";
         }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
 using RealmFoundry;
@@ -63,6 +64,17 @@ try
     });
 
     var app = builder.Build();
+
+    // Trust the Caddy reverse-proxy's forwarded headers so Request.Scheme is https
+    // and Nav.BaseUri reflects the public HTTPS origin.  Required for correct OAuth
+    // returnUrl construction.  Safe to clear KnownNetworks inside the Docker network.
+    var fwdOptions = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    };
+    fwdOptions.KnownIPNetworks.Clear();
+    fwdOptions.KnownProxies.Clear();
+    app.UseForwardedHeaders(fwdOptions);
 
     if (!app.Environment.IsDevelopment())
     {

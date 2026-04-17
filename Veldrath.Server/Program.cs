@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Identity;
@@ -383,6 +384,18 @@ try
         var runtimeCollector = DotNetRuntimeStatsBuilder.Default().StartCollecting();
         app.Lifetime.ApplicationStopping.Register(runtimeCollector.Dispose);
     }
+
+    // Trust the Caddy reverse-proxy's forwarded headers so Request.Scheme is https
+    // and Request.Host is the public hostname.  Required for correct OAuth redirect
+    // URL construction.  Safe to clear KnownNetworks because only Caddy reaches the
+    // container in production (no direct port exposure).
+    var fwdOptions = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    };
+    fwdOptions.KnownIPNetworks.Clear();
+    fwdOptions.KnownProxies.Clear();
+    app.UseForwardedHeaders(fwdOptions);
 
     app.UseExceptionHandler(handler => handler.Run(async context =>
     {

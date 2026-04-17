@@ -107,14 +107,17 @@ public static class ExternalAuthEndpoints
 
         var result = await authSvc.ExternalLoginOrRegisterAsync(
             ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp,
-            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase) ? returnUrl : null,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl) ? returnUrl : null,
             serverBaseUrl);
 
         if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
         {
             // A confirmation email has been dispatched; redirect without issuing tokens.
+            // Route back to the originating app's /login page (not always Foundry).
+            // The returnUrl is /api/auth/session?redirectTo={appBase}/ — extract appBase
+            // from the nested redirectTo query param so the user stays on the right app.
             ctx.HandleResponse();
-            ctx.Response.Redirect($"{foundryBase}/login?pending_link=1");
+            ctx.Response.Redirect(BuildPendingLinkRedirect(returnUrl, foundryBase));
             return;
         }
 
@@ -205,7 +208,7 @@ public static class ExternalAuthEndpoints
 
         var result = await authService.ExternalLoginOrRegisterAsync(
             info.LoginProvider, info.ProviderKey, email, displayName, clientIp,
-            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase) ? returnUrl : null,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl) ? returnUrl : null,
             serverBaseUrl);
 
         if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
@@ -229,6 +232,26 @@ public static class ExternalAuthEndpoints
         }
 
         return Results.Ok(result.Response);
+    }
+
+    // Extracts the originating app's base URL from the nested `redirectTo` param inside
+    // a /api/auth/session returnUrl, then redirects to {appBase}/login?pending_link=1.
+    // Falls back to foundryBase when the param is absent or invalid.
+    private static string BuildPendingLinkRedirect(string? returnUrl, string? foundryBase)
+    {
+        if (returnUrl is not null
+            && Uri.TryCreate(returnUrl, UriKind.Absolute, out var returnUri))
+        {
+            var qs = System.Web.HttpUtility.ParseQueryString(returnUri.Query);
+            var redirectTo = qs["redirectTo"];
+            if (!string.IsNullOrEmpty(redirectTo)
+                && Uri.TryCreate(redirectTo, UriKind.Absolute, out var appUri))
+            {
+                return $"{appUri.Scheme}://{appUri.Authority}/login?pending_link=1";
+            }
+        }
+
+        return (foundryBase?.TrimEnd('/') ?? string.Empty) + "/login?pending_link=1";
     }
 
     // Only localhost/127.0.0.1, the configured Foundry origin, and an optional additional

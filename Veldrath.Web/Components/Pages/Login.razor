@@ -7,6 +7,13 @@
 <div class="auth-card">
     <h1>Sign In</h1>
 
+    @if (PendingLinkParam is not null)
+    {
+        <div class="alert alert-info">
+            <strong>One more step!</strong> We've sent a confirmation link to your email address.
+            Click it to finish linking your account with this provider, then sign in again.
+        </div>
+    }
     @if (ErrorParam is not null)
     {
         <div class="alert alert-error">
@@ -24,7 +31,8 @@
 </div>
 
 @code {
-    [SupplyParameterFromQuery(Name = "error")] private string? ErrorParam { get; set; }
+    [SupplyParameterFromQuery(Name = "pending_link")] private string? PendingLinkParam { get; set; }
+    [SupplyParameterFromQuery(Name = "error")]        private string? ErrorParam        { get; set; }
 
     private string _discordUrl   = "#";
     private string _googleUrl    = "#";

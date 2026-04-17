@@ -43,8 +43,9 @@ services:
       - Email__Password=${EMAIL_PASSWORD}
       - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
       - Email__SenderName=Veldrath
-      # Foundry base URL — container-to-container (unchanged from base)
-      - Foundry__BaseUrl=http://foundry:8081
+      # Foundry public base URL — used for OAuth redirect validation and email links.
+      # Must be the browser-reachable HTTPS address, NOT the internal container address.
+      - Foundry__BaseUrl=https://foundry.veldrath.com
       # Public base URL for the main website (used to validate session redirects)
       - Web__BaseUrl=https://veldrath.com
       # Cross-subdomain rt cookie domain — covers veldrath.com and all subdomains

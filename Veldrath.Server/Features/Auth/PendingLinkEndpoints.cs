@@ -26,7 +26,8 @@ public static class PendingLinkEndpoints
         HttpContext context,
         AccountLinkService accountLinkSvc,
         AuthService authService,
-        AuthExchangeCodeService exchangeService)
+        AuthExchangeCodeService exchangeService,
+        IConfiguration config)
     {
         var (account, pendingToken, error) =
             await accountLinkSvc.ConfirmAndLinkAsync(token, context.RequestAborted);
@@ -38,10 +39,14 @@ public static class PendingLinkEndpoints
         var response  = await authService.CreateSessionAsync(account!, clientIp, context.RequestAborted);
         var code      = exchangeService.CreateCode(response, response.AccountId);
 
-        var returnUrl = pendingToken!.ReturnUrl;
+        var returnUrl   = pendingToken!.ReturnUrl;
+        var foundryBase = config["Foundry:BaseUrl"];
+        var webBase     = config["Web:BaseUrl"];
+        var serverBase  = $"{context.Request.Scheme}://{context.Request.Host}";
         string destination;
 
-        if (returnUrl is not null && ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl))
+        if (returnUrl is not null
+            && ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, foundryBase, serverBase))
         {
             var uriBuilder   = new UriBuilder(returnUrl);
             var query        = HttpUtility.ParseQueryString(uriBuilder.Query);
