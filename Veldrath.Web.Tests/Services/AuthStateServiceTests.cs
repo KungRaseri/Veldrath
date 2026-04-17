@@ -11,26 +11,31 @@ public class AuthStateServiceTests
     private static RenewJwtResponse MakeRenewResponse(string token = "new-jwt") =>
         new(token, DateTimeOffset.UtcNow.AddHours(1), Guid.NewGuid(), "alice", ["Player"], []);
 
+    // Creates a loose VeldrathApiClient mock — non-virtual methods (SetBearerToken / ClearBearerToken)
+    // call through to the real implementation via CallBase = true, which is harmless on a throw-away HttpClient.
+    private static VeldrathApiClient MakeApi() =>
+        new Mock<VeldrathApiClient>(new HttpClient()) { CallBase = true }.Object;
+
     // ── Initial state ─────────────────────────────────────────────────────────
 
     [Fact]
     public void InitialState_IsNotLoggedIn()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         svc.IsLoggedIn.Should().BeFalse();
     }
 
     [Fact]
     public void InitialState_IsNotAuthReady()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         svc.IsAuthReady.Should().BeFalse();
     }
 
     [Fact]
     public void InitialState_TokensAreNull()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         svc.AccessToken.Should().BeNull();
         svc.RefreshToken.Should().BeNull();
     }
@@ -40,7 +45,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task SetTokensAsync_AuthResponse_SetsLoggedIn()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeAuthResponse());
         svc.IsLoggedIn.Should().BeTrue();
     }
@@ -48,7 +53,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task SetTokensAsync_AuthResponse_SetsUsername()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeAuthResponse());
         svc.Username.Should().Be("alice");
     }
@@ -56,7 +61,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task SetTokensAsync_AuthResponse_RaisesOnChange()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         var raised = false;
         svc.OnChange += () => raised = true;
 
@@ -70,7 +75,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task SetTokensAsync_RenewJwtResponse_SetsNewAccessToken()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeRenewResponse("fresh-token"), "rt-value");
         svc.AccessToken.Should().Be("fresh-token");
         svc.RefreshToken.Should().Be("rt-value");
@@ -81,7 +86,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task LogOutAsync_ClearsLoggedInState()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeAuthResponse());
         await svc.LogOutAsync();
         svc.IsLoggedIn.Should().BeFalse();
@@ -90,7 +95,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task LogOutAsync_ClearsUsername()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeAuthResponse());
         await svc.LogOutAsync();
         svc.Username.Should().BeNull();
@@ -99,7 +104,7 @@ public class AuthStateServiceTests
     [Fact]
     public async Task LogOutAsync_RaisesOnChange()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeAuthResponse());
         var raised = false;
         svc.OnChange += () => raised = true;
@@ -114,7 +119,7 @@ public class AuthStateServiceTests
     [Fact]
     public void MarkReady_SetsIsAuthReady()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         svc.MarkReady();
         svc.IsAuthReady.Should().BeTrue();
     }
@@ -122,7 +127,7 @@ public class AuthStateServiceTests
     [Fact]
     public void MarkReady_RaisesOnChange()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         var raised = false;
         svc.OnChange += () => raised = true;
 
@@ -136,10 +141,9 @@ public class AuthStateServiceTests
     [Fact]
     public async Task TryRefreshAsync_ReturnsFalse_WhenNoRefreshToken()
     {
-        var svc = new AuthStateService();
-        var api = new Mock<VeldrathApiClient>(new HttpClient()).Object;
+        var svc = new AuthStateService(MakeApi());
 
-        var result = await svc.TryRefreshAsync(api);
+        var result = await svc.TryRefreshAsync();
 
         result.Should().BeFalse();
     }
@@ -147,12 +151,11 @@ public class AuthStateServiceTests
     [Fact]
     public async Task TryRefreshAsync_ReturnsTrue_WhenTokenIsStillFresh()
     {
-        var svc = new AuthStateService();
+        var svc = new AuthStateService(MakeApi());
         await svc.SetTokensAsync(MakeAuthResponse());
 
         // Token expires in 1 hour, threshold is 2 minutes — still fresh
-        var api = new Mock<VeldrathApiClient>(new HttpClient()).Object;
-        var result = await svc.TryRefreshAsync(api, TimeSpan.FromMinutes(2));
+        var result = await svc.TryRefreshAsync(TimeSpan.FromMinutes(2));
 
         result.Should().BeTrue();
     }
@@ -160,17 +163,18 @@ public class AuthStateServiceTests
     [Fact]
     public async Task TryRefreshAsync_CallsRenewJwt_WhenTokenIsExpiringSoon()
     {
-        var svc = new AuthStateService();
+        var mock = new Mock<VeldrathApiClient>(new HttpClient()) { CallBase = true };
+        mock.Setup(a => a.RenewJwtAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeRenewResponse("refreshed-jwt"));
+
+        var svc = new AuthStateService(mock.Object);
+
         // Set a token that expires in 30 seconds — below default 2-minute threshold
         var resp = new AuthResponse("jwt", "rt", DateTimeOffset.UtcNow.AddSeconds(30),
             Guid.NewGuid(), "alice", ["Player"], []);
         await svc.SetTokensAsync(resp);
 
-        var mock = new Mock<VeldrathApiClient>(new HttpClient());
-        mock.Setup(a => a.RenewJwtAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(MakeRenewResponse("refreshed-jwt"));
-
-        var result = await svc.TryRefreshAsync(mock.Object);
+        var result = await svc.TryRefreshAsync();
 
         result.Should().BeTrue();
         mock.Verify(a => a.RenewJwtAsync("rt", It.IsAny<CancellationToken>()), Times.Once);
@@ -180,16 +184,17 @@ public class AuthStateServiceTests
     [Fact]
     public async Task TryRefreshAsync_ReturnsFalse_WhenRenewFails()
     {
-        var svc = new AuthStateService();
+        var mock = new Mock<VeldrathApiClient>(new HttpClient()) { CallBase = true };
+        mock.Setup(a => a.RenewJwtAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RenewJwtResponse?)null);
+
+        var svc = new AuthStateService(mock.Object);
+
         var resp = new AuthResponse("jwt", "rt", DateTimeOffset.UtcNow.AddSeconds(10),
             Guid.NewGuid(), "alice", [], []);
         await svc.SetTokensAsync(resp);
 
-        var mock = new Mock<VeldrathApiClient>(new HttpClient());
-        mock.Setup(a => a.RenewJwtAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((RenewJwtResponse?)null);
-
-        var result = await svc.TryRefreshAsync(mock.Object);
+        var result = await svc.TryRefreshAsync();
 
         result.Should().BeFalse();
     }

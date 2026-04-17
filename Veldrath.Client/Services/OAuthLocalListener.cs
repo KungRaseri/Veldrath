@@ -20,24 +20,33 @@ internal sealed class OAuthLocalListener : IDisposable
         // Pick an available port. The probe→release→re-bind sequence has a small TOCTOU window,
         // so we retry up to 3 times in the rare case another process grabs the port first.
         const int MaxAttempts = 3;
+        HttpListener? listener = null;
+        string? callbackUrl = null;
+
         for (var attempt = 0; attempt < MaxAttempts; attempt++)
         {
             var port = GetFreePort();
-            CallbackUrl = $"http://localhost:{port}/callback";
-            _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-            _listener.Prefixes.Add($"http://localhost:{port}/");
+            var candidate = new HttpListener();
+            candidate.Prefixes.Add($"http://127.0.0.1:{port}/");
+            candidate.Prefixes.Add($"http://localhost:{port}/");
             try
             {
-                _listener.Start();
-                return;
+                candidate.Start();
+                listener    = candidate;
+                callbackUrl = $"http://localhost:{port}/callback";
+                break;
             }
             catch (HttpListenerException) when (attempt < MaxAttempts - 1)
             {
                 // Port was grabbed between probe and bind — try again with a new port.
             }
         }
-        _listener.Start(); // Final attempt: let it throw if still failing.
+
+        if (listener is null || callbackUrl is null)
+            throw new InvalidOperationException("Unable to acquire a free port for the OAuth callback listener after multiple attempts.");
+
+        _listener   = listener;
+        CallbackUrl = callbackUrl;
     }
 
     /// <summary>
