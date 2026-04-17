@@ -73,7 +73,9 @@ try
         ctx.Response.Headers["Permissions-Policy"]      = "camera=(), microphone=(), geolocation=()";
         ctx.Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
-            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none';";
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "font-src 'self' https://fonts.gstatic.com; " +
+            "img-src 'self' data:; frame-ancestors 'none';";
         await next(ctx);
     });
 
