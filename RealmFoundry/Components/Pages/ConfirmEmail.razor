@@ -1,6 +1,7 @@
 @page "/confirm-email"
 @inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
+@inject AuthStateService AuthState
 
 <PageTitle>Confirm Email — RealmFoundry</PageTitle>
 
@@ -18,7 +19,26 @@ else
 {
     <div class="result">
         <p class="error">@(_error ?? "Confirmation failed. The link may have expired.")</p>
-        <p><a href="/login">Back to sign in</a></p>
+
+        @if (AuthState.IsLoggedIn)
+        {
+            @if (_resendSent)
+            {
+                <p class="info">A new confirmation email has been sent. Check your inbox.</p>
+            }
+            else
+            {
+                <button class="btn" @onclick="ResendAsync" disabled="@_resending" style="margin-top:.75rem">
+                    @(_resending ? "Sending…" : "Resend confirmation email")
+                </button>
+                @if (_resendError is not null)
+                {
+                    <p class="error" style="margin-top:.5rem">@_resendError</p>
+                }
+            }
+        }
+
+        <p style="margin-top:1rem"><a href="/login">Back to sign in</a></p>
     </div>
 }
 
@@ -26,16 +46,24 @@ else
     .result { max-width: 420px; margin: 4rem auto; padding: 2rem;
               border: 1px solid var(--vds-border); border-radius: 8px; }
     .success { color: var(--vds-success); }
-    .error { color: var(--vds-danger); }
+    .info    { color: var(--vds-info,  #1a6fa3); font-size: .9rem; margin-top: .5rem; }
+    .error   { color: var(--vds-danger); }
+    .btn     { background: var(--vds-accent); color: #fff; border: none; padding: .4rem .85rem;
+               border-radius: 4px; cursor: pointer; font-size: .9rem; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
 </style>
 
 @code {
     [SupplyParameterFromQuery(Name = "userId")] private string? UserId { get; set; }
     [SupplyParameterFromQuery(Name = "token")]  private string? Token  { get; set; }
 
-    private bool    _loading = true;
+    private bool    _loading     = true;
     private bool    _done;
     private string? _error;
+
+    private bool    _resending;
+    private bool    _resendSent;
+    private string? _resendError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,5 +78,23 @@ else
         _done    = ok;
         _error   = error;
         _loading = false;
+    }
+
+    private async Task ResendAsync()
+    {
+        _resending   = true;
+        _resendError = null;
+        try
+        {
+            var (ok, error) = await Api.ResendEmailConfirmationAsync();
+            if (ok)
+                _resendSent = true;
+            else
+                _resendError = error ?? "Could not resend confirmation email. Please try again.";
+        }
+        finally
+        {
+            _resending = false;
+        }
     }
 }

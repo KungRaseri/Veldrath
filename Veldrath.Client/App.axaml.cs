@@ -75,7 +75,7 @@ public partial class App : Application
                 {
                     // Valid token — restore everything so unauthenticated splash API calls can proceed.
                     tokenStore.Set(saved.AccessToken, saved.RefreshToken, saved.Username, saved.AccountId,
-                                   saved.AccessTokenExpiry, saved.IsCurator);
+                                   saved.AccessTokenExpiry, saved.IsCurator, saved.Roles, saved.Permissions, saved.SessionId);
                 }
                 else
                 {
@@ -87,6 +87,9 @@ public partial class App : Application
                     tokenStore.Username          = saved.Username;
                     tokenStore.AccountId         = saved.AccountId;
                     tokenStore.IsCurator         = saved.IsCurator;
+                    tokenStore.Roles             = saved.Roles       ?? [];
+                    tokenStore.Permissions       = saved.Permissions ?? [];
+                    tokenStore.SessionId         = saved.SessionId;
                     tokenStore.AccessTokenExpiry = saved.AccessTokenExpiry;
                 }
             }
@@ -190,6 +193,7 @@ public partial class App : Application
         services.AddTransient<MainMenuViewModel>();
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
+        services.AddTransient<ForgotPasswordViewModel>();
         services.AddSingleton<GameViewModel>();
         services.AddTransient<CharacterSelectViewModel>();
         services.AddTransient<CreateCharacterViewModel>();
