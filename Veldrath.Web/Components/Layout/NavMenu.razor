@@ -1,3 +1,4 @@
+@implements IDisposable
 @inject AuthStateService AuthState
 
 <nav class="main-nav">
@@ -15,3 +16,14 @@
         <a href="/login">Sign In</a>
     }
 </nav>
+
+@code {
+    protected override void OnInitialized()
+        => AuthState.OnChange += OnAuthStateChanged;
+
+    private void OnAuthStateChanged()
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+        => AuthState.OnChange -= OnAuthStateChanged;
+}

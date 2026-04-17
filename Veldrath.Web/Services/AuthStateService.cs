@@ -7,7 +7,7 @@ namespace Veldrath.Web.Services;
 /// Tokens never touch browser storage — they are only held for the lifetime of the
 /// Blazor Server WebSocket circuit, preventing XSS-based token theft.
 /// </summary>
-public class AuthStateService
+public class AuthStateService(VeldrathApiClient api)
 {
     private string? _accessToken;
     private string? _refreshToken;
@@ -40,8 +40,8 @@ public class AuthStateService
     public DateTimeOffset? AccessTokenExpiry { get; private set; }
 
     /// <summary>
-    /// Populates auth state from a <see cref="RenewJwtResponse"/> returned during the SSR
-    /// prerender pass and serialised into the component state for the circuit to restore.
+    /// Populates auth state from a <see cref="AuthResponse"/> and propagates the bearer token
+    /// to <see cref="VeldrathApiClient"/> so all subsequent API calls are authenticated.
     /// </summary>
     public Task SetTokensAsync(AuthResponse response)
     {
@@ -51,12 +51,14 @@ public class AuthStateService
         AccountId      = response.AccountId;
         Roles          = response.Roles;
         AccessTokenExpiry = response.AccessTokenExpiry;
+        api.SetBearerToken(response.AccessToken);
         NotifyStateChanged();
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Populates auth state from a <see cref="RenewJwtResponse"/> (no refresh-token rotation).
+    /// Populates auth state from a <see cref="RenewJwtResponse"/> (no refresh-token rotation)
+    /// and propagates the bearer token to <see cref="VeldrathApiClient"/>.
     /// </summary>
     public Task SetTokensAsync(RenewJwtResponse response, string rawRefreshToken)
     {
@@ -66,13 +68,15 @@ public class AuthStateService
         AccountId      = response.AccountId;
         Roles          = response.Roles;
         AccessTokenExpiry = response.AccessTokenExpiry;
+        api.SetBearerToken(response.AccessToken);
         NotifyStateChanged();
         return Task.CompletedTask;
     }
 
-    /// <summary>Clears all auth state and notifies listeners.</summary>
+    /// <summary>Clears all auth state, revokes the bearer token on the API client, and notifies listeners.</summary>
     public Task LogOutAsync()
     {
+        api.ClearBearerToken();
         _accessToken  = null;
         _refreshToken = null;
         Username      = null;
@@ -87,7 +91,7 @@ public class AuthStateService
     /// Proactively refreshes the JWT if it will expire within the supplied threshold.
     /// Uses the in-memory refresh token; does not update the HttpOnly cookie.
     /// </summary>
-    public async Task<bool> TryRefreshAsync(VeldrathApiClient api, TimeSpan? expiryThreshold = null)
+    public async Task<bool> TryRefreshAsync(TimeSpan? expiryThreshold = null)
     {
         if (_refreshToken is null) return false;
 
@@ -99,7 +103,6 @@ public class AuthStateService
         if (renewed is null) return false;
 
         await SetTokensAsync(renewed, _refreshToken);
-        api.SetBearerToken(renewed.AccessToken);
         return true;
     }
 
