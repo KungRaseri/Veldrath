@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Veldrath.Contracts.Auth;
 
 namespace Veldrath.Auth;
@@ -119,7 +120,7 @@ public class VeldrathAuthApiClient(HttpClient http) : IVeldrathAuthApiClient
         var resp = await http.PostAsJsonAsync("/api/auth/reset-password",
             new ResetPasswordRequest(email, token, newPassword), ct);
         if (resp.IsSuccessStatusCode) return (true, null);
-        return (false, await resp.Content.ReadAsStringAsync(ct));
+        return (false, await ReadErrorAsync(resp.Content, ct));
     }
 
     /// <summary>Confirms an email address using a <paramref name="userId"/> and <paramref name="token"/> from the confirmation link.</summary>
@@ -130,7 +131,7 @@ public class VeldrathAuthApiClient(HttpClient http) : IVeldrathAuthApiClient
                 + $"?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}";
         var resp = await http.GetAsync(url, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
-        return (false, await resp.Content.ReadAsStringAsync(ct));
+        return (false, await ReadErrorAsync(resp.Content, ct));
     }
 
     /// <summary>Requests the server to resend the email-confirmation message for the authenticated account.</summary>
@@ -139,6 +140,26 @@ public class VeldrathAuthApiClient(HttpClient http) : IVeldrathAuthApiClient
     {
         var resp = await http.PostAsync("/api/auth/resend-confirmation", null, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
-        return (false, await resp.Content.ReadAsStringAsync(ct));
+        return (false, await ReadErrorAsync(resp.Content, ct));
+    }
+
+    /// <summary>
+    /// Reads the response body and extracts the value of the <c>error</c> field when the body is
+    /// a JSON object, e.g. <c>{"error":"Token invalid."}</c>.
+    /// Falls back to returning the raw string when the body is not valid JSON or lacks an
+    /// <c>error</c> property.
+    /// </summary>
+    private static async Task<string?> ReadErrorAsync(HttpContent content, CancellationToken ct)
+    {
+        var raw = await content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(raw)) return raw;
+        try
+        {
+            using var doc = JsonDocument.Parse(raw);
+            if (doc.RootElement.TryGetProperty("error", out var err))
+                return err.GetString();
+        }
+        catch { }
+        return raw;
     }
 }

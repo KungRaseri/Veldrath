@@ -283,8 +283,8 @@ public class AuthService(
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var encodedToken = Uri.EscapeDataString(token);
-        var foundryBase  = (config["Foundry:BaseUrl"] ?? string.Empty).TrimEnd('/');
-        var resetLink    = $"{foundryBase}/reset-password?email={Uri.EscapeDataString(user.Email)}&token={encodedToken}";
+        var webBase      = (config["Web:BaseUrl"] ?? string.Empty).TrimEnd('/');
+        var resetLink    = $"{webBase}/reset-password?email={Uri.EscapeDataString(user.Email)}&token={encodedToken}";
 
         var body = $"""
             <p>Hi {user.UserName},</p>
@@ -323,8 +323,8 @@ public class AuthService(
 
         var token        = await userManager.GenerateEmailConfirmationTokenAsync(user);
         var encodedToken = Uri.EscapeDataString(token);
-        var foundryBase  = (config["Foundry:BaseUrl"] ?? string.Empty).TrimEnd('/');
-        var confirmLink  = $"{foundryBase}/confirm-email?userId={user.Id}&token={encodedToken}";
+        var webBase      = (config["Web:BaseUrl"] ?? string.Empty).TrimEnd('/');
+        var confirmLink  = $"{webBase}/confirm-email?userId={user.Id}&token={encodedToken}";
 
         var body = $"""
             <p>Hi {user.UserName},</p>

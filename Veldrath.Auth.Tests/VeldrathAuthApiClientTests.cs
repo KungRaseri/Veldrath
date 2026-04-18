@@ -254,6 +254,15 @@ public class VeldrathAuthApiClientTests
         error.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task ResetPasswordAsync_ExtractsErrorFromJsonBody()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.BadRequest, new { error = "Invalid or expired token." });
+        var (ok, error) = await client.ResetPasswordAsync("user@example.com", "bad-tok", "NewP@ss1");
+        ok.Should().BeFalse();
+        error.Should().Be("Invalid or expired token.");
+    }
+
     // ── ConfirmEmailAsync ─────────────────────────────────────────────────────
 
     [Fact]
@@ -274,6 +283,15 @@ public class VeldrathAuthApiClientTests
         error.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task ConfirmEmailAsync_ExtractsErrorFromJsonBody()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.BadRequest, new { error = "Missing userId or token." });
+        var (ok, error) = await client.ConfirmEmailAsync("user-id", "bad-tok");
+        ok.Should().BeFalse();
+        error.Should().Be("Missing userId or token.");
+    }
+
     // ── ResendEmailConfirmationAsync ──────────────────────────────────────────
 
     [Fact]
@@ -292,5 +310,14 @@ public class VeldrathAuthApiClientTests
         var (ok, error) = await client.ResendEmailConfirmationAsync();
         ok.Should().BeFalse();
         error.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ResendEmailConfirmationAsync_ExtractsErrorFromJsonBody()
+    {
+        var (client, _) = CreateClient(HttpStatusCode.BadRequest, new { error = "Email already confirmed." });
+        var (ok, error) = await client.ResendEmailConfirmationAsync();
+        ok.Should().BeFalse();
+        error.Should().Be("Email already confirmed.");
     }
 }
